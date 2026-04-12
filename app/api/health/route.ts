@@ -60,7 +60,7 @@ export async function GET() {
               { label: "Último error", value: errMsg },
             ],
             actionLabel: "Ver health check",
-            actionUrl: `${process.env.NEXT_PUBLIC_BASE_URL ?? "https://buleje.com"}/api/health`,
+            actionUrl: `${process.env.NEXT_PUBLIC_BASE_URL ?? "https://buleje.pe"}/api/health`,
           })
         ).catch(() => {});
       }

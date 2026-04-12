@@ -1,6 +1,7 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { ShoppingListsDB } from "@/lib/jsondb";
 import { toErrorPayload } from "@/lib/api-error";
+import { getTenantIdFromRequest } from "@/lib/tenant";
 
 export async function GET(req: NextRequest) {
   try {
@@ -19,7 +20,7 @@ export async function POST(req: NextRequest) {
     const body = await req.json();
     const { customerPhone, name, items } = body;
     if (!customerPhone || !name) return NextResponse.json({ error: "customerPhone y name requeridos" }, { status: 400 });
-    const list = await ShoppingListsDB.add({ customerPhone, name, items: items ?? [] });
+    const list = await ShoppingListsDB.add({ customerPhone, name, items: items ?? [], tenantId: getTenantIdFromRequest(req) });
     return NextResponse.json(list, { status: 201 });
   } catch (err) {
     const { payload, status } = toErrorPayload(err);

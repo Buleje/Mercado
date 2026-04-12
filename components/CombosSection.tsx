@@ -8,6 +8,7 @@ import { useToast } from "@/contexts/toast-context";
 import { useStoreProducts } from "@/hooks/use-store-products";
 import { cn } from "@/lib/utils";
 import type { Product, Category } from "@/data/products";
+import SectionPlaceholder from "@/components/SectionPlaceholder";
 
 type Combo = {
   id: string;
@@ -247,7 +248,7 @@ export default function CombosSection() {
   );
 
   // No render while loading or if no combos — prevents blank gaps
-  if (isLoading || liveProducts.length === 0 || combos.length === 0) return null;
+  if (isLoading || liveProducts.length === 0 || combos.length === 0) return <SectionPlaceholder title="Combos" hint="Crea combos desde Admin → Productos & Precios" cols={4} />;
 
   return (
     <section className="py-16 sm:py-20 bg-white dark:bg-background">

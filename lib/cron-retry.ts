@@ -1,9 +1,9 @@
 import { prisma } from "@/lib/prisma";
 import { logger } from "@/lib/logger";
+import { trackCronExecution } from "@/lib/cron/health-tracker";
 
 /**
- * Wraps a cron job function with retry logic and dead-letter logging.
- * On permanent failure (all retries exhausted), logs to CronDeadLetter table.
+ * Wraps a cron job function with retry logic, dead-letter logging, and health tracking.
  */
 export async function withCronRetry<T>(
   jobName: string,
@@ -11,10 +11,13 @@ export async function withCronRetry<T>(
   options: { maxRetries?: number; delayMs?: number } = {}
 ): Promise<T> {
   const { maxRetries = 3, delayMs = 1000 } = options;
+  const startMs = Date.now();
 
   for (let attempt = 1; attempt <= maxRetries; attempt++) {
     try {
-      return await fn();
+      const result = await fn();
+      trackCronExecution({ jobName, status: "success", durationMs: Date.now() - startMs }).catch(() => {});
+      return result;
     } catch (err) {
       const message = err instanceof Error ? err.message : String(err);
       logger.warn(`[cron/${jobName}] Attempt failed`, { jobName, attempt, maxRetries, error: message });
@@ -29,8 +32,9 @@ export async function withCronRetry<T>(
             maxRetries
           );
         } catch (dlErr) {
-          console.error(`[cron/${jobName}] Failed to write dead letter:`, dlErr);
+          logger.error(`[cron/${jobName}] Failed to write dead letter`, { error: String(dlErr) });
         }
+        trackCronExecution({ jobName, status: "failure", durationMs: Date.now() - startMs, error: message }).catch(() => {});
         throw err;
       }
 

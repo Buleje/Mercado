@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect } from "react";
+import * as Sentry from "@sentry/nextjs";
 
 export default function TiendaError({
   error,
@@ -10,7 +11,7 @@ export default function TiendaError({
   reset: () => void;
 }) {
   useEffect(() => {
-    console.error("[Tienda Error]", error);
+    Sentry.captureException(error);
   }, [error]);
 
   return (

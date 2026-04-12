@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { requireAdmin } from "@/lib/require-admin";
+import { toNumOrZero } from "@/lib/decimal-utils";
 import { prisma } from "@/lib/prisma";
 import { logActivity } from "@/lib/activity-logger";
 
@@ -59,7 +60,9 @@ export async function POST(req: NextRequest) {
         const saleItem = sale.items.find(si => si.productId === item.productId);
         if (!saleItem) continue;
 
-        const itemTotal = saleItem.price * item.qty;
+        // TD-018: saleItem.price es Decimal
+        const saleItemPriceNum = toNumOrZero(saleItem.price);
+        const itemTotal = saleItemPriceNum * item.qty;
         totalRefund += itemTotal;
 
         // Restore stock
@@ -93,7 +96,7 @@ export async function POST(req: NextRequest) {
           productId: item.productId,
           name: saleItem.name,
           quantity: item.qty,
-          price: saleItem.price,
+          price: saleItemPriceNum,
         });
       }
 

@@ -1,4 +1,4 @@
-# Bodega San Martín — Iniciar servidor de desarrollo
+# Buleje — Iniciar servidor de desarrollo
 # Abre el navegador en la página de SuperAdmin cuando el servidor esté listo
 
 $ProjectDir = Split-Path -Parent $PSScriptRoot
@@ -29,5 +29,5 @@ Start-Job -ScriptBlock {
 } | Out-Null
 
 # Iniciar servidor de desarrollo
-Write-Host "Iniciando Bodega San Martin en localhost:3000..." -ForegroundColor Green
+Write-Host "Iniciando Buleje en localhost:3000..." -ForegroundColor Green
 npm run dev

@@ -3,6 +3,7 @@ import { z } from "zod";
 import { requireAdmin } from "@/lib/require-admin";
 import { logActivity } from "@/lib/activity-logger";
 import { prisma } from "@/lib/prisma";
+import { sendWhatsAppText } from "@/lib/whatsapp";
 
 const VALID_TRANSITIONS: Record<string, string[]> = {
   assigned: ["picked_up"],
@@ -161,6 +162,10 @@ export async function PATCH(req: NextRequest) {
         status,
         ...(status === "delivered" && { deliveredAt: new Date() }),
       },
+      include: {
+        order: { select: { customerName: true, customerPhone: true } },
+        partner: { select: { name: true } },
+      },
     });
 
     logActivity(
@@ -170,6 +175,21 @@ export async function PATCH(req: NextRequest) {
       id,
       auth.username
     ).catch(() => {});
+
+    // Fire-and-forget: WhatsApp tracking update to customer
+    if (updated.order?.customerPhone) {
+      const customerName = updated.order.customerName?.split(" ")[0] ?? "vecino";
+      const driverName = updated.partner?.name ?? "tu repartidor";
+      const trackingMessages: Record<string, string> = {
+        picked_up: `📦 ¡Hola ${customerName}! ${driverName} ya recogió tu pedido de la tienda. Pronto estará en camino hacia ti. 🏃`,
+        in_transit: `🛵 ¡${customerName}, tu pedido va en camino! ${driverName} ya salió hacia tu dirección. Prepárate para recibirlo.`,
+        delivered: `✅ ¡Listo! Tu pedido ha sido entregado. ¡Gracias por tu compra! 🎉`,
+      };
+      const msg = trackingMessages[status];
+      if (msg) {
+        sendWhatsAppText(updated.order.customerPhone, msg).catch(() => {});
+      }
+    }
 
     return NextResponse.json(updated);
   } catch {

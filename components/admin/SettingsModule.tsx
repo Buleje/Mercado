@@ -1,19 +1,20 @@
 "use client";
 import { useState, useEffect, useRef, useCallback, useMemo } from "react";
+import Image from "next/image";
 import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "@/lib/utils";
 import type { StoreMode } from "@/lib/jsondb";
 import dynamic from "next/dynamic";
 import {
-  Store, Phone, MapPin, Clock, AlignLeft, Image as ImageIcon, Upload, Lock, X, Search,
-  ShoppingCart, MessageCircle, HandCoins, Link as LinkIcon, Pencil, Check,
-  Loader2, Eye, EyeOff, ArrowUp, ArrowDown, AlertTriangle, Shield, Download,
-  CheckCircle, UserCog, Palette, User, Truck, Settings, Bell, Package,
-  DollarSign, FileText, Zap, CreditCard, Landmark, Globe, Hash, Percent,
-  Calendar, Timer, Layers, Smartphone, Mail, Key, Wifi, WifiOff,
-  BarChart3, Database, Crown, ChevronRight, ChevronDown, Save, RefreshCw,
-  Plus, Minus, Trash2, Copy, Send, ToggleLeft, ToggleRight, Activity,
-  HardDrive, ClipboardList, Users, Power, Monitor
+  Store, Phone, MapPin, Clock, AlignLeft, Upload, Lock, X, Search,
+  ShoppingCart, MessageCircle, Check,
+  Loader2, Eye, EyeOff, ArrowUp, ArrowDown, AlertTriangle, Download,
+  CheckCircle, Palette, User, Truck, Settings, Bell, Package,
+  DollarSign, FileText, Zap, Landmark, Globe, Hash, Percent,
+  Calendar, Timer, Layers, Mail, Key, Wifi, WifiOff,
+  BarChart3, Crown, ChevronRight, ChevronDown, Save,
+  Plus, Trash2, Copy, Send, Activity,
+  HardDrive, ClipboardList, Monitor
 } from "lucide-react";
 
 const LeafletMap = dynamic(() => import("@/components/LeafletMap"), { ssr: false });
@@ -689,7 +690,7 @@ export default function SettingsModule({ storeMode, onModeChange }: { storeMode:
           )}
         </SectionCard>
         <div className="bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-800/40 rounded-xl p-3">
-          <p className="text-xs text-amber-700 dark:text-amber-400 font-medium">💡 Los accesos directos aparecen en la sección &quot;Favoritos&quot; de tu barra lateral. Puedes agregar hasta 6.</p>
+          <p className="text-xs text-amber-700 dark:text-amber-400 font-medium">Los accesos directos aparecen en la sección &quot;Favoritos&quot; de tu barra lateral. Puedes agregar hasta 6.</p>
         </div>
       </div>
     );
@@ -780,8 +781,7 @@ export default function SettingsModule({ storeMode, onModeChange }: { storeMode:
         </div>
         {logoUrl && (
           <div className="flex items-center gap-3 p-3 bg-gray-50 dark:bg-surface rounded-xl border border-gray-100 dark:border-card-border">
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src={logoUrl} alt="Logo" className="h-14 w-14 object-contain rounded-xl bg-white border border-gray-100" onError={e => { (e.currentTarget as HTMLImageElement).style.display = "none"; }} />
+            <Image src={logoUrl} alt="Logo" width={56} height={56} className="object-contain rounded-xl bg-white border border-gray-100" unoptimized onError={e => { (e.currentTarget as HTMLImageElement).style.display = "none"; }} />
             <span className="text-xs text-gray-500 flex-1">Vista previa</span>
             <button onClick={() => setLogoUrl("")} className="text-xs text-red-400 hover:text-red-600">Quitar</button>
           </div>
@@ -1175,7 +1175,7 @@ export default function SettingsModule({ storeMode, onModeChange }: { storeMode:
                 <FieldLabel>QR de Yape</FieldLabel>
                 <button onClick={() => yapeImgRef.current?.click()} className="w-full py-3 rounded-xl border-2 border-dashed border-purple-300 hover:border-purple-500 text-sm font-semibold text-purple-600 bg-purple-50 transition-colors"><Upload className="h-4 w-4 inline mr-1.5" />Subir QR</button>
                 <input ref={yapeImgRef} type="file" accept="image/*" capture="environment" className="hidden" onChange={handleFileUpload(setYapeImage)} />
-                {yapeImage && <div className="mt-2 flex items-center gap-3 p-2 bg-purple-50 rounded-xl">{/* eslint-disable-next-line @next/next/no-img-element */}<img src={yapeImage} alt="QR" className="h-16 w-16 rounded-lg object-contain border" /><button onClick={() => setYapeImage("")} className="text-xs text-red-400 hover:text-red-600">Quitar</button></div>}
+                {yapeImage && <div className="mt-2 flex items-center gap-3 p-2 bg-purple-50 rounded-xl"><Image src={yapeImage} alt="QR" width={64} height={64} className="rounded-lg object-contain border" unoptimized /><button onClick={() => setYapeImage("")} className="text-xs text-red-400 hover:text-red-600">Quitar</button></div>}
               </div>
             </div>
           )}
@@ -1189,7 +1189,7 @@ export default function SettingsModule({ storeMode, onModeChange }: { storeMode:
               <div>
                 <button onClick={() => plinImgRef.current?.click()} className="w-full py-3 rounded-xl border-2 border-dashed border-blue-300 hover:border-blue-500 text-sm font-semibold text-blue-600 bg-blue-50 transition-colors"><Upload className="h-4 w-4 inline mr-1.5" />Subir QR Plin</button>
                 <input ref={plinImgRef} type="file" accept="image/*" className="hidden" onChange={handleFileUpload(setPlinImage)} />
-                {plinImage && <div className="mt-2 flex items-center gap-3 p-2 bg-blue-50 rounded-xl">{/* eslint-disable-next-line @next/next/no-img-element */}<img src={plinImage} alt="QR" className="h-16 w-16 rounded-lg object-contain border" /><button onClick={() => setPlinImage("")} className="text-xs text-red-400">Quitar</button></div>}
+                {plinImage && <div className="mt-2 flex items-center gap-3 p-2 bg-blue-50 rounded-xl"><Image src={plinImage} alt="QR" width={64} height={64} className="rounded-lg object-contain border" unoptimized /><button onClick={() => setPlinImage("")} className="text-xs text-red-400">Quitar</button></div>}
               </div>
             </div>
           )}
@@ -1415,13 +1415,52 @@ export default function SettingsModule({ storeMode, onModeChange }: { storeMode:
         <div className="mt-4 p-4 rounded-xl border border-gray-200 dark:border-card-border" style={{ background: `linear-gradient(135deg, ${primaryColor}15, ${secondaryColor}15)` }}>
           <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-2">Vista previa</p>
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl flex items-center justify-center text-white font-bold text-sm" style={{ backgroundColor: primaryColor }}>BSM</div>
+            <div className="w-10 h-10 rounded-xl flex items-center justify-center text-white font-bold text-sm" style={{ backgroundColor: primaryColor }}>Buleje</div>
             <div><p className="text-sm font-extrabold" style={{ color: primaryColor }}>{businessName}</p><p className="text-xs" style={{ color: secondaryColor }}>{slogan}</p></div>
           </div>
           <div className="mt-3 flex gap-2">
             <span className="px-3 py-1.5 rounded-lg text-xs font-bold text-white" style={{ backgroundColor: primaryColor }}>Primario</span>
             <span className="px-3 py-1.5 rounded-lg text-xs font-bold text-white" style={{ backgroundColor: secondaryColor }}>Secundario</span>
           </div>
+        </div>
+      </SectionCard>
+
+      <SectionCard title="Modo de lenguaje" desc="Elige cómo se muestran los términos en el panel">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <button
+            type="button"
+            onClick={() => {
+              try { localStorage.setItem("buleje-vocabulary-mode", "simple"); } catch {}
+              window.dispatchEvent(new Event("vocabulary-change"));
+            }}
+            className={cn(
+              "p-4 rounded-xl border-2 text-left transition-all",
+              (typeof window !== "undefined" && localStorage.getItem("buleje-vocabulary-mode") !== "technical")
+                ? "border-primary bg-primary/5"
+                : "border-gray-200 dark:border-card-border hover:border-gray-300"
+            )}
+          >
+            <p className="font-bold text-sm">Sencillo</p>
+            <p className="text-xs text-gray-500 mt-1">Palabras simples y claras. Ideal para dueños de bodega.</p>
+            <p className="text-[10px] text-gray-400 mt-2 italic">Ejemplo: &ldquo;Ganancia&rdquo; en vez de &ldquo;Margen bruto&rdquo;</p>
+          </button>
+          <button
+            type="button"
+            onClick={() => {
+              try { localStorage.setItem("buleje-vocabulary-mode", "technical"); } catch {}
+              window.dispatchEvent(new Event("vocabulary-change"));
+            }}
+            className={cn(
+              "p-4 rounded-xl border-2 text-left transition-all",
+              (typeof window !== "undefined" && localStorage.getItem("buleje-vocabulary-mode") === "technical")
+                ? "border-primary bg-primary/5"
+                : "border-gray-200 dark:border-card-border hover:border-gray-300"
+            )}
+          >
+            <p className="font-bold text-sm">Profesional</p>
+            <p className="text-xs text-gray-500 mt-1">Terminología técnica. Ideal para contadores y profesionales.</p>
+            <p className="text-[10px] text-gray-400 mt-2 italic">Ejemplo: &ldquo;Margen bruto&rdquo;, &ldquo;FEFO&rdquo;, &ldquo;SKU&rdquo;, &ldquo;ROI&rdquo;</p>
+          </button>
         </div>
       </SectionCard>
 
@@ -1468,7 +1507,7 @@ export default function SettingsModule({ storeMode, onModeChange }: { storeMode:
       <SectionCard title="Respaldo de datos" desc="Protege tu información con backups regulares">
         {/* Last backup indicator */}
         {(() => {
-          const lastDate = lastBackupAt ? new Date(lastBackupAt) : (typeof window !== "undefined" ? (() => { const ls = localStorage.getItem("bsm-last-backup"); return ls ? new Date(ls) : null; })() : null);
+          const lastDate = lastBackupAt ? new Date(lastBackupAt) : (typeof window !== "undefined" ? (() => { const ls = localStorage.getItem("buleje-last-backup"); return ls ? new Date(ls) : null; })() : null);
           const daysSince = lastDate ? Math.floor((Date.now() - lastDate.getTime()) / 86400000) : null;
           const needsBackup = !lastDate || (daysSince !== null && daysSince > 7);
           return (
@@ -1486,7 +1525,7 @@ export default function SettingsModule({ storeMode, onModeChange }: { storeMode:
             const link = document.createElement("a");
             link.href = "/api/backup"; link.download = `bodega-backup-${ts}.json`;
             document.body.appendChild(link); link.click(); document.body.removeChild(link);
-            if (typeof window !== "undefined") localStorage.setItem("bsm-last-backup", new Date().toISOString());
+            if (typeof window !== "undefined") localStorage.setItem("buleje-last-backup", new Date().toISOString());
             setLastBackupAt(new Date().toISOString());
           }} className="flex items-center justify-center gap-2 px-4 py-3 rounded-xl border-2 border-teal-200 bg-white hover:bg-teal-50 text-sm font-semibold text-teal-700">
             <Download className="h-4 w-4" /> Generar respaldo

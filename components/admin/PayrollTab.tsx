@@ -248,7 +248,7 @@ export default function PayrollTab() {
                 <button onClick={() => markPaid(detail.id)} className="flex-1 py-2.5 text-sm rounded-xl bg-emerald-500 text-white font-semibold hover:bg-emerald-600">Marcar como pagado</button>
               )}
               {detail.status === "pagado" && (
-                <p className="text-xs text-emerald-600 font-semibold text-center w-full">✓ Pagado el {detail.paymentDate}</p>
+                <p className="text-xs text-emerald-600 font-semibold text-center w-full">Pagado el {detail.paymentDate}</p>
               )}
             </div>
           </div>

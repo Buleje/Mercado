@@ -133,7 +133,7 @@ export default function ReportsTab() {
         // FASE 6.4: Full Business Metrics Export
         const [sales, products, customers, payables, suppliers, orders] = data;
         
-        csv = `BODEGA SAN MARTIN - METRICAS COMPLETAS DEL NEGOCIO\n`;
+        csv = `BULEJE ERP - METRICAS COMPLETAS DEL NEGOCIO\n`;
         csv += `Generado: ${new Date().toLocaleString("es-PE")}\n\n`;
         
         // === EXECUTIVE SUMMARY ===

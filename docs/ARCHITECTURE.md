@@ -1,4 +1,4 @@
-# Architecture — Bodega San Martín
+# Architecture — Buleje
 
 > **Ancla arquitectónica del proyecto.** Este documento es la referencia única para entender cómo fluye la información de punta a punta. Si algo contradice lo que está acá, la fuente de verdad es el código + los ADRs en `docs/adr/`.
 >
@@ -11,7 +11,7 @@
 
 ## 1. Vista de 10 000 pies
 
-Bodega San Martín es un **ERP/e-commerce multi-tenant** para bodegas familiares en Pucallpa. Una sola instancia de la app sirve a N tenants mediante aislamiento por `tenantId` en cada query. Los usuarios finales son:
+Buleje es un **ERP/e-commerce multi-tenant** para bodegas familiares en Pucallpa. Una sola instancia de la app sirve a N tenants mediante aislamiento por `tenantId` en cada query. Los usuarios finales son:
 
 | Actor | Rol típico | Dónde interactúa |
 |---|---|---|

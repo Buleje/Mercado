@@ -178,7 +178,7 @@ interface PerfSnapshot {
   ttfb: number;
 }
 
-const PERF_HISTORY_KEY = "bsm-perf-history";
+const PERF_HISTORY_KEY = "buleje-perf-history";
 const MAX_SNAPSHOTS = 14;
 
 function getHistory(): PerfSnapshot[] {
@@ -572,26 +572,26 @@ export default function RendimientoModule() {
         activeTab={sub}
         onTabChange={setSub}
         moduleId={MODULE_ID}
-      />
-
-      {sub === "web-vitals" && (
-        <div className="space-y-4">
-          <div className="rounded-2xl border border-gray-200 bg-white p-4">
-            <h3 className="text-sm font-bold text-gray-900 mb-1">
-              ¿Qué tan rápido carga tu tienda?
-            </h3>
-            <p className="text-xs text-gray-500 mb-4">
-              Estas métricas miden la velocidad de tu página — como un velocímetro para tu tienda web.
-              Verde = rápido, Amarillo = normal, Rojo = lento.
-            </p>
-            <WebVitalsWidget />
+      >
+        {sub === "web-vitals" && (
+          <div className="space-y-4">
+            <div className="rounded-2xl border border-gray-200 bg-white p-4">
+              <h3 className="text-sm font-bold text-gray-900 mb-1">
+                ¿Qué tan rápido carga tu tienda?
+              </h3>
+              <p className="text-xs text-gray-500 mb-4">
+                Estas métricas miden la velocidad de tu página — como un velocímetro para tu tienda web.
+                Verde = rápido, Amarillo = normal, Rojo = lento.
+              </p>
+              <WebVitalsWidget />
+            </div>
           </div>
-        </div>
-      )}
-      {sub === "historial" && <PerformanceHistoryTab />}
-      {sub === "salud" && <SystemHealthTab />}
-      {sub === "navegador" && <BrowserInfoTab />}
-      {sub === "almacenamiento" && <StorageTab />}
+        )}
+        {sub === "historial" && <PerformanceHistoryTab />}
+        {sub === "salud" && <SystemHealthTab />}
+        {sub === "navegador" && <BrowserInfoTab />}
+        {sub === "almacenamiento" && <StorageTab />}
+      </AdminTabBar>
     </div>
   );
 }

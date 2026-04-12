@@ -59,7 +59,7 @@ export function TenantSlugProvider({
 
     // Set up BroadcastChannel scoped to this tenant
     if (typeof BroadcastChannel !== "undefined") {
-      channel = new BroadcastChannel(`bsm-tenant-${slug}`);
+      channel = new BroadcastChannel(`buleje-tenant-${slug}`);
       channel.onmessage = (event: MessageEvent<TenantBroadcast>) => {
         if (event.data?.type === "tenant-resolved" && event.data.slug === slug) {
           setTenantId(event.data.tenantId);
@@ -113,7 +113,7 @@ export function useTenant(): TenantContextValue {
 
 // ─── Utility ────────────────────────────────────────────────
 
-/** Build a tenant-scoped localStorage key: bsm-{slug}-{key} */
+/** Build a tenant-scoped localStorage key: buleje-{slug}-{key} */
 export function tenantKey(slug: string, key: string): string {
-  return slug ? `bsm-${slug}-${key}` : `bsm-${key}`;
+  return slug ? `buleje-${slug}-${key}` : `buleje-${key}`;
 }

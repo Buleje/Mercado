@@ -3,6 +3,7 @@ import { ReviewsDB } from "@/lib/jsondb";
 import { requireAdmin } from "@/lib/require-admin";
 import { applyRateLimit } from "@/lib/rate-limit";
 import { logger } from "@/lib/logger";
+import { getTenantIdFromRequest } from "@/lib/tenant";
 
 export async function GET(req: NextRequest) {
   const limited = applyRateLimit(req, "MODERATE", "reviews");
@@ -32,9 +33,11 @@ export async function GET(req: NextRequest) {
   }
 }
 
-export async function POST(req: Request) {
+export async function POST(req: NextRequest) {
   const rl = applyRateLimit(req, "STRICT", "reviews");
   if (rl) return rl;
+
+  const tenantId = getTenantIdFromRequest(req);
 
   try {
     const body = await req.json() as {
@@ -60,7 +63,7 @@ export async function POST(req: Request) {
       productId: body.productId ?? null,
       status: "pending",
       date: body.date,
-    });
+    }, tenantId);
     return NextResponse.json(review);
   } catch {
     return NextResponse.json({ error: "invalid request" }, { status: 400 });

@@ -11,15 +11,15 @@ export async function GET(req: NextRequest) {
   const session = await getPlatformSession(token);
   if (!session) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
 
-  // TECH-DEBT: campo storeId no está en schema Prisma (Coupon) — listar todos los cupones sin filtro por storeId
-  // TODO: agregar storeId al modelo Coupon para filtrar cupones de marketplace
   const coupons = await prisma.coupon.findMany({
+    where: { storeId: { not: null } },
     orderBy: { createdAt: "desc" },
     take: 500,
     select: {
       id: true,
       code: true,
       tenantId: true,
+      storeId: true,
       discountType: true,
       discountValue: true,
       maxUses: true,
@@ -32,6 +32,7 @@ export async function GET(req: NextRequest) {
   const mapped = coupons.map((c) => ({
     id: c.id,
     code: c.code,
+    storeId: c.storeId,
     storeName: c.tenantId,
     discountType: c.discountType,
     discountValue: c.discountValue,

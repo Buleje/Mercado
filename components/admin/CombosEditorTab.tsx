@@ -74,7 +74,7 @@ export default function CombosEditorTab() {
       id,
       name: "Nuevo Combo",
       description: "Descripción del combo",
-      emoji: "📦",
+      emoji: "",
       categories: ["abarrotes"],
       size: 3,
       discount: 10,

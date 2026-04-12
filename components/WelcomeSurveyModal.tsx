@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import { Smartphone, Tablet, Monitor, X, ChevronRight, Sparkles, FlaskConical } from "lucide-react";
 import { cn } from "@/lib/utils";
 
-const STORAGE_KEY = "bsm_welcome_done";
+const STORAGE_KEY = "buleje_welcome_done";
 
 type Device = "celular" | "tablet" | "computadora";
 

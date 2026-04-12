@@ -137,16 +137,16 @@ function buildMensajeWhatsApp(
 
   if (conDescuento) {
     const montoDesc = (fiado.saldo * (1 - conDescuento.pct / 100)).toFixed(2);
-    return `Hola ${nombre}, si pagas tu deuda de S/${monto} hoy, te hacemos ${conDescuento.pct}% de descuento. Solo pagarías S/${montoDesc} 🙌`;
+    return `Hola ${nombre}, si pagas tu deuda de S/${monto} hoy, te hacemos ${conDescuento.pct}% de descuento. Solo pagarías S/${montoDesc}`;
   }
 
   switch (fiado.nivel) {
     case 1:
-      return `Hola ${nombre}! 👋 Te paso el aviso de tu cuentita en la bodega: S/${monto}. Cuando puedas pasate! 😊`;
+      return `Hola ${nombre}! Te paso el aviso de tu cuentita en la bodega: S/${monto}. Cuando puedas pasate!`;
     case 2:
-      return `Hola ${nombre}, todo bien? Ya van unos días con tu pendiente de S/${monto}. Tenemos un descuento especial si te pones al día esta semana 👍`;
+      return `Hola ${nombre}, todo bien? Ya van unos días con tu pendiente de S/${monto}. Tenemos un descuento especial si te pones al día esta semana`;
     case 3:
-      return `${nombre}, tu deuda de S/${monto} lleva ${fiado.diasVencido} días vencida. Necesito que te acerques a regularizar o me llames para coordinar 🙏`;
+      return `${nombre}, tu deuda de S/${monto} lleva ${fiado.diasVencido} días vencida. Necesito que te acerques a regularizar o me llames para coordinar`;
     case 4:
       return `${nombre}, tu cuenta de S/${monto} lleva ${fiado.diasVencido} días sin pago. Lamentablemente hemos tenido que suspender el crédito. Acércate a la bodega para ponerte al día.`;
   }

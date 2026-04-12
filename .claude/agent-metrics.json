@@ -1,0 +1,13 @@
+{
+  "_comment": "Agent performance metrics. Auto-populated by withCronRetry and agent dispatches. Used by /agent-report and /evolve.",
+  "version": 1,
+  "startedTracking": "2026-04-11",
+  "agents": {},
+  "sessions": [],
+  "totals": {
+    "totalDispatches": 0,
+    "totalTokens": 0,
+    "totalSuccesses": 0,
+    "totalFailures": 0
+  }
+}

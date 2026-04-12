@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useMemo } from "react";
 import { cn } from "@/lib/utils";
-import { CreditCard, AlertTriangle, MessageCircle, ArrowUpDown, Filter } from "lucide-react";
+import { CreditCard, AlertTriangle, MessageCircle, Filter } from "lucide-react";
 
 // -- Types --
 

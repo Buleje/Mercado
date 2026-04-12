@@ -15,6 +15,7 @@ import { predictDemand } from "./demand-predictor";
 import { PurchasesDB } from "@/lib/db/purchases.db";
 import { logActivity } from "@/lib/activity-logger";
 import { createNotification } from "@/lib/create-notification";
+import { toNumOrZero } from "@/lib/decimal-utils";
 
 // ── Tipos públicos ─────────────────────────────────────────────────────────────
 
@@ -111,7 +112,8 @@ async function getLastSupplier(
   return {
     supplierId: item.purchaseOrder.supplierId,
     supplierName: item.purchaseOrder.supplierName,
-    unitCost: item.unitCost,
+    // TD-018: unitCost es Decimal
+    unitCost: toNumOrZero(item.unitCost),
   };
 }
 
@@ -225,7 +227,7 @@ export async function createAutoPurchaseOrders(
       })),
       createdAt: now,
       updatedAt: now,
-    });
+    }, tenantId);
 
     // Fire-and-forget: registrar actividad
     logActivity(

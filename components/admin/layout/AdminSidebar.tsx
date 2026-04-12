@@ -2,7 +2,7 @@
 
 import React from "react";
 import Link from "next/link";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion } from "framer-motion";
 import {
   Star,
   ShoppingBasket,
@@ -18,6 +18,7 @@ import {
   Plus,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { resolveActiveTenantSlug } from "@/lib/tenant-fetch";
 import type { Tab } from "@/app/admin/_lib/tabs.types";
 import type { TabCategory } from "@/app/admin/_lib/tab-categories";
 import { DEMO_DATA_MODULES } from "@/app/admin/_lib/tab-categories";
@@ -46,6 +47,7 @@ export type AdminSidebarProps = {
   // Tenant / usuario
   activeTenantName: string | null | undefined;
   activeTenantLogo: string | null | undefined;
+  activeTenantSlug: string | null | undefined;
   userName: string;
   userRole: string;
 
@@ -106,6 +108,7 @@ export function AdminSidebar({
   isSuperAdminImpersonating,
   activeTenantName,
   activeTenantLogo,
+  activeTenantSlug,
   userName,
   userRole,
   tab,
@@ -140,6 +143,32 @@ export function AdminSidebar({
   sidebarSearch,
   allTabs,
 }: AdminSidebarProps) {
+  const [storeHref, setStoreHref] = React.useState("/tienda");
+
+  React.useEffect(() => {
+    let active = true;
+
+    void (async () => {
+      const fallbackSlug = await resolveActiveTenantSlug();
+      const resolvedSlug = activeTenantSlug && activeTenantSlug !== "main"
+        ? activeTenantSlug
+        : fallbackSlug;
+
+      if (!active) return;
+
+      if (resolvedSlug && resolvedSlug !== "main") {
+        setStoreHref(`/t/${resolvedSlug}/tienda`);
+        return;
+      }
+
+      setStoreHref("/tienda");
+    })();
+
+    return () => {
+      active = false;
+    };
+  }, [activeTenantSlug]);
+
   return (
     <>
       {/* Desktop permanent sidebar */}
@@ -254,120 +283,115 @@ export function AdminSidebar({
             </div>
           )}
 
-          {/* Category accordion — normal mode, no search */}
-          {!focusMode && visibleCategories.map(category => {
+          {/* Category sections — always expanded, grouped like StoreCustomizer */}
+          {!focusMode && visibleCategories.map((category, ci) => {
             const catTabs = category.tabs.filter(
               t => allowedTabs.includes(t as Tab) && !hiddenTabs.has(t as Tab)
             );
             if (catTabs.length === 0) return null;
             const CategoryIcon = category.icon;
             const isSingleTab = catTabs.length === 1;
-            const isOpen = openAccordionCategories.has(category.id);
-            const isActive = isSingleTab ? tab === catTabs[0] : isOpen;
+
             return (
-              <div key={category.id} className="mb-0.5">
-                <button
-                  onClick={() => {
-                    if (isSingleTab) {
-                      navigateTab(catTabs[0] as Tab);
-                    } else {
-                      onToggleAccordion(category.id);
-                    }
-                  }}
-                  onMouseEnter={(e) => {
-                    if (isSingleTab) return;
-                    if (flyoutTimerRef.current) clearTimeout(flyoutTimerRef.current);
-                    const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
-                    onSidebarFlyoutChange({ categoryId: category.id, top: rect.top });
-                  }}
-                  onMouseLeave={() => {
-                    if (!isSingleTab) {
-                      flyoutTimerRef.current = setTimeout(() => onSidebarFlyoutChange(null), 150);
-                    }
-                  }}
-                  className={cn(
-                    "w-full flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold transition-all",
-                    isActive
-                      ? "bg-primary/10 text-primary"
-                      : "text-gray-600 dark:text-muted hover:bg-gray-100 dark:hover:bg-accent"
-                  )}
-                >
-                  <CategoryIcon className="h-4 w-4 shrink-0" />
-                  <span className="truncate flex-1 text-left">{category.label}</span>
-                  {!isSingleTab && (
-                    <>
-                      <span className="text-[10px] font-bold text-gray-400 dark:text-muted tabular-nums">
-                        {catTabs.length}
-                      </span>
-                      <ChevronDown className={cn(
-                        "h-3.5 w-3.5 shrink-0 transition-transform duration-200 text-gray-400",
-                        isOpen && "rotate-180"
-                      )} />
-                    </>
-                  )}
-                </button>
-                <AnimatePresence initial={false}>
-                  {isOpen && !isSingleTab && (
-                    <motion.div
-                      key="content"
-                      initial={{ height: 0, opacity: 0 }}
-                      animate={{ height: "auto", opacity: 1 }}
-                      exit={{ height: 0, opacity: 0 }}
-                      transition={{ duration: 0.2, ease: "easeInOut" }}
-                      className="overflow-hidden"
-                    >
-                      <div className="pl-3 pr-1 pt-0.5 pb-1">
-                        {catTabs.map(tabId => {
-                          const tabInfo = allTabs.find(t => t.id === tabId);
-                          if (!tabInfo) return null;
-                          const TabIcon = tabInfo.icon;
-                          return (
-                            <button
-                              key={tabId}
-                              data-tour-tab={tabId}
-                              onClick={() => navigateTab(tabId as Tab)}
+              <div key={category.id} className="mb-1">
+                {ci > 0 && <div className="border-t border-gray-100 dark:border-card-border mx-2 my-1.5" />}
+
+                {isSingleTab ? (
+                  /* Single-tab category: render as a direct nav button */
+                  (() => {
+                    const tabId = catTabs[0];
+                    const tabInfo = allTabs.find(t => t.id === tabId);
+                    if (!tabInfo) return null;
+                    const TabIcon = tabInfo.icon;
+                    return (
+                      <button
+                        data-tour-tab={tabId}
+                        onClick={() => navigateTab(tabId as Tab)}
+                        className={cn(
+                          "group w-full flex items-center gap-2.5 px-4 py-2.5 rounded-xl text-sm font-semibold transition-all",
+                          tab === tabId
+                            ? "bg-primary text-white shadow-sm"
+                            : "text-gray-600 dark:text-muted hover:bg-gray-100 dark:hover:bg-accent"
+                        )}
+                      >
+                        <TabIcon className="h-4 w-4 shrink-0" />
+                        <span className="truncate flex-1 text-left">{tabInfo.label}</span>
+                        {alerts[tabId] && (
+                          <span className={cn(
+                            "text-xs font-bold rounded-full px-1.5 py-0.5 min-w-5 text-center",
+                            tab === tabId ? "bg-white/20 text-white" : "bg-red-500 text-white"
+                          )}>
+                            {alerts[tabId]}
+                          </span>
+                        )}
+                        <Star
+                          onClick={e => { e.stopPropagation(); onToggleFavorite(tabId as Tab); }}
+                          className={cn(
+                            "h-3.5 w-3.5 shrink-0 transition-all cursor-pointer",
+                            favoriteTabs.has(tabId as Tab)
+                              ? "fill-amber-400 text-amber-400"
+                              : "opacity-0 group-hover:opacity-60 text-gray-400"
+                          )}
+                        />
+                      </button>
+                    );
+                  })()
+                ) : (
+                  /* Multi-tab category: section header + always-visible sub-tabs */
+                  <>
+                    <p className="text-[10px] font-bold text-gray-400/80 dark:text-muted/70 uppercase tracking-widest px-4 pt-1.5 pb-1 flex items-center gap-1.5">
+                      <CategoryIcon className="h-3 w-3" />
+                      {category.label}
+                    </p>
+                    {catTabs.map(tabId => {
+                      const tabInfo = allTabs.find(t => t.id === tabId);
+                      if (!tabInfo) return null;
+                      const TabIcon = tabInfo.icon;
+                      return (
+                        <button
+                          key={tabId}
+                          data-tour-tab={tabId}
+                          onClick={() => navigateTab(tabId as Tab)}
+                          className={cn(
+                            "group w-full flex items-center gap-2.5 px-4 py-2 rounded-xl text-sm font-medium transition-all mb-0.5",
+                            tab === tabId
+                              ? "bg-primary text-white shadow-sm"
+                              : "text-gray-600 dark:text-muted hover:bg-gray-100 dark:hover:bg-accent"
+                          )}
+                        >
+                          <TabIcon className="h-4 w-4 shrink-0" />
+                          <span className="truncate flex-1 text-left">{tabInfo.label}</span>
+                          {DEMO_DATA_MODULES[tabId as Tab] && !clearedDemoTabs.has(tabId as Tab) && (
+                            <span
+                              title="Datos de ejemplo"
                               className={cn(
-                                "group w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm font-medium transition-all mb-0.5",
-                                tab === tabId
-                                  ? "bg-primary text-white shadow-sm"
-                                  : "text-gray-600 dark:text-muted hover:bg-gray-100 dark:hover:bg-accent"
+                                "h-1.5 w-1.5 rounded-full shrink-0",
+                                tab === tabId ? "bg-red-300" : "bg-red-500"
                               )}
-                            >
-                              <TabIcon className="h-4 w-4 shrink-0" />
-                              <span className="truncate flex-1 text-left">{tabInfo.label}</span>
-                              {DEMO_DATA_MODULES[tabId as Tab] && !clearedDemoTabs.has(tabId as Tab) && (
-                                <span
-                                  title="Datos de ejemplo"
-                                  className={cn(
-                                    "h-1.5 w-1.5 rounded-full shrink-0",
-                                    tab === tabId ? "bg-red-300" : "bg-red-500"
-                                  )}
-                                />
-                              )}
-                              {alerts[tabId] && (
-                                <span className={cn(
-                                  "text-xs font-bold rounded-full px-1.5 py-0.5 min-w-5 text-center",
-                                  tab === tabId ? "bg-white/20 text-white" : "bg-red-500 text-white"
-                                )}>
-                                  {alerts[tabId]}
-                                </span>
-                              )}
-                              <Star
-                                onClick={e => { e.stopPropagation(); onToggleFavorite(tabId as Tab); }}
-                                className={cn(
-                                  "h-3.5 w-3.5 shrink-0 transition-all cursor-pointer",
-                                  favoriteTabs.has(tabId as Tab)
-                                    ? "fill-amber-400 text-amber-400"
-                                    : "opacity-0 group-hover:opacity-60 text-gray-400"
-                                )}
-                              />
-                            </button>
-                          );
-                        })}
-                      </div>
-                    </motion.div>
-                  )}
-                </AnimatePresence>
+                            />
+                          )}
+                          {alerts[tabId] && (
+                            <span className={cn(
+                              "text-xs font-bold rounded-full px-1.5 py-0.5 min-w-5 text-center",
+                              tab === tabId ? "bg-white/20 text-white" : "bg-red-500 text-white"
+                            )}>
+                              {alerts[tabId]}
+                            </span>
+                          )}
+                          <Star
+                            onClick={e => { e.stopPropagation(); onToggleFavorite(tabId as Tab); }}
+                            className={cn(
+                              "h-3.5 w-3.5 shrink-0 transition-all cursor-pointer",
+                              favoriteTabs.has(tabId as Tab)
+                                ? "fill-amber-400 text-amber-400"
+                                : "opacity-0 group-hover:opacity-60 text-gray-400"
+                            )}
+                          />
+                        </button>
+                      );
+                    })}
+                  </>
+                )}
               </div>
             );
           })}
@@ -559,15 +583,16 @@ export function AdminSidebar({
             <Globe className="h-5 w-5" /> {!focusMode && "Marketplace"}
           </Link>
           <Link
-            href="/tienda"
+            href={storeHref}
             target="_blank"
-            title={focusMode ? "Tienda" : undefined}
+            rel="noopener noreferrer"
+            title={focusMode ? "Mi Tienda" : undefined}
             className={cn(
               "flex items-center rounded-xl text-sm font-semibold text-primary hover:bg-primary/10 dark:hover:bg-primary/20 transition-all",
               focusMode ? "justify-center px-0 py-2.5" : "gap-3 px-4 py-3"
             )}
           >
-            <Store className="h-5 w-5" /> {!focusMode && "Tienda"}
+            <Store className="h-5 w-5" /> {!focusMode && "Mi Tienda"}
           </Link>
         </div>
       </aside>

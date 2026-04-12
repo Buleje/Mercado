@@ -69,63 +69,64 @@ export function resolveTenantFromHost(req: NextRequest): string {
  * Multi-source tenant fallback used when the host resolves to "main".
  *
  * Priority (highest wins):
- *   1. Referer header — per-request, per-tab (multi-tab safe, authoritative
- *      when the user is navigating inside `/t/{slug}/*`).
- *   2. active-tenant cookie — shared across tabs, can be stale.
- *   3. bsm-admin-sess JWT — base64 payload has the canonical `tenantId`
- *      from the admin login flow. Not verified here (that's session.ts'
- *      job at the route level) — we only peek to route correctly.
+ *   1. Admin session JWT (`buleje-admin-sess`/legacy `bsm-admin-sess`) —
+ *      canonical Tenant.id (CUID), always correct for DB queries.
+ *   2. active-tenant cookie — set during impersonation/login with Tenant.id (CUID).
+ *   3. Referer header — extracts slug from /t/[slug]/, useful for
+ *      unauthenticated storefront browsing as last resort.
  *
- * Returns the new tenant slug, or the input `baseTenant` if no fallback
+ * WHY JWT is highest: The Referer header extracts a *slug* (e.g. "demo"),
+ * but DB records use the canonical Tenant.id (CUID). If Referer wins,
+ * requireAdmin() passes the slug to DB queries → 0 results. The JWT
+ * always contains the CUID from login/impersonation, so it's the safest
+ * source for authenticated admin API calls.
+ *
+ * Returns the resolved tenant ID, or the input `baseTenant` if no fallback
  * produced a value.
  */
 export function resolveTenantMultiSource(req: NextRequest, baseTenant: string): string {
   if (baseTenant !== DEFAULT_TENANT_ID) return baseTenant;
 
-  let tenantId = baseTenant;
+  // Source 1 (HIGHEST): Admin session JWT — canonical tenantId (CUID).
+  // Always contains the real Tenant.id, set during login or impersonation.
+  // We support both the current cookie name and the legacy one after rebrand.
+  const sessionCookie =
+    req.cookies.get("buleje-admin-sess")?.value ??
+    req.cookies.get("bsm-admin-sess")?.value;
+  if (sessionCookie) {
+    try {
+      const dotIdx = sessionCookie.lastIndexOf(".");
+      if (dotIdx > 0) {
+        const encoded = sessionCookie.slice(0, dotIdx);
+        const decoded = JSON.parse(
+          Buffer.from(encoded, "base64").toString(),
+        ) as { tenantId?: string };
+        if (decoded.tenantId && decoded.tenantId !== DEFAULT_TENANT_ID) {
+          return decoded.tenantId;
+        }
+      }
+    } catch {
+      /* ignore parse errors — malformed tokens stay as "main" */
+    }
+  }
 
-  // Source 1 (HIGHEST for multi-tab safety): Referer header contains /t/[slug]/
-  // When an admin at /t/luis/admin makes API calls, Referer is
-  //   http://localhost:3000/t/luis/admin
-  // This is per-request and per-tab, unlike cookies which are shared.
+  // Source 2: active-tenant cookie (set during login/impersonation with
+  // canonical Tenant.id — CUID, not slug).
+  const activeTenantCookie = req.cookies.get("active-tenant")?.value;
+  if (activeTenantCookie && activeTenantCookie !== DEFAULT_TENANT_ID) {
+    return activeTenantCookie;
+  }
+
+  // Source 3 (LOWEST): Referer header contains /t/[slug]/.
+  // Extracts the slug (NOT a CUID). Only useful for unauthenticated
+  // storefront browsing when no JWT or cookie is available.
   const referer = req.headers.get("referer");
   if (referer) {
     const refTenantMatch = referer.match(/\/t\/([^/]+)\//);
     if (refTenantMatch) {
-      tenantId = decodeURIComponent(refTenantMatch[1]);
+      return decodeURIComponent(refTenantMatch[1]);
     }
   }
 
-  // Source 2: active-tenant cookie (set during login — shared across tabs,
-  // can be stale if the user switched tenants in another tab).
-  if (tenantId === DEFAULT_TENANT_ID) {
-    const activeTenantCookie = req.cookies.get("active-tenant")?.value;
-    if (activeTenantCookie && activeTenantCookie !== DEFAULT_TENANT_ID) {
-      tenantId = activeTenantCookie;
-    }
-  }
-
-  // Source 3: admin session token — has tenantId in the base64 payload,
-  // which is the canonical Tenant.id from the login flow.
-  if (tenantId === DEFAULT_TENANT_ID) {
-    const sessionCookie = req.cookies.get("bsm-admin-sess")?.value;
-    if (sessionCookie) {
-      try {
-        const dotIdx = sessionCookie.lastIndexOf(".");
-        if (dotIdx > 0) {
-          const encoded = sessionCookie.slice(0, dotIdx);
-          const decoded = JSON.parse(
-            Buffer.from(encoded, "base64").toString(),
-          ) as { tenantId?: string };
-          if (decoded.tenantId && decoded.tenantId !== DEFAULT_TENANT_ID) {
-            tenantId = decoded.tenantId;
-          }
-        }
-      } catch {
-        /* ignore parse errors — malformed tokens stay as "main" */
-      }
-    }
-  }
-
-  return tenantId;
+  return baseTenant;
 }

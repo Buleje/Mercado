@@ -2,9 +2,7 @@
 
 import { useState, useEffect, useCallback } from "react";
 import {
-  FileText, Search, Printer, MessageCircle, Eye,
-  Loader2, Filter, FileSignature, ArrowRight, AlertTriangle,
-} from "lucide-react";
+  FileText, Search, Printer, MessageCircle, Eye, Filter, FileSignature, ArrowRight, AlertTriangle } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 // ── Types ──────────────────────────────────────────────────────────────

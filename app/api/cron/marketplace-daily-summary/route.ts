@@ -6,6 +6,7 @@ import { enqueueNotification } from "@/lib/queue";
 import { prisma } from "@/lib/prisma";
 import { logger } from "@/lib/logger";
 import { logActivity } from "@/lib/activity-logger";
+import { toNumOrZero } from "@/lib/decimal-utils";
 
 /**
  * GET /api/cron/marketplace-daily-summary
@@ -56,7 +57,7 @@ export async function GET(req: NextRequest) {
           (o) => o.status !== "cancelado"
         );
 
-        const totalRevenue = activeOrders.reduce((sum, o) => sum + o.total, 0);
+        const totalRevenue = activeOrders.reduce((sum, o) => sum + toNumOrZero(o.total), 0);
 
         // Top 3 products by quantity
         const productMap = new Map<string, { name: string; qty: number; rev: number }>();
@@ -66,7 +67,7 @@ export async function GET(req: NextRequest) {
             productMap.set(item.name, {
               name: item.name,
               qty: existing.qty + item.quantity,
-              rev: existing.rev + item.price * item.quantity,
+              rev: existing.rev + toNumOrZero(item.price) * item.quantity,
             });
           }
         }

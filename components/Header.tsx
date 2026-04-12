@@ -5,8 +5,7 @@ import { useRouter, usePathname } from "next/navigation";
 import {
   Menu, X, ShoppingCart, Store,
   ChevronDown, ChevronLeft, ChevronRight, Leaf, Package, Beef, Milk, GlassWater, Sparkles, UserCircle, Settings,
-  Search, Trophy, Gift, History, PackageCheck, User, Mic, Flame, ChefHat, Globe, ClipboardList,
-} from "lucide-react";
+  Search, Trophy, History, PackageCheck, User, Mic, Flame, ChefHat, Globe, ClipboardList } from "lucide-react";
 import Link from "next/link";
 import Image from "next/image";
 import { useCart } from "@/contexts/cart-context";
@@ -98,7 +97,7 @@ export default function Header() {
   const [userMenuOpen, setUserMenuOpen] = useState(false);
   const [hasActiveOrder, setHasActiveOrder] = useState(false);
   const [orderStatusChanged, setOrderStatusChanged] = useState(false);
-  const [isAdmin, setIsAdmin] = useState(false);
+  const [_isAdmin, setIsAdmin] = useState(false);
   /* X4: Voice search + ordering */
   const [listening, setListening] = useState(false);
   const [voiceResult, setVoiceResult] = useState<{ type: "added"; product: string; qty: number } | null>(null);
@@ -109,12 +108,12 @@ export default function Header() {
   /* AC4: Track recent searches for trending suggestions */
   const [recentSearches, setRecentSearches] = useState<string[]>(() => {
     if (typeof window === "undefined") return [];
-    try { return JSON.parse(localStorage.getItem("bsm-recent-searches") || "[]").slice(0, 5); } catch { return []; }
+    try { return JSON.parse(localStorage.getItem("buleje-recent-searches") || "[]").slice(0, 5); } catch { return []; }
   });
   const recordSearch = useCallback((term: string) => {
     setRecentSearches(prev => {
       const next = [term, ...prev.filter(s => s.toLowerCase() !== term.toLowerCase())].slice(0, 5);
-      try { localStorage.setItem("bsm-recent-searches", JSON.stringify(next)); } catch { /* silent */ }
+      try { localStorage.setItem("buleje-recent-searches", JSON.stringify(next)); } catch { /* silent */ }
       return next;
     });
   }, []);
@@ -167,7 +166,7 @@ export default function Header() {
       // Populate trending products once data is available
       try {
         const now = Date.now();
-        const data: Record<string, number[]> = JSON.parse(localStorage.getItem("bsm-selling-fast") || "{}");
+        const data: Record<string, number[]> = JSON.parse(localStorage.getItem("buleje-selling-fast") || "{}");
         const scored = Object.entries(data)
           .map(([id, timestamps]) => ({
             id: Number(id),
@@ -258,7 +257,7 @@ export default function Header() {
 
   // Detectar si hay cookie de admin para mostrar enlace al panel
   useEffect(() => {
-    setIsAdmin(document.cookie.includes("bsm-admin-sess"));
+    setIsAdmin(document.cookie.includes("buleje-admin-sess"));
   }, []);
 
   useEffect(() => {
@@ -333,7 +332,7 @@ export default function Header() {
   useEffect(() => {
     const checkOrder = () => {
       try {
-        const raw = localStorage.getItem("bsm-active-order");
+        const raw = localStorage.getItem("buleje-active-order");
         if (!raw) { setHasActiveOrder(false); prevOrderStatus.current = null; return; }
         const order = JSON.parse(raw);
         const age = Date.now() - new Date(order.createdAt).getTime();
@@ -351,10 +350,10 @@ export default function Header() {
     };
     checkOrder();
     const interval = setInterval(checkOrder, 30_000);
-    window.addEventListener("bsm:orderCreated", checkOrder);
+    window.addEventListener("buleje:orderCreated", checkOrder);
     return () => {
       clearInterval(interval);
-      window.removeEventListener("bsm:orderCreated", checkOrder);
+      window.removeEventListener("buleje:orderCreated", checkOrder);
     };
   }, []);
 
@@ -1060,6 +1059,78 @@ export default function Header() {
             >
               <Search className="h-4.5 w-4.5" />
             </button>
+
+            {/* Notification bell — customer inbox */}
+            {customer?.phone && (
+              <button
+                onClick={() => setNotifOpen((p) => !p)}
+                className={cn(
+                  "relative flex items-center justify-center h-9 w-9 rounded-full transition-all duration-200",
+                  scrolled
+                    ? "text-foreground hover:bg-muted"
+                    : "text-white/70 hover:text-white hover:bg-white/15"
+                )}
+                aria-label={`Notificaciones${_unreadCount > 0 ? ` (${_unreadCount} sin leer)` : ""}`}
+              >
+                <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
+                </svg>
+                {_unreadCount > 0 && (
+                  <span className="absolute -top-0.5 -right-0.5 flex h-4 w-4 items-center justify-center rounded-full bg-red-500 text-[9px] font-bold text-white">
+                    {_unreadCount > 9 ? "9+" : _unreadCount}
+                  </span>
+                )}
+              </button>
+            )}
+
+            {/* Notification dropdown */}
+            {notifOpen && customer?.phone && (
+              <div
+                ref={notifRef}
+                className="absolute right-0 top-full mt-2 w-80 max-h-96 overflow-y-auto rounded-2xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 shadow-xl z-50"
+              >
+                <div className="p-3 border-b border-slate-100 dark:border-slate-700 flex items-center justify-between">
+                  <h3 className="text-sm font-semibold text-slate-800 dark:text-slate-200">Notificaciones</h3>
+                  {_unreadCount > 0 && (
+                    <button
+                      onClick={async () => {
+                        await fetch("/api/customer-notifications", {
+                          method: "POST",
+                          headers: { "Content-Type": "application/json" },
+                          body: JSON.stringify({ phone: customer.phone, markAllRead: true }),
+                        }).catch(() => {});
+                        setUnreadCount(0);
+                        setNotifs((prev) => prev.map((n) => ({ ...n, read: true })));
+                      }}
+                      className="text-xs text-emerald-600 hover:text-emerald-700 font-medium"
+                    >
+                      Marcar todas leidas
+                    </button>
+                  )}
+                </div>
+                {_notifs.length === 0 ? (
+                  <p className="p-6 text-center text-sm text-slate-400">Sin notificaciones</p>
+                ) : (
+                  <div className="divide-y divide-slate-100 dark:divide-slate-700">
+                    {_notifs.slice(0, 10).map((n) => (
+                      <div
+                        key={n.id}
+                        className={cn(
+                          "px-3 py-2.5 text-sm",
+                          !n.read && "bg-emerald-50/50 dark:bg-emerald-900/10"
+                        )}
+                      >
+                        <p className="font-medium text-slate-700 dark:text-slate-200 text-xs">{n.title}</p>
+                        <p className="text-slate-500 dark:text-slate-400 text-xs mt-0.5 line-clamp-2">{n.body}</p>
+                        <p className="text-slate-400 text-[10px] mt-1">
+                          {new Date(n.createdAt).toLocaleDateString("es-PE", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" })}
+                        </p>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
 
             {/* Cart */}
             <button

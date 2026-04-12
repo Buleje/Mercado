@@ -3,6 +3,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { getPlatformSession, PLATFORM_SESSION } from "@/lib/superadmin-session";
 import { prisma } from "@/lib/prisma";
 import { z } from "zod";
+import { sendWhatsAppText } from "@/lib/whatsapp";
+import { logger } from "@/lib/logger";
 
 // GET /api/superadmin/stores
 export async function GET(req: NextRequest) {
@@ -33,24 +35,30 @@ export async function GET(req: NextRequest) {
     },
   });
 
-  // Count real products (Product table) per tenant — NOT StoreProduct intermediate
-  // rows. This matches what the per-tenant admin inventory tab shows.
-  // Uses an OR(id, slug) lookup so it works whether Product.tenantId stores the
-  // canonical CUID or the slug (mismatch is being normalized in a separate fix).
-  const stores = await Promise.all(
-    storesRaw.map(async (store) => {
-      const productCount = await prisma.product.count({
-        where: {
-          deletedAt: null,
-          OR: [
-            { tenantId: store.tenant.id },
-            { tenantId: store.tenant.slug },
-          ],
-        },
-      });
-      return { ...store, _count: { products: productCount } };
-    })
-  );
+  // Count real products per tenant in a single query (was N+1 — TD-027).
+  // Uses OR(id, slug) because some products have tenantId as slug instead of CUID.
+  const tenantIdentifiers = storesRaw.flatMap((s) => [s.tenant.id, s.tenant.slug]);
+
+  const productCounts = await prisma.product.groupBy({
+    by: ["tenantId"],
+    where: {
+      deletedAt: null,
+      tenantId: { in: tenantIdentifiers },
+    },
+    _count: { id: true },
+  });
+
+  const countMap = new Map<string, number>();
+  for (const row of productCounts) {
+    countMap.set(row.tenantId, row._count.id);
+  }
+
+  const stores = storesRaw.map((store) => {
+    const count =
+      (countMap.get(store.tenant.id) ?? 0) +
+      (countMap.get(store.tenant.slug) ?? 0);
+    return { ...store, _count: { products: count } };
+  });
 
   return NextResponse.json({ stores });
 }
@@ -85,6 +93,38 @@ export async function PATCH(req: NextRequest) {
     where: { id: storeId },
     data: updateData,
   });
+
+  // Notify store owner via WhatsApp when their store gets published
+  if (data.isPublished === true) {
+    (async () => {
+      try {
+        const tenant = await prisma.tenant.findUnique({
+          where: { id: store.tenantId },
+          select: { ownerPhone: true, name: true },
+        });
+        const ownerPhone = tenant?.ownerPhone;
+        if (ownerPhone) {
+          const msg = [
+            `🎉 *¡Tu tienda fue aprobada!*`,
+            ``,
+            `Hola 👋, tu tienda *${store.name}* ya está visible en el Marketplace.`,
+            ``,
+            `✅ Los clientes pueden encontrarte y hacer pedidos`,
+            `📦 Asegúrate de tener tus productos actualizados`,
+            `💰 Los pedidos llegarán directo a tu panel`,
+            ``,
+            `¡Éxitos con tus ventas! 🚀`,
+            ``,
+            `─────`,
+            `Buleje 🏪`,
+          ].join("\n");
+          await sendWhatsAppText(ownerPhone, msg);
+        }
+      } catch (e) {
+        logger.warn("[superadmin/stores] WhatsApp notification failed", { error: String(e) });
+      }
+    })().catch(() => {});
+  }
 
   return NextResponse.json({ store });
 }

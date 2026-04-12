@@ -9,6 +9,7 @@ import { CheckoutOrderReview, CheckoutPaymentSection } from "..";
 import type { CheckoutState } from "../types";
 import type { CheckoutDispatch } from "../hooks/useCheckoutState";
 import type { YapeConfig } from "@/contexts/settings-context";
+import LoyaltyTierProgressBar from "@/components/loyalty/LoyaltyTierProgressBar";
 
 /**
  * StepPago — selector de método de pago + resumen del pedido.
@@ -27,6 +28,7 @@ export type StepPagoProps = {
   tierDiscount: number;
   tierDiscountPct: number;
   effectiveCustomer: Customer | null;
+  loyaltyPoints: number | null;
   yape: YapeConfig;
   cashEnabled: boolean;
   onValidateCoupon: () => Promise<void>;
@@ -45,6 +47,7 @@ export function StepPago({
   tierDiscount,
   tierDiscountPct,
   effectiveCustomer,
+  loyaltyPoints,
   yape,
   cashEnabled,
   onValidateCoupon,
@@ -94,6 +97,11 @@ export function StepPago({
             tierDiscount={tierDiscount}
             tierDiscountPct={tierDiscountPct}
             loyaltyTier={state.loyalty.tier}
+            loyaltyPoints={loyaltyPoints}
+            redemptionSoles={state.loyalty.redemptionSoles}
+            onRedemptionChange={(soles) =>
+              dispatch({ type: "SET_LOYALTY", patch: { redemptionSoles: soles } })
+            }
             paymentMethod={state.payment.method}
             onPaymentMethodChange={(method) => {
               dispatch({
@@ -114,6 +122,13 @@ export function StepPago({
             onBack={onBackToDatos}
           />
         </div>
+
+        {/* Loyalty progress bar */}
+        {loyaltyPoints !== null && loyaltyPoints >= 0 && (
+          <div className="mt-4">
+            <LoyaltyTierProgressBar points={loyaltyPoints} compact />
+          </div>
+        )}
       </form>
     </m.div>
   );

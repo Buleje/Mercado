@@ -4,6 +4,7 @@ import { requireAdmin } from "@/lib/require-admin";
 import { rateLimit, getClientIp } from "@/lib/rate-limit";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
+import { logger } from "@/lib/logger";
 
 // Auto-discount tiers based on purchase count (from discount engine)
 const AUTO_DISCOUNT_TIERS = [
@@ -49,7 +50,7 @@ export async function GET(
       },
     });
   } catch (e) {
-    console.error("[loyalty] GET error:", e);
+    logger.error("[loyalty] GET error", { error: String(e) });
     return NextResponse.json({ error: "Database error" }, { status: 503 });
   }
 }
@@ -95,7 +96,7 @@ export async function PATCH(
       return NextResponse.json(data);
     }
   } catch (e) {
-    console.error("[loyalty] PATCH error:", e);
+    logger.error("[loyalty] PATCH error", { error: String(e) });
     return NextResponse.json({ error: "Database error" }, { status: 503 });
   }
 }

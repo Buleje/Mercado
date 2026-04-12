@@ -124,7 +124,7 @@ export default function CLVAnalyticsTab() {
               {top10.map((c, idx) => {
                 const predicted = predictFutureCLV(c);
                 const barPct = (c.totalSpent / maxCLV) * 100;
-                const medals = ["🥇","🥈","🥉"];
+                const medals = ["1.","2.","3."];
                 return (
                   <div key={c.phone}>
                     <div className="flex items-center justify-between mb-1 flex-wrap gap-1">
@@ -211,7 +211,7 @@ export default function CLVAnalyticsTab() {
                           <span className="text-emerald-600 font-semibold">{fmt(cohort.avgLTV)}</span>
                           {prev && (
                             <span className={cn("ml-1.5 text-[10px] font-bold", delta >= 0 ? "text-emerald-500" : "text-red-500")}>
-                              {delta >= 0 ? "▲" : "▼"}{Math.abs(delta).toFixed(0)}
+                              {delta >= 0 ? "+" : "-"}{Math.abs(delta).toFixed(0)}
                             </span>
                           )}
                         </td>

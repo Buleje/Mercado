@@ -1,7 +1,8 @@
 "use client";
 
 import { useState, useMemo, useCallback } from "react";
-import { Download, FileText, Clock, ChevronDown, ChevronUp, MessageCircle, TrendingUp, TrendingDown, Minus, AlertTriangle, CheckCircle2, BarChart3, Star } from "lucide-react";
+import { Download, FileText, Clock, ChevronDown, ChevronUp, MessageCircle, TrendingUp, TrendingDown } from "lucide-react";
+import * as Sentry from "@sentry/nextjs";
 import { cn } from "@/lib/utils";
 import type { BusinessData } from "./AICommandCenter";
 
@@ -10,7 +11,6 @@ type SectionGrade = "excelente" | "bien" | "regular" | "alerta" | "critico";
 
 type ReportSection = {
   title: string;
-  emoji: string;
   content: string;
   grade: SectionGrade;
   highlights: string[];
@@ -47,12 +47,12 @@ type SavedReport = {
   grade: SectionGrade;
 };
 
-const GRADE_CONFIG: Record<SectionGrade, { label: string; emoji: string; color: string; bg: string }> = {
-  excelente: { label: "Excelente", emoji: "🌟", color: "text-emerald-700 dark:text-emerald-400", bg: "bg-emerald-50 dark:bg-emerald-950/30" },
-  bien: { label: "Bien", emoji: "✅", color: "text-blue-700 dark:text-blue-400", bg: "bg-blue-50 dark:bg-blue-950/30" },
-  regular: { label: "Regular", emoji: "➡️", color: "text-amber-700 dark:text-amber-400", bg: "bg-amber-50 dark:bg-amber-950/30" },
-  alerta: { label: "Alerta", emoji: "⚠️", color: "text-orange-700 dark:text-orange-400", bg: "bg-orange-50 dark:bg-orange-950/30" },
-  critico: { label: "Crítico", emoji: "🔴", color: "text-red-700 dark:text-red-400", bg: "bg-red-50 dark:bg-red-950/30" },
+const GRADE_CONFIG: Record<SectionGrade, { label: string; color: string; bg: string }> = {
+  excelente: { label: "Excelente", color: "text-emerald-700 dark:text-emerald-400", bg: "bg-emerald-50 dark:bg-emerald-950/30" },
+  bien: { label: "Bien", color: "text-blue-700 dark:text-blue-400", bg: "bg-blue-50 dark:bg-blue-950/30" },
+  regular: { label: "Regular", color: "text-amber-700 dark:text-amber-400", bg: "bg-amber-50 dark:bg-amber-950/30" },
+  alerta: { label: "Alerta", color: "text-orange-700 dark:text-orange-400", bg: "bg-orange-50 dark:bg-orange-950/30" },
+  critico: { label: "Cr\u00edtico", color: "text-red-700 dark:text-red-400", bg: "bg-red-50 dark:bg-red-950/30" },
 };
 
 /* ── Report Generator ── */
@@ -165,7 +165,6 @@ function generateReport(data: BusinessData | null): WeeklyReport | null {
   const sections: ReportSection[] = [
     {
       title: "Resumen Ejecutivo",
-      emoji: "📊",
       grade: salesGrade,
       highlights: [
         `${fmt(thisWeek.rev)} en ventas`,
@@ -178,7 +177,6 @@ function generateReport(data: BusinessData | null): WeeklyReport | null {
     },
     {
       title: "Ventas",
-      emoji: "🛒",
       grade: salesGrade,
       highlights: topProducts.slice(0, 3).map((p) => `${p.name}: ${p.qty} und`),
       content: (() => {
@@ -206,7 +204,6 @@ function generateReport(data: BusinessData | null): WeeklyReport | null {
     },
     {
       title: "Inventario",
-      emoji: "📦",
       grade: inventoryGrade,
       highlights: [
         `${activeProducts.length} productos activos`,
@@ -216,7 +213,7 @@ function generateReport(data: BusinessData | null): WeeklyReport | null {
       content: (() => {
         let text = `${activeProducts.length} productos activos en catálogo. `;
         if (outOfStock.length > 0) {
-          text += `⚠️ ${outOfStock.length} producto${outOfStock.length > 1 ? "s" : ""} agotado${outOfStock.length > 1 ? "s" : ""}: ${outOfStock.slice(0, 3).map((p) => p.name).join(", ")}${outOfStock.length > 3 ? "..." : ""}. `;
+          text += `${outOfStock.length} producto${outOfStock.length > 1 ? "s" : ""} agotado${outOfStock.length > 1 ? "s" : ""}: ${outOfStock.slice(0, 3).map((p) => p.name).join(", ")}${outOfStock.length > 3 ? "..." : ""}. `;
         }
         if (lowStock.length > 0) {
           text += `${lowStock.length} con stock bajo: ${lowStock.slice(0, 3).map((p) => `${p.name} (${p.stock} und)`).join(", ")}. `;
@@ -232,7 +229,6 @@ function generateReport(data: BusinessData | null): WeeklyReport | null {
     },
     {
       title: "Clientes",
-      emoji: "👥",
       grade: customersGrade,
       highlights: [
         `${activeCustomers} activos esta semana`,
@@ -243,7 +239,6 @@ function generateReport(data: BusinessData | null): WeeklyReport | null {
     },
     {
       title: "Finanzas",
-      emoji: "💰",
       grade: financesGrade,
       highlights: [
         `Utilidad: ${fmt(profit)}`,
@@ -266,7 +261,6 @@ function generateReport(data: BusinessData | null): WeeklyReport | null {
     },
     {
       title: "Plan Próxima Semana",
-      emoji: "🎯",
       grade: "bien",
       highlights: ["Acciones priorizadas", "Basadas en datos", "Enfoque semana entrante"],
       content: (() => {
@@ -370,7 +364,7 @@ async function exportToPDF(report: WeeklyReport) {
   y += 3;
 
   for (const section of report.sections) {
-    addText(`${section.emoji} ${section.title} — ${GRADE_CONFIG[section.grade].label}`, 11, true, [45, 106, 79]);
+    addText(`${section.title} — ${GRADE_CONFIG[section.grade].label}`, 11, true, [45, 106, 79]);
     addText(section.content, 9, false, [50, 50, 50]);
     y += 3;
   }
@@ -390,21 +384,21 @@ async function exportToPDF(report: WeeklyReport) {
 
 /* ── WhatsApp Share ── */
 function generateWhatsAppSummary(report: WeeklyReport): string {
-  let msg = `📊 *Reporte Semanal — ${report.weekLabel}*\n`;
-  msg += `Calificación: ${GRADE_CONFIG[report.overallGrade].emoji} ${GRADE_CONFIG[report.overallGrade].label}\n\n`;
+  let msg = `*Reporte Semanal — ${report.weekLabel}*\n`;
+  msg += `Calificacion: ${GRADE_CONFIG[report.overallGrade].label}\n\n`;
 
-  msg += `📈 *KPIs:*\n`;
+  msg += `KPIs:\n`;
   report.kpis.forEach((k) => {
-    msg += `• ${k.label}: ${k.value}${k.delta ? ` (${k.delta >= 0 ? "+" : ""}${k.delta.toFixed(1)}%)` : ""}${k.unit ? ` ${k.unit}` : ""}\n`;
+    msg += `- ${k.label}: ${k.value}${k.delta ? ` (${k.delta >= 0 ? "+" : ""}${k.delta.toFixed(1)}%)` : ""}${k.unit ? ` ${k.unit}` : ""}\n`;
   });
 
-  msg += `\n🔑 *Highlights:*\n`;
+  msg += `\nResumen:\n`;
   report.sections.slice(0, 3).forEach((s) => {
-    msg += `${s.emoji} ${s.title}: ${GRADE_CONFIG[s.grade].emoji}\n`;
-    s.highlights.slice(0, 2).forEach((h) => { msg += `  • ${h}\n`; });
+    msg += `${s.title}: ${GRADE_CONFIG[s.grade].label}\n`;
+    s.highlights.slice(0, 2).forEach((h) => { msg += `  - ${h}\n`; });
   });
 
-  msg += `\n💡 *Recomendaciones Top:*\n`;
+  msg += `\nRecomendaciones:\n`;
   report.recommendations.slice(0, 3).forEach((r, i) => {
     msg += `${i + 1}. ${r.text}\n`;
   });
@@ -455,7 +449,7 @@ export default function AIWeeklyReport({ data }: Props) {
   const handleExport = useCallback(async () => {
     if (!report) return;
     setExporting(true);
-    try { await exportToPDF(report); } catch (e) { console.error("[AIWeeklyReport] PDF export failed:", e); }
+    try { await exportToPDF(report); } catch (e) { Sentry.captureException(e instanceof Error ? e : new Error(String(e))); }
     finally { setExporting(false); }
   }, [report]);
 
@@ -514,7 +508,7 @@ export default function AIWeeklyReport({ data }: Props) {
               <p className="text-xs text-gray-400 mb-1">Reportes anteriores:</p>
               {savedReports.slice(0, 4).map((r) => (
                 <div key={r.id} className="flex items-center gap-1.5 text-xs text-gray-400 justify-center">
-                  <Clock className="w-3 h-3" /> {r.weekLabel} {GRADE_CONFIG[r.grade]?.emoji ?? ""}
+                  <Clock className="w-3 h-3" /> {r.weekLabel} — {GRADE_CONFIG[r.grade]?.label ?? ""}
                 </div>
               ))}
             </div>
@@ -525,7 +519,7 @@ export default function AIWeeklyReport({ data }: Props) {
           {/* Overall grade + week info */}
           <div className="flex items-center gap-3 mb-4">
             <div className={cn("flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold", GRADE_CONFIG[report.overallGrade].color, GRADE_CONFIG[report.overallGrade].bg)}>
-              {GRADE_CONFIG[report.overallGrade].emoji} Semana {GRADE_CONFIG[report.overallGrade].label}
+              Semana {GRADE_CONFIG[report.overallGrade].label}
             </div>
             <span className="text-xs text-gray-400">{report.weekLabel}</span>
             <span className="text-[10px] text-gray-400 flex items-center gap-0.5">
@@ -564,10 +558,9 @@ export default function AIWeeklyReport({ data }: Props) {
                     onClick={() => toggleSection(section.title)}
                   >
                     <div className="flex items-center gap-2">
-                      <span className="text-sm">{section.emoji}</span>
                       <span className="text-sm font-semibold text-gray-800 dark:text-gray-200">{section.title}</span>
                       <span className={cn("text-[10px] px-1.5 py-0.5 rounded-full font-bold", grCfg.color, grCfg.bg)}>
-                        {grCfg.emoji} {grCfg.label}
+                        {grCfg.label}
                       </span>
                     </div>
                     {isExp ? <ChevronUp className="w-4 h-4 text-gray-400 shrink-0" /> : <ChevronDown className="w-4 h-4 text-gray-400 shrink-0" />}

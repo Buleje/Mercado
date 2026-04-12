@@ -5,8 +5,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import {
   Search, Plus, X, ChevronLeft, ChevronRight, Loader2, AlertTriangle,
   FileText, User, Calendar, Printer, Send, Check, XCircle, ShoppingCart,
-  Trash2, Hash, Percent, Bookmark, Copy, List, Clock, MessageCircle, RefreshCw, BarChart3,
-} from "lucide-react";
+  Trash2, Hash, Bookmark, Copy, List, Clock, MessageCircle, RefreshCw, BarChart3 } from "lucide-react";
 import { BarChart, Bar, AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
 import { cn } from "@/lib/utils";
 import ClienteFormModal from "./clientes/ClienteFormModal";
@@ -189,7 +188,9 @@ function CotizacionesDashboard({ cotizaciones, loading: parentLoading }: { cotiz
 
   const emptyCot = (msg: string) => (
     <div className="flex flex-col items-center justify-center py-12 text-center">
-      <div className="text-4xl mb-3">📊</div>
+      <div className="h-12 w-12 rounded-xl bg-gray-100 dark:bg-surface flex items-center justify-center mb-3">
+        <BarChart3 className="h-6 w-6 text-gray-400 dark:text-muted" />
+      </div>
       <p className="text-sm font-medium text-gray-500 dark:text-gray-400">{msg}</p>
       <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">Los datos apareceran cuando crees cotizaciones</p>
     </div>
@@ -834,7 +835,9 @@ export default function CotizacionesModule() {
               </div>
             ) : cotizaciones.length === 0 ? (
               <div className="text-center py-16 px-4">
-                <div className="text-6xl mb-4">📋</div>
+                <div className="h-16 w-16 rounded-2xl bg-gray-100 dark:bg-surface flex items-center justify-center mx-auto mb-4">
+                  <FileText className="h-8 w-8 text-gray-400 dark:text-muted" />
+                </div>
                 <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">Sin cotizaciones</h3>
                 <p className="text-sm text-gray-500 mb-6 max-w-md mx-auto">Envía presupuestos profesionales a tus clientes</p>
                 <button onClick={() => setActiveTab("nueva")} className="bg-[#00B4A6] text-white px-6 py-2.5 rounded-xl font-medium hover:bg-[#009690]">Nueva cotización</button>
@@ -1316,7 +1319,7 @@ export default function CotizacionesModule() {
                       );
                     }
                     if (diasEnviada > 3) {
-                      const phone = selected.customerId || "";
+                      const _phone = selected.customerId || "";
                       const waText = `Hola ${selected.clienteNombre}, te enviamos la cotización ${String(selected.numero).padStart(4, "0")} por S/${selected.total.toFixed(2)}. ¿Te interesa?`;
                       return (
                         <div className="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-xl p-3 space-y-2">

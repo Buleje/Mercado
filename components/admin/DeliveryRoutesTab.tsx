@@ -4,6 +4,7 @@ import { useState, useMemo, useEffect, useRef, startTransition } from "react";
 import { MapPin, Clock, Navigation, ChevronDown, ChevronUp, Download, RefreshCw, Users, Map as MapIcon } from "lucide-react";
 import { cn, exportToCSV } from "@/lib/utils";
 import { haversineKm } from "@/lib/admin-helpers";
+import { tenantFetch } from "@/lib/tenant-fetch";
 import "leaflet/dist/leaflet.css";
 
 // ── Constantes de Pucallpa ───────────────────────────────────────────────────
@@ -296,7 +297,7 @@ export default function DeliveryRoutesTab() {
       : newStatus === "completada" ? "entregado"
       : newStatus === "cancelada" ? "cancelado"
       : "confirmado";
-    fetch(`/api/orders/${routeId}`, {
+    tenantFetch(`/api/orders/${routeId}`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
@@ -540,7 +541,7 @@ export default function DeliveryRoutesTab() {
                   <div className="mt-2 flex flex-wrap items-center gap-2 text-xs">
                     <Clock className="h-3 w-3 text-gray-400" />
                     <span className={cn("font-semibold", r.actualTime <= r.estimatedTime ? "text-emerald-600" : "text-red-600")}>
-                      {r.actualTime} min {r.actualTime <= r.estimatedTime ? "(a tiempo ✓)" : `(+${r.actualTime - r.estimatedTime} min tarde)`}
+                      {r.actualTime} min {r.actualTime <= r.estimatedTime ? "(a tiempo)" : `(+${r.actualTime - r.estimatedTime} min tarde)`}
                     </span>
                   </div>
                 )}

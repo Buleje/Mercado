@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { requireAdmin } from "@/lib/require-admin";
 
 /**
  * GET /api/notification-center
@@ -14,7 +15,9 @@ import { prisma } from "@/lib/prisma";
  *   - X-Unread-Count: total de no leídas del tenant
  */
 export async function GET(req: NextRequest) {
-  const tenantId = "main";
+  const auth = await requireAdmin(req);
+  if (auth instanceof NextResponse) return auth;
+  const tenantId = auth.tenantId;
   const url = req.nextUrl;
 
   const limitParam = parseInt(url.searchParams.get("limit") ?? "50", 10);

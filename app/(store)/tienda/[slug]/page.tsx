@@ -1,4 +1,6 @@
 import type { Metadata } from "next";
+import { Suspense } from "react";
+import { connection } from "next/server";
 import { notFound } from "next/navigation";
 import { headers } from "next/headers";
 import { slugify, categories } from "@/data/products";
@@ -11,11 +13,12 @@ interface Props {
   params: Promise<{ slug: string }>;
 }
 
-// No pre-rendered pages — products are dynamic (DB-based)
-export async function generateStaticParams() {
-  return [];
-}
-export const dynamicParams = true;
+// No pre-rendered pages — products are dynamic (DB-based, per-tenant).
+// Next 16 con cacheComponents rechaza `generateStaticParams` que retorne []
+// ("EmptyGenerateStaticParamsError"). La página lee `await headers()` para
+// resolver tenantId, así que JAMÁS puede pre-renderizarse estáticamente →
+// removemos la función por completo. Next auto-detecta dinámica por headers().
+// Ver ADR-019 (ampliado 2026-04-09).
 
 async function getProductBySlugFromDB(slug: string): Promise<Product | null> {
   const hdrs = await headers();
@@ -57,7 +60,25 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   };
 }
 
-export default async function ProductDetailPage({ params }: Props) {
+function ProductDetailSkeleton() {
+  return (
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-950 animate-pulse">
+      <div className="max-w-4xl mx-auto px-4 py-20">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+          <div className="aspect-square bg-gray-200 dark:bg-gray-800 rounded-2xl" />
+          <div className="space-y-4 pt-4">
+            <div className="h-8 w-48 bg-gray-200 dark:bg-gray-800 rounded" />
+            <div className="h-6 w-24 bg-gray-200 dark:bg-gray-800 rounded" />
+            <div className="h-10 w-32 bg-gray-200 dark:bg-gray-800 rounded" />
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+async function ProductDetailContent({ params }: Props) {
+  await connection();
   const { slug } = await params;
   const product = await getProductBySlugFromDB(slug);
 
@@ -85,7 +106,7 @@ export default async function ProductDetailPage({ params }: Props) {
             "@type": "Product",
             name: product.name,
             image: product.image,
-            sku: `BSM-${product.id}`,
+            sku: `Buleje-${product.id}`,
             description: `${product.name} — ${category?.label ?? "Producto"} disponible con delivery. Paga con Yape o efectivo. Buleje.`,
             category: category?.label,
             brand: {
@@ -97,7 +118,7 @@ export default async function ProductDetailPage({ params }: Props) {
               url: `https://www.buleje.pe/tienda/${slug}`,
               price: product.price.toFixed(2),
               priceCurrency: "PEN",
-              priceValidUntil: new Date(new Date().getFullYear(), 11, 31).toISOString().split("T")[0],
+              priceValidUntil: "2026-12-31",
               availability: product.badge?.toLowerCase() === "agotado"
                 ? "https://schema.org/OutOfStock"
                 : "https://schema.org/InStock",
@@ -134,5 +155,13 @@ export default async function ProductDetailPage({ params }: Props) {
       />
       <ProductDetailClient product={product} />
     </>
+  );
+}
+
+export default function ProductDetailPage({ params }: Props) {
+  return (
+    <Suspense fallback={<ProductDetailSkeleton />}>
+      <ProductDetailContent params={params} />
+    </Suspense>
   );
 }

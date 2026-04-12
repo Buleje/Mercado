@@ -17,7 +17,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "phone and orderId required" }, { status: 400 });
   }
 
-  const order = await OrdersDB.getById(body.orderId);
+  const order = await OrdersDB.getById(auth.tenantId, body.orderId);
   if (!order) return NextResponse.json({ error: "order not found" }, { status: 404 });
 
   const settings = await SettingsDB.get(auth.tenantId);
@@ -42,7 +42,7 @@ export async function POST(req: NextRequest) {
     message,
     status: "sent",
     orderId: order.id,
-  });
+  }, auth.tenantId);
 
   return NextResponse.json({ ...log, whatsappUrl }, { status: 201 });
 }

@@ -11,7 +11,7 @@ type BadgeDetail = {
 };
 
 async function computeBadges(productId: number, tenantId: string, lat?: number, lng?: number) {
-  const [product, storeProduct, topSellers, avgRating] = await Promise.all([
+  const [product, storeProduct, topSellers, _avgRating] = await Promise.all([
     prisma.product.findFirst({
       where: { id: productId, tenantId, deletedAt: null },
       select: { id: true, stock: true },

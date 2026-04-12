@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireAdmin } from "@/lib/require-admin";
 import { prisma } from "@/lib/prisma";
+import { toNumOrZero } from "@/lib/decimal-utils";
+import { logger } from "@/lib/logger";
 
 /**
  * POST /api/admin/seed-data
@@ -149,13 +151,20 @@ export async function POST(req: NextRequest) {
 
     const tenantId = auth.tenantId;
 
-    const products = await Promise.all(
+    // TD-018: Prisma devuelve price/costPrice como Decimal — convertir a number
+    // para que el resto del seed pueda hacer aritmética sin TS errors.
+    const productsRaw = await Promise.all(
       productData.map((p) =>
         prisma.product.create({
           data: { ...p, tenantId, image: "", active: true, barcode: `7750${randInt(100000, 999999)}` },
         })
       )
     );
+    const products = productsRaw.map((p) => ({
+      ...p,
+      price: toNumOrZero(p.price),
+      costPrice: toNumOrZero(p.costPrice),
+    }));
 
     // ── Customers ───────────────────────────────────────
     const customerData = [
@@ -490,7 +499,7 @@ export async function POST(req: NextRequest) {
       },
     });
   } catch (e) {
-    console.error("[SEED-DATA]", e);
+    logger.error("[SEED-DATA] error", { error: (e as Error).message, tenantId: auth.tenantId });
     return NextResponse.json({ error: "Error al generar datos de simulación" }, { status: 500 });
   }
 }

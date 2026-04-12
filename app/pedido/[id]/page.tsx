@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState, useCallback, useRef } from "react";
-import { useParams } from "next/navigation";
+import { useParams, useSearchParams } from "next/navigation";
 import Image from "next/image";
 import {
   CheckCircle2, Clock, Truck, PackageCheck,
@@ -86,9 +86,29 @@ function formatDate(iso: string) {
   });
 }
 
+/**
+ * HOTFIX-003: the public endpoint now requires ?phone=<customerPhone> to prove
+ * ownership. We try the URL searchParams first (e.g. WhatsApp confirmation
+ * links) and fall back to bsm-last-order in localStorage for customers who
+ * just placed the order from this device.
+ */
+function resolveCustomerPhone(urlPhone: string | null): string | null {
+  if (urlPhone) return urlPhone;
+  if (typeof window === "undefined") return null;
+  try {
+    const raw = localStorage.getItem("buleje-last-order");
+    if (!raw) return null;
+    const parsed = JSON.parse(raw) as { customerPhone?: string };
+    return parsed.customerPhone ?? null;
+  } catch {
+    return null;
+  }
+}
+
 export default function PedidoPage() {
   const params = useParams<{ id: string }>();
   const id = params.id;
+  const searchParams = useSearchParams();
 
   const [order, setOrder] = useState<PublicOrder | null>(null);
   const [loading, setLoading] = useState(true);
@@ -98,7 +118,11 @@ export default function PedidoPage() {
 
   const fetchOrder = useCallback(async () => {
     try {
-      const res = await fetch(`/api/orders/${id}/public`, { cache: "no-store" });
+      const phone = resolveCustomerPhone(searchParams.get("phone"));
+      const url = phone
+        ? `/api/orders/${id}/public?phone=${encodeURIComponent(phone)}`
+        : `/api/orders/${id}/public`;
+      const res = await fetch(url, { cache: "no-store" });
       if (!res.ok) {
         setError("No encontramos este pedido. Verifica el enlace.");
         setLoading(false);
@@ -113,7 +137,7 @@ export default function PedidoPage() {
     } finally {
       setLoading(false);
     }
-  }, [id]);
+  }, [id, searchParams]);
 
   useEffect(() => {
     void fetchOrder();
@@ -448,7 +472,7 @@ function PostDeliveryReview({ orderId, customerName }: { orderId: string; custom
   const [hover, setHover] = useState(0);
   const [text, setText] = useState("");
   const [sent, setSent] = useState(() => {
-    try { return localStorage.getItem(`bsm-review-${orderId}`) === "1"; } catch { return false; }
+    try { return localStorage.getItem(`buleje-review-${orderId}`) === "1"; } catch { return false; }
   });
   const [sending, setSending] = useState(false);
 
@@ -468,7 +492,7 @@ function PostDeliveryReview({ orderId, customerName }: { orderId: string; custom
       });
       if (res.ok) {
         setSent(true);
-        try { localStorage.setItem(`bsm-review-${orderId}`, "1"); } catch {}
+        try { localStorage.setItem(`buleje-review-${orderId}`, "1"); } catch {}
       }
     } catch { /* silent */ }
     setSending(false);

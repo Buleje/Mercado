@@ -44,14 +44,14 @@ export default function SeguridadModule() {
         activeTab={sub}
         onTabChange={setSub}
         moduleId={MODULE_ID}
-      />
-
-      {sub === "usuarios" && <AdminUsersTab />}
-      {sub === "roles" && <RolePermissionsTab />}
-      {sub === "logs" && <SecurityLogsTab />}
-      {sub === "auditoria" && <AuditLogTab />}
-      {sub === "actividad" && <ActivityLogTab />}
-      {sub === "cumplimiento" && <ComplianceTab />}
+      >
+        {sub === "usuarios" && <AdminUsersTab />}
+        {sub === "roles" && <RolePermissionsTab />}
+        {sub === "logs" && <SecurityLogsTab />}
+        {sub === "auditoria" && <AuditLogTab />}
+        {sub === "actividad" && <ActivityLogTab />}
+        {sub === "cumplimiento" && <ComplianceTab />}
+      </AdminTabBar>
     </div>
   );
 }

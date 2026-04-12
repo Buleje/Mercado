@@ -2,6 +2,7 @@ import "server-only";
 import { prisma } from "@/lib/prisma";
 import { getOrSet, invalidateByPrefix } from "@/lib/cache";
 import { NotFoundError } from "@/lib/api-error";
+import { toNum, toNumOrZero } from "@/lib/decimal-utils";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -67,12 +68,139 @@ function slugify(name: string): string {
 
 // ─── MarketplaceStoresDB ──────────────────────────────────────────────────────
 
+/**
+ * Normaliza un número telefónico dejando solo dígitos.
+ * Usado como dedup-key contra `Tenant.ownerPhone` (que NO es unique en schema,
+ * así que la unicidad se fuerza en application-layer).
+ */
+function normalizePhone(phone: string): string {
+  return phone.replace(/\D/g, "");
+}
+
 export const MarketplaceStoresDB = {
   /**
    * Registrar una nueva tienda en el marketplace.
-   * El tenantId de la sesión del admin se usa como dueño de la tienda.
+   *
+   * **Fix 2026-04-09 (ADR-023):** antes este método recibía un `tenantId`
+   * sintético como string (`store-${phone}`) que NUNCA existía como row real
+   * en la tabla `Tenant`. Eso rompía el aislamiento multi-tenant, bloqueaba
+   * el login del dueño al admin y dejaba los stores huérfanos.
+   *
+   * Ahora crea un `Tenant` REAL dentro de un `$transaction` y luego crea el
+   * `Store` apuntando a ese `tenant.id` (cuid de verdad).
+   *
+   * Si ya existe un Tenant con el mismo `ownerPhone` normalizado, lanza error
+   * (el route handler lo traduce a 409).
    */
   async register(params: {
+    ownerName: string;
+    ownerPhone: string;
+    ownerEmail?: string;
+    storeName: string;
+    description?: string;
+    logo?: string;
+    banner?: string;
+    category?: string;
+    zone?: string;
+    commission?: number;
+  }): Promise<DbStore> {
+    const phoneDigits = normalizePhone(params.ownerPhone);
+    if (!phoneDigits) {
+      throw new Error("Teléfono inválido");
+    }
+
+    // 1. Duplicate check por ownerPhone normalizado (application-layer unique)
+    const existingTenant = await prisma.tenant.findFirst({
+      where: { ownerPhone: phoneDigits, type: "store" },
+      select: { id: true, slug: true, stores: { select: { slug: true }, take: 1 } },
+    });
+    if (existingTenant) {
+      const err = new Error("Ya tienes una solicitud registrada con ese teléfono");
+      (err as Error & { code?: string; storeSlug?: string }).code = "MKT_DUPLICATE_PHONE";
+      (err as Error & { code?: string; storeSlug?: string }).storeSlug =
+        existingTenant.stores[0]?.slug ?? existingTenant.slug;
+      throw err;
+    }
+
+    // 2. Generar slugs únicos (Tenant.slug y Store.slug son ambos unique)
+    const baseSlug = slugify(params.storeName) || `tienda-${phoneDigits.slice(-6)}`;
+
+    const [storeSlugTaken, tenantSlugTaken] = await Promise.all([
+      prisma.store.findUnique({ where: { slug: baseSlug }, select: { id: true } }),
+      prisma.tenant.findUnique({ where: { slug: baseSlug }, select: { id: true } }),
+    ]);
+
+    const suffix = phoneDigits.slice(-6) || Date.now().toString(36).slice(-6);
+    const storeSlug  = storeSlugTaken  ? `${baseSlug}-${suffix}` : baseSlug;
+    const tenantSlug = tenantSlugTaken ? `${baseSlug}-${suffix}` : baseSlug;
+
+    // 3. Crear Tenant + Store en una transacción atómica
+    const { store } = await prisma.$transaction(async (tx) => {
+      const tenant = await tx.tenant.create({
+        data: {
+          // id autogenerado por @default(cuid())
+          slug:       tenantSlug,
+          name:       params.storeName,
+          type:       "store",
+          plan:       "free",
+          active:     false, // requiere aprobación del superadmin
+          ownerEmail: params.ownerEmail ?? null,
+          ownerPhone: phoneDigits,
+        },
+        select: { id: true },
+      });
+
+      const createdStore = await tx.store.create({
+        data: {
+          id:          crypto.randomUUID(),
+          tenantId:    tenant.id, // ← tenant REAL
+          slug:        storeSlug,
+          name:        params.storeName,
+          description: params.description ?? null,
+          logo:        params.logo ?? null,
+          banner:      params.banner ?? null,
+          category:    params.category ?? "bodega",
+          zone:        params.zone ?? null,
+          commission:  params.commission ?? 5.0,
+          isPublished: false, // requiere aprobación manual
+          updatedAt:   new Date(),
+        },
+      });
+
+      return { tenant, store: createdStore };
+    });
+
+    invalidateByPrefix("marketplace:stores");
+
+    return {
+      id:          store.id,
+      tenantId:    store.tenantId,
+      slug:        store.slug,
+      name:        store.name,
+      description: store.description,
+      logo:        store.logo,
+      banner:      store.banner,
+      category:    store.category,
+      zone:        store.zone,
+      rating:      store.rating,
+      reviewCount: store.reviewCount,
+      isPublished: store.isPublished,
+      commission:  store.commission,
+      createdAt:   store.createdAt.toISOString(),
+    };
+  },
+
+  /**
+   * Registrar una tienda en el marketplace para un Tenant que YA EXISTE.
+   *
+   * Usado por el endpoint admin-autenticado `POST /api/marketplace/stores/register`,
+   * donde el `tenantId` viene de `auth.tenantId` (sesión JWT) y por construcción
+   * corresponde a un row real en la tabla `Tenant`.
+   *
+   * No crea Tenant nuevo. Diferente de `register()` (que sí lo hace para el
+   * flujo público del apply).
+   */
+  async registerForExistingTenant(params: {
     tenantId: string;
     name: string;
     description?: string;
@@ -84,7 +212,7 @@ export const MarketplaceStoresDB = {
   }): Promise<DbStore> {
     const baseSlug = slugify(params.name);
 
-    // Si ya existe el slug, agregar sufijo del tenantId
+    // Si ya existe el slug, agregar sufijo del tenantId real
     const existing = await prisma.store.findUnique({ where: { slug: baseSlug } });
     const slug = existing ? `${baseSlug}-${params.tenantId.slice(-6)}` : baseSlug;
 
@@ -129,19 +257,19 @@ export const MarketplaceStoresDB = {
    * Listar tiendas publicadas — usando cache de 5 minutos.
    */
   async list(params: {
-    tenantId?: string;
+    tenantId: string;
     zone?: string;
     category?: string;
     search?: string;
     limit?: number;
-  } = {}): Promise<DbStore[]> {
+  }): Promise<DbStore[]> {
     const cacheKey = `marketplace:stores:list:${JSON.stringify(params)}`;
 
     return getOrSet(cacheKey, 300, async () => {
       const rows = await prisma.store.findMany({
         where: {
           isPublished: true,
-          ...(params.tenantId && { tenantId: params.tenantId }),
+          tenantId: params.tenantId,
           ...(params.zone     && { zone: params.zone }),
           ...(params.category && { category: params.category }),
           ...(params.search   && { name: { contains: params.search, mode: "insensitive" } }),
@@ -264,8 +392,9 @@ export const MarketplaceStoreProductsDB = {
         id:                 r.id,
         storeId:            r.storeId,
         productId:          r.productId,
-        retailPrice:        r.retailPrice,
-        wholesalePrice:     r.wholesalePrice,
+        // TD-018: retailPrice / wholesalePrice ahora son Decimal → serializar a number
+        retailPrice:        toNumOrZero(r.retailPrice),
+        wholesalePrice:     toNum(r.wholesalePrice),
         minOrderQty:        r.minOrderQty,
         isActive:           r.isActive,
         volumePricingTiers: r.volumePricingTiers,
@@ -325,8 +454,9 @@ export const MarketplaceStoreProductsDB = {
       id:                 row.id,
       storeId:            row.storeId,
       productId:          row.productId,
-      retailPrice:        row.retailPrice,
-      wholesalePrice:     row.wholesalePrice,
+      // TD-018: serializar Decimal → number
+      retailPrice:        toNumOrZero(row.retailPrice),
+      wholesalePrice:     toNum(row.wholesalePrice),
       minOrderQty:        row.minOrderQty,
       isActive:           row.isActive,
       volumePricingTiers: row.volumePricingTiers,
@@ -425,6 +555,8 @@ export const MarketplaceStoreProductsDB = {
 
     for (const product of catalogProducts) {
       const existing = existingMap.get(product.id);
+      // TD-018: product.price es Decimal → convertir para el contrato number
+      const priceNum = toNumOrZero(product.price);
 
       if (product.active) {
         if (!existing) {
@@ -432,12 +564,12 @@ export const MarketplaceStoreProductsDB = {
             id:          crypto.randomUUID(),
             storeId:     store.id,
             productId:   product.id,
-            retailPrice: product.price,
+            retailPrice: priceNum,
             minOrderQty: 1,
             isActive:    true,
           });
         } else if (!existing.isActive) {
-          toReactivate.push({ id: existing.id, price: product.price });
+          toReactivate.push({ id: existing.id, price: priceNum });
         }
         // If already active, skip (don't override manual price changes)
       } else if (existing && existing.isActive) {
@@ -521,6 +653,7 @@ export const MarketplaceOrdersDB = {
     customerPhone: string;
     customerAddress: string;
     notes?: string;
+    paymentMethod?: string;
     items: CartItem[];
   }): Promise<DbMarketplaceOrder> {
     // 1. Cargar tienda y verificar que esté publicada
@@ -544,7 +677,8 @@ export const MarketplaceOrdersDB = {
     }
 
     // Mapa de precio real (server-side — nunca confiar en el precio del cliente)
-    const priceMap = new Map(storeProducts.map((sp) => [sp.id, sp.retailPrice]));
+    // TD-018: sp.retailPrice es Decimal → convertir a number antes de map
+    const priceMap = new Map(storeProducts.map((sp) => [sp.id, toNumOrZero(sp.retailPrice)]));
 
     const orderItems = params.items.map((item) => {
       const unitPrice = priceMap.get(item.storeProductId) ?? item.retailPrice;
@@ -559,7 +693,9 @@ export const MarketplaceOrdersDB = {
     });
 
     const total      = orderItems.reduce((sum, i) => sum + i.price * i.quantity, 0);
-    const commission = parseFloat(((total * store.commission) / 100).toFixed(2));
+    // TD-018: store.commission es Decimal → convertir para toFixed()
+    const commissionRate = toNumOrZero(store.commission);
+    const commission = parseFloat(((total * commissionRate) / 100).toFixed(2));
 
     // 3. Crear el Order en el tenant del vendedor
     const orderId = crypto.randomUUID().replace(/-/g, "").slice(0, 12).toUpperCase();
@@ -574,7 +710,7 @@ export const MarketplaceOrdersDB = {
         customerLocation: params.customerAddress,
         total,
         notes:            params.notes ?? null,
-        paymentMethod:    "marketplace",
+        paymentMethod:    params.paymentMethod || "marketplace",
         updatedAt:        new Date(),
         items: {
           create: orderItems,
@@ -647,7 +783,8 @@ export const MarketplaceOrdersDB = {
         }),
       ]);
 
-      const totalRevenue = allOrders.reduce((sum, o) => sum + o.total, 0);
+      // TD-018: o.total es Decimal → convertir para suma
+      const totalRevenue = allOrders.reduce((sum, o) => sum + toNumOrZero(o.total), 0);
       const pendingOrders = allOrders.filter(
         (o) => o.status === "pendiente" || o.status === "confirmado",
       ).length;
@@ -657,9 +794,11 @@ export const MarketplaceOrdersDB = {
       for (const order of allOrders) {
         for (const item of order.items) {
           const existing = productSales.get(item.name) ?? { quantity: 0, revenue: 0 };
+          // TD-018: item.price es Decimal → convertir para aritmética
+          const itemPriceNum = toNumOrZero(item.price);
           productSales.set(item.name, {
             quantity: existing.quantity + item.quantity,
-            revenue:  existing.revenue + item.price * item.quantity,
+            revenue:  existing.revenue + itemPriceNum * item.quantity,
           });
         }
       }
@@ -682,7 +821,8 @@ export const MarketplaceOrdersDB = {
         recentOrders: allOrders.slice(0, 10).map((o) => ({
           id:           o.id,
           customerName: o.customerName,
-          total:        o.total,
+          // TD-018: total es Decimal → serializar a number
+          total:        toNumOrZero(o.total),
           status:       o.status,
           createdAt:    o.createdAt.toISOString(),
         })),
@@ -800,10 +940,6 @@ type AbandonedCartItem = {
   unit: string;
 };
 
-// TODO Sprint C Wave 4: refactor type MarketplaceAbandonedCart — el modelo
-// `marketplaceAbandonedCart` no existe aún en el schema de Prisma.
-// Estas funciones son stub hasta que se agregue la migración correspondiente.
-
 export type AbandonedCartRecord = {
   id: string;
   storeSlug: string;
@@ -822,42 +958,111 @@ export const MarketplaceAbandonedCartsDB = {
   /**
    * Save/update a marketplace cart for recovery tracking.
    * Called when user enters customer info in checkout.
-   * @stub — requiere migración de schema (Sprint C Wave 4)
+   * Upserts by storeSlug + customerPhone to avoid duplicates.
    */
-  async save(_params: {
+  async save(params: {
     storeSlug: string;
     customerName: string;
     customerPhone: string;
     items: AbandonedCartItem[];
     total: number;
   }): Promise<AbandonedCartRecord | null> {
-    // TODO Sprint C Wave 4: implementar cuando exista el modelo en schema.prisma
-    return null;
+    try {
+      const itemsJson = JSON.stringify(params.items);
+      // Try to find existing non-recovered cart for this customer+store
+      const existing = await prisma.marketplaceAbandonedCart.findFirst({
+        where: {
+          storeSlug: params.storeSlug,
+          customerPhone: params.customerPhone,
+          recovered: false,
+        },
+        select: { id: true },
+      });
+
+      if (existing) {
+        const updated = await prisma.marketplaceAbandonedCart.update({
+          where: { id: existing.id },
+          data: {
+            customerName: params.customerName,
+            itemsJson,
+            total: params.total,
+            reminderSentAt: null, // reset so new reminder can be sent
+          },
+        });
+        return updated as AbandonedCartRecord;
+      }
+
+      const created = await prisma.marketplaceAbandonedCart.create({
+        data: {
+          storeSlug: params.storeSlug,
+          customerName: params.customerName,
+          customerPhone: params.customerPhone,
+          itemsJson,
+          total: params.total,
+        },
+      });
+      return created as AbandonedCartRecord;
+    } catch {
+      return null;
+    }
   },
 
   /**
    * Mark a cart as converted (order was placed).
-   * @stub — requiere migración de schema (Sprint C Wave 4)
    */
-  async markConverted(_storeSlug: string, _customerPhone: string): Promise<void> {
-    // TODO Sprint C Wave 4: implementar cuando exista el modelo en schema.prisma
+  async markConverted(storeSlug: string, customerPhone: string): Promise<void> {
+    try {
+      await prisma.marketplaceAbandonedCart.updateMany({
+        where: {
+          storeSlug,
+          customerPhone,
+          recovered: false,
+        },
+        data: {
+          recovered: true,
+          convertedAt: new Date(),
+        },
+      });
+    } catch {
+      // silently fail — non-critical
+    }
   },
 
   /**
    * Get abandoned carts that haven't been converted and haven't received a reminder.
-   * Only carts older than `hoursOld` hours.
-   * @stub — requiere migración de schema (Sprint C Wave 4)
+   * Only carts older than `hoursOld` hours and younger than 24h.
    */
-  async getAbandoned(_hoursOld = 2): Promise<AbandonedCartRecord[]> {
-    // TODO Sprint C Wave 4: implementar cuando exista el modelo en schema.prisma
-    return [];
+  async getAbandoned(hoursOld = 2): Promise<AbandonedCartRecord[]> {
+    try {
+      const cutoff = new Date(Date.now() - hoursOld * 60 * 60 * 1000);
+      const maxAge = new Date(Date.now() - 24 * 60 * 60 * 1000);
+
+      const carts = await prisma.marketplaceAbandonedCart.findMany({
+        where: {
+          recovered: false,
+          reminderSentAt: null,
+          createdAt: { lt: cutoff, gt: maxAge },
+        },
+        orderBy: { createdAt: "asc" },
+        take: 50,
+      });
+      return carts as AbandonedCartRecord[];
+    } catch {
+      return [];
+    }
   },
 
   /**
    * Mark reminder as sent for a cart.
-   * @stub — requiere migración de schema (Sprint C Wave 4)
    */
-  async markReminderSent(_id: string): Promise<void> {
-    // TODO Sprint C Wave 4: implementar cuando exista el modelo en schema.prisma
+  async markReminderSent(id: string): Promise<void> {
+    try {
+      await prisma.marketplaceAbandonedCart.update({
+        where: { id },
+        data: { reminderSentAt: new Date() },
+      });
+    } catch {
+      // silently fail
+    }
   },
 };

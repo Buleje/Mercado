@@ -7,7 +7,6 @@ import {
   ShoppingCart,
   DollarSign,
   RefreshCw,
-  Edit2,
   Eye,
   EyeOff,
   CheckCircle,
@@ -26,8 +25,7 @@ import {
   Gift,
   ExternalLink,
   Zap,
-  ArrowRight,
-} from "lucide-react";
+  ArrowRight } from "lucide-react";
 import { cn } from "@/lib/utils";
 import AdminModuleHeader from "@/components/admin/shared/AdminModuleHeader";
 import AdminTabBar from "@/components/admin/shared/AdminTabBar";
@@ -129,7 +127,7 @@ const MODULE_ID = "marketplace";
 
 const TABS = [
   { id: "dashboard",    label: "Dashboard",    icon: BarChart3 },
-  { id: "tienda",       label: "Mi Tienda",    icon: Store },
+  { id: "tienda",       label: "Mi Tienda Personal",    icon: Store },
   { id: "productos",    label: "Productos",    icon: Package },
   { id: "ordenes",      label: "Órdenes",      icon: ShoppingCart },
   { id: "comisiones",   label: "Comisiones",   icon: DollarSign },
@@ -320,7 +318,7 @@ function DashboardTab() {
     <div className="text-center py-12 text-gray-400">
       <BarChart3 className="h-8 w-8 mx-auto mb-2 opacity-50" />
       <p className="text-sm">No hay datos del marketplace todavía.</p>
-      <p className="text-xs mt-1">Configura tu tienda primero en la pestaña &ldquo;Mi Tienda&rdquo;.</p>
+      <p className="text-xs mt-1">Configura tu tienda primero en la pestaña &ldquo;Mi Tienda Personal&rdquo;.</p>
     </div>
   );
 
@@ -472,7 +470,7 @@ function DashboardTab() {
 
           {/* Ver mi tienda */}
           <a
-            href={data.store.slug ? `/marketplace/tienda/${data.store.slug}` : "/marketplace"}
+            href={data.store.slug ? `/marketplace/${data.store.slug}` : "/marketplace"}
             target="_blank"
             rel="noopener noreferrer"
             className="flex items-center gap-3 p-3 rounded-xl border border-[#00B4A6]/20 bg-[#00B4A6]/5 text-left transition-all hover:shadow-md hover:bg-[#00B4A6]/10"
@@ -617,7 +615,7 @@ function DashboardTab() {
 }
 
 // ─────────────────────────────────────────────
-// Sub-tab: Mi Tienda
+// Sub-tab: Mi Tienda Personal
 // ─────────────────────────────────────────────
 function TiendaTab() {
   const [store, setStore] = useState<StoreData>({
@@ -696,7 +694,7 @@ function TiendaTab() {
               className="w-full px-3 py-2.5 rounded-xl border border-gray-200 bg-white text-sm text-gray-900 outline-none focus:ring-2 focus:ring-[#00B4A6]/30 focus:border-[#00B4A6] transition-all"
             />
             {store.slug && (
-              <p className="text-[10px] text-gray-400">marketplace.com/tienda/{store.slug}</p>
+              <p className="text-[10px] text-gray-400">marketplace.com/{store.slug}</p>
             )}
           </div>
 
@@ -707,7 +705,7 @@ function TiendaTab() {
               type="text"
               value={store.name}
               onChange={(e) => setStore((p) => ({ ...p, name: e.target.value }))}
-              placeholder="Bodega San Martín"
+              placeholder="Mi Bodega"
               className="w-full px-3 py-2.5 rounded-xl border border-gray-200 bg-white text-sm text-gray-900 outline-none focus:ring-2 focus:ring-[#00B4A6]/30 focus:border-[#00B4A6] transition-all"
             />
           </div>
@@ -2101,26 +2099,26 @@ export default function MarketplaceModule() {
         activeTab={tab}
         onTabChange={(id) => setTab(id)}
         moduleId={MODULE_ID}
-      />
-
-      {tab === "dashboard"   && <DashboardTab />}
-      {tab === "tienda"      && <TiendaTab />}
-      {tab === "productos"   && <ProductosTab />}
-      {tab === "ordenes"     && <OrdenesTab />}
-      {tab === "comisiones"  && <ComisionesTab />}
-      {tab === "precios"     && (
-        <Suspense fallback={<Spinner />}>
-          <CompetitivePricingTab />
-        </Suspense>
-      )}
-      {tab === "cupones"     && <CuponesTab />}
-      {tab === "resenas"     && <ResenasTab />}
-      {tab === "fidelidad"   && <FidelidadTab />}
-      {tab === "multitienda" && isMultiStoreEnabled && (
-        <Suspense fallback={<Spinner />}>
-          <MultiStoreDashboard />
-        </Suspense>
-      )}
+      >
+        {tab === "dashboard"   && <DashboardTab />}
+        {tab === "tienda"      && <TiendaTab />}
+        {tab === "productos"   && <ProductosTab />}
+        {tab === "ordenes"     && <OrdenesTab />}
+        {tab === "comisiones"  && <ComisionesTab />}
+        {tab === "precios"     && (
+          <Suspense fallback={<Spinner />}>
+            <CompetitivePricingTab />
+          </Suspense>
+        )}
+        {tab === "cupones"     && <CuponesTab />}
+        {tab === "resenas"     && <ResenasTab />}
+        {tab === "fidelidad"   && <FidelidadTab />}
+        {tab === "multitienda" && isMultiStoreEnabled && (
+          <Suspense fallback={<Spinner />}>
+            <MultiStoreDashboard />
+          </Suspense>
+        )}
+      </AdminTabBar>
     </div>
   );
 }

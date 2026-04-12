@@ -17,7 +17,7 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ orde
       return NextResponse.json({ error: "Pedido no encontrado" }, { status: 404 });
     }
 
-    const settings = await SettingsDB.get();
+    const settings = await SettingsDB.get(auth.tenantId);
     const businessName = settings.businessName || "Buleje";
     const businessPhone = settings.businessPhone || "";
     const businessAddress = settings.businessAddress || "Pucallpa, Ucayali, Perú";

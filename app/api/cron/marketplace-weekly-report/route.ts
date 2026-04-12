@@ -5,6 +5,7 @@ import { prisma } from "@/lib/prisma";
 import { enqueueNotification } from "@/lib/queue";
 import { sendPushToPhone } from "@/lib/push-sender";
 import { logger } from "@/lib/logger";
+import { toNumOrZero } from "@/lib/decimal-utils";
 
 /**
  * GET /api/cron/marketplace-weekly-report
@@ -79,7 +80,7 @@ export async function GET(req: NextRequest) {
 
       for (const store of stores) {
         const orders = ordersByTenant.get(store.tenantId) ?? [];
-        const revenue = orders.reduce((sum, o) => sum + o.total, 0);
+        const revenue = orders.reduce((sum, o) => sum + toNumOrZero(o.total), 0);
         const completedOrders = orders.filter((o) => o.status === "entregado").length;
         const cancelledOrders = orders.filter((o) => o.status === "cancelado").length;
         const avgTicket = orders.length > 0 ? revenue / orders.length : 0;

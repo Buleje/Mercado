@@ -163,11 +163,12 @@ export function buildCustomerForRegister(args: {
 export function saveLastOrder(
   orderId: string,
   items: CartItem[],
-  finalTotal: number
+  finalTotal: number,
+  customerPhone?: string,
 ) {
   try {
     localStorage.setItem(
-      "bsm-last-order",
+      "buleje-last-order",
       JSON.stringify({
         id: orderId,
         items: items.map((i) => ({
@@ -178,6 +179,8 @@ export function saveLastOrder(
           image: i.image ?? "",
         })),
         total: finalTotal,
+        // HOTFIX-003: persist phone so public order lookups can prove ownership.
+        ...(customerPhone && { customerPhone }),
       })
     );
   } catch {

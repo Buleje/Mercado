@@ -355,7 +355,7 @@ export async function POST(req: NextRequest) {
     let totalUsage: LLMUsage = { promptTokens: 0, completionTokens: 0, totalTokens: 0 };
 
     if (!res.ok) {
-      console.error("[ai-assistant] LLM router error:", res.error);
+      logger.error("[ai-assistant] LLM router error", { error: String(res.error), tenantId: auth.tenantId });
       recordAIFailure("ai-assistant", res.error ?? "unknown");
       return returnRuleBased();
     }
@@ -602,7 +602,7 @@ export async function POST(req: NextRequest) {
       });
 
       if (!followUpRes.ok) {
-        console.error("[ai-assistant] LLM router follow-up error:", followUpRes.error);
+        logger.error("[ai-assistant] LLM router follow-up error", { error: String(followUpRes.error), tenantId: auth.tenantId });
         recordAIFailure("ai-assistant-followup", followUpRes.error ?? "unknown");
         return returnRuleBased();
       }
@@ -718,7 +718,7 @@ export async function POST(req: NextRequest) {
     });
   } catch (err) {
     const errMsg = err instanceof Error ? err.message : String(err);
-    console.error("[ai-assistant] Fetch error:", errMsg);
+    logger.error("[ai-assistant] Fetch error", { error: errMsg, tenantId: auth.tenantId });
     recordAIFailure("ai-assistant", errMsg);
     return returnRuleBased();
   }

@@ -1,6 +1,6 @@
 # `/api/v1/` — API Versionada
 
-Esta carpeta contiene la versión 1 oficial de la API pública de Bodega San Martín.
+Esta carpeta contiene la versión 1 oficial de la API pública de Buleje.
 
 ## Política de versionado
 

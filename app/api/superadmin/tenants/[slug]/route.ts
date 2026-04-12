@@ -16,52 +16,63 @@ export async function PATCH(
   req: NextRequest,
   { params }: { params: Promise<{ slug: string }> },
 ) {
-  const session = await requirePlatform(req);
-  if (!session) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
+  try {
+    const session = await requirePlatform(req);
+    if (!session) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
 
-  const { slug } = await params;
+    const { slug } = await params;
 
-  let body: { plan?: string; active?: boolean };
-  try { body = await req.json(); } catch { body = {}; }
+    let body: { plan?: string; active?: boolean };
+    try { body = await req.json(); } catch { body = {}; }
 
-  const updates: Record<string, unknown> = {};
+    const updates: Record<string, unknown> = {};
 
-  if (body.plan !== undefined) {
-    if (!["free", "pro", "business", "enterprise"].includes(body.plan)) {
-      return NextResponse.json({ error: "Plan inválido" }, { status: 400 });
+    if (body.plan !== undefined) {
+      if (!["free", "pro", "business", "enterprise"].includes(body.plan)) {
+        return NextResponse.json({ error: "Plan inválido" }, { status: 400 });
+      }
+      updates.plan = body.plan;
     }
-    updates.plan = body.plan;
+
+    if (body.active !== undefined) {
+      updates.active = Boolean(body.active);
+    }
+
+    if (Object.keys(updates).length === 0) {
+      return NextResponse.json({ error: "Nada que actualizar" }, { status: 400 });
+    }
+
+    const tenant = await prisma.tenant.update({
+      where: { slug },
+      data: updates,
+      select: { id: true, slug: true, name: true, plan: true, active: true },
+    });
+
+    // Log activity
+    const details: string[] = [];
+    if (body.plan !== undefined) details.push(`plan → ${body.plan}`);
+    if (body.active !== undefined) details.push(body.active ? "reactivated" : "suspended");
+    await prisma.activityLog.create({
+      data: {
+        action: body.active !== undefined ? (body.active ? "tenant_reactivated" : "tenant_suspended") : "plan_changed",
+        entity: "tenant",
+        entityId: slug,
+        detail: details.join(", "),
+        user: `superadmin:${session.username}`,
+        tenantId: slug,
+      },
+    }).catch(() => {});
+
+    logger.info("[SuperAdmin] Tenant updated", { username: session.username, slug, updates });
+    return NextResponse.json({ tenant });
+  } catch (error) {
+    logger.error("[superadmin/tenants PATCH] Error updating tenant", {
+      error: error instanceof Error ? error.message : String(error),
+      stack: error instanceof Error ? error.stack : undefined,
+    });
+    return NextResponse.json(
+      { error: "Error updating tenant" },
+      { status: 500 }
+    );
   }
-
-  if (body.active !== undefined) {
-    updates.active = Boolean(body.active);
-  }
-
-  if (Object.keys(updates).length === 0) {
-    return NextResponse.json({ error: "Nada que actualizar" }, { status: 400 });
-  }
-
-  const tenant = await prisma.tenant.update({
-    where: { slug },
-    data: updates,
-    select: { id: true, slug: true, name: true, plan: true, active: true },
-  });
-
-  // Log activity
-  const details: string[] = [];
-  if (body.plan !== undefined) details.push(`plan → ${body.plan}`);
-  if (body.active !== undefined) details.push(body.active ? "reactivated" : "suspended");
-  await prisma.activityLog.create({
-    data: {
-      action: body.active !== undefined ? (body.active ? "tenant_reactivated" : "tenant_suspended") : "plan_changed",
-      entity: "tenant",
-      entityId: slug,
-      detail: details.join(", "),
-      user: `superadmin:${session.username}`,
-      tenantId: slug,
-    },
-  }).catch(() => {});
-
-  logger.info("[SuperAdmin] Tenant updated", { username: session.username, slug, updates });
-  return NextResponse.json({ tenant });
 }

@@ -2,10 +2,9 @@
 
 import { useState, useEffect, useCallback } from "react";
 import {
-  FileText, Search, Filter, RefreshCw,
+  FileText, Search, RefreshCw,
   Loader2, ChevronLeft, ChevronRight,
-  XCircle,
-} from "lucide-react";
+  XCircle } from "lucide-react";
 
 // ── Types ────────────────────────────────────────────────────────────────────
 

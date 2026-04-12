@@ -11,8 +11,8 @@ export default function OrderStatusModalWrapper() {
 
   useEffect(() => {
     const handler = () => openOrderStatusModal();
-    window.addEventListener("bsm:orderCreated", handler);
-    return () => window.removeEventListener("bsm:orderCreated", handler);
+    window.addEventListener("buleje:orderCreated", handler);
+    return () => window.removeEventListener("buleje:orderCreated", handler);
   }, [openOrderStatusModal]);
 
   return <OrderStatusModalComponent isOpen={orderStatusModalOpen} onClose={closeOrderStatusModal} />;

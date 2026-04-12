@@ -3,6 +3,7 @@ import { CashRegistersDB } from "@/lib/jsondb";
 import { requireAdmin } from "@/lib/require-admin";
 import { toErrorPayload } from "@/lib/api-error";
 import { withDbRetry } from "@/lib/db-retry";
+import { applyRateLimit } from "@/lib/rate-limit";
 
 export async function GET(req: NextRequest) {
   const auth = await requireAdmin(req, ["admin", "cajero"]);
@@ -27,6 +28,9 @@ export async function GET(req: NextRequest) {
 }
 
 export async function POST(req: NextRequest) {
+  const rateLimitResult = applyRateLimit(req, "STRICT", "cash-registers-post");
+  if (rateLimitResult) return rateLimitResult;
+
   const auth = await requireAdmin(req, ["admin", "cajero"]);
   if (auth instanceof NextResponse) return auth;
 
@@ -37,7 +41,7 @@ export async function POST(req: NextRequest) {
     if (action === "open") {
       const openingAmount = Number(body.openingAmount) || 0;
       // Check if there's already an open register
-      const open = await CashRegistersDB.getOpen();
+      const open = await CashRegistersDB.getOpen(auth.tenantId);
       if (open) {
         return NextResponse.json({ error: "Ya hay una caja abierta" }, { status: 400 });
       }

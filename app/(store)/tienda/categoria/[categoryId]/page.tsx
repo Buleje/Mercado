@@ -1,9 +1,11 @@
 import type { Metadata } from "next";
+import { Suspense } from "react";
+import { connection } from "next/server";
 import { notFound } from "next/navigation";
 import Link from "next/link";
-import { Suspense } from "react";
 import dynamic from "next/dynamic";
 import { headers } from "next/headers";
+import { cacheLife, cacheTag } from "next/cache";
 import { categories, type Category } from "@/data/products";
 import { ProductsDB } from "@/lib/db/products.db";
 import Header from "@/components/Header";
@@ -21,8 +23,21 @@ const StickyCartBar = dynamic(() => import("@/components/StickyCartBar"));
 
 const realCategories = categories.filter((c) => c.id !== "todos");
 
-// ISR: regenerate category pages at most once per 5 minutes
-export const revalidate = 300;
+/**
+ * Cached product fetcher for category pages (Next 16 Cache Components).
+ * Replaces the old `export const revalidate = 300`. tenantId is part of
+ * the cache key automatically. Invalidable via `updateTag('category-products:*')`.
+ * Ver ADR-019.
+ */
+async function getCategoryProducts(tenantId: string, categoryId: string) {
+  "use cache";
+  cacheLife({ revalidate: 300, stale: 60, expire: 900 });
+  cacheTag("category-products", `category-products:${tenantId}:${categoryId}`);
+  const allProducts = await ProductsDB.getAll(tenantId);
+  return allProducts.filter(
+    (p) => p.category === categoryId && p.active !== false,
+  );
+}
 
 interface Props {
   params: Promise<{ categoryId: string }>;
@@ -56,11 +71,10 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const cat = findCategory(categoryId);
   if (!cat) return { title: "Categoría no encontrada" };
 
-  // Fetch product count/price from DB
+  // Fetch product count/price from DB (cached 5m via use cache helper)
   const hdrs = await headers();
   const tenantId = hdrs.get("x-tenant-id") ?? "main";
-  const allProducts = await ProductsDB.getAll(tenantId);
-  const catProducts = allProducts.filter((p) => p.category === cat.id && p.active !== false);
+  const catProducts = await getCategoryProducts(tenantId, cat.id);
   const productCount = catProducts.length;
   const minPrice = catProducts.length ? Math.min(...catProducts.map((p) => p.price)) : 0;
 
@@ -81,13 +95,13 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
       url: categoryUrl,
       locale: "es_PE",
       siteName: "Buleje",
-      images: [{ url: "https://www.buleje.pe/og-image.jpg", width: 1200, height: 630, alt: `${cat.label} — Buleje` }],
+      images: [{ url: "https://www.buleje.pe/api/og", width: 1200, height: 630, alt: `${cat.label} — Buleje` }],
     },
     twitter: {
       card: "summary_large_image",
       title: `${cat.emoji} ${cat.label} — Buleje`,
       description: desc,
-      images: ["https://www.buleje.pe/og-image.jpg"],
+      images: ["https://www.buleje.pe/api/og"],
     },
     alternates: {
       canonical: categoryUrl,
@@ -95,7 +109,8 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   };
 }
 
-export default async function CategoryPage({ params }: Props) {
+async function CategoryPageContent({ params }: Props) {
+  await connection();
   const { categoryId } = await params;
   const cat = findCategory(categoryId);
 
@@ -112,11 +127,10 @@ export default async function CategoryPage({ params }: Props) {
 
   const categoryUrl = `https://www.buleje.pe/tienda/categoria/${cat.id}`;
   
-  // Fetch products from DB for JSON-LD schema
+  // Fetch products from DB for JSON-LD schema (cached 5m via use cache helper)
   const hdrs = await headers();
   const tenantId = hdrs.get("x-tenant-id") ?? "main";
-  const allProducts = await ProductsDB.getAll(tenantId);
-  const catProducts = allProducts.filter((p) => p.category === cat.id && p.active !== false);
+  const catProducts = await getCategoryProducts(tenantId, cat.id);
 
   return (
     <>
@@ -257,5 +271,33 @@ export default async function CategoryPage({ params }: Props) {
       <StickyCartBar />
       <MobileBottomNav />
     </>
+  );
+}
+
+function CategoryPageSkeleton() {
+  return (
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-950 animate-pulse">
+      <div className="h-[6.75rem] sm:h-[7.75rem]" />
+      <section className="bg-gradient-to-br from-indigo-900 to-indigo-950 pt-32 pb-14">
+        <div className="max-w-7xl mx-auto px-4 text-center">
+          <div className="h-14 w-14 bg-white/20 rounded mx-auto mb-4" />
+          <div className="h-10 w-48 bg-white/20 rounded mx-auto mb-4" />
+          <div className="h-5 w-64 bg-white/15 rounded mx-auto" />
+        </div>
+      </section>
+      <section className="py-20">
+        <div className="max-w-7xl mx-auto px-4">
+          <ProductGridSkeleton />
+        </div>
+      </section>
+    </div>
+  );
+}
+
+export default function CategoryPage({ params }: Props) {
+  return (
+    <Suspense fallback={<CategoryPageSkeleton />}>
+      <CategoryPageContent params={params} />
+    </Suspense>
   );
 }

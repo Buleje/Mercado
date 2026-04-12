@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef, useCallback } from "react";
-import { Plus, Trash2, Search, Clock, Check, X, AlertTriangle } from "lucide-react";
+import { Plus, Trash2, Search, Clock, Check, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
@@ -27,7 +27,7 @@ type ProductSearchResult = {
 
 // ── Storage ───────────────────────────────────────────────────────────────────
 
-const STORAGE_KEY = "bsm_price_schedules";
+const STORAGE_KEY = "buleje_price_schedules";
 
 function loadSchedules(): PriceSchedule[] {
   if (typeof window === "undefined") return [];
@@ -60,7 +60,7 @@ const STATUS_UI: Record<ScheduleStatus, { label: string; color: string; dot: str
 
 function fmt(n: number) { return "S/ " + n.toFixed(2); }
 
-function toInputDate(iso: string): string {
+function _toInputDate(iso: string): string {
   if (!iso) return "";
   return iso.slice(0, 16);
 }

@@ -1,7 +1,6 @@
 "use client";
 
 import { Truck, Check } from "lucide-react";
-import { cn } from "@/lib/utils";
 
 interface FreeDeliveryBannerProps {
   currentTotal: number;

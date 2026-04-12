@@ -5,8 +5,8 @@ import Image from "next/image";
 import { BellRing, ShoppingCart, X, Package } from "lucide-react";
 import { useCart } from "@/contexts/cart-context";
 
-const STORAGE_KEY = "bsm-back-in-stock-notified";
-const STOCK_CACHE_KEY = "bsm-stock-snapshot";
+const STORAGE_KEY = "buleje-back-in-stock-notified";
+const STOCK_CACHE_KEY = "buleje-stock-snapshot";
 
 type StockProduct = {
   id: number;

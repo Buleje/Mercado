@@ -18,9 +18,9 @@ const PRIORITY_CONFIG: Record<Priority, { label: string; color: string }> = {
   urgente: { label: "Urgente", color: "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400" },
 };
 const COL_CONFIG: Record<Column, { label: string; color: string; bg: string; icon: typeof Clock }> = {
-  pendiente: { label: "📋 Pendiente", color: "text-amber-600 dark:text-amber-400", bg: "bg-amber-50 dark:bg-amber-950/10", icon: Clock },
-  "en-progreso": { label: "🔄 En Progreso", color: "text-blue-600 dark:text-blue-400", bg: "bg-blue-50 dark:bg-blue-950/10", icon: ListChecks },
-  completado: { label: "✅ Completado", color: "text-emerald-600 dark:text-emerald-400", bg: "bg-emerald-50 dark:bg-emerald-950/10", icon: CheckCircle },
+  pendiente: { label: "Pendiente", color: "text-amber-600 dark:text-amber-400", bg: "bg-amber-50 dark:bg-amber-950/10", icon: Clock },
+  "en-progreso": { label: "En Progreso", color: "text-blue-600 dark:text-blue-400", bg: "bg-blue-50 dark:bg-blue-950/10", icon: ListChecks },
+  completado: { label: "Completado", color: "text-emerald-600 dark:text-emerald-400", bg: "bg-emerald-50 dark:bg-emerald-950/10", icon: CheckCircle },
 };
 
 /* ── Seed Data ── */
@@ -153,10 +153,10 @@ export default function KanbanBoardTab() {
                       </div>
                       <div className="flex items-center gap-1">
                         {col !== "pendiente" && (
-                          <button onClick={() => moveTask(t.id, col === "en-progreso" ? "pendiente" : "en-progreso")} className="p-1 rounded text-gray-400 hover:bg-gray-100 dark:hover:bg-accent text-xs">←</button>
+                          <button onClick={() => moveTask(t.id, col === "en-progreso" ? "pendiente" : "en-progreso")} className="p-1 rounded text-gray-400 hover:bg-gray-100 dark:hover:bg-accent text-xs">Atras</button>
                         )}
                         {col !== "completado" && (
-                          <button onClick={() => moveTask(t.id, col === "pendiente" ? "en-progreso" : "completado")} className="p-1 rounded text-gray-400 hover:bg-gray-100 dark:hover:bg-accent text-xs">→</button>
+                          <button onClick={() => moveTask(t.id, col === "pendiente" ? "en-progreso" : "completado")} className="p-1 rounded text-gray-400 hover:bg-gray-100 dark:hover:bg-accent text-xs">Adelante</button>
                         )}
                         <button onClick={() => setEditing(t)} className="p-1 rounded text-gray-400 hover:bg-gray-100 dark:hover:bg-accent"><Pencil className="h-3 w-3" /></button>
                         <button onClick={() => deleteTask(t.id)} className="p-1 rounded text-red-400 hover:bg-red-50 dark:hover:bg-red-950/20"><Trash2 className="h-3 w-3" /></button>

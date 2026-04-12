@@ -1,35 +1,131 @@
 "use client";
 
-import { useState } from "react";
-import { DollarSign, BarChart3, Settings, CheckCircle2 } from "lucide-react";
+import { useEffect, useState } from "react";
+import { DollarSign, BarChart3, Settings, CheckCircle2, Loader2 } from "lucide-react";
 import type { PlatformSettings } from "@/lib/superadmin-types";
 import { DEFAULT_SETTINGS } from "@/lib/superadmin-types";
 
+/**
+ * /superadmin/settings
+ *
+ * Fix del bug MRR fake 2026-04-09:
+ *   - Antes persistía en `localStorage` → Brandon perdía los cambios al
+ *     cambiar de dispositivo y el MRR del dashboard estaba desincronizado.
+ *   - Ahora GET inicial + POST real a `/api/superadmin/settings`, que
+ *     escribe en `PlatformSetting("plan-prices")` en la DB — single source
+ *     of truth compartida con `app/api/superadmin/analytics/route.ts`.
+ */
 export default function SettingsPage() {
-  const [settings, setSettings] = useState<PlatformSettings>(() => {
-    if (typeof window === "undefined") return DEFAULT_SETTINGS;
-    try {
-      const stored = localStorage.getItem("superadmin-platform-settings");
-      if (!stored) return DEFAULT_SETTINGS;
-      return { ...DEFAULT_SETTINGS, ...(JSON.parse(stored) as Partial<PlatformSettings>) };
-    } catch {
-      return DEFAULT_SETTINGS;
-    }
-  });
+  const [settings, setSettings] = useState<PlatformSettings>(DEFAULT_SETTINGS);
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  // ── GET inicial desde DB ──────────────────────────────────────────────
+  useEffect(() => {
+    let alive = true;
+    (async () => {
+      try {
+        const res = await fetch("/api/superadmin/settings", {
+          method: "GET",
+          credentials: "include",
+          cache: "no-store",
+        });
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        const data = (await res.json()) as { settings: Record<string, unknown> };
+
+        // Aplanar el shape DB (key → JSON) al shape plano PlatformSettings
+        // que usa el formulario. "plan-prices" es el único setting crítico hoy.
+        const flat: Partial<PlatformSettings> = {};
+        const prices = data.settings["plan-prices"] as
+          | Partial<Record<"free" | "pro" | "business" | "enterprise", number>>
+          | undefined;
+        if (prices) {
+          if (typeof prices.free === "number") flat.priceFree = prices.free;
+          if (typeof prices.pro === "number") flat.pricePro = prices.pro;
+          if (typeof prices.business === "number") flat.priceBusiness = prices.business;
+          if (typeof prices.enterprise === "number") flat.priceEnterprise = prices.enterprise;
+        }
+
+        // Otros settings que ya se persisten bajo claves top-level en DB.
+        const assignIfNumber = (k: keyof PlatformSettings, v: unknown) => {
+          if (typeof v === "number") (flat as Record<string, unknown>)[k] = v;
+        };
+        const assignIfBool = (k: keyof PlatformSettings, v: unknown) => {
+          if (typeof v === "boolean") (flat as Record<string, unknown>)[k] = v;
+        };
+        assignIfNumber("commissionDefault", data.settings["commission-default"]);
+        assignIfNumber("limitsFreeProducts", data.settings["limits-free-products"]);
+        assignIfNumber("limitsFreeUsers", data.settings["limits-free-users"]);
+        assignIfNumber("limitsFreeOrders", data.settings["limits-free-orders"]);
+        assignIfNumber("limitsProProducts", data.settings["limits-pro-products"]);
+        assignIfNumber("limitsProUsers", data.settings["limits-pro-users"]);
+        assignIfNumber("limitsProOrders", data.settings["limits-pro-orders"]);
+        assignIfBool("allowNewStores", data.settings["allow-new-stores"]);
+        assignIfBool("maintenanceMode", data.settings["maintenance-mode"]);
+
+        if (alive) setSettings((prev) => ({ ...prev, ...flat }));
+      } catch (e) {
+        if (alive) setError(e instanceof Error ? e.message : "load_failed");
+      } finally {
+        if (alive) setLoading(false);
+      }
+    })();
+    return () => {
+      alive = false;
+    };
+  }, []);
 
   const update = <K extends keyof PlatformSettings>(key: K, value: PlatformSettings[K]) => {
     setSettings((prev) => ({ ...prev, [key]: value }));
   };
 
-  const handleSave = () => {
-    localStorage.setItem("superadmin-platform-settings", JSON.stringify(settings));
-    setSaved(true);
-    setTimeout(() => setSaved(false), 2500);
+  // ── POST a la API (single source of truth) ────────────────────────────
+  const handleSave = async () => {
+    setSaving(true);
+    setError(null);
+    try {
+      const payload = {
+        settings: {
+          "plan-prices": {
+            free: settings.priceFree,
+            pro: settings.pricePro,
+            business: settings.priceBusiness,
+            enterprise: settings.priceEnterprise,
+          },
+          "commission-default": settings.commissionDefault,
+          "limits-free-products": settings.limitsFreeProducts,
+          "limits-free-users": settings.limitsFreeUsers,
+          "limits-free-orders": settings.limitsFreeOrders,
+          "limits-pro-products": settings.limitsProProducts,
+          "limits-pro-users": settings.limitsProUsers,
+          "limits-pro-orders": settings.limitsProOrders,
+          "allow-new-stores": settings.allowNewStores,
+          "maintenance-mode": settings.maintenanceMode,
+        },
+      };
+      const res = await fetch("/api/superadmin/settings", {
+        method: "POST",
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+      if (!res.ok) {
+        const errBody = (await res.json().catch(() => ({}))) as { error?: string };
+        throw new Error(errBody.error ?? `HTTP ${res.status}`);
+      }
+      setSaved(true);
+      setTimeout(() => setSaved(false), 2500);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "save_failed");
+    } finally {
+      setSaving(false);
+    }
   };
 
   const inputCls =
-    "w-full bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl px-3 py-2 text-sm text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-teal-500/40";
+    "w-full bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl px-3 py-2 text-sm text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-teal-500/40 disabled:opacity-60";
   const labelCls =
     "block text-xs font-semibold text-gray-500 dark:text-gray-400 mb-1 uppercase tracking-wider";
 
@@ -37,7 +133,17 @@ export default function SettingsPage() {
     <div className="space-y-6">
       <div>
         <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Configuración de plataforma</h1>
-        <p className="text-gray-500 text-sm mt-1">Ajusta precios, límites y controles globales.</p>
+        <p className="text-gray-500 text-sm mt-1">
+          Ajusta precios, límites y controles globales. Los precios alimentan el MRR del dashboard.
+        </p>
+        {loading && (
+          <p className="text-xs text-gray-400 mt-2 flex items-center gap-2">
+            <Loader2 className="w-3 h-3 animate-spin" /> Cargando desde la base de datos...
+          </p>
+        )}
+        {error && (
+          <p className="text-xs text-rose-500 mt-2">Error: {error}</p>
+        )}
       </div>
 
       {/* Precios de planes */}
@@ -57,6 +163,7 @@ export default function SettingsPage() {
               <input
                 type="number"
                 min={0}
+                disabled={loading}
                 value={settings[key]}
                 onChange={(e) => update(key, Number(e.target.value))}
                 className={inputCls}
@@ -79,6 +186,7 @@ export default function SettingsPage() {
               min={0}
               max={100}
               step={0.1}
+              disabled={loading}
               value={settings.commissionDefault}
               onChange={(e) => update("commissionDefault", Number(e.target.value))}
               className={inputCls}
@@ -100,6 +208,7 @@ export default function SettingsPage() {
               <input
                 type="number"
                 min={0}
+                disabled={loading}
                 value={settings[key]}
                 onChange={(e) => update(key, Number(e.target.value))}
                 className={inputCls}
@@ -122,6 +231,7 @@ export default function SettingsPage() {
               <input
                 type="number"
                 min={0}
+                disabled={loading}
                 value={settings[key]}
                 onChange={(e) => update(key, Number(e.target.value))}
                 className={inputCls}
@@ -160,7 +270,8 @@ export default function SettingsPage() {
               <button
                 type="button"
                 onClick={() => update(key, !settings[key])}
-                className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors focus:outline-none focus:ring-2 focus:ring-teal-500 focus:ring-offset-2 ${
+                disabled={loading}
+                className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors focus:outline-none focus:ring-2 focus:ring-teal-500 focus:ring-offset-2 disabled:opacity-60 ${
                   settings[key] ? "bg-teal-500" : "bg-gray-200 dark:bg-gray-700"
                 }`}
                 role="switch"
@@ -182,14 +293,19 @@ export default function SettingsPage() {
         <button
           type="button"
           onClick={handleSave}
-          className="flex items-center gap-2 px-6 py-2.5 rounded-xl text-white text-sm font-semibold transition-all"
+          disabled={loading || saving}
+          className="flex items-center gap-2 px-6 py-2.5 rounded-xl text-white text-sm font-semibold transition-all disabled:opacity-60"
           style={{
             background: saved
               ? "#22c55e"
               : "linear-gradient(135deg, #00B4A6 0%, #2dd4bf 100%)",
           }}
         >
-          {saved ? (
+          {saving ? (
+            <>
+              <Loader2 className="w-4 h-4 animate-spin" /> Guardando...
+            </>
+          ) : saved ? (
             <>
               <CheckCircle2 className="w-4 h-4" /> Guardado
             </>

@@ -101,6 +101,7 @@ export default function CTABanner() {
             <Link
               ref={magnetRef as React.Ref<HTMLAnchorElement>}
               href="/tienda"
+              aria-label="Ir a la tienda — explorar catálogo completo"
               onClick={(e) => {
                 createRipple(e as React.MouseEvent<HTMLElement>);
                 trackCTAClick({ source: "cta-banner", destination: "/tienda", ctaText: "Ir a la tienda" });
@@ -123,6 +124,7 @@ export default function CTABanner() {
               onClick={() => trackWhatsAppClick("cta-banner")}
               target="_blank"
               rel="noopener noreferrer"
+              aria-label="Pedir por WhatsApp — abre conversación en WhatsApp"
               className="inline-flex items-center gap-2 rounded-2xl px-7 py-4 text-base font-bold text-white border border-white/15 bg-white/8 backdrop-blur-sm hover:bg-white/14 hover:-translate-y-0.5 transition-all duration-300"
             >
               💬 Pedir por WhatsApp

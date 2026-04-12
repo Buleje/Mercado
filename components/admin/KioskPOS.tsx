@@ -304,7 +304,7 @@ export default function KioskPOS() {
           <div className="w-8 h-8 rounded-xl bg-teal-600 flex items-center justify-center">
             <span className="text-xs font-extrabold text-white">B</span>
           </div>
-          <span className="text-base font-extrabold tracking-wide text-white">Bodega San Martín</span>
+          <span className="text-base font-extrabold tracking-wide text-white">Buleje POS</span>
           <span className="px-2 py-0.5 rounded-full bg-teal-900/60 text-teal-300 text-[10px] font-bold uppercase tracking-wider">POS</span>
         </div>
 

@@ -98,8 +98,8 @@ const TIER_ORDER: Record<ModuleTier, number> = {
 
 // ── Storage key ──────────────────────────────────────────────────────────────
 
-const STORAGE_KEY = "bsm-module-tier";
-const OVERRIDES_KEY = "bsm-module-tier-overrides";
+const STORAGE_KEY = "buleje-module-tier";
+const OVERRIDES_KEY = "buleje-module-tier-overrides";
 
 // ── Hook ─────────────────────────────────────────────────────────────────────
 

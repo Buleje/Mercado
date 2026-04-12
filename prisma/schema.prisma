@@ -17,7 +17,7 @@ datasource db {
 model Tenant {
   id                     String    @id @default(cuid())
   slug                   String    @unique // subdomain: e.g. "bodega-san-martin"
-  name                   String // E.g. "Bodega San Martín"
+  name                   String // E.g. "Buleje"
   plan                   String    @default("free") // free | pro | business
   type                   String    @default("store") // store | supplier | delivery
   active                 Boolean   @default(true)
@@ -65,6 +65,11 @@ model Tenant {
   treasuryMovimientos    TreasuryMovimiento[]
   treasuryTransferencias TreasuryTransferencia[]
   stores                 Store[]
+  featureFlags           TenantFeatureFlag[]
+  storePage              TenantStorePage?
+  pageProductOverrides   TenantPageProductOverride[]
+  pagePromotions         TenantPagePromotion[]
+  pageVisits             TenantPageVisit[]
 
   @@index([slug])
   @@index([active])
@@ -76,8 +81,8 @@ model Product {
   id            Int       @id @default(autoincrement())
   name          String
   category      String
-  price         Float
-  costPrice     Float?
+  price         Decimal   @db.Decimal(12, 2)
+  costPrice     Decimal?  @db.Decimal(12, 2)
   image         String    @default("")
   description   String?
   unit          String    @default("unidad")
@@ -114,6 +119,7 @@ model Product {
 
   stockoutPredictions StockoutPrediction[]
   sponsoredBoosts     SponsoredBoost[]
+  pageOverrides       TenantPageProductOverride[]
 
   @@index([tenantId])
   @@index([tenantId, active])
@@ -142,7 +148,7 @@ model ProductVariant {
   product        Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
   name           String
   sku            String?
-  priceModifier  Float    @default(0)
+  priceModifier  Decimal  @default(0) @db.Decimal(12, 2)
   stock          Int?
   attributesJson String?
   isActive       Boolean  @default(true)
@@ -170,15 +176,15 @@ model Customer {
   birthday          DateTime?
   loyaltyPoints     Int       @default(0)
   loyaltyTier       String    @default("bronce")
-  totalSpent        Float     @default(0)
+  totalSpent        Decimal   @default(0) @db.Decimal(12, 2)
   notifOrderUpdates Boolean   @default(true)
   notifPromotions   Boolean   @default(true)
   notifRestock      Boolean   @default(false)
   privateNotes      String?
   referralCode      String?   @unique
   referredBy        String?
-  creditBalance     Float     @default(0)
-  creditLimit       Float     @default(0) // 0 = sin límite
+  creditBalance     Decimal   @default(0) @db.Decimal(12, 2)
+  creditLimit       Decimal   @default(0) // 0 = sin límite @db.Decimal(12, 2)
   tags              String? // JSON array: ["mayorista", "restaurante", "vecino"]
 
   // ── Identificación ──
@@ -220,18 +226,40 @@ model Customer {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  locations     SavedLocation[]
-  orders        Order[]
-  sales         Sale[]
-  savedCart     SavedCart?
-  notifications CustomerNotification[]
-  fiados        Fiado[]
-  prestamos     Prestamo[]
-  cotizaciones  Cotizacion[]
+  locations           SavedLocation[]
+  orders              Order[]
+  sales               Sale[]
+  savedCart           SavedCart?
+  notifications       CustomerNotification[]
+  fiados              Fiado[]
+  prestamos           Prestamo[]
+  cotizaciones        Cotizacion[]
+  loyaltyTransactions LoyaltyTransaction[]
 
   @@index([tenantId])
   @@index([tenantId, createdAt])
   @@index([createdAt])
+}
+
+// ─── Loyalty Ledger (ADR-024 — TD-030) ──────────────────
+// Append-only ledger for every change to Customer.loyaltyPoints.
+// Customer.loyaltyPoints stays as a denormalized materialized balance whose
+// only legal mutation path is `lib/db/loyalty.db.ts#addTransaction` inside
+// a `$transaction([insert, increment])` block. See docs/adr/024.
+model LoyaltyTransaction {
+  id         String   @id @default(cuid())
+  customerId String // FK to Customer.phone (Customer's @id is `phone`)
+  tenantId   String
+  amount     Int // positive = credit, negative = debit; never 0
+  reason     String // "purchase" | "promotion" | "redemption" | "manual" | "referral" | "expiry" | "adjustment" | "backfill"
+  metadata   Json? // free-form: { orderId, promoId, idempotencyKey, ... }
+  createdAt  DateTime @default(now())
+
+  customer Customer @relation(fields: [customerId], references: [phone], onDelete: Cascade)
+
+  @@index([customerId, createdAt(sort: Desc)], map: "idx_loyalty_tx_customer_created_desc")
+  @@index([tenantId, createdAt(sort: Desc)], map: "idx_loyalty_tx_tenant_created_desc")
+  @@index([tenantId, reason])
 }
 
 // ─── Saved Carts (persistent across devices) ────────────
@@ -272,17 +300,17 @@ model Order {
   customerPhone       String?
   customerLocation    String      @default("")
   customerReference   String      @default("")
-  total               Float
+  total               Decimal     @db.Decimal(12, 2)
   status              OrderStatus @default(pendiente)
   notes               String?
   paymentMethod       String?
   yapeOperationNumber String?
   deuda               Boolean?
   appliedCouponCode   String?
-  couponDiscount      Float?
+  couponDiscount      Decimal?    @db.Decimal(12, 2)
   appliedPromoId      String?
-  discountAmount      Float?
-  totalCogs           Float?
+  discountAmount      Decimal?    @db.Decimal(12, 2)
+  totalCogs           Decimal?    @db.Decimal(12, 2)
   createdAt           DateTime    @default(now())
   updatedAt           DateTime    @updatedAt
   tenantId            String
@@ -324,15 +352,15 @@ model Order {
 }
 
 model OrderItem {
-  id        Int    @id @default(autoincrement())
+  id        Int      @id @default(autoincrement())
   orderId   String
   productId Int?
   name      String
-  price     Float
-  costPrice Float?
+  price     Decimal  @db.Decimal(12, 2)
+  costPrice Decimal? @db.Decimal(12, 2)
   quantity  Int
   unit      String
-  image     String @default("")
+  image     String   @default("")
 
   order   Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
   product Product? @relation(fields: [productId], references: [id], onDelete: SetNull)
@@ -472,16 +500,16 @@ model Settings {
   inventoryCountFreq String? @default("monthly") // weekly | monthly | quarterly
 
   // ── Caja y pagos (Mejora M47-M54) ──
-  cashOpeningAmount Float?  @default(100)
-  cashAlertMax      Float?  @default(500)
-  returnPolicyDays  Int?    @default(7)
-  returnMaxNoAuth   Float?  @default(50)
+  cashOpeningAmount Decimal? @default(100) @db.Decimal(12, 2)
+  cashAlertMax      Decimal? @default(500) @db.Decimal(12, 2)
+  returnPolicyDays  Int?     @default(7)
+  returnMaxNoAuth   Decimal? @default(50) @db.Decimal(12, 2)
   autoCloseTime     String? // e.g. "22:00"
 
   // ── Delivery (Mejora M55-M62) ──
   deliveryZonesJson String? // JSON array: [{ name, fee, estimatedMin }]
-  freeDeliveryMin   Float?  @default(0)
-  deliveryMaxRadius Float?  @default(10)
+  freeDeliveryMin   Decimal? @default(0) @db.Decimal(12, 2)
+  deliveryMaxRadius Float?   @default(10)
   deliveryHoursJson String? // JSON: { morning, afternoon, evening }
   ridersJson        String? // JSON array: [{ name, phone, zone }]
 
@@ -573,6 +601,17 @@ model Supplier {
   // ── Adicionales ──
   observaciones String?
 
+  // ── Self-signup & approval workflow (ADR item #15) ──
+  // NB: Suppliers son cross-tenant en el marketplace; los registros creados via
+  // self-signup usan tenantId = "__platform__" hasta ser aprobados y asignados.
+  contactName     String?
+  appliedAt       DateTime? @default(now())
+  approvedAt      DateTime?
+  approvedBy      String?
+  rejectedAt      DateTime?
+  rejectedBy      String?
+  rejectionReason String?
+
   tenantId  String
   createdAt DateTime @default(now())
 
@@ -582,6 +621,8 @@ model Supplier {
   portal      SupplierPortal?
 
   @@index([tenantId])
+  @@index([estado])
+  @@index([ruc])
 }
 
 // ─── Purchase Orders ────────────────────────────────────
@@ -597,12 +638,12 @@ model PurchaseOrder {
   id            String         @id
   supplierId    String
   supplierName  String
-  total         Float
+  total         Decimal        @db.Decimal(12, 2)
   status        PurchaseStatus @default(pendiente)
   notes         String?
   paymentMethod String?
   deliveryDate  DateTime?
-  discount      Float?         @default(0)
+  discount      Decimal?       @default(0) @db.Decimal(12, 2)
   tenantId      String
   createdAt     DateTime       @default(now())
   updatedAt     DateTime       @updatedAt
@@ -617,12 +658,12 @@ model PurchaseOrder {
 }
 
 model PurchaseItem {
-  id              Int    @id @default(autoincrement())
+  id              Int     @id @default(autoincrement())
   purchaseOrderId String
   productId       Int
   name            String
   quantity        Int
-  unitCost        Float
+  unitCost        Decimal @db.Decimal(12, 2)
   unit            String
 
   purchaseOrder PurchaseOrder @relation(fields: [purchaseOrderId], references: [id], onDelete: Cascade)
@@ -634,11 +675,11 @@ model PurchaseItem {
 // ─── Sales (POS) ────────────────────────────────────────
 model Sale {
   id            String   @id
-  total         Float
-  totalCogs     Float?
+  total         Decimal  @db.Decimal(12, 2)
+  totalCogs     Decimal? @db.Decimal(12, 2)
   payment       String   @default("efectivo")
-  amountPaid    Float    @default(0)
-  change        Float    @default(0)
+  amountPaid    Decimal  @default(0) @db.Decimal(12, 2)
+  change        Decimal  @default(0) @db.Decimal(12, 2)
   customerPhone String?
   cashierId     String?
   tenantId      String
@@ -666,12 +707,12 @@ model Sale {
 }
 
 model SaleItem {
-  id        Int    @id @default(autoincrement())
+  id        Int      @id @default(autoincrement())
   saleId    String
   productId Int
   name      String
-  price     Float
-  costPrice Float?
+  price     Decimal  @db.Decimal(12, 2)
+  costPrice Decimal? @db.Decimal(12, 2)
   quantity  Int
   unit      String
 
@@ -687,7 +728,7 @@ model Promotion {
   name            String
   description     String    @default("")
   discountPercent Float     @default(0)
-  minPurchase     Float?
+  minPurchase     Decimal?  @db.Decimal(12, 2)
   imageUrl        String?
   message         String?
   targetType      String    @default("all")
@@ -707,8 +748,8 @@ model Payable {
   supplierName    String
   purchaseOrderId String?
   description     String   @default("")
-  amount          Float
-  paidAmount      Float    @default(0)
+  amount          Decimal  @db.Decimal(12, 2)
+  paidAmount      Decimal  @default(0) @db.Decimal(12, 2)
   status          String   @default("pendiente")
   dueDate         DateTime
   tenantId        String
@@ -727,7 +768,7 @@ model Payable {
 model Payment {
   id        String   @id
   payableId String
-  amount    Float
+  amount    Decimal  @db.Decimal(12, 2)
   method    String   @default("efectivo")
   date      DateTime @default(now())
   reference String?
@@ -747,10 +788,10 @@ model CashRegister {
   id             String             @id @default(cuid())
   openedAt       DateTime           @default(now())
   closedAt       DateTime?
-  openingAmount  Float              @default(0)
-  closingAmount  Float?
-  expectedAmount Float?
-  difference     Float?
+  openingAmount  Decimal            @default(0) @db.Decimal(12, 2)
+  closingAmount  Decimal?           @db.Decimal(12, 2)
+  expectedAmount Decimal?           @db.Decimal(12, 2)
+  difference     Decimal?           @db.Decimal(12, 2)
   status         CashRegisterStatus @default(abierta)
   notes          String?
   tenantId       String
@@ -764,7 +805,7 @@ model CashMovement {
   id             String   @id @default(cuid())
   cashRegisterId String
   type           String // venta, ingreso, egreso, apertura, cierre
-  amount         Float
+  amount         Decimal  @db.Decimal(12, 2)
   method         String   @default("efectivo") // efectivo, yape, plin, tarjeta, transferencia
   description    String   @default("")
   saleId         String?
@@ -807,11 +848,12 @@ model Coupon {
   id            String    @id @default(cuid())
   code          String
   tenantId      String
+  storeId       String?   // TD-032: cupón específico de tienda marketplace (null = aplica a todo el tenant)
   description   String    @default("")
   discountType  String    @default("percent") // percent | fixed | giftcard
-  discountValue Float     @default(0)
-  balance       Float? // remaining balance for giftcard type
-  minPurchase   Float?
+  discountValue Decimal   @default(0) @db.Decimal(12, 2)
+  balance       Decimal?  @db.Decimal(12, 2) // remaining balance for giftcard type
+  minPurchase   Decimal?  @db.Decimal(12, 2)
   maxUses       Int?
   usedCount     Int       @default(0)
   active        Boolean   @default(true)
@@ -820,6 +862,7 @@ model Coupon {
 
   @@unique([tenantId, code])
   @@index([tenantId])
+  @@index([storeId, code])
 }
 
 // ─── Returns / Refunds ──────────────────────────────────
@@ -828,7 +871,7 @@ model Return {
   saleId        String?
   orderId       String?
   reason        String   @default("")
-  total         Float    @default(0)
+  total         Decimal  @default(0) @db.Decimal(12, 2)
   photoUrl      String?
   customerPhone String?
   creditApplied Boolean  @default(false)
@@ -841,12 +884,12 @@ model Return {
 }
 
 model ReturnItem {
-  id        Int    @id @default(autoincrement())
+  id        Int     @id @default(autoincrement())
   returnId  String
   productId Int
   name      String
   quantity  Int
-  price     Float
+  price     Decimal @db.Decimal(12, 2)
   unit      String
 
   returnRecord Return @relation(fields: [returnId], references: [id], onDelete: Cascade)
@@ -884,8 +927,8 @@ model ShoppingListItem {
 model PriceHistory {
   id        Int      @id @default(autoincrement())
   productId Int
-  oldPrice  Float
-  newPrice  Float
+  oldPrice  Decimal  @db.Decimal(12, 2)
+  newPrice  Decimal  @db.Decimal(12, 2)
   tenantId  String
   changedAt DateTime @default(now())
 
@@ -943,7 +986,7 @@ model Expense {
   id          String   @id @default(cuid())
   category    String // alquiler, servicios, personal, transporte, limpieza, marketing, otros
   description String   @default("")
-  amount      Float
+  amount      Decimal  @db.Decimal(12, 2)
   date        DateTime @default(now())
   recurring   Boolean  @default(false)
   tenantId    String
@@ -959,7 +1002,7 @@ model Bundle {
   id          String   @id @default(cuid())
   name        String
   description String   @default("")
-  price       Float // bundle price (usually less than sum of items)
+  price       Decimal  @db.Decimal(12, 2) // bundle price (usually less than sum of items)
   image       String   @default("")
   active      Boolean  @default(true)
   tenantId    String
@@ -1028,10 +1071,31 @@ model AdminUser {
   createdAt             DateTime  @default(now())
   updatedAt             DateTime  @updatedAt
 
+  // ── 2FA TOTP (ADR-043) ──────────────────────────────────────
+  totpSecret    String? // Base32-encoded TOTP secret (RFC 6238). NULL = sin 2FA configurado
+  totpEnabledAt DateTime? // Timestamp de activación. NULL = TOTP no activo aún
+
   turnos Turno[]
 
   @@unique([tenantId, username])
   @@index([tenantId])
+  @@index([totpEnabledAt])
+}
+
+// ── SuperadminUser — platform-level users (ADR-043) ──────────
+// La auth de superadmin usaba solo ADMIN_PASSWORD env + session cookie.
+// Ahora persistimos el user con TOTP obligatorio para platform access.
+model SuperadminUser {
+  id            String    @id @default(cuid())
+  username      String    @unique
+  passwordHash  String
+  totpSecret    String? // Base32-encoded TOTP secret (RFC 6238)
+  totpEnabledAt DateTime?
+  lastLoginAt   DateTime?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  @@index([username])
 }
 
 // ─── WhatsApp Notification Log ──────────────────────────
@@ -1387,7 +1451,7 @@ model Batch {
   supplierName    String   @default("")
   entryDate       DateTime
   expiryDate      DateTime
-  costUnit        Float    @default(0)
+  costUnit        Decimal  @default(0) @db.Decimal(12, 2)
   notes           String   @default("")
   productId       Int? // FK to Product catalogue (optional, backward compat)
   warehouseId     String? // FK to Warehouse where this batch is stored
@@ -1455,7 +1519,7 @@ model ABTestEvent {
   variantId String
   visitorId String // anonymous cookie or phone
   event     String // "impression" | "conversion"
-  value     Float? // optional conversion value
+  value     Decimal? @db.Decimal(12, 2) // optional conversion value
   tenantId  String
   createdAt DateTime @default(now())
 
@@ -1536,6 +1600,18 @@ model CronDeadLetter {
   createdAt DateTime @default(now())
 
   @@index([jobName, createdAt])
+}
+
+model CronHealthLog {
+  id         String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  jobName    String
+  status     String
+  durationMs Int
+  error      String?
+  createdAt  DateTime @default(now())
+
+  @@index([jobName, createdAt])
+  @@index([createdAt])
 }
 
 // ─── Warehouses ─────────────────────────────────────────
@@ -1661,7 +1737,7 @@ model Campaign {
   delivered     Int       @default(0)
   opened        Int       @default(0)
   conversions   Int       @default(0)
-  revenue       Float     @default(0)
+  revenue       Decimal   @default(0) @db.Decimal(12, 2)
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
 
@@ -1676,8 +1752,8 @@ model CommissionRule {
   tenantId  String
   cashierId String // matches adminUser.username
   label     String   @default("") // e.g. "Nivel base", "Objetivo Q1"
-  minSales  Float    @default(0) // minimum revenue to qualify
-  maxSales  Float? // null = no upper limit
+  minSales  Decimal  @default(0) // minimum revenue to qualify @db.Decimal(12, 2)
+  maxSales  Decimal? @db.Decimal(12, 2) // null = no upper limit
   rate      Float    @default(0) // commission % applied to revenue
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -2239,7 +2315,7 @@ model DiscountRule {
   id          String   @id @default(cuid())
   nombre      String
   tipo        String // porcentaje, 2x1, 3x2, combo, monto_fijo
-  valor       Float    @default(0)
+  valor       Decimal  @default(0) @db.Decimal(12, 2)
   categorias  String   @default("[]") // JSON array
   condicion   String?
   fechaInicio DateTime
@@ -2341,6 +2417,8 @@ model Store {
   banner              String?
   category            String               @default("bodega")
   zone                String?
+  lat                 Float?
+  lng                 Float?
   rating              Float                @default(0)
   reviewCount         Int                  @default(0)
   isPublished         Boolean              @default(false)
@@ -2390,8 +2468,8 @@ model StoreProduct {
   store               Store                @relation(fields: [storeId], references: [id])
   productId           Int
   product             Product              @relation(fields: [productId], references: [id])
-  retailPrice         Float
-  wholesalePrice      Float?
+  retailPrice         Decimal              @db.Decimal(12, 2)
+  wholesalePrice      Decimal?             @db.Decimal(12, 2)
   minOrderQty         Int                  @default(1)
   isActive            Boolean              @default(true)
   volumePricingTiers  Json? // [{ minQty: 10, discount: 5 }, ...]
@@ -2411,7 +2489,7 @@ model DeliveryPartner {
   vehicleType String               @default("moto")
   isActive    Boolean              @default(true)
   rating      Float                @default(5.0)
-  fee         Float                @default(5.0)
+  fee         Decimal              @default(5.0) @db.Decimal(12, 2)
   notes       String? // JSON: { notifyWhatsApp, notifyEmail, notifyUrgent }
   tenantId    String
   createdAt   DateTime             @default(now())
@@ -2427,7 +2505,7 @@ model DeliveryAssignment {
   partnerId   String
   partner     DeliveryPartner @relation(fields: [partnerId], references: [id])
   status      String          @default("assigned")
-  fee         Float
+  fee         Decimal         @db.Decimal(12, 2)
   pickedUpAt  DateTime?
   deliveredAt DateTime?
   notes       String?
@@ -2598,8 +2676,8 @@ model WholesaleOrder {
   buyerTenantId  String
   sellerTenantId String
   status         String               @default("pending")
-  total          Float
-  commission     Float                @default(0)
+  total          Decimal              @db.Decimal(12, 2)
+  commission     Decimal              @default(0) @db.Decimal(12, 2)
   notes          String?
   createdAt      DateTime             @default(now())
   updatedAt      DateTime             @updatedAt
@@ -2616,8 +2694,8 @@ model WholesaleOrderItem {
   productId        Int
   name             String
   quantity         Int
-  unitPrice        Float
-  total            Float
+  unitPrice        Decimal        @db.Decimal(12, 2)
+  total            Decimal        @db.Decimal(12, 2)
   appliedDiscount  Float          @default(0) // porcentaje de descuento por volumen aplicado
 
   @@index([wholesaleOrderId])
@@ -2645,7 +2723,7 @@ model CommissionLedger {
   storeId   String?
   partnerId String?
   type      String
-  amount    Float
+  amount    Decimal   @db.Decimal(12, 2)
   rate      Float
   status    String    @default("pending")
   settledAt DateTime?
@@ -2729,9 +2807,9 @@ model SunatInvoice {
   number       Int // correlativo
   customerRuc  String? // RUC del receptor (solo facturas)
   customerName String // nombre/razón social del receptor
-  subtotal     Float // monto gravado (sin IGV)
-  igv          Float // monto IGV
-  total        Float // total con IGV
+  subtotal     Decimal   @db.Decimal(12, 2) // monto gravado (sin IGV)
+  igv          Decimal   @db.Decimal(12, 2) // monto IGV
+  total        Decimal   @db.Decimal(12, 2) // total con IGV
   xmlContent   String? // XML UBL 2.1 generado (texto)
   cdrResponse  String? // CDR XML devuelto por SUNAT
   sunatStatus  String    @default("pending") // pending | accepted | rejected | voided
@@ -2816,15 +2894,15 @@ model CreditProfile {
   tenantId         String
   customerId       String
   creditScore      Int      @default(0) // 0-1000
-  creditLimit      Float    @default(0) // monto máximo de crédito en PEN
-  usedCredit       Float    @default(0) // crédito utilizado actualmente
-  availableCredit  Float    @default(0) // creditLimit - usedCredit
+  creditLimit      Decimal  @default(0) // monto máximo de crédito en PEN @db.Decimal(12, 2)
+  usedCredit       Decimal  @default(0) // crédito utilizado actualmente @db.Decimal(12, 2)
+  availableCredit  Decimal  @default(0) // creditLimit - usedCredit @db.Decimal(12, 2)
   riskLevel        String   @default("none") // none | low | medium | high
   totalLoans       Int      @default(0) // total de préstamos dados
   paidOnTime       Int      @default(0) // pagados a tiempo
   paidLate         Int      @default(0) // pagados tarde
   defaulted        Int      @default(0) // impagos
-  avgTicket        Float    @default(0) // ticket promedio de compra
+  avgTicket        Decimal  @default(0) // ticket promedio de compra @db.Decimal(12, 2)
   purchaseFreqDays Float? // frecuencia de compra en días
   lastScoreUpdate  DateTime @default(now())
   isActive         Boolean  @default(true)
@@ -2832,6 +2910,7 @@ model CreditProfile {
   updatedAt        DateTime @updatedAt
 
   installments CreditInstallment[]
+  scoreHistory CreditScoreHistory[]
 
   @@unique([tenantId, customerId])
   @@index([tenantId])
@@ -2843,11 +2922,11 @@ model CreditInstallment {
   tenantId          String
   creditProfileId   String
   orderId           String? // orden que generó este crédito
-  totalAmount       Float // monto total del crédito
+  totalAmount       Decimal  @db.Decimal(12, 2) // monto total del crédito
   installments      Int // número de cuotas (2, 3, 4)
-  installmentAmount Float // monto por cuota
+  installmentAmount Decimal  @db.Decimal(12, 2) // monto por cuota
   interestRate      Float    @default(0) // tasa de interés mensual (ej: 0.05 = 5%)
-  paidAmount        Float    @default(0)
+  paidAmount        Decimal  @default(0) @db.Decimal(12, 2)
   paidInstallments  Int      @default(0)
   status            String   @default("active") // active | paid | overdue | defaulted
   nextDueDate       DateTime
@@ -2858,6 +2937,57 @@ model CreditInstallment {
   @@index([tenantId])
   @@index([creditProfileId])
   @@index([status, nextDueDate])
+}
+
+// ─── Credit Score History (Fiado Digital Phase 1) ─────────────────────────────
+// Append-only timeline of credit score snapshots. Used for transparency
+// (customer sees "your score went from X to Y") and analytics.
+// ADR-021 §3: immutable, tenant-isolated, write-only after creation.
+model CreditScoreHistory {
+  id                          String   @id @default(cuid())
+  tenantId                    String
+  customerId                  String
+  creditProfileId             String
+  score                       Int // 0-1000 at snapshot time
+  creditLimit                 Decimal  @db.Decimal(12, 2)
+  riskLevel                   String // none | low | medium | high
+  // Breakdown at snapshot time (for transparency explainability)
+  breakdownPurchaseHistory    Int      @default(0)
+  breakdownPaymentPunctuality Int      @default(0)
+  breakdownAvgTicket          Int      @default(0)
+  breakdownSeniority          Int      @default(0)
+  breakdownLoyaltyPoints      Int      @default(0)
+  // What triggered this snapshot
+  trigger                     String   @default("manual") // manual | weekly_recalc | payment | fiado_close
+  createdAt                   DateTime @default(now())
+
+  creditProfile CreditProfile @relation(fields: [creditProfileId], references: [id])
+
+  @@index([tenantId, customerId])
+  @@index([creditProfileId, createdAt])
+  @@index([createdAt])
+}
+
+// ─── Credit Reminder (Fiado Digital Phase 2) ──────────────────────────────────
+// Idempotent reminder tracking. Each (fiadoId, stage, date) combination
+// can only produce one reminder. Prevents double-sends on cron retries.
+// ADR-021 §4: stages escalate T-3 → T-1 → T0 → T+1 → T+7 → T+30.
+model CreditReminder {
+  id             String   @id @default(cuid())
+  tenantId       String
+  fiadoId        String
+  customerId     String
+  stage          String // pre_3d | pre_1d | due_day | post_1d | post_7d | post_30d
+  channel        String   @default("whatsapp") // whatsapp | notification | sms
+  message        String   @db.Text
+  sentAt         DateTime @default(now())
+  // Idempotency: unique constraint ensures one reminder per fiado+stage+day
+  idempotencyKey String   @unique // format: {fiadoId}:{stage}:{YYYY-MM-DD}
+
+  @@index([tenantId])
+  @@index([fiadoId])
+  @@index([customerId])
+  @@index([sentAt])
 }
 
 // ─── AI Demand Forecasting ───────────────────────────────
@@ -2887,8 +3017,8 @@ model SupplierPriceVersion {
   supplierId    String
   productName   String
   sku           String?
-  oldPrice      Float
-  newPrice      Float
+  oldPrice      Decimal  @db.Decimal(12, 2)
+  newPrice      Decimal  @db.Decimal(12, 2)
   tenantId      String
   effectiveDate DateTime @default(now())
   createdAt     DateTime @default(now())
@@ -2986,7 +3116,7 @@ model ProductAnalytics {
   clicks      Int      @default(0)
   addsToCart  Int      @default(0)
   conversions Int      @default(0)
-  revenue     Float    @default(0)
+  revenue     Decimal  @default(0) @db.Decimal(12, 2)
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
@@ -3100,4 +3230,188 @@ model SearchSuggestion {
   @@index([tenantId])
   @@index([tenantId, normalizedQuery])
   @@index([lastSearchedAt])
+}
+
+// ─── Roadmap Item Status (Master Roadmap 2026-04-09) ─────
+// Estado mutable de los 84 items del master roadmap.
+// El contenido vive en lib/roadmap/items.ts (estático en código).
+// Este modelo solo guarda el estado (planned/in_progress/done/blocked/skipped),
+// progreso 0-100, notas y auditoría. Es PLATFORM-LEVEL (sin tenantId).
+model RoadmapItemStatus {
+  id          String    @id @default(cuid())
+  itemId      String    @unique // slug que matchea RoadmapItem.id en lib/roadmap/items.ts
+  status      String    @default("planned") // "planned" | "in_progress" | "done" | "blocked" | "skipped"
+  progress    Int       @default(0) // 0-100
+  startedAt   DateTime?
+  completedAt DateTime?
+  notes       String? // historial de notas (append-only con timestamps inline)
+  updatedBy   String? // username del superadmin que hizo la última mutación
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  @@index([status])
+  @@index([updatedAt])
+}
+
+/// ─────────────────────────────────────────────────────────────────────────────
+/// PlatformSetting — global platform-level key/value store (NO tenantId).
+/// Single source of truth for plan prices, maintenance mode, feature flags, etc.
+/// Referenced by lib/db/platform-settings.db.ts + lib/plans.ts (getPlanPrice).
+/// Fix del bug MRR fake 2026-04-09 — ver docs/research/superadmin-improvements-2026-04-09.md
+/// ─────────────────────────────────────────────────────────────────────────────
+model PlatformSetting {
+  key       String   @id
+  value     Json
+  updatedAt DateTime @updatedAt
+  updatedBy String?
+}
+
+/// ─────────────────────────────────────────────────────────────────────────────
+/// TenantFeatureFlag — per-tenant DB overrides for feature flags.
+/// Allows toggling features at the tenant level without env var changes.
+/// Referenced by lib/feature-flags.ts (isFeatureEnabled with DB fallback).
+/// ─────────────────────────────────────────────────────────────────────────────
+model TenantFeatureFlag {
+  id        String   @id @default(cuid())
+  tenantId  String
+  flagKey   String
+  enabled   Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  tenant Tenant @relation(fields: [tenantId], references: [id])
+
+  @@unique([tenantId, flagKey])
+  @@index([tenantId])
+}
+
+/// ─────────────────────────────────────────────────────────────────────────────
+/// MarketplaceAbandonedCart — carts abandoned during marketplace checkout.
+/// Used by the cron job to send WhatsApp recovery messages.
+/// Referenced by lib/db/marketplace.db.ts (MarketplaceAbandonedCartsDB).
+/// ─────────────────────────────────────────────────────────────────────────────
+model MarketplaceAbandonedCart {
+  id              String    @id @default(cuid())
+  storeSlug       String
+  customerName    String
+  customerPhone   String
+  itemsJson       String /// JSON array of {storeProductId, productId, name, quantity, price, unit}
+  total           Float
+  recovered       Boolean   @default(false)
+  convertedAt     DateTime?
+  reminderSentAt  DateTime?
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  @@index([storeSlug])
+  @@index([customerPhone])
+  @@index([recovered, reminderSentAt, createdAt])
+}
+
+/// ─────────────────────────────────────────────────────────────────────────────
+/// TenantStorePage — customización de la página pública individual por tienda.
+/// Una fila por tenant. Controla tema, hero, about, SEO y estado publicado.
+/// Referenciado por lib/db/store-page.db.ts (StorePageDB).
+/// Página pública: /t/[slug] (server component con "use cache" + cacheTag).
+/// ─────────────────────────────────────────────────────────────────────────────
+model TenantStorePage {
+  id               String   @id @default(cuid())
+  tenantId         String   @unique
+  tenant           Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  published        Boolean  @default(true)
+  heroTitle        String?
+  heroSubtitle     String?
+  heroImageUrl     String?
+  heroCtaLabel     String?
+  heroCtaUrl       String?
+  primaryColor     String   @default("#00B4A6")
+  accentColor      String   @default("#f4a261")
+  aboutTitle       String?
+  aboutBody        String?
+  whatsappPhone    String?
+  contactEmail     String?
+  address          String?
+  metaTitle        String?
+  metaDescription  String?
+  ogImageUrl       String?
+  footerHtml       String?
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  @@index([tenantId])
+}
+
+/// ─────────────────────────────────────────────────────────────────────────────
+/// TenantPageProductOverride — override de producto para la página individual.
+/// Permite al dueño elegir qué productos del inventario aparecen, fijar precio
+/// exclusivo (menor al marketplace) y destacarlos. NO afecta marketplace general.
+/// ─────────────────────────────────────────────────────────────────────────────
+model TenantPageProductOverride {
+  id              String   @id @default(cuid())
+  tenantId        String
+  tenant          Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  productId       Int
+  product         Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  exclusivePrice  Decimal? @db.Decimal(12, 2)
+  featured        Boolean  @default(false)
+  sortOrder       Int      @default(0)
+  badge           String?
+  visible         Boolean  @default(true)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@unique([tenantId, productId])
+  @@index([tenantId])
+  @@index([tenantId, visible, featured])
+  @@index([productId])
+}
+
+/// ─────────────────────────────────────────────────────────────────────────────
+/// TenantPagePromotion — promociones exclusivas de la página individual.
+/// Scope limitado: NO aparecen en marketplace ni en admin general de promos.
+/// discountType: "percent" | "amount" | "fixed"
+/// ─────────────────────────────────────────────────────────────────────────────
+model TenantPagePromotion {
+  id              String    @id @default(cuid())
+  tenantId        String
+  tenant          Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  title           String
+  description     String?
+  discountType    String    @default("percent")
+  discountValue   Decimal   @db.Decimal(12, 2)
+  bannerImageUrl  String?
+  ctaLabel        String?
+  ctaUrl          String?
+  startAt         DateTime?
+  endAt           DateTime?
+  active          Boolean   @default(true)
+  position        Int       @default(0)
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  @@index([tenantId])
+  @@index([tenantId, active, startAt, endAt])
+}
+
+/// ─────────────────────────────────────────────────────────────────────────────
+/// TenantPageVisit — evento analítico de visita a la página individual.
+/// Trackea visitas (pageview) y conversiones (linked orderId) por tenant.
+/// Write-heavy: usar índice compuesto para queries de agregado.
+/// ─────────────────────────────────────────────────────────────────────────────
+model TenantPageVisit {
+  id         String   @id @default(cuid())
+  tenantId   String
+  tenant     Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  sessionId  String?
+  referrer   String?
+  utmSource  String?
+  userAgent  String?
+  ipHash     String?
+  path       String?
+  converted  Boolean  @default(false)
+  orderId    String?
+  visitedAt  DateTime @default(now())
+
+  @@index([tenantId, visitedAt])
+  @@index([tenantId, converted])
+  @@index([sessionId])
 }

@@ -3,6 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { timingSafeCompare } from "@/lib/timing-safe";
 import { toErrorPayload, newTraceId } from "@/lib/api-error";
 import { logger } from "@/lib/logger";
+import { toNumOrZero } from "@/lib/decimal-utils";
 
 /**
  * GET /api/cron/settle-commissions
@@ -41,7 +42,7 @@ export async function GET(req: NextRequest) {
 
     const ids = pending.map((c) => c.id);
     const totalAmount = Math.round(
-      pending.reduce((sum, c) => sum + c.amount, 0) * 100,
+      pending.reduce((sum, c) => sum + toNumOrZero(c.amount), 0) * 100,
     ) / 100;
 
     // Marcar como "settled"

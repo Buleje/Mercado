@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback, useMemo } from "react";
+import { useState, useEffect, useCallback } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import {
@@ -142,7 +142,7 @@ export default function ProductDetailClient({ product }: ProductDetailClientProp
   const [restockPhone, setRestockPhone] = useState("");
   const [restockSubmitted, setRestockSubmitted] = useState(() => {
     if (typeof window === "undefined") return false;
-    try { return !!localStorage.getItem(`bsm-restock-${product.id}`); } catch { return false; }
+    try { return !!localStorage.getItem(`buleje-restock-${product.id}`); } catch { return false; }
   });
   const [restockLoading, setRestockLoading] = useState(false);
 
@@ -158,7 +158,7 @@ export default function ProductDetailClient({ product }: ProductDetailClientProp
       });
       if (res.ok) {
         setRestockSubmitted(true);
-        localStorage.setItem(`bsm-restock-${product.id}`, "1");
+        localStorage.setItem(`buleje-restock-${product.id}`, "1");
       }
     } catch { /* silent */ }
     setRestockLoading(false);
@@ -231,12 +231,12 @@ export default function ProductDetailClient({ product }: ProductDetailClientProp
   // Track recently viewed
   useEffect(() => {
     try {
-      const key = "bsm-recently-viewed";
+      const key = "buleje-recently-viewed";
       const saved: Product[] = JSON.parse(localStorage.getItem(key) || "[]");
       const filtered = saved.filter((p: Product) => p.id !== product.id);
       filtered.unshift(product);
       localStorage.setItem(key, JSON.stringify(filtered.slice(0, 12)));
-      window.dispatchEvent(new Event("bsm:productViewed"));
+      window.dispatchEvent(new Event("buleje:productViewed"));
     } catch {}
   }, [product]);
 
@@ -251,6 +251,21 @@ export default function ProductDetailClient({ product }: ProductDetailClientProp
     trackAddToCart(product.id);
     addItem({ ...product, price: effectivePrice });
     showToast(product.name, product.image);
+  };
+
+  const handleBulkAdd = (targetQty: number) => {
+    if (isOutOfStock) return;
+    const effectivePrice = variantFinalPrice ?? product.price;
+    const currentQty = cartItem?.quantity ?? 0;
+    const maxStock = product.stock ?? 999;
+    const safeQty = Math.min(targetQty, maxStock);
+    if (safeQty <= currentQty) return;
+    // Add the difference to reach target quantity
+    for (let i = currentQty; i < safeQty; i++) {
+      addItem({ ...product, price: effectivePrice });
+    }
+    if (currentQty === 0) trackAddToCart(product.id);
+    showToast(`${safeQty}x ${product.name}`, product.image);
   };
 
   const handleShare = async () => {
@@ -390,16 +405,20 @@ export default function ProductDetailClient({ product }: ProductDetailClientProp
                     "inline-block mt-3 text-xs font-semibold px-3 py-1 rounded-full",
                     stock <= 0
                       ? "bg-red-50 text-red-500 dark:bg-red-500/10"
-                      : stock <= stockMin
-                        ? "bg-amber-50 text-amber-600 dark:bg-amber-500/10"
-                        : "bg-emerald-50 text-emerald-600 dark:bg-emerald-500/10",
+                      : stock <= 5
+                        ? "bg-red-50 text-red-600 dark:bg-red-500/15 animate-pulse font-bold"
+                        : stock <= stockMin
+                          ? "bg-amber-50 text-amber-600 dark:bg-amber-500/10"
+                          : "bg-emerald-50 text-emerald-600 dark:bg-emerald-500/10",
                   )}
                 >
                   {stock <= 0
                     ? "Agotado"
-                    : stock <= stockMin
-                      ? `¡Solo quedan ${stock}!`
-                      : `${stock} en stock`}
+                    : stock <= 5
+                      ? `Solo quedan ${stock} — ¡No te quedes sin el tuyo!`
+                      : stock <= stockMin
+                        ? `¡Solo quedan ${stock}!`
+                        : `${stock} en stock`}
                 </span>
               )}
               <div className="mt-3">
@@ -557,6 +576,35 @@ export default function ProductDetailClient({ product }: ProductDetailClientProp
                   </span>
                 </div>
               )}
+            </div>
+
+            {/* Quick quantity buttons — bulk buy shortcuts */}
+            {!isOutOfStock && (
+              <div className="flex items-center gap-2">
+                <span className="text-xs text-slate-400">Comprar:</span>
+                {[2, 6, 12].map((n) => {
+                  const maxStock = product.stock ?? 999;
+                  if (n > maxStock) return null;
+                  const isActive = qty >= n;
+                  return (
+                    <button
+                      key={n}
+                      onClick={() => handleBulkAdd(n)}
+                      className={`px-3 py-1.5 rounded-lg text-xs font-medium border transition-colors ${
+                        isActive
+                          ? "bg-emerald-50 border-emerald-300 text-emerald-700"
+                          : "border-slate-200 text-slate-500 hover:border-emerald-300 hover:text-emerald-600"
+                      }`}
+                    >
+                      {n}x — S/{(product.price * n).toFixed(2)}
+                    </button>
+                  );
+                })}
+              </div>
+            )}
+
+            {/* Action buttons row */}
+            <div className="flex items-center gap-2">
               <button
                 onClick={() => toggleFav(String(product.id))}
                 className={cn(

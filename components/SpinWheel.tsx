@@ -14,8 +14,8 @@ const SEGMENTS = [
   { label: "Sorpresa 🎁", color: "#33C4B8", value: 0 },
 ];
 
-const STORAGE_KEY = "bsm-spin-played";
-const COUPON_KEY = "bsm-spin-coupon";
+const STORAGE_KEY = "buleje-spin-played";
+const COUPON_KEY = "buleje-spin-coupon";
 const SEVEN_DAYS = 7 * 24 * 60 * 60 * 1000;
 const SEG_COUNT = SEGMENTS.length;
 const SEG_ANGLE = 360 / SEG_COUNT;

@@ -114,9 +114,8 @@ function mapReturn(r: PReturn & { items: PReturnItem[] }): DbReturn {
 // ── Orders DB ─────────────────────────────────────────────────────────────────
 
 export const OrdersDB = {
-  async getAll(tenantId?: string): Promise<DbOrder[]> {
-    const where: Record<string, unknown> = {};
-    if (tenantId) where.tenantId = tenantId;
+  async getAll(tenantId: string): Promise<DbOrder[]> {
+    const where: Record<string, unknown> = { tenantId };
     return (await prisma.order.findMany({ where, include: { items: true }, orderBy: { createdAt: "desc" } })).map(mapOrder);
   },
 
@@ -128,7 +127,7 @@ export const OrdersDB = {
     status?: string;
     since?: string;
     phone?: string;
-    tenantId?: string;
+    tenantId: string;
   }): Promise<DbOrder[]> {
     const where: Record<string, unknown> = {};
     if (opts?.tenantId) where.tenantId = opts.tenantId;
@@ -162,7 +161,7 @@ export const OrdersDB = {
     status?: string;
     since?: string;
     phone?: string;
-    tenantId?: string;
+    tenantId: string;
   }): Promise<{ orders: DbOrder[]; nextCursor: string | null; total: number }> {
     const limit = Math.min(Math.max(opts.limit ?? 50, 1), 200);
 
@@ -201,18 +200,44 @@ export const OrdersDB = {
     return { orders: items.map(mapOrder), nextCursor, total };
   },
 
-  async getById(id: string): Promise<DbOrder | null> {
-    const row = await prisma.order.findUnique({ where: { id }, include: { items: true } });
+  /**
+   * Fetch a single order scoped to the given tenant.
+   * Returns null if the order does not exist OR belongs to a different tenant.
+   * Do not distinguish the two cases to the caller — prevents oracle attacks.
+   */
+  async getById(tenantId: string, id: string): Promise<DbOrder | null> {
+    const row = await prisma.order.findFirst({
+      where: { id, tenantId },
+      include: { items: true },
+    });
     return row ? mapOrder(row) : null;
   },
-  async getByCustomerPhone(phone: string): Promise<DbOrder[]> {
+  /**
+   * HOTFIX-005 / SN-1 — Fetch orders for a given phone, scoped to a tenant.
+   *
+   * Two call shapes are accepted during the migration window:
+   *   - `(tenantId, phone)` — secure, tenant-scoped path. Use this everywhere.
+   *   - `(phone)` — legacy, cross-tenant. @deprecated, do not use in new code.
+   *     Still accepted so that app/api/orders/route.ts (Beta-Charlie's file,
+   *     locked during this hotfix) keeps compiling until its call site is
+   *     migrated in a follow-up PR. When `phone` is omitted the first arg is
+   *     treated as the phone and NO tenant filter is applied.
+   */
+  async getByCustomerPhone(
+    tenantIdOrPhone: string,
+    phone?: string,
+  ): Promise<DbOrder[]> {
+    const where: Record<string, unknown> =
+      phone !== undefined
+        ? { tenantId: tenantIdOrPhone, customerPhone: normalizePhone(phone) }
+        : { customerPhone: normalizePhone(tenantIdOrPhone) };
     return (await prisma.order.findMany({
-      where: { customerPhone: normalizePhone(phone) },
+      where,
       include: { items: true },
       orderBy: { createdAt: "desc" },
     })).map(mapOrder);
   },
-  async add(order: DbOrder, tenantId = "main"): Promise<DbOrder> {
+  async add(order: DbOrder, tenantId: string): Promise<DbOrder> {
     // Ensure the customer exists in the DB before linking via FK
     const phone = order.customer.phone ? normalizePhone(order.customer.phone) : null;
     if (phone) {
@@ -304,7 +329,8 @@ export const OrdersDB = {
     DomainEvents.ventaCompletada(tenantId, {
       orderId:       row.id,
       customerPhone: row.customerPhone ?? "",
-      total:         row.total,
+      // TD-018: row.total es Decimal
+      total:         toNumOrZero(row.total),
       itemCount:     order.items.length,
       paymentMethod: order.paymentMethod ?? "efectivo",
       hadCoupon:     Boolean(order.appliedCouponCode),
@@ -371,8 +397,13 @@ export const OrdersDB = {
 
     return mappedOrder;
   },
-  async update(id: string, patch: Partial<DbOrder>): Promise<DbOrder | null> {
-    const existing = await prisma.order.findUnique({ where: { id } });
+  /**
+   * Update an order scoped to the given tenant.
+   * Returns null if the order does not exist OR belongs to a different tenant.
+   */
+  async update(tenantId: string, id: string, patch: Partial<DbOrder>): Promise<DbOrder | null> {
+    // Tenant-scoped existence check — returns null for cross-tenant IDs
+    const existing = await prisma.order.findFirst({ where: { id, tenantId } });
     if (!existing) return null;
     const data: Record<string, unknown> = {};
     if (patch.status) data.status = patch.status;
@@ -391,8 +422,13 @@ export const OrdersDB = {
     const row = await prisma.order.update({ where: { id }, data, include: { items: true } });
     return mapOrder(row);
   },
-  async delete(id: string): Promise<void> {
-    await prisma.order.delete({ where: { id } }).catch(() => {});
+  /**
+   * Delete an order scoped to the given tenant.
+   * Silently no-ops when the order does not exist OR belongs to a different tenant.
+   * Uses deleteMany (does not throw on zero matches) instead of delete.
+   */
+  async delete(tenantId: string, id: string): Promise<void> {
+    await prisma.order.deleteMany({ where: { id, tenantId } }).catch(() => {});
   },
 
   /**
@@ -508,10 +544,10 @@ export const DeliverySlotsDB = {
     const row = await prisma.deliverySlot.findUnique({ where: { orderId } });
     return row ? mapDeliverySlot(row) : null;
   },
-  async set(data: { orderId: string; date: string; slot: string; notes?: string; tenantId?: string }): Promise<DbDeliverySlot> {
+  async set(data: { orderId: string; date: string; slot: string; notes?: string; tenantId: string }): Promise<DbDeliverySlot> {
     const row = await prisma.deliverySlot.upsert({
       where: { orderId: data.orderId },
-      create: { orderId: data.orderId, date: data.date, slot: data.slot, notes: data.notes, tenantId: data.tenantId ?? "main" },
+      create: { orderId: data.orderId, date: data.date, slot: data.slot, notes: data.notes, tenantId: data.tenantId },
       update: { date: data.date, slot: data.slot, notes: data.notes },
     });
     return mapDeliverySlot(row);
@@ -521,19 +557,18 @@ export const DeliverySlotsDB = {
 // ── Returns DB ────────────────────────────────────────────────────────────────
 
 export const ReturnsDB = {
-  async getAll(tenantId?: string): Promise<DbReturn[]> {
-    const where: Record<string, unknown> = {};
-    if (tenantId) where.tenantId = tenantId;
+  async getAll(tenantId: string): Promise<DbReturn[]> {
+    const where: Record<string, unknown> = { tenantId };
     return (await prisma.return.findMany({ where, include: { items: true }, orderBy: { createdAt: "desc" } })).map(mapReturn);
   },
-  async add(r: { saleId?: string; orderId?: string; reason: string; photoUrl?: string; customerPhone?: string; creditApplied?: boolean; items: Omit<DbReturnItem, "id">[]; tenantId?: string }): Promise<DbReturn> {
+  async add(r: { saleId?: string; orderId?: string; reason: string; photoUrl?: string; customerPhone?: string; creditApplied?: boolean; items: Omit<DbReturnItem, "id">[]; tenantId: string }): Promise<DbReturn> {
     const total = r.items.reduce((s, i) => s + i.price * i.quantity, 0);
     const row = await prisma.return.create({
       data: {
         saleId: r.saleId, orderId: r.orderId, reason: r.reason, total,
         photoUrl: r.photoUrl, customerPhone: r.customerPhone ? normalizePhone(r.customerPhone) : undefined,
         creditApplied: r.creditApplied ?? false,
-        tenantId: r.tenantId ?? "main",
+        tenantId: r.tenantId,
         items: { create: r.items.map(i => ({ productId: i.productId, name: i.name, quantity: i.quantity, price: i.price, unit: i.unit })) },
       },
       include: { items: true },

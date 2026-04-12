@@ -24,7 +24,7 @@ export default function InstallPrompt() {
     }
 
     // Check if user already dismissed the prompt
-    const dismissed = localStorage.getItem("bsm-install-dismissed");
+    const dismissed = localStorage.getItem("buleje-install-dismissed");
     if (dismissed === "1") {
       return;
     }
@@ -85,13 +85,6 @@ export default function InstallPrompt() {
     // Wait for the user's response
     const { outcome } = await deferredPrompt.userChoice;
 
-    if (process.env.NODE_ENV === "development") {
-      if (outcome === "accepted") {
-        console.log("[PWA] User accepted the install prompt");
-      } else {
-        console.log("[PWA] User dismissed the install prompt");
-      }
-    }
 
     // Clear the prompt
     setDeferredPrompt(null);
@@ -100,7 +93,7 @@ export default function InstallPrompt() {
 
   const handleDismiss = () => {
     setShowPrompt(false);
-    localStorage.setItem("bsm-install-dismissed", "1");
+    localStorage.setItem("buleje-install-dismissed", "1");
   };
 
   if (!showPrompt) {

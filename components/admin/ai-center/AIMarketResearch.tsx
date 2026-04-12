@@ -315,7 +315,7 @@ Responde en español, directo, sin rodeos.`,
             )}
             title="Revisar stock, márgenes y clientes y crear alertas"
           >
-            {alertsSent ? <><Check className="w-3.5 h-3.5" /> Alertas enviadas</> : sendingAlerts ? <><Loader2 className="w-3.5 h-3.5 animate-spin" /> Analizando...</> : "🔔 Generar alertas"}
+            {alertsSent ? <><Check className="w-3.5 h-3.5" /> Alertas enviadas</> : sendingAlerts ? <><Loader2 className="w-3.5 h-3.5 animate-spin" /> Analizando...</> : "Generar alertas"}
           </button>
           {aiAvailable && (
             <button
@@ -388,7 +388,7 @@ Responde en español, directo, sin rodeos.`,
                   </div>
                   {insight.action && (
                     <div className="mt-2 px-2.5 py-1.5 rounded-lg bg-gray-50 dark:bg-gray-800 text-[10px] font-semibold text-gray-700 dark:text-gray-300">
-                      💡 Acción: {insight.action}
+                      Acción: {insight.action}
                     </div>
                   )}
                   {insight.category === "combo" && insight.comboProducts && (

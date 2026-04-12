@@ -9,7 +9,7 @@ puedes enviar un 5% → 25% → 50% → 100% con monitoreo entre cada paso.
 
 ### 1. Dashboard de Vercel
 1. Ir a [vercel.com/dashboard](https://vercel.com/dashboard)
-2. Seleccionar el proyecto **Bodega San Martín**
+2. Seleccionar el proyecto **Buleje**
 3. Settings → General → Rolling Releases
 4. Activar "Enable Rolling Releases"
 

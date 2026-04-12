@@ -1,8 +1,20 @@
 "use client";
 
 import { useState, useEffect, useCallback, useMemo, type KeyboardEvent } from "react";
-import { Search, ArrowRight, Clock, X, Command, Settings, Package, Users, Zap } from "lucide-react";
+import { Search, ArrowRight, Clock, X, Command, Settings, Package, Users, Zap, DollarSign, Receipt, ShoppingCart, BarChart2, Inbox, Star, FlaskConical, TrendingUp, RefreshCw, Tag, FileText, UserPlus, LogIn, AlertTriangle, LayoutDashboard, Truck } from "lucide-react";
 import { useRouter } from "next/navigation";
+
+// ── Tipos admin quick-actions ────────────────────────────────────────────────
+export type AdminRole = "admin" | "cajero" | "almacenero" | "vendedor" | "superadmin";
+export type AdminQuickAction = {
+  id: string;
+  label: string;
+  subtitle?: string;
+  icon: React.ReactNode;
+  href?: string;
+  action?: () => void;
+  roles: AdminRole[];
+};
 
 type SearchableItem = {
   id: string;
@@ -53,13 +65,38 @@ const ADMIN_TABS: SearchableItem[] = [
   { id: "turnos", type: "tab", title: "Turnos", category: "Navegación", href: "/admin?tab=turnos" },
 ];
 
-const QUICK_ACTIONS: SearchableItem[] = [
-  { id: "a-crear-producto", type: "action", title: "Crear producto", subtitle: "Agregar nuevo producto al inventario", category: "Acciones", href: "/admin?tab=productos" },
-  { id: "a-nueva-venta", type: "action", title: "Nueva venta", subtitle: "Abrir punto de venta", category: "Acciones", href: "/admin?tab=ventas-caja" },
-  { id: "a-abrir-turno", type: "action", title: "Abrir turno", subtitle: "Iniciar turno de caja", category: "Acciones", href: "/admin?tab=turnos" },
-  { id: "a-ver-reportes", type: "action", title: "Ver reportes", subtitle: "Reportes financieros", category: "Acciones", href: "/admin?tab=plata" },
-  { id: "a-cerrar-dia", type: "action", title: "Cerrar día", subtitle: "Cierre diario de caja", category: "Acciones", href: "/admin?tab=ventas-caja" },
+// ── Admin Quick Actions (12) — filtrables por rol ────────────────────────────
+export const ADMIN_QUICK_ACTIONS: AdminQuickAction[] = [
+  { id: "a-crear-producto",  label: "Crear producto",       subtitle: "Agregar nuevo producto al inventario",      icon: <Package    className="w-4 h-4 text-blue-500"    />, href: "/admin?tab=productos&new=1",                 roles: ["admin", "almacenero"] },
+  { id: "a-nueva-venta",     label: "Nueva venta",          subtitle: "Abrir punto de venta",                      icon: <Zap        className="w-4 h-4 text-emerald-500" />, href: "/admin?tab=ventas-caja",                     roles: ["admin", "cajero"] },
+  { id: "a-registrar-gasto", label: "Registrar gasto",      subtitle: "Ir a Mi Plata para registrar un gasto",    icon: <DollarSign className="w-4 h-4 text-red-500"     />, href: "/admin?tab=plata",                           roles: ["admin"] },
+  { id: "a-cobrar-fiado",    label: "Cobrar fiado",         subtitle: "Gestionar cuentas por cobrar",              icon: <Receipt    className="w-4 h-4 text-amber-500"   />, href: "/admin?tab=fiados",                          roles: ["admin", "cajero"] },
+  { id: "a-crear-oc",        label: "Crear OC",             subtitle: "Nueva orden de compra a proveedor",        icon: <ShoppingCart className="w-4 h-4 text-violet-500" />, href: "/admin?tab=compras",                        roles: ["admin", "almacenero"] },
+  { id: "a-abrir-turno",     label: "Abrir turno",          subtitle: "Iniciar turno de caja",                    icon: <Clock      className="w-4 h-4 text-cyan-500"     />, href: "/admin?tab=turnos",                          roles: ["admin", "cajero"] },
+  { id: "a-ver-reportes",    label: "Ver reportes",         subtitle: "Reportes financieros y analíticas",        icon: <BarChart2  className="w-4 h-4 text-indigo-500"   />, href: "/admin?tab=plata",                           roles: ["admin"] },
+  { id: "a-cerrar-dia",      label: "Cerrar día",           subtitle: "Cierre diario de caja",                    icon: <Settings   className="w-4 h-4 text-gray-500"     />, href: "/admin?tab=ventas-caja",                     roles: ["admin", "cajero"] },
+  { id: "a-pedidos-hoy",     label: "Ver pedidos hoy",      subtitle: "Pedidos recibidos en el día",              icon: <ShoppingBasketIcon className="w-4 h-4 text-orange-500" />, href: "/admin?tab=pedidos&filter=today",      roles: ["admin", "cajero", "almacenero"] },
+  { id: "a-nuevo-cliente",   label: "Nuevo cliente",        subtitle: "Registrar un nuevo cliente en el CRM",     icon: <UserPlus   className="w-4 h-4 text-teal-500"     />, href: "/admin?tab=clientes&new=1",                  roles: ["admin", "cajero"] },
+  { id: "a-soporte",         label: "Reportar bug / soporte", subtitle: "Ir a la bandeja de soporte unificada",  icon: <Inbox      className="w-4 h-4 text-pink-500"      />, href: "/admin?tab=support-inbox",                  roles: ["admin"] },
+  { id: "a-prediccion",      label: "Predicción de demanda", subtitle: "Ver forecasting de stock",               icon: <TrendingUp className="w-4 h-4 text-green-500"    />, href: "/admin?tab=forecasting",                     roles: ["admin", "almacenero"] },
 ];
+
+// Convertir a SearchableItem para el motor de búsqueda existente
+const QUICK_ACTIONS: SearchableItem[] = ADMIN_QUICK_ACTIONS.map((a) => ({
+  id: a.id,
+  type: "action" as const,
+  title: a.label,
+  subtitle: a.subtitle,
+  category: "Acciones",
+  href: a.href,
+  action: a.action,
+  icon: a.icon,
+}));
+
+// Alias para evitar conflicto de nombre con lucide-react
+function ShoppingBasketIcon({ className }: { className?: string }) {
+  return <ShoppingCart className={className} />;
+}
 
 const MAX_PER_CATEGORY = 3;
 
@@ -87,7 +124,7 @@ export default function CommandPalette() {
 
   // Load recent searches
   useEffect(() => {
-    const stored = localStorage.getItem("bsm-recent-searches");
+    const stored = localStorage.getItem("buleje-recent-searches");
     if (stored) {
       try {
         setRecentSearches(JSON.parse(stored));
@@ -99,7 +136,7 @@ export default function CommandPalette() {
     if (!q.trim()) return;
     const updated = [q, ...recentSearches.filter((s) => s !== q)].slice(0, 5);
     setRecentSearches(updated);
-    localStorage.setItem("bsm-recent-searches", JSON.stringify(updated));
+    localStorage.setItem("buleje-recent-searches", JSON.stringify(updated));
   }, [recentSearches]);
 
   const allItems = useMemo<SearchableItem[]>(() => {
@@ -172,10 +209,15 @@ export default function CommandPalette() {
     <div
       className="fixed inset-0 z-[9999] flex items-start justify-center pt-[15vh] bg-black/50 backdrop-blur-sm"
       onClick={() => setIsOpen(false)}
+      aria-hidden="true"
     >
       <div
+        role="dialog"
+        aria-modal="true"
+        aria-label="Paleta de comandos"
         className="w-full max-w-2xl mx-4 bg-white dark:bg-gray-900 rounded-2xl shadow-2xl border border-gray-200 dark:border-gray-700 overflow-hidden"
         onClick={(e) => e.stopPropagation()}
+        aria-hidden="false"
       >
         {/* Search Input */}
         <div className="flex items-center gap-3 px-5 py-4 border-b border-gray-200 dark:border-gray-700">
@@ -188,6 +230,11 @@ export default function CommandPalette() {
             placeholder="Buscar módulos, productos, acciones..."
             className="flex-1 bg-transparent text-gray-900 dark:text-white placeholder-gray-500 focus:outline-none text-base"
             autoFocus
+            aria-label="Buscar en la paleta de comandos"
+            aria-autocomplete="list"
+            aria-controls="command-palette-results"
+            role="combobox"
+            aria-expanded={flatItems.length > 0}
           />
           <div className="flex items-center gap-1.5 shrink-0">
             <kbd className="px-1.5 py-0.5 bg-gray-100 dark:bg-gray-800 rounded border border-gray-300 dark:border-gray-600 text-[10px] font-mono text-gray-500">Ctrl+K</kbd>
@@ -195,13 +242,14 @@ export default function CommandPalette() {
           <button
             onClick={() => setIsOpen(false)}
             className="p-1 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition"
+            aria-label="Cerrar paleta de comandos"
           >
             <X className="w-4 h-4 text-gray-500" />
           </button>
         </div>
 
         {/* Results */}
-        <div className="max-h-[400px] overflow-y-auto">
+        <div id="command-palette-results" className="max-h-[400px] overflow-y-auto" role="listbox" aria-label="Resultados de búsqueda">
           {!query && recentSearches.length > 0 && (
             <div className="p-2">
               <p className="text-[10px] font-bold uppercase tracking-wider text-gray-400 px-3 py-2 flex items-center gap-2">
@@ -248,6 +296,9 @@ export default function CommandPalette() {
                           : "hover:bg-gray-50 dark:hover:bg-gray-800/50"
                       }`}
                     >
+                      {item.icon && (
+                        <span className="shrink-0">{item.icon}</span>
+                      )}
                       <div className="flex-1 min-w-0">
                         <p className={`text-sm font-medium truncate ${
                           currentFlatIdx === selected

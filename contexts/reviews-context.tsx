@@ -31,7 +31,7 @@ type ReviewsCtx = {
 
 const ReviewsContext = createContext<ReviewsCtx | null>(null);
 
-const STORAGE_KEY = "bsm-reviews";
+const STORAGE_KEY = "buleje-reviews";
 
 export function ReviewsProvider({ children }: { children: ReactNode }) {
   const [reviews, setReviews] = useState<Review[]>([]);

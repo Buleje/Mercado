@@ -1,10 +1,9 @@
 "use client";
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-import { useState, useMemo } from "react";
+import { useState } from "react";
 import {
-  TrendingUp, ShoppingCart, Package, Timer, Gift, Target, ShoppingBasket,
-} from "lucide-react";
+  TrendingUp, ShoppingCart, Package, Timer, Target, ShoppingBasket } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 function fmt(n: number) { return `S/${n.toFixed(2)}`; }
@@ -34,7 +33,7 @@ function Card({ title, icon: Icon, children, action }: { title: string; icon: Re
 }
 function Empty({ text = "Sin datos en este periodo" }: { text?: string }) { return <div className="py-8 text-center text-xs text-gray-300 dark:text-muted">{text}</div>; }
 
-export default function DashboardProductosSection({ st, expandAll, products }: any) {
+export default function DashboardProductosSection({ st, expandAll, _products }: any) {
   const [topTab, setTopTab] = useState<"revenue"|"profit"|"units">("revenue");
   const topList = topTab==="revenue"?st.topRev:topTab==="profit"?st.topProfit:st.topUnits;
   const topMax = topList.length>0?Math.max(...topList.map((p: any)=>topTab==="units"?p.units:topTab==="profit"?p.profit:p.revenue)):1;
@@ -177,7 +176,7 @@ export default function DashboardProductosSection({ st, expandAll, products }: a
 
               {/* Action insights */}
               <div className="bg-blue-50 dark:bg-blue-950/30 rounded-lg p-3 text-xs">
-                <div className="font-semibold text-blue-700 dark:text-blue-400 mb-1">💡 Recomendaciones</div>
+                <div className="font-semibold text-blue-700 dark:text-blue-400 mb-1">Recomendaciones</div>
                 <ul className="space-y-0.5 text-blue-600 dark:text-blue-300 text-[10px]">
                   <li>• <strong>Clase A:</strong> Nunca dejar agotar. Prioridad en inventario y proveedores.</li>
                   <li>• <strong>Clase B:</strong> Mantener stock moderado. Revisar rotación mensual.</li>
@@ -233,7 +232,7 @@ export default function DashboardProductosSection({ st, expandAll, products }: a
                   </div>
                 ))}
                 <div className="bg-violet-50 dark:bg-violet-950/30 rounded-lg p-3 text-xs mt-1">
-                  <div className="font-semibold text-violet-700 dark:text-violet-400 mb-1">💡 Oportunidad de venta</div>
+                  <div className="font-semibold text-violet-700 dark:text-violet-400 mb-1">Oportunidad de venta</div>
                   <p className="text-violet-600 dark:text-violet-300 text-[10px]">
                     Estos productos se compran juntos frecuentemente. Crea combos o colócalos cerca en el local para impulsar ventas cruzadas.
                   </p>

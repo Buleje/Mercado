@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { requireAdmin } from "@/lib/require-admin";
 import { prisma } from "@/lib/prisma";
 import { toErrorPayload, newTraceId } from "@/lib/api-error";
+import { toNumOrZero } from "@/lib/decimal-utils";
 
 /**
  * GET /api/marketplace/analytics
@@ -165,13 +166,14 @@ export async function GET(req: NextRequest) {
     for (const row of dailySales) {
       const key = new Date(row.createdAt).toISOString().slice(0, 10);
       if (salesByDay[key]) {
-        salesByDay[key].revenue += row._sum.total ?? 0;
+        // TD-018: row._sum.total es Decimal | null
+        salesByDay[key].revenue += toNumOrZero(row._sum.total);
         salesByDay[key].orders += row._count;
       }
     }
 
-    const monthRevenue = monthOrders._sum.total ?? 0;
-    const prevMonthRevenue = prevMonthOrders._sum.total ?? 0;
+    const monthRevenue = toNumOrZero(monthOrders._sum.total);
+    const prevMonthRevenue = toNumOrZero(prevMonthOrders._sum.total);
     const revenueGrowth = prevMonthRevenue > 0
       ? Math.round(((monthRevenue - prevMonthRevenue) / prevMonthRevenue) * 100)
       : 0;
@@ -184,13 +186,14 @@ export async function GET(req: NextRequest) {
       store: {
         name: store.name,
         slug: store.slug ?? "",
-        rating: store.rating,
+        // TD-018: rating es Decimal → serializar a number
+        rating: toNumOrZero(store.rating),
         reviewCount: store.reviewCount,
       },
       pendingOrders,
       today: {
         orders: todayOrders._count,
-        revenue: todayOrders._sum.total ?? 0,
+        revenue: toNumOrZero(todayOrders._sum.total),
       },
       month: {
         orders: monthOrders._count,
@@ -200,7 +203,7 @@ export async function GET(req: NextRequest) {
       },
       week: {
         orders: weekOrders._count,
-        revenue: weekOrders._sum.total ?? 0,
+        revenue: toNumOrZero(weekOrders._sum.total),
       },
       products: {
         published: publishedProducts,
@@ -211,12 +214,14 @@ export async function GET(req: NextRequest) {
       topProducts: topProducts.map((p) => ({
         name: p.name,
         qty: p._sum?.quantity ?? 0,
-        revenue: (p._sum?.quantity ?? 0) * (p._sum?.price ?? 0),
+        // TD-018: p._sum?.price es Decimal | null
+        revenue: (p._sum?.quantity ?? 0) * toNumOrZero(p._sum?.price),
       })),
       recentOrders: recentOrders.map((o) => ({
         id: o.id,
         customerName: o.customerName,
-        total: o.total,
+        // TD-018: total es Decimal → serializar a number
+        total: toNumOrZero(o.total),
         status: o.status,
         createdAt: o.createdAt.toISOString(),
         itemsCount: o._count.items,
@@ -227,8 +232,8 @@ export async function GET(req: NextRequest) {
         orders: v.orders,
       })),
       allChannels: {
-        today: { orders: allChannelToday._count, revenue: allChannelToday._sum.total ?? 0 },
-        month: { orders: allChannelMonth._count, revenue: allChannelMonth._sum.total ?? 0 },
+        today: { orders: allChannelToday._count, revenue: toNumOrZero(allChannelToday._sum.total) },
+        month: { orders: allChannelMonth._count, revenue: toNumOrZero(allChannelMonth._sum.total) },
       },
     });
   } catch (err) {

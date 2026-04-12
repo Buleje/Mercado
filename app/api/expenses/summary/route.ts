@@ -8,7 +8,7 @@ export async function GET(req: NextRequest) {
   if (auth instanceof NextResponse) return auth;
 
   try {
-    const summary = await ExpensesDB.getSummary();
+    const summary = await ExpensesDB.getSummary(auth.tenantId);
     return NextResponse.json(summary);
   } catch (err) {
     const { payload, status } = toErrorPayload(err);

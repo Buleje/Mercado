@@ -10,13 +10,13 @@ type CalEvent = {
   assignee: string; notes: string;
 };
 
-const TYPE_CONFIG: Record<EventType, { label: string; color: string; emoji: string }> = {
-  tarea: { label: "Tarea", color: "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400 border-blue-300 dark:border-blue-700", emoji: "📋" },
-  entrega: { label: "Entrega", color: "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400 border-emerald-300 dark:border-emerald-700", emoji: "📦" },
-  pago: { label: "Pago", color: "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400 border-amber-300 dark:border-amber-700", emoji: "💰" },
-  reunion: { label: "Reunión", color: "bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400 border-purple-300 dark:border-purple-700", emoji: "🤝" },
-  recordatorio: { label: "Recordatorio", color: "bg-pink-100 text-pink-700 dark:bg-pink-900/30 dark:text-pink-400 border-pink-300 dark:border-pink-700", emoji: "🔔" },
-  promocion: { label: "Promoción", color: "bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400 border-orange-300 dark:border-orange-700", emoji: "🎯" },
+const TYPE_CONFIG: Record<EventType, { label: string; color: string }> = {
+  tarea: { label: "Tarea", color: "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400 border-blue-300 dark:border-blue-700" },
+  entrega: { label: "Entrega", color: "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400 border-emerald-300 dark:border-emerald-700" },
+  pago: { label: "Pago", color: "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400 border-amber-300 dark:border-amber-700" },
+  reunion: { label: "Reunión", color: "bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400 border-purple-300 dark:border-purple-700" },
+  recordatorio: { label: "Recordatorio", color: "bg-pink-100 text-pink-700 dark:bg-pink-900/30 dark:text-pink-400 border-pink-300 dark:border-pink-700" },
+  promocion: { label: "Promoción", color: "bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400 border-orange-300 dark:border-orange-700" },
 };
 
 /* ── Seed ── */
@@ -88,7 +88,7 @@ export default function SharedCalendarTab() {
         <button onClick={() => setTypeFilter("todas")} className={cn("px-3 py-1.5 rounded-xl text-xs font-bold transition-colors", typeFilter === "todas" ? "bg-indigo-500 text-white" : "bg-white dark:bg-card border border-gray-200 dark:border-card-border text-gray-600 dark:text-muted")}>Todos</button>
         {Object.entries(TYPE_CONFIG).map(([k, v]) => (
           <button key={k} onClick={() => setTypeFilter(k as EventType)} className={cn("px-3 py-1.5 rounded-xl text-xs font-bold transition-colors", typeFilter === k ? "bg-indigo-500 text-white" : "bg-white dark:bg-card border border-gray-200 dark:border-card-border text-gray-600 dark:text-muted")}>
-            {v.emoji} {v.label}
+            {v.label}
           </button>
         ))}
       </div>
@@ -100,7 +100,7 @@ export default function SharedCalendarTab() {
           <div className="grid grid-cols-1 md:grid-cols-3 gap-2 sm:gap-4">
             <input value={form.title} onChange={e => setForm({ ...form, title: e.target.value })} placeholder="Título" className="px-2 sm:px-4 py-1.5 sm:py-2.5 rounded-xl border-2 border-gray-200 dark:border-card-border bg-white dark:bg-card text-sm outline-none focus:border-primary md:col-span-2" />
             <select value={form.type} onChange={e => setForm({ ...form, type: e.target.value as EventType })} className="px-2 sm:px-4 py-1.5 sm:py-2.5 rounded-xl border-2 border-gray-200 dark:border-card-border bg-white dark:bg-card text-sm font-semibold outline-none focus:border-primary">
-              {Object.entries(TYPE_CONFIG).map(([k, v]) => <option key={k} value={k}>{v.emoji} {v.label}</option>)}
+              {Object.entries(TYPE_CONFIG).map(([k, v]) => <option key={k} value={k}>{v.label}</option>)}
             </select>
             <input type="date" value={form.date} onChange={e => setForm({ ...form, date: e.target.value })} className="px-2 sm:px-4 py-1.5 sm:py-2.5 rounded-xl border-2 border-gray-200 dark:border-card-border bg-white dark:bg-card text-sm outline-none focus:border-primary" />
             <input type="time" value={form.time} onChange={e => setForm({ ...form, time: e.target.value })} className="px-2 sm:px-4 py-1.5 sm:py-2.5 rounded-xl border-2 border-gray-200 dark:border-card-border bg-white dark:bg-card text-sm outline-none focus:border-primary" />
@@ -138,7 +138,7 @@ export default function SharedCalendarTab() {
                     const tc = TYPE_CONFIG[e.type];
                     return (
                       <div key={e.id} className={cn("rounded-lg border p-2 text-xs cursor-default", tc.color)}>
-                        <p className="font-bold truncate">{tc.emoji} {e.title}</p>
+                        <p className="font-bold truncate">{e.title}</p>
                         {e.time !== "00:00" && <p className="text-[10px] opacity-75 flex items-center gap-0.5"><Clock className="h-2.5 w-2.5" />{e.time}</p>}
                       </div>
                     );
@@ -166,7 +166,6 @@ export default function SharedCalendarTab() {
                 <div className={cn("w-1 h-10 rounded-full shrink-0", tc.color.split(" ")[0])} />
                 <div className="flex-1 min-w-0">
                   <div className="flex flex-wrap items-center gap-2">
-                    <span className="text-lg">{tc.emoji}</span>
                     <h4 className="font-bold text-gray-900 dark:text-foreground truncate">{e.title}</h4>
                     <span className={cn("text-[10px] font-bold px-2 py-0.5 rounded-full shrink-0", tc.color)}>{tc.label}</span>
                   </div>

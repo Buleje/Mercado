@@ -4,7 +4,7 @@
  * Edge-compatible — no Node.js-only imports.
  */
 
-const PLATFORM_COOKIE = "bsm-platform-sess";
+const PLATFORM_COOKIE = "buleje-platform-sess";
 const DURATION_MS = 8 * 60 * 60 * 1000; // 8 hours
 
 export interface PlatformSession {
@@ -13,7 +13,7 @@ export interface PlatformSession {
 }
 
 function getSecret(): string {
-  return process.env.AUTH_SECRET ?? "bsm-dev-fallback-2024-change-in-production";
+  return process.env.AUTH_SECRET ?? "buleje-dev-fallback-2024-change-in-production";
 }
 
 async function sign(secret: string, data: string): Promise<string> {

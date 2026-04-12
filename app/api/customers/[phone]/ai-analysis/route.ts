@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { CustomersDB, normalizePhone } from "@/lib/jsondb";
 import { requireAdmin } from "@/lib/require-admin";
+import { getTenantIdFromRequest } from "@/lib/tenant";
 
 const LocationSchema = z.object({
   id: z.string().min(1),
@@ -30,7 +31,7 @@ export async function GET(req: NextRequest) {
   }
 }
 
-export async function POST(req: Request) {
+export async function POST(req: NextRequest) {
   try {
     const raw = await req.json();
     const parsed = CustomerPostSchema.safeParse(raw);
@@ -56,7 +57,7 @@ export async function POST(req: Request) {
       notifOrderUpdates: true,
       notifPromotions: true,
       notifRestock: true,
-    });
+    }, getTenantIdFromRequest(req));
     return NextResponse.json(record);
   } catch {
     return NextResponse.json({ error: "invalid request" }, { status: 400 });

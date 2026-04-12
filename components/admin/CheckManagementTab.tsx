@@ -3,9 +3,7 @@
 import { useState, useEffect, useMemo } from "react";
 import {
   Wallet, Download, Search, Eye, X,
-  Calendar, AlertTriangle, Clock,
-  ArrowUpDown, Ban, Loader2, RefreshCw, CheckCircle,
-} from "lucide-react";
+  Calendar, AlertTriangle, Clock, Ban, Loader2, RefreshCw, CheckCircle } from "lucide-react";
 import { cn, exportToCSV } from "@/lib/utils";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
@@ -366,7 +364,7 @@ export default function CheckManagementTab() {
                     >
                       <Calendar className="h-3 w-3" />
                       {new Date(c.dueDate).toLocaleDateString("es-PE")}
-                      {isOverdue && " ⚠"}
+                      {isOverdue && " (vencido)"}
                     </td>
                     <td className="px-4 py-3">
                       <span

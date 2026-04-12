@@ -56,6 +56,8 @@ export type CouponState = {
 export type LoyaltyState = {
   points: number | null;
   tier: string | null;
+  /** Soles a descontar por canje de puntos (50 pts = S/1). */
+  redemptionSoles: number;
 };
 
 export type PaymentState = {
@@ -85,6 +87,7 @@ export type UiState = {
   showRefSuggestions: boolean;
   pendingOrdersCount: number;
   stockWarnings: string[];
+  hasBlockingStockError: boolean;
 };
 
 /** Estado completo del wizard. */

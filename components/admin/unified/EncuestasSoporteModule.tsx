@@ -38,11 +38,11 @@ export default function EncuestasSoporteModule() {
         activeTab={sub}
         onTabChange={setSub}
         moduleId={MODULE_ID}
-      />
-
-      {sub === "nps" && <NPSTab />}
-      {sub === "encuestas" && <SurveysTab />}
-      {sub === "soporte" && <SupportTicketsTab />}
+      >
+        {sub === "nps" && <NPSTab />}
+        {sub === "encuestas" && <SurveysTab />}
+        {sub === "soporte" && <SupportTicketsTab />}
+      </AdminTabBar>
     </div>
   );
 }

@@ -19,13 +19,17 @@ import {
   MapPin,
   Clock,
   ChevronDown,
+  FileText,
+  ThumbsUp,
+  ThumbsDown,
+  Trophy,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import AdminModuleHeader from "@/components/admin/shared/AdminModuleHeader";
 import AdminTabBar from "@/components/admin/shared/AdminTabBar";
 
 // ── Spinner compacto ──
-const Spinner = () => (
+const _Spinner = () => (
   <div className="flex items-center justify-center py-12">
     <div className="h-8 w-8 border-4 border-[#00B4A6] border-t-transparent rounded-full animate-spin" />
   </div>
@@ -100,7 +104,9 @@ const MODULE_ID = "delivery-partners";
 
 const TABS = [
   { id: "repartidores",  label: "Repartidores",  icon: Users },
+  { id: "solicitudes",   label: "Solicitudes",   icon: FileText },
   { id: "asignaciones",  label: "Asignaciones",  icon: ClipboardList },
+  { id: "ranking",       label: "Ranking",        icon: Trophy },
   { id: "permisos",      label: "Permisos",       icon: Shield },
 ];
 
@@ -826,6 +832,375 @@ function PermisosTab() {
 }
 
 // ─────────────────────────────────────────────
+// Tab: Solicitudes de repartidores
+// ─────────────────────────────────────────────
+interface DriverApplication {
+  id: string;
+  title: string;
+  body: string;
+  readAt: string | null;
+  createdAt: string;
+}
+
+function parseApplicationBody(body: string) {
+  // Format: "Name (Phone) - Zona: zone - Vehículo: type - Horario: avail"
+  const match = body.match(
+    /^(.+?)\s*\((.+?)\)\s*-\s*Zona:\s*(.+?)\s*-\s*Vehículo:\s*(.+?)\s*-\s*Horario:\s*(.+)$/
+  );
+  if (!match) return { name: body, phone: "", zone: "", vehicle: "", availability: "" };
+  return {
+    name: match[1].trim(),
+    phone: match[2].trim(),
+    zone: match[3].trim(),
+    vehicle: match[4].trim(),
+    availability: match[5].trim(),
+  };
+}
+
+const AVAILABILITY_LABELS: Record<string, string> = {
+  manana: "Mañana",
+  tarde: "Tarde",
+  noche: "Noche",
+  full: "Todo el día",
+  fines: "Fines de semana",
+};
+
+const VEHICLE_LABELS: Record<string, string> = {
+  moto: "Moto",
+  bicicleta: "Bicicleta",
+  auto: "Auto",
+  a_pie: "A pie",
+};
+
+// ─────────────────────────────────────────────
+// Ranking Tab
+// ─────────────────────────────────────────────
+interface RankingEntry {
+  id: string;
+  name: string;
+  phone: string;
+  zone: string;
+  vehicleType: string;
+  rating: number;
+  isActive: boolean;
+  baseFee: number;
+  deliveries: number;
+  pending: number;
+  avgFee: number;
+  avgTimeMin: number;
+  score: number;
+}
+
+const RANK_MEDALS = ["🥇", "🥈", "🥉"];
+
+function RankingTab() {
+  const [data, setData] = useState<RankingEntry[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [period, setPeriod] = useState<"semana" | "mes" | "todo">("mes");
+
+  const fetchRanking = useCallback((p: string) => {
+    setLoading(true);
+    fetch(`/api/delivery/ranking?period=${p}`)
+      .then((r) => (r.ok ? r.json() : { ranking: [] }))
+      .then((d) => setData(d.ranking ?? []))
+      .catch(() => setData([]))
+      .finally(() => setLoading(false));
+  }, []);
+
+  useEffect(() => { fetchRanking(period); }, [fetchRanking, period]);
+
+  const PERIODS: { id: "semana" | "mes" | "todo"; label: string }[] = [
+    { id: "semana", label: "Esta semana" },
+    { id: "mes",    label: "Este mes" },
+    { id: "todo",   label: "Todo" },
+  ];
+
+  return (
+    <div className="space-y-4">
+      {/* Period selector */}
+      <div className="flex items-center gap-2">
+        {PERIODS.map((p) => (
+          <button
+            key={p.id}
+            onClick={() => setPeriod(p.id)}
+            className={cn(
+              "px-3 py-1.5 rounded-lg text-xs font-bold transition-colors",
+              period === p.id
+                ? "bg-[#00B4A6] text-white"
+                : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+            )}
+          >
+            {p.label}
+          </button>
+        ))}
+      </div>
+
+      {loading ? (
+        <TableSkeleton />
+      ) : data.length === 0 ? (
+        <div className="text-center py-12 text-gray-400">
+          <Trophy className="h-10 w-10 mx-auto mb-2 opacity-50" />
+          <p className="text-sm">No hay datos de ranking para este periodo</p>
+        </div>
+      ) : (
+        <div className="overflow-x-auto">
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="border-b border-gray-100 text-left text-xs text-gray-500 uppercase tracking-wider">
+                <th className="pb-2 pr-2">#</th>
+                <th className="pb-2 pr-3">Repartidor</th>
+                <th className="pb-2 pr-3">Zona</th>
+                <th className="pb-2 pr-3 text-center">Rating</th>
+                <th className="pb-2 pr-3 text-center">Entregas</th>
+                <th className="pb-2 pr-3 text-center">Prom. min</th>
+                <th className="pb-2 pr-3 text-center">Prom. tarifa</th>
+                <th className="pb-2 text-center">Score</th>
+              </tr>
+            </thead>
+            <tbody>
+              {data.map((entry, idx) => (
+                <tr
+                  key={entry.id}
+                  className={cn(
+                    "border-b border-gray-50 hover:bg-gray-50/50 transition-colors",
+                    idx < 3 && "bg-amber-50/30"
+                  )}
+                >
+                  <td className="py-2.5 pr-2 font-bold text-gray-400">
+                    {idx < 3 ? RANK_MEDALS[idx] : idx + 1}
+                  </td>
+                  <td className="py-2.5 pr-3">
+                    <div className="flex items-center gap-2">
+                      <div
+                        className={cn(
+                          "h-8 w-8 rounded-full flex items-center justify-center text-xs font-bold text-white shrink-0",
+                          entry.isActive ? "bg-[#00B4A6]" : "bg-gray-300"
+                        )}
+                      >
+                        {entry.name.charAt(0).toUpperCase()}
+                      </div>
+                      <div>
+                        <p className="font-semibold text-gray-900 text-xs">{entry.name}</p>
+                        <p className="text-[10px] text-gray-400">{entry.vehicleType}</p>
+                      </div>
+                    </div>
+                  </td>
+                  <td className="py-2.5 pr-3">
+                    <span className="text-xs text-gray-600 flex items-center gap-1">
+                      <MapPin className="h-3 w-3" />
+                      {entry.zone}
+                    </span>
+                  </td>
+                  <td className="py-2.5 pr-3 text-center">
+                    <span className="flex items-center justify-center gap-0.5 text-xs font-bold text-amber-600">
+                      <Star className="h-3 w-3 fill-amber-400 text-amber-400" />
+                      {entry.rating.toFixed(1)}
+                    </span>
+                  </td>
+                  <td className="py-2.5 pr-3 text-center">
+                    <span className="text-xs font-semibold text-gray-800">{entry.deliveries}</span>
+                    {entry.pending > 0 && (
+                      <span className="ml-1 text-[10px] text-amber-500">+{entry.pending} pen.</span>
+                    )}
+                  </td>
+                  <td className="py-2.5 pr-3 text-center">
+                    <span className="flex items-center justify-center gap-0.5 text-xs text-gray-600">
+                      <Clock className="h-3 w-3" />
+                      {entry.avgTimeMin > 0 ? `${entry.avgTimeMin} min` : "—"}
+                    </span>
+                  </td>
+                  <td className="py-2.5 pr-3 text-center">
+                    <span className="text-xs font-medium text-gray-700">
+                      S/ {entry.avgFee.toFixed(2)}
+                    </span>
+                  </td>
+                  <td className="py-2.5 text-center">
+                    <span
+                      className={cn(
+                        "inline-flex items-center justify-center h-7 w-12 rounded-full text-xs font-extrabold",
+                        entry.score >= 70
+                          ? "bg-emerald-100 text-emerald-700"
+                          : entry.score >= 40
+                            ? "bg-amber-100 text-amber-700"
+                            : "bg-red-100 text-red-600"
+                      )}
+                    >
+                      {entry.score}
+                    </span>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function SolicitudesTab() {
+  const [apps, setApps] = useState<DriverApplication[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [processing, setProcessing] = useState<string | null>(null);
+  const [filter, setFilter] = useState<"pending" | "all">("pending");
+
+  const fetchApps = useCallback(() => {
+    setLoading(true);
+    fetch("/api/admin/driver-applications")
+      .then((r) => (r.ok ? r.json() : { data: [] }))
+      .then((d) => setApps(d.data ?? []))
+      .catch(() => setApps([]))
+      .finally(() => setLoading(false));
+  }, []);
+
+  useEffect(() => { fetchApps(); }, [fetchApps]);
+
+  const handleAction = async (id: string, action: "approve" | "reject") => {
+    setProcessing(id);
+    try {
+      const res = await fetch("/api/admin/driver-applications", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action, notificationId: id }),
+      });
+      if (res.ok) {
+        fetchApps();
+      }
+    } catch {
+      // silently fail
+    } finally {
+      setProcessing(null);
+    }
+  };
+
+  const filtered = filter === "pending"
+    ? apps.filter((a) => !a.readAt)
+    : apps;
+
+  const pendingCount = apps.filter((a) => !a.readAt).length;
+
+  return (
+    <div className="space-y-4">
+      {/* Filter bar */}
+      <div className="flex items-center gap-2">
+        <button
+          onClick={() => setFilter("pending")}
+          className={cn(
+            "px-3 py-1.5 rounded-lg text-xs font-bold transition-colors",
+            filter === "pending"
+              ? "bg-[#00B4A6] text-white"
+              : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+          )}
+        >
+          Pendientes {pendingCount > 0 && `(${pendingCount})`}
+        </button>
+        <button
+          onClick={() => setFilter("all")}
+          className={cn(
+            "px-3 py-1.5 rounded-lg text-xs font-bold transition-colors",
+            filter === "all"
+              ? "bg-[#00B4A6] text-white"
+              : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+          )}
+        >
+          Todas
+        </button>
+        <button
+          onClick={fetchApps}
+          className="ml-auto p-2 rounded-lg text-gray-400 hover:text-[#00B4A6] hover:bg-[#00B4A6]/10 transition-colors"
+        >
+          <RefreshCw className={cn("h-4 w-4", loading && "animate-spin")} />
+        </button>
+      </div>
+
+      {loading ? (
+        <TableSkeleton />
+      ) : filtered.length === 0 ? (
+        <div className="text-center py-12">
+          <FileText className="h-12 w-12 text-gray-300 mx-auto mb-3" />
+          <p className="text-sm text-gray-500 font-medium">
+            {filter === "pending" ? "No hay solicitudes pendientes" : "No hay solicitudes"}
+          </p>
+        </div>
+      ) : (
+        <div className="space-y-3">
+          {filtered.map((app) => {
+            const data = parseApplicationBody(app.body);
+            const isPending = !app.readAt;
+            const isProcessing = processing === app.id;
+
+            return (
+              <div
+                key={app.id}
+                className={cn(
+                  "bg-white border rounded-2xl p-4 shadow-sm transition-all",
+                  isPending ? "border-amber-200 bg-amber-50/30" : "border-gray-200 opacity-70"
+                )}
+              >
+                <div className="flex items-start justify-between gap-3">
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2 mb-1">
+                      <h4 className="font-bold text-gray-900 text-sm truncate">{data.name}</h4>
+                      {isPending ? (
+                        <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-100 text-amber-700">
+                          Pendiente
+                        </span>
+                      ) : (
+                        <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-gray-100 text-gray-500">
+                          Revisado
+                        </span>
+                      )}
+                    </div>
+                    <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-gray-500">
+                      <span className="flex items-center gap-1">
+                        <Phone className="h-3 w-3" /> {data.phone}
+                      </span>
+                      <span className="flex items-center gap-1">
+                        <MapPin className="h-3 w-3" /> {data.zone}
+                      </span>
+                      <span className="flex items-center gap-1">
+                        <Truck className="h-3 w-3" /> {VEHICLE_LABELS[data.vehicle] ?? data.vehicle}
+                      </span>
+                      <span className="flex items-center gap-1">
+                        <Clock className="h-3 w-3" /> {AVAILABILITY_LABELS[data.availability] ?? data.availability}
+                      </span>
+                    </div>
+                    <p className="text-[10px] text-gray-400 mt-1">
+                      {new Date(app.createdAt).toLocaleDateString("es-PE", {
+                        year: "numeric", month: "short", day: "numeric", hour: "2-digit", minute: "2-digit",
+                      })}
+                    </p>
+                  </div>
+
+                  {isPending && (
+                    <div className="flex items-center gap-1.5 shrink-0">
+                      <button
+                        onClick={() => handleAction(app.id, "approve")}
+                        disabled={isProcessing}
+                        className="flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-bold bg-emerald-100 text-emerald-700 hover:bg-emerald-200 disabled:opacity-50 transition-colors"
+                      >
+                        <ThumbsUp className="h-3.5 w-3.5" /> Aprobar
+                      </button>
+                      <button
+                        onClick={() => handleAction(app.id, "reject")}
+                        disabled={isProcessing}
+                        className="flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-bold bg-red-100 text-red-600 hover:bg-red-200 disabled:opacity-50 transition-colors"
+                      >
+                        <ThumbsDown className="h-3.5 w-3.5" /> Rechazar
+                      </button>
+                    </div>
+                  )}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ─────────────────────────────────────────────
 // Componente principal
 // ─────────────────────────────────────────────
 interface DeliveryKPIs {
@@ -896,11 +1271,13 @@ export default function DeliveryPartnersModule() {
         activeTab={tab}
         onTabChange={(id) => setTab(id)}
         moduleId={MODULE_ID}
-      />
-
-      {tab === "repartidores" && <RepartidoresTab />}
-      {tab === "asignaciones" && <AsignacionesTab />}
-      {tab === "permisos"     && <PermisosTab />}
+      >
+        {tab === "repartidores" && <RepartidoresTab />}
+        {tab === "solicitudes"  && <SolicitudesTab />}
+        {tab === "asignaciones" && <AsignacionesTab />}
+        {tab === "ranking"      && <RankingTab />}
+        {tab === "permisos"     && <PermisosTab />}
+      </AdminTabBar>
     </div>
   );
 }

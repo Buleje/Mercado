@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { requireAdmin } from "@/lib/require-admin";
 import { prisma } from "@/lib/prisma";
 import { withDbRetry } from "@/lib/db-retry";
+import { logger } from "@/lib/logger";
 
 /**
  * GET /api/admin/stats
@@ -11,6 +12,7 @@ import { withDbRetry } from "@/lib/db-retry";
 export async function GET(req: NextRequest) {
   const auth = await requireAdmin(req, ["admin"]);
   if (auth instanceof NextResponse) return auth;
+  const tenantId = auth.tenantId;
 
   try {
     const now = new Date();
@@ -30,18 +32,19 @@ export async function GET(req: NextRequest) {
       overduePayables,
     ] = await withDbRetry(() => Promise.all([
       // Active pending orders
-      prisma.order.count({ where: { status: "pendiente" } }),
+      prisma.order.count({ where: { tenantId, status: "pendiente" } }),
 
       // Pending orders waiting > 30 minutes
-      prisma.order.count({ where: { status: "pendiente", createdAt: { lt: thirtyMinutesAgo } } }),
+      prisma.order.count({ where: { tenantId, status: "pendiente", createdAt: { lt: thirtyMinutesAgo } } }),
 
       // Orders placed today
-      prisma.order.count({ where: { createdAt: { gte: startOfToday } } }),
+      prisma.order.count({ where: { tenantId, createdAt: { gte: startOfToday } } }),
 
       // Revenue from non-cancelled orders today
       prisma.order.aggregate({
         _sum: { total: true },
         where: {
+          tenantId,
           createdAt: { gte: startOfToday },
           status: { notIn: ["cancelado"] },
         },
@@ -50,6 +53,7 @@ export async function GET(req: NextRequest) {
       // Products with stock at or below minimum threshold
       prisma.product.count({
         where: {
+          tenantId,
           active: true,
           stock: { not: null },
           stockMin: { not: null },
@@ -60,19 +64,23 @@ export async function GET(req: NextRequest) {
       }),
 
       // Orders in the last 7 days
-      prisma.order.count({ where: { createdAt: { gte: startOfWeek } } }),
+      prisma.order.count({ where: { tenantId, createdAt: { gte: startOfWeek } } }),
 
       // Total customers
-      prisma.customer.count(),
+      prisma.customer.count({ where: { tenantId } }),
 
       // Overdue payables (due before now and not fully paid)
-      prisma.payable.count({ where: { dueDate: { lt: now }, status: { not: "pagado" } } }),
+      prisma.payable.count({ where: { tenantId, dueDate: { lt: now }, status: { not: "pagado" } } }),
     ]));
 
     // Low stock: Prisma doesn't support "fieldA <= fieldB" directly, use $queryRaw
     const lowStockResult = await withDbRetry(() => prisma.$queryRaw<{ count: bigint }[]>`
       SELECT COUNT(*) as count FROM "Product"
-      WHERE active = true AND stock IS NOT NULL AND "stockMin" IS NOT NULL AND stock <= "stockMin"
+      WHERE "tenantId" = ${tenantId}
+        AND active = true
+        AND stock IS NOT NULL
+        AND "stockMin" IS NOT NULL
+        AND stock <= "stockMin"
     `);
     const lowStockCount = Number(lowStockResult[0]?.count ?? 0);
 
@@ -91,7 +99,7 @@ export async function GET(req: NextRequest) {
       generatedAt: now.toISOString(),
     });
   } catch (e) {
-    console.error("[admin/stats] error:", e);
+    logger.error("[admin/stats] error", { error: (e as Error).message, tenantId: auth.tenantId });
     return NextResponse.json({ error: "Database error" }, { status: 503 });
   }
 }

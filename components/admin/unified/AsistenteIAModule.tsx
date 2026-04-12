@@ -137,8 +137,7 @@ export default function AsistenteIAModule({ tenantId }: Props) {
         activeTab={tab}
         onTabChange={setTab}
         moduleId={MODULE_ID}
-      />
-
+      >
       {tab === "dashboard-ia" && <SmartDashboardTab />}
       {tab === "centro-comando" && <AICommandCenter />}
       {tab === "sugerencias" && <SugerenciasIAModule />}
@@ -263,6 +262,7 @@ export default function AsistenteIAModule({ tenantId }: Props) {
           </div>
         </div>
       )}
+      </AdminTabBar>
     </div>
   );
 }

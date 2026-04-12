@@ -21,9 +21,9 @@ export async function GET(req: NextRequest) {
     const [products, customers, orders, fiados, settings] = await Promise.all([
       ProductsDB.getAll(auth.tenantId),
       CustomersDB.getAll(auth.tenantId),
-      OrdersDB.getAllFiltered({ since: sinceISO }),
+      OrdersDB.getAllFiltered({ since: sinceISO, tenantId: auth.tenantId }),
       FiadosDB.list(auth.tenantId),
-      SettingsDB.get(),
+      SettingsDB.get(auth.tenantId),
     ]);
 
     // 4. Construir payload de exportación

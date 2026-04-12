@@ -4,18 +4,18 @@
  * Does NOT import "server-only" — must remain edge-compatible.
  *
  * Token strategy:
- *   - Access token  (bsm-admin-sess):    short-lived (15 min), used for auth on every request
- *   - Refresh token (bsm-admin-refresh): long-lived (7 days), used only to rotate access tokens
+ *   - Access token  (buleje-admin-sess):    short-lived (15 min), used for auth on every request
+ *   - Refresh token (buleje-admin-refresh): long-lived (7 days), used only to rotate access tokens
  *   - On each refresh, BOTH tokens are rotated (refresh token rotation prevents replay)
  */
 
-const COOKIE_NAME = "bsm-admin-sess";
-const REFRESH_COOKIE_NAME = "bsm-admin-refresh";
+const COOKIE_NAME = "buleje-admin-sess";
+const REFRESH_COOKIE_NAME = "buleje-admin-refresh";
 const ACCESS_DURATION_MS = 15 * 60 * 1000; // 15 minutes
 const REFRESH_DURATION_MS = 7 * 24 * 60 * 60 * 1000; // 7 days
 
 /** @deprecated Use ACCESS_DURATION_MS — kept for backward compatibility */
-const SESSION_DURATION_MS = ACCESS_DURATION_MS;
+const _SESSION_DURATION_MS = ACCESS_DURATION_MS;
 
 function getSecret(): string {
   const secret = process.env.AUTH_SECRET;
@@ -23,7 +23,7 @@ function getSecret(): string {
     if (process.env.NODE_ENV === "production") {
       throw new Error("AUTH_SECRET environment variable is required in production");
     }
-    return "bsm-dev-fallback-2024-change-in-production";
+    return "buleje-dev-fallback-2024-change-in-production";
   }
   return secret;
 }

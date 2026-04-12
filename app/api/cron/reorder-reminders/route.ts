@@ -180,7 +180,7 @@ export async function GET(req: NextRequest) {
             `Hola${data.name ? ` ${data.name}` : ""} 👋`,
             `Hace ${daysSinceLast} días compraste *${bestProduct}* y quizás ya lo necesitas de nuevo.`,
             ``,
-            `👉 Pide aquí: ${process.env.NEXT_PUBLIC_APP_URL || "https://buleje.com"}/tienda`,
+            `👉 Pide aquí: ${process.env.NEXT_PUBLIC_APP_URL || "https://buleje.pe"}/tienda`,
             ``,
             `─────`,
             `${tenant.name} 🏪`,

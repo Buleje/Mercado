@@ -15,7 +15,7 @@ export async function POST() {
 
     if (!envEnabled) {
       try {
-        const settings = await SettingsDB.get();
+        const settings = await SettingsDB.get("main");
         settingsEnabled = settings.adminBypassLogin === true;
       } catch {
         settingsEnabled = false;
@@ -40,7 +40,7 @@ export async function POST() {
     });
     return response;
   } catch (e) {
-    console.error("[auth/bypass] error:", e);
+    logger.error("[auth/bypass] error", { error: String(e) });
     return NextResponse.json({ error: "service unavailable" }, { status: 503 });
   }
 }

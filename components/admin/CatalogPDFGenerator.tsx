@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { Download, MessageCircle, Loader2, Eye, Package } from "lucide-react";
+import * as Sentry from "@sentry/nextjs";
 import { cn } from "@/lib/utils";
 
 // ── Types ───────────────────────────────────────────────────────────────────
@@ -151,7 +152,7 @@ export default function CatalogPDFGenerator() {
       );
     } catch (err) {
       setError("Error al generar el PDF. Asegurate de tener jspdf instalado.");
-      console.error(err);
+      Sentry.captureException(err instanceof Error ? err : new Error(String(err)));
     } finally {
       setGenerating(false);
     }

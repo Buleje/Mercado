@@ -1,5 +1,6 @@
 import { NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { logger } from "@/lib/logger";
 
 export type AuditAction = "CREATE" | "UPDATE" | "DELETE" | "VIEW" | "LOGIN" | "FAILED_LOGIN" | "EXPORT" | "SYSTEM";
 
@@ -37,6 +38,6 @@ export function logAudit({
       tenantId,
     }
   }).catch((err) => {
-    console.error("[AuditLogger] Failed to write audit log:", err);
+    logger.error("[AuditLogger] Failed to write audit log", { error: String(err) });
   });
 }

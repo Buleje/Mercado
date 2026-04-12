@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireAdmin } from "@/lib/require-admin";
 import { prisma } from "@/lib/prisma";
+import { logger } from "@/lib/logger";
 
 /**
  * POST /api/admin/seed-peru-products
@@ -813,7 +814,7 @@ export async function POST(req: NextRequest) {
       message: `✅ ${created} productos peruanos creados en tienda "main". ${skipped} omitidos (ya existían).`,
     });
   } catch (e) {
-    console.error("[seed-peru-products] POST error:", e);
+    logger.error("[seed-peru-products] POST error", { error: (e as Error).message, tenantId: auth.tenantId });
     return NextResponse.json(
       { error: "Error al crear productos peruanos" },
       { status: 500 }

@@ -1,7 +1,7 @@
 /**
  * __tests__/proxy.test.ts
  *
- * Tests unitarios para proxy.ts — middleware crítico de Bodega San Martín.
+ * Tests unitarios para proxy.ts — middleware crítico de Buleje.
  *
  * Estrategias de tenant resolution cubiertas:
  *   E1  hostname subdomain (slug.localhost:3000 / slug.bodegasaas.com)

@@ -1,7 +1,7 @@
 /**
  * setup-sentry-alerts.ts
  * ---------------------------------------------------------------------------
- * Configures Sentry alert rules for Bodega San Martin via the Sentry API.
+ * Configures Sentry alert rules for Buleje via the Sentry API.
  *
  * Required env vars:
  *   SENTRY_AUTH_TOKEN  — API token with project:write and org:read scopes
@@ -164,7 +164,7 @@ function ruleExists(
 
 function buildErrorRateRule(): IssueAlertPayload {
   return {
-    name: "BSM \u2014 Error Rate Alto",
+    name: "Buleje \u2014 Error Rate Alto",
     conditions: [
       {
         id: "sentry.rules.conditions.event_frequency.EventFrequencyCondition",
@@ -218,7 +218,7 @@ async function createErrorRateRule(
 
 function buildUnhandledExceptionRule(): IssueAlertPayload {
   return {
-    name: "BSM \u2014 Excepci\u00f3n No Manejada",
+    name: "Buleje \u2014 Excepci\u00f3n No Manejada",
     conditions: [
       {
         id: "sentry.rules.conditions.first_seen_event.FirstSeenEventCondition",
@@ -280,7 +280,7 @@ async function createUnhandledExceptionRule(
 
 function buildLatencyMetricAlert(project: string): MetricAlertPayload {
   return {
-    name: "BSM \u2014 Latencia P95 Alta",
+    name: "Buleje \u2014 Latencia P95 Alta",
     dataset: "transactions",
     query: "",
     aggregate: "p95(transaction.duration)",
@@ -345,7 +345,7 @@ async function createLatencyMetricAlert(
 
 function buildFailureRateMetricAlert(project: string): MetricAlertPayload {
   return {
-    name: "BSM \u2014 Tasa de Fallos Alta",
+    name: "Buleje \u2014 Tasa de Fallos Alta",
     dataset: "transactions",
     query: "",
     aggregate: "failure_rate()",
@@ -411,7 +411,7 @@ async function createFailureRateMetricAlert(
 async function main(): Promise<void> {
   const dryRun = process.argv.includes("--dry-run");
 
-  console.log("=== Sentry Alert Rules Setup — Bodega San Martin ===");
+  console.log("=== Sentry Alert Rules Setup — Buleje ===");
   console.log(`Modo: ${dryRun ? "DRY-RUN (no se creara nada)" : "PRODUCCION"}\n`);
 
   const env = loadEnv();

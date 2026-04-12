@@ -3,6 +3,7 @@ import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { requireAdmin } from "@/lib/require-admin";
 import { logger } from "@/lib/logger";
+import { toNumOrZero } from "@/lib/decimal-utils";
 
 const TENANT = "main";
 
@@ -17,9 +18,11 @@ const DiscountRuleSchema = z.object({
   activa:      z.boolean().default(true),
 });
 
-function mapRule(r: { id: string; nombre: string; tipo: string; valor: number; categorias: string; condicion: string | null; fechaInicio: Date; fechaFin: Date; activa: boolean; tenantId: string; createdAt: Date }) {
+function mapRule(r: { id: string; nombre: string; tipo: string; valor: unknown; categorias: string; condicion: string | null; fechaInicio: Date; fechaFin: Date; activa: boolean; tenantId: string; createdAt: Date }) {
+  // TD-018: valor es Decimal en DB → serializar a number
   return {
     ...r,
+    valor:       toNumOrZero(r.valor as never),
     categorias:  (() => { try { return JSON.parse(r.categorias); } catch { return []; } })(),
     fechaInicio: r.fechaInicio.toISOString().slice(0, 10),
     fechaFin:    r.fechaFin.toISOString().slice(0, 10),

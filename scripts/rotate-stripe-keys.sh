@@ -31,7 +31,7 @@ if [[ -z "${VERCEL_TOKEN:-}" ]]; then
 fi
 
 echo "============================================"
-echo " Rotación de claves Stripe — Bodega San Martín"
+echo " Rotación de claves Stripe — Buleje"
 echo "============================================"
 echo
 echo "Pega tu Stripe SECRET KEY (empieza con sk_live_ o sk_test_):"

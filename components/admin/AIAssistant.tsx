@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { useState, useRef, useEffect, useCallback, useMemo } from "react";
 import {
@@ -6,9 +6,8 @@ import {
   AlertTriangle, TrendingUp, Package, Users, Lightbulb,
   Loader2, Maximize2, Minimize2, Trash2,
   Volume2, VolumeX, Play, Clock, BarChart3, WifiOff, Bell, Check, XCircle,
-  History, Star, Command, ChevronRight, ArrowRight, Zap, Heart,
-  Table, BarChart, GraduationCap, Activity, Search,
-} from "lucide-react";
+  History, Star, Command, ChevronRight, ArrowRight, Zap,
+  Table, BarChart, Activity, Search } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { escapeHtml } from "@/lib/safe-html";
 
@@ -57,43 +56,43 @@ type WidgetSize = "mini" | "medium" | "large";
 
 // Mejora 30: Grouped Quick Actions by category
 const QUICK_ACTIONS: QuickAction[] = [
-  { label: "¿Qué debo hacer ahora?", icon: Lightbulb, prompt: "Analiza la situación actual del negocio y dime las 5 acciones más urgentes que debo tomar HOY, en orden de prioridad. Incluye a qué módulo ir para cada acción.", color: "text-amber-600 bg-amber-50 dark:bg-amber-950/30 border-amber-200 dark:border-amber-800/40", category: "🎯 Prioridades" },
-  { label: "Estado del negocio", icon: TrendingUp, prompt: "Dame un diagnóstico ejecutivo completo del estado actual del negocio: ventas, inventario, clientes, deudas. Resalta lo positivo y lo que necesita atención urgente.", color: "text-blue-600 bg-blue-50 dark:bg-blue-950/30 border-blue-200 dark:border-blue-800/40", category: "📊 Análisis" },
-  { label: "Alertas urgentes", icon: AlertTriangle, prompt: "¿Hay alguna alerta urgente? Stock agotado, pedidos sin atender, facturas vencidas, clientes en riesgo. Solo lo crítico.", color: "text-red-600 bg-red-50 dark:bg-red-950/30 border-red-200 dark:border-red-800/40", category: "🎯 Prioridades" },
-  { label: "Ideas de productos", icon: Package, prompt: "Basándote en mis productos más vendidos y tendencias, ¿qué productos nuevos me recomiendas agregar al catálogo? Dame 5 ideas con precio sugerido y por qué.", color: "text-emerald-600 bg-emerald-50 dark:bg-emerald-950/30 border-emerald-200 dark:border-emerald-800/40", category: "💡 Estrategia" },
-  { label: "Retener clientes", icon: Users, prompt: "¿Cómo puedo retener mejor a mis clientes actuales? Dame estrategias basadas en los datos reales de mis clientes top y su comportamiento de compra.", color: "text-violet-600 bg-violet-50 dark:bg-violet-950/30 border-violet-200 dark:border-violet-800/40", category: "💡 Estrategia" },
-  { label: "Plan semanal", icon: Sparkles, prompt: "Crea un plan semanal de tareas ejecutivas para esta semana. Incluye: qué revisar cada día, qué módulo usar, y qué métricas monitorear. Formato tabla o bullets.", color: "text-indigo-600 bg-indigo-50 dark:bg-indigo-950/30 border-indigo-200 dark:border-indigo-800/40", category: "📊 Análisis" },
-  { label: "Ventas de hoy", icon: BarChart, prompt: "Dame un resumen detallado de las ventas de hoy: total vendido, cantidad de pedidos, ticket promedio, productos más vendidos, y comparación con ayer.", color: "text-cyan-600 bg-cyan-50 dark:bg-cyan-950/30 border-cyan-200 dark:border-cyan-800/40", category: "📊 Análisis" },
-  { label: "Hazlo por mí", icon: Zap, prompt: "Quiero que ejecutes acciones automáticamente. Revisa qué se necesita hacer urgente y propón acciones ejecutables que yo solo tenga que confirmar.", color: "text-orange-600 bg-orange-50 dark:bg-orange-950/30 border-orange-200 dark:border-orange-800/40", category: "🎯 Prioridades" },
+  { label: "¿Qué debo hacer ahora?", icon: Lightbulb, prompt: "Analiza la situación actual del negocio y dime las 5 acciones más urgentes que debo tomar HOY, en orden de prioridad. Incluye a qué módulo ir para cada acción.", color: "text-amber-600 bg-amber-50 dark:bg-amber-950/30 border-amber-200 dark:border-amber-800/40", category: "Prioridades" },
+  { label: "Estado del negocio", icon: TrendingUp, prompt: "Dame un diagnóstico ejecutivo completo del estado actual del negocio: ventas, inventario, clientes, deudas. Resalta lo positivo y lo que necesita atención urgente.", color: "text-blue-600 bg-blue-50 dark:bg-blue-950/30 border-blue-200 dark:border-blue-800/40", category: "Analisis" },
+  { label: "Alertas urgentes", icon: AlertTriangle, prompt: "¿Hay alguna alerta urgente? Stock agotado, pedidos sin atender, facturas vencidas, clientes en riesgo. Solo lo crítico.", color: "text-red-600 bg-red-50 dark:bg-red-950/30 border-red-200 dark:border-red-800/40", category: "Prioridades" },
+  { label: "Ideas de productos", icon: Package, prompt: "Basándote en mis productos más vendidos y tendencias, ¿qué productos nuevos me recomiendas agregar al catálogo? Dame 5 ideas con precio sugerido y por qué.", color: "text-emerald-600 bg-emerald-50 dark:bg-emerald-950/30 border-emerald-200 dark:border-emerald-800/40", category: "Estrategia" },
+  { label: "Retener clientes", icon: Users, prompt: "¿Cómo puedo retener mejor a mis clientes actuales? Dame estrategias basadas en los datos reales de mis clientes top y su comportamiento de compra.", color: "text-violet-600 bg-violet-50 dark:bg-violet-950/30 border-violet-200 dark:border-violet-800/40", category: "Estrategia" },
+  { label: "Plan semanal", icon: Sparkles, prompt: "Crea un plan semanal de tareas ejecutivas para esta semana. Incluye: qué revisar cada día, qué módulo usar, y qué métricas monitorear. Formato tabla o bullets.", color: "text-indigo-600 bg-indigo-50 dark:bg-indigo-950/30 border-indigo-200 dark:border-indigo-800/40", category: "Analisis" },
+  { label: "Ventas de hoy", icon: BarChart, prompt: "Dame un resumen detallado de las ventas de hoy: total vendido, cantidad de pedidos, ticket promedio, productos más vendidos, y comparación con ayer.", color: "text-cyan-600 bg-cyan-50 dark:bg-cyan-950/30 border-cyan-200 dark:border-cyan-800/40", category: "Analisis" },
+  { label: "Hazlo por mí", icon: Zap, prompt: "Quiero que ejecutes acciones automáticamente. Revisa qué se necesita hacer urgente y propón acciones ejecutables que yo solo tenga que confirmar.", color: "text-orange-600 bg-orange-50 dark:bg-orange-950/30 border-orange-200 dark:border-orange-800/40", category: "Prioridades" },
 ];
 
 const GREETING: Message = {
   id: "greeting",
   role: "assistant",
-  content: `👋 **¡Hola! Soy tu Asistente Ejecutivo IA.**
+  content: `**Hola. Soy tu Asistente Ejecutivo IA.**
 
 Estoy aquí para ayudarte a gestionar tu negocio como un profesional. Puedo:
 
-- 📊 **Analizar** la situación actual y darte un diagnóstico
-- 🎯 **Priorizar** qué hacer ahora vs qué puede esperar
-- 🚨 **Alertar** sobre problemas urgentes
-- 💡 **Recomendar** estrategias de ventas, precios e inventario
-- 📋 **Asignar tareas** y crear planes de acción
-- 🛒 **Sugerir productos** para agregar al catálogo
-- ⚡ **Ejecutar acciones** directamente — precios, stock, productos
-- 🔊 **Hablar** — activa el sonido para escuchar mis respuestas
+- **Analizar** la situación actual y darte un diagnóstico
+- **Priorizar** qué hacer ahora vs qué puede esperar
+- **Alertar** sobre problemas urgentes
+- **Recomendar** estrategias de ventas, precios e inventario
+- **Asignar tareas** y crear planes de acción
+- **Sugerir productos** para agregar al catálogo
+- **Ejecutar acciones** directamente — precios, stock, productos
+- **Hablar** — activa el sonido para escuchar mis respuestas
 
-**Pregúntame lo que necesites** o usa las acciones rápidas de abajo 👇`,
+**Pregúntame lo que necesites** o usa las acciones rápidas de abajo.`,
   timestamp: Date.now(),
 };
 
 // ── Offline pre-calculated responses ──────────────────────────────────────────
 
 const OFFLINE_RESPONSES: Record<string, string> = {
-  "estado": "⚠️ **Modo sin conexión** — No puedo consultar datos en tiempo real, pero aquí tienes una guía general:\n\n1. Revisa pedidos pendientes en \"pedidos\"\n2. Verifica stock crítico en \"inventario-almacenes\"\n3. Revisa facturas vencidas en \"tesoreria\"\n4. Consulta ventas del día en \"panel-principal\"\n\nConéctate a internet para un análisis personalizado.",
-  "urgente": "⚠️ **Modo sin conexión** — Sin acceso a datos reales, te sugiero:\n\n- **Pedidos**: Revisa \"pedidos\" para pendientes sin confirmar\n- **Stock**: Ve a \"inventario-almacenes\" y filtra por agotados\n- **Pagos**: Revisa \"tesoreria\" para facturas vencidas\n\nPara alertas basadas en datos reales, necesito conexión.",
-  "productos": "⚠️ **Modo sin conexión** — Sugerencias generales para bodega:\n\n1. Productos de temporada (según época del año)\n2. Complementos a tu top vendedor\n3. Productos con alto margen en tu categoría principal\n4. Items de impulso para el mostrador\n\nConéctate para recomendaciones basadas en tus datos.",
-  "default": "⚠️ **Modo sin conexión** — No puedo responder con datos en tiempo real.\n\nMientras tanto puedes:\n- Revisar \"panel-principal\" para tu dashboard\n- Consultar \"inventario-almacenes\" para stock\n- Ir a \"pedidos\" para gestionar pendientes\n\nReconecta a internet para un análisis completo.",
+  "estado": "**Modo sin conexión** — No puedo consultar datos en tiempo real, pero aquí tienes una guía general:\n\n1. Revisa pedidos pendientes en \"pedidos\"\n2. Verifica stock crítico en \"inventario-almacenes\"\n3. Revisa facturas vencidas en \"tesoreria\"\n4. Consulta ventas del día en \"panel-principal\"\n\nConéctate a internet para un análisis personalizado.",
+  "urgente": "**Modo sin conexión** — Sin acceso a datos reales, te sugiero:\n\n- **Pedidos**: Revisa \"pedidos\" para pendientes sin confirmar\n- **Stock**: Ve a \"inventario-almacenes\" y filtra por agotados\n- **Pagos**: Revisa \"tesoreria\" para facturas vencidas\n\nPara alertas basadas en datos reales, necesito conexión.",
+  "productos": "**Modo sin conexión** — Sugerencias generales para bodega:\n\n1. Productos de temporada (según época del año)\n2. Complementos a tu top vendedor\n3. Productos con alto margen en tu categoría principal\n4. Items de impulso para el mostrador\n\nConéctate para recomendaciones basadas en tus datos.",
+  "default": "**Modo sin conexión** — No puedo responder con datos en tiempo real.\n\nMientras tanto puedes:\n- Revisar \"panel-principal\" para tu dashboard\n- Consultar \"inventario-almacenes\" para stock\n- Ir a \"pedidos\" para gestionar pendientes\n\nReconecta a internet para un análisis completo.",
 };
 
 function getOfflineResponse(query: string): string {
@@ -121,7 +120,7 @@ function parseActions(content: string): { cleanContent: string; actions: ParsedA
 
 // ── Usage tracking helpers ────────────────────────────────────────────────────
 
-const USAGE_KEY = "bsm-ai-usage";
+const USAGE_KEY = "buleje-ai-usage";
 const MAX_USAGE_ENTRIES = 200;
 
 function trackUsage(query: string, responseMs: number) {
@@ -149,7 +148,7 @@ function getUsageStats(): { total: number; avgMs: number; topQueries: string[]; 
 
 // ── Session history helpers ───────────────────────────────────────────────────
 
-const SESSIONS_KEY = "bsm-ai-sessions";
+const SESSIONS_KEY = "buleje-ai-sessions";
 const MAX_SESSIONS = 20;
 
 function saveSession(messages: Message[]) {
@@ -178,7 +177,7 @@ function getSessions(): SessionSummary[] {
 
 // ── Mejora 34: Favorites helpers ──────────────────────────────────────────────
 
-const FAVORITES_KEY = "bsm-ai-favorites";
+const FAVORITES_KEY = "buleje-ai-favorites";
 function getFavorites(): string[] {
   try { return JSON.parse(localStorage.getItem(FAVORITES_KEY) ?? "[]"); } catch { return []; }
 }
@@ -226,14 +225,14 @@ const CMD_PALETTE_ITEMS = [
 
 // ── Mejora 38: Guided Tour ───────────────────────────────────────────────────
 
-const TOUR_KEY = "bsm-ai-tour-done";
+const TOUR_KEY = "buleje-ai-tour-done";
 const TOUR_STEPS = [
-  { msg: "👋 **¡Bienvenido!** Este es tu asistente IA. Te voy a enseñar cómo usarlo en 30 segundos." },
-  { msg: "💬 **Escríbeme lo que necesites** — puedo responder preguntas sobre ventas, inventario, clientes, o cualquier parte del negocio." },
-  { msg: "⚡ **Acciones rápidas** — Usa los botones de colores abajo para consultas frecuentes con un solo clic." },
-  { msg: "🔍 **Escribe / para comandos** — por ejemplo `/ventas` te lleva directo al módulo de ventas." },
-  { msg: "⭐ **Favoritos** — Marca tus consultas favoritas con la estrella para acceder rápido." },
-  { msg: "🎙️ **Voz** — Habla directamente apretando el micrófono. ¡Listo! Ya sabes todo. 🚀" },
+  { msg: "**Bienvenido.** Este es tu asistente IA. Te voy a enseñar cómo usarlo en 30 segundos." },
+  { msg: "**Escríbeme lo que necesites** — puedo responder preguntas sobre ventas, inventario, clientes, o cualquier parte del negocio." },
+  { msg: "**Acciones rápidas** — Usa los botones de colores abajo para consultas frecuentes con un solo clic." },
+  { msg: "**Escribe / para comandos** — por ejemplo `/ventas` te lleva directo al módulo de ventas." },
+  { msg: "**Favoritos** — Marca tus consultas favoritas con la estrella para acceder rápido." },
+  { msg: "**Voz** — Habla directamente apretando el micrófono. Listo, ya sabes lo principal." },
 ];
 
 // ── Component ─────────────────────────────────────────────────────────────────
@@ -545,8 +544,8 @@ export default function AIAssistant({ onNavigate, embedded, moduleContext }: AIA
       const errText = err instanceof Error ? err.message : String(err);
       const isApiKeyError = errText.includes("503") || errText.includes("500") || errText.includes("GROQ") || errText.includes("API") || errText.includes("key") || errText.includes("Error de red");
       const errorContent = isApiKeyError
-        ? `⚠️ **No se pudo conectar con el asistente IA**\n\nEl asistente usa **Groq** (servicio gratuito). Para activarlo:\n\n1. Ve a [console.groq.com](https://console.groq.com) y crea una cuenta gratis\n2. Copia tu API key (empieza con \`gsk_...\`)\n3. Agrégala en \`.env.local\` como: \`GROQ_API_KEY=gsk_tu_clave_aqui\`\n4. Reinicia el servidor con \`npm run dev\`\n\n**Mientras tanto**, puedo responder con información general. Escribe tu pregunta y usaré el modo offline.`
-        : `⚠️ ${errText}`;
+        ? `**No se pudo conectar con el asistente IA**\n\nEl asistente usa **Groq** (servicio gratuito). Para activarlo:\n\n1. Ve a [console.groq.com](https://console.groq.com) y crea una cuenta gratis\n2. Copia tu API key (empieza con \`gsk_...\`)\n3. Agrégala en \`.env.local\` como: \`GROQ_API_KEY=gsk_tu_clave_aqui\`\n4. Reinicia el servidor con \`npm run dev\`\n\n**Mientras tanto**, puedo responder con información general. Escribe tu pregunta y usaré el modo offline.`
+        : `Aviso: ${errText}`;
       setMessages(prev => [...prev, { id: `e-${Date.now()}`, role: "assistant", content: errorContent, timestamp: Date.now() }]);
       if (isApiKeyError) setIsOffline(true);
       trackUsage(msg, Date.now() - startTime);
@@ -665,14 +664,14 @@ export default function AIAssistant({ onNavigate, embedded, moduleContext }: AIA
       .replace(/`(.+?)`/g, '<code class="text-[10px] bg-gray-100 dark:bg-accent px-1 py-0.5 rounded font-mono">$1</code>')
       .replace(moduleRegex, (_match, mod) => {
         const safeMod = mod.replace(/[^a-z0-9-]/g, "");
-        return `<button onclick="window.__bsmNavTo&&window.__bsmNavTo('${safeMod}')" class="text-primary font-bold hover:underline cursor-pointer">&quot;${safeMod}&quot;</button>`;
+        return `<button onclick="window.__bulejeNavTo&&window.__bulejeNavTo('${safeMod}')" class="text-primary font-bold hover:underline cursor-pointer">&quot;${safeMod}&quot;</button>`;
       });
   };
 
   // Expose navigation handler
   useEffect(() => {
-    (window as unknown as Record<string, unknown>).__bsmNavTo = handleNavigate;
-    return () => { delete (window as unknown as Record<string, unknown>).__bsmNavTo; };
+    (window as unknown as Record<string, unknown>).__bulejeNavTo = handleNavigate;
+    return () => { delete (window as unknown as Record<string, unknown>).__bulejeNavTo; };
   });
 
   // Mejora 31: Render action buttons with direct navigation 
@@ -782,7 +781,7 @@ export default function AIAssistant({ onNavigate, embedded, moduleContext }: AIA
           </div>
           <p className="text-xs text-indigo-800 dark:text-indigo-300 leading-relaxed">{TOUR_STEPS[tourStep].msg.replace(/\*\*/g, "")}</p>
           <button onClick={advanceTour} className="text-xs font-bold text-indigo-600 hover:underline flex items-center gap-1">
-            {tourStep < TOUR_STEPS.length - 1 ? "Siguiente →" : "¡Entendido! 🚀"}
+            {tourStep < TOUR_STEPS.length - 1 ? "Siguiente" : "Entendido"}
           </button>
         </div>
       )}
@@ -854,7 +853,7 @@ export default function AIAssistant({ onNavigate, embedded, moduleContext }: AIA
             onKeyDown={e => {
               if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); sendMessage(); }
             }}
-            placeholder={isListening ? "🎙️ Escuchando…" : isOffline ? "Modo offline…" : "Pregunta algo… (/ para comandos)"}
+            placeholder={isListening ? "Escuchando..." : isOffline ? "Modo offline..." : "Pregunta algo... (/ para comandos)"}
             rows={1}
             className={cn(
               "w-full resize-none rounded-xl border px-3 py-2 text-xs bg-gray-50 dark:bg-surface text-gray-800 dark:text-foreground placeholder:text-gray-400 dark:placeholder:text-muted focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-colors",
@@ -940,7 +939,7 @@ export default function AIAssistant({ onNavigate, embedded, moduleContext }: AIA
           <div className="flex-1 min-w-0">
             <h3 className="font-bold text-sm leading-tight">Asistente IA</h3>
             <p className="text-[10px] text-white/70">
-              {isOffline ? "⚡ Modo offline" : moduleContext ? `Módulo: ${moduleContext}` : "IA · Análisis en tiempo real"}
+              {isOffline ? "Modo offline" : moduleContext ? `Modulo: ${moduleContext}` : "IA en tiempo real"}
             </p>
           </div>
           <div className="flex items-center gap-1">
@@ -1079,7 +1078,7 @@ export default function AIAssistant({ onNavigate, embedded, moduleContext }: AIA
             <div className="flex-1 min-w-0">
               <h3 className="font-bold text-sm leading-tight">Asistente Ejecutivo</h3>
               <p className="text-[10px] text-white/70 flex items-center gap-2">
-                {isOffline ? "⚡ Modo offline" : "IA · Análisis en tiempo real"}
+                {isOffline ? "Modo offline" : "IA en tiempo real"}
                 {healthScore !== null && !isOffline && (
                   <span className={cn("px-1.5 py-0.5 rounded-full text-[9px] font-bold",
                     healthScore > 70 ? "bg-emerald-400/30 text-emerald-200" : healthScore > 40 ? "bg-amber-400/30 text-amber-200" : "bg-red-400/30 text-red-200"

@@ -108,12 +108,12 @@ export default function QuickViewModal({ product, onClose }: { product: LiveProd
 
   useEffect(() => {
     try {
-      const key = "bsm-recently-viewed";
+      const key = "buleje-recently-viewed";
       const saved: Product[] = JSON.parse(localStorage.getItem(key) || "[]");
       const filtered = saved.filter((p: Product) => p.id !== product.id);
       filtered.unshift(product);
       localStorage.setItem(key, JSON.stringify(filtered.slice(0, 12)));
-      window.dispatchEvent(new Event("bsm:productViewed"));
+      window.dispatchEvent(new Event("buleje:productViewed"));
     } catch {}
   }, [product]);
 
@@ -131,11 +131,15 @@ export default function QuickViewModal({ product, onClose }: { product: LiveProd
   const staticDesc = (products as Array<Product & { description?: string }>).find(p => p.id === product.id)?.description;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4" onClick={onClose}>
+    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4" onClick={onClose} aria-hidden="true">
       <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" />
       <div
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="quick-view-title"
         className="relative bg-white dark:bg-card rounded-t-3xl sm:rounded-2xl shadow-2xl w-full max-w-2xl lg:max-w-4xl lg:max-h-[88vh] max-h-[92vh] overflow-hidden flex flex-col lg:flex-row border border-gray-100 dark:border-card-border animate-[scaleIn_0.2s_ease-out]"
         onClick={(e) => e.stopPropagation()}
+        aria-hidden="false"
       >
         {/* Left panel: image */}
         <div className="relative lg:w-[44%] lg:shrink-0 lg:h-auto">
@@ -188,7 +192,7 @@ export default function QuickViewModal({ product, onClose }: { product: LiveProd
           <div className="p-5 sm:p-6 pb-3 border-b border-gray-100 dark:border-card-border shrink-0">
             <div className="flex items-start justify-between gap-4">
               <div className="flex-1">
-                <h3 className="text-xl sm:text-2xl font-extrabold text-foreground leading-tight mb-1">{product.name}</h3>
+                <h3 id="quick-view-title" className="text-xl sm:text-2xl font-extrabold text-foreground leading-tight mb-1">{product.name}</h3>
                 <p className="text-sm text-muted lg:hidden">
                   {category?.emoji} {category?.label ?? product.category}
                   {reviews.length > 0 && (
@@ -222,9 +226,9 @@ export default function QuickViewModal({ product, onClose }: { product: LiveProd
               ) : (
                 <div className="flex items-center gap-3">
                   <div className="flex items-center bg-primary rounded-xl overflow-hidden shadow-md">
-                    <button onClick={() => updateQty(product.id, qty - 1)} className="h-11 w-10 text-white hover:bg-primary-dark transition-colors flex items-center justify-center"><Minus className="h-4 w-4" /></button>
-                    <span className="w-8 text-center font-bold text-white">{qty}</span>
-                    <button onClick={handleAdd} className="h-11 w-10 text-white hover:bg-primary-dark transition-colors flex items-center justify-center"><Plus className="h-4 w-4" /></button>
+                    <button onClick={() => updateQty(product.id, qty - 1)} aria-label={`Reducir cantidad de ${product.name}`} className="h-11 w-10 text-white hover:bg-primary-dark transition-colors flex items-center justify-center"><Minus className="h-4 w-4" /></button>
+                    <span className="w-8 text-center font-bold text-white" aria-live="polite" aria-label={`Cantidad: ${qty}`}>{qty}</span>
+                    <button onClick={handleAdd} aria-label={`Aumentar cantidad de ${product.name}`} className="h-11 w-10 text-white hover:bg-primary-dark transition-colors flex items-center justify-center"><Plus className="h-4 w-4" /></button>
                   </div>
                   <span className="text-sm font-semibold text-primary">En carrito · S/{(product.price * qty).toFixed(2)}</span>
                 </div>
@@ -233,10 +237,14 @@ export default function QuickViewModal({ product, onClose }: { product: LiveProd
           </div>
 
           {/* Tabs */}
-          <div className="flex border-b border-gray-100 dark:border-card-border shrink-0">
+          <div role="tablist" aria-label="Secciones del producto" className="flex border-b border-gray-100 dark:border-card-border shrink-0">
             {([["info", "Detalles"], ["reviews", "Reseñas"], ["alsoBought", "Compran juntos"], ["related", "Relacionados"]] as const).map(([key, label]) => (
               <button
                 key={key}
+                role="tab"
+                aria-selected={tab === key}
+                aria-controls={`tab-panel-${key}`}
+                id={`tab-${key}`}
                 onClick={() => setTab(key)}
                 className={cn(
                   "flex-1 py-3 text-sm font-semibold transition-all border-b-2",
@@ -251,7 +259,7 @@ export default function QuickViewModal({ product, onClose }: { product: LiveProd
           </div>
 
           {/* Tab content */}
-          <div className="flex-1 overflow-y-auto p-5 sm:p-6">
+          <div role="tabpanel" id={`tab-panel-${tab}`} aria-labelledby={`tab-${tab}`} className="flex-1 overflow-y-auto p-5 sm:p-6">
             {tab === "info" && (
               <div className="space-y-4 animate-[fadeUp_0.2s_ease-out]">
                 <div className="grid grid-cols-2 gap-3">

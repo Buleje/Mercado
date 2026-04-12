@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireAdmin } from "@/lib/require-admin";
 import { prisma } from "@/lib/prisma";
+import { logger } from "@/lib/logger";
 
 // IDs of the 24 products auto-seeded from data/products.ts when the DB was empty
 const DEMO_IDS = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24];
@@ -100,7 +101,7 @@ export async function POST(req: NextRequest) {
       message: `${created} productos de bodega peruana creados exitosamente`,
     });
   } catch (e) {
-    console.error("[demo-products] POST error:", e);
+    logger.error("[demo-products] POST error", { error: (e as Error).message, tenantId: auth.tenantId });
     return NextResponse.json({ error: "Error al crear productos demo" }, { status: 500 });
   }
 }
@@ -120,7 +121,7 @@ export async function DELETE(req: NextRequest) {
     const { count } = await prisma.product.deleteMany({ where: { id: { in: DEMO_IDS } } });
     return NextResponse.json({ ok: true, deleted: count });
   } catch (e) {
-    console.error("[demo-products] DELETE error:", e);
+    logger.error("[demo-products] DELETE error", { error: (e as Error).message, tenantId: auth.tenantId });
     return NextResponse.json({ error: "Error al eliminar productos de ejemplo" }, { status: 500 });
   }
 }

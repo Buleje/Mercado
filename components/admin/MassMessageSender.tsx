@@ -30,7 +30,8 @@ type Segment =
   | "compraron-30"
   | "inactivos-30"
   | "deuda"
-  | "alto-valor";
+  | "alto-valor"
+  | "rfm-preset";
 
 const SEGMENT_LABELS: Record<Segment, string> = {
   todos: "Todos los clientes",
@@ -38,7 +39,15 @@ const SEGMENT_LABELS: Record<Segment, string> = {
   "inactivos-30": "No compran hace 30+ días",
   deuda: "Con deuda pendiente",
   "alto-valor": "Alto valor (S/ 200+)",
+  "rfm-preset": "Segmento RFM seleccionado",
 };
+
+interface MassMessageSenderProps {
+  /** Optional preselected phones (e.g. from RFM segment click). Switches segment to "rfm-preset" automatically. */
+  preselectedPhones?: string[];
+  /** Optional label shown in the UI when preselectedPhones is used. */
+  presetLabel?: string;
+}
 
 const DEFAULT_TEMPLATES: Record<string, string> = {
   oferta:
@@ -76,10 +85,28 @@ function applyTemplate(template: string, customer: Customer): string {
 
 // ─── Component ────────────────────────────────────────────────────────────────
 
-export default function MassMessageSender() {
+export default function MassMessageSender({
+  preselectedPhones,
+  presetLabel,
+}: MassMessageSenderProps = {}) {
   const [customers, setCustomers] = useState<Customer[]>([]);
   const [loading, setLoading] = useState(true);
-  const [segment, setSegment] = useState<Segment>("todos");
+  const [segment, setSegment] = useState<Segment>(
+    preselectedPhones && preselectedPhones.length > 0 ? "rfm-preset" : "todos",
+  );
+
+  // Normalized set of preselected phones (digits only) for fast lookup.
+  const presetPhoneSet = useMemo(() => {
+    if (!preselectedPhones || preselectedPhones.length === 0) return null;
+    return new Set(preselectedPhones.map((p) => p.replace(/\D/g, "")));
+  }, [preselectedPhones]);
+
+  // Auto-switch to "rfm-preset" when preselection changes from outside.
+  useEffect(() => {
+    if (presetPhoneSet && presetPhoneSet.size > 0) {
+      setSegment("rfm-preset");
+    }
+  }, [presetPhoneSet]);
   const [search, setSearch] = useState("");
   const [template, setTemplate] = useState(DEFAULT_TEMPLATES.oferta);
   const [selectedTemplateKey, setSelectedTemplateKey] = useState("oferta");
@@ -126,6 +153,14 @@ export default function MassMessageSender() {
       case "alto-valor":
         list = list.filter((c) => (c.totalSpent ?? 0) >= 200);
         break;
+      case "rfm-preset":
+        if (presetPhoneSet) {
+          list = list.filter((c) => {
+            const digits = (c.phone ?? "").replace(/\D/g, "");
+            return digits && presetPhoneSet.has(digits);
+          });
+        }
+        break;
     }
 
     if (search.trim()) {
@@ -138,7 +173,7 @@ export default function MassMessageSender() {
     }
 
     return list;
-  }, [customers, segment, search]);
+  }, [customers, segment, search, presetPhoneSet]);
 
   useEffect(() => {
     setPreviewCustomer(filtered[0] ?? null);
@@ -181,20 +216,28 @@ export default function MassMessageSender() {
         </div>
 
         <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
-          {(Object.keys(SEGMENT_LABELS) as Segment[]).map((s) => (
-            <button
-              key={s}
-              onClick={() => setSegment(s)}
-              className={cn(
-                "rounded-lg border px-3 py-2 text-left text-xs font-medium transition",
-                segment === s
-                  ? "border-[#00B4A6] bg-[#00B4A6] text-white"
-                  : "border-gray-200 text-gray-600 hover:border-[#00B4A6]/40 dark:border-gray-600 dark:text-gray-300"
-              )}
-            >
-              {SEGMENT_LABELS[s]}
-            </button>
-          ))}
+          {(Object.keys(SEGMENT_LABELS) as Segment[])
+            .filter((s) => s !== "rfm-preset" || (presetPhoneSet && presetPhoneSet.size > 0))
+            .map((s) => {
+              const label =
+                s === "rfm-preset" && presetLabel
+                  ? `RFM: ${presetLabel} (${presetPhoneSet?.size ?? 0})`
+                  : SEGMENT_LABELS[s];
+              return (
+                <button
+                  key={s}
+                  onClick={() => setSegment(s)}
+                  className={cn(
+                    "rounded-lg border px-3 py-2 text-left text-xs font-medium transition",
+                    segment === s
+                      ? "border-[#00B4A6] bg-[#00B4A6] text-white"
+                      : "border-gray-200 text-gray-600 hover:border-[#00B4A6]/40 dark:border-gray-600 dark:text-gray-300",
+                  )}
+                >
+                  {label}
+                </button>
+              );
+            })}
         </div>
 
         {/* Search within segment */}

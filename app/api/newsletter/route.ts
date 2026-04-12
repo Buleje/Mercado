@@ -32,7 +32,7 @@ export async function POST(req: Request) {
     });
 
     return NextResponse.json({ ok: true });
-  } catch (err) {
+  } catch (_err) {
     return NextResponse.json({ error: "Error al suscribir" }, { status: 500 });
   }
 }

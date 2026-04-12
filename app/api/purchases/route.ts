@@ -66,7 +66,7 @@ export async function POST(req: NextRequest) {
       discount: discountPct,
       createdAt: now,
       updatedAt: now,
-    });
+    }, auth.tenantId);
 
     // Tarea 1: Crear Payable automático si el pago es a crédito
     if (data.paymentMethod.startsWith("credito_")) {
@@ -78,7 +78,7 @@ export async function POST(req: NextRequest) {
       if (existingPayable) {
         logger.warn("[purchases] Payable ya existe para OC — omitiendo duplicado", { purchaseOrderId: id });
       } else {
-      PayablesDB.add({
+      PayablesDB.add(auth.tenantId, {
         id: `pay-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
         supplierId: data.supplierId,
         supplierName: data.supplierName || "",

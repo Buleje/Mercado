@@ -679,10 +679,10 @@ export default function DashboardIATab({ tenantId: _tenantId }: Props) {
           </h3>
           <div className="space-y-2">
             {chartData.recent.map((item) => {
-              const methodIcons: Record<string, string> = { efectivo: "💵", yape: "📱", plin: "📲", tarjeta: "💳" };
+              const methodIcons: Record<string, string> = { efectivo: "E", yape: "Y", plin: "P", tarjeta: "T" };
               return (
                 <div key={item.id} className="flex items-center gap-3 p-2.5 rounded-xl bg-gray-50 dark:bg-surface">
-                  <span className="text-base shrink-0">{methodIcons[item.method] ?? "🧾"}</span>
+                  <span className="w-6 h-6 shrink-0 flex items-center justify-center rounded-full bg-gray-200 dark:bg-accent text-[10px] font-bold text-gray-600 dark:text-muted">{methodIcons[item.method] ?? "?"}</span>
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center justify-between">
                       <span className="text-sm font-semibold text-gray-800 dark:text-foreground truncate">{item.customer}</span>

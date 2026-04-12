@@ -1,5 +1,6 @@
 "use client";
-import { useState, useRef, useEffect, useCallback } from "react";
+
+import { useState, useRef, useEffect, useCallback, type ReactNode } from "react";
 import { ChevronLeft, ChevronRight, GripVertical } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { LucideIcon } from "lucide-react";
@@ -17,41 +18,55 @@ interface AdminTabBarProps {
   tabs: AdminTab[];
   activeTab: string;
   onTabChange: (id: string) => void;
-  moduleId: string; // para persistir orden en localStorage
+  moduleId: string;
   draggable?: boolean;
   className?: string;
+  vertical?: boolean;
+  children?: ReactNode;
 }
 
-export default function AdminTabBar({ tabs, activeTab, onTabChange, moduleId, draggable = true, className }: AdminTabBarProps) {
+export default function AdminTabBar({
+  tabs,
+  activeTab,
+  onTabChange,
+  moduleId,
+  draggable = true,
+  className,
+  vertical = true,
+  children,
+}: AdminTabBarProps) {
   const tabsRef = useRef<HTMLDivElement>(null);
   const [canScrollLeft, setCanScrollLeft] = useState(false);
   const [canScrollRight, setCanScrollRight] = useState(false);
   const [draggedTab, setDraggedTab] = useState<string | null>(null);
   const [dragOverTab, setDragOverTab] = useState<string | null>(null);
 
-  // Tab order persistence
   const [tabOrder, setTabOrder] = useState<string[]>(() => {
-    if (typeof window === "undefined") return tabs.map(t => t.id);
+    if (typeof window === "undefined") return tabs.map((tab) => tab.id);
+
     try {
       const saved = localStorage.getItem(`tab-order-${moduleId}`);
       if (saved) {
         const parsed = JSON.parse(saved) as string[];
-        const allIds = tabs.map(t => t.id);
-        const valid = parsed.filter(id => allIds.includes(id));
-        const missing = allIds.filter(id => !valid.includes(id));
+        const allIds = tabs.map((tab) => tab.id);
+        const valid = parsed.filter((id) => allIds.includes(id));
+        const missing = allIds.filter((id) => !valid.includes(id));
         return [...valid, ...missing];
       }
     } catch {}
-    return tabs.map(t => t.id);
+
+    return tabs.map((tab) => tab.id);
   });
 
-  const orderedTabs = tabOrder.map(id => tabs.find(t => t.id === id)).filter(Boolean) as AdminTab[];
+  const orderedTabs = tabOrder
+    .map((id) => tabs.find((tab) => tab.id === id))
+    .filter(Boolean) as AdminTab[];
 
   const checkScroll = useCallback(() => {
-    const el = tabsRef.current;
-    if (!el) return;
-    setCanScrollLeft(el.scrollLeft > 2);
-    setCanScrollRight(el.scrollLeft + el.clientWidth < el.scrollWidth - 2);
+    const element = tabsRef.current;
+    if (!element) return;
+    setCanScrollLeft(element.scrollLeft > 2);
+    setCanScrollRight(element.scrollLeft + element.clientWidth < element.scrollWidth - 2);
   }, []);
 
   useEffect(() => {
@@ -60,38 +75,98 @@ export default function AdminTabBar({ tabs, activeTab, onTabChange, moduleId, dr
     return () => window.removeEventListener("resize", checkScroll);
   }, [checkScroll]);
 
-  const scrollTabs = (dir: "left" | "right") => {
-    tabsRef.current?.scrollBy({ left: dir === "left" ? -200 : 200, behavior: "smooth" });
+  const scrollTabs = (direction: "left" | "right") => {
+    tabsRef.current?.scrollBy({
+      left: direction === "left" ? -200 : 200,
+      behavior: "smooth",
+    });
     setTimeout(checkScroll, 350);
   };
 
   const handleDrop = (targetId: string) => {
     if (!draggedTab || draggedTab === targetId) return;
+
     const newOrder = [...tabOrder];
-    const fromIdx = newOrder.indexOf(draggedTab);
-    const toIdx = newOrder.indexOf(targetId);
-    newOrder.splice(fromIdx, 1);
-    newOrder.splice(toIdx, 0, draggedTab);
+    const fromIndex = newOrder.indexOf(draggedTab);
+    const toIndex = newOrder.indexOf(targetId);
+
+    newOrder.splice(fromIndex, 1);
+    newOrder.splice(toIndex, 0, draggedTab);
+
     setTabOrder(newOrder);
-    try { localStorage.setItem(`tab-order-${moduleId}`, JSON.stringify(newOrder)); } catch {}
+
+    try {
+      localStorage.setItem(`tab-order-${moduleId}`, JSON.stringify(newOrder));
+    } catch {}
+
     setDraggedTab(null);
     setDragOverTab(null);
   };
 
   const resetOrder = () => {
-    const defaultOrder = tabs.map(t => t.id);
+    const defaultOrder = tabs.map((tab) => tab.id);
     setTabOrder(defaultOrder);
-    try { localStorage.removeItem(`tab-order-${moduleId}`); } catch {}
+    try {
+      localStorage.removeItem(`tab-order-${moduleId}`);
+    } catch {}
   };
 
-  const isReordered = JSON.stringify(tabOrder) !== JSON.stringify(tabs.map(t => t.id));
+  const isReordered = JSON.stringify(tabOrder) !== JSON.stringify(tabs.map((tab) => tab.id));
+
+  if (vertical) {
+    return (
+      <div className={cn("flex flex-col gap-4 lg:flex-row lg:items-start lg:gap-5", className)}>
+        <nav className="w-full shrink-0 rounded-2xl border border-gray-100 bg-gray-50 p-1.5 dark:border-white/10 dark:bg-white/[0.04] lg:sticky lg:top-0 lg:w-56 lg:self-start">
+          <div className="grid grid-cols-2 gap-1 sm:grid-cols-3 lg:grid-cols-1">
+            {orderedTabs.map((tab) => {
+              const Icon = tab.icon;
+
+              return (
+                <button
+                  key={tab.id}
+                  onClick={() => !tab.disabled && onTabChange(tab.id)}
+                  className={cn(
+                    "flex w-full items-center gap-2.5 rounded-xl px-3 py-2.5 text-left text-sm transition-all duration-150",
+                    activeTab === tab.id
+                      ? "border border-[#00B4A6]/20 bg-white font-semibold text-[#00B4A6] shadow-sm dark:bg-white/10"
+                      : "text-gray-500 hover:bg-white/70 hover:text-gray-800 dark:text-gray-400 dark:hover:bg-white/[0.08] dark:hover:text-gray-200",
+                    tab.disabled && "cursor-not-allowed opacity-40",
+                  )}
+                >
+                  {Icon && <Icon className="h-4 w-4 shrink-0" />}
+                  <span className="truncate">{tab.label}</span>
+                  {tab.badge != null && (
+                    <span className="ml-auto flex h-4 min-w-[16px] shrink-0 items-center justify-center rounded-full bg-red-500 px-1 text-[9px] font-bold text-white">
+                      {tab.badge}
+                    </span>
+                  )}
+                </button>
+              );
+            })}
+          </div>
+
+          {isReordered && (
+            <button
+              onClick={resetOrder}
+              className="mt-2 w-full border-t border-gray-100 px-3 pt-2 text-left text-[10px] text-gray-400 transition-colors hover:text-[#00B4A6] dark:border-white/10"
+            >
+              Restablecer orden
+            </button>
+          )}
+        </nav>
+
+        <div className="min-w-0 flex-1">{children}</div>
+      </div>
+    );
+  }
 
   return (
+    <>
     <div className={cn("relative", className)}>
       {canScrollLeft && (
         <button
           onClick={() => scrollTabs("left")}
-          className="absolute left-0 top-0 bottom-0 w-10 bg-gradient-to-r from-white via-white/90 to-transparent z-10 flex items-center transition-opacity duration-300"
+          className="absolute left-0 top-0 bottom-0 z-10 flex w-10 items-center bg-gradient-to-r from-white via-white/90 to-transparent transition-opacity duration-300"
           aria-label="Ver tabs anteriores"
         >
           <ChevronLeft className="h-4 w-4 text-gray-500" />
@@ -101,40 +176,47 @@ export default function AdminTabBar({ tabs, activeTab, onTabChange, moduleId, dr
       <div
         ref={tabsRef}
         onScroll={checkScroll}
-        className="flex gap-0.5 sm:gap-1 overflow-x-auto scrollbar-none scroll-smooth border-b border-gray-200 -mx-1 px-1"
+        className="-mx-1 flex gap-0.5 overflow-x-auto scroll-smooth border-b border-gray-200 px-1 scrollbar-none sm:gap-1"
         style={{ scrollbarWidth: "none" }}
       >
-        {orderedTabs.map(t => {
-          const Icon = t.icon;
+        {orderedTabs.map((tab) => {
+          const Icon = tab.icon;
+
           return (
             <button
-              key={t.id}
+              key={tab.id}
               draggable={draggable}
-              onDragStart={() => setDraggedTab(t.id)}
-              onDragOver={e => { e.preventDefault(); setDragOverTab(t.id); }}
+              onDragStart={() => setDraggedTab(tab.id)}
+              onDragOver={(event) => {
+                event.preventDefault();
+                setDragOverTab(tab.id);
+              }}
               onDragLeave={() => setDragOverTab(null)}
-              onDrop={() => handleDrop(t.id)}
-              onDragEnd={() => { setDraggedTab(null); setDragOverTab(null); }}
-              onClick={() => !t.disabled && onTabChange(t.id)}
-              disabled={t.disabled}
-              title={t.label}
+              onDrop={() => handleDrop(tab.id)}
+              onDragEnd={() => {
+                setDraggedTab(null);
+                setDragOverTab(null);
+              }}
+              onClick={() => !tab.disabled && onTabChange(tab.id)}
+              disabled={tab.disabled}
+              title={tab.label}
               className={cn(
-                "shrink-0 flex items-center gap-1.5 px-2.5 sm:px-4 py-2 sm:py-2.5 text-xs sm:text-sm whitespace-nowrap transition-all duration-200 border-b-[3px]",
+                "flex shrink-0 items-center gap-1.5 whitespace-nowrap border-b-[3px] px-2.5 py-2 text-xs transition-all duration-200 sm:px-4 sm:py-2.5 sm:text-sm",
                 draggable && "cursor-grab active:cursor-grabbing",
-                activeTab === t.id
-                  ? "border-[#00B4A6] text-[#00B4A6] font-semibold bg-[#00B4A6]/5"
-                  : "border-transparent text-gray-500 hover:text-gray-700 hover:bg-gray-50 font-normal",
-                t.disabled && "opacity-40 cursor-not-allowed",
-                draggedTab === t.id && "opacity-40 scale-95",
-                dragOverTab === t.id && draggedTab !== t.id && "ring-2 ring-[#00B4A6] ring-offset-1 rounded-t-lg",
+                activeTab === tab.id
+                  ? "border-[#00B4A6] bg-[#00B4A6]/5 font-semibold text-[#00B4A6]"
+                  : "border-transparent font-normal text-gray-500 hover:bg-gray-50 hover:text-gray-700",
+                tab.disabled && "cursor-not-allowed opacity-40",
+                draggedTab === tab.id && "scale-95 opacity-40",
+                dragOverTab === tab.id && draggedTab !== tab.id && "rounded-t-lg ring-2 ring-[#00B4A6] ring-offset-1",
               )}
             >
               {draggable && <GripVertical className="h-3 w-3 shrink-0 opacity-30" />}
               {Icon && <Icon className="h-3.5 w-3.5 shrink-0" />}
-              <span>{t.shortLabel || t.label}</span>
-              {t.badge != null && (
-                <span className="h-4 min-w-[16px] px-1 rounded-full bg-red-500 text-white text-[9px] flex items-center justify-center font-bold">
-                  {t.badge}
+              <span>{tab.shortLabel || tab.label}</span>
+              {tab.badge != null && (
+                <span className="flex h-4 min-w-[16px] items-center justify-center rounded-full bg-red-500 px-1 text-[9px] font-bold text-white">
+                  {tab.badge}
                 </span>
               )}
             </button>
@@ -144,7 +226,7 @@ export default function AdminTabBar({ tabs, activeTab, onTabChange, moduleId, dr
         {isReordered && (
           <button
             onClick={resetOrder}
-            className="shrink-0 ml-1 px-2 py-1.5 text-[10px] text-gray-400 hover:text-[#00B4A6] transition-colors whitespace-nowrap"
+            className="ml-1 shrink-0 whitespace-nowrap px-2 py-1.5 text-[10px] text-gray-400 transition-colors hover:text-[#00B4A6]"
             title="Restablecer orden de tabs"
           >
             Restablecer
@@ -155,12 +237,14 @@ export default function AdminTabBar({ tabs, activeTab, onTabChange, moduleId, dr
       {canScrollRight && (
         <button
           onClick={() => scrollTabs("right")}
-          className="absolute right-0 top-0 bottom-0 w-10 bg-gradient-to-l from-white via-white/90 to-transparent z-10 flex items-center justify-end transition-opacity duration-300"
+          className="absolute right-0 top-0 bottom-0 z-10 flex w-10 items-center justify-end bg-gradient-to-l from-white via-white/90 to-transparent transition-opacity duration-300"
           aria-label="Ver más tabs"
         >
           <ChevronRight className="h-4 w-4 text-gray-500" />
         </button>
       )}
     </div>
+    {children}
+    </>
   );
 }

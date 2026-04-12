@@ -255,7 +255,7 @@ export function AdminMobileDrawer({
                   <span className="truncate">{label}</span>
                 </button>
               ))}
-              {customShortcutItems.map(({ id, label, icon: Icon }) => (
+              {customShortcutItems.map(({ id, label, icon: _Icon }) => (
                 <button
                   key={`sc-${id}-${label}`}
                   onClick={() => { navigateTab(id as Tab); onClose(); }}

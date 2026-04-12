@@ -109,6 +109,36 @@ export default function InvoiceScannerModal({ open, onClose, onConfirm }: Props)
     }
   }, []);
 
+  // ── Send to OCR API (hoisted so camera + upload handlers can reference it) ──
+
+  const processImage = useCallback(async (imageDataUrl: string) => {
+    setState("processing");
+    setError("");
+
+    try {
+      const res = await fetch("/api/ocr/invoice", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ image: imageDataUrl }),
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        setError(data.error ?? "Error al procesar la factura");
+        setState("error");
+        return;
+      }
+
+      setInvoiceData(data);
+      setEditItems(data.items?.map((i: InvoiceItem) => ({ ...i })) ?? []);
+      setState("results");
+    } catch {
+      setError("Error de conexión al procesar la factura");
+      setState("error");
+    }
+  }, []);
+
   // ── Capture photo from camera ───────────────────────────────────────────────
 
   const capturePhoto = useCallback(() => {
@@ -126,7 +156,7 @@ export default function InvoiceScannerModal({ open, onClose, onConfirm }: Props)
     setPreview(dataUrl);
     stopStream();
     processImage(dataUrl);
-  }, [stopStream]);
+  }, [stopStream, processImage]);
 
   // ── Handle file upload ──────────────────────────────────────────────────────
 
@@ -158,38 +188,8 @@ export default function InvoiceScannerModal({ open, onClose, onConfirm }: Props)
       // Reset input so same file can be re-selected
       e.target.value = "";
     },
-    [],
+    [processImage],
   );
-
-  // ── Send to OCR API ─────────────────────────────────────────────────────────
-
-  const processImage = useCallback(async (imageDataUrl: string) => {
-    setState("processing");
-    setError("");
-
-    try {
-      const res = await fetch("/api/ocr/invoice", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ image: imageDataUrl }),
-      });
-
-      const data = await res.json();
-
-      if (!res.ok) {
-        setError(data.error ?? "Error al procesar la factura");
-        setState("error");
-        return;
-      }
-
-      setInvoiceData(data);
-      setEditItems(data.items?.map((i: InvoiceItem) => ({ ...i })) ?? []);
-      setState("results");
-    } catch {
-      setError("Error de conexión al procesar la factura");
-      setState("error");
-    }
-  }, []);
 
   // ── Edit item helpers ───────────────────────────────────────────────────────
 

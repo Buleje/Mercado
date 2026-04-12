@@ -1,11 +1,10 @@
 "use client";
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-import { useState, useMemo } from "react";
+import { useState } from "react";
 import {
-  Users, UserCheck, Star, TrendingDown,
-  Download, Trophy, AlertTriangle, BarChart3,
-} from "lucide-react";
+  Users, UserCheck, Star,
+  Download, AlertTriangle, BarChart3 } from "lucide-react";
 import { cn, exportToCSV } from "@/lib/utils";
 
 function fmt(n: number) { return `S/${n.toFixed(2)}`; }
@@ -41,12 +40,12 @@ function Card({ title, icon: Icon, children, action }: { title: string; icon: Re
   return (<div className="bg-white dark:bg-card rounded-xl border border-gray-100 dark:border-card-border p-4"><div className="flex items-center justify-between mb-4"><h3 className="flex items-center gap-1.5 text-xs font-semibold tracking-wider text-gray-400 dark:text-muted" style={{letterSpacing:"0.06em"}}><Icon className="h-3 w-3 text-gray-300 dark:text-muted" />{title.toUpperCase()}</h3>{action}</div>{children}</div>);
 }
 function Empty({ text = "Sin datos en este periodo" }: { text?: string }) { return <div className="py-8 text-center text-xs text-gray-300 dark:text-muted">{text}</div>; }
-function DBadge({ children, color }: { children: React.ReactNode; color: "green"|"red"|"amber"|"blue"|"purple"|"gray" }) {
+function _DBadge({ children, color }: { children: React.ReactNode; color: "green"|"red"|"amber"|"blue"|"purple"|"gray" }) {
   const m: Record<string,string> = { green:"bg-emerald-50 text-emerald-600", red:"bg-red-50 text-red-600", amber:"bg-amber-50 text-amber-600", blue:"bg-blue-50 text-blue-600", purple:"bg-purple-50 text-purple-600", gray:"bg-gray-100 text-gray-500" };
   return <span className={cn("inline-flex px-1.5 py-0.5 rounded text-xs font-semibold",m[color])}>{children}</span>;
 }
 
-export default function DashboardClientesSection({ st, expandAll, orders, customers, products, showCohortRetention, setShowCohortRetention, showCrossSell, setShowCrossSell, selectedProductForCrossSell, setSelectedProductForCrossSell, reviewFilter, setReviewFilter, reviews, period }: any) {
+export default function DashboardClientesSection({ st, expandAll, orders, customers, _products, showCohortRetention, setShowCohortRetention, _showCrossSell, _setShowCrossSell, _selectedProductForCrossSell, _setSelectedProductForCrossSell, reviewFilter, setReviewFilter, reviews, period }: any) {
   const [selectedClientPhone, setSelectedClientPhone] = useState<string | null>(null);
   return (
         <div className={cn("space-y-4", expandAll && "bg-white dark:bg-card rounded-2xl border border-gray-100 dark:border-card-border p-4")}>
@@ -98,7 +97,7 @@ export default function DashboardClientesSection({ st, expandAll, orders, custom
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
             <Kpi label="Total Clientes" value={String(st.totalCustomers)} icon={Users} accent="text-violet-500" />
             <Kpi label="Atendidos" value={String(st.clientesAtendidos)} icon={Users} accent="text-indigo-500" />
-            <Kpi label="Rating Prom." value={`★ ${st.avgRating.toFixed(1)}`} icon={Star} accent="text-amber-500" />
+            <Kpi label="Rating Prom." value={`${st.avgRating.toFixed(1)}`} icon={Star} accent="text-amber-500" />
             <Kpi label="Reseñas" value={String(reviews.length)} icon={Star} accent="text-amber-400" />
           </div>
 
@@ -149,10 +148,10 @@ export default function DashboardClientesSection({ st, expandAll, orders, custom
                               ))
                             }
                             <a
-                              href={`https://wa.me/51${c.phone.replace(/\D/g,"")}?text=${encodeURIComponent(`Hola ${c.name}, ¡gracias por ser cliente de Buleje! 🛒`)}`}
+                              href={`https://wa.me/51${c.phone.replace(/\D/g,"")}?text=${encodeURIComponent(`Hola ${c.name}, ¡gracias por ser cliente de Buleje!`)}`}
                               target="_blank" rel="noopener noreferrer"
                               className="inline-flex items-center gap-1 text-[10px] font-bold text-emerald-600 hover:underline mt-0.5"
-                            >📲 Contactar por WA</a>
+                            >Contactar por WA</a>
                           </div>
                         );
                       })()}
@@ -259,7 +258,7 @@ export default function DashboardClientesSection({ st, expandAll, orders, custom
                   </div>
 
                   <div className="bg-blue-50 dark:bg-blue-950/30 rounded-lg p-3 text-xs">
-                    <div className="font-semibold text-blue-700 dark:text-blue-400 mb-1">💡 Interpretación</div>
+                    <div className="font-semibold text-blue-700 dark:text-blue-400 mb-1">Interpretación</div>
                     <p className="text-blue-600 dark:text-blue-300 text-[10px]">
                       Verde (≥50%): Excelente retención. Naranja (30-49%): Retención aceptable. Rojo (&lt;30%): Requiere acción inmediata. 
                       Los primeros 30 días son críticos para fidelizar clientes.
@@ -300,12 +299,12 @@ export default function DashboardClientesSection({ st, expandAll, orders, custom
                               <div className="text-[9px] text-gray-400">sin comprar</div>
                             </div>
                             <a
-                              href={`https://wa.me/51${c.phone.replace(/\D/g,"")}?text=${encodeURIComponent(`Hola ${c.name}, ¡te extrañamos en Buleje! 🛒\n\n¿Necesitas algo? Tenemos novedades y ofertas especiales para ti. 😊`)}`}
+                              href={`https://wa.me/51${c.phone.replace(/\D/g,"")}?text=${encodeURIComponent(`Hola ${c.name}, ¡te extrañamos en Buleje!\n\n¿Necesitas algo? Tenemos novedades y ofertas especiales para ti.`)}`}
                               target="_blank"
                               rel="noopener noreferrer"
                               className="text-[10px] font-bold text-emerald-600 bg-emerald-50 hover:bg-emerald-100 dark:bg-emerald-950/30 dark:hover:bg-emerald-900/50 px-2 py-1 rounded transition-colors"
                             >
-                              📲 Contactar
+                              Contactar
                             </a>
                           </div>
                         </div>
@@ -329,12 +328,12 @@ export default function DashboardClientesSection({ st, expandAll, orders, custom
                             <span className="text-[10px] text-gray-500">{c.orderCount} pedidos totales • Último: hace {c.daysSinceLastOrder} días</span>
                           </div>
                           <a
-                            href={`https://wa.me/51${c.phone.replace(/\D/g,"")}?text=${encodeURIComponent(`Hola ${c.name}, esperamos que estés bien. En Buleje tenemos tus productos favoritos listos para ti. ¿Te enviamos algo? 🚀`)}`}
+                            href={`https://wa.me/51${c.phone.replace(/\D/g,"")}?text=${encodeURIComponent(`Hola ${c.name}, esperamos que estés bien. En Buleje tenemos tus productos favoritos listos para ti. ¿Te enviamos algo?`)}`}
                             target="_blank"
                             rel="noopener noreferrer"
                             className="text-[10px] font-bold text-amber-700 bg-amber-100 hover:bg-amber-200 dark:bg-amber-900/50 dark:hover:bg-amber-800/50 px-2 py-1 rounded transition-colors shrink-0"
                           >
-                            📲 Reactivar
+                            Reactivar
                           </a>
                         </div>
                       ))}
@@ -342,7 +341,7 @@ export default function DashboardClientesSection({ st, expandAll, orders, custom
                   </div>
                 )}
                 <div className="bg-blue-50 dark:bg-blue-950/30 rounded-lg p-3 text-xs">
-                  <div className="font-semibold text-blue-700 dark:text-blue-400 mb-1">💡 Retención proactiva</div>
+                  <div className="font-semibold text-blue-700 dark:text-blue-400 mb-1">Retención proactiva</div>
                   <p className="text-blue-600 dark:text-blue-300 text-[10px]">
                     Los clientes VIP (top 20% en gasto) que no compran en 3+ semanas tienen alto riesgo de irse. Un mensaje personalizado recupera hasta 30% de clientes inactivos.
                   </p>

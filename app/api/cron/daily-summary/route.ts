@@ -9,6 +9,7 @@ import { enqueueActivityLog } from "@/lib/queue";
 import { sendPushToPhone } from "@/lib/push-sender";
 import { enqueueNotification } from "@/lib/queue";
 import { prisma } from "@/lib/prisma";
+import { generateDailyInsights } from "@/lib/ai/daily-insights";
 
 /**
  * GET /api/cron/daily-summary
@@ -48,9 +49,9 @@ export async function GET(req: NextRequest) {
         // Recopilar datos en paralelo
         const [allSales, todayOrders, allProducts, openCash] = await Promise.all([
           SalesDB.getAll(tenantId),
-          OrdersDB.getAllFiltered({ since: startOfDayISO }),
+          OrdersDB.getAllFiltered({ since: startOfDayISO, tenantId }),
           ProductsDB.getAll(tenantId),
-          CashRegistersDB.getOpen(),
+          CashRegistersDB.getOpen(tenantId),
         ]);
 
         // Ventas POS del día
@@ -118,6 +119,52 @@ export async function GET(req: NextRequest) {
         const ticketPromedio = totalPedidos > 0 ? totalVentas / totalPedidos : 0;
         const fechaTexto = new Date().toLocaleDateString("es-PE", { weekday: "long", day: "numeric", month: "long" });
 
+        // Obtener resumen del día anterior para comparar tendencias
+        const yesterday = new Date(now);
+        yesterday.setDate(yesterday.getDate() - 1);
+        yesterday.setHours(0, 0, 0, 0);
+        const yesterdayEnd = new Date(yesterday);
+        yesterdayEnd.setHours(23, 59, 59, 999);
+
+        let summaryAyer: { totalVentas: number; totalPedidos: number; ticketPromedio: number } | null = null;
+        try {
+          const prevSummary = await prisma.dailySummary.findFirst({
+            where: {
+              tenantId,
+              fecha: { gte: yesterday, lte: yesterdayEnd },
+            },
+            select: {
+              totalVentas: true,
+              cantidadVentas: true,
+              ticketPromedio: true,
+            },
+          });
+          if (prevSummary) {
+            summaryAyer = {
+              totalVentas: Number(prevSummary.totalVentas),
+              totalPedidos: prevSummary.cantidadVentas,
+              ticketPromedio: Number(prevSummary.ticketPromedio),
+            };
+          }
+        } catch (e) {
+          logger.warn("[daily-summary] No se pudo obtener resumen de ayer", { error: String(e) });
+        }
+
+        // Generar resumen inteligente con IA (fire-and-forget safe — nunca rompe el cron)
+        const aiInsights = await generateDailyInsights({
+          hoy: {
+            totalVentas,
+            totalPedidos,
+            ticketPromedio,
+            top5Productos,
+            productosStockBajo,
+            diferenciaCaja,
+            tenantName: tenant.name,
+            fechaTexto,
+          },
+          ayer: summaryAyer,
+        }).catch(() => null);
+
         // Auto-save DailySummary record. Schema has @@index([tenantId, fecha])
         // but no @@unique on the pair, so upsert isn't available — fall back
         // to findFirst + update/create. Schema field types:
@@ -166,21 +213,29 @@ export async function GET(req: NextRequest) {
           logger.warn("[daily-summary] Error saving DailySummary", { error: String(e) });
         }
 
-        const whatsappText = [
-          `📊 *Resumen del día — ${tenant.name}*`,
-          `📅 ${fechaTexto}`,
-          ``,
+        // Texto del resumen: preferir versión IA, con fallback a texto raw estructurado
+        const aiSummaryText = aiInsights?.summary ?? null;
+        const trendEmoji = aiInsights?.emoji ?? "📊";
+
+        const rawLines = [
           `💰 Ventas: S/ ${totalVentas.toFixed(2)} (${totalPedidos} transacciones)`,
           `🧾 Ticket promedio: S/ ${ticketPromedio.toFixed(2)}`,
           `📦 Stock bajo: ${productosStockBajo.length} productos`,
           diferenciaCaja !== null ? `💵 Diferencia caja: S/ ${diferenciaCaja.toFixed(2)}` : null,
+          top5Productos.length > 0 ? `🏆 Top: ${top5Productos.slice(0, 3).map((p, i) => `${i + 1}. ${p.nombre} (${p.cantidad})`).join(" | ")}` : null,
+          productosStockBajo.length > 0 ? `⚠ Stock crítico: ${productosStockBajo.slice(0, 3).map(p => `${p.name}(${p.stock})`).join(", ")}` : null,
+        ].filter((line): line is string => line !== null).join("\n");
+
+        const whatsappText = [
+          `${trendEmoji} *Resumen del día — ${tenant.name}*`,
+          `📅 ${fechaTexto}`,
           ``,
-          top5Productos.length > 0 ? `🏆 *Top productos:*` : null,
-          ...top5Productos.slice(0, 3).map((p, i) => `  ${i + 1}. ${p.nombre} (${p.cantidad} uds)`),
+          // Cuerpo principal: IA o raw
+          aiSummaryText ?? rawLines,
           ``,
-          productosStockBajo.length > 0 ? `⚠ *Alertas stock:*` : null,
-          ...productosStockBajo.slice(0, 3).map(p => `  - ${p.name}: ${p.stock} uds (mín: ${p.stockMin ?? 5})`),
-          ``,
+          // Siempre incluir el detalle raw como referencia rápida
+          aiSummaryText ? rawLines : null,
+          aiSummaryText ? `` : null,
           `─────`,
           `${tenant.name} 🏪`,
         ].filter((line): line is string => line !== null).join("\n");

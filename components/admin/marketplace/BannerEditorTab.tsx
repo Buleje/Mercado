@@ -321,10 +321,10 @@ export default function BannerEditorTab({ storeSlug }: BannerEditorTabProps) {
         }
         setBannersBySection(grouped);
       } catch {
-        // TODO: endpoint real /api/marketplace/stores/${storeSlug}/banners
+        // Fallback: mock banners when API unavailable
         const mock: Record<BannerSection, Banner[]> = {
           hero: [
-            { id: "h1", title: "Bienvenidos a Bodega San Martín", subtitle: "Los mejores precios de Pucallpa", imageUrl: null, linkUrl: null, active: true, section: "hero", position: 0 },
+            { id: "h1", title: "Bienvenidos a tu tienda", subtitle: "Los mejores precios", imageUrl: null, linkUrl: null, active: true, section: "hero", position: 0 },
           ],
           featured: [],
           promo: [

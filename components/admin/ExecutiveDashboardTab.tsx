@@ -335,7 +335,7 @@ export default function ExecutiveDashboardTab() {
                 <div className="flex items-center justify-between mb-2">
                   <span className="font-bold text-sm text-gray-900 dark:text-foreground">{h.module}</span>
                   <span className={cn("text-[10px] font-bold uppercase px-2 py-0.5 rounded-full", h.status === "ok" ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400" : h.status === "warning" ? "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400" : "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400")}>
-                    {h.status === "ok" ? "✓ OK" : h.status === "warning" ? "⚠ Alerta" : "✕ Crítico"}
+                    {h.status === "ok" ? "OK" : h.status === "warning" ? "Alerta" : "Crítico"}
                   </span>
                 </div>
                 <p className="text-xs text-gray-500 dark:text-muted mb-1.5">{h.metric}</p>

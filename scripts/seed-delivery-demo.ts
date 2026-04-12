@@ -30,7 +30,7 @@ const tenantArgIdx = args.indexOf("--tenant");
 const TENANT_ID = tenantArgIdx >= 0 ? args[tenantArgIdx + 1] ?? "main" : "main";
 
 // Coordenadas reales de Pucallpa (tienda central + 3 destinos en el centro)
-const PICKUP = { lat: -8.3791, lng: -74.5539, name: "Bodega San Martín (origen)" };
+const PICKUP = { lat: -8.3791, lng: -74.5539, name: "Buleje (origen)" };
 const DESTINATIONS = [
   {
     address: "Jr. Progreso 245, Pucallpa",

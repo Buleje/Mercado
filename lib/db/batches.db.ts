@@ -1,6 +1,7 @@
 import "server-only";
 import { prisma } from "@/lib/prisma";
 import type { Batch as PBatch } from "@/lib/generated/prisma/client";
+import { toNumOrZero } from "@/lib/decimal-utils";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -113,7 +114,8 @@ function mapBatch(b: PBatchWithProduct): DbBatch {
     ...(b.warehouseId != null && { warehouseId: b.warehouseId }),
     entryDate: toDateOnly(b.entryDate),
     expiryDate: toDateOnly(b.expiryDate),
-    costUnit: b.costUnit,
+    // TD-018: costUnit es Decimal
+    costUnit: toNumOrZero(b.costUnit),
     notes: b.notes,
     createdAt: toISO(b.createdAt),
     updatedAt: toISO(b.updatedAt),

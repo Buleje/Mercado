@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireAdmin } from "@/lib/require-admin";
 import { prisma } from "@/lib/prisma";
+import { logger } from "@/lib/logger";
 
 /**
  * POST /api/admin/setup-marketplace-store
@@ -75,7 +76,7 @@ export async function POST(req: NextRequest) {
       message: `✅ Tienda "${store.name}" publicada en marketplace con ${products.length} productos.`,
     });
   } catch (e) {
-    console.error("[setup-marketplace-store] Error:", e);
+    logger.error("[setup-marketplace-store] error", { error: (e as Error).message, tenantId: auth.tenantId });
     return NextResponse.json({ error: "Error al configurar tienda marketplace" }, { status: 500 });
   }
 }

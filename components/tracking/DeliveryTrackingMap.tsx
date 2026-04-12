@@ -2,7 +2,6 @@
 
 import { useState, useEffect, useRef, useCallback } from "react";
 import {
-  MapPin,
   Loader2,
   AlertCircle,
   Phone,
@@ -10,8 +9,7 @@ import {
   CheckCircle,
   Bike,
   Package,
-  Navigation,
-} from "lucide-react";
+  Navigation } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 // ── Types ────────────────────────────────────────────────────────────────────
@@ -131,7 +129,6 @@ export default function DeliveryTrackingMap({ orderId, destLat, destLng, classNa
     if (!containerRef.current || initRef.current) return;
     initRef.current = true;
 
-    // @ts-expect-error — CSS module import dinámico
     await import("leaflet/dist/leaflet.css");
     const L = await import("leaflet");
 

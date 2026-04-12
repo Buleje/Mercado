@@ -71,11 +71,11 @@ function getStoredOrder(): TrackedOrder | null {
   if (typeof window === "undefined") return null;
   try {
     // Try full order data first — use pendiente as initial status (real status fetched on first poll)
-    const lastOrderRaw = localStorage.getItem("bsm-last-order");
+    const lastOrderRaw = localStorage.getItem("buleje-last-order");
     if (lastOrderRaw) {
       const lastOrder = JSON.parse(lastOrderRaw);
-      // If we already have a live status cached in bsm-active-order, prefer it
-      const activeRaw = localStorage.getItem("bsm-active-order");
+      // If we already have a live status cached in buleje-active-order, prefer it
+      const activeRaw = localStorage.getItem("buleje-active-order");
       let cachedStatus: TrackedOrder["status"] = "pendiente";
       if (activeRaw) {
         try {
@@ -93,12 +93,12 @@ function getStoredOrder(): TrackedOrder | null {
     }
     
     // Fallback to minimal tracking data
-    const raw = localStorage.getItem("bsm-active-order");
+    const raw = localStorage.getItem("buleje-active-order");
     if (!raw) return null;
     const order = JSON.parse(raw) as TrackedOrder;
     const age = Date.now() - new Date(order.createdAt).getTime();
     if (age > 7_200_000) {
-      localStorage.removeItem("bsm-active-order");
+      localStorage.removeItem("buleje-active-order");
       return null;
     }
     return order;
@@ -107,16 +107,33 @@ function getStoredOrder(): TrackedOrder | null {
   }
 }
 
+/** Reads customerPhone from buleje-last-order so the public lookup can prove ownership. */
+function getStoredPhone(): string | null {
+  if (typeof window === "undefined") return null;
+  try {
+    const raw = localStorage.getItem("buleje-last-order");
+    if (!raw) return null;
+    const parsed = JSON.parse(raw) as { customerPhone?: string };
+    return parsed.customerPhone ?? null;
+  } catch {
+    return null;
+  }
+}
+
 async function fetchLiveStatus(orderId: string): Promise<TrackedOrder["status"] | null> {
   try {
-    const res = await fetch(`/api/orders/${orderId}/public`, { cache: "no-store" });
+    const phone = getStoredPhone();
+    const url = phone
+      ? `/api/orders/${orderId}/public?phone=${encodeURIComponent(phone)}`
+      : `/api/orders/${orderId}/public`;
+    const res = await fetch(url, { cache: "no-store" });
     if (!res.ok) {
       // Order no longer exists on the server (purged, expired, or never persisted) —
       // clear stale tracking data so we stop hammering a dead endpoint.
       if (res.status === 404 && typeof window !== "undefined") {
         try {
-          localStorage.removeItem("bsm-active-order");
-          localStorage.removeItem("bsm-last-order");
+          localStorage.removeItem("buleje-active-order");
+          localStorage.removeItem("buleje-last-order");
         } catch {}
       }
       return null;
@@ -233,7 +250,7 @@ export default function OrderStatusModal({ isOpen, onClose }: OrderStatusModalPr
     const handleNewOrder = (e: Event) => {
       const detail = (e as CustomEvent).detail;
       if (detail?.orderId) {
-        const lastOrderRaw = localStorage.getItem("bsm-last-order");
+        const lastOrderRaw = localStorage.getItem("buleje-last-order");
         let orderData: TrackedOrder = {
           id: detail.orderId,
           status: "pendiente",  // real status will be fetched on next poll
@@ -245,12 +262,12 @@ export default function OrderStatusModal({ isOpen, onClose }: OrderStatusModalPr
             orderData = { ...orderData, items: parsed.items, total: parsed.total, createdAt: parsed.createdAt ?? orderData.createdAt };
           } catch {}
         }
-        localStorage.setItem("bsm-active-order", JSON.stringify(orderData));
+        localStorage.setItem("buleje-active-order", JSON.stringify(orderData));
         startTransition(() => { setOrder(orderData); });
       }
     };
-    window.addEventListener("bsm:orderCreated", handleNewOrder);
-    return () => window.removeEventListener("bsm:orderCreated", handleNewOrder);
+    window.addEventListener("buleje:orderCreated", handleNewOrder);
+    return () => window.removeEventListener("buleje:orderCreated", handleNewOrder);
   }, []);
 
   // Adaptive poll: 10s when open (for visibility), 30s in background
@@ -263,7 +280,7 @@ export default function OrderStatusModal({ isOpen, onClose }: OrderStatusModalPr
       const liveStatus = await fetchLiveStatus(current.id);
       if (liveStatus && liveStatus !== current.status) {
         current.status = liveStatus;
-        localStorage.setItem("bsm-active-order", JSON.stringify(current));
+        localStorage.setItem("buleje-active-order", JSON.stringify(current));
         startTransition(() => setOrder({ ...current }));
       }
     }, interval);
@@ -530,7 +547,7 @@ export default function OrderStatusModal({ isOpen, onClose }: OrderStatusModalPr
                       </div>
                       <div>
                         <p className="text-xs font-bold text-white">{order.status === "en_camino" ? "🚚 Delivery en ruta" : "📍 Buleje"}</p>
-                        <p className="text-[10px] text-white/60">Jr. San Martín · Callería, Ucayali</p>
+                        <p className="text-[10px] text-white/60">Buleje — Software ERP para Bodegas</p>
                       </div>
                     </div>
                     {order.status === "en_camino" && (

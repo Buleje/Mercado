@@ -31,10 +31,21 @@ export async function GET(req: NextRequest) {
       const now = new Date();
       const sevenDaysAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
 
+      // Iterate over all active tenants (multi-tenant)
+      const tenants = await prisma.tenant.findMany({
+        where: { active: true },
+        select: { id: true, name: true },
+      });
+
+      const allResults: { tenantId: string; tenantName: string; total: number; capitalAtado: number }[] = [];
+
+      for (const tenant of tenants) {
+        const tenantId = tenant.id;
+
       // Get all active products with stock
       const activeProducts = await prisma.product.findMany({
         where: {
-          tenantId: "main",
+          tenantId,
           active: true,
           deletedAt: null,
           stock: { gt: 0 },
@@ -51,14 +62,14 @@ export async function GET(req: NextRequest) {
       });
 
       if (activeProducts.length === 0) {
-        return { ok: true, deadStock: [], total: 0 };
+        continue;
       }
 
       // Get product IDs that had sales in the last 7 days
       const recentSaleItems = await prisma.saleItem.findMany({
         where: {
           sale: {
-            tenantId: "main",
+            tenantId,
             createdAt: { gte: sevenDaysAgo },
           },
         },
@@ -70,7 +81,7 @@ export async function GET(req: NextRequest) {
       const recentOrderItems = await prisma.orderItem.findMany({
         where: {
           order: {
-            tenantId: "main",
+            tenantId,
             createdAt: { gte: sevenDaysAgo },
             status: { notIn: ["cancelado"] },
           },
@@ -100,7 +111,7 @@ export async function GET(req: NextRequest) {
         .sort((a, b) => b.capitalAtado - a.capitalAtado);
 
       if (deadStock.length === 0) {
-        return { ok: true, deadStock: [], total: 0, message: "Todos los productos tuvieron ventas esta semana 🎉" };
+        continue;
       }
 
       const totalCapitalAtado = deadStock.reduce((s, p) => s + p.capitalAtado, 0);
@@ -111,12 +122,12 @@ export async function GET(req: NextRequest) {
         recipient: "admin",
         message: `${deadStock.length} productos sin ventas en 7 días. Capital atado: S/ ${totalCapitalAtado.toFixed(2)}`,
         status: "pending",
-      });
+      }, tenantId);
 
       // Build WhatsApp message
       const whatsappMsg = [
         `📦 *Reporte Semanal — Productos sin Movimiento*`,
-        `🏪 *Buleje*`,
+        `🏪 *${tenant.name}*`,
         `━━━━━━━━━━━━━━━━━━━`,
         ``,
         `${deadStock.length} producto(s) no se vendieron en los últimos 7 días:`,
@@ -138,7 +149,7 @@ export async function GET(req: NextRequest) {
       (async () => {
         try {
           const settings = await prisma.settings.findFirst({
-            where: { tenantId: "main" },
+            where: { tenantId },
             select: { businessPhone: true },
           });
           const ownerPhone = settings?.businessPhone || process.env.NOTIFY_PHONE;
@@ -147,7 +158,7 @@ export async function GET(req: NextRequest) {
               type: "whatsapp",
               recipient: ownerPhone,
               message: whatsappMsg,
-              tenantId: "main",
+              tenantId,
             }).catch(() => {});
             sendPushToPhone(ownerPhone, {
               title: `📦 ${deadStock.length} productos sin ventas esta semana`,
@@ -158,7 +169,10 @@ export async function GET(req: NextRequest) {
         } catch { /* silencioso */ }
       })();
 
+      allResults.push({ tenantId, tenantName: tenant.name, total: deadStock.length, capitalAtado: totalCapitalAtado });
+
       logger.info("[cron/dead-stock-report] Reporte generado", {
+        tenantId,
         total: deadStock.length,
         capitalAtado: totalCapitalAtado.toFixed(2),
       });
@@ -170,12 +184,12 @@ export async function GET(req: NextRequest) {
         undefined,
         "cron"
       ).catch(() => {});
+      } // end for tenant
 
       return {
         ok: true,
-        total: deadStock.length,
-        capitalAtado: totalCapitalAtado,
-        deadStock: deadStock.slice(0, 50),
+        tenantsProcessed: tenants.length,
+        results: allResults,
         processedAt: now.toISOString(),
       };
     });

@@ -5,7 +5,6 @@ import {
   AlertTriangle,
   CheckCircle2,
   Circle,
-  Clock,
   MessageCircle,
   RotateCcw,
   Star,
@@ -16,11 +15,8 @@ import {
   Focus,
   Users,
   BarChart3,
-  ChevronDown,
-  ChevronUp,
   Flame,
-  Award,
-} from "lucide-react";
+  Award } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { BusinessData } from "./AICommandCenter";
 
@@ -85,14 +81,14 @@ interface TimeSlot {
 function getCurrentTimeSlot(): TimeSlot {
   const h = new Date().getHours();
   if (h < 9)
-    return { label: "Apertura", keywords: ["apertura", "stock", "inventario", "caducidad", "vencimiento"], icon: "🌅", description: "Revisar inventario y preparar el día" };
+    return { label: "Apertura", keywords: ["apertura", "stock", "inventario", "caducidad", "vencimiento"], icon: "", description: "Revisar inventario y preparar el día" };
   if (h < 13)
-    return { label: "Ventas", keywords: ["venta", "cliente", "pedido", "whatsapp", "promocion"], icon: "🛒", description: "Hora punta de ventas" };
+    return { label: "Ventas", keywords: ["venta", "cliente", "pedido", "whatsapp", "promocion"], icon: "", description: "Hora punta de ventas" };
   if (h < 15)
-    return { label: "Control", keywords: ["reporte", "control", "merma", "ajuste", "inventario"], icon: "📊", description: "Revisión y ajustes de mediodía" };
+    return { label: "Control", keywords: ["reporte", "control", "merma", "ajuste", "inventario"], icon: "", description: "Revisión y ajustes de mediodía" };
   if (h < 18)
-    return { label: "Cobros", keywords: ["fiado", "cobro", "deuda", "pago", "transferencia"], icon: "💰", description: "Gestión de cobranzas" };
-  return { label: "Cierre", keywords: ["cierre", "caja", "corte", "reporte", "resumen"], icon: "🌙", description: "Cierre del día y planificación" };
+    return { label: "Cobros", keywords: ["fiado", "cobro", "deuda", "pago", "transferencia"], icon: "", description: "Gestión de cobranzas" };
+  return { label: "Cierre", keywords: ["cierre", "caja", "corte", "reporte", "resumen"], icon: "", description: "Cierre del día y planificación" };
 }
 
 function matchesTimeSlot(action: string, slot: TimeSlot): boolean {
@@ -351,24 +347,23 @@ function getRecurringTasks(): RecurringTask[] {
 function generateWhatsAppPlan(tasks: PlanTask[], recurring: RecurringTask[], streak: number): string {
   const now = new Date();
   const dateStr = now.toLocaleDateString("es-PE", { weekday: "long", day: "numeric", month: "long" });
-  let msg = `📋 *Plan del día — ${dateStr}*\n`;
-  if (streak > 0) msg += `🔥 Racha: ${streak} día(s) consecutivos\n`;
+  let msg = `*Plan del día — ${dateStr}*\n`;
+  if (streak > 0) msg += `Racha: ${streak} día(s) consecutivos\n`;
   msg += "\n";
 
   const totalTime = tasks.reduce((s, t) => s + t.estimatedMinutes, 0);
   const doneCount = tasks.filter((t) => t.done).length;
-  msg += `📊 ${doneCount}/${tasks.length} tareas (⏱ ~${totalTime} min estimados)\n\n`;
+  msg += `${doneCount}/${tasks.length} tareas (~${totalTime} min estimados)\n\n`;
 
   const grouped: Record<Priority, PlanTask[]> = { urgente: [], importante: [], recomendado: [] };
   tasks.forEach((t) => grouped[t.priority].push(t));
 
-  const icons: Record<Priority, string> = { urgente: "🔴", importante: "🟡", recomendado: "🔵" };
   for (const p of ["urgente", "importante", "recomendado"] as Priority[]) {
     const grp = grouped[p];
     if (grp.length === 0) continue;
-    msg += `${icons[p]} *${PRIORITY_CONFIG[p].label}*\n`;
+    msg += `*${PRIORITY_CONFIG[p].label}*\n`;
     grp.forEach((t) => {
-      msg += `${t.done ? "✅" : "⬜"} ${t.action} (⏱${t.estimatedMinutes}min)`;
+      msg += `${t.done ? "[x]" : "[ ]"} ${t.action} (${t.estimatedMinutes} min)`;
       if (t.roiEstimate) msg += ` → ${t.roiEstimate}`;
       msg += "\n";
     });
@@ -376,9 +371,9 @@ function generateWhatsAppPlan(tasks: PlanTask[], recurring: RecurringTask[], str
   }
 
   if (recurring.length > 0) {
-    msg += "🔄 *Recurrentes*\n";
+    msg += "*Recurrentes*\n";
     recurring.forEach((t) => {
-      msg += `${t.done ? "✅" : "⬜"} ${t.action}\n`;
+      msg += `${t.done ? "[x]" : "[ ]"} ${t.action}\n`;
     });
   }
 
@@ -410,7 +405,7 @@ export default function AIActionPlan({ data }: { data: BusinessData }) {
   const [focusMode, setFocusMode] = useState(false);
   const [showDelegation, setShowDelegation] = useState(false);
   const [streak, setStreak] = useState(0);
-  const [expandedCategories, setExpandedCategories] = useState<Record<string, boolean>>({});
+  const [_expandedCategories, setExpandedCategories] = useState<Record<string, boolean>>({});
   const timeSlot = useMemo(() => getCurrentTimeSlot(), []);
 
   // Load tasks + restore state from localStorage
@@ -870,7 +865,7 @@ function TaskRow({
           </p>
           {task.done && task.completedAt && (
             <span className="text-[10px] text-emerald-600 dark:text-emerald-400 font-medium whitespace-nowrap">
-              ✓ {formatTime(task.completedAt)}
+              {formatTime(task.completedAt)}
             </span>
           )}
         </div>
@@ -891,7 +886,7 @@ function TaskRow({
           )}
           {task.dependsOn && !task.done && (
             <span className="text-[10px] text-amber-600 dark:text-amber-400">
-              ⚠ {task.dependsOn}
+              {task.dependsOn}
             </span>
           )}
         </div>
@@ -935,7 +930,7 @@ function RecurringTaskRow({
           </p>
           {task.done && task.completedAt && (
             <span className="text-[10px] text-purple-600 dark:text-purple-400 font-medium whitespace-nowrap">
-              ✓ {formatTime(task.completedAt)}
+              {formatTime(task.completedAt)}
             </span>
           )}
         </div>

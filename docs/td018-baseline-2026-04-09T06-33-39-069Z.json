@@ -1,0 +1,62 @@
+{
+  "timestamp": "2026-04-09T06:33:40.595Z",
+  "database": "postgres",
+  "branch": "feature/td018-float-to-decimal",
+  "queries_run": 12,
+  "results": {
+    "Product.price": {
+      "rows": "84",
+      "sum": "710.50",
+      "avg": "8.4583333333333333",
+      "min": "1.80",
+      "max": "29.90"
+    },
+    "Product.costPrice": {
+      "rows": "82",
+      "sum": "496.60",
+      "avg": "6.0560975609756098"
+    },
+    "Order.total": {
+      "rows": "12",
+      "sum": "165.10",
+      "avg": "13.7583333333333333",
+      "min": "3.20",
+      "max": "39.50"
+    },
+    "Order.discountAmount": {
+      "rows": "0",
+      "sum": "0"
+    },
+    "SaleItem.total": {
+      "error": "column \"total\" does not exist"
+    },
+    "SaleItem.amountPaid": {
+      "error": "column \"amountPaid\" does not exist"
+    },
+    "Customer.totalSpent": {
+      "rows": "0",
+      "sum": "0",
+      "avg": "0"
+    },
+    "Customer.creditBalance": {
+      "rows": "0",
+      "sum": "0"
+    },
+    "Invoice.subtotal": {
+      "error": "relation \"Invoice\" does not exist"
+    },
+    "CashierSession.openingAmount": {
+      "error": "relation \"CashierSession\" does not exist"
+    },
+    "Payable.amount": {
+      "rows": "0",
+      "sum": "0",
+      "sum_paid": "0"
+    },
+    "PurchaseOrder.total": {
+      "rows": "0",
+      "sum": "0",
+      "avg": "0"
+    }
+  }
+}

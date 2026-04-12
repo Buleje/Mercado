@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 
-const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL ?? "https://buleje.com";
+const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL ?? "https://buleje.pe";
 
 export const metadata: Metadata = {
   title: "Crear tu Tienda — Registro | Buleje",

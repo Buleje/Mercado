@@ -45,12 +45,12 @@ export default function GastosActivosModule() {
         activeTab={sub}
         onTabChange={setSub}
         moduleId={MODULE_ID}
-      />
-
-      {sub === "gastos" && <ExpensesTab />}
-      {sub === "centros-costo" && <CostCenterTab />}
-      {sub === "seguros" && <InsuranceTab />}
-      {sub === "activos" && <AssetManagerTab />}
+      >
+        {sub === "gastos" && <ExpensesTab />}
+        {sub === "centros-costo" && <CostCenterTab />}
+        {sub === "seguros" && <InsuranceTab />}
+        {sub === "activos" && <AssetManagerTab />}
+      </AdminTabBar>
     </div>
   );
 }

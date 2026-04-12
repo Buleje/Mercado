@@ -179,7 +179,7 @@ const FLOW_STEPS: FlowStep[] = [
     n: 1,
     title: "El cliente abre la tienda",
     simple: "Entra al sitio web o la app del celular",
-    technical: "Next.js sirve la página del storefront con tenant por subdominio (slug.buleje.com)",
+    technical: "Next.js sirve la página del storefront con tenant por subdominio (slug.buleje.pe)",
     icon: <Smartphone className="w-5 h-5" />,
   },
   {
@@ -577,7 +577,7 @@ const SELL_PACKAGES: SellPackage[] = [
     includes: [
       "Todo lo del paquete 'Empresarial'",
       "Marca registrada 'Buleje' (logos, nombre)",
-      "Dominios (buleje.com y otros)",
+      "Dominios (buleje.pe y otros)",
       "Cuentas de GitHub, Vercel, Supabase transferidas",
       "6 meses de soporte full",
       "Capacitación 1 semana a tu equipo",
@@ -740,7 +740,7 @@ function WhatTab() {
       <div className="bg-white dark:bg-gray-950 border-2 border-indigo-200 dark:border-indigo-900/40 rounded-2xl p-6">
         <h2 className="text-lg font-bold text-gray-900 dark:text-white mb-3 flex items-center gap-2">
           <Rocket className="w-5 h-5 text-indigo-600" />
-          ¿Qué es Bodega San Martín?
+          ¿Qué es Buleje?
         </h2>
         <p className="text-sm text-gray-700 dark:text-gray-300 leading-relaxed">
           Es un <strong>sistema ERP + e-commerce completo</strong> para bodegas y minimarkets en Perú, con inteligencia artificial integrada. No es un MVP — es un producto vendible YA.

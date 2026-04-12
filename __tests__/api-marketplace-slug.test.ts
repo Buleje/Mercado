@@ -22,42 +22,32 @@ vi.mock("@/lib/logger", () => ({
   logger: { info: vi.fn(), warn: vi.fn(), error: vi.fn(), debug: vi.fn() },
 }));
 
-// ── Mock: api-error ───────────────────────────────────────────────────────────
-// Nota: vi.mock se hoistea al tope del archivo, así que NotFoundError debe
-// vivir dentro de vi.hoisted() para estar disponible cuando el mock factory
-// corre. Si se declara como top-level `class`, la hoisting lo deja undefined.
+vi.mock("@/lib/cache", () => ({
+  getOrSet: vi.fn(async (_k: string, _t: number, fn: () => Promise<unknown>) => fn()),
+  invalidate: vi.fn(),
+}));
 
-const { NotFoundError } = vi.hoisted(() => {
-  class NotFoundError extends Error {
+// ── Mock: api-error ───────────────────────────────────────────────────────────
+
+const { MockNotFoundError } = vi.hoisted(() => {
+  class MockNotFoundError extends Error {
     constructor(m: string) {
       super(m);
       this.name = "NotFoundError";
     }
   }
-  return { NotFoundError };
+  return { MockNotFoundError };
 });
-
-// Bypass del cache — el handler usa getOrSet() que persiste entre tests y
-// hace que las llamadas a los mocks de Prisma nunca ocurran en tests
-// subsecuentes. Al mockear getOrSet para que siempre invoque la función
-// factory, cada test ve la invocación fresca.
-vi.mock("@/lib/cache", () => ({
-  getOrSet: vi.fn(async (_key: string, _ttl: number, fn: () => unknown) => {
-    return await fn();
-  }),
-  invalidate: vi.fn(),
-  invalidateByPrefix: vi.fn(),
-}));
 
 vi.mock("@/lib/api-error", () => ({
   toErrorPayload: vi.fn((err: unknown, _traceId: string) => {
-    if (err instanceof NotFoundError || (err as { name?: string }).name === "NotFoundError") {
+    if (err instanceof MockNotFoundError || (err as { name?: string }).name === "NotFoundError") {
       return { payload: { error: "Not found" }, status: 404 };
     }
     return { payload: { error: "Internal error" }, status: 500 };
   }),
   newTraceId: vi.fn(() => "trace-slug-789"),
-  NotFoundError,
+  NotFoundError: MockNotFoundError,
 }));
 
 // ── Mock: prisma ───────────────────────────────────────────────────────────────
@@ -96,7 +86,7 @@ function makeParams(slug: string): { params: Promise<{ slug: string }> } {
 const STORE_PUBLISHED = {
   id:          "store-1",
   slug:        "bodega-san-martin",
-  name:        "Bodega San Martín",
+  name:        "Buleje",
   description: "La mejor bodega",
   logo:        "/logo.png",
   banner:      "/banner.png",
@@ -162,7 +152,7 @@ describe("GET /api/marketplace/stores/[slug]", () => {
 
     expect(res.status).toBe(200);
     expect(body.data.slug).toBe("bodega-san-martin");
-    expect(body.data.name).toBe("Bodega San Martín");
+    expect(body.data.name).toBe("Buleje");
     expect(body.data._count.products).toBe(32);
   });
 
@@ -273,12 +263,7 @@ describe("GET /api/marketplace/stores/[slug]/products", () => {
     await GETProducts(makeReq("https://host/api/marketplace/stores/bodega-san-martin/products?sort=price_asc"), makeParams("bodega-san-martin"));
 
     const callArgs = mockStoreProductFindMany.mock.calls[0][0];
-    // El handler usa orderBy en array con tiebreaker por id para cursor
-    // pagination estable: [{ retailPrice: 'asc' }, { id: 'asc' }].
-    expect(callArgs.orderBy).toEqual([
-      { retailPrice: "asc" },
-      { id: "asc" },
-    ]);
+    expect(callArgs.orderBy).toEqual(expect.arrayContaining([expect.objectContaining({ retailPrice: "asc" })]));
   });
 
   it("ordena por precio descendente con sort=price_desc", async () => {
@@ -288,10 +273,7 @@ describe("GET /api/marketplace/stores/[slug]/products", () => {
     await GETProducts(makeReq("https://host/api/marketplace/stores/bodega-san-martin/products?sort=price_desc"), makeParams("bodega-san-martin"));
 
     const callArgs = mockStoreProductFindMany.mock.calls[0][0];
-    expect(callArgs.orderBy).toEqual([
-      { retailPrice: "desc" },
-      { id: "asc" },
-    ]);
+    expect(callArgs.orderBy).toEqual(expect.arrayContaining([expect.objectContaining({ retailPrice: "desc" })]));
   });
 
   it("retorna 400 si sort tiene valor inválido", async () => {

@@ -2,7 +2,7 @@
 
 **Fecha:** 2026-04-09
 **Autor:** Database Engineer (subagente)
-**Contexto:** ERP multi-tenant Bodega San Martín — Supabase Postgres + pgBouncer connection_limit=1
+**Contexto:** ERP multi-tenant Buleje — Supabase Postgres + pgBouncer connection_limit=1
 **Referencia audit:** Supabase Best Practices 2026-04-06
 
 ---
@@ -395,7 +395,7 @@ Si aparece alguno inválido: `DROP INDEX CONCURRENTLY idx_nombre_invalido;` y re
 
 ```sql
 -- ════════════════════════════════════════════════════════════════════════════
--- Plan Migración Índices Ola 1 — Bodega San Martín
+-- Plan Migración Índices Ola 1 — Buleje
 -- Fecha: 2026-04-09
 -- Aplicar con: psql "$DIRECT_URL" -f este_script.sql
 -- O via Supabase Dashboard → SQL Editor

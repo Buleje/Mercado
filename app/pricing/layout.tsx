@@ -1,14 +1,15 @@
 import type { Metadata } from "next";
 
-const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL ?? "https://buleje.com";
+const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL ?? "https://buleje.pe";
 
 export const metadata: Metadata = {
   title: "Planes y Precios — Buleje | Tienda Online para Bodegas",
   description:
     "Elige el plan perfecto para tu bodega. Desde gratis hasta Enterprise con dominio propio, analytics avanzado, soporte prioritario y más. Prueba gratis 14 días.",
   keywords: [
-    "bodega online", "tienda virtual", "planes precios", "ecommerce peru",
-    "bodega san martin", "SaaS bodegas", "tienda gratis",
+    "software para bodegas", "ERP tienda peru", "planes precios bodega",
+    "sistema inventario tienda", "Buleje ERP", "SaaS bodegas peru",
+    "punto de venta bodega", "software inventario gratis",
   ],
   alternates: { canonical: `${BASE_URL}/pricing` },
   openGraph: {

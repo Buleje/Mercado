@@ -3,6 +3,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getPlatformSession, PLATFORM_SESSION } from "@/lib/superadmin-session";
 import { prismaReadonly as prisma } from "@/lib/prisma-readonly";
 import { applyRateLimit } from "@/lib/rate-limit";
+import { getAllPlanPrices } from "@/lib/plans-server";
 
 async function requirePlatform(req: NextRequest) {
   const token = req.cookies.get(PLATFORM_SESSION.COOKIE_NAME)?.value;
@@ -23,6 +24,12 @@ export async function GET(req: NextRequest) {
   const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
   const startOfLastMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1);
   const endOfLastMonth = new Date(now.getFullYear(), now.getMonth(), 0, 23, 59, 59, 999);
+
+  // ── Single source of truth para precios de planes ──────────────────────
+  // Fix MRR fake 2026-04-09: antes había hardcoded {pro:49, business:149, enterprise:399}
+  // desincronizado con lib/superadmin-types.ts (enterprise:499). Ahora leemos
+  // desde PlatformSetting("plan-prices") con fallback a DEFAULT_PLAN_PRICES.
+  const PLAN_PRICES = await getAllPlanPrices();
 
   const [
     allTenants,
@@ -65,11 +72,11 @@ export async function GET(req: NextRequest) {
     planCounts[t.plan] = (planCounts[t.plan] ?? 0) + 1;
   }
 
-  // MRR calculation
-  const PLAN_PRICES: Record<string, number> = { free: 0, pro: 49, business: 149, enterprise: 399 };
+  // MRR calculation — usa PLAN_PRICES traídos de PlatformSetting arriba.
   const mrr = allTenants.reduce((sum, t) => {
     if (!t.active) return sum;
-    return sum + (PLAN_PRICES[t.plan] ?? 0);
+    const price = PLAN_PRICES[t.plan as keyof typeof PLAN_PRICES] ?? 0;
+    return sum + price;
   }, 0);
 
   // Growth metrics
@@ -106,7 +113,10 @@ export async function GET(req: NextRequest) {
     // Estimate by counting active paid tenants created before end of month
     const revenue = allTenants
       .filter((t) => new Date(t.createdAt) <= end && t.active)
-      .reduce((s, t) => s + (PLAN_PRICES[t.plan] ?? 0), 0);
+      .reduce(
+        (s, t) => s + (PLAN_PRICES[t.plan as keyof typeof PLAN_PRICES] ?? 0),
+        0,
+      );
     monthlyRevenue.push({ month: label, revenue });
   }
 

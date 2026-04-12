@@ -197,7 +197,7 @@ export default function BalanceSheetTab() {
       {/* Balance check */}
       {Math.abs(totals.totalActivos.current - totals.totalPasPat.current) > 0.01 && (
         <div className="bg-red-50 dark:bg-red-950/20 border border-red-200 dark:border-red-800 rounded-2xl p-4 text-sm text-red-700 dark:text-red-400 font-bold">
-          ⚠ Descuadre detectado: Activos ({fmt(totals.totalActivos.current)}) ≠ Pasivo + Patrimonio ({fmt(totals.totalPasPat.current)}). Diferencia: {fmt(Math.abs(totals.totalActivos.current - totals.totalPasPat.current))}
+          Descuadre detectado: Activos ({fmt(totals.totalActivos.current)}) ≠ Pasivo + Patrimonio ({fmt(totals.totalPasPat.current)}). Diferencia: {fmt(Math.abs(totals.totalActivos.current - totals.totalPasPat.current))}
         </div>
       )}
 

@@ -99,8 +99,9 @@ export async function guardSuperadminPages(
 
   const session = await getPlatformSession(platformToken);
   if (!session) {
-    // Invalid or expired — clear the cookie and redirect
+    // Invalid or expired — clear the cookie and redirect with reason
     const loginUrl = new URL("/superadmin/login", req.url);
+    loginUrl.searchParams.set("reason", "expired");
     const response = NextResponse.redirect(loginUrl);
     response.cookies.delete(PLATFORM_SESSION.COOKIE_NAME);
     return response;

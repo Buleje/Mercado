@@ -1,7 +1,8 @@
 "use client";
 
 import { useState, useEffect, useRef, useCallback } from "react";
-import { Search, X, ShoppingCart, Loader2 } from "lucide-react";
+import Image from "next/image";
+import { Search, X, ShoppingCart, Loader2, Mic, MicOff } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface SearchResult {
@@ -27,6 +28,50 @@ export default function SmartSearchBar({ onAddToCart, className }: SmartSearchBa
   const inputRef = useRef<HTMLInputElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const debounceRef = useRef<ReturnType<typeof setTimeout>>(undefined);
+  const [isListening, setIsListening] = useState(false);
+  const recognitionRef = useRef<SpeechRecognition | null>(null);
+
+  // Web Speech API support check + setup
+  const speechSupported = typeof window !== "undefined" && ("SpeechRecognition" in window || "webkitSpeechRecognition" in window);
+
+  const toggleVoiceSearch = () => {
+    if (!speechSupported) return;
+
+    if (isListening && recognitionRef.current) {
+      recognitionRef.current.stop();
+      setIsListening(false);
+      return;
+    }
+
+    const SpeechRecognitionApi = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (!SpeechRecognitionApi) return;
+    const recognition = new SpeechRecognitionApi();
+    recognition.lang = "es-PE";
+    recognition.continuous = false;
+    recognition.interimResults = false;
+
+    recognition.onresult = (event: SpeechRecognitionEvent) => {
+      const transcript = event.results[0]?.[0]?.transcript ?? "";
+      if (transcript) {
+        setQuery(transcript);
+        setOpen(true);
+        setSelected(-1);
+      }
+      setIsListening(false);
+    };
+
+    recognition.onerror = () => {
+      setIsListening(false);
+    };
+
+    recognition.onend = () => {
+      setIsListening(false);
+    };
+
+    recognitionRef.current = recognition;
+    recognition.start();
+    setIsListening(true);
+  };
 
   const fmt = (n: number) => `S/${n.toFixed(2)}`;
 
@@ -89,16 +134,33 @@ export default function SmartSearchBar({ onAddToCart, className }: SmartSearchBa
           onFocus={() => { if (results.length > 0) setOpen(true); }}
           onKeyDown={handleKeyDown}
           placeholder="Buscar productos..."
-          className="w-full pl-9 pr-8 py-2.5 rounded-xl border border-gray-200 dark:border-card-border bg-white dark:bg-card text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 dark:text-foreground"
+          className="w-full pl-9 pr-16 py-2.5 rounded-xl border border-gray-200 dark:border-card-border bg-white dark:bg-card text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 dark:text-foreground"
         />
-        {query && (
-          <button
-            onClick={() => { setQuery(""); setResults([]); setOpen(false); inputRef.current?.focus(); }}
-            className="absolute right-2 top-1/2 -translate-y-1/2 p-1 rounded-full hover:bg-gray-100 dark:hover:bg-accent"
-          >
-            <X className="h-3.5 w-3.5 text-gray-400" />
-          </button>
-        )}
+        <div className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center gap-0.5">
+          {query && (
+            <button
+              onClick={() => { setQuery(""); setResults([]); setOpen(false); inputRef.current?.focus(); }}
+              className="p-1 rounded-full hover:bg-gray-100 dark:hover:bg-accent"
+            >
+              <X className="h-3.5 w-3.5 text-gray-400" />
+            </button>
+          )}
+          {speechSupported && (
+            <button
+              onClick={toggleVoiceSearch}
+              className={cn(
+                "p-1.5 rounded-full transition-colors",
+                isListening
+                  ? "bg-red-100 dark:bg-red-900/30 text-red-500 animate-pulse"
+                  : "hover:bg-gray-100 dark:hover:bg-accent text-gray-400",
+              )}
+              aria-label={isListening ? "Detener dictado" : "Buscar por voz"}
+              title={isListening ? "Detener dictado" : "Buscar por voz en espanol"}
+            >
+              {isListening ? <MicOff className="h-4 w-4" /> : <Mic className="h-4 w-4" />}
+            </button>
+          )}
+        </div>
       </div>
 
       {/* Results dropdown */}
@@ -128,7 +190,7 @@ export default function SmartSearchBar({ onAddToCart, className }: SmartSearchBa
                 )}
               >
                 {product.image ? (
-                  <img src={product.image} alt="" className="h-10 w-10 rounded-lg object-cover shrink-0" />
+                  <Image src={product.image} alt="" width={40} height={40} className="rounded-lg object-cover shrink-0" />
                 ) : (
                   <div className="h-10 w-10 rounded-lg bg-gray-100 dark:bg-accent flex items-center justify-center shrink-0">
                     <ShoppingCart className="h-4 w-4 text-gray-400" />

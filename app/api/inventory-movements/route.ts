@@ -67,7 +67,7 @@ export async function POST(req: NextRequest) {
         );
       }
       const { productId, newStock, warehouseId, notes } = parsed.data;
-      const movement = await InventoryMovementsDB.adjust(productId, newStock, warehouseId, notes, auth.username);
+      const movement = await InventoryMovementsDB.adjust(productId, newStock, auth.tenantId, warehouseId, notes, auth.username);
       return NextResponse.json(movement, { status: 201 });
     }
 
@@ -80,7 +80,7 @@ export async function POST(req: NextRequest) {
         );
       }
       const results = await Promise.allSettled(
-        parsed.data.items.map((item) => InventoryMovementsDB.adjust(item.productId, item.newStock, undefined, item.notes, auth.username))
+        parsed.data.items.map((item) => InventoryMovementsDB.adjust(item.productId, item.newStock, auth.tenantId, undefined, item.notes, auth.username))
       );
       const succeeded = results.filter((r) => r.status === "fulfilled").length;
       const failed = results.filter((r) => r.status === "rejected").length;
@@ -108,6 +108,7 @@ export async function POST(req: NextRequest) {
       warehouseId,
       notes,
       createdBy: auth.username,
+      tenantId: auth.tenantId,
     });
     return NextResponse.json(movement, { status: 201 });
   } catch (err) {

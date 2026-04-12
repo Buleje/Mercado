@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { toNumOrZero } from "@/lib/decimal-utils";
 
 /**
  * GET /api/recommendations?phone=XXXXXXXXX&limit=8
@@ -106,9 +107,10 @@ export async function GET(req: NextRequest) {
 
           for (const cat of topCats) {
             if (recommended.length >= limit) break;
+            // TD-018: p.price es Decimal
             const catProducts = allProducts
               .filter((p) => p.category === cat && !usedIds.has(p.id) && (p.stock ?? 0) > 0)
-              .sort((a, b) => b.price - a.price);
+              .sort((a, b) => toNumOrZero(b.price) - toNumOrZero(a.price));
             for (const p of catProducts) {
               if (recommended.length >= limit) break;
               recommended.push(p.id);

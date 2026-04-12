@@ -1,7 +1,7 @@
 "use client";
 import { useState, useEffect, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Download, Eye, X, Loader2, ChevronLeft, ChevronRight, CalendarOff } from "lucide-react";
+import { Download, Eye, X, ChevronLeft, ChevronRight, CalendarOff } from "lucide-react";
 import { exportToExcel } from "@/lib/export-excel";
 import EmptyState from "@/components/admin/shared/EmptyState";
 import TableSkeleton from "@/components/admin/shared/TableSkeleton";

@@ -68,12 +68,14 @@ export async function generateMetadata(): Promise<Metadata> {
  * el layout debe streamar lo estático y mover el async adentro de Suspense.
  */
 async function StoreLayoutContent({
-  tenantId,
   children,
 }: {
-  tenantId: string;
   children: React.ReactNode;
 }) {
+  // Read tenantId inside Suspense to avoid Next 16 blocking route error
+  const hdrs = await headers();
+  const tenantId = hdrs.get("x-tenant-id") ?? "main";
+
   // Validate tenant exists — return 404 for invalid slugs
   if (tenantId !== "main") {
     const exists = await tenantExists(tenantId);
@@ -104,15 +106,11 @@ async function StoreLayoutContent({
   );
 }
 
-export default async function StoreLayout({
+export default function StoreLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  // Leer tenantId del header inyectado por proxy.ts (cookie active-tenant → x-tenant-id)
-  const hdrs = await headers();
-  const tenantId = hdrs.get("x-tenant-id") ?? "main";
-
   return (
     <>
       <GTMNoScript />
@@ -128,9 +126,9 @@ export default async function StoreLayout({
         Saltar al contenido principal
       </a>
       <Suspense fallback={null}>
-        <StoreLayoutContent tenantId={tenantId}>{children}</StoreLayoutContent>
+        <StoreLayoutContent>{children}</StoreLayoutContent>
+        <LocalBusinessJsonLd />
       </Suspense>
-      <LocalBusinessJsonLd />
     </>
   );
 }

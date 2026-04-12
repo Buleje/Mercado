@@ -1,13 +1,13 @@
 "use client";
 
 import { useEffect, useState, useMemo, useCallback } from "react";
+import { useSearchParams } from "next/navigation";
 import {
   MapPin,
   Star,
   Store,
   ShoppingBag,
   ChevronRight,
-  Sparkles,
   TrendingUp,
   Clock,
   Package,
@@ -23,6 +23,7 @@ import MarketplaceFilters, {
 } from "@/components/marketplace/MarketplaceFilters";
 import dynamic from "next/dynamic";
 import PersonalizedRecommendations from "@/components/marketplace/PersonalizedRecommendations";
+import CatalogSections from "@/components/marketplace/CatalogSections";
 import SearchAutocomplete from "@/components/marketplace/SearchAutocomplete";
 
 const CatalogView = dynamic(
@@ -309,11 +310,26 @@ const DEFAULT_FILTERS: MarketplaceFiltersState = {
 };
 
 export default function MarketplaceContent() {
+  const searchParams = useSearchParams();
+  const initialCategoria = searchParams.get("categoria") ?? "todos";
+  // Map landing category slugs to marketplace category IDs
+  const CATEGORIA_MAP: Record<string, string> = {
+    // Product-type slugs → store categories
+    abarrotes: "bodega", bebidas: "bodega", carnes: "carniceria",
+    verduras: "fruteria", frutas: "fruteria", lacteos: "bodega",
+    panaderia: "panaderia", limpieza: "bodega", higiene: "bodega",
+    snacks: "bodega", embutidos: "carniceria", congelados: "bodega",
+    // Landing page slugs → marketplace category IDs
+    bodegas: "bodega", restaurantes: "restaurante",
+    "frutas-verduras": "fruteria", mascotas: "bodega",
+  };
+  const mappedCategory = CATEGORIA_MAP[initialCategoria] ?? (CATEGORIES.some(c => c.id === initialCategoria) ? initialCategoria : "todos");
+
   const [stores, setStores] = useState<MarketplaceStore[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [search, setSearch] = useState("");
-  const [category, setCategory] = useState("todos");
+  const [search, setSearch] = useState(searchParams.get("buscar") ?? "");
+  const [category, setCategory] = useState(mappedCategory);
   const [zone, setZone] = useState("");
   const [geoLoading, setGeoLoading] = useState(false);
   const [geoActive, setGeoActive] = useState(false);
@@ -427,36 +443,25 @@ export default function MarketplaceContent() {
   return (
     <div className="relative">
       {/* ── Hero Section ── */}
-      <section className="relative overflow-hidden bg-linear-to-br from-primary/5 via-white to-secondary/5 dark:from-primary/10 dark:via-background dark:to-secondary/10 pb-8 pt-6 sm:pt-10 sm:pb-12">
+      <section className="relative overflow-hidden bg-linear-to-br from-primary/5 via-white to-secondary/5 dark:from-primary/10 dark:via-background dark:to-secondary/10 pb-6 pt-5 sm:pt-8 sm:pb-8">
         {/* Background decoration */}
         <div className="absolute top-0 right-0 w-96 h-96 bg-primary/5 rounded-full blur-[120px] -translate-y-1/2 translate-x-1/3 pointer-events-none" />
         <div className="absolute bottom-0 left-0 w-72 h-72 bg-secondary/5 rounded-full blur-[100px] translate-y-1/2 -translate-x-1/3 pointer-events-none" />
 
         <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          {/* Title */}
-          <div className="text-center mb-6 sm:mb-8">
-            <motion.div
+          {/* Title — compact since search is in navbar now */}
+          <div className="text-center mb-5">
+            <motion.h1
+              className="text-2xl sm:text-3xl md:text-4xl font-extrabold text-gray-900 dark:text-foreground leading-tight"
               initial={{ opacity: 0, y: 16 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.5 }}
-            >
-              <span className="inline-flex items-center gap-2 text-xs font-bold uppercase tracking-widest text-primary mb-3 bg-primary/8 rounded-full px-4 py-1.5">
-                <Sparkles className="h-3.5 w-3.5" />
-                Marketplace
-              </span>
-            </motion.div>
-
-            <motion.h1
-              className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-extrabold text-gray-900 dark:text-foreground leading-tight"
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.5, delay: 0.1 }}
             >
               Todas las tiendas,{" "}
               <span className="text-primary relative">
                 un solo lugar
                 <svg
-                  className="absolute -bottom-1 sm:-bottom-2 left-0 w-full h-2 sm:h-3 text-primary/30"
+                  className="absolute -bottom-1 left-0 w-full h-2 text-primary/30"
                   viewBox="0 0 100 12"
                   preserveAspectRatio="none"
                 >
@@ -472,37 +477,38 @@ export default function MarketplaceContent() {
             </motion.h1>
 
             <motion.p
-              className="text-gray-500 dark:text-muted mt-3 sm:mt-4 text-sm sm:text-base md:text-lg max-w-2xl mx-auto"
-              initial={{ opacity: 0, y: 16 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.5, delay: 0.2 }}
+              className="text-gray-500 dark:text-muted mt-2 text-sm sm:text-base max-w-xl mx-auto"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ duration: 0.5, delay: 0.15 }}
             >
-              Encuentra las mejores bodegas y tiendas cerca de ti.*
+              Encuentra las mejores bodegas y tiendas cerca de ti.
               Compra de varios negocios en un solo pedido.
             </motion.p>
-          </div>
 
-          {/* Search bar — SearchAutocomplete con sugerencias IA + did you mean */}
-          <motion.div
-            className="max-w-xl mx-auto"
-            initial={{ opacity: 0, scale: 0.95 }}
-            animate={{ opacity: 1, scale: 1 }}
-            transition={{ duration: 0.4, delay: 0.3 }}
-          >
-            <SearchAutocomplete
-              placeholder="Buscar tiendas o productos…"
-              onSearch={(q) => {
-                setSearch(q);
-              }}
-            />
-          </motion.div>
+            {/* Search bar — SearchAutocomplete con sugerencias IA + did you mean */}
+            <motion.div
+              className="mt-5 max-w-xl mx-auto"
+              initial={{ opacity: 0, y: 8 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.2 }}
+            >
+              <SearchAutocomplete
+                onSearch={(q) => {
+                  setSearch(q);
+                  if (q.trim()) setViewMode("catalogo");
+                }}
+                placeholder="Busca productos, tiendas o categorías..."
+              />
+            </motion.div>
+          </div>
 
           {/* Stats row */}
           <motion.div
-            className="flex items-center justify-center gap-4 sm:gap-8 mt-6 text-sm text-gray-500 dark:text-muted flex-wrap"
+            className="flex items-center justify-center gap-4 sm:gap-8 text-sm text-gray-500 dark:text-muted flex-wrap"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
-            transition={{ delay: 0.5 }}
+            transition={{ delay: 0.3 }}
           >
             <span className="inline-flex items-center gap-1.5">
               <Store className="h-4 w-4 text-primary" />
@@ -526,10 +532,10 @@ export default function MarketplaceContent() {
 
           {/* ── View Mode Toggle ── */}
           <motion.div
-            className="flex items-center justify-center mt-6"
-            initial={{ opacity: 0, y: 10 }}
+            className="flex items-center justify-center mt-5"
+            initial={{ opacity: 0, y: 8 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.6 }}
+            transition={{ delay: 0.4 }}
           >
             <div className="inline-flex items-center rounded-2xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 p-1 shadow-md shadow-gray-200/40 dark:shadow-none">
               <button
@@ -559,6 +565,11 @@ export default function MarketplaceContent() {
             </div>
           </motion.div>
         </div>
+      </section>
+
+      {/* ── Curated Catalog Sections ── */}
+      <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
+        <CatalogSections />
       </section>
 
       {/* ── Filters + Grid ── */}

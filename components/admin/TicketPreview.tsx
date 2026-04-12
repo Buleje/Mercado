@@ -64,39 +64,39 @@ function paymentIcon(method: string) {
 
 function buildWhatsAppText(ticket: TicketData, business: BusinessInfo): string {
   const lines: string[] = [];
-  lines.push(`🏪 *${business.name}*`);
-  if (business.ruc) lines.push(`📋 RUC: ${business.ruc}`);
-  if (business.dni) lines.push(`📋 DNI: ${business.dni}`);
-  if (ticket.boletaNumber) lines.push(`🧾 Boleta: ${ticket.boletaNumber}`);
-  lines.push(`🔖 Ticket: ${ticket.ticketNumber}`);
-  lines.push(`📅 Fecha: ${ticket.fecha}`);
-  if (ticket.cashierName) lines.push(`👤 Cajero: ${ticket.cashierName}`);
+  lines.push(`*${business.name}*`);
+  if (business.ruc) lines.push(`RUC: ${business.ruc}`);
+  if (business.dni) lines.push(`DNI: ${business.dni}`);
+  if (ticket.boletaNumber) lines.push(`Boleta: ${ticket.boletaNumber}`);
+  lines.push(`Ticket: ${ticket.ticketNumber}`);
+  lines.push(`Fecha: ${ticket.fecha}`);
+  if (ticket.cashierName) lines.push(`Cajero: ${ticket.cashierName}`);
   lines.push("─────────────────");
-  lines.push("📦 *Detalle:*");
+  lines.push("*Detalle:*");
   for (const item of ticket.items) {
     lines.push(
-      `  ${item.qty}x ${item.name} → ${fmt(item.price * item.qty)}`
+      `  ${item.qty}x ${item.name} - ${fmt(item.price * item.qty)}`
     );
   }
   lines.push("─────────────────");
   lines.push(`   Subtotal: ${fmt(ticket.subtotal)}`);
   lines.push(`   IGV (18%): ${fmt(ticket.igv)}`);
-  lines.push(`💰 *TOTAL: ${fmt(ticket.total)}*`);
+  lines.push(`*TOTAL: ${fmt(ticket.total)}*`);
   lines.push("");
   if (ticket.paymentMethod === "MIXTO" && ticket.paymentDetails) {
-    lines.push("💳 *Pago mixto:*");
+    lines.push("*Pago mixto:*");
     for (const pd of ticket.paymentDetails) {
-      lines.push(`  • ${pd.method}: ${fmt(pd.amount)}`);
+      lines.push(`  ${pd.method}: ${fmt(pd.amount)}`);
     }
   } else {
-    lines.push(`💳 Pago: ${ticket.paymentMethod}`);
+    lines.push(`Pago: ${ticket.paymentMethod}`);
   }
   lines.push("");
   lines.push(
     business.footerMessage ??
-      `✨ ¡Gracias por su preferencia! Vuelva pronto 🙏`
+      `Gracias por su preferencia! Vuelva pronto`
   );
-  lines.push(`🏪 ${business.name}`);
+  lines.push(`${business.name}`);
   return lines.join("\n");
 }
 

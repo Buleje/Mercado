@@ -157,7 +157,7 @@ describe("POST /api/marketplace/products/bulk-edit", () => {
   // 9. Zod rechaza campos no listados en el schema de item
   it("rechaza campo desconocido en un update item → 400", async () => {
     const updates = [{ id: 1, unknownField: "x" }];
-    const res = await POST(makeReq({ updates }));
+    const _res = await POST(makeReq({ updates }));
     // Zod strict no está activo por default, pero si no envía ningún campo conocido
     // el objeto pasaría. Probamos con id faltante:
     const updatesNoId = [{ price: 5 }];

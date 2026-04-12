@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireAdmin } from "@/lib/require-admin";
 import { prisma } from "@/lib/prisma";
+import { toNumOrZero } from "@/lib/decimal-utils";
+import { logger } from "@/lib/logger";
 
 type DiaRentabilidad = {
   fecha: string;
@@ -41,10 +43,10 @@ export async function GET(req: NextRequest) {
       }),
     ]);
 
-    // Index sale items by saleId for cost lookup
+    // Index sale items by saleId for cost lookup (TD-018: costPrice es Decimal)
     const costBySale = new Map<string, number>();
     for (const item of saleItems) {
-      const cost = item.costPrice ?? item.product.costPrice ?? 0;
+      const cost = toNumOrZero(item.costPrice) || toNumOrZero(item.product.costPrice);
       costBySale.set(item.saleId, (costBySale.get(item.saleId) ?? 0) + cost * item.quantity);
     }
 
@@ -63,7 +65,8 @@ export async function GET(req: NextRequest) {
       const key = new Date(sale.createdAt).toISOString().slice(0, 10);
       const day = dayMap.get(key);
       if (day) {
-        day.ingresos += sale.total;
+        // TD-018: sale.total es Decimal
+        day.ingresos += toNumOrZero(sale.total);
         day.costos += costBySale.get(sale.id) ?? 0;
         day.transacciones++;
       }
@@ -98,7 +101,7 @@ export async function GET(req: NextRequest) {
       },
     });
   } catch (e) {
-    console.error("[analytics/rentabilidad] GET error:", e);
+    logger.error("[analytics/rentabilidad] GET error", { error: (e as Error).message, tenantId: auth.tenantId });
     return NextResponse.json({ error: "Database error" }, { status: 503 });
   }
 }

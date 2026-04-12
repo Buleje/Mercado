@@ -1,7 +1,7 @@
-# ADR-019: Next 16 Cache Components incompatible con `export const dynamic = "force-dynamic"`
+# ADR-019: Next 16 Cache Components incompatible con `export const dynamic = "force-dynamic"`, `revalidate = N` y `dynamicParams = true`
 
 ## Estado
-✅ Aceptada — hotfix aplicado 2026-04-09 (488 archivos `.ts/.tsx` limpiados)
+✅ Aceptada — hotfix aplicado 2026-04-09 (488 archivos `.ts/.tsx` limpiados, ampliada 2026-04-09 para cubrir `revalidate` y `dynamicParams`)
 
 ## Fecha
 2026-04-09
@@ -86,3 +86,51 @@ Elegimos la **Opción B — remover el export en los 488 archivos**.
 - `CLAUDE.md` — regla crítica #4 actualizada
 - `scripts/remove-force-dynamic.ts` — script del hotfix
 - ADR-016 — Plan Maestro 24 semanas (contiene el Quick Win Q5 que introdujo `cacheComponents: true`)
+
+## Amplición 2026-04-09 — `export const revalidate`
+
+Next.js 16 también rechaza el antiguo ISR segment config `export const revalidate = N` cuando `cacheComponents: true` está activo. Error visible:
+
+```
+Route segment config "revalidate" is not compatible with
+`nextConfig.cacheComponents`. Please remove it.
+```
+
+**Archivos afectados (encontrados con `grep -R "^export const revalidate" app/`):**
+
+1. `app/api/superadmin/project-intel/route.ts` — removido. Los helpers `parsePracticasAudit()` y `parseTechDebt()` ahora usan `"use cache"` + `cacheLife({ revalidate: 300, stale: 60, expire: 600 })` + `cacheTag("project-intel:*")`. El handler `GET` sigue siendo dinámico porque lee `req.cookies` para auth.
+
+2. `app/(store)/tienda/categoria/[categoryId]/page.tsx` — removido. Se extrajo un helper `getCategoryProducts(tenantId, categoryId)` con `"use cache"` + `cacheLife({ revalidate: 300, stale: 60, expire: 900 })` + `cacheTag("category-products", "category-products:${tenantId}:${categoryId}")`. La página principal sigue dinámica por `headers()`.
+
+**Patrón canónico Next 16:** cuando se necesita caché time-based, mover el fetch al interior de una función async con `"use cache"` y usar `cacheLife({ revalidate: N })`. Los argumentos de la función (ej: `tenantId`) se incluyen automáticamente en la cache key. Invalidación vía `revalidateTag("tag")` o `updateTag("tag")` (esta última para invalidación dentro de la misma request).
+
+**Regla crítica #4 del CLAUDE.md queda actualizada** para prohibir también `export const revalidate = N` en cualquier archivo `.ts/.tsx` dentro de `app/`. Para caché, usar directiva `"use cache"` + `cacheLife`.
+
+## Amplición 2026-04-09 (segunda) — `export const dynamicParams`
+
+Next.js 16 también rechaza `export const dynamicParams = true` (y `false`) cuando `cacheComponents: true` está activo. Detectado durante `npm run build` post-TD-018 Fase 3 por el agent QA. El error apareció porque `npm run build` bypass `ignoreBuildErrors: true` en este step específico (es el parser de config de Next, no el type-checker).
+
+**Archivo afectado:**
+
+- `app/(store)/tienda/[slug]/page.tsx:18` — removido. La página ya lee `await headers()` en `getProductBySlugFromDB`, lo que hace que Next 16 auto-detecte dinámica sin necesidad del segment config explícito. Además `generateStaticParams()` retorna `[]` (no hay pre-renderización estática), reforzando el auto-detect.
+
+**Patrón canónico Next 16:** eliminar cualquier `export const` de los siguientes segment configs en archivos `app/**/page.tsx`, `layout.tsx`, `route.ts`:
+- `dynamic = "force-dynamic"`
+- `dynamic = "force-static"`
+- `revalidate = N`
+- `dynamicParams = true | false`
+- `fetchCache = "..."`
+
+Todos son incompatibles con `cacheComponents: true`. Para caché time-based, mover a `"use cache"` + `cacheLife`. Para dinámica forzada, llamar `cookies()` / `headers()` en algún lugar del componente (auto-detect). Para pre-rendering estático, usar `"use cache"` + `cacheLife("max")`.
+
+**Regla crítica #4 del CLAUDE.md queda ampliada** para prohibir los 5 segment configs listados arriba.
+
+## Amplición 2026-04-09 (tercera) — `generateStaticParams(): []`
+
+Al re-correr `npm run build` tras remover `dynamicParams`, apareció un nuevo error: **`EmptyGenerateStaticParamsError`**. Next 16 con `cacheComponents: true` rechaza cualquier `export async function generateStaticParams() { return []; }` porque "all `generateStaticParams` functions must return at least one result" — esta validación en build-time previene runtime errors por acceso dinámico inesperado.
+
+**Archivo afectado:**
+
+- `app/(store)/tienda/[slug]/page.tsx` — función `generateStaticParams` eliminada por completo. La página lee `await headers()` para resolver `tenantId` (multi-tenant), lo que la hace imposible de pre-renderizar estáticamente. Removiendo la función, Next 16 auto-detecta dinámica por el uso de `headers()` y no exige el contrato de "al menos 1 resultado".
+
+**Regla extra:** en Next 16 con Cache Components, `generateStaticParams()` sólo debe existir si realmente va a generar rutas estáticas en build-time. Si la ruta es 100% dinámica (lee cookies/headers/DB per-tenant), **elimina la función**. Para rutas híbridas (algunas estáticas, algunas dinámicas), `generateStaticParams()` puede retornar el subset estático + `dynamicParams` ya no es necesario (auto-detect).

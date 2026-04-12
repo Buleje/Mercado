@@ -92,6 +92,7 @@ export default function POSCustomerSearch({
   // Debounced search
   useEffect(() => {
     if (query.trim().length < 3) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- legitimate sync: clearing stale results when query falls below min length is the core responsibility of this debounced search effect
       setResults([]);
       return;
     }
@@ -133,6 +134,7 @@ export default function POSCustomerSearch({
   // Mejora 2: Fetch payment history
   useEffect(() => {
     if (!selectedPhone) {
+      /* eslint-disable react-hooks/set-state-in-effect -- legitimate sync: clearing dependent customer data (fiado, loyalty, reliability) when selected customer changes is the core responsibility of this effect */
       setLastPurchase(undefined);
       setPaymentHistory([]);
       setCustomerNotes("");
@@ -142,6 +144,7 @@ export default function POSCustomerSearch({
       setReliabilityScore(null);
       setFiadoSaldo(0);
       setShowAbonoRapido(false);
+      /* eslint-enable react-hooks/set-state-in-effect */
       return;
     }
     // Mejora M-3: Fetch fiado balance
@@ -210,9 +213,11 @@ export default function POSCustomerSearch({
       .catch(() => setPaymentHistory([]));
   }, [selectedPhone]);
 
+  // Snapshot "now" once per mount (avoids impure Date.now() during render per React Compiler rules)
+  const [nowTs] = useState(() => Date.now());
   // Helper to format relative time
   const getRelativeTime = (dateStr: string) => {
-    const diff = Date.now() - new Date(dateStr).getTime();
+    const diff = nowTs - new Date(dateStr).getTime();
     const days = Math.floor(diff / (1000 * 60 * 60 * 24));
     if (days === 0) return "hoy";
     if (days === 1) return "ayer";

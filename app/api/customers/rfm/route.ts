@@ -1,6 +1,7 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireAdmin } from "@/lib/require-admin";
+import { toNumOrZero } from "@/lib/decimal-utils";
 
 /**
  * GET /api/customers/rfm — Returns RFM segmentation for all customers.
@@ -62,17 +63,18 @@ export async function GET(req: NextRequest) {
     const map = new Map<string, { name: string; lastOrder: Date; count: number; spent: number }>();
     for (const o of orders) {
       if (!o.customerPhone) continue;
+      const totalNum = toNumOrZero(o.total);
       const existing = map.get(o.customerPhone);
       if (existing) {
         existing.count += 1;
-        existing.spent += o.total;
+        existing.spent += totalNum;
         if (o.createdAt > existing.lastOrder) existing.lastOrder = o.createdAt;
       } else {
         map.set(o.customerPhone, {
           name: o.customerName,
           lastOrder: o.createdAt,
           count: 1,
-          spent: o.total,
+          spent: totalNum,
         });
       }
     }

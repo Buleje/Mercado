@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { RotateCcw, ShoppingCart, X, AlertTriangle } from "lucide-react";
+import { RotateCcw, ShoppingCart, X } from "lucide-react";
 import { useCart } from "@/contexts/cart-context";
 import { useToast } from "@/contexts/toast-context";
 import { useCustomer } from "@/contexts/customer-context";
@@ -33,7 +33,7 @@ export default function QuickReorder() {
   useEffect(() => {
     try {
       // Try from localStorage first
-      const saved = localStorage.getItem("bsm-last-order");
+      const saved = localStorage.getItem("buleje-last-order");
       if (saved) {
         setLastOrder(JSON.parse(saved));
         return;
@@ -60,7 +60,7 @@ export default function QuickReorder() {
                   date: order.createdAt || "",
                 };
                 setLastOrder(lastOrderData);
-                localStorage.setItem("bsm-last-order", JSON.stringify(lastOrderData));
+                localStorage.setItem("buleje-last-order", JSON.stringify(lastOrderData));
               }
             }
           })

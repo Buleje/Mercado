@@ -29,7 +29,7 @@ async function checkStock(
   const threshold = (task.payload.threshold as number) ?? undefined;
 
   const products = await cache.getOrSet("inventory:all-products", 120, () =>
-    ProductsDB.getAll(),
+    ProductsDB.getAll(task.tenantId),
   );
 
   const withStock = products.filter((p) => p.stock != null && p.active);
@@ -191,7 +191,7 @@ async function reorderSuggestions(
   const lowStockProducts = await cache.getOrSet(
     "inventory:low-stock-products",
     120,
-    () => AutoReorderDB.getLowStockProducts(),
+    () => AutoReorderDB.getLowStockProducts(task.tenantId),
   );
 
   // Estimate daily sales velocity from recent movements
@@ -265,7 +265,7 @@ async function stockValuation(
   log.info("Calculating stock valuation", { action: task.action });
 
   const products = await cache.getOrSet("inventory:all-products", 120, () =>
-    ProductsDB.getAll(),
+    ProductsDB.getAll(task.tenantId),
   );
 
   const activeWithStock = products.filter(

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { TurnosDB } from "@/lib/db/turnos.db";
+import { toNumOrZero } from "@/lib/decimal-utils";
 import { requireAdmin } from "@/lib/require-admin";
 import { logActivity } from "@/lib/activity-logger";
 import { logger } from "@/lib/logger";
@@ -47,7 +48,8 @@ export async function POST(
       },
       _sum: { total: true },
     });
-    const totalVentas = ventasTotal._sum.total ?? 0;
+    // TD-018: _sum.total y existing.inicioEfectivo son Decimal
+    const totalVentas = toNumOrZero(ventasTotal._sum.total);
 
     const updated = await TurnosDB.cerrar(id, {
       cierreEfectivo: parsed.data.cierreEfectivo,
@@ -57,7 +59,7 @@ export async function POST(
 
     if (!updated) return NextResponse.json({ error: "Error al cerrar turno" }, { status: 500 });
 
-    const diferencia = parsed.data.cierreEfectivo - (Number(existing.inicioEfectivo) + totalVentas);
+    const diferencia = parsed.data.cierreEfectivo - (toNumOrZero(existing.inicioEfectivo) + totalVentas);
 
     logActivity(
       "Cerrar", "turno",

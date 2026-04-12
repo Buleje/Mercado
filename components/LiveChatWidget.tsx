@@ -87,7 +87,7 @@ export default function LiveChatWidget() {
 
   // Derive unread status
   const lastAdminTs = messages.filter(m => m.sender === "admin").pop()?.createdAt;
-  const lastSeen = typeof window !== "undefined" ? sessionStorage.getItem("bsm-chat-seen") : null;
+  const lastSeen = typeof window !== "undefined" ? sessionStorage.getItem("buleje-chat-seen") : null;
   const derivedUnread = !open && !!lastAdminTs && lastAdminTs !== lastSeen;
 
   useEffect(() => {
@@ -108,7 +108,7 @@ export default function LiveChatWidget() {
 
   useEffect(() => {
     if (open && lastAdminTs) {
-      sessionStorage.setItem("bsm-chat-seen", lastAdminTs);
+      sessionStorage.setItem("buleje-chat-seen", lastAdminTs);
     }
   }, [open, lastAdminTs]);
 

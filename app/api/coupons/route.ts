@@ -4,6 +4,7 @@ import { CouponsDB } from "@/lib/jsondb";
 import { requireAdmin } from "@/lib/require-admin";
 import { logger } from "@/lib/logger";
 import { withDbRetry } from "@/lib/db-retry";
+import { applyRateLimit } from "@/lib/rate-limit";
 
 const CouponPostSchema = z.object({
   code: z.string().min(1).max(50),
@@ -45,14 +46,14 @@ export async function POST(req: NextRequest) {
   const { code, description, discountType, discountValue, minPurchase, maxUses, active, expiresAt } = parsed.data;
 
   try {
-    const existing = await CouponsDB.getByCode(code);
+    const existing = await CouponsDB.getByCode(auth.tenantId, code);
     if (existing) return NextResponse.json({ error: "Ya existe un cupón con ese código" }, { status: 409 });
 
     const coupon = await CouponsDB.add({
       code, description: description ?? "",
       discountType: discountType ?? "percent", discountValue,
       minPurchase, maxUses, active: active ?? true, expiresAt,
-    });
+    }, auth.tenantId);
     logger.info("[coupons] POST created", { code: coupon.code, requestId: req.headers.get("x-request-id") ?? undefined });
     return NextResponse.json(coupon, { status: 201 });
   } catch (e) {

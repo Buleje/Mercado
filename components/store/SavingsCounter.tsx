@@ -20,7 +20,7 @@ export default function SavingsCounter() {
 
   useEffect(() => {
     try {
-      const raw = localStorage.getItem("bsm-savings-data");
+      const raw = localStorage.getItem("buleje-savings-data");
       if (raw) {
         const all: Record<string, { total: number; count: number }> = JSON.parse(raw);
         const monthKey = getCurrentMonthKey();

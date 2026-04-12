@@ -36,6 +36,7 @@ export async function POST(req: NextRequest) {
     customerPhone: customerPhone ?? undefined,
     creditApplied,
     items,
+    tenantId: auth.tenantId,
   });
 
   // Restock items
@@ -47,6 +48,7 @@ export async function POST(req: NextRequest) {
         quantity: item.quantity,
         reference: ret.id,
         notes: `Devolución: ${reason ?? "Sin motivo"}`,
+        tenantId: auth.tenantId,
       });
     }
   }

@@ -1,16 +1,14 @@
-import type { OrderStatus, StoreMode } from "@/lib/jsondb";
+import type { OrderStatus } from "@/lib/jsondb";
 import type React from "react";
 import {
-  Users, ShoppingBasket, ShoppingCart,
+  Users, ShoppingCart,
   Truck, FileText, Settings, Store,
-  Clock, Activity,
+  Clock,
   Brain,
   Package, FlaskConical,
   DollarSign, Tag,
-  Shield, CreditCard, Landmark,
-  ClipboardList, RotateCcw,
-  Palette,
-} from "lucide-react";
+  Shield, CreditCard, Landmark, RotateCcw,
+  Palette } from "lucide-react";
 
 // ── 8 consolidated modules + specials + extras ──
 export type Tab =
@@ -48,7 +46,8 @@ export type Tab =
   | "store-customizer"
   | "mi-perfil"
   | "rendimiento"
-  | "colas";
+  | "colas"
+  | "pagina-inicio";
 
 export type TabCategory = {
   id: string;
@@ -122,7 +121,7 @@ export const TAB_MIGRATION: Record<string, Tab> = {
   recordatorios: "config", flujos: "config", "reglas-negocio": "config",
   "agenda-utilidades": "config", calendario: "config",
   "notas-rapidas": "config", "filtros-guardados": "config",
-  "pagina-inicio": "config",
+  "pagina-inicio": "pagina-inicio",
   // Especiales
   pedidos: "pedidos",
   plan: "plan",

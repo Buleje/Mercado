@@ -8,6 +8,7 @@ import {
   ChevronDown, ChevronUp, TimerReset,
 } from "lucide-react";
 import { cn, exportToCSV } from "@/lib/utils";
+import { tenantFetch } from "@/lib/tenant-fetch";
 import OrderTrackingTimeline from "./logistics/OrderTrackingTimeline";
 
 // ─── Types ───────────────────────────────────────────────────────────────────
@@ -329,7 +330,7 @@ export default function ShipmentTrackingTab() {
   const handleUpdateStatus = useCallback(async (id: string, status: OrderStatus) => {
     setUpdatingId(id);
     try {
-      const res = await fetch(`/api/orders/${id}`, {
+      const res = await tenantFetch(`/api/orders/${id}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ status }),

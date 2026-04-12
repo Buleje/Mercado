@@ -1,5 +1,6 @@
 import "server-only";
 import { prisma } from "@/lib/prisma";
+import { toNumOrZero } from "@/lib/decimal-utils";
 
 // ── Constantes ────────────────────────────────────────────────────────────────
 
@@ -91,9 +92,11 @@ export async function createInstallmentPlan(
     throw new Error("El crédito de este cliente está desactivado");
   }
 
-  if (profile.availableCredit < amount) {
+  // TD-018: availableCredit es Decimal → convertir antes de comparar
+  const availableCreditNum = toNumOrZero(profile.availableCredit);
+  if (availableCreditNum < amount) {
     throw new Error(
-      `Crédito insuficiente. Disponible: S/${profile.availableCredit.toFixed(2)}, requerido: S/${amount.toFixed(2)}`,
+      `Crédito insuficiente. Disponible: S/${availableCreditNum.toFixed(2)}, requerido: S/${amount.toFixed(2)}`,
     );
   }
 
@@ -166,16 +169,22 @@ export async function processPayment(
     throw new Error("Este plan está marcado como impago");
   }
 
-  const newPaidAmount = plan.paidAmount + amount;
+  // TD-018: paidAmount, totalAmount, installmentAmount, interestRate son Decimal
+  const planPaidAmount = toNumOrZero(plan.paidAmount);
+  const planTotalAmount = toNumOrZero(plan.totalAmount);
+  const planInstallmentAmount = toNumOrZero(plan.installmentAmount);
+  const planInterestRate = toNumOrZero(plan.interestRate);
+
+  const newPaidAmount = planPaidAmount + amount;
   const isOnTime = new Date() <= plan.nextDueDate;
 
   // Calcular cuotas pagadas basadas en el monto acumulado
   const newPaidInstallments = Math.min(
-    Math.floor(newPaidAmount / plan.installmentAmount),
+    Math.floor(newPaidAmount / planInstallmentAmount),
     plan.installments,
   );
 
-  const isFullyPaid = newPaidAmount >= plan.totalAmount * (1 + plan.interestRate) - 0.01;
+  const isFullyPaid = newPaidAmount >= planTotalAmount * (1 + planInterestRate) - 0.01;
   const newStatus = isFullyPaid
     ? "paid"
     : new Date() > plan.nextDueDate
@@ -184,7 +193,7 @@ export async function processPayment(
 
   // Calcular cuánto crédito liberar al perfil
   // Solo liberamos el principal (sin interés), proporcional a la cuota pagada
-  const principalPerInstallment = plan.totalAmount / plan.installments;
+  const principalPerInstallment = planTotalAmount / plan.installments;
   const newlyPaidInstallments = newPaidInstallments - plan.paidInstallments;
   const creditToRelease = newlyPaidInstallments * principalPerInstallment;
 
@@ -224,7 +233,7 @@ export async function processPayment(
 
   const remainingAmount = Math.max(
     0,
-    plan.totalAmount * (1 + plan.interestRate) - newPaidAmount,
+    planTotalAmount * (1 + planInterestRate) - newPaidAmount,
   );
 
   return {
@@ -328,9 +337,10 @@ export async function getAvailableCredit(
   }
 
   return {
-    creditLimit: profile.creditLimit,
-    usedCredit: profile.usedCredit,
-    availableCredit: profile.availableCredit,
+    // TD-018: serializar Decimal → number
+    creditLimit: toNumOrZero(profile.creditLimit),
+    usedCredit: toNumOrZero(profile.usedCredit),
+    availableCredit: toNumOrZero(profile.availableCredit),
     isActive: profile.isActive,
   };
 }

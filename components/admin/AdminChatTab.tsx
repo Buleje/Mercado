@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { MessageSquare, Send, Loader2, Users, ArrowLeft, Maximize2, Minimize2 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { EmptyState } from "@/components/admin/EmptyState";
 
 type Message = { id: string; sender: string; message: string; createdAt: string };
 type Conversation = { phone: string; name: string; lastMessage: string; lastAt: string; unread: number };
@@ -166,7 +167,13 @@ export default function AdminChatTab() {
       {/* Customer Chat */}
       {tab === "customers" && !activePhone && (
         <div className="flex-1 overflow-y-auto bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl p-4">
-          {convos.length === 0 && <p className="text-center text-gray-400 dark:text-muted py-12">No hay conversaciones de clientes aún.</p>}
+          {convos.length === 0 && (
+            <EmptyState
+              icon={<Users className="h-10 w-10 text-gray-300" />}
+              title="No hay conversaciones aún"
+              description="Los clientes que escriban por WhatsApp o chat aparecerán aquí."
+            />
+          )}
           {convos.map(c => (
             <button key={c.phone} onClick={() => setActivePhone(c.phone)}
               className="w-full flex flex-wrap items-center gap-3 p-3 rounded-xl hover:bg-gray-50 dark:hover:bg-surface transition text-left border-b border-gray-100 dark:border-card-border last:border-0"

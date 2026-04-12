@@ -66,7 +66,7 @@ export function dispatchAppEvent<T extends EventName>(
   eventName: T,
   data: AppEvent[T]
 ): void {
-  const event = new CustomEvent(`bsm:${eventName}`, {
+  const event = new CustomEvent(`buleje:${eventName}`, {
     detail: data,
     bubbles: true,
     cancelable: true,
@@ -90,11 +90,11 @@ export function onAppEvent<T extends EventName>(
     handler(event.detail);
   }) as EventListener;
 
-  window.addEventListener(`bsm:${eventName}`, listener);
+  window.addEventListener(`buleje:${eventName}`, listener);
 
   // Return cleanup function
   return () => {
-    window.removeEventListener(`bsm:${eventName}`, listener);
+    window.removeEventListener(`buleje:${eventName}`, listener);
   };
 }
 

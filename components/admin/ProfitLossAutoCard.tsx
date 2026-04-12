@@ -62,7 +62,7 @@ function estimateCOGS(sales: Sale[]): number {
 // ── Main Component ─────────────────────────────────────────────────────────────
 
 export default function ProfitLossAutoCard() {
-  const [report, setReport] = useState<DailyReport | null>(null);
+  const [_report, setReport] = useState<DailyReport | null>(null);
   const [expenses, setExpenses] = useState<ExpenseSummary | null>(null);
   const [monthlySales, setMonthlySales] = useState<Sale[]>([]);
   const [loading, setLoading] = useState(true);

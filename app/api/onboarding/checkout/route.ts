@@ -55,7 +55,7 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL ?? "https://buleje.com";
+  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL ?? "https://buleje.pe";
 
   const stripeCustomerId = await getOrCreateStripeCustomer({
     stripeCustomerId: tenant.stripeCustomerId ?? null,

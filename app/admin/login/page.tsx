@@ -292,6 +292,7 @@ export default function AdminLoginPage() {
         }
         const data = (await res.json()) as {
           ok: boolean;
+          role?: string;
           onboardingPending?: boolean;
           tenantId?: string;
           tenantSlug?: string;
@@ -303,6 +304,9 @@ export default function AdminLoginPage() {
         }
         if (data.onboardingPending && !fromRef.current) {
           router.push("/onboarding");
+        } else if (data.role === "owner" || data.role === "platform_admin") {
+          // Superadmin-level users should use the platform login
+          router.push("/superadmin/login");
         } else {
           router.push(
             fromRef.current

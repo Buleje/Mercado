@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireAdmin } from "@/lib/require-admin";
 import { prisma } from "@/lib/prisma";
+import { toNumOrZero } from "@/lib/decimal-utils";
 
 export type HeatCell = { hour: number; day: string; value: number; amount: number };
 
@@ -30,7 +31,8 @@ export async function GET(req: NextRequest) {
       const hour = d.getHours();
       const key = `${day}::${hour}`;
       const prev = map.get(key) ?? { count: 0, amount: 0 };
-      map.set(key, { count: prev.count + 1, amount: prev.amount + (sale.total ?? 0) });
+      // TD-018: sale.total es Decimal
+      map.set(key, { count: prev.count + 1, amount: prev.amount + toNumOrZero(sale.total) });
     }
 
     const cells: HeatCell[] = [];

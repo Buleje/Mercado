@@ -48,7 +48,7 @@ export async function GET(
             fontFamily: "Arial, sans-serif",
           }}
         >
-          SAN MARTÍN
+          BULEJE
         </div>
       </div>
     ),

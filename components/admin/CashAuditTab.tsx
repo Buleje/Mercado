@@ -103,7 +103,7 @@ function ModuleTooltip() {
           <div className="space-y-1 border-t border-gray-100 dark:border-card-border pt-2">
             <p className="text-gray-500 dark:text-muted"><span className="font-semibold text-gray-700 dark:text-foreground">Tarjetas</span> — resumen global de todos los arqueos.</p>
             <p className="text-gray-500 dark:text-muted"><span className="font-semibold text-gray-700 dark:text-foreground">Tabla</span> — cada fila = un turno cerrado con su diferencia.</p>
-            <p className="text-gray-500 dark:text-muted"><span className="font-semibold text-gray-700 dark:text-foreground">Ojo (👁)</span> — detalle del turno y desglose de billetes.</p>
+            <p className="text-gray-500 dark:text-muted"><span className="font-semibold text-gray-700 dark:text-foreground">Ver detalle</span> — turno y desglose de billetes.</p>
           </div>
           <p className="mt-2 text-gray-400 italic">Los cuadres se generan automáticamente al cerrar turnos en <strong>Control de Turnos</strong>.</p>
         </div>

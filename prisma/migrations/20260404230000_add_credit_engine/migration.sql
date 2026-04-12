@@ -1,6 +1,6 @@
 -- ============================================================
 -- Motor de Crédito Interno (Buy-Now-Pay-Later)
--- Bodega San Martín — migración: 20260404230000_add_credit_engine
+-- Buleje — migración: 20260404230000_add_credit_engine
 -- ============================================================
 
 -- CreditProfile: perfil crediticio por cliente/tenant

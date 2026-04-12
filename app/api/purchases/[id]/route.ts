@@ -3,6 +3,7 @@ import { z } from "zod";
 import { PurchasesDB } from "@/lib/jsondb";
 import { requireAdmin } from "@/lib/require-admin";
 import { logActivity } from "@/lib/activity-logger";
+import { toNumOrZero } from "@/lib/decimal-utils";
 import { prisma } from "@/lib/prisma";
 import { withDbRetry } from "@/lib/db-retry";
 
@@ -76,10 +77,12 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
             const prevStock = product.stock ?? 0;
             const newStock = prevStock + quantityReceived;
 
-            let avgCost = item.unitCost;
+            // TD-018: item.unitCost y product.costPrice son Decimal
+            const unitCostNum = toNumOrZero(item.unitCost);
+            let avgCost = unitCostNum;
             if (prevStock > 0) {
-              const oldVal = prevStock * (product.costPrice ?? 0);
-              const newVal = quantityReceived * item.unitCost;
+              const oldVal = prevStock * toNumOrZero(product.costPrice);
+              const newVal = quantityReceived * unitCostNum;
               avgCost = (oldVal + newVal) / newStock;
             }
 

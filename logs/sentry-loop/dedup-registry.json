@@ -1,0 +1,6 @@
+{
+  "_comment": "Registro de dedup para el SRE loop. Cada error se trackea por fingerprint. 3 intentos max antes de escalar.",
+  "_created": "2026-04-10",
+  "_schema_version": 1,
+  "errors": {}
+}

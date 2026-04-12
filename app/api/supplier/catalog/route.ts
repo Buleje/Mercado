@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { requireSupplier } from "@/lib/require-supplier";
+import { toNumOrZero } from "@/lib/decimal-utils";
 import { prisma } from "@/lib/prisma";
 import { SupplierPriceVersionDB } from "@/lib/db/supplier-portal.db";
 import { logActivity } from "@/lib/activity-logger";
@@ -124,19 +125,22 @@ export async function PUT(req: NextRequest) {
 
       if (!product) continue;
 
+      // TD-018: product.price es Decimal
+      const oldPriceNum = toNumOrZero(product.price);
+
       // Registrar versión de precio histórica
       await SupplierPriceVersionDB.create(tenantId, {
         supplierId,
         productName: product.name,
         sku: update.sku ?? product.barcode ?? undefined,
-        oldPrice: product.price,
+        oldPrice: oldPriceNum,
         newPrice: update.newPrice,
       });
 
       results.push({
         productId: product.id,
         name: product.name,
-        oldPrice: product.price,
+        oldPrice: oldPriceNum,
         newPrice: update.newPrice,
       });
     }

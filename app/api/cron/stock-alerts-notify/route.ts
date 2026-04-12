@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { timingSafeCompare } from "@/lib/timing-safe";
 import { withCronRetry } from "@/lib/cron-retry";
-import { ProductsDB } from "@/lib/db/products.db";
 import { NotificationLogsDB } from "@/lib/db/notifications.db";
 import { sendPushToPhone } from "@/lib/push-sender";
 import { enqueueNotification } from "@/lib/queue";
@@ -95,7 +94,7 @@ export async function GET(req: NextRequest) {
           recipient: `admin-${tenant.slug}`,
           message: `${alertas.length} producto(s) con stock bajo: ${nombresAlerta}${sufijo}`,
           status: "pending",
-        });
+        }, tenant.id);
 
         // Send push + WhatsApp to store owner
         (async () => {

@@ -1,6 +1,8 @@
 import { Suspense } from "react";
 import dynamic from "next/dynamic";
+import Link from "next/link";
 import type { Metadata } from "next";
+import { cacheLife, cacheTag } from "next/cache";
 import Header from "@/components/Header";
 import AnnouncementBar from "@/components/AnnouncementBar";
 import BreadcrumbSchema from "@/components/BreadcrumbSchema";
@@ -10,28 +12,30 @@ import {
   ProductGridSkeleton,
   SectionSkeleton,
 } from "@/components/LoadingSkeleton";
+import { zones } from "@/data/zones";
+import { categories } from "@/data/products";
 
 export const metadata: Metadata = {
-  title: "Tienda Online de Abarrotes — Buleje",
+  title: "Catalogo de Productos — Buleje ERP",
   description:
-    "Explora nuestro catálogo completo de abarrotes, bebidas, carnes, snacks, limpieza y más. Delivery gratis desde S/50. Paga con Yape o efectivo.",
+    "Explora el catalogo completo de productos: abarrotes, bebidas, carnes, limpieza y mas. Gestionado con Buleje, el software ERP para bodegas del Peru.",
   alternates: {
     canonical: "https://www.buleje.pe/tienda",
   },
   openGraph: {
-    title: "Tienda Online — Buleje",
-    description: "Más de 500 productos con delivery gratis. Abarrotes, bebidas, carnes, snacks y más. Paga con Yape o efectivo.",
+    title: "Catalogo de Productos — Buleje",
+    description: "Abarrotes, bebidas, carnes, limpieza y mas. Gestionado con Buleje ERP. Delivery con Yape y efectivo.",
     url: "https://www.buleje.pe/tienda",
     type: "website",
     locale: "es_PE",
     siteName: "Buleje",
-    images: [{ url: "https://www.buleje.pe/og-image.jpg", width: 1200, height: 630, alt: "Tienda online Buleje — Abarrotes" }],
+    images: [{ url: "https://www.buleje.pe/api/og", width: 1200, height: 630, alt: "Buleje — Software ERP para Bodegas del Peru" }],
   },
   twitter: {
     card: "summary_large_image",
-    title: "Tienda Online — Buleje",
-    description: "Más de 500 productos con delivery gratis.",
-    images: ["https://www.buleje.pe/og-image.jpg"],
+    title: "Catalogo — Buleje ERP",
+    description: "Productos gestionados con Buleje. Software para bodegas del Peru.",
+    images: ["https://www.buleje.pe/api/og"],
   },
 };
 
@@ -59,6 +63,31 @@ const TIENDA_DEFAULT_ORDER: TiendaSectionKey[] = [
 // Keys that default to OFF when no config exists
 const TIENDA_DEFAULT_DISABLED: Set<TiendaSectionKey> = new Set(["recipes"]);
 
+/**
+ * #42: Cached product fetcher — pure DB read without headers/cookies.
+ * tenantId is passed as param and becomes part of the cache key.
+ * Revalidates every 5 min. Invalidable via updateTag('tienda-products:*').
+ */
+async function getCachedProducts(tenantId: string) {
+  "use cache";
+  cacheLife({ revalidate: 300, stale: 60, expire: 900 });
+  cacheTag("tienda-products", `tienda-products:${tenantId}`);
+  const { ProductsDB } = await import("@/lib/db/products.db");
+  const dbProducts = await ProductsDB.getAll(tenantId);
+  return dbProducts.filter((p) => p.active !== false);
+}
+
+/**
+ * #42: Cached section config — pure DB read for storefront layout.
+ */
+async function getCachedSectionConfig(tenantId: string) {
+  "use cache";
+  cacheLife({ revalidate: 300, stale: 60, expire: 900 });
+  cacheTag("tienda-sections", `tienda-sections:${tenantId}`);
+  const { SettingsDB } = await import("@/lib/db/settings.db");
+  return SettingsDB.get(tenantId);
+}
+
 // ── Read tienda section config from settings (server-side) ──────────────────
 async function getTiendaSectionConfig(): Promise<{
   visible: Set<TiendaSectionKey>;
@@ -68,8 +97,7 @@ async function getTiendaSectionConfig(): Promise<{
     const { headers } = await import("next/headers");
     const hdrs = await headers();
     const tenantId = hdrs.get("x-tenant-id") ?? "main";
-    const { SettingsDB } = await import("@/lib/db/settings.db");
-    const data = await SettingsDB.get(tenantId);
+    const data = await getCachedSectionConfig(tenantId);
 
     const storeTheme = data?.storeTheme as Record<string, unknown> | undefined;
 
@@ -113,15 +141,13 @@ export default async function TiendaPage() {
   const { visible, order } = await getTiendaSectionConfig();
   const show = (key: TiendaSectionKey) => visible.has(key);
 
-  // Server-side product prefetch — products load instantly on first visit
+  // Server-side product prefetch — #42: uses cached function for 5min revalidation
   let initialProducts: Array<Record<string, unknown>> = [];
   try {
     const { headers } = await import("next/headers");
     const hdrs = await headers();
     const tenantId = hdrs.get("x-tenant-id") ?? "main";
-    const { ProductsDB } = await import("@/lib/db/products.db");
-    const dbProducts = await ProductsDB.getAll(tenantId);
-    initialProducts = dbProducts.filter((p) => p.active !== false) as unknown as Array<Record<string, unknown>>;
+    initialProducts = await getCachedProducts(tenantId) as unknown as Array<Record<string, unknown>>;
   } catch {
     // Fallback to empty — client will retry via useCachedData
   }
@@ -233,13 +259,34 @@ export default async function TiendaPage() {
         {/* Below-fold sections + modals (client-only shell) */}
         <TiendaClientShell {...shellVisibility} />
       </main>
+
+      {/* SEO: Internal links to zone pages for crawl discovery */}
+      <section className="bg-slate-50 dark:bg-slate-900/50 py-8 border-t border-slate-200 dark:border-slate-800">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <h2 className="text-sm font-semibold text-slate-600 dark:text-slate-400 uppercase tracking-wider mb-4">
+            Buleje — Software para bodegas en todo el Peru
+          </h2>
+          <div className="flex flex-wrap gap-2">
+            {zones.map((zone) => (
+              <Link
+                key={zone.slug}
+                href={`/zona/${zone.slug}`}
+                className="text-sm text-slate-500 hover:text-emerald-600 transition-colors"
+              >
+                {zone.name}
+              </Link>
+            ))}
+          </div>
+        </div>
+      </section>
+
       <Footer />
     </>
   );
 }
 
 /* ── Loading States ── */
-function SectionLoadingSkeleton() {
+function _SectionLoadingSkeleton() {
   return (
     <section className="py-12 sm:py-16 bg-surface min-h-70">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">

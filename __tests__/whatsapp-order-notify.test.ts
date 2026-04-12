@@ -69,7 +69,7 @@ const baseOrder: DbOrder = {
 const baseTenant: TenantInfo = {
   id:         "tenant-main",
   slug:       "bodega-san-martin",
-  name:       "Bodega San Martín",
+  name:       "Buleje",
   ownerPhone: "916409675",
 };
 

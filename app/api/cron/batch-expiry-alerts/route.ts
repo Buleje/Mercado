@@ -52,7 +52,7 @@ export async function GET(req: NextRequest) {
           recipient: tenant.id,
           message,
           status: "pending",
-        });
+        }, tenant.id);
 
         totalNotifications++;
         tenantsAlerted.push(tenant.slug);

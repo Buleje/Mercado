@@ -23,7 +23,7 @@ export type PublicMessageView = {
 
 /**
  * Datos persistidos del buyer en localStorage para que la conversación
- * sobreviva refreshes. Clave: `bsm-chat-${storeSlug}`.
+ * sobreviva refreshes. Clave: `buleje-chat-${storeSlug}`.
  */
 export type ChatBubbleSession = {
   threadId: string;

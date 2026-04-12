@@ -299,7 +299,7 @@ export default function PointsProgramTab() {
           </div>
 
           <button onClick={handleSaveConfig} className={cn("px-5 py-2.5 rounded-xl text-sm font-bold transition-all", configSaved ? "bg-emerald-500 text-white" : "bg-primary text-white hover:bg-primary/90")}>
-            {configSaved ? "Guardado ✓" : "Guardar configuración"}
+            {configSaved ? "Guardado" : "Guardar configuración"}
           </button>
         </div>
       )}

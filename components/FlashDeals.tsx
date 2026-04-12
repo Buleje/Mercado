@@ -8,6 +8,7 @@ import { useToast } from "@/contexts/toast-context";
 import { useSettings } from "@/contexts/settings-context";
 import { useStoreProducts } from "@/hooks/use-store-products";
 import type { Product } from "@/data/products";
+import SectionPlaceholder from "@/components/SectionPlaceholder";
 
 // compute flash deal defaults – daily deals that reset every day at midnight
 function getEndOfDay(): Date {
@@ -51,8 +52,8 @@ function buildAdminDeals(allProducts: Product[], ids: number[], discount: number
   }));
 }
 
-const DEALS_KEY = "bsm-flash-deals";
-const DEALS_DATE_KEY = "bsm-flash-deals-date";
+const DEALS_KEY = "buleje-flash-deals";
+const DEALS_DATE_KEY = "buleje-flash-deals-date";
 
 function loadOrCreateDeals(allProducts: Product[], discount: number) {
   if (typeof window === "undefined") return pickDeals(allProducts, discount);
@@ -101,7 +102,7 @@ export default function FlashDeals() {
   }, [endTime]);
 
   // No render while loading or if no deals — prevents blank gaps
-  if (isLoading || deals.length === 0) return null;
+  if (isLoading || deals.length === 0) return <SectionPlaceholder title="Ofertas Relampago" hint="Configura desde Admin → Mi Tienda → Secciones" cols={6} />;
 
   /* JSON-LD Offer schema for flash deals */
   const flashOffersSchema = {

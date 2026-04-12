@@ -37,18 +37,18 @@ export const MP_PLAN_ITEMS: Partial<Record<PlanId, {
   currency_id: "PEN";
 }>> = {
   pro: {
-    title: `Suscripción ${PLANS.pro.name} — Bodega San Martín`,
+    title: `Suscripción ${PLANS.pro.name} — Buleje`,
     unit_price: PLANS.pro.priceMonthly,     // S/49
     currency_id: "PEN",
   },
   business: {
-    title: `Suscripción ${PLANS.business.name} — Bodega San Martín`,
+    title: `Suscripción ${PLANS.business.name} — Buleje`,
     unit_price: PLANS.business.priceMonthly, // S/149
     currency_id: "PEN",
   },
   enterprise: {
-    title: `Suscripción ${PLANS.enterprise.name} — Bodega San Martín`,
-    unit_price: PLANS.enterprise.priceMonthly, // S/399
+    title: `Suscripción ${PLANS.enterprise.name} — Buleje`,
+    unit_price: PLANS.enterprise.priceMonthly, // S/499 (canonical — ver lib/plans.ts)
     currency_id: "PEN",
   },
 };
@@ -111,7 +111,7 @@ export async function createMercadoPagoPreference(
       auto_return: "approved",
       // external_reference identifica al tenant en el webhook IPN
       external_reference: opts.tenantSlug,
-      statement_descriptor: "BODEGA SAN MARTIN",
+      statement_descriptor: "BULEJE",
       // Habilitar métodos de pago locales peruanos
       payment_methods: {
         excluded_payment_types: [],

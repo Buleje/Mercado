@@ -1,5 +1,6 @@
 import "server-only";
 import { prisma } from "@/lib/prisma";
+import { toNumOrZero } from "@/lib/decimal-utils";
 
 // ─── Types ─────────────────────────────────────────────────────────────────────
 
@@ -234,7 +235,8 @@ export const RecommendationsPersonalizedDB = {
         storeId: c.store.id,
         storeName: c.store.name,
         storeSlug: c.store.slug,
-        retailPrice: c.retailPrice,
+        // TD-018: retailPrice es Decimal
+        retailPrice: toNumOrZero(c.retailPrice),
         avgRating: Math.round(avgRating * 10) / 10,
         score,
         reason,
@@ -339,7 +341,8 @@ export const RecommendationsPersonalizedDB = {
         storeId: sp.store.id,
         storeName: sp.store.name,
         storeSlug: sp.store.slug,
-        retailPrice: sp.retailPrice,
+        // TD-018: retailPrice es Decimal
+        retailPrice: toNumOrZero(sp.retailPrice),
         avgRating: Math.round((ratingMap.get(sp.productId) ?? 0) * 10) / 10,
         score: 0,
         reason: "Más vendido este mes",

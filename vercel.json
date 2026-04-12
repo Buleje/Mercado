@@ -194,6 +194,22 @@
     {
       "path": "/api/cron/marketplace-sponsored-cleanup",
       "schedule": "0 1 * * *"
+    },
+    {
+      "path": "/api/cron/credit-reminders",
+      "schedule": "0 9 * * *"
+    },
+    {
+      "path": "/api/cron/credit-weekly-report",
+      "schedule": "0 8 * * 1"
+    },
+    {
+      "path": "/api/cron/credit-score-recalc",
+      "schedule": "0 0 * * 0"
+    },
+    {
+      "path": "/api/cron/weekly-report",
+      "schedule": "0 13 * * 1"
     }
   ]
 }

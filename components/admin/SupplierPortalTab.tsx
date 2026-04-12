@@ -131,9 +131,12 @@ export default function SupplierPortalTab() {
 
       {/* View Tabs */}
       <div className="flex flex-wrap gap-1 bg-gray-100 dark:bg-surface rounded-xl p-1">
-        {([["pedidos", "📦 Pedidos"], ["facturas", "🧾 Facturas"], ["mensajes", "💬 Mensajes"]] as const).map(([v, label]) => (
+        {(["pedidos", "facturas", "mensajes"] as const).map((v) => {
+          const label = v === "pedidos" ? "Pedidos" : v === "facturas" ? "Facturas" : "Mensajes";
+          return (
           <button key={v} onClick={() => setView(v)} className={cn("flex-1 px-3 py-2 rounded-lg text-sm font-bold transition-colors", view === v ? "bg-white dark:bg-card text-gray-900 dark:text-foreground shadow-sm" : "text-gray-500 dark:text-muted hover:text-gray-700")}>{label}</button>
-        ))}
+          );
+        })}
       </div>
 
       <div className="relative max-w-sm">

@@ -17,6 +17,8 @@ import {
   Shield,
   Truck,
   Tag,
+  Zap,
+  Gift,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useMarketplaceCart, type CartItem } from "@/hooks/use-marketplace-cart";
@@ -175,7 +177,7 @@ export default function MarketplaceCheckoutModal({
   const [orderError, setOrderError] = useState<string | null>(null);
   const [orderSuccess, setOrderSuccess] = useState(false);
   const [orderResults, setOrderResults] = useState<
-    { storeName: string; storeSlug: string; success: boolean; error?: string }[]
+    { storeName: string; storeSlug: string; success: boolean; orderId?: string; error?: string }[]
   >([]);
 
   // Customer data
@@ -186,8 +188,17 @@ export default function MarketplaceCheckoutModal({
   const [notes, setNotes] = useState("");
 
   // Payment
-  const [payMethod, setPayMethod] = useState<"efectivo" | "yape">("efectivo");
+  const [payMethod, setPayMethod] = useState<"efectivo" | "yape" | "mercado_pago">("efectivo");
   const [cashAmount, setCashAmount] = useState("");
+
+  // Referral code
+  const [referralCode, setReferralCode] = useState("");
+  const [referralResult, setReferralResult] = useState<{ success: boolean; message: string } | null>(null);
+  const [referralLoading, setReferralLoading] = useState(false);
+
+  // One-click checkout: detect returning customer
+  const [hasSavedData, setHasSavedData] = useState(false);
+  const [quickBuyMode, setQuickBuyMode] = useState(false);
 
   // Coupon
   const [couponCodes, setCouponCodes] = useState<Record<string, string>>({});
@@ -211,6 +222,10 @@ export default function MarketplaceCheckoutModal({
         if (info.phone) setPhone(info.phone);
         if (info.address) setAddress(info.address);
         if (info.reference) setReference(info.reference);
+        // Detect returning customer with complete data
+        if (info.name && info.phone && info.address) {
+          setHasSavedData(true);
+        }
       }
     } catch { /* silent */ }
   }, []);
@@ -226,7 +241,7 @@ export default function MarketplaceCheckoutModal({
     fetch(`/api/marketplace/loyalty?phone=${encodeURIComponent(phone.trim())}`)
       .then((r) => (r.ok ? r.json() : null))
       .then((d) => {
-        if (!cancelled && d) setLoyaltyPoints(d.points ?? 0);
+        if (!cancelled && d) setLoyaltyPoints(d.data?.points ?? 0);
       })
       .catch(() => {});
     return () => { cancelled = true; };
@@ -272,6 +287,33 @@ export default function MarketplaceCheckoutModal({
     setOrderError(null);
     setStep(s);
   };
+
+  // Apply referral code
+  const handleApplyReferral = useCallback(async () => {
+    const code = referralCode.trim().toUpperCase();
+    if (!code || !phone.trim()) return;
+    setReferralLoading(true);
+    try {
+      const res = await fetch("/api/marketplace/referral/apply", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ phone: phone.trim(), code }),
+      });
+      const data = await res.json();
+      setReferralResult(data);
+    } catch {
+      setReferralResult({ success: false, message: "Error de conexión" });
+    } finally {
+      setReferralLoading(false);
+    }
+  }, [referralCode, phone]);
+
+  // Quick buy: skip to confirmation with saved data
+  const handleQuickBuy = useCallback(() => {
+    if (!name.trim() || !phone.trim() || !address.trim()) return;
+    setQuickBuyMode(true);
+    setStep("confirmacion");
+  }, [name, phone, address]);
 
   const validateDatos = (): boolean => {
     if (!name.trim() || name.trim().length < 2) {
@@ -379,7 +421,8 @@ export default function MarketplaceCheckoutModal({
             const data = await r.json().catch(() => ({}));
             throw new Error(data.error || `Error ${r.status}`);
           }
-          return { storeId };
+          const data = await r.json().catch(() => ({}));
+          return { storeId, orderId: data?.data?.orderId };
         });
       })
     );
@@ -391,6 +434,7 @@ export default function MarketplaceCheckoutModal({
         storeName: group.storeName,
         storeSlug: group.storeSlug,
         success: r.status === "fulfilled",
+        orderId: r.status === "fulfilled" ? (r.value as { storeId: string; orderId?: string }).orderId : undefined,
         error: r.status === "rejected" ? (r.reason?.message ?? "Error desconocido") : undefined,
       };
     });
@@ -403,6 +447,39 @@ export default function MarketplaceCheckoutModal({
     for (const r of succeeded) {
       const sid = storeIds.find((id) => byStore[id]?.storeSlug === r.storeSlug);
       if (sid) clearStore(sid);
+    }
+
+    // Mercado Pago flow: redirect to MP checkout
+    if (payMethod === "mercado_pago" && succeeded.length > 0) {
+      try {
+        // For simplicity, create one MP preference for the first succeeded order
+        const firstSuccess = succeeded[0];
+        const group = byStore[storeIds.find((id) => byStore[id]?.storeSlug === firstSuccess.storeSlug)!];
+        const mpRes = await fetch("/api/marketplace/payment/mercadopago/create-preference", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            storeSlug: firstSuccess.storeSlug,
+            storeName: firstSuccess.storeName,
+            customerName: name.trim(),
+            customerPhone: phone.trim(),
+            items: group.items.map((i) => ({
+              name: i.name,
+              quantity: i.quantity,
+              unitPrice: i.price,
+            })),
+            orderId: firstSuccess.orderId || "unknown",
+            total: group.items.reduce((s, i) => s + i.price * i.quantity, 0),
+          }),
+        });
+        if (mpRes.ok) {
+          const mpData = await mpRes.json();
+          if (mpData.initPoint) {
+            window.location.href = mpData.initPoint;
+            return;
+          }
+        }
+      } catch { /* fall through to normal success */ }
     }
 
     if (failed.length > 0 && succeeded.length > 0) {
@@ -572,6 +649,35 @@ export default function MarketplaceCheckoutModal({
                       Para contactarte sobre tu pedido
                     </p>
 
+                    {/* One-click checkout banner for returning customers */}
+                    {hasSavedData && !quickBuyMode && (
+                      <motion.div
+                        initial={{ opacity: 0, y: -10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        className="rounded-2xl border-2 border-primary/30 bg-gradient-to-r from-primary/5 to-emerald-50/50 dark:from-primary/10 dark:to-emerald-950/30 p-4 space-y-2"
+                      >
+                        <div className="flex items-center gap-2">
+                          <Zap className="h-4 w-4 text-primary" />
+                          <span className="text-sm font-bold text-gray-900 dark:text-white">
+                            ¡Hola de nuevo, {name.split(" ")[0]}!
+                          </span>
+                        </div>
+                        <p className="text-xs text-gray-500 dark:text-gray-400">
+                          Datos guardados: {phone} · {address.slice(0, 30)}…
+                        </p>
+                        <button
+                          onClick={handleQuickBuy}
+                          className="w-full flex items-center justify-center gap-2 h-11 rounded-xl bg-gradient-to-r from-primary to-emerald-600 text-white text-sm font-bold shadow-lg shadow-primary/25 hover:shadow-xl hover:shadow-primary/30 active:scale-[0.98] transition-all"
+                        >
+                          <Zap className="h-4 w-4" />
+                          Comprar con un clic · {fmt(grandTotal)}
+                        </button>
+                        <p className="text-[10px] text-center text-gray-400 dark:text-gray-500">
+                          Pago en efectivo · Tus datos ya están guardados
+                        </p>
+                      </motion.div>
+                    )}
+
                     <div className="space-y-3">
                       <div>
                         <label htmlFor="mco-name" className="mb-1.5 block text-xs font-semibold text-gray-700 dark:text-gray-300">
@@ -633,6 +739,42 @@ export default function MarketplaceCheckoutModal({
                         </div>
                       </div>
                     )}
+
+                    {/* Referral code input */}
+                    <div className="rounded-xl border border-orange-200/50 dark:border-orange-800/30 bg-orange-50/50 dark:bg-orange-950/20 p-3 space-y-2">
+                      <div className="flex items-center gap-2">
+                        <Gift className="h-4 w-4 text-orange-500" />
+                        <span className="text-xs font-bold text-gray-700 dark:text-gray-300">
+                          ¿Tienes código de referido?
+                        </span>
+                      </div>
+                      <div className="flex gap-1.5">
+                        <input
+                          type="text"
+                          value={referralCode}
+                          onChange={(e) => setReferralCode(e.target.value.toUpperCase())}
+                          placeholder="Ej: ABC123"
+                          className="flex-1 rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-900 px-3 py-2 text-xs text-gray-900 dark:text-white placeholder:text-gray-400 focus:border-orange-400 focus:ring-1 focus:ring-orange-400/20"
+                          maxLength={10}
+                          disabled={!!referralResult?.success}
+                        />
+                        <button
+                          onClick={handleApplyReferral}
+                          disabled={referralLoading || !referralCode.trim() || !phone.trim() || !!referralResult?.success}
+                          className="rounded-lg bg-orange-500 px-3 py-2 text-xs font-bold text-white hover:bg-orange-600 disabled:opacity-50 transition-colors"
+                        >
+                          {referralLoading ? "..." : referralResult?.success ? "✓" : "Aplicar"}
+                        </button>
+                      </div>
+                      {referralResult && (
+                        <p className={cn(
+                          "text-xs",
+                          referralResult.success ? "text-green-600 dark:text-green-400" : "text-red-500 dark:text-red-400"
+                        )}>
+                          {referralResult.message}
+                        </p>
+                      )}
+                    </div>
 
                     {/* Mini cart summary */}
                     <MiniCartSummary
@@ -865,6 +1007,44 @@ export default function MarketplaceCheckoutModal({
                           )}
                         </div>
                       </button>
+
+                      {/* Mercado Pago */}
+                      <button
+                        onClick={() => setPayMethod("mercado_pago")}
+                        className={cn(
+                          "w-full flex items-center gap-4 rounded-2xl border-2 p-4 transition-all",
+                          payMethod === "mercado_pago"
+                            ? "border-[#009ee3] bg-[#009ee3]/5 ring-1 ring-[#009ee3]/20"
+                            : "border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600"
+                        )}
+                      >
+                        <div
+                          className={cn(
+                            "flex h-12 w-12 items-center justify-center rounded-xl",
+                            payMethod === "mercado_pago"
+                              ? "bg-[#009ee3]/10 text-[#009ee3]"
+                              : "bg-gray-100 dark:bg-gray-800 text-gray-400"
+                          )}
+                        >
+                          <CreditCard className="h-6 w-6" />
+                        </div>
+                        <div className="flex-1 text-left">
+                          <p className="text-sm font-bold text-gray-900 dark:text-white">Mercado Pago</p>
+                          <p className="text-xs text-gray-500 dark:text-gray-400">
+                            Tarjeta, transferencia o saldo MP
+                          </p>
+                        </div>
+                        <div
+                          className={cn(
+                            "h-5 w-5 rounded-full border-2 flex items-center justify-center",
+                            payMethod === "mercado_pago" ? "border-[#009ee3]" : "border-gray-300 dark:border-gray-600"
+                          )}
+                        >
+                          {payMethod === "mercado_pago" && (
+                            <div className="h-3 w-3 rounded-full bg-[#009ee3]" />
+                          )}
+                        </div>
+                      </button>
                     </div>
 
                     {/* Cash calculator */}
@@ -926,6 +1106,31 @@ export default function MarketplaceCheckoutModal({
                         </ol>
                       </div>
                     )}
+
+                    {payMethod === "mercado_pago" && (
+                      <div className="rounded-xl border border-[#009ee3]/20 bg-[#009ee3]/5 p-4 space-y-3">
+                        <p className="text-sm font-bold text-gray-900 dark:text-white">
+                          Pago con Mercado Pago
+                        </p>
+                        <ol className="space-y-2 text-xs text-gray-600 dark:text-gray-400">
+                          <li className="flex items-start gap-2">
+                            <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-[#009ee3]/10 text-[10px] font-bold text-[#009ee3]">1</span>
+                            <span>Al confirmar, te redirigiremos a Mercado Pago</span>
+                          </li>
+                          <li className="flex items-start gap-2">
+                            <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-[#009ee3]/10 text-[10px] font-bold text-[#009ee3]">2</span>
+                            <span>Elige: tarjeta, transferencia o saldo de Mercado Pago</span>
+                          </li>
+                          <li className="flex items-start gap-2">
+                            <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-[#009ee3]/10 text-[10px] font-bold text-[#009ee3]">3</span>
+                            <span>El vendedor recibirá el pago y preparará tu pedido</span>
+                          </li>
+                        </ol>
+                        <p className="text-[10px] text-gray-400 dark:text-gray-500 flex items-center gap-1">
+                          <Shield className="h-3 w-3" /> Pago 100% seguro con encriptación
+                        </p>
+                      </div>
+                    )}
                   </motion.div>
                 ) : step === "confirmacion" ? (
                   /* ─── STEP 4: CONFIRMACIÓN FINAL ─── */
@@ -967,7 +1172,7 @@ export default function MarketplaceCheckoutModal({
                       <p className="text-xs font-bold text-gray-500 dark:text-gray-400 mb-2">💳 Pago</p>
                       <div className="flex items-center gap-2">
                         <span className="text-sm font-semibold text-gray-900 dark:text-white capitalize">
-                          {payMethod === "yape" ? "Yape" : "Efectivo"}
+                          {payMethod === "yape" ? "Yape" : payMethod === "mercado_pago" ? "Mercado Pago" : "Efectivo"}
                         </span>
                       </div>
                     </div>
@@ -1034,6 +1239,11 @@ export default function MarketplaceCheckoutModal({
                   {step !== "datos" && (
                     <button
                       onClick={() => {
+                        if (quickBuyMode) {
+                          setQuickBuyMode(false);
+                          goTo("datos");
+                          return;
+                        }
                         const prev: Record<Step, Step> = {
                           cart: "cart",
                           datos: "datos",

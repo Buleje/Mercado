@@ -3,6 +3,7 @@ import { z } from "zod";
 import { OrdersDB, CouponsDB, PromotionsDB } from "@/lib/jsondb";
 import type { DbOrder } from "@/lib/jsondb";
 import { emitAdminSSE } from "@/lib/sse-emitter";
+import { toNumOrZero } from "@/lib/decimal-utils";
 import { sendOrderNotification } from "@/lib/mailer";
 import { sendWhatsAppNotification, getWhatsAppLink, sendWhatsAppText } from "@/lib/whatsapp";
 import { sendReceiptByWhatsApp } from "@/lib/receipt-whatsapp";
@@ -138,11 +139,18 @@ export async function POST(req: NextRequest) {
     return rateLimitResponse;
   }
 
+  // ── Tenant resolution ───────────────────────────────────────────────────────
+  // HOTFIX-004: must run BEFORE the idempotency lookup so the key is scoped
+  // by tenant — otherwise tenant B can replay tenant A's key and leak the order.
+  const rawTenantId = req.headers.get("x-tenant-id") ?? "main";
+  const tenantId = (await resolveTenantSlug(rawTenantId)) ?? "main";
+
   // ── Idempotency: return existing order if same key is reused ────────────────
+  // HOTFIX-004: scoped by tenantId — two tenants can use the same key safely.
   const idempotencyKey = req.headers.get("x-idempotency-key")?.slice(0, 128) || undefined;
   if (idempotencyKey) {
     const existing = await prisma.order.findFirst({
-      where: { idempotencyKey },
+      where: { idempotencyKey, tenantId },
     }).catch(() => null);
     if (existing) {
       // Duplicate request — return the already-created order with 200
@@ -150,10 +158,6 @@ export async function POST(req: NextRequest) {
     }
   }
   // ─────────────────────────────────────────────────────────────────────────────
-
-  // ── Tenant resolution & plan limit ──────────────────────────────────────────
-  const rawTenantId = req.headers.get("x-tenant-id") ?? "main";
-  const tenantId = (await resolveTenantSlug(rawTenantId)) ?? "main";
 
   // Fetch tenant plan and enforce maxOrdersPerMonth
   const tenantRow = await prisma.tenant.findFirst({ where: { OR: [{ id: tenantId }, { slug: tenantId }] }, select: { plan: true } });
@@ -191,15 +195,54 @@ export async function POST(req: NextRequest) {
     }
     const body = parsed.data;
 
-    // â”€â”€ Server-side total recomputation â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-    // Prevents price manipulation: always compute from item prices Ã— quantities
-    const itemsTotal = body.items.reduce((sum, i) => sum + i.price * i.quantity, 0);
+    // ── HOTFIX-001: Server-authoritative pricing ────────────────────────────
+    // NEVER trust body.items[i].price — attacker can send price=0.01 and have
+    // the server persist the manipulated total. Resolve the selling price AND
+    // the COGS straight from the DB, scoped by tenantId so items from another
+    // tenant are rejected. Reject any order whose productId is deleted,
+    // cross-tenant or outright fake.
+    const productIds = body.items.map(i => i.id);
+    const serverPriceMap = new Map<number, number>();
+    const costMap = new Map<number, number>();
+    // RED-005: track which products have finite stock so the atomic decrement
+    // below skips unlimited (stock IS NULL) products without false-rejecting.
+    const stockMap = new Map<number, number | null>();
+    if (productIds.length > 0) {
+      const products = await prisma.product.findMany({
+        where: { tenantId, id: { in: productIds } },
+        select: { id: true, price: true, costPrice: true, stock: true },
+      });
+      for (const p of products) {
+        const priceNum = toNumOrZero(p.price);
+        const costNum = toNumOrZero(p.costPrice);
+        serverPriceMap.set(p.id, priceNum);
+        costMap.set(p.id, costNum || priceNum * 0.7);
+        stockMap.set(p.id, p.stock ?? null);
+      }
+    }
+    for (const i of body.items) {
+      if (!serverPriceMap.has(i.id)) {
+        return NextResponse.json(
+          { error: "invalid_product", productId: i.id },
+          { status: 400 },
+        );
+      }
+    }
+
+    // ── Server-side total recomputation ─────────────────────────────────────
+    // Always computed from DB prices × quantities — never from the client.
+    const itemsTotal = body.items.reduce(
+      (sum, i) => sum + (serverPriceMap.get(i.id) ?? 0) * i.quantity,
+      0,
+    );
 
     // Re-verify coupon server-side when code is present
     let serverCouponDiscount = 0;
     let verifiedCouponCode: string | undefined;
     if (body.appliedCouponCode) {
-      const coupon = await CouponsDB.getByCode(body.appliedCouponCode);
+      // RED-007: tenant-scoped lookup — tenant B can NOT use a coupon owned
+      // by tenant A. Lookup will return null when tenantId doesn't match.
+      const coupon = await CouponsDB.getByCode(tenantId, body.appliedCouponCode);
       const now = new Date();
       const valid =
         coupon &&
@@ -273,18 +316,12 @@ export async function POST(req: NextRequest) {
 
     const now = new Date().toISOString();
 
-    // Look up costPrice for each product to capture COGS at order time
-    const productIds = body.items.map(i => i.id).filter(id => id > 0);
-    const costMap = new Map<number, number>();
-    if (productIds.length > 0) {
-      const products = await prisma.product.findMany({ where: { id: { in: productIds } }, select: { id: true, costPrice: true, price: true } });
-      for (const p of products) costMap.set(p.id, p.costPrice ?? p.price * 0.7);
-    }
-
+    // HOTFIX-001: price comes from serverPriceMap (DB), NOT body.items[i].price.
+    // costMap was already populated above from the same authoritative query.
     const orderItems = body.items.map(i => ({
       id: i.id,
       name: i.name,
-      price: i.price,
+      price: serverPriceMap.get(i.id) ?? 0,
       costPrice: costMap.get(i.id),
       quantity: i.quantity,
       unit: i.unit ?? "und",
@@ -325,19 +362,128 @@ export async function POST(req: NextRequest) {
       createdAt: now,
       updatedAt: now,
     };
-    const saved = await withDbRetry(() => OrdersDB.add(order, tenantId));
+    // ── RED-005 + RED-006: atomic stock decrement + coupon redeem ───────────
+    // Race window: two parallel POSTs for the last unit. Without an atomic
+    // conditional UPDATE, both reads see stock=1 and both succeed. Same race
+    // applies to maxUses=1 coupons. Solution: a single prisma.$transaction
+    // that runs row-level conditional UPDATEs server-side in PostgreSQL.
+    // Either every guard wins or every write rolls back.
+    const NOW_FOR_TXN = new Date();
+    try {
+      await prisma.$transaction(async (tx) => {
+        // Stock: one conditional UPDATE per item, only for products with
+        // finite stock. Items with stock=null are unlimited and skipped.
+        for (const item of body.items) {
+          if (item.id <= 0) continue; // skip free-form / non-DB items
+          const tracked = stockMap.get(item.id);
+          if (tracked == null) continue; // unlimited stock — no decrement needed
+          const affected: number = await tx.$executeRaw`
+            UPDATE "Product"
+               SET "stock" = "stock" - ${item.quantity}
+             WHERE "id" = ${item.id}
+               AND "tenantId" = ${tenantId}
+               AND "stock" IS NOT NULL
+               AND "stock" >= ${item.quantity}
+          `;
+          if (affected === 0) {
+            // Throwing inside the txn callback rolls back every prior write.
+            const err = new Error("insufficient_stock") as Error & {
+              code?: string;
+              productId?: number;
+              productName?: string;
+            };
+            err.code = "INSUFFICIENT_STOCK";
+            err.productId = item.id;
+            err.productName = item.name;
+            throw err;
+          }
+        }
 
-    // ── FEFO stock decrement: deduct from earliest-expiring batches first ────
+        // Coupon: same atomic conditional UPDATE pattern, scoped by tenant.
+        // The maxUses guard runs in SQL — two parallel callers cannot both
+        // bump usedCount past the limit.
+        if (verifiedCouponCode) {
+          const couponAffected: number = await tx.$executeRaw`
+            UPDATE "Coupon"
+               SET "usedCount" = "usedCount" + 1
+             WHERE "code" = ${verifiedCouponCode}
+               AND "tenantId" = ${tenantId}
+               AND "active" = true
+               AND ("expiresAt" IS NULL OR "expiresAt" > ${NOW_FOR_TXN})
+               AND ("maxUses" IS NULL OR "usedCount" < "maxUses")
+          `;
+          if (couponAffected === 0) {
+            const err = new Error("coupon_exhausted") as Error & { code?: string };
+            err.code = "COUPON_EXHAUSTED";
+            throw err;
+          }
+        }
+      });
+    } catch (txErr) {
+      const code = (txErr as { code?: string }).code;
+      if (code === "INSUFFICIENT_STOCK") {
+        const e = txErr as Error & { productId?: number; productName?: string };
+        return NextResponse.json(
+          {
+            error: "insufficient_stock",
+            productId: e.productId,
+            productName: e.productName,
+          },
+          { status: 409 },
+        );
+      }
+      if (code === "COUPON_EXHAUSTED") {
+        return NextResponse.json(
+          { error: "coupon_exhausted", couponCode: verifiedCouponCode },
+          { status: 409 },
+        );
+      }
+      throw txErr;
+    }
+    // ─────────────────────────────────────────────────────────────────────────
+
+    let saved: DbOrder;
+    try {
+      saved = await withDbRetry(() => OrdersDB.add(order, tenantId));
+    } catch (addErr) {
+      // Compensating writes — the atomic guards above already decremented
+      // stock and bumped coupon usage, but the order row never landed. Roll
+      // those side-effects back so we don't leak inventory or coupon uses.
+      // Best-effort, fire-and-forget per CLAUDE.md #7.
+      (async () => {
+        try {
+          await prisma.$transaction(async (tx) => {
+            for (const item of body.items) {
+              if (item.id <= 0) continue;
+              if (stockMap.get(item.id) == null) continue;
+              await tx.$executeRaw`
+                UPDATE "Product"
+                   SET "stock" = "stock" + ${item.quantity}
+                 WHERE "id" = ${item.id}
+                   AND "tenantId" = ${tenantId}
+                   AND "stock" IS NOT NULL
+              `;
+            }
+            if (verifiedCouponCode) {
+              await tx.$executeRaw`
+                UPDATE "Coupon"
+                   SET "usedCount" = GREATEST("usedCount" - 1, 0)
+                 WHERE "code" = ${verifiedCouponCode}
+                   AND "tenantId" = ${tenantId}
+              `;
+            }
+          });
+        } catch { /* swallow — log path is best-effort */ }
+      })().catch(() => {});
+      throw addErr;
+    }
+
+    // ── FEFO batch decrement (separate from Product.stock — deducts from
+    //    earliest-expiring Batch rows). Fire-and-forget per CLAUDE.md #7.
     for (const item of body.items) {
       if (item.id > 0) {
-        InventoryMovementsDB.decrementFEFO(item.id, item.quantity, saved.id, "venta_online").catch(() => {});
+        InventoryMovementsDB.decrementFEFO(item.id, item.quantity, tenantId, saved.id, "venta_online").catch(() => {});
       }
-    }
-    // ─────────────────────────────────────────────────────────────────────────────
-
-    // Increment coupon usage counter (fire-and-forget)
-    if (verifiedCouponCode) {
-      CouponsDB.redeem(verifiedCouponCode, serverCouponDiscount).catch(() => {});
     }
     // Fire-and-forget email notification (never blocks the response)
     sendOrderNotification({
@@ -448,7 +594,8 @@ export async function POST(req: NextRequest) {
       (async () => {
         try {
           // Count all orders by this phone via the JSON customer.phone field stored in OrdersDB
-          const customerOrders = await OrdersDB.getByCustomerPhone(customerPhone);
+          // Wave 4 F-1: tenant-scoped lookup — prevents cross-tenant loyalty counter leakage
+          const customerOrders = await OrdersDB.getByCustomerPhone(tenantId, customerPhone);
           const orderCount = customerOrders.length;
           if (orderCount > 0 && orderCount % 5 === 0) {
             const discountPct = orderCount % 10 === 0 ? 15 : 10; // 15% on 10th, 20th…; 10% on 5th, 15th…
@@ -463,7 +610,7 @@ export async function POST(req: NextRequest) {
               maxUses: 1,
               active: true,
               expiresAt,
-            });
+            }, tenantId);
             // Notify via push notification
             sendPushToPhone(customerPhone, {
               title: `🎁 ¡Premio de fidelidad!`,

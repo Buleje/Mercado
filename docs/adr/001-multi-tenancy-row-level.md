@@ -3,7 +3,7 @@
 ## Status: Accepted (2024)
 
 ## Context
-Bodega San Martín needs to serve multiple stores (bodegas) from a single deployment. Options: separate databases per tenant, schema-per-tenant, or row-level isolation with tenant_id.
+Buleje needs to serve multiple stores (bodegas) from a single deployment. Options: separate databases per tenant, schema-per-tenant, or row-level isolation with tenant_id.
 
 ## Decision
 Row-level isolation with `tenantId` field on every model. All DB queries filter by tenantId as the first parameter.

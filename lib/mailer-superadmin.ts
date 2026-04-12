@@ -46,7 +46,7 @@ export async function sendSuperAdminAlert(alert: SuperAdminAlert): Promise<void>
     : "";
 
   await transporter.sendMail({
-    from: `"BSM Platform" <${smtpUser}>`,
+    from: `"Buleje Platform" <${smtpUser}>`,
     to,
     subject: alert.subject,
     html: `

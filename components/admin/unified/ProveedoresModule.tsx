@@ -42,13 +42,13 @@ export default function ProveedoresModule() {
         activeTab={sub}
         onTabChange={setSub}
         moduleId={MODULE_ID}
-      />
-
-      {sub === "directorio" && <SuppliersTab />}
-      {sub === "portal" && <SupplierPortalTab />}
-      {sub === "evaluaciones" && <SupplierEvaluationsTab />}
-      {sub === "calidad" && <SupplierQualityTab />}
-      {sub === "pagos" && <SupplierPaymentsTab />}
+      >
+        {sub === "directorio" && <SuppliersTab />}
+        {sub === "portal" && <SupplierPortalTab />}
+        {sub === "evaluaciones" && <SupplierEvaluationsTab />}
+        {sub === "calidad" && <SupplierQualityTab />}
+        {sub === "pagos" && <SupplierPaymentsTab />}
+      </AdminTabBar>
     </div>
   );
 }

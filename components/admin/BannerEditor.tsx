@@ -20,7 +20,7 @@ type FormState = Omit<Banner, "id" | "active">;
 
 // ── Storage ───────────────────────────────────────────────────────────────────
 
-const STORAGE_KEY = "bsm_banners";
+const STORAGE_KEY = "buleje_banners";
 const MAX_ACTIVE  = 5;
 
 const SEED: Banner[] = [

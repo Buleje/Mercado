@@ -121,7 +121,7 @@ export default function InvoicingTab() {
       if (!form.customerName.trim() && nombreCompleto) {
         setForm(p => ({ ...p, customerName: nombreCompleto }));
       }
-      setDniMsg({ ok: true, text: nombreCompleto ? `✓ ${nombreCompleto}` : "DNI válido." });
+      setDniMsg({ ok: true, text: nombreCompleto ? nombreCompleto : "DNI válido." });
     } catch {
       setDniMsg({ ok: false, text: "Error de conexión con RENIEC." });
     } finally {

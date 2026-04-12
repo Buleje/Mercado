@@ -1,4 +1,5 @@
 import { prisma } from "@/lib/prisma";
+import { toNumOrZero } from "@/lib/decimal-utils";
 
 export type Variant = { id: string; label: string; weight: number };
 export type ABTestDef = {
@@ -66,7 +67,8 @@ export const ABTestDB = {
       if (!map.has(e.variantId)) map.set(e.variantId, { impressions: 0, conversions: 0, totalValue: 0 });
       const m = map.get(e.variantId)!;
       if (e.event === "impression") m.impressions++;
-      else if (e.event === "conversion") { m.conversions++; m.totalValue += e.value ?? 0; }
+      // TD-018: e.value puede ser Decimal
+      else if (e.event === "conversion") { m.conversions++; m.totalValue += toNumOrZero(e.value); }
     }
     return Array.from(map.entries()).map(([variantId, m]) => ({
       variantId,

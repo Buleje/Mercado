@@ -42,12 +42,12 @@ describe("lib/session.ts — token creation & verification", () => {
   // ── Config constants ─────────────────────────────────────────────────────
 
   describe("SESSION / REFRESH constants", () => {
-    it('SESSION.COOKIE_NAME equals "bsm-admin-sess"', () => {
-      expect(SESSION.COOKIE_NAME).toBe("bsm-admin-sess");
+    it('SESSION.COOKIE_NAME equals "buleje-admin-sess"', () => {
+      expect(SESSION.COOKIE_NAME).toBe("buleje-admin-sess");
     });
 
-    it('REFRESH.COOKIE_NAME equals "bsm-admin-refresh"', () => {
-      expect(REFRESH.COOKIE_NAME).toBe("bsm-admin-refresh");
+    it('REFRESH.COOKIE_NAME equals "buleje-admin-refresh"', () => {
+      expect(REFRESH.COOKIE_NAME).toBe("buleje-admin-refresh");
     });
 
     it("SESSION.MAX_AGE is 900 (15 min in seconds)", () => {

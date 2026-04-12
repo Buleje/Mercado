@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
-import { OrdersDB, NotificationLogsDB, LoyaltyDB } from "@/lib/jsondb";
+import { OrdersDB, NotificationLogsDB } from "@/lib/jsondb";
 import type { DbOrder } from "@/lib/jsondb";
 import { getWhatsAppLink, sendWhatsAppNotification } from "@/lib/whatsapp";
 import { logActivity } from "@/lib/activity-logger";
@@ -9,6 +9,7 @@ import { sendPushToPhone } from "@/lib/push-sender";
 import { prisma } from "@/lib/prisma";
 import { logger } from "@/lib/logger";
 import { invalidate } from "@/lib/cache";
+import { autoEarnLoyaltyPoints } from "@/lib/loyalty/auto-earn";
 
 const NOTIFIABLE_STATUSES = new Set(["confirmado", "en_camino", "entregado", "cancelado"]);
 
@@ -42,7 +43,7 @@ export async function GET(
 
   const { id } = await params;
   try {
-    const order = await OrdersDB.getById(id);
+    const order = await OrdersDB.getById(auth.tenantId, id);
     if (!order) return NextResponse.json({ error: "Pedido no encontrado" }, { status: 404 });
     return NextResponse.json(order);
   } catch (e) {
@@ -74,7 +75,7 @@ export async function PATCH(
   }
 
   try {
-    const existing = await OrdersDB.getById(id);
+    const existing = await OrdersDB.getById(auth.tenantId, id);
     if (!existing) return NextResponse.json({ error: "Pedido no encontrado" }, { status: 404 });
 
     // Validate status transition if attempting to change status
@@ -88,7 +89,7 @@ export async function PATCH(
       }
     }
 
-    const updated = await OrdersDB.update(id, parsed.data as Partial<DbOrder>);
+    const updated = await OrdersDB.update(auth.tenantId, id, parsed.data as Partial<DbOrder>);
     if (!updated) return NextResponse.json({ error: "Error al actualizar" }, { status: 500 });
 
     const statusChanged = parsed.data.status != null && parsed.data.status !== existing.status;
@@ -118,9 +119,31 @@ export async function PATCH(
       }
     }
 
-    // Accrue loyalty points when order is marked as delivered
+    // Auto-earn de puntos de lealtad al completar la entrega — fire-and-forget.
+    // autoEarnLoyaltyPoints maneja: mínimo S/5, 1pto/S/1,(×2 para frescos, etc.),
+    // anti-duplicación por orderId, niveles Bronce/Plata/Oro/Diamante y audit trail.
     if (statusChanged && parsed.data.status === "entregado" && updated.customer.phone) {
-      LoyaltyDB.accruePoints(updated.customer.phone, updated.total).catch(() => {});
+      // Fetch order items with product categories for multiplier calculation
+      prisma.orderItem.findMany({
+        where: { orderId: id },
+        select: {
+          price: true,
+          quantity: true,
+          product: { select: { category: true } },
+        },
+      }).then((orderItems) => {
+        const categoryItems = orderItems.map((oi) => ({
+          categorySlug: oi.product?.category ?? null,
+          lineTotal: Number(oi.price) * oi.quantity,
+        }));
+        return autoEarnLoyaltyPoints(
+          auth.tenantId,
+          updated.customer.phone!,
+          id,
+          updated.total,
+          categoryItems.length > 0 ? categoryItems : undefined,
+        );
+      }).catch(() => {});
     }
 
     // Auto-coupon "Vuelve pronto" 5% on delivery (fire-and-forget)
@@ -228,7 +251,7 @@ export async function PATCH(
             : `WhatsApp link generado: estado -> ${updated.status}`,
           status: whatsappSent ? "sent" : whatsappLink ? "link" : "skipped",
           orderId: updated.id,
-        }).catch(() => {});
+        }, auth.tenantId).catch(() => {});
       }
     }
 
@@ -282,7 +305,7 @@ export async function DELETE(
 
   const { id } = await params;
   try {
-    await OrdersDB.delete(id);
+    await OrdersDB.delete(auth.tenantId, id);
     const reqId = req.headers.get("x-request-id") ?? undefined;
     logActivity("Eliminar", "pedido", `Pedido ${id.slice(-6)} eliminado`, id, "admin", reqId).catch(() => {});
     invalidate(`dashboard:${auth.tenantId}`);

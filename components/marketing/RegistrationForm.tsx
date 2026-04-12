@@ -14,6 +14,13 @@ import { PLANS, type PlanId, type PlanDef } from "@/lib/plans";
 import { STORE_TEMPLATES_LIST, type TemplateId } from "@/lib/store-templates";
 import { trackEvent } from "@/lib/analytics";
 
+/** Read csrf-token cookie for double-submit protection */
+function getCsrfToken(): string | null {
+  if (typeof document === "undefined") return null;
+  const m = document.cookie.match(/(?:^|;\s*)csrf-token=([^;]+)/);
+  return m ? m[1] : null;
+}
+
 // ─── Zod schema (espejo del schema del servidor) ─────────────
 const Step1Schema = z.object({
   storeName:  z.string().min(2, "Mínimo 2 caracteres").max(80, "Máximo 80 caracteres"),
@@ -185,7 +192,7 @@ const TEMPLATE_ICONS: Record<string, React.ReactNode> = {
 
 // ─── Main component ───────────────────────────────────────────
 export function RegistrationForm({ initialPlan = "free" }: RegistrationFormProps) {
-  const ROOT_DOMAIN = process.env.NEXT_PUBLIC_ROOT_DOMAIN ?? "buleje.com";
+  const ROOT_DOMAIN = process.env.NEXT_PUBLIC_ROOT_DOMAIN ?? "buleje.pe";
 
   const [step,        setStep]        = useState<Step>(0);
   const [direction,   setDirection]   = useState<Direction>(1);
@@ -358,7 +365,7 @@ export function RegistrationForm({ initialPlan = "free" }: RegistrationFormProps
     try {
       const res = await fetch("/api/onboarding", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: { "Content-Type": "application/json", ...(getCsrfToken() && { "x-csrf-token": getCsrfToken()! }) },
         body: JSON.stringify({
           type:          accountType,
           storeName:     form.storeName,
@@ -406,7 +413,7 @@ export function RegistrationForm({ initialPlan = "free" }: RegistrationFormProps
         try {
           const checkoutRes  = await fetch("/api/onboarding/checkout", {
             method: "POST",
-            headers: { "Content-Type": "application/json" },
+            headers: { "Content-Type": "application/json", ...(getCsrfToken() && { "x-csrf-token": getCsrfToken()! }) },
             body: JSON.stringify({ tenantSlug: data.tenantSlug ?? data.tenantId, plan: form.plan }),
           });
           const checkoutData = await checkoutRes.json() as { url?: string };
@@ -548,7 +555,7 @@ export function RegistrationForm({ initialPlan = "free" }: RegistrationFormProps
                   <div className="space-y-1">
                     <div className="flex items-center border rounded-xl overflow-hidden focus-within:ring-2 focus-within:ring-[#00B4A6]/40 transition-all border-gray-200 dark:border-gray-700">
                       <span className="px-3 py-2.5 text-sm text-muted-foreground bg-gray-50 dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700 select-none whitespace-nowrap">
-                        buleje.com/
+                        buleje.pe/
                       </span>
                       <input
                         type="text"

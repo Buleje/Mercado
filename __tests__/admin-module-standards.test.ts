@@ -23,6 +23,13 @@ const UNIFIED_DIR = path.resolve(
 // Módulos que son proxies o tienen excepciones documentadas
 const PROXY_MODULES = ["AnalyticsProModule.tsx"];
 const NO_TABS_MODULES = ["AICommandModule.tsx", "AnalyticsProModule.tsx"];
+// Módulos que legítimamente usan dark: classes (dark mode habilitado)
+const DARK_MODE_MODULES = [
+  "CRMClientesModule.tsx",
+  "FinanzasModule.tsx",
+  "InventarioAlmacenesModule.tsx",
+  "POSCajaModule.tsx",
+];
 
 function getModuleFiles(): string[] {
   if (!fs.existsSync(UNIFIED_DIR)) return [];
@@ -80,13 +87,15 @@ describe("Admin Modules — Estándares de estructura", () => {
 
       it(`${file} tiene MODULE_ID definido`, () => {
         const content = readModule(file);
-        expect(content).toMatch(/const MODULE_ID\s*=\s*"/);
+        expect(content).toMatch(/const _?MODULE_ID\s*=\s*"/);
       });
     }
   });
 
-  describe("No dark: classes — modo claro forzado", () => {
+  describe("No dark: classes — modo claro forzado (excepto módulos con dark mode habilitado)", () => {
     for (const file of moduleFiles) {
+      if (DARK_MODE_MODULES.includes(file)) continue;
+
       it(`${file} no contiene clases dark: de Tailwind`, () => {
         const content = readModule(file);
         // Busca dark: seguido de caracteres de clase CSS (patrón Tailwind)

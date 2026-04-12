@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireAdmin } from "@/lib/require-admin";
 import { prisma } from "@/lib/prisma";
+import { logger } from "@/lib/logger";
 
 /**
  * GET /api/audit-trail
@@ -67,7 +68,7 @@ export async function GET(req: NextRequest) {
       offset,
     });
   } catch (e) {
-    console.error("[audit-trail] GET error:", e);
+    logger.error("[audit-trail] GET error", { error: String(e) });
     return NextResponse.json({ error: "Error cargando audit trail" }, { status: 500 });
   }
 }

@@ -60,19 +60,18 @@ function mapChatMessage(m: PChatMessage): DbChatMessage {
 // ── Notification Logs DB ──────────────────────────────────────────────────────
 
 export const NotificationLogsDB = {
-  async getAll(tenantId?: string): Promise<DbNotificationLog[]> {
-    const where: Record<string, unknown> = {};
-    if (tenantId) where.tenantId = tenantId;
+  async getAll(tenantId: string): Promise<DbNotificationLog[]> {
+    const where: Record<string, unknown> = { tenantId };
     return (await prisma.notificationLog.findMany({ where, orderBy: { createdAt: "desc" }, take: 200 })).map(mapNotificationLog);
   },
-  async getByRecipient(phone: string): Promise<DbNotificationLog[]> {
+  async getByRecipient(phone: string, tenantId: string): Promise<DbNotificationLog[]> {
     return (await prisma.notificationLog.findMany({
-      where: { recipient: normalizePhone(phone) },
+      where: { tenantId, recipient: normalizePhone(phone) },
       orderBy: { createdAt: "desc" },
       take: 100,
     })).map(mapNotificationLog);
   },
-  async add(data: Omit<DbNotificationLog, "id" | "createdAt">, tenantId = "main"): Promise<DbNotificationLog> {
+  async add(data: Omit<DbNotificationLog, "id" | "createdAt">, tenantId: string): Promise<DbNotificationLog> {
     const row = await prisma.notificationLog.create({ data: { ...data, tenantId } });
     return mapNotificationLog(row);
   },
@@ -81,12 +80,11 @@ export const NotificationLogsDB = {
 // ── Admin Chat DB ─────────────────────────────────────────────────────────────
 
 export const AdminChatDB = {
-  async getAll(tenantId?: string, limit = 100): Promise<DbAdminMessage[]> {
-    const where: Record<string, unknown> = {};
-    if (tenantId) where.tenantId = tenantId;
+  async getAll(tenantId: string, limit = 100): Promise<DbAdminMessage[]> {
+    const where: Record<string, unknown> = { tenantId };
     return (await prisma.adminMessage.findMany({ where, orderBy: { createdAt: "desc" }, take: limit })).map(mapAdminMessage).reverse();
   },
-  async add(sender: string, message: string, tenantId = "main"): Promise<DbAdminMessage> {
+  async add(sender: string, message: string, tenantId: string): Promise<DbAdminMessage> {
     const row = await prisma.adminMessage.create({ data: { sender, message, tenantId } });
     return mapAdminMessage(row);
   },
@@ -95,11 +93,11 @@ export const AdminChatDB = {
 // ── Customer Live Chat DB ─────────────────────────────────────────────────────
 
 export const ChatDB = {
-  async getByPhone(phone: string, limit = 50): Promise<DbChatMessage[]> {
-    return (await prisma.chatMessage.findMany({ where: { customerPhone: phone }, orderBy: { createdAt: "asc" }, take: limit })).map(mapChatMessage);
+  async getByPhone(tenantId: string, phone: string, limit = 50): Promise<DbChatMessage[]> {
+    return (await prisma.chatMessage.findMany({ where: { tenantId, customerPhone: phone }, orderBy: { createdAt: "asc" }, take: limit })).map(mapChatMessage);
   },
-  async getConversations(): Promise<{ phone: string; name: string; lastMessage: string; lastAt: string; unread: number }[]> {
-    const msgs = await prisma.chatMessage.findMany({ orderBy: { createdAt: "desc" } });
+  async getConversations(tenantId: string): Promise<{ phone: string; name: string; lastMessage: string; lastAt: string; unread: number }[]> {
+    const msgs = await prisma.chatMessage.findMany({ where: { tenantId }, orderBy: { createdAt: "desc" } });
     const map = new Map<string, { name: string; lastMessage: string; lastAt: Date; unread: number }>();
     for (const m of msgs) {
       if (!map.has(m.customerPhone)) {
@@ -112,11 +110,11 @@ export const ChatDB = {
     }
     return Array.from(map.entries()).map(([phone, c]) => ({ phone, name: c.name, lastMessage: c.lastMessage, lastAt: toISO(c.lastAt), unread: c.unread }));
   },
-  async add(customerPhone: string, customerName: string, sender: "customer" | "admin", message: string, tenantId = "main"): Promise<DbChatMessage> {
+  async add(tenantId: string, customerPhone: string, customerName: string, sender: "customer" | "admin", message: string): Promise<DbChatMessage> {
     const row = await prisma.chatMessage.create({ data: { customerPhone, customerName, sender, message, tenantId } });
     return mapChatMessage(row);
   },
-  async markRead(customerPhone: string): Promise<void> {
-    await prisma.chatMessage.updateMany({ where: { customerPhone, sender: "customer", read: false }, data: { read: true } });
+  async markRead(tenantId: string, customerPhone: string): Promise<void> {
+    await prisma.chatMessage.updateMany({ where: { tenantId, customerPhone, sender: "customer", read: false }, data: { read: true } });
   },
 };

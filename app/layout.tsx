@@ -1,4 +1,5 @@
 import type { Metadata, Viewport } from "next";
+import { Suspense } from "react";
 import { Geist } from "next/font/google";
 
 const GeistSans = Geist({
@@ -26,43 +27,30 @@ export const metadata: Metadata = {
   metadataBase: new URL("https://www.buleje.pe"),
   title: {
     default:
-      "Tienda Virtual de Abarrotes en Pucallpa | Delivery, Yape y Efectivo",
+      "Buleje — Software ERP para Bodegas y Tiendas del Peru | Inventario, POS, Delivery",
     template: "%s | Buleje",
   },
   description:
-    "Compra abarrotes online en Pucallpa: bebidas, golosinas, carnes, pollo, productos de limpieza y más. Paga con Yape o efectivo. Delivery rápido y tienda virtual administrable.",
+    "Buleje: software ERP para bodegas y tiendas de todo el Peru. Inventario en tiempo real, punto de venta POS, delivery, fiado digital y facturacion SUNAT. Yape y efectivo. Empieza gratis.",
   keywords: [
-    "tienda virtual de abarrotes en pucallpa",
-    "abarrotes delivery pucallpa",
-    "comprar abarrotes online pucallpa",
-    "tienda de abarrotes pucallpa",
-    "delivery de abarrotes pucallpa",
-    "supermercado delivery pucallpa",
-    "viveres delivery pucallpa",
-    "tienda online pucallpa",
-    "compras online pucallpa",
-    "productos de consumo pucallpa",
-    "pagar con yape en pucallpa",
-    "tienda con yape en pucallpa",
-    "delivery con pago en efectivo pucallpa",
-    "delivery rápido en pucallpa",
-    "bebidas en pucallpa",
-    "golosinas en pucallpa",
-    "carnes en pucallpa",
-    "pollo en pucallpa",
-    "productos de limpieza en pucallpa",
-    "detergente delivery pucallpa",
-    "abarrotes al por menor pucallpa",
-    "venta de viveres pucallpa",
-    "snacks y bebidas pucallpa",
-    "artículos para el hogar pucallpa",
-    "tienda ecommerce pucallpa",
-    "delivery de productos pucallpa",
-    "viveres a domicilio en pucallpa",
-    "tienda de consumo masivo en pucallpa",
-    "abarrotes a domicilio pucallpa",
-    "compra por whatsapp pucallpa",
-    "pago con yape pucallpa",
+    "software para bodegas",
+    "ERP tienda peru",
+    "sistema inventario bodega",
+    "punto de venta bodega",
+    "software delivery tienda",
+    "facturacion electronica bodega",
+    "Buleje ERP",
+    "app bodega peru",
+    "gestion inventario tienda",
+    "sistema ventas bodega",
+    "software bodega gratis",
+    "POS para bodegas",
+    "fiado digital bodega",
+    "tienda online bodega peru",
+    "software minimarket peru",
+    "sistema bodega Yape",
+    "delivery bodega app",
+    "control stock tienda",
   ],
   authors: [{ name: "Buleje" }],
   creator: "Buleje",
@@ -78,24 +66,24 @@ export const metadata: Metadata = {
     url: "https://www.buleje.pe",
     siteName: "Buleje",
     title:
-      "Tienda Virtual de Abarrotes en Pucallpa | Delivery, Yape y Efectivo",
+      "Buleje — Software ERP para Bodegas y Tiendas del Peru",
     description:
-      "Abarrotes, bebidas, carnes, pollo, golosinas y limpieza con delivery en Pucallpa. Compra online y paga con Yape o efectivo.",
+      "Sistema completo para tu bodega: inventario, ventas POS, delivery, fiado digital y facturacion SUNAT. Funciona con Yape y efectivo. Disponible en todo el Peru.",
     images: [
       {
-        url: "/og-image.jpg",
+        url: "/api/og",
         width: 1200,
         height: 630,
-        alt: "Buleje - Tienda Virtual de Abarrotes en Pucallpa",
+        alt: "Buleje — Software ERP para Bodegas y Tiendas del Peru",
       },
     ],
   },
   twitter: {
     card: "summary_large_image",
-    title: "Tienda Virtual de Abarrotes en Pucallpa",
+    title: "Buleje — Software para Bodegas del Peru",
     description:
-      "Compra abarrotes online con delivery en Pucallpa. Pago por Yape o efectivo.",
-    images: ["/og-image.jpg"],
+      "Inventario, POS, delivery, fiado digital y facturacion SUNAT. Todo en un solo sistema. Empieza gratis.",
+    images: ["/api/og"],
   },
   robots: process.env.VERCEL_ENV === "preview" || process.env.VERCEL_ENV === "development"
     ? { index: false, follow: false }
@@ -154,26 +142,49 @@ async function getCachedReviewStats() {
   return { ratingValue: undefined, ratingCount: undefined };
 }
 
+// Async component that isolates headers() inside a Suspense boundary
+// so it doesn't block the entire page render (Next.js 16 streaming).
+async function DynamicHeadContent() {
+  const reqHeaders = await headers();
+  const requestId = reqHeaders.get("x-request-id") ?? undefined;
+  const nonce = reqHeaders.get("x-nonce") ?? undefined;
+
+  return (
+    <>
+      {requestId && <meta name="x-request-id" content={requestId} />}
+      {/* Filtrar TODOS los errores de extensiones - Ejecutar PRIMERO */}
+      <script
+        nonce={nonce}
+        suppressHydrationWarning
+        dangerouslySetInnerHTML={{
+          __html: `!function(){"use strict";var e=console.error;console.error=function(){for(var o=[],r=0;r<arguments.length;r++)o[r]=arguments[r];var n=o.join(" ");n.includes("bootstrap-autofill")||n.includes("extension")||n.includes("chrome-extension")||n.includes("Cache")||e.apply(console,o)};var o=function(e){if(!e)return!1;var o=e.toString?e.toString():"",r=e.filename||"",n=e.stack||"",t=e.message||"";return r.includes("extension")||r.includes("bootstrap-autofill")||r.includes("chrome-extension")||r.includes("moz-extension")||o.includes("extension")||o.includes("Cache")||n.includes("extension")||n.includes("bootstrap-autofill")||n.includes("chrome-extension")||n.includes("Cache")||t.includes("extension")||t.includes("Cache")};window.addEventListener("error",(function(e){if(o(e))return e.preventDefault(),e.stopImmediatePropagation(),!0}),!0),window.addEventListener("unhandledrejection",(function(e){if(o(e.reason))return e.preventDefault(),e.stopImmediatePropagation(),console.log("[Filtrado] Error de extensión bloqueado"),!0}),!0)}();`,
+        }}
+      />
+      {/* Evitar flash de tema incorrecto */}
+      <script
+        nonce={nonce}
+        suppressHydrationWarning
+        dangerouslySetInnerHTML={{
+          __html: `(function(){try{if(window.innerWidth<640)return;var t=localStorage.getItem("buleje-theme");var d=t==="dark"||(t!=="light"&&matchMedia("(prefers-color-scheme:dark)").matches);if(d)document.documentElement.classList.add("dark")}catch(e){}})()`,
+        }}
+      />
+    </>
+  );
+}
+
 export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  // Correr DB query en paralelo con headers — shaves 100-500ms off TTFB.
-  // Arrancamos statsPromise primero (DB call, lento) y después await headers()
-  // (fast, solo lee el request context). Cuando statsPromise resuelva ya el
-  // headers fue procesado → paralelismo real con awaits explícitos Next.js 16.
-  const statsPromise = getCachedReviewStats();
-  const reqHeaders = await headers();
-  const { ratingValue, ratingCount } = await statsPromise;
-  const requestId = reqHeaders.get("x-request-id") ?? undefined;
-  // Per-request nonce for CSP — matches what middleware set in x-nonce
-  const nonce = reqHeaders.get("x-nonce") ?? undefined;
+  const { ratingValue, ratingCount } = await getCachedReviewStats();
 
   return (
     <html lang="es-PE" className={`${GeistSans.variable} ${GeistSans.className}`} suppressHydrationWarning data-scroll-behavior="smooth">
       <head suppressHydrationWarning>
-        {requestId && <meta name="x-request-id" content={requestId} />}
+        <Suspense>
+          <DynamicHeadContent />
+        </Suspense>
         <SchemaMarkup ratingValue={ratingValue} ratingCount={ratingCount} />
         
         {/* Critical preconnects — max 4 (more hurts performance per Lighthouse) */}
@@ -191,6 +202,7 @@ export default async function RootLayout({
         <link rel="dns-prefetch" href="https://c.clarity.ms" />
         
         {/* PWA Metadata */}
+        <link rel="manifest" href="/manifest.json" />
         <meta name="mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-status-bar-style" content="default" />
@@ -201,22 +213,6 @@ export default async function RootLayout({
         <link rel="apple-touch-icon" sizes="167x167" href="/api/pwa-icon/167" />
         <link rel="apple-touch-icon" sizes="120x120" href="/api/pwa-icon/120" />
         
-        {/* Filtrar TODOS los errores de extensiones - Ejecutar PRIMERO */}
-        <script
-          nonce={nonce}
-          suppressHydrationWarning
-          dangerouslySetInnerHTML={{
-            __html: `!function(){"use strict";var e=console.error;console.error=function(){for(var o=[],r=0;r<arguments.length;r++)o[r]=arguments[r];var n=o.join(" ");n.includes("bootstrap-autofill")||n.includes("extension")||n.includes("chrome-extension")||n.includes("Cache")||e.apply(console,o)};var o=function(e){if(!e)return!1;var o=e.toString?e.toString():"",r=e.filename||"",n=e.stack||"",t=e.message||"";return r.includes("extension")||r.includes("bootstrap-autofill")||r.includes("chrome-extension")||r.includes("moz-extension")||o.includes("extension")||o.includes("Cache")||n.includes("extension")||n.includes("bootstrap-autofill")||n.includes("chrome-extension")||n.includes("Cache")||t.includes("extension")||t.includes("Cache")};window.addEventListener("error",(function(e){if(o(e))return e.preventDefault(),e.stopImmediatePropagation(),!0}),!0),window.addEventListener("unhandledrejection",(function(e){if(o(e.reason))return e.preventDefault(),e.stopImmediatePropagation(),console.log("[Filtrado] Error de extensión bloqueado"),!0}),!0)}();`,
-          }}
-        />
-        {/* Evitar flash de tema incorrecto */}
-        <script
-          nonce={nonce}
-          suppressHydrationWarning
-          dangerouslySetInnerHTML={{
-            __html: `(function(){try{if(window.innerWidth<640)return;var t=localStorage.getItem("bsm-theme");var d=t==="dark"||(t!=="light"&&matchMedia("(prefers-color-scheme:dark)").matches);if(d)document.documentElement.classList.add("dark")}catch(e){}})()`,
-          }}
-        />
       </head>
       <body className={`antialiased ${GeistSans.className}`}>
         <ThemeProvider>

@@ -3,6 +3,8 @@
 // Renders CMS pages from database
 // ═══════════════════════════════════════════════════════
 
+import { Suspense } from "react";
+import { connection } from "next/server";
 import { notFound } from "next/navigation";
 import { getPageBySlug } from "@/lib/cms-db/pages";
 import { Metadata } from "next";
@@ -18,9 +20,10 @@ import CTABlock from "@/components/blocks/CTABlock";
 export async function generateMetadata({
   params,
 }: {
-  params: { slug: string };
+  params: Promise<{ slug: string }>;
 }): Promise<Metadata> {
-  const page = await getPageBySlug(params.slug, false);
+  const { slug } = await params;
+  const page = await getPageBySlug(slug, false);
 
   if (!page || page.status !== "PUBLISHED") {
     return {
@@ -28,7 +31,7 @@ export async function generateMetadata({
     };
   }
 
-  const pageUrl = `https://www.buleje.pe/cms/${params.slug}`;
+  const pageUrl = `https://www.buleje.pe/cms/${slug}`;
 
   return {
     title: page.metaTitle || page.title,
@@ -66,13 +69,15 @@ const BLOCK_COMPONENTS: Record<string, React.ComponentType<any>> = {
 };
 
 // ─── Page Component ─────────────────────────────────────
-export default async function DynamicPage({
+async function DynamicPageContent({
   params,
 }: {
-  params: { slug: string };
+  params: Promise<{ slug: string }>;
 }) {
+  await connection();
   // Fetch page from database
-  const page = await getPageBySlug(params.slug, true);
+  const { slug } = await params;
+  const page = await getPageBySlug(slug, true);
 
   // 404 if not found or not published
   if (!page || page.status !== "PUBLISHED") {
@@ -97,16 +102,18 @@ export default async function DynamicPage({
             "@type": "Article",
             headline: page.title,
             description: page.metaDescription || page.description,
-            url: `https://www.buleje.pe/cms/${params.slug}`,
+            url: `https://www.buleje.pe/cms/${slug}`,
             ...(page.ogImage ? { image: page.ogImage } : {}),
             author: { "@type": "Organization", name: "Buleje" },
             publisher: {
               "@type": "Organization",
               name: "Buleje",
-              logo: { "@type": "ImageObject", url: "https://www.buleje.pe/og-image.jpg" },
+              logo: { "@type": "ImageObject", url: "https://www.buleje.pe/api/og" },
             },
-            datePublished: page.createdAt ?? new Date().toISOString(),
-            dateModified: page.updatedAt ?? new Date().toISOString(),
+            // TD-018/Next16: page.createdAt/updatedAt siempre existen (Prisma required fields).
+            // El fallback a new Date() violaba cacheComponents ("non-deterministic data during prerender").
+            datePublished: page.createdAt ? new Date(page.createdAt).toISOString() : undefined,
+            dateModified: page.updatedAt ? new Date(page.updatedAt).toISOString() : undefined,
           }),
         }}
       />
@@ -129,5 +136,33 @@ export default async function DynamicPage({
         );
       })}
     </main>
+  );
+}
+
+function CmsPageSkeleton() {
+  return (
+    <main className="dynamic-page min-h-screen animate-pulse">
+      <div className="max-w-4xl mx-auto px-4 py-20 space-y-8">
+        <div className="h-12 w-2/3 bg-gray-200 dark:bg-gray-800 rounded" />
+        <div className="h-6 w-1/2 bg-gray-200 dark:bg-gray-800 rounded" />
+        <div className="space-y-3">
+          {Array.from({ length: 4 }).map((_, i) => (
+            <div key={i} className="h-4 bg-gray-100 dark:bg-gray-800 rounded" />
+          ))}
+        </div>
+      </div>
+    </main>
+  );
+}
+
+export default function DynamicPage({
+  params,
+}: {
+  params: Promise<{ slug: string }>;
+}) {
+  return (
+    <Suspense fallback={<CmsPageSkeleton />}>
+      <DynamicPageContent params={params} />
+    </Suspense>
   );
 }

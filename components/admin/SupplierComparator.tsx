@@ -2,9 +2,8 @@
 
 import { useState, useEffect, useCallback, useMemo } from "react";
 import {
-  Users, Star, Truck, DollarSign, Clock, Package,
-  CreditCard, RefreshCw, AlertTriangle, ShoppingCart, ChevronDown,
-} from "lucide-react";
+  Users, Star, DollarSign, Clock, Package,
+  CreditCard, RefreshCw, AlertTriangle, ShoppingCart } from "lucide-react";
 import {
   RadarChart, Radar, PolarGrid, PolarAngleAxis, PolarRadiusAxis,
   ResponsiveContainer, Tooltip,

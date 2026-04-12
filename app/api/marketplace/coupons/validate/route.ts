@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { toErrorPayload, newTraceId } from "@/lib/api-error";
 import { z } from "zod";
+import { toNumOrZero } from "@/lib/decimal-utils";
 
 const ValidateSchema = z.object({
   code: z.string().min(1).transform((v) => v.toUpperCase().trim()),
@@ -33,14 +34,15 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Tienda no encontrada" }, { status: 404 });
     }
 
-    // Find the coupon (must belong to this store's tenant)
-    // TECH-DEBT: campo storeId no está en schema Prisma (Coupon) — filtro por storeId removido temporalmente
+    // Find the coupon: store-specific first, then tenant-wide (storeId=null)
     const coupon = await prisma.coupon.findFirst({
       where: {
         tenantId: store.tenantId,
         code,
         active: true,
+        OR: [{ storeId: store.id }, { storeId: null }],
       },
+      orderBy: { storeId: "desc" }, // prefer store-specific over tenant-wide
     });
 
     if (!coupon) {
@@ -57,20 +59,24 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ valid: false, reason: "Cupón agotado" });
     }
 
+    // TD-018: minPurchase y discountValue son Decimal
+    const minPurchaseNum = toNumOrZero(coupon.minPurchase);
+    const discountValueNum = toNumOrZero(coupon.discountValue);
+
     // Check minimum purchase
-    if (coupon.minPurchase && cartTotal < coupon.minPurchase) {
+    if (minPurchaseNum > 0 && cartTotal < minPurchaseNum) {
       return NextResponse.json({
         valid: false,
-        reason: `Compra mínima de S/${coupon.minPurchase.toFixed(2)}`,
+        reason: `Compra mínima de S/${minPurchaseNum.toFixed(2)}`,
       });
     }
 
     // Calculate discount
     let discount = 0;
     if (coupon.discountType === "percent") {
-      discount = Math.round((cartTotal * coupon.discountValue) / 100 * 100) / 100;
+      discount = Math.round((cartTotal * discountValueNum) / 100 * 100) / 100;
     } else {
-      discount = Math.min(coupon.discountValue, cartTotal);
+      discount = Math.min(discountValueNum, cartTotal);
     }
 
     return NextResponse.json({
@@ -79,7 +85,7 @@ export async function POST(req: NextRequest) {
       code: coupon.code,
       description: coupon.description,
       discountType: coupon.discountType,
-      discountValue: coupon.discountValue,
+      discountValue: discountValueNum,
       discount,
     });
   } catch (err) {

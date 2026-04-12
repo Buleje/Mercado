@@ -13,6 +13,7 @@
 
 import "server-only";
 import { prisma } from "@/lib/prisma";
+import { toNum, toNumOrZero } from "@/lib/decimal-utils";
 import { predictDemand } from "./demand-predictor";
 
 // ── Tipos públicos ─────────────────────────────────────────────────────────────
@@ -90,8 +91,10 @@ export async function suggestPriceAdjustments(
 
   for (const product of products) {
     const currentStock = product.stock ?? 0;
-    const currentPrice = product.price;
-    const costPrice = product.costPrice ?? currentPrice * 0.7;
+    // TD-018: price y costPrice ahora son Decimal → convertir a number al inicio
+    const currentPrice = toNumOrZero(product.price);
+    const costPriceRaw = toNum(product.costPrice);
+    const costPrice = costPriceRaw ?? currentPrice * 0.7;
 
     // ── FEFO urgente: expira en <15 días ─────────────────────────────────────
     if (product.expiresAt && product.expiresAt <= fefoDeadline) {

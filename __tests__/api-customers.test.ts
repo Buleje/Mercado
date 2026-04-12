@@ -223,7 +223,8 @@ describe("POST /api/customers", () => {
   it("calls CustomersDB.upsert with the correct data", async () => {
     await POST(makePost(VALID_POST_BODY));
     expect(mockCustomersUpsert).toHaveBeenCalledWith(
-      expect.objectContaining({ name: "María García" })
+      expect.objectContaining({ name: "María García" }),
+      "main",
     );
   });
 

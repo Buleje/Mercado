@@ -54,6 +54,20 @@ skills-lock.json
 /.claude/skills/supabase
 /.claude/skills/supabase-postgres-best-practices
 
+# Phase 3 runtime artifacts (never commit)
+/backups/db/*.sql
+/backups/db/*.sql.gz
+/logs/sentry-loop/*.json
+!/logs/sentry-loop/dedup-registry.json
+/reports/finops/*.md
+/docs/showcase/**/
+/.worktrees/
+
+# MCP server node_modules
+/tools/mcp-bodega/node_modules/
+/tools/mcp-bodega/dist/
+/tools/mcp-bodega/.env
+
 # typescript
 *.tsbuildinfo
 next-env.d.ts
@@ -91,3 +105,6 @@ build-output.txt
 /shot-*.png
 /screenshot-*.png
 
+build-task003.log
+
+.env*.local

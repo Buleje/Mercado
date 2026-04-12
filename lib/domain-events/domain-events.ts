@@ -1,7 +1,7 @@
 /**
  * lib/domain-events/domain-events.ts
  *
- * Domain events for Bodega San Martín — Event-Driven Architecture.
+ * Domain events for Buleje ERP — Event-Driven Architecture.
  * NOTE: lib/events.ts (sin "domain-") es el sistema de CustomEvents del DOM
  * para el storefront — son conceptos diferentes. Este módulo es server-only.
  *

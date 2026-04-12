@@ -68,7 +68,7 @@ export default function DataExportImport() {
         setPreview(json);
         setPreviewFile(file.name);
       } catch {
-        setError("Archivo JSON inválido. Verifica que sea un export de Bodega San Martín.");
+        setError("Archivo JSON invalido. Verifica que sea un export de Buleje.");
         setPreview(null);
         setPreviewFile(null);
       }

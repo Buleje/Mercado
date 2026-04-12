@@ -15,9 +15,9 @@ const TYPE_LABELS: Record<string, string> = {
 };
 
 const STATUS_ICONS: Record<string, string> = {
-  sent: "✅",
-  pending: "⏳",
-  failed: "❌",
+  sent: "",
+  pending: "",
+  failed: "",
 };
 
 export default function NotificationsTab() {
@@ -172,7 +172,7 @@ export default function NotificationsTab() {
                 <div key={l.id} className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl px-2 sm:px-4 py-2 sm:py-3 space-y-1">
                   <div className="flex items-center justify-between">
                     <span className="text-sm font-bold text-gray-900 dark:text-foreground flex flex-wrap items-center gap-2">
-                      {STATUS_ICONS[l.status] ?? "📨"} {l.recipient}
+                      {l.recipient}
                     </span>
                     <span className="text-[10px] text-gray-400">{new Date(l.createdAt).toLocaleString("es-PE")}</span>
                   </div>

@@ -1,4 +1,4 @@
-# Deuda Técnica — Bodega San Martín
+# Deuda Técnica — Buleje
 
 > **Regla:** Dedicar ~20% de cada sesión a reducir deuda técnica.
 > Actualizar este archivo cuando se identifique o resuelva deuda.
@@ -25,9 +25,9 @@
 | TD-014 | Doppler | Migración planeada en `docs/doppler.md` pero bloqueada por acciones humanas (crear cuenta, autenticar CLI) | Secrets duplicados Vercel + .env.local | 🟡 En progreso |
 | ~~TD-026~~ | ~~.husky/pre-commit~~ | **RESUELTO 2026-04-08** (audit next-phase). `.husky/pre-commit` ahora corre `npx lint-staged` + `npx tsc --noEmit` como gate bloqueante con `exit 1` y mensaje legible. Emergency bypass documentado via `HUSKY=0 git commit`. En el mismo turno se quitó `continue-on-error: true` de `Lint` y `Run tests with coverage` en `.github/workflows/ci.yml` y se añadió un step dedicado `Type check (tsc --noEmit)`. ADR 008 ahora es promesa real tanto local como en CI. | — | ✅ Cerrado |
 | TD-027 | api/superadmin/stores | Conteo de productos por tenant es N+1 (Promise.all + count por store). Funcional pero ineficiente. Plan: groupBy o subquery. Documentado inline en `app/api/superadmin/stores/route.ts`. | Latencia crece con # de tiendas | 🔓 Abierto |
-| TD-028 | components/admin/AdminTenantBar.tsx | Marcado `"use client"` sin justificación — es presentacional puro (sin hooks ni handlers). Convertir a Server Component reduce bundle JS. | Bytes JS innecesarios en cliente | 🔓 Abierto |
-| TD-029 | components/admin/fiados/FiadoFormModal.tsx | Setters tipados como `(p: any)` — escape hatch del type system introducido en commit `11bdafd` para destrabar TS errors rápido. Tipar correctamente con el shape real del form. | Pierde safety en formulario crítico de fiados | 🔓 Abierto |
-| TD-034 | e2e/ product-card selector | **Descubierto 2026-04-08, parcialmente resuelto**. `data-testid="product-card"` restaurado en `RecommendedProducts.tsx` (home) + `CategoryCatalog.tsx` (/tienda). Además: `cart-button` en `Header.tsx`, `cart-sidebar` en `CartSidebar.tsx`, `checkout-button` en `CartSidebar.tsx`, `checkout-skip-account` en `CheckoutAccountStep.tsx`. Los e2e ahora llegan al CheckoutModal sin errores de selector. **PENDIENTE:** los tests fallan todavía en el wizard interno (StepDatos, StepPago) — faltan testids en los inputs name/phone/address y en los radio buttons de método de pago. Cada step componente necesita 1-2 testids más. | 18 e2e viejos desbloqueados parcialmente, 3 e2e del confirmar siguen rojos por selectors en wizard interno | 🟡 En progreso |
+| ~~TD-028~~ | ~~components/admin/AdminTenantBar.tsx~~ | **✅ CERRADO 2026-04-09.** Verificado en audit: el archivo YA es Server Component puro — sin `"use client"`, imports Server-only (`lucide-react` + `next/link`), sin hooks ni handlers. Cero bytes JS enviados al cliente. La memoria estaba desactualizada. | — | ✅ Cerrado |
+| ~~TD-029~~ | ~~components/admin/fiados/FiadoFormModal.tsx~~ | **✅ CERRADO 2026-04-09.** Verificado en audit: el componente YA usa `Dispatch<SetStateAction<...>>` correctamente tipado, sin `(p: any)`. TypeScript infiere los tipos en los callbacks. La memoria estaba desactualizada. | — | ✅ Cerrado |
+| ~~TD-034~~ | ~~e2e/ product-card selector~~ | **✅ CERRADO 2026-04-09.** Testids completos en todo el flujo: `product-card` (RecommendedProducts, CategoryCatalog), `cart-button` (Header), `cart-sidebar`/`checkout-button` (CartSidebar), `checkout-skip-account` (CheckoutAccountStep), `dni-input`/`name-input`/`phone-input` (CustomerFormFields), `location-input`/`reference-input`/`request-geo` (AddressInput), `payment-yape`/`payment-efectivo` (CheckoutPaymentSection), `datos-submit` (StepDatos), `pago-submit` (CheckoutPaymentSection submit final — añadido 2026-04-09). Wizard interno cubierto. | 18 e2e del checkout desbloqueados | ✅ Cerrado |
 
 ## 🟡 Baja prioridad (mejora calidad a largo plazo)
 
@@ -43,7 +43,7 @@ Audit automatizado contra el skill `supabase-postgres-best-practices` recién in
 
 | ID | Modelo/Campo | Problema | Referencia skill | Severidad |
 |----|--------------|----------|------------------|-----------|
-| TD-018 | `OrderItem.price`, `SaleItem.price`, `WholesaleOrderItem.unitPrice`+`total`, `Bundle.price` | Usan `Float` para dinero. Float tiene ~15-17 dígitos de precisión → errores de redondeo acumulados en audits, chargebacks, discrepancias de pago. | `schema-data-types.md` | 🔴 Crítica (correctness) |
+| ~~TD-018~~ | ~~`OrderItem.price`, `SaleItem.price`, 47 campos monetarios Float→Decimal~~ | **✅ CERRADO 2026-04-09.** Las 3 fases completadas:<br>• **Fase 1** — baseline + hallazgos schema drift + `lib/decimal-utils.ts` centralizado (toNum, toNumOrZero, toFixedStr, sumDecimals).<br>• **Fase 2** — 71 ALTER COLUMN TYPE aplicados en prod (Float → Decimal(12,2)) + schema.prisma sincronizado.<br>• **Fase 3** — 281 errores TS arreglados en 91 archivos usando el helper canónico. Patrón: convertir Decimal → number al leer de Prisma (en el borde DB), luego aritmética number pura. Cero `.toNumber()` directo, cero `Number(decimal)`, cero `as number`. 0 errores `tsc --noEmit` al final. Agent team DELTA cerró 15 archivos (seeds + commissions + cron + customers) en background, los demás fueron fixes manuales del orquestador tras fallo 529 de los otros 3 agents. Ver ADR-018 + ADR-019 ampliado. | — | ✅ Cerrado |
 | ~~TD-019~~ | ~~WholesaleOrderItem + StoreProduct FK~~ | **RESUELTO 2026-04-09** — verificación contra prod (Paso 0 Sprint 2 Ola 1) confirmó que los 3 índices ya estaban aplicados en producción. Zero schema drift en esas tablas. Ver ADR 017. | — | ✅ Cerrado |
 | ~~TD-020~~ | ~~Compound indexes faltantes~~ | **RESUELTO 2026-04-09** — 4 compound indexes aplicados en prod vía `scripts/apply-ola1-indices.ts` (pooler session mode, CREATE INDEX CONCURRENTLY): `PurchaseOrder(tenantId,status)`, `Payable(tenantId,status)`, `NotificationLog(tenantId,createdAt DESC)`, `SupportTicket(tenantId,status)`. Tiempos 193+128+130+133 ms = <600ms total, zero downtime. Schema.prisma sincronizado con `@@index(..., map)`. Ver ADR 017. | — | ✅ Cerrado |
 | ~~TD-021~~ | ~~StorePermission.userId~~ | **RESUELTO 2026-04-09** — verificación contra prod confirmó que `StorePermission_userId_idx` ya existía físicamente. Sin acción adicional requerida. Ver ADR 017. | — | ✅ Cerrado |
@@ -72,16 +72,16 @@ Al cerrar los últimos 105 errores TS, el Agent Team descubrió 4 gaps reales en
 
 | ID | Modelo/Campo | Problema | Workaround aplicado | Severidad |
 |----|--------------|----------|---------------------|-----------|
-| TD-030 | `LoyaltyTransaction` (modelo completo) | Referenciado por `app/api/marketplace/loyalty/route.ts` (3 uses) pero el modelo no existe en schema. El historial de puntos de fidelidad NO persiste — solo se guarda el balance actual en `Customer.loyaltyPoints`. | Opción B: array vacío en GET, operación directa sobre `customer.loyaltyPoints` en POST. | 🟠 Alta — audit loyalty roto |
-| TD-031 | `Review.imageUrls` | Referenciado por `app/api/marketplace/stores/[slug]/reviews/route.ts` (3 uses: select, create, response). El UI del marketplace soportaba reseñas con fotos pero la DB nunca tuvo la columna. | Opción B: removido el uso, reseñas sin fotos. | 🟡 Media — feature UI sin backing |
-| TD-032 | `Coupon.storeId` | Referenciado en 3 archivos (`marketplace/coupons`, `marketplace/coupons/validate`, `superadmin/marketplace/coupons`). Los cupones del marketplace NO están diferenciados de los cupones del POS — comparten tabla sin relación a tienda. | Opción B: removidos filtros por `storeId` con comentarios TECH-DEBT. | 🟡 Media — cupones cruzados |
+| ~~TD-030~~ | ~~`LoyaltyTransaction`~~ | **✅ CERRADO 2026-04-12.** Modelo `LoyaltyTransaction` creado en schema (id, customerId, tenantId, amount, reason, metadata, createdAt) + 3 indexes + `lib/db/loyalty.db.ts` (earn/redeem/getHistory con atomic `$transaction`) + 9 endpoints (marketplace/loyalty, loyalty/[phone], referral, auto-earn, metrics, redeem, cron). Interfaz formal en `lib/db/interfaces/ILoyaltyDB.ts`. Backfill sintético para customers con balance previo. | — | ✅ Cerrado |
+| ~~TD-031~~ | ~~`Review.imageUrls`~~ | **✅ CERRADO 2026-04-12.** `imageUrls` ahora se persiste via `photosJson` (campo existente en schema). GET parsea JSON→array, POST serializa array→JSON. 3 TECH-DEBT comments removidos. Zero migration — usa campo existente. | — | ✅ Cerrado |
+| ~~TD-032~~ | ~~`Coupon.storeId`~~ | **✅ CERRADO 2026-04-12.** `storeId String?` ya existía en schema con `@@index([storeId, code])`. Superadmin endpoint actualizado: filtra `storeId: { not: null }` para marketplace, incluye `storeId` en response. 2 TECH-DEBT comments removidos. | — | ✅ Cerrado |
 | TD-033 | `Tenant.settings` (relación) | Los crons (`demand-forecast`, `marketplace-weekly-report`, `stock-alerts-notify`, `recompra-coupon`, `zone-offers-push`) asumían una relación `Tenant.settings` que no existe. La config real vive en el modelo `Settings` separado (1:1 implícito vía `tenantId`) y los feature flags en `Settings.featureFlagsJson`. | Opción A: corregido — queries ahora hacen `prisma.settings.findUnique({ where: { tenantId } })` y leen `featureFlagsJson` para feature flags. | ✅ Ya corregido en código |
 
 **Plan de migración futuro** (requiere sesión dedicada con `migration-planner`):
 
-1. **TD-030**: crear modelo `LoyaltyTransaction` con `(id, customerId, tenantId, amount, reason, createdAt)` + migration + backfill de `Customer.loyaltyPoints` a movimientos sintéticos.
-2. **TD-031**: agregar `Review.imageUrls String[]` (PostgreSQL array) o tabla `ReviewImage` con relación 1:N.
-3. **TD-032**: agregar `Coupon.storeId String? @index` + FK opcional a `Store` + migration que marque los existentes como cupones POS (storeId = null).
+1. ~~**TD-030**~~: ✅ CERRADO — modelo + DB class + 9 endpoints + backfill implementados.
+2. ~~**TD-031**~~: ✅ CERRADO — imageUrls persiste via photosJson existente, zero migration.
+3. ~~**TD-032**~~: ✅ CERRADO — storeId ya existía en schema, superadmin endpoint actualizado.
 4. **TD-033**: sin migración necesaria — solo documentar la relación implícita en `prisma/schema.prisma` como comentario.
 
 ## ✅ Resueltas

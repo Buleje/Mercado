@@ -107,7 +107,7 @@ export async function POST(req: NextRequest) {
   }
 
   // 4. Generar nuevo token y enviar email (fire-and-forget)
-  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL ?? "https://buleje.com";
+  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL ?? "https://buleje.pe";
 
   resendVerificationEmail(auth.tenantId)
     .then((token) => {

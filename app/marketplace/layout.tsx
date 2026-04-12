@@ -4,11 +4,11 @@ import StoreProviders from "@/components/StoreProviders";
 
 export const metadata: Metadata = {
   title: {
-    default: "Marketplace | Buleje — Todas las bodegas en un solo lugar",
+    default: "Marketplace Buleje — Bodegas y Tiendas de Todo el Peru",
     template: "%s | Marketplace · Buleje",
   },
   description:
-    "Encuentra todas las bodegas, minimarkets y distribuidores de Pucallpa en un solo lugar.",
+    "Encuentra bodegas, minimarkets y tiendas de todo el Peru en un solo lugar. Compra con delivery rapido. Yape y efectivo.",
 };
 
 /**

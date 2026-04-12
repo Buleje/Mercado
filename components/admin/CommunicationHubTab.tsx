@@ -108,7 +108,7 @@ export default function CommunicationHubTab() {
                     <span className="text-[10px] text-gray-400 ml-auto flex items-center gap-0.5"><Clock className="h-2.5 w-2.5" />{fmtDate(m.timestamp)}</span>
                   </div>
                   <p className="text-xs text-gray-600 dark:text-muted">{m.content}</p>
-                  {m.agent && <p className="text-[10px] text-gray-400 mt-1">👤 {m.agent}</p>}
+                  {m.agent && <p className="text-[10px] text-gray-400 mt-1">Agente: {m.agent}</p>}
 
                   {replyTo === m.id && (
                     <div className="mt-2 flex flex-wrap gap-2">

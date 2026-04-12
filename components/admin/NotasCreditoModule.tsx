@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Search, Plus, X, ChevronLeft, ChevronRight, Loader2, AlertTriangle,
-  Calendar, DollarSign, Hash, FileX, Download, ArrowUpDown, ArrowUp,
+  Calendar, DollarSign, FileX, Download, ArrowUpDown, ArrowUp,
   ArrowDown, Copy, LayoutGrid, LayoutList, Trash2, Send, TrendingUp,
   TrendingDown, Filter, CheckSquare, FileText, Receipt, CreditCard,
   Keyboard, History, AlertCircle, Minus, Package,
@@ -222,7 +222,9 @@ function NCCard({ nc, onSelect, selected, onToggle }: { nc: NotaCredito; onSelec
 // ── StaleDraftsBanner ───────────────────────────────────────────────────────
 
 function StaleDraftsBanner({ notas, onFilter }: { notas: NotaCredito[]; onFilter: () => void }) {
-  const stale = notas.filter(nc => nc.status === "BORRADOR" && (Date.now() - new Date(nc.createdAt).getTime()) > 48 * 3600000);
+  // Capture "now" once per mount via lazy state init (avoids impure Date.now() during render)
+  const [nowTs] = useState(() => Date.now());
+  const stale = notas.filter(nc => nc.status === "BORRADOR" && (nowTs - new Date(nc.createdAt).getTime()) > 48 * 3600000);
   if (stale.length === 0) return null;
   return (
     <div className="flex items-center gap-2 px-4 py-3 rounded-xl bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-800/50 text-sm">
@@ -601,7 +603,11 @@ export default function NotasCreditoModule() {
   // ── Bulk operations ───────────────────────────────────────────────────────
   const allChecked = paginated.length > 0 && paginated.every(nc => checkedIds.has(nc.id));
   const someChecked = checkedIds.size > 0;
-  const toggleCheck = (id: string) => setCheckedIds(prev => { const n = new Set(prev); n.has(id) ? n.delete(id) : n.add(id); return n; });
+  const toggleCheck = (id: string) => setCheckedIds(prev => {
+    const n = new Set(prev);
+    if (n.has(id)) n.delete(id); else n.add(id);
+    return n;
+  });
   const toggleAll = () => { if (allChecked) setCheckedIds(new Set()); else setCheckedIds(new Set(paginated.map(nc => nc.id))); };
 
   const exportCSV = () => {
@@ -1543,7 +1549,7 @@ export default function NotasCreditoModule() {
                           <button onClick={() => setShowTemplates(s => !s)} className="flex items-center gap-2 w-full text-xs font-bold text-blue-700 dark:text-blue-400">
                             <Bookmark className="h-3.5 w-3.5" />
                             Mis templates guardados ({templates.length})
-                            <span className="ml-auto text-[10px] text-blue-400">{showTemplates ? "▲ Ocultar" : "▼ Ver"}</span>
+                            <span className="ml-auto text-[10px] text-blue-400">{showTemplates ? "Ocultar" : "Ver"}</span>
                           </button>
                           <AnimatePresence>
                             {showTemplates && (
@@ -1555,7 +1561,7 @@ export default function NotasCreditoModule() {
                                         <strong>{t.name}</strong> — [{t.codigoMotivo}] {t.descripcionMotivo}
                                       </span>
                                       <button onClick={() => loadTemplate(t)} className="text-[10px] font-bold text-blue-600 hover:underline shrink-0">Usar</button>
-                                      <button onClick={() => deleteTemplate(t.id)} className="text-[10px] text-red-400 hover:text-red-600 shrink-0">✕</button>
+                                      <button onClick={() => deleteTemplate(t.id)} className="text-[10px] text-red-400 hover:text-red-600 shrink-0">x</button>
                                     </div>
                                   ))}
                                 </div>

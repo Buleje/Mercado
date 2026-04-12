@@ -27,7 +27,7 @@ import { Rate, Trend, Counter } from "k6/metrics";
 const errorRate = new Rate("errors");
 const isolationFailures = new Counter("isolation_failures");
 const productsLatency = new Trend("products_latency", true);
-const ordersLatency = new Trend("orders_latency", true);
+const _ordersLatency = new Trend("orders_latency", true);
 const settingsLatency = new Trend("settings_latency", true);
 
 export const options = {
@@ -125,8 +125,8 @@ export default function () {
 
     // Cross-check: products from A should not appear in B
     if (productsA.length > 0 && productsB.length > 0) {
-      const idsA = new Set(productsA.map((p) => p.id));
-      const idsB = new Set(productsB.map((p) => p.id));
+      const _idsA = new Set(productsA.map((p) => p.id));
+      const _idsB = new Set(productsB.map((p) => p.id));
 
       // Check for overlap (tenantIds match is fine if they share product IDs,
       // but tenantId fields should differ)

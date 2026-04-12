@@ -22,13 +22,13 @@ const STATUS_INDEX: Record<string, number> = { confirmado: 0, preparando: 1, en_
 function getStoredOrder(): TrackedOrder | null {
   if (typeof window === "undefined") return null;
   try {
-    const raw = localStorage.getItem("bsm-active-order");
+    const raw = localStorage.getItem("buleje-active-order");
     if (!raw) return null;
     const order = JSON.parse(raw) as TrackedOrder;
     // Auto-expire after 2 hours
     const age = Date.now() - new Date(order.createdAt).getTime();
     if (age > 7_200_000) {
-      localStorage.removeItem("bsm-active-order");
+      localStorage.removeItem("buleje-active-order");
       return null;
     }
     return order;
@@ -67,11 +67,11 @@ export default function OrderProgress() {
           createdAt: new Date().toISOString(),
           customerName: detail.customerName,
         };
-        localStorage.setItem("bsm-active-order", JSON.stringify(newOrder));
+        localStorage.setItem("buleje-active-order", JSON.stringify(newOrder));
         startTransition(() => { setOrder(newOrder); setDismissed(false); setShowAsModal(true); });
       }
     };
-    window.addEventListener("bsm:orderCreated", handleNewOrder);
+    window.addEventListener("buleje:orderCreated", handleNewOrder);
 
     // Poll for progress updates
     const poll = setInterval(() => {
@@ -80,14 +80,14 @@ export default function OrderProgress() {
         const simStatus = simulateProgress(current);
         if (simStatus !== current.status) {
           current.status = simStatus;
-          localStorage.setItem("bsm-active-order", JSON.stringify(current));
+          localStorage.setItem("buleje-active-order", JSON.stringify(current));
         }
         startTransition(() => setOrder({ ...current }));
       }
     }, 30_000);
 
     return () => {
-      window.removeEventListener("bsm:orderCreated", handleNewOrder);
+      window.removeEventListener("buleje:orderCreated", handleNewOrder);
       clearInterval(poll);
     };
   }, []);
@@ -102,7 +102,7 @@ export default function OrderProgress() {
   const submitNps = useCallback((rating: number, comment?: string) => {
     setNpsRating(rating);
     setNpsSent(true);
-    try { localStorage.setItem(`bsm-nps-${order?.id}`, String(rating)); } catch { /* silent */ }
+    try { localStorage.setItem(`buleje-nps-${order?.id}`, String(rating)); } catch { /* silent */ }
     // Persist to backend
     fetch("/api/surveys", {
       method: "POST",
@@ -129,7 +129,7 @@ export default function OrderProgress() {
 
   // Show NPS survey when delivered
   if (order.status === "entregado") {
-    const alreadyRated = (() => { try { return !!localStorage.getItem(`bsm-nps-${order.id}`); } catch { return false; } })();
+    const alreadyRated = (() => { try { return !!localStorage.getItem(`buleje-nps-${order.id}`); } catch { return false; } })();
     if (alreadyRated && !npsSent) return null;
     if (npsSent) {
       // Brief thank-you then auto-hide

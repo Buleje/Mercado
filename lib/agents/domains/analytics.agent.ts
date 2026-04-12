@@ -35,11 +35,12 @@ async function dailyKpis(
       OrdersDB.getAllFiltered({
         status: "entregado",
         since: todayStart.toISOString(),
+        tenantId: task.tenantId,
       }),
     ),
-    cache.getOrSet("analytics:all-sales", 60, () => SalesDB.getAll()),
+    cache.getOrSet("analytics:all-sales", 60, () => SalesDB.getAll(task.tenantId)),
     cache.getOrSet("analytics:all-customers", 300, () =>
-      CustomersDB.getAll(),
+      CustomersDB.getAll(task.tenantId),
     ),
   ]);
 
@@ -98,9 +99,10 @@ async function productPerformance(
       OrdersDB.getAllFiltered({
         status: "entregado",
         since,
+        tenantId: task.tenantId,
       }),
     ),
-    cache.getOrSet("analytics:all-sales", 60, () => SalesDB.getAll()),
+    cache.getOrSet("analytics:all-sales", 60, () => SalesDB.getAll(task.tenantId)),
   ]);
 
   const sinceDate = new Date(since);
@@ -186,7 +188,7 @@ async function marginAnalysis(
   const products = await cache.getOrSet(
     "analytics:all-products",
     120,
-    () => ProductsDB.getAll(),
+    () => ProductsDB.getAll(task.tenantId),
   );
 
   const withMargin = products
@@ -275,9 +277,10 @@ async function salesTrend(
       OrdersDB.getAllFiltered({
         status: "entregado",
         since,
+        tenantId: task.tenantId,
       }),
     ),
-    cache.getOrSet("analytics:all-sales", 60, () => SalesDB.getAll()),
+    cache.getOrSet("analytics:all-sales", 60, () => SalesDB.getAll(task.tenantId)),
   ]);
 
   const sinceDate = new Date(since);
@@ -358,11 +361,12 @@ async function categoryBreakdown(
       OrdersDB.getAllFiltered({
         status: "entregado",
         since,
+        tenantId: task.tenantId,
       }),
     ),
-    cache.getOrSet("analytics:all-sales", 60, () => SalesDB.getAll()),
+    cache.getOrSet("analytics:all-sales", 60, () => SalesDB.getAll(task.tenantId)),
     cache.getOrSet("analytics:all-products", 120, () =>
-      ProductsDB.getAll(),
+      ProductsDB.getAll(task.tenantId),
     ),
   ]);
 

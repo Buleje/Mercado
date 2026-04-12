@@ -1,5 +1,6 @@
 import "server-only";
 import { prisma } from "@/lib/prisma";
+import { toNumOrZero } from "@/lib/decimal-utils";
 
 // ── Constantes de pesos del scoring ──────────────────────────────────────────
 
@@ -192,13 +193,14 @@ export async function calculateCreditScore(
   }
 
   // Calcular métricas de compras
+  // TD-018: s.total / o.total / customer.totalSpent son Decimal
   const allPurchases = [
-    ...customer.sales.map((s) => ({ amount: Number(s.total), date: s.createdAt })),
-    ...customer.orders.map((o) => ({ amount: Number(o.total), date: o.createdAt })),
+    ...customer.sales.map((s) => ({ amount: toNumOrZero(s.total), date: s.createdAt })),
+    ...customer.orders.map((o) => ({ amount: toNumOrZero(o.total), date: o.createdAt })),
   ].sort((a, b) => b.date.getTime() - a.date.getTime());
 
   const totalPurchaseCount = allPurchases.length;
-  const totalSpent = customer.totalSpent ?? 0;
+  const totalSpent = toNumOrZero(customer.totalSpent);
   const avgTicket = totalPurchaseCount > 0 ? totalSpent / totalPurchaseCount : 0;
 
   const daysSinceLastPurchase =
@@ -282,6 +284,44 @@ export async function calculateCreditScore(
 }
 
 /**
+ * Persiste un snapshot inmutable del score actual en CreditScoreHistory.
+ * Usado por el cron semanal de recálculo y tras pagos/cierres de fiado.
+ * ADR-021 §3: append-only, nunca se edita ni se borra.
+ */
+export async function snapshotCreditScore(
+  tenantId: string,
+  customerId: string,
+  trigger: "manual" | "weekly_recalc" | "payment" | "fiado_close" = "manual",
+): Promise<{ snapshotId: string; score: number } | null> {
+  const profile = await prisma.creditProfile.findUnique({
+    where: { tenantId_customerId: { tenantId, customerId } },
+  });
+
+  if (!profile) return null;
+
+  const result = await calculateCreditScore(tenantId, customerId);
+
+  const snapshot = await prisma.creditScoreHistory.create({
+    data: {
+      tenantId,
+      customerId,
+      creditProfileId: profile.id,
+      score: result.score,
+      creditLimit: result.creditLimit,
+      riskLevel: result.riskLevel,
+      breakdownPurchaseHistory: result.breakdown.purchaseHistory,
+      breakdownPaymentPunctuality: result.breakdown.paymentPunctuality,
+      breakdownAvgTicket: result.breakdown.avgTicket,
+      breakdownSeniority: result.breakdown.seniority,
+      breakdownLoyaltyPoints: result.breakdown.loyaltyPoints,
+      trigger,
+    },
+  });
+
+  return { snapshotId: snapshot.id, score: result.score };
+}
+
+/**
  * Recalcula y persiste el CreditProfile completo de un cliente.
  * Crea el perfil si no existe.
  */
@@ -309,7 +349,8 @@ export async function updateCreditProfile(
   ].sort((a, b) => b.getTime() - a.getTime());
 
   const totalPurchaseCount = allDates.length;
-  const totalSpent = Number(customer.totalSpent ?? 0);
+  // TD-018: customer.totalSpent es Decimal
+  const totalSpent = toNumOrZero(customer.totalSpent);
   const avgTicket = totalPurchaseCount > 0 ? totalSpent / totalPurchaseCount : 0;
 
   let purchaseFreqDays: number | null = null;
@@ -333,7 +374,8 @@ export async function updateCreditProfile(
     },
   });
 
-  const usedCredit = existing?.usedCredit ?? 0;
+  // TD-018: existing.usedCredit es Decimal
+  const usedCredit = toNumOrZero(existing?.usedCredit);
   const availableCredit = Math.max(0, result.creditLimit - usedCredit);
 
   await prisma.creditProfile.upsert({

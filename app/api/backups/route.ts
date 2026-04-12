@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireAdmin } from "@/lib/require-admin";
 import { logActivity } from "@/lib/activity-logger";
+import { applyRateLimit } from "@/lib/rate-limit";
 
 export type BackupEntry = {
   id: string; name: string; type: "manual" | "auto";
@@ -54,6 +55,9 @@ export async function GET(req: NextRequest) {
 }
 
 export async function POST(req: NextRequest) {
+  const rateLimitResult = applyRateLimit(req, "STRICT", "backups-post");
+  if (rateLimitResult) return rateLimitResult;
+
   const auth = await requireAdmin(req, ["admin"]);
   if (auth instanceof NextResponse) return auth;
 

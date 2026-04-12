@@ -9,7 +9,7 @@
  * - Failures in one subscriber don't break others
  */
 
-import { describe, it, expect, vi, beforeEach } from "vitest";
+import { describe, it, expect, vi } from "vitest";
 
 // Mock the BullMQ connection to force the in-memory fallback path
 vi.mock("@/lib/queue/connection", () => ({
@@ -27,12 +27,10 @@ vi.mock("@/lib/logger", () => ({
 }));
 
 import {
-  emitDomainEvent,
   onDomainEvent,
   DomainEvents,
   type VentaCompletadaEvent,
-  type StockBajoEvent,
-} from "@/lib/domain-events";
+  type StockBajoEvent } from "@/lib/domain-events";
 
 describe("onDomainEvent + emitDomainEvent", () => {
   it("delivers VentaCompletada events to subscribers", async () => {
@@ -156,7 +154,7 @@ describe("onDomainEvent + emitDomainEvent", () => {
 
   it("assigns a unique id and ISO occurredAt to each emitted event", async () => {
     const ids: string[] = [];
-    const off = onDomainEvent("VentaCompletada", (ev) => {
+    const _off = onDomainEvent("VentaCompletada", (ev) => {
       ids.push(ev.id);
     });
 

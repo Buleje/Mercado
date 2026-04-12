@@ -81,7 +81,7 @@ export default function OrderTimeline({
             const stepIdx = STATUS_ORDER[step.key];
             const isCompleted = !isCancelled && currentIdx > stepIdx;
             const isCurrent = !isCancelled && currentIdx === stepIdx;
-            const isFuture = !isCancelled && currentIdx < stepIdx;
+            const _isFuture = !isCancelled && currentIdx < stepIdx;
             const StepIcon = step.icon;
             const timestamp = timestampMap[step.key];
 

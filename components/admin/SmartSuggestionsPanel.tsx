@@ -102,7 +102,7 @@ export default function SmartSuggestionsPanel({ context = "general", compact = f
                     className="p-1 rounded-lg hover:bg-black/10 dark:hover:bg-white/10 transition-colors shrink-0"
                     title="Descartar"
                   >
-                    <span className="text-xs text-gray-400">✕</span>
+                    <span className="text-xs text-gray-400">x</span>
                   </button>
                 </div>
               );

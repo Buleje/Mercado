@@ -8,6 +8,7 @@
  */
 
 import { NextRequest, NextResponse } from "next/server";
+import { toNumOrZero } from "@/lib/decimal-utils";
 import { requireAdmin } from "@/lib/require-admin";
 import { z } from "zod/v4";
 import { prisma } from "@/lib/prisma";
@@ -71,22 +72,22 @@ export async function POST(req: NextRequest) {
       (settings as { sunatDenominacion?: string | null } | null)?.sunatDenominacion ??
       settings?.businessName ??
       process.env.RAZON_SOCIAL_EMISOR ??
-      "Bodega San Martín";
+      "Mi Tienda";
 
     const ruc =
       (settings as { sunatRuc?: string | null } | null)?.sunatRuc ??
       process.env.RUC_EMISOR ??
       "00000000000";
 
-    // Normalizar orden al formato que espera generateInvoice
+    // TD-018: order.total y i.price son Decimal → convertir a number
     const invoiceOrder: InvoiceOrder = {
       id: order.id,
       customerName: order.customerName,
-      total: order.total,
+      total: toNumOrZero(order.total),
       items: order.items.map((i) => ({
         name: i.name,
         quantity: i.quantity,
-        price: i.price,
+        price: toNumOrZero(i.price),
         unit: i.unit,
       })),
     };

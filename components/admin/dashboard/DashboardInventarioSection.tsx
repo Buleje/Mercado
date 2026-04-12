@@ -1,7 +1,7 @@
 "use client";
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-import { useState, useMemo } from "react";
+import { useState } from "react";
 import {
   DollarSign, AlertTriangle, Package, PackageX, Timer, Truck,
   Sparkles, Gift, ChevronRight, Zap, TrendingDown, Clock,
@@ -60,7 +60,7 @@ export default function DashboardInventarioSection({ st, expandAll, products }: 
 
           <Card title="Productos con stock crítico" icon={AlertTriangle}>
             {st.stockCritico.length===0&&st.agotados.length===0?(
-              <div className="py-6 text-center text-xs text-emerald-500 font-medium">✓ Inventario saludable</div>
+              <div className="py-6 text-center text-xs text-emerald-500 font-medium">Inventario saludable</div>
             ):(
               <div className="space-y-1">
                 {st.agotados.map((p: any) => (
@@ -93,13 +93,13 @@ export default function DashboardInventarioSection({ st, expandAll, products }: 
                       )}
                       <span className="text-xs font-semibold text-amber-600">{p.stock}/{p.stockMin} uds</span>
                       <a
-                        href={`https://wa.me/?text=${encodeURIComponent(`Hola, necesito reponer: ${p.name}. Stock actual: ${p.stock} uds (mínimo: ${p.stockMin}). Por favor confirmar disponibilidad y precio. 📦`)}`}
+                        href={`https://wa.me/?text=${encodeURIComponent(`Hola, necesito reponer: ${p.name}. Stock actual: ${p.stock} uds (mínimo: ${p.stockMin}). Por favor confirmar disponibilidad y precio.`)}`}
                         target="_blank"
                         rel="noopener noreferrer"
                         className="text-[10px] font-bold text-emerald-600 bg-emerald-50 hover:bg-emerald-100 dark:bg-emerald-950/30 dark:hover:bg-emerald-900/50 px-1.5 py-0.5 rounded transition-colors"
                         title="Pedir al proveedor por WhatsApp"
                       >
-                        📲 Pedir
+                        Pedir
                       </a>
                     </div>
                   </div>
@@ -110,7 +110,7 @@ export default function DashboardInventarioSection({ st, expandAll, products }: 
 
           <Card title="Productos sin movimiento" icon={Timer}>
             {st.sinMov.length===0?(
-              <div className="py-6 text-center text-xs text-emerald-500 font-medium">✓ Todos con rotación</div>
+              <div className="py-6 text-center text-xs text-emerald-500 font-medium">Todos con rotación</div>
             ):(
               <div className="space-y-0.5">
                 {st.sinMov.slice(0,20).map((p: any) => (
@@ -182,7 +182,7 @@ export default function DashboardInventarioSection({ st, expandAll, products }: 
                                 );
                               })}
                               <div className="bg-blue-50 dark:bg-blue-950/30 rounded-lg p-2.5 text-xs mt-3">
-                                <div className="font-semibold text-blue-700 dark:text-blue-400 mb-1">💡 Sugerencia</div>
+                                <div className="font-semibold text-blue-700 dark:text-blue-400 mb-1">Sugerencia</div>
                                 <p className="text-blue-600 dark:text-blue-300 text-[10px]">
                                   Crea un combo especial con estos productos o sugiérelos activamente cuando vendes {product.name}.
                                 </p>
@@ -217,7 +217,7 @@ export default function DashboardInventarioSection({ st, expandAll, products }: 
           {/* Stock Projection - Intelligent forecasting */}
           <Card title="Proyección de Stock (Próximos 30 días)" icon={TrendingDown}>
             {st.criticalStock.length === 0 && st.needsReorderSoon.length === 0 ? (
-              <div className="py-6 text-center text-xs text-emerald-500 font-medium">✓ Stock proyectado saludable</div>
+              <div className="py-6 text-center text-xs text-emerald-500 font-medium">Stock proyectado saludable</div>
             ) : (
               <div className="space-y-4">
                 {/* Critical products (< 7 days) */}
@@ -247,13 +247,13 @@ export default function DashboardInventarioSection({ st, expandAll, products }: 
                               <div className="text-[9px] text-gray-500">Pedir: {p.suggestedOrderQty}</div>
                             </div>
                             <a
-                              href={`https://wa.me/?text=${encodeURIComponent(`🚨 URGENTE: ${p.name}\n\nStock actual: ${p.stock} uds\nSe agota en: ${Math.floor(p.daysRemaining)} días\nCantidad sugerida: ${p.suggestedOrderQty} uds\n\nPor favor confirmar disponibilidad inmediata.`)}`}
+                              href={`https://wa.me/?text=${encodeURIComponent(`URGENTE: ${p.name}\n\nStock actual: ${p.stock} uds\nSe agota en: ${Math.floor(p.daysRemaining)} días\nCantidad sugerida: ${p.suggestedOrderQty} uds\n\nPor favor confirmar disponibilidad inmediata.`)}`}
                               target="_blank"
                               rel="noopener noreferrer"
                               className="text-[10px] font-bold text-white bg-red-500 hover:bg-red-600 px-2 py-1 rounded transition-colors"
                               title="Pedir URGENTE por WhatsApp"
                             >
-                              🚨 Ordenar
+                              Ordenar (urgente)
                             </a>
                           </div>
                         </div>
@@ -289,13 +289,13 @@ export default function DashboardInventarioSection({ st, expandAll, products }: 
                               <div className="text-[9px] text-gray-500">Pedir: {p.suggestedOrderQty}</div>
                             </div>
                             <a
-                              href={`https://wa.me/?text=${encodeURIComponent(`📦 Reorden: ${p.name}\n\nStock actual: ${p.stock} uds\nDías restantes: ${Math.floor(p.daysRemaining)}\nCantidad sugerida: ${p.suggestedOrderQty} uds\n\nPor favor confirmar disponibilidad.`)}`}
+                              href={`https://wa.me/?text=${encodeURIComponent(`Reorden: ${p.name}\n\nStock actual: ${p.stock} uds\nDías restantes: ${Math.floor(p.daysRemaining)}\nCantidad sugerida: ${p.suggestedOrderQty} uds\n\nPor favor confirmar disponibilidad.`)}`}
                               target="_blank"
                               rel="noopener noreferrer"
                               className="text-[10px] font-bold text-amber-700 bg-amber-100 hover:bg-amber-200 dark:bg-amber-900/50 dark:hover:bg-amber-800/50 px-2 py-1 rounded transition-colors"
                               title="Pedir por WhatsApp"
                             >
-                              📲 Pedir
+                              Pedir
                             </a>
                           </div>
                         </div>
@@ -311,7 +311,7 @@ export default function DashboardInventarioSection({ st, expandAll, products }: 
 
                 {/* Info box */}
                 <div className="bg-blue-50 dark:bg-blue-950/30 rounded-lg p-3 text-xs">
-                  <div className="font-semibold text-blue-700 dark:text-blue-400 mb-1">💡 Proyección inteligente</div>
+                  <div className="font-semibold text-blue-700 dark:text-blue-400 mb-1">Proyección inteligente</div>
                   <p className="text-blue-600 dark:text-blue-300 text-[10px]">
                     Basado en ventas de los últimos 30 días. Las cantidades sugeridas cubren 30 días de demanda proyectada.
                   </p>
@@ -329,17 +329,17 @@ export default function DashboardInventarioSection({ st, expandAll, products }: 
                           const arr = grouped.get(cat) ?? [];
                           arr.push(p); grouped.set(cat, arr);
                         });
-                        let msg = `📦 ORDEN DE COMPRA MASIVA\n📅 ${new Date().toLocaleDateString("es-PE")}\n\n`;
+                        let msg = `ORDEN DE COMPRA MASIVA\n${new Date().toLocaleDateString("es-PE")}\n\n`;
                         let totalItems = 0;
                         grouped.forEach((items, cat) => {
-                          msg += `── ${(CAT_LABELS[cat] ?? cat).toUpperCase()} ──\n`;
+                          msg += `-- ${(CAT_LABELS[cat] ?? cat).toUpperCase()} --\n`;
                           items.forEach(p => {
-                            msg += `• ${p.name}: ${p.suggestedOrderQty} uds (stock: ${p.stock}, ${p.daysRemaining < 7 ? "🚨 URGENTE" : "⚠️ pronto"})\n`;
+                            msg += `- ${p.name}: ${p.suggestedOrderQty} uds (stock: ${p.stock}, ${p.daysRemaining < 7 ? "URGENTE" : "pronto"})\n`;
                             totalItems += p.suggestedOrderQty;
                           });
                           msg += "\n";
                         });
-                        msg += `────────────────\nTotal: ${allReorder.length} productos, ${totalItems} unidades\n\nPor favor confirmar disponibilidad y costo. 🙏`;
+                        msg += `----------------\nTotal: ${allReorder.length} productos, ${totalItems} unidades\n\nPor favor confirmar disponibilidad y costo.`;
                         window.open(`https://wa.me/?text=${encodeURIComponent(msg)}`, "_blank", "noopener,noreferrer");
                       }}
                       className="w-full flex flex-wrap items-center justify-center gap-2 py-3 rounded-xl bg-linear-to-r from-emerald-500 to-emerald-600 hover:from-emerald-600 hover:to-emerald-700 text-white font-bold text-sm transition-all shadow-sm hover:shadow-md"

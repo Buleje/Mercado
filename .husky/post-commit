@@ -43,4 +43,13 @@ echo "🧪 post-commit: corriendo vitest en background (log: bodega-san-martin/$
 ) >/dev/null 2>&1 &
 
 disown 2>/dev/null || true
+
+# Showcase auto — generar contenido para commits feat: o BREAKING CHANGE
+COMMIT_MSG=$(git log -1 --format="%s" HEAD 2>/dev/null || true)
+if echo "$COMMIT_MSG" | grep -qE '^feat:|BREAKING CHANGE'; then
+  echo "🎯 post-commit: commit califica para showcase-auto (feat/BREAKING)"
+  # El skill se dispara en la próxima sesión Claude, no en el hook
+  touch ".husky/.showcase-auto-pending"
+fi
+
 exit 0

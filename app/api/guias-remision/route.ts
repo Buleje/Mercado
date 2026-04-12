@@ -4,6 +4,7 @@ import { GuiasRemisionDB } from "@/lib/db";
 import { requireAdmin } from "@/lib/require-admin";
 import { prisma } from "@/lib/prisma";
 import { logAudit } from "@/lib/audit-logger";
+import { logger } from "@/lib/logger";
 
 const GuiaItemSchema = z.object({
   descripcion: z.string().min(1).max(500),
@@ -52,7 +53,7 @@ export async function GET(req: NextRequest) {
     });
     return NextResponse.json(data);
   } catch (e) {
-    console.error("[guias-remision] GET error:", e);
+    logger.error("[guias-remision] GET error", { error: String(e) });
     return NextResponse.json({ error: "Database error" }, { status: 503 });
   }
 }
@@ -136,7 +137,7 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json(guia, { status: 201 });
   } catch (e) {
-    console.error("[guias-remision] POST error:", e);
+    logger.error("[guias-remision] POST error", { error: String(e) });
     return NextResponse.json({ error: "Database error" }, { status: 503 });
   }
 }

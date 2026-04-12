@@ -9,8 +9,7 @@ import {
 import {
   ShoppingCart, Wallet, CreditCard, Scale, ClipboardList, HandCoins,
   Banknote, History, ArrowRight, Clock, BarChart3, Maximize2, X, RefreshCw, FileDown,
-  Brain, Activity, TrendingUp, Package, Users, AlertTriangle, DollarSign,
-} from "lucide-react";
+  Brain, Activity, Package, Users, AlertTriangle, DollarSign } from "lucide-react";
 import AdminTabBar from "@/components/admin/shared/AdminTabBar";
 import AdminModuleHeader from "@/components/admin/shared/AdminModuleHeader";
 import { cn } from "@/lib/utils";
@@ -41,9 +40,11 @@ import { usePOSOffline } from "@/components/admin/pos/usePOSOffline";
 function EmptyChart({ message }: { message: string }) {
   return (
     <div className="flex flex-col items-center justify-center py-12 text-center">
-      <div className="text-4xl mb-3">📊</div>
-      <p className="text-sm font-medium text-gray-500">{message}</p>
-      <p className="text-xs text-gray-400 mt-1">Los datos apareceran cuando registres ventas</p>
+      <div className="h-12 w-12 rounded-xl bg-gray-100 dark:bg-surface flex items-center justify-center mb-3">
+        <BarChart3 className="h-6 w-6 text-gray-400 dark:text-muted" />
+      </div>
+      <p className="text-sm font-medium text-gray-500 dark:text-muted">{message}</p>
+      <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">Los datos apareceran cuando registres ventas</p>
     </div>
   );
 }
@@ -51,7 +52,7 @@ function EmptyChart({ message }: { message: string }) {
 // ── Sales Dashboard helpers ───────────────────────────────────────────────────
 const DASHBOARD_COLORS = ["#00B4A6", "#f97316", "#457b9d", "#9b5de5", "#e63946", "#2dd4bf"];
 
-function KpiCard({ label, value, color, onClick }: { label: string; value: string; color: string; onClick?: () => void }) {
+function _KpiCard({ label, value, color, onClick }: { label: string; value: string; color: string; onClick?: () => void }) {
   return (
     <div
       onClick={onClick}
@@ -203,7 +204,7 @@ function SalesDashboard({ cachedData, onDataLoaded, onNavigate }: { cachedData?:
   // Mejora 12: Click-to-filter en PieChart de metodos de pago
   const [pieFilter, setPieFilter] = useState<string | null>(null);
   // Mejora 14: Drag reorder sections
-  const [sectionOrder, setSectionOrder] = useState<string[]>(() => {
+  const [_sectionOrder, _setSectionOrder] = useState<string[]>(() => {
     try { return JSON.parse(localStorage.getItem("dashboard-section-order-ventas") || "[]"); } catch { return []; }
   });
   // Mejora 20: Comparar meses
@@ -436,9 +437,11 @@ function SalesDashboard({ cachedData, onDataLoaded, onNavigate }: { cachedData?:
   if (data.sales.length === 0) {
     return (
       <div className="text-center py-16">
-        <div className="text-6xl mb-4">📊</div>
-        <h3 className="text-lg font-semibold text-gray-700">Sin datos aun</h3>
-        <p className="text-sm text-gray-500 mt-1">Registra tu primera venta para ver estadisticas</p>
+        <div className="h-16 w-16 rounded-2xl bg-gray-100 dark:bg-surface flex items-center justify-center mx-auto mb-4">
+          <BarChart3 className="h-8 w-8 text-gray-400 dark:text-muted" />
+        </div>
+        <h3 className="text-lg font-semibold text-foreground">Sin datos aun</h3>
+        <p className="text-sm text-muted mt-1">Registra tu primera venta para ver estadisticas</p>
         {onNavigate && (
           <button onClick={() => onNavigate("pos")} className="mt-4 px-4 py-2 bg-[#00B4A6] text-white rounded-xl text-sm hover:bg-[#009690] transition-colors">
             Ir a Vender
@@ -886,7 +889,7 @@ const TABS = [
 ];
 
 // Índices tras los cuales insertar separador visual (entre grupos lógicos)
-const SEPARATOR_AFTER_INDICES = [1, 3, 4]; // Después de Dashboard (idx 1), Turnos (idx 3), Caja Registradora (idx 4)
+const _SEPARATOR_AFTER_INDICES = [1, 3, 4]; // Después de Dashboard (idx 1), Turnos (idx 3), Caja Registradora (idx 4)
 
 type TabId = typeof TABS[number]["id"];
 
@@ -1168,7 +1171,7 @@ export default function POSCajaModule() {
         activeTab={sub}
         onTabChange={(id) => setSub(id as TabId)}
         moduleId="pos-caja"
-      />
+      >
 
       {/* ── Mobile Cerrar/Abrir Turno button — fixed at bottom ───────── */}
       <div className="sm:hidden fixed bottom-16 right-4 z-40">
@@ -1208,6 +1211,7 @@ export default function POSCajaModule() {
           onConfirm={handleShiftClosed}
         />
       )}
+      </AdminTabBar>
     </div>
   );
 }

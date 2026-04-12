@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { timingSafeCompare } from "@/lib/timing-safe";
 import { withCronRetry } from "@/lib/cron-retry";
 import { ProductsDB } from "@/lib/db/products.db";
+import { PurchasesDB } from "@/lib/db/purchases.db";
 import { prisma } from "@/lib/prisma";
 import { logger } from "@/lib/logger";
 import { logActivity } from "@/lib/activity-logger";
@@ -111,11 +112,87 @@ export async function GET(req: NextRequest) {
         "cron"
       ).catch(() => {});
 
+      // ── #20: Create draft OCs grouped by preferred supplier ───────────
+      const draftOCs: { poId: string; supplierId: string; supplierName: string; itemCount: number; total: number }[] = [];
+
+      if (sugerencias.length > 0) {
+        // Group suggestions by supplier
+        const bySupplier = new Map<
+          string,
+          { supplierName: string; items: typeof sugerencias }
+        >();
+
+        for (const s of sugerencias) {
+          const key = s.proveedor.id;
+          if (!bySupplier.has(key)) {
+            bySupplier.set(key, { supplierName: s.proveedor.nombre, items: [] });
+          }
+          bySupplier.get(key)!.items.push(s);
+        }
+
+        for (const [supplierId, { supplierName, items }] of bySupplier.entries()) {
+          const total = items.reduce((sum, i) => {
+            const unitCost = (i as Record<string, unknown>).costPrice as number | undefined ?? 0;
+            return sum + i.cantidadSugerida * unitCost;
+          }, 0);
+
+          const poId = `draft_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 6)}`;
+          const now = new Date().toISOString();
+
+          try {
+            await PurchasesDB.add({
+              id: poId,
+              supplierId,
+              supplierName,
+              total: Math.round(total * 100) / 100,
+              status: "pendiente",
+              notes: `OC sugerida auto-generada por cron auto-reorder — ${new Date().toLocaleDateString("es-PE")}`,
+              items: items.map((i) => ({
+                productId: i.productoId,
+                name: i.nombre,
+                quantity: i.cantidadSugerida,
+                unitCost: 0, // Cost unknown at suggestion level
+                unit: i.unidad,
+              })),
+              createdAt: now,
+              updatedAt: now,
+            }, "main");
+
+            draftOCs.push({
+              poId,
+              supplierId,
+              supplierName,
+              itemCount: items.length,
+              total: Math.round(total * 100) / 100,
+            });
+
+            // Fire-and-forget: log activity
+            logActivity(
+              "auto-reorder-draft-oc",
+              "PurchaseOrder",
+              `OC draft creada para ${supplierName}: ${items.length} producto(s)`,
+              poId,
+              "cron",
+            ).catch(() => {});
+          } catch (ocErr) {
+            logger.warn("[cron/auto-reorder-check] Error creating draft OC", {
+              supplierId,
+              error: ocErr instanceof Error ? ocErr.message : String(ocErr),
+            });
+          }
+        }
+
+        logger.info("[cron/auto-reorder-check] Draft OCs created", {
+          count: draftOCs.length,
+        });
+      }
+
       return {
         ok: true,
         total: sugerencias.length,
         sugerencias,
         sinProveedor,
+        draftOCs,
         generadoA: new Date().toISOString(),
       };
     });

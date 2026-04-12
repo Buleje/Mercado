@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireAdmin } from "@/lib/require-admin";
 import { prisma } from "@/lib/prisma";
+import { logger } from "@/lib/logger";
 
 /**
  * GET /api/analytics/fiado-analytics
@@ -179,7 +180,7 @@ export async function GET(req: NextRequest) {
       topDeudores,
     });
   } catch (e) {
-    console.error("[analytics/fiado-analytics] GET error:", e);
+    logger.error("[analytics/fiado-analytics] GET error", { error: (e as Error).message, tenantId: auth.tenantId });
     return NextResponse.json({ error: "Database error" }, { status: 503 });
   }
 }

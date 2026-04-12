@@ -51,16 +51,15 @@ type HealthPriority = {
   area: string;
   pct: number;
   action: string;
-  emoji: string;
 };
 
 // ── Score color helper ─────────────────────────────────────────────────────────
 
 function scoreColor(score: number) {
-  if (score >= 85) return { ring: "stroke-emerald-500", text: "text-emerald-600 dark:text-emerald-400", bg: "bg-emerald-500", label: "Excelente", labelBg: "bg-emerald-50 dark:bg-emerald-950/30 text-emerald-700 dark:text-emerald-300", emoji: "🏆" };
-  if (score >= 65) return { ring: "stroke-green-500", text: "text-green-600 dark:text-green-400", bg: "bg-green-500", label: "Saludable", labelBg: "bg-green-50 dark:bg-green-950/30 text-green-700 dark:text-green-300", emoji: "✅" };
-  if (score >= 45) return { ring: "stroke-amber-500", text: "text-amber-600 dark:text-amber-400", bg: "bg-amber-500", label: "Moderado", labelBg: "bg-amber-50 dark:bg-amber-950/30 text-amber-700 dark:text-amber-300", emoji: "⚠️" };
-  return { ring: "stroke-red-500", text: "text-red-600 dark:text-red-400", bg: "bg-red-500", label: "Critico", labelBg: "bg-red-50 dark:bg-red-950/30 text-red-700 dark:text-red-300", emoji: "🚨" };
+  if (score >= 85) return { ring: "stroke-emerald-500", text: "text-emerald-600 dark:text-emerald-400", bg: "bg-emerald-500", label: "Excelente", labelBg: "bg-emerald-50 dark:bg-emerald-950/30 text-emerald-700 dark:text-emerald-300" };
+  if (score >= 65) return { ring: "stroke-green-500", text: "text-green-600 dark:text-green-400", bg: "bg-green-500", label: "Saludable", labelBg: "bg-green-50 dark:bg-green-950/30 text-green-700 dark:text-green-300" };
+  if (score >= 45) return { ring: "stroke-amber-500", text: "text-amber-600 dark:text-amber-400", bg: "bg-amber-500", label: "Moderado", labelBg: "bg-amber-50 dark:bg-amber-950/30 text-amber-700 dark:text-amber-300" };
+  return { ring: "stroke-red-500", text: "text-red-600 dark:text-red-400", bg: "bg-red-500", label: "Critico", labelBg: "bg-red-50 dark:bg-red-950/30 text-red-700 dark:text-red-300" };
 }
 
 // ── Score engine ───────────────────────────────────────────────────────────────
@@ -245,10 +244,6 @@ function computeHealthScore(
 // ── Priorities from weak areas ─────────────────────────────────────────────────
 
 function computePriorities(subs: SubScore[]): HealthPriority[] {
-  const EMOJI_MAP: Record<string, string> = {
-    ventas: "💰", inventario: "📦", finanzas: "💳",
-    clientes: "👥", operaciones: "⚙️", crecimiento: "📈",
-  };
   const ACTION_MAP: Record<string, string> = {
     ventas: "Lanza una promo o revisa precios para reactivar ventas",
     inventario: "Repone productos agotados y liquida sobrestock",
@@ -267,7 +262,6 @@ function computePriorities(subs: SubScore[]): HealthPriority[] {
       area: s.area,
       pct: s.pct,
       action: ACTION_MAP[s.key] ?? "Revisa esta area para mejorar",
-      emoji: EMOJI_MAP[s.key] ?? "📋",
     }));
 }
 
@@ -532,22 +526,22 @@ export default function AIBusinessHealthScore({ data }: Props) {
   // WhatsApp share
   const shareWhatsApp = useCallback(() => {
     const lines = [
-      `🏥 *Salud del Negocio: ${total}/100 (${colors.label})*`,
+      `*Salud del Negocio: ${total}/100 (${colors.label})*`,
       "",
       ...subs.map((s) => {
         const pct = Math.round((s.score / s.max) * 100);
-        const arrow = s.trend === "up" ? "📈" : s.trend === "down" ? "📉" : "➡️";
-        return `${arrow} ${s.label}: ${s.score}/${s.max} (${pct}%)`;
+        const trendLabel = s.trend === "up" ? "Sube" : s.trend === "down" ? "Baja" : "Estable";
+        return `${trendLabel} · ${s.label}: ${s.score}/${s.max} (${pct}%)`;
       }),
     ];
     if (priorities.length > 0) {
-      lines.push("", "🎯 *Prioridades:*");
-      priorities.forEach((p) => lines.push(`${p.emoji} ${p.area}: ${p.action}`));
+      lines.push("", "*Prioridades:*");
+      priorities.forEach((p) => lines.push(`${p.area}: ${p.action}`));
     }
     if (computedFiadoRisk && computedFiadoRisk.level !== "BAJO") {
-      lines.push("", `💸 Fiado: S/${computedFiadoRisk.total.toFixed(0)} (${computedFiadoRisk.ratio.toFixed(1)}% de ventas)`);
+      lines.push("", `Fiado: S/${computedFiadoRisk.total.toFixed(0)} (${computedFiadoRisk.ratio.toFixed(1)}% de ventas)`);
     }
-    lines.push("", `📅 ${new Date().toLocaleDateString("es-PE")}`);
+    lines.push("", `Fecha: ${new Date().toLocaleDateString("es-PE")}`);
 
     const url = `https://wa.me/?text=${encodeURIComponent(lines.join("\n"))}`;
     window.open(url, "_blank", "noopener,noreferrer");
@@ -566,7 +560,7 @@ export default function AIBusinessHealthScore({ data }: Props) {
             className="text-xs px-2.5 py-1 rounded-lg bg-green-50 dark:bg-green-950/30 text-green-700 dark:text-green-300 hover:bg-green-100 dark:hover:bg-green-950/50 transition-colors"
             title="Compartir por WhatsApp"
           >
-            📱 Compartir
+            Compartir
           </button>
         </div>
 
@@ -589,7 +583,7 @@ export default function AIBusinessHealthScore({ data }: Props) {
               <span className={cn("text-4xl font-bold", colors.text)}>{total}</span>
               <span className="text-xs text-gray-400 dark:text-gray-500">/ 100</span>
               <span className={cn("mt-1 px-2 py-0.5 rounded-full text-xs font-semibold", colors.labelBg)}>
-                {colors.emoji} {colors.label}
+                {colors.label}
               </span>
               {totalTrendDelta !== 0 && (
                 <span className={cn(
@@ -651,12 +645,11 @@ export default function AIBusinessHealthScore({ data }: Props) {
       {priorities.length > 0 && (
         <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 p-5 shadow-sm">
           <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3 uppercase tracking-wide">
-            🎯 Prioridades Inmediatas
+            Prioridades Inmediatas
           </h3>
           <div className="space-y-2.5">
             {priorities.map((p, i) => (
               <div key={i} className="flex items-start gap-3 p-3 rounded-lg bg-gray-50 dark:bg-gray-800/50">
-                <span className="text-lg shrink-0">{p.emoji}</span>
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2 mb-0.5">
                     <span className="text-xs font-semibold text-gray-700 dark:text-gray-300">{p.area}</span>
@@ -768,7 +761,7 @@ export default function AIBusinessHealthScore({ data }: Props) {
                   ? "bg-amber-100 dark:bg-amber-950/30"
                   : "bg-emerald-100 dark:bg-emerald-950/30"
               )}>
-                💸
+                <span className="text-sm font-bold">S/</span>
               </div>
               <div className="flex-1">
                 <div className="flex items-center gap-2 mb-0.5">
@@ -823,12 +816,12 @@ export default function AIBusinessHealthScore({ data }: Props) {
           <div className="flex flex-wrap gap-1.5 mb-3">
             {inventoryDays.filter((r) => r.daysRemaining < 3).length > 0 && (
               <span className="text-[10px] px-2 py-0.5 rounded-full bg-red-100 dark:bg-red-950/30 text-red-700 dark:text-red-400 font-medium">
-                🔴 {inventoryDays.filter((r) => r.daysRemaining < 3).length} criticos (&lt;3d)
+                Criticos: {inventoryDays.filter((r) => r.daysRemaining < 3).length} (&lt;3d)
               </span>
             )}
             {inventoryDays.filter((r) => r.daysRemaining >= 3 && r.daysRemaining < 7).length > 0 && (
               <span className="text-[10px] px-2 py-0.5 rounded-full bg-amber-100 dark:bg-amber-950/30 text-amber-700 dark:text-amber-400 font-medium">
-                🟡 {inventoryDays.filter((r) => r.daysRemaining >= 3 && r.daysRemaining < 7).length} alertas (&lt;7d)
+                Alertas: {inventoryDays.filter((r) => r.daysRemaining >= 3 && r.daysRemaining < 7).length} (&lt;7d)
               </span>
             )}
           </div>
@@ -926,16 +919,16 @@ export default function AIBusinessHealthScore({ data }: Props) {
           {/* Summary badges — always visible */}
           <div className="flex flex-wrap gap-2 mb-3">
             <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium bg-emerald-50 dark:bg-emerald-950/30 text-emerald-700 dark:text-emerald-300">
-              ⭐ {rotation.estrella.length} estrellas
+              Estrella: {rotation.estrella.length}
             </span>
             <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400">
               {rotation.normal.length} normales
             </span>
             <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium bg-amber-50 dark:bg-amber-950/30 text-amber-700 dark:text-amber-300">
-              🐌 {rotation.lento.length} lentos
+              Lentos: {rotation.lento.length}
             </span>
             <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium bg-red-50 dark:bg-red-950/30 text-red-700 dark:text-red-300">
-              💀 {rotation.muerto.length} muertos
+              Sin movimiento: {rotation.muerto.length}
             </span>
           </div>
 
@@ -1011,17 +1004,17 @@ export default function AIBusinessHealthScore({ data }: Props) {
             <div>
               {rotation.muerto.length > 0 && (
                 <p className="text-xs text-red-600 dark:text-red-400">
-                  💀 {rotation.muerto.length} producto{rotation.muerto.length > 1 ? "s" : ""} sin movimiento — revisa pronto
+                  {rotation.muerto.length} producto{rotation.muerto.length > 1 ? "s" : ""} sin movimiento — revisa pronto
                 </p>
               )}
               {rotation.muerto.length === 0 && rotation.lento.length > 0 && (
                 <p className="text-xs text-amber-600 dark:text-amber-400">
-                  🐌 {rotation.lento.length} con rotacion lenta — considera promociones
+                  {rotation.lento.length} con rotacion lenta — considera promociones
                 </p>
               )}
               {rotation.muerto.length === 0 && rotation.lento.length === 0 && (
                 <p className="text-xs text-emerald-600 dark:text-emerald-400">
-                  ✅ Todos los productos tienen buena rotacion
+                  Todos los productos tienen buena rotacion
                 </p>
               )}
             </div>

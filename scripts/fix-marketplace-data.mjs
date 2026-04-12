@@ -22,7 +22,7 @@ async function main() {
     // 2. Update the 'demo' store to have proper data
     await client.query(`
       UPDATE "Store" SET
-        name = 'Bodega San Martín',
+        name = 'Buleje',
         description = 'Tu bodega de confianza en Pucallpa. Abarrotes, bebidas, carnes, frutas y productos de limpieza con delivery rápido.',
         category = 'bodega',
         zone = 'centro',
@@ -32,7 +32,7 @@ async function main() {
         "updatedAt" = NOW()
       WHERE slug = 'demo'
     `);
-    console.log('✅ Updated demo store → "Bodega San Martín"');
+    console.log('✅ Updated demo store → "Buleje"');
 
     // 3. Get the demo store id
     const { rows: [demoStore] } = await client.query(`SELECT id FROM "Store" WHERE slug = 'demo'`);
@@ -76,7 +76,7 @@ async function main() {
     const { rows: spCount } = await client.query(
       `SELECT COUNT(*) as total FROM "StoreProduct" WHERE "storeId" = $1 AND "isActive" = true`, [storeId]
     );
-    console.log(`Products in Bodega San Martín: ${spCount[0].total}`);
+    console.log(`Products in Buleje: ${spCount[0].total}`);
     
     // Show remaining stores
     const { rows: remaining } = await client.query(

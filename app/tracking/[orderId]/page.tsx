@@ -3,8 +3,8 @@ import type { Metadata } from "next";
 import TrackingClient from "./TrackingClient";
 
 export const metadata: Metadata = {
-  title: "Seguimiento de pedido | Bodega San Martín",
-  description: "Rastrea en tiempo real la ubicación de tu pedido",
+  title: "Seguimiento de pedido | Buleje",
+  description: "Rastrea en tiempo real la ubicacion de tu pedido. Delivery con seguimiento GPS.",
 };
 
 interface Props {

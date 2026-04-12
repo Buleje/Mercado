@@ -1,6 +1,5 @@
 "use client";
-/* eslint-disable react-hooks/set-state-in-effect */
-import { useState, useEffect, useMemo, useRef, useCallback } from "react";
+import { useState, useEffect, useMemo, useCallback } from "react";
 import dynamic from "next/dynamic";
 import { motion } from "framer-motion";
 import {
@@ -42,6 +41,7 @@ const BudgetAlertWidget = dynamic(() => import("@/components/admin/BudgetAlertWi
 const MonthProjectionCard = dynamic(() => import("@/components/admin/MonthProjectionCard"), { loading: S });
 const ProfitLossAutoCard = dynamic(() => import("@/components/admin/ProfitLossAutoCard"), { loading: S });
 const CashFlowProjection = dynamic(() => import("@/components/admin/CashFlowProjection"), { loading: S });
+const CashflowRollingTable = dynamic(() => import("@/components/admin/finance/CashflowRollingTable"), { loading: S });
 const BreakEvenDashboard = dynamic(() => import("@/components/admin/BreakEvenDashboard"), { loading: S });
 // LoanCalculator → movido a PrestamosModule (evitar duplicación)
 // CommissionCalculator → movido a POSCajaModule (es operativo de ventas)
@@ -98,6 +98,7 @@ function calcHealthScore(d: HealthData) {
   return { total, margenPts, liquidezPts, deudaPts, margen, liquidez, deudaRatio };
 }
 
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 function HealthSemaphore() {
   const [data, setData] = useState<HealthData | null>(null);
   const [loading, setLoading] = useState(true);
@@ -269,6 +270,7 @@ function ComparativoMensual() {
 
 // ── Mejora 14: Punto de equilibrio visual ─────────────────────────────────────
 
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 function PuntoEquilibrio() {
   const [data, setData] = useState<{ gastoDiario: number; ventasHoy: number } | null>(null);
   const [loading, setLoading] = useState(true);
@@ -365,6 +367,7 @@ const EXPENSE_COLORS: Record<string, string> = {
   "limpieza": "#06b6d4",
 };
 
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 function GastosDonut() {
   const [gastos, setGastos] = useState<Array<{ category: string; total: number }>>([]);
   // Mejora 13: Promedio historico por categoria para detectar gastos inusuales
@@ -497,6 +500,7 @@ function GastosDonut() {
 
 // ── Mejora 16: Proyeccion de cierre de mes ───────────────────────────────────
 
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 function ProyeccionCierreMes() {
   const [data, setData] = useState<{
     ventasMes: number;
@@ -584,6 +588,7 @@ function ProyeccionCierreMes() {
 
 // ── Mejora 12: Resumen fiscal mensual ────────────────────────────────────────
 
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 function ResumenFiscal() {
   const [data, setData] = useState<{ ventas: number; compras: number } | null>(null);
   const [loading, setLoading] = useState(true);
@@ -785,9 +790,11 @@ function GaugeChart({ value, max, label, unit, color }: { value: number; max: nu
 function FinanzasEmptyChart({ message }: { message: string }) {
   return (
     <div className="flex flex-col items-center justify-center py-12 text-center">
-      <div className="text-4xl mb-3">📊</div>
-      <p className="text-sm font-medium text-gray-500">{message}</p>
-      <p className="text-xs text-gray-400 mt-1">Los datos apareceran cuando registres ventas</p>
+      <div className="h-12 w-12 rounded-xl bg-gray-100 dark:bg-surface flex items-center justify-center mb-3">
+        <BarChart3 className="h-6 w-6 text-gray-400 dark:text-muted" />
+      </div>
+      <p className="text-sm font-medium text-gray-500 dark:text-muted">{message}</p>
+      <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">Los datos apareceran cuando registres ventas</p>
     </div>
   );
 }
@@ -853,6 +860,10 @@ function FinanzasDashboard() {
   // Mejora 3: Auto-refresh
   const [lastRefresh, setLastRefresh] = useState(new Date());
   const [minAgo, setMinAgo] = useState(0);
+  // Mock KPI deltas — lazy-init so Math.random runs once per mount (React Compiler purity rule)
+  const [kpiMockChanges] = useState<number[]>(() =>
+    Array.from({ length: KPI_DEFS.length }, () => Math.round((Math.random() - 0.3) * 30))
+  );
   // Mejora 5: Favoritos
   const finFavs = useFinanzasFavCharts("fav-charts-finanzas");
 
@@ -1088,9 +1099,11 @@ function FinanzasDashboard() {
   if (Object.values(kpis).every(v => v === 0) && monthlyData.every(m => m.ingresos === 0 && m.gastos === 0)) {
     return (
       <div className="text-center py-16">
-        <div className="text-6xl mb-4">📊</div>
-        <h3 className="text-lg font-semibold text-gray-700">Sin datos financieros</h3>
-        <p className="text-sm text-gray-500 mt-1">Registra tus primeras ventas y gastos para ver el dashboard</p>
+        <div className="h-16 w-16 rounded-2xl bg-gray-100 dark:bg-surface flex items-center justify-center mx-auto mb-4">
+          <BarChart3 className="h-8 w-8 text-gray-400 dark:text-muted" />
+        </div>
+        <h3 className="text-lg font-semibold text-foreground">Sin datos financieros</h3>
+        <p className="text-sm text-muted mt-1">Registra tus primeras ventas y gastos para ver el dashboard</p>
       </div>
     );
   }
@@ -1142,8 +1155,8 @@ function FinanzasDashboard() {
           let display: string;
           let subtexto = "";
           let valColor = "text-gray-900";
-          // Mejora 7: Comparativo mock
-          const change = Math.round((Math.random() - 0.3) * 30);
+          // Mejora 7: Comparativo mock (lazy-initialized for React Compiler purity)
+          const change = kpiMockChanges[kpiIdx] ?? 0;
 
           if (def.key === "margen") {
             display = `${val}%`;
@@ -1879,7 +1892,7 @@ export default function FinanzasModule() {
         activeTab={sub}
         onTabChange={(id) => setSub(id as typeof TABS[number]["id"])}
         moduleId="finanzas"
-      />
+      >
       {sub === "dashboard" && (
         <div className="space-y-4" key={refreshKey}>
           <FinanzasDashboard />
@@ -1913,9 +1926,18 @@ export default function FinanzasModule() {
         </div>
       )}
       {sub === "flujo-caja" && (
-        <div className="space-y-4">
-          <CashFlowProjection />
-          <WeeklyCashFlowTable />
+        <div className="space-y-6">
+          {/* Nuevo — diferenciador #1 vs Loyverse/Alegra/Vendemás */}
+          <CashflowRollingTable />
+          <div className="pt-4 border-t border-gray-200 dark:border-white/10">
+            <p className="text-xs font-bold uppercase tracking-wider text-gray-400 mb-3">
+              Proyección legacy (30 días)
+            </p>
+            <div className="space-y-4 opacity-90">
+              <CashFlowProjection />
+              <WeeklyCashFlowTable />
+            </div>
+          </div>
         </div>
       )}
       {sub === "reporte-mensual" && <ReporteMensualTab />}
@@ -1946,6 +1968,7 @@ export default function FinanzasModule() {
           </div>
         </Suspense>
       )}
+      </AdminTabBar>
     </div>
   );
 }

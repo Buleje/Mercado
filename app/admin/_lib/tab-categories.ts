@@ -37,6 +37,10 @@ import {
   Store,
   Palette,
   Settings,
+  Receipt,
+  ShoppingBag,
+  Zap,
+  ChefHat,
 } from "lucide-react";
 import type { Tab } from "./tabs.types";
 
@@ -48,90 +52,104 @@ export const DEMO_DATA_MODULES: Partial<Record<Tab, { label: string; api?: strin
   },
 };
 
-// Rich metadata for every module: emoji, priority, description and a helpful tip
+// Rich metadata for every module: icon, color, priority, description and a helpful tip
 export const MODULE_INFO: Partial<
-  Record<Tab, { emoji: string; priority: "core" | "high" | "medium" | "low"; desc: string; tip: string }>
+  Record<Tab, { icon: ComponentType<{ className?: string }>; iconColor: string; priority: "core" | "high" | "medium" | "low"; desc: string; tip: string }>
 > = {
   "asistente-ia": {
-    emoji: "🧠",
+    icon: Brain,
+    iconColor: "text-teal-600",
     priority: "core",
     desc: "Dashboard IA, chat con asistente y centro de alertas del negocio.",
     tip: "Empieza aquí cada mañana para tener el pulso del negocio.",
   },
   "ventas-caja": {
-    emoji: "🖥️",
+    icon: ShoppingCart,
+    iconColor: "text-emerald-600",
     priority: "core",
     desc: "Punto de venta, caja registradora, arqueo, pedidos y cuentas por cobrar.",
     tip: "Todo lo que necesitas para operar el mostrador en un solo lugar.",
   },
   inventario: {
-    emoji: "📦",
+    icon: Package,
+    iconColor: "text-amber-600",
     priority: "core",
-    desc: "Stock, Kardex, vencimientos, mermas y alertas de inventario.",
+    desc: "Stock, movimientos de stock, vencimientos, mermas y alertas de inventario.",
     tip: "Control completo del inventario desde una sola vista.",
   },
   productos: {
-    emoji: "🏪",
+    icon: Tag,
+    iconColor: "text-violet-600",
     priority: "high",
     desc: "Catálogo, categorías, ofertas, cupones e historial de precios.",
     tip: "Gestiona tu catálogo y optimiza precios.",
   },
   compras: {
-    emoji: "📋",
+    icon: Truck,
+    iconColor: "text-blue-600",
     priority: "high",
     desc: "Pedidos a proveedor, directorio de proveedores y recepción.",
     tip: "Flujo completo de compras desde la cotización hasta la recepción.",
   },
   plata: {
-    emoji: "💵",
+    icon: DollarSign,
+    iconColor: "text-green-600",
     priority: "high",
     desc: "Ingresos, egresos, gastos, ganancias, reportes y exportación.",
     tip: "Visión financiera completa del negocio en un solo módulo.",
   },
   clientes: {
-    emoji: "👥",
+    icon: Users,
+    iconColor: "text-pink-600",
     priority: "high",
     desc: "CRM, delivery, opiniones y programa de fidelización.",
     tip: "Conoce a tus clientes y personaliza la atención.",
   },
   config: {
-    emoji: "⚙️",
+    icon: Settings,
+    iconColor: "text-gray-600",
     priority: "core",
     desc: "Usuarios, permisos, plan y configuración de la página web.",
     tip: "Configura esto primero para que todo funcione correctamente.",
   },
   pedidos: {
-    emoji: "🛒",
+    icon: ShoppingBag,
+    iconColor: "text-orange-600",
     priority: "core",
     desc: "Gestiona pedidos recibidos, su estado, asignación y entrega.",
     tip: "Centraliza pedidos de WhatsApp, tienda online y mostrador.",
   },
   plan: {
-    emoji: "⚡",
+    icon: Zap,
+    iconColor: "text-yellow-600",
     priority: "medium",
     desc: "Tu plan actual, límites y opciones de mejora.",
     tip: "Revisa tu plan para aprovechar al máximo la plataforma.",
   },
   fiados: {
-    emoji: "💰",
+    icon: CreditCard,
+    iconColor: "text-red-600",
     priority: "high",
     desc: "Control de créditos informales: registro, pagos y saldos pendientes.",
     tip: "Lleva la cuenta de lo que te deben tus clientes de confianza.",
   },
   turnos: {
-    emoji: "⏱️",
+    icon: Clock,
+    iconColor: "text-indigo-600",
     priority: "high",
     desc: "Apertura y cierre de turnos con conteo de efectivo.",
     tip: "Control de caja por turno para saber exactamente cuánto entró.",
   },
   recetas: {
-    emoji: "🍳",
+    icon: ChefHat,
+    iconColor: "text-orange-500",
     priority: "medium",
     desc: "Recetas de producción con ingredientes y control de lotes.",
     tip: "Calcula costos de producción y descuenta stock automáticamente.",
   },
   prestamos: {
-    emoji: "🏦",
+    icon: Landmark,
+    iconColor: "text-slate-600",
     priority: "medium",
     desc: "Préstamos a clientes con cuotas, interés y tabla de amortización.",
     tip: "Gestiona préstamos con calculadora integrada y seguimiento de pagos.",
@@ -145,19 +163,21 @@ export type TabCategory = {
   tabs: Tab[];
 };
 
-// ── 17 módulos básicos del sidebar ──────────────────────────────────────────
+// ── 12 módulos consolidados del sidebar (antes: 19 categorías con datos duplicados) ──
+// Consolidación 2026-04-12: fusión A1-A9 (fiados+prestamos+scoring→clientes,
+// plata+tesoreria+facturacion→finanzas, pedidos+turnos→ventas, etc.)
 export const BASIC_MODULES: TabCategory[] = [
   {
-    id: "asistente-ia",
-    label: "IA & Analítica",
+    id: "dashboard",
+    label: "Dashboard",
     icon: Brain,
-    tabs: ["asistente-ia", "analytics-pro"],
+    tabs: ["asistente-ia"],
   },
   {
-    id: "ventas-caja",
-    label: "Ventas & Caja",
+    id: "ventas",
+    label: "Ventas",
     icon: ShoppingCart,
-    tabs: ["ventas-caja", "pedidos"],
+    tabs: ["ventas-caja", "pedidos", "turnos"],
   },
   {
     id: "inventario",
@@ -167,39 +187,33 @@ export const BASIC_MODULES: TabCategory[] = [
   },
   {
     id: "productos",
-    label: "Productos & Precios",
+    label: "Productos",
     icon: Tag,
-    tabs: ["productos"],
+    tabs: ["productos", "promociones"],
   },
   {
-    id: "compras-mod",
+    id: "compras",
     label: "Compras",
     icon: Truck,
-    tabs: ["compras"],
+    tabs: ["compras", "devoluciones-proveedor"],
   },
   {
-    id: "plata",
-    label: "Mi Plata",
+    id: "finanzas",
+    label: "Finanzas",
     icon: DollarSign,
-    tabs: ["plata"],
+    tabs: ["plata", "tesoreria", "facturacion"],
   },
   {
     id: "clientes",
-    label: "Mis Clientes",
+    label: "Clientes",
     icon: Users,
-    tabs: ["clientes"],
+    tabs: ["clientes", "fiados", "prestamos", "scoring"],
   },
   {
-    id: "fiados",
-    label: "Fíados",
-    icon: CreditCard,
-    tabs: ["fiados"],
-  },
-  {
-    id: "turnos",
-    label: "Turnos",
-    icon: Clock,
-    tabs: ["turnos"],
+    id: "analytics",
+    label: "Analytics",
+    icon: Brain,
+    tabs: ["analytics-pro", "forecasting"],
   },
   {
     id: "recetas",
@@ -208,52 +222,16 @@ export const BASIC_MODULES: TabCategory[] = [
     tabs: ["recetas"],
   },
   {
-    id: "prestamos",
-    label: "Préstamos",
-    icon: Landmark,
-    tabs: ["prestamos"],
-  },
-  {
-    id: "auditoria",
-    label: "Auditoría",
-    icon: Shield,
-    tabs: ["auditoria"],
-  },
-  {
-    id: "devoluciones-proveedor",
-    label: "Devoluciones",
-    icon: RotateCcw,
-    tabs: ["devoluciones-proveedor"],
-  },
-  {
-    id: "tesoreria",
-    label: "Tesorería",
-    icon: Landmark,
-    tabs: ["tesoreria"],
-  },
-  {
-    id: "promociones",
-    label: "Promociones",
-    icon: Tag,
-    tabs: ["promociones"],
-  },
-  {
-    id: "scoring",
-    label: "Scoring Crédito",
-    icon: Shield,
-    tabs: ["scoring"],
+    id: "marketplace-ops",
+    label: "Marketplace",
+    icon: Store,
+    tabs: ["marketplace", "delivery-partners", "delivery-live", "marketplace-chat"],
   },
   {
     id: "documentos",
     label: "Documentos",
     icon: FileText,
     tabs: ["cotizaciones", "guias-remision", "notas-credito", "contratos"],
-  },
-  {
-    id: "marketplace-ops",
-    label: "Marketplace",
-    icon: Store,
-    tabs: ["marketplace", "delivery-partners", "delivery-live", "marketplace-chat"],
   },
 ];
 
@@ -270,7 +248,7 @@ export const CONFIG_MODULE: TabCategory = {
   id: "config",
   label: "Configuración",
   icon: Settings,
-  tabs: ["config", "plan"],
+  tabs: ["config", "plan", "auditoria"],
 };
 
 // ── TAB_CATEGORIES: composición final del sidebar ────────────────────────────

@@ -126,10 +126,10 @@ export function AdvancedSearchPanel<T extends Record<string, unknown>>({
   ).length;
 
   return (
-    <div ref={panelRef} className="relative w-full">
+    <div ref={panelRef} className="relative w-full" role="search" aria-label="Panel de búsqueda avanzada">
       {/* Search Input */}
       <div className="relative">
-        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" aria-hidden="true" />
         <input
           ref={inputRef}
           type="text"
@@ -137,18 +137,24 @@ export function AdvancedSearchPanel<T extends Record<string, unknown>>({
           onChange={(e) => handleSearch(e.target.value)}
           onFocus={() => setIsOpen(true)}
           placeholder={placeholder}
+          aria-label={placeholder}
+          aria-autocomplete="list"
+          aria-controls="search-results-panel"
+          aria-expanded={isOpen}
           className="w-full pl-10 pr-20 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
         />
         <div className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center gap-1">
           {showFilters && (
             <button
               onClick={() => setShowFiltersPanel(!showFiltersPanel)}
+              aria-label={showFiltersPanel ? "Ocultar filtros" : "Mostrar filtros"}
+              aria-expanded={showFiltersPanel}
+              aria-controls="filters-panel"
               className={`p-2 rounded-lg transition-colors ${
                 showFiltersPanel
                   ? 'bg-emerald-100 text-emerald-600'
                   : 'hover:bg-gray-100 text-gray-400'
               }`}
-              title="Filtros"
             >
               <Filter className="w-4 h-4" />
               {activeFilterCount > 0 && (
@@ -161,8 +167,8 @@ export function AdvancedSearchPanel<T extends Record<string, unknown>>({
           {query && (
             <button
               onClick={handleClearSearch}
+              aria-label="Limpiar búsqueda"
               className="p-2 hover:bg-gray-100 rounded-lg text-gray-400 transition-colors"
-              title="Limpiar búsqueda"
             >
               <X className="w-4 h-4" />
             </button>
@@ -172,7 +178,7 @@ export function AdvancedSearchPanel<T extends Record<string, unknown>>({
 
       {/* Filters Panel */}
       {showFilters && showFiltersPanel && (
-        <div className="absolute z-20 w-full mt-2 p-4 bg-white rounded-lg shadow-lg border border-gray-200">
+        <div id="filters-panel" className="absolute z-20 w-full mt-2 p-4 bg-white rounded-lg shadow-lg border border-gray-200" role="region" aria-label="Panel de filtros">
           <div className="flex items-center justify-between mb-3">
             <h3 className="font-semibold text-gray-900">Filtros</h3>
             {activeFilterCount > 0 && (
@@ -263,7 +269,7 @@ export function AdvancedSearchPanel<T extends Record<string, unknown>>({
 
       {/* Results Dropdown */}
       {isOpen && (
-        <div className="absolute z-10 w-full mt-2 bg-white rounded-lg shadow-lg border border-gray-200 max-h-96 overflow-y-auto">
+        <div id="search-results-panel" className="absolute z-10 w-full mt-2 bg-white rounded-lg shadow-lg border border-gray-200 max-h-96 overflow-y-auto" role="listbox" aria-label="Resultados de búsqueda">
           {/* Recent Searches */}
           {!query && recentSearches.length > 0 && (
             <div className="p-3 border-b border-gray-100">
@@ -391,6 +397,7 @@ export function AdvancedSearchPanel<T extends Record<string, unknown>>({
                 <span>{displayValue}</span>
                 <button
                   onClick={() => clearFilter(field)}
+                  aria-label={`Quitar filtro ${filterConfig.label}`}
                   className="ml-1 hover:bg-emerald-200 rounded-full p-0.5"
                 >
                   <X className="w-3 h-3" />

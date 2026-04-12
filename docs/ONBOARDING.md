@@ -1,4 +1,4 @@
-# Onboarding — Bodega San Martín
+# Onboarding — Buleje
 
 > **Objetivo:** que cualquier desarrollador (humano o agente Claude) sea productivo en < 1 hora.
 > **No leas todo el repo. Leé solo esto y seguí el orden.**

@@ -143,9 +143,9 @@ describe("POST /api/purchases", () => {
 
     await POST(req);
 
-    // PayablesDB.add debe haber sido llamado
+    // PayablesDB.add debe haber sido llamado with (tenantId, data)
     expect(mockPayablesAdd).toHaveBeenCalledOnce();
-    const payableArg = (mockPayablesAdd.mock.calls as unknown as unknown[][])[0][0] as Record<string, unknown>;
+    const payableArg = (mockPayablesAdd.mock.calls as unknown as unknown[][])[0][1] as Record<string, unknown>;
     expect(payableArg.supplierId).toBe("sup-2");
     expect(payableArg.amount).toBe(50);
     expect(payableArg.status).toBe("pendiente");

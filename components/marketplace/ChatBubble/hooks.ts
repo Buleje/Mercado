@@ -7,7 +7,7 @@ import type {
   PublicThreadView,
 } from "./types";
 
-const sessionKey = (storeSlug: string) => `bsm-chat-${storeSlug}`;
+const sessionKey = (storeSlug: string) => `buleje-chat-${storeSlug}`;
 
 function loadSession(storeSlug: string): ChatBubbleSession | null {
   if (typeof window === "undefined") return null;

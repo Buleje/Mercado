@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireAdmin } from "@/lib/require-admin";
 import { prisma } from "@/lib/prisma";
+import { toNumOrZero } from "@/lib/decimal-utils";
+import { logger } from "@/lib/logger";
 
 export type ABCProduct = {
   productId: number;
@@ -46,7 +48,8 @@ export async function GET(req: NextRequest) {
     for (const item of saleItemDetails) {
       const existing = map.get(item.productId) ?? { units: 0, revenue: 0 };
       existing.units += item.quantity;
-      existing.revenue += item.price * item.quantity;
+      // TD-018: item.price es Decimal
+      existing.revenue += toNumOrZero(item.price) * item.quantity;
       map.set(item.productId, existing);
     }
     void saleItems; // already aggregated via detailed query
@@ -55,7 +58,8 @@ export async function GET(req: NextRequest) {
       if (!item.productId) continue;
       const existing = map.get(item.productId) ?? { units: 0, revenue: 0 };
       existing.units += item.quantity;
-      existing.revenue += item.price * item.quantity;
+      // TD-018: item.price es Decimal
+      existing.revenue += toNumOrZero(item.price) * item.quantity;
       map.set(item.productId, existing);
     }
 
@@ -97,7 +101,7 @@ export async function GET(req: NextRequest) {
 
     return NextResponse.json(result);
   } catch (e) {
-    console.error("[abc] error:", e);
+    logger.error("[abc] error", { error: (e as Error).message, tenantId: auth.tenantId });
     return NextResponse.json({ error: "Database error" }, { status: 503 });
   }
 }

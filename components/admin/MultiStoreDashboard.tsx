@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useEffect, useRef, useCallback } from "react";
-import dynamic from "next/dynamic";
 import {
   Store,
   DollarSign,
@@ -12,11 +11,9 @@ import {
   RefreshCw,
   ArrowUpDown,
   ExternalLink,
-  Loader2,
   AlertCircle,
   BarChart3,
-  MapPin,
-} from "lucide-react";
+  MapPin } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 // ── Leaflet solo en cliente (sin SSR) ────────────────────────────────────────
@@ -156,7 +153,6 @@ function StoresMapInner({ stores }: { stores: StoreRow[] }) {
       if (!containerRef.current || initRef.current) return;
       initRef.current = true;
 
-      // @ts-expect-error — CSS module import dinámico
       await import("leaflet/dist/leaflet.css");
       const L = await import("leaflet");
 

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback, useMemo } from "react";
+import { useState, useEffect, useMemo } from "react";
 import dynamic from "next/dynamic";
 import { Target, Trophy, Flame, TrendingUp, Pencil, Check, X, Calendar } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -447,7 +447,7 @@ export default function MetasLogrosModule({ tenantId: _tenantId }: Props) {
     return { active, achieved, streak, rate };
   }, [goals, streak]);
 
-  const kpiCards = [
+  const _kpiCards = [
     { label: "Metas activas",   value: String(kpis.active),   icon: Target,      color: "text-[#00B4A6]", bg: "bg-[#00B4A6]/10" },
     { label: "Logradas",        value: String(kpis.achieved), icon: Trophy,       color: "text-amber-600",   bg: "bg-amber-50"        },
     { label: "Racha (días)",    value: String(kpis.streak),   icon: Flame,        color: "text-orange-600", bg: "bg-orange-50"      },
@@ -466,14 +466,14 @@ export default function MetasLogrosModule({ tenantId: _tenantId }: Props) {
         activeTab={tab}
         onTabChange={(id) => setTab(id as TabId)}
         moduleId={MODULE_ID}
-      />
-
-      <div>
-        {tab === "mis-metas"  && <GoalsTab />}
-        {tab === "hoy"        && <DailyGoalTracker />}
-        {tab === "semana-mes" && <SemaMesTab />}
-        {tab === "logros"     && <LogrosTab />}
-      </div>
+      >
+        <div>
+          {tab === "mis-metas"  && <GoalsTab />}
+          {tab === "hoy"        && <DailyGoalTracker />}
+          {tab === "semana-mes" && <SemaMesTab />}
+          {tab === "logros"     && <LogrosTab />}
+        </div>
+      </AdminTabBar>
     </div>
   );
 }

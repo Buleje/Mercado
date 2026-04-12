@@ -52,6 +52,7 @@ export default function FloatingStoreCTA() {
 
       <Link
         href="/tienda"
+        aria-label="Ir a la tienda"
         className="relative flex items-center gap-2 rounded-full bg-primary pl-4 pr-5 py-3 text-sm font-bold text-white shadow-lg shadow-primary/30 transition-all duration-200 group hover:-translate-y-0.5 hover:shadow-xl hover:bg-primary-dark active:scale-95 motion-safe:animate-[float_3.2s_ease-in-out_infinite]"
       >
         <ShoppingBag className="h-4.5 w-4.5 transition-transform duration-300 group-hover:-rotate-6 group-hover:scale-110" />

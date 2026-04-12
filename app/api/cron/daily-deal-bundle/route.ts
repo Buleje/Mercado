@@ -34,10 +34,21 @@ export async function GET(req: NextRequest) {
       const MIN_PRODUCTS = 3;
       const MAX_PRODUCTS = 5;
 
+      // Iterate over all active tenants (multi-tenant)
+      const tenants = await prisma.tenant.findMany({
+        where: { active: true },
+        select: { id: true, name: true },
+      });
+
+      const allResults: { tenantId: string; bundleId?: string; bundleName?: string; skipped?: string }[] = [];
+
+      for (const tenant of tenants) {
+        const tenantId = tenant.id;
+
       // 1. Deactivate yesterday's auto-bundle (if any)
       await prisma.bundle.updateMany({
         where: {
-          tenantId: "main",
+          tenantId,
           name: { startsWith: "🔥 Paquete del Día" },
           active: true,
         },
@@ -47,7 +58,7 @@ export async function GET(req: NextRequest) {
       // 2. Find active products with stock but zero sales in 7 days
       const activeProducts = await prisma.product.findMany({
         where: {
-          tenantId: "main",
+          tenantId,
           active: true,
           deletedAt: null,
           stock: { gt: 0 },
@@ -64,13 +75,14 @@ export async function GET(req: NextRequest) {
       });
 
       if (activeProducts.length === 0) {
-        return { ok: true, bundle: null, reason: "No hay productos activos" };
+        allResults.push({ tenantId, skipped: "No hay productos activos" });
+        continue;
       }
 
       // Get products that sold in last 7 days
       const recentSaleItems = await prisma.saleItem.findMany({
         where: {
-          sale: { tenantId: "main", createdAt: { gte: sevenDaysAgo } },
+          sale: { tenantId, createdAt: { gte: sevenDaysAgo } },
         },
         select: { productId: true },
         distinct: ["productId"],
@@ -79,7 +91,7 @@ export async function GET(req: NextRequest) {
       const recentOrderItems = await prisma.orderItem.findMany({
         where: {
           order: {
-            tenantId: "main",
+            tenantId,
             createdAt: { gte: sevenDaysAgo },
             status: { notIn: ["cancelado"] },
           },
@@ -103,18 +115,14 @@ export async function GET(req: NextRequest) {
         }))
         .filter((p) => p.priceNum > 0)
         .sort((a, b) => {
-          // Prioritize higher cost items (more capital tied up)
           const capitalA = a.costNum * (a.stock ?? 1);
           const capitalB = b.costNum * (b.stock ?? 1);
           return capitalB - capitalA;
         });
 
       if (deadStock.length < MIN_PRODUCTS) {
-        return {
-          ok: true,
-          bundle: null,
-          reason: `Solo ${deadStock.length} productos sin ventas — necesita al menos ${MIN_PRODUCTS}`,
-        };
+        allResults.push({ tenantId, skipped: `Solo ${deadStock.length} productos sin ventas` });
+        continue;
       }
 
       // Pick top products for the bundle
@@ -133,7 +141,7 @@ export async function GET(req: NextRequest) {
           price: bundlePrice,
           image: selected[0]?.image ?? null,
           active: true,
-          tenantId: "main",
+          tenantId,
           items: {
             create: selected.map((p) => ({
               productId: p.id,
@@ -148,6 +156,7 @@ export async function GET(req: NextRequest) {
       const productList = selected.map((p, i) => `  ${i + 1}. ${p.name} (S/ ${p.priceNum.toFixed(2)})`).join("\n");
       const whatsappMsg = [
         `🔥 *Paquete del Día creado*`,
+        `🏪 *${tenant.name}*`,
         `━━━━━━━━━━━━━━━━━━━`,
         ``,
         `${selected.length} productos sin ventas en 7 días se armaron en paquete:`,
@@ -166,7 +175,7 @@ export async function GET(req: NextRequest) {
       (async () => {
         try {
           const settings = await prisma.settings.findFirst({
-            where: { tenantId: "main" },
+            where: { tenantId },
             select: { businessPhone: true },
           });
           const ownerPhone = settings?.businessPhone || process.env.NOTIFY_PHONE;
@@ -175,7 +184,7 @@ export async function GET(req: NextRequest) {
               type: "whatsapp",
               recipient: ownerPhone,
               message: whatsappMsg,
-              tenantId: "main",
+              tenantId,
             }).catch(() => {});
             sendPushToPhone(ownerPhone, {
               title: `🔥 Paquete del Día: ${selected.length} productos a S/ ${bundlePrice.toFixed(2)}`,
@@ -195,21 +204,19 @@ export async function GET(req: NextRequest) {
       ).catch(() => {});
 
       logger.info("[cron/daily-deal-bundle] Paquete creado", {
+        tenantId,
         bundleId: bundle.id,
         products: selected.length,
         price: bundlePrice,
       });
 
+      allResults.push({ tenantId, bundleId: bundle.id, bundleName });
+      } // end for tenant
+
       return {
         ok: true,
-        bundle: {
-          id: bundle.id,
-          name: bundleName,
-          products: selected.map((p) => p.name),
-          originalPrice: sumPrices,
-          bundlePrice,
-          discount: `${DISCOUNT_PCT}%`,
-        },
+        tenantsProcessed: tenants.length,
+        results: allResults,
       };
     });
 

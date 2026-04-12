@@ -28,8 +28,6 @@
 
 import { config as loadEnv } from "dotenv";
 import path from "node:path";
-import { Resolver } from "node:dns/promises";
-import type { LookupAddress } from "node:dns";
 
 loadEnv({ path: path.resolve(process.cwd(), ".env.local") });
 

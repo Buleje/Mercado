@@ -1,7 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireAdmin } from "@/lib/require-admin";
 import { prisma } from "@/lib/prisma";
+import { toNumOrZero } from "@/lib/decimal-utils";
 import { z } from "zod";
+import { logger } from "@/lib/logger";
 
 const querySchema = z.object({
   days: z.coerce.number().min(7).max(365).default(90),
@@ -98,7 +100,8 @@ export async function GET(req: NextRequest) {
         monetary: 0,
       };
       existing.frequency++;
-      existing.monetary += sale.total;
+      // TD-018: sale.total es Decimal
+      existing.monetary += toNumOrZero(sale.total);
       if (sale.createdAt > existing.lastPurchase) {
         existing.lastPurchase = sale.createdAt;
       }
@@ -113,7 +116,8 @@ export async function GET(req: NextRequest) {
         monetary: 0,
       };
       existing.frequency++;
-      existing.monetary += order.total;
+      // TD-018: order.total es Decimal
+      existing.monetary += toNumOrZero(order.total);
       if (order.createdAt > existing.lastPurchase) {
         existing.lastPurchase = order.createdAt;
       }
@@ -240,7 +244,7 @@ export async function GET(req: NextRequest) {
       total: rfmCustomers.length,
     });
   } catch (e) {
-    console.error("[analytics/rfm] GET error:", e);
+    logger.error("[analytics/rfm] GET error", { error: String(e) });
     return NextResponse.json({ error: "Database error" }, { status: 503 });
   }
 }

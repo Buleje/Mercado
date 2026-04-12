@@ -88,16 +88,12 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  // Obtener la orden — filtrar por tenantId para aislamiento multi-tenant
-  const order = await OrdersDB.getById(orderId);
+  // Obtener la orden — getById ahora filtra por tenantId (HOTFIX-002).
+  // Cross-tenant IDs return null, preventing invoice forgery across tenants.
+  const order = await OrdersDB.getById(auth.tenantId, orderId);
   if (!order) {
     return NextResponse.json({ error: "Pedido no encontrado" }, { status: 404 });
   }
-
-  // Validar que la orden pertenece al tenant autenticado
-  // (getById no filtra por tenant — verificamos manualmente)
-  // El campo tenantId no está expuesto en DbOrder, pero la orden existe → tenant correcto
-  // si el admin está autenticado y la orden existe en su instancia
 
   if (!order.items || order.items.length === 0) {
     return NextResponse.json(

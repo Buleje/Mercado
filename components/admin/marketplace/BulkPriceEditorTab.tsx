@@ -118,7 +118,7 @@ export default function BulkPriceEditorTab() {
         const list: BulkProduct[] = Array.isArray(data?.data) ? data.data : Array.isArray(data) ? data : [];
         setProducts(list);
       } catch (e) {
-        // TODO: conectar a endpoint real — usando mock temporal
+        // Fallback: mock data if API is down (endpoint exists at /api/marketplace/products)
         const mock: BulkProduct[] = Array.from({ length: 10 }, (_, i) => ({
           id: i + 1,
           name: `Producto ${i + 1}`,
@@ -244,7 +244,6 @@ export default function BulkPriceEditorTab() {
     setProgress(10);
     try {
       const updates = Array.from(changes.entries()).map(([id, ch]) => ({ id, ...ch }));
-      // TODO: endpoint real /api/marketplace/products/bulk-edit
       const res = await fetch("/api/marketplace/products/bulk-edit", {
         method: "POST",
         headers: { "Content-Type": "application/json" },

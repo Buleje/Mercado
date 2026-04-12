@@ -1,4 +1,4 @@
-# ADR 016 — Plan Maestro 24 Semanas: Bodega San Martín Enterprise Marketplace
+# ADR 016 — Plan Maestro 24 Semanas: Buleje Enterprise Marketplace
 
 **Status:** Accepted
 **Date:** 2026-04-08
@@ -244,3 +244,58 @@ Medir cada 2 semanas:
 
 - **Supersedes:** nada formal, pero reemplaza al roadmap informal de memoria `project_sprint_roadmap.md`
 - **Superseded by:** TBD — probable ADR 017 (Marketplace Economy v2) al cierre de Sprint 4
+
+---
+
+## Amendment 2026-04-09 — Master Roadmap research wave + 6 bugs críticos
+
+### Context de la enmienda
+
+El 2026-04-09 se corrió una **research wave cross-layer** con 6 agents Opus en paralelo cubriendo marketplace, admin modules, superadmin, store individual, cross-cutting platform y product-UX. Output consolidado en `docs/research/MASTER-ROADMAP-2026-04-09.md` con **84 mejoras priorizadas** (Tier S: 15, Tier A: 16, Tier B: 15, Tier C: 30+).
+
+Durante la auditoría aparecieron **6 bugs críticos** que NO estaban en el plan original y que bloquean el salto de "1 bodega en producción" a "50 tenants activos":
+
+| # | Bug | Archivo | Impacto | Sprint target |
+|---|-----|---------|---------|---------------|
+| **B1** | PlatformSettings persiste solo en localStorage → superadmin cambia precio y al recargar vuelve al hardcode | `app/superadmin/settings/page.tsx:11-18` | MRR fake, métricas de negocio sin fuente de verdad | **Sprint 1 (hot-fix 2026-04-09)** |
+| **B2** | MRR enterprise hardcodeado `399` en analytics vs `499` en superadmin-types | `app/api/superadmin/analytics/route.ts:69` + `lib/superadmin-types.ts:72` | Off-by-100 por cada tenant enterprise en todos los reportes | **Sprint 1 (hot-fix)** (resuelto por B1) |
+| **B3** | Tenants fantasma en marketplace apply — tenantId `store-${phone}` que no existe en tabla Tenant | `app/api/marketplace/stores/apply/route.ts:54,65` | Rompe aislamiento multi-tenant, bloquea onboarding post-aprobación | **Sprint 1 (hot-fix)** |
+| **B4** | Rate limit en memoria (`new Map()`) → bypassable multiplicando instancias Vercel | `lib/middleware-utils.ts:51-110` | Todo endpoint público es vulnerable a brute-force distribuido | **Sprint 1 (hot-fix)** |
+| **B5** | Abandoned cart email va al admin, no al cliente | `app/api/cart/abandoned/route.ts` (UX research) | Se desperdicia el recordatorio — debería mandarse al cliente | **Sprint 2** |
+| **B6** | Daily briefing promete WhatsApp pero solo manda email | `lib/notification-generators.ts` (UX research) | Inconsistencia producto-promesa | **Sprint 2** |
+
+### Amendment decision
+
+1. **Añadir Wave 0.5 de hot-fixes** antes de continuar con Sprint 1 regular. Wave 0.5 cubre B1-B4 (los 4 bugs server-side críticos) y se ejecuta con **4 agents en paralelo** en un solo día. B5/B6 quedan para Sprint 2 como parte del bloque UX.
+2. **Crear módulo Superadmin → Roadmap** (nuevo item S0) que lea el Master Roadmap y permita marcar completado cada ítem. Sustituye al seguimiento manual via memoria.
+3. **Cross-link bidireccional:** este ADR apunta al Master Roadmap, el Master Roadmap apunta al ADR como fuente arquitectónica.
+4. **Reafirmar el plan original:** los 50 items tiered (S/A/B/C) siguen siendo válidos. El Master Roadmap **no** reemplaza a este ADR — lo amplía con 34 ítems adicionales descubiertos en la research wave.
+
+### Nuevos ADRs disparados por esta enmienda
+
+| ADR | Tema | Status |
+|-----|------|--------|
+| 022 | Upstash Redis distributed rate limit (reemplaza `Map()` en memoria) | Draft 2026-04-09 |
+| 023 | Marketplace apply con Tenants reales (elimina tenants fantasma) | Draft 2026-04-09 |
+| 024 | PlatformSettings persistence + single source of truth de precios | Draft 2026-04-09 |
+
+### Métricas adicionales a trackear post-Wave 0.5
+
+- Rate-limit evictions/min (Upstash) — debe ser > 0 en tráfico real.
+- Drift entre `PlatformSettings.value` y `superadmin-types.ts` — debe ser 0 (se elimina el hardcode).
+- Stores con `tenantId` matching `/^store-\d+$/` — debe ser 0 tras el cleanup script.
+- Superadmin Roadmap items marcados completados / 84 total — KPI de ejecución del plan maestro.
+
+### Referencias a la research wave
+
+Todos bajo `docs/research/`:
+
+- `MASTER-ROADMAP-2026-04-09.md` — consolidación ejecutiva (84 ítems, 3 waves)
+- `marketplace-improvements-2026-04-09.md` (14 ítems)
+- `admin-modules-improvements-2026-04-09.md` (18 ítems)
+- `superadmin-improvements-2026-04-09.md` (12 ítems)
+- `store-individual-improvements-2026-04-09.md` (14 ítems)
+- `cross-cutting-improvements-2026-04-09.md` (13 ítems)
+- `product-ux-improvements-2026-04-09.md` (13 ítems)
+
+Cada archivo conserva el análisis detallado por área (problema → evidencia → fix propuesto → impact score). El Master Roadmap es la vista agregada priorizada.

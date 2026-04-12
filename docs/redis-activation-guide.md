@@ -1,4 +1,4 @@
-# Activacion de Redis — Bodega San Martin
+# Activacion de Redis — Buleje
 
 ## Por que activar Redis
 - **Colas BullMQ**: emails, notificaciones WhatsApp, PDFs y activity logs se procesan con reintentos automaticos en vez de fire-and-forget
@@ -73,7 +73,7 @@ REDIS_URL=redis://localhost:6379
 | Alto latencia Redis | Revisar region — Upstash y Vercel deben estar en la misma region |
 | `MaxRetriesPerRequestError` | Revisar si Redis esta caido o si el firewall bloquea el puerto |
 
-## Arquitectura de Redis en Bodega San Martin
+## Arquitectura de Redis en Buleje
 
 ```
 ┌─────────────────┐     ┌──────────────┐

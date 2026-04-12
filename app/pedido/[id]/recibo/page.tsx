@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useParams } from "next/navigation";
+import { useParams, useSearchParams } from "next/navigation";
 import { Printer, ArrowLeft, Loader2 } from "lucide-react";
 import Link from "next/link";
 
@@ -30,16 +30,38 @@ const STATUS_LABELS: Record<string, string> = {
   cancelado: "Cancelado",
 };
 
+/**
+ * HOTFIX-003: the public endpoint now requires ?phone=<customerPhone>. Try the
+ * URL searchParams first, then fall back to bsm-last-order in localStorage.
+ */
+function resolveCustomerPhone(urlPhone: string | null): string | null {
+  if (urlPhone) return urlPhone;
+  if (typeof window === "undefined") return null;
+  try {
+    const raw = localStorage.getItem("buleje-last-order");
+    if (!raw) return null;
+    const parsed = JSON.parse(raw) as { customerPhone?: string };
+    return parsed.customerPhone ?? null;
+  } catch {
+    return null;
+  }
+}
+
 export default function ReciboPage() {
   const { id } = useParams<{ id: string }>();
+  const searchParams = useSearchParams();
   const [order, setOrder] = useState<Order | null>(null);
   const [settings, setSettings] = useState<Settings>({});
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
   useEffect(() => {
+    const phone = resolveCustomerPhone(searchParams.get("phone"));
+    const orderUrl = phone
+      ? `/api/orders/${encodeURIComponent(id)}/public?phone=${encodeURIComponent(phone)}`
+      : `/api/orders/${encodeURIComponent(id)}/public`;
     Promise.all([
-      fetch(`/api/orders/${encodeURIComponent(id)}/public`).then((r) =>
+      fetch(orderUrl).then((r) =>
         r.ok ? r.json() : Promise.reject("Pedido no encontrado")
       ),
       fetch("/api/settings")
@@ -52,7 +74,7 @@ export default function ReciboPage() {
       })
       .catch((e) => setError(typeof e === "string" ? e : "Error al cargar"))
       .finally(() => setLoading(false));
-  }, [id]);
+  }, [id, searchParams]);
 
   if (loading) {
     return (

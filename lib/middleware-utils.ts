@@ -7,6 +7,10 @@
 
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
+import {
+  createDistributedRateLimiter,
+  type DistributedRateLimiter,
+} from "@/lib/rate-limit";
 
 // ── Request ID generation ──────────────────────────────────────────────────────
 
@@ -48,23 +52,50 @@ export function isProtectedAdmin(pathname: string): boolean {
   );
 }
 
-// ── Edge rate limiter (in-memory, per-instance) ───────────────────────────────
+// ── Edge rate limiter (distributed via Upstash Redis REST) ────────────────────
+//
+// Before ADR-022 (2026-04-09) this file used a per-instance `Map` to track
+// request counts. That was broken on Vercel because every edge/lambda replica
+// had its own Map, so an attacker bypassed the configured limit × N replicas
+// with no coordination across instances.
+//
+// Now we delegate to `createDistributedRateLimiter` from `lib/rate-limit.ts`,
+// which talks to Upstash Redis over REST (edge-compatible). When Upstash env
+// vars are absent (dev w/o setup) the factory falls back to an in-memory map
+// with a loud warning — same ergonomic as before, but explicit.
 
 const WINDOW_MS = 60_000;
 const MAX_REQUESTS = 60;
 
+/**
+ * Legacy alias — kept so existing unit tests that import `RateLimitEntry`
+ * from this module keep compiling. New code should not reference it.
+ */
 export type RateLimitEntry = { count: number; resetAt: number };
 
+/**
+ * Legacy in-memory store exported only for backward compatibility with
+ * `__tests__/middleware-utils.test.ts`. The real rate-limit state now lives
+ * either in Upstash (distributed) or in the `fallbackStore` inside
+ * `lib/rate-limit.ts`. Tests that mutate this map still work against the
+ * pure helper `checkEdgeRateLimit` below.
+ *
+ * @deprecated Use `createDistributedRateLimiter` from `lib/rate-limit.ts`.
+ */
 export const rlStore = new Map<string, RateLimitEntry>();
-let lastCleanup = Date.now();
 
-function rlCleanup() {
-  const now = Date.now();
-  if (now - lastCleanup < 300_000) return;
-  lastCleanup = now;
-  for (const [k, v] of rlStore) {
-    if (v.resetAt < now) rlStore.delete(k);
-  }
+// Singleton limiter for the edge middleware pipeline. Lazy-initialized so
+// the Upstash client is only built when the middleware actually fires (and
+// so tests that mock `@/lib/rate-limit` get their mock honored).
+let _edgeLimiter: DistributedRateLimiter | null = null;
+function getEdgeLimiter(): DistributedRateLimiter {
+  if (_edgeLimiter) return _edgeLimiter;
+  _edgeLimiter = createDistributedRateLimiter({
+    key: "mw:api",
+    maxRequests: MAX_REQUESTS,
+    windowMs: WINDOW_MS,
+  });
+  return _edgeLimiter;
 }
 
 export function getIP(req: NextRequest): string {
@@ -75,6 +106,13 @@ export function getIP(req: NextRequest): string {
   );
 }
 
+/**
+ * Pure helper kept for unit tests and as a building block for the legacy
+ * `rlStore`-based path. The production middleware pipeline uses
+ * `checkRateLimit` which delegates to Upstash.
+ *
+ * @deprecated Prefer `createDistributedRateLimiter`.
+ */
 export function checkEdgeRateLimit(
   map: Map<string, RateLimitEntry>,
   ip: string,
@@ -92,22 +130,44 @@ export function checkEdgeRateLimit(
   return true;
 }
 
-export function checkRateLimit(req: NextRequest): NextResponse | null {
-  rlCleanup();
+/**
+ * Enforce a distributed rate limit on an incoming request.
+ *
+ * Resolves to a `NextResponse` (status 429) when the caller has exceeded the
+ * configured budget, or `null` when the request is allowed. The check is
+ * async because it talks to Upstash Redis REST — callers in `proxy.ts`
+ * must `await` it.
+ *
+ * Fail-open: if Upstash is unreachable or misconfigured, the underlying
+ * limiter returns `true` (allowed) and logs the incident. This protects
+ * against a Redis outage taking the whole site down at the cost of a
+ * brief protection gap during the outage.
+ */
+export async function checkRateLimit(req: NextRequest): Promise<NextResponse | null> {
   const ip = getIP(req);
-  const now = Date.now();
-  const allowed = checkEdgeRateLimit(rlStore, ip, MAX_REQUESTS, WINDOW_MS, now);
-  if (!allowed) {
-    const entry = rlStore.get(ip)!;
-    return NextResponse.json(
-      { error: "Demasiadas solicitudes. Intente de nuevo en un minuto." },
-      {
-        status: 429,
-        headers: { "Retry-After": String(Math.ceil((entry.resetAt - now) / 1000)) },
-      },
-    );
-  }
-  return null;
+  const tenantId = req.headers.get("x-tenant-id") ?? "global";
+  const identifier = `${tenantId}:${ip}`;
+
+  const limiter = getEdgeLimiter();
+  const allowed = await limiter.check(identifier);
+  if (allowed) return null;
+
+  return NextResponse.json(
+    { error: "Demasiadas solicitudes. Intente de nuevo en un minuto." },
+    {
+      status: 429,
+      headers: { "Retry-After": String(Math.ceil(WINDOW_MS / 1000)) },
+    },
+  );
+}
+
+/**
+ * Test-only reset of the internal cached limiter. Not part of the public API.
+ * @internal
+ */
+export function __resetEdgeLimiterForTests(): void {
+  _edgeLimiter = null;
+  rlStore.clear();
 }
 
 // ── Content-Security-Policy ───────────────────────────────────────────────────
@@ -118,7 +178,13 @@ export function checkRateLimit(req: NextRequest): NextResponse | null {
  * When `nonce` is provided, `script-src` uses `'nonce-{value}'` instead of
  * `'unsafe-inline'`, substantially tightening security.
  *
- * Keep `'unsafe-eval'` for Next.js hydration (required for edge runtime).
+ * NOTE on 'unsafe-eval': Required by Next.js edge runtime for hydration and
+ * dynamic code evaluation in development. Recharts (used in admin dashboards)
+ * also relies on eval for its responsive container calculations. Until these
+ * dependencies drop eval usage, we cannot remove 'unsafe-eval' without
+ * breaking the app. Tracked for future removal when Next.js and Recharts
+ * provide eval-free alternatives.
+ *
  * Keep `'unsafe-inline'` in `style-src` for Tailwind JIT.
  */
 export function buildCSP(pathname: string, nonce?: string): string {

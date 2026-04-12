@@ -3,6 +3,7 @@ import { z } from "zod";
 import { requireAdmin } from "@/lib/require-admin";
 import { logActivity } from "@/lib/activity-logger";
 import { prisma } from "@/lib/prisma";
+import { toNumOrZero } from "@/lib/decimal-utils";
 
 const CommissionPostSchema = z.object({
   orderId: z.string().min(1, "orderId requerido"),
@@ -53,13 +54,20 @@ export async function GET(req: NextRequest) {
     // Totales agregados por status
     const totals = { totalPending: 0, totalSettled: 0, totalPaid: 0 };
     for (const row of aggregates) {
-      const sum = row._sum.amount ?? 0;
+      const sum = toNumOrZero(row._sum.amount);
       if (row.status === "pending") totals.totalPending = sum;
       else if (row.status === "settled") totals.totalSettled = sum;
       else if (row.status === "paid") totals.totalPaid = sum;
     }
 
-    return NextResponse.json({ data: commissions, totals });
+    return NextResponse.json({
+      data: commissions.map((c) => ({
+        ...c,
+        amount: Number(c.amount),
+        rate: Number(c.rate),
+      })),
+      totals,
+    });
   } catch {
     return NextResponse.json({ error: "Error del servidor" }, { status: 503 });
   }

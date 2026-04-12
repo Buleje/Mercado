@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { connection } from "next/server";
 import { z } from "zod";
 import { requireAdmin } from "@/lib/require-admin";
 import { prisma } from "@/lib/prisma";
@@ -28,6 +29,12 @@ const QuerySchema = z.object({
 });
 
 export async function GET(req: NextRequest) {
+  // Next 16 Cache Components: opt-out de pre-render estático porque el
+  // handler lee cookies via requireAdmin (dinámico por sesión). Debe ir
+  // FUERA del try/catch — connection() lanza una excepción especial durante
+  // prerender que React captura internamente, no debemos interceptarla.
+  // ADR-019 (2026-04-09).
+  await connection();
   try {
     const auth = await requireAdmin(req, ["admin", "almacenero", "tienda_owner"]);
     if (auth instanceof NextResponse) return auth;

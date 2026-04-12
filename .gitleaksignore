@@ -1,0 +1,2 @@
+# False positives — localStorage keys, not secrets
+.gitleaksignore:generic-api-key:2

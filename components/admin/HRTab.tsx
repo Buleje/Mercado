@@ -146,7 +146,7 @@ export default function HRTab() {
       if (!form.name.trim() && nombreCompleto) {
         setForm(p => ({ ...p, name: nombreCompleto }));
       }
-      setDniMsg({ ok: true, text: nombreCompleto ? `✓ ${nombreCompleto}` : "DNI válido." });
+      setDniMsg({ ok: true, text: nombreCompleto ? nombreCompleto : "DNI válido." });
     } catch {
       setDniMsg({ ok: false, text: "Error de conexión con RENIEC." });
     } finally {

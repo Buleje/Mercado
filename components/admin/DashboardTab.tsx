@@ -3,22 +3,17 @@
 import { useState, useEffect, useCallback, useMemo, useRef, Fragment } from "react";
 import {
   TrendingUp, DollarSign, ShoppingCart, Users, Package,
-  AlertTriangle, BarChart3, Clock,
-  CreditCard, Banknote,
-  AlertCircle, PackageX, Timer, Truck, Star, Receipt, Percent,
+  AlertTriangle, BarChart3, Clock, Banknote,
+  AlertCircle, PackageX, Truck, Receipt, Percent,
   ShoppingBasket, RefreshCw, Lightbulb, Zap, CalendarDays,
   UserCheck, TrendingDown, Download, Search, Target, X, type LucideIcon,
-  ArrowUp, ArrowDown, Trophy, CheckCircle2, Edit3,
-  Beaker, Sparkles, Gift, Plus, ChevronRight, Sun, Maximize2, Minimize2, LayoutDashboard,
-} from "lucide-react";
+  ArrowUp, ArrowDown, Trophy, Edit3,
+  Beaker, Plus, ChevronRight, Sun, Maximize2, Minimize2, LayoutDashboard } from "lucide-react";
 import { cn, exportToCSV } from "@/lib/utils";
+import { tenantFetch } from "@/lib/tenant-fetch";
 import { OrderStats } from "@/components/OrderStats";
 import { useTheme } from "@/contexts/theme-context";
 import type { Product, Sale, Purchase, Supplier, Customer } from "@/types/erp";
-import BatchStatsWidget from "@/components/admin/dashboard/BatchStatsWidget";
-import ExpiringBatchesAlert from "@/components/admin/dashboard/ExpiringBatchesAlert";
-import ExpiredBatchesWidget from "@/components/admin/dashboard/ExpiredBatchesWidget";
-import PushNotificationBanner from "@/components/admin/dashboard/PushNotificationBanner";
 import dynamic from "next/dynamic";
 const S = () => (<div className="flex items-center justify-center py-12"><div className="h-8 w-8 border-4 border-primary border-t-transparent rounded-full animate-spin" /></div>);
 const DashboardVentasSection = dynamic(() => import("./dashboard/DashboardVentasSection"), { ssr: false, loading: S });
@@ -26,6 +21,7 @@ const DashboardProductosSection = dynamic(() => import("./dashboard/DashboardPro
 const DashboardInventarioSection = dynamic(() => import("./dashboard/DashboardInventarioSection"), { ssr: false, loading: S });
 const DashboardClientesSection = dynamic(() => import("./dashboard/DashboardClientesSection"), { ssr: false, loading: S });
 const DashboardComprasCajaSection = dynamic(() => import("./dashboard/DashboardComprasCajaSection"), { ssr: false, loading: S });
+const DailySummaryPanel = dynamic(() => import("./DailySummaryPanel"), { ssr: false, loading: S });
 
 // ── Types ────────────────────────────────────────────────────────────────────
 
@@ -53,7 +49,7 @@ function fmtDate(iso: string) {
 function fmtDateFull(iso: string) {
   try { return new Date(iso).toLocaleDateString("es-PE", { day: "2-digit", month: "short", year: "numeric" }); } catch { return iso; }
 }
-function fmtTime(iso: string) {
+function _fmtTime(iso: string) {
   try { return new Date(iso).toLocaleTimeString("es-PE", { hour: "2-digit", minute: "2-digit" }); } catch { return ""; }
 }
 function inPeriod(dateStr: string, period: Period): boolean {
@@ -103,10 +99,10 @@ export default function DashboardTab() {
   /* X3: Auto dark mode for admin on first visit */
   useEffect(() => {
     try {
-      if (!localStorage.getItem("bsm-admin-theme-set")) {
+      if (!localStorage.getItem("buleje-admin-theme-set")) {
         const prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
         if (prefersDark) setTheme("system");
-        localStorage.setItem("bsm-admin-theme-set", "1");
+        localStorage.setItem("buleje-admin-theme-set", "1");
       }
     } catch { /* silent */ }
   // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -163,7 +159,7 @@ export default function DashboardTab() {
   }>(() => {
     if (typeof window === "undefined") return { revenue: 0, orders: 0, customers: 0, avgTicket: 0 };
     try {
-      const stored = localStorage.getItem("bsm-monthly-goals");
+      const stored = localStorage.getItem("buleje-monthly-goals");
       return stored ? JSON.parse(stored) : { revenue: 0, orders: 0, customers: 0, avgTicket: 0 };
     } catch {
       return { revenue: 0, orders: 0, customers: 0, avgTicket: 0 };
@@ -175,17 +171,17 @@ export default function DashboardTab() {
   
   const saveMonthlyGoals = useCallback(() => {
     try {
-      localStorage.setItem("bsm-monthly-goals", JSON.stringify(tempGoals));
+      localStorage.setItem("buleje-monthly-goals", JSON.stringify(tempGoals));
       setMonthlyGoals(tempGoals);
       setEditingMonthlyGoals(false);
       // Save goals only (achievement history will be calculated when viewing history)
       const monthKey = new Date().toISOString().slice(0, 7); // YYYY-MM
-      const history = JSON.parse(localStorage.getItem("bsm-goals-history") || "{}");
+      const history = JSON.parse(localStorage.getItem("buleje-goals-history") || "{}");
       history[monthKey] = {
         goals: tempGoals,
         savedAt: new Date().toISOString(),
       };
-      localStorage.setItem("bsm-goals-history", JSON.stringify(history));
+      localStorage.setItem("buleje-goals-history", JSON.stringify(history));
     } catch {}
   }, [tempGoals]);
   const knownOrderIdsRef = useRef<Set<string> | null>(null);
@@ -698,11 +694,11 @@ export default function DashboardTab() {
     const todaySalesFiltered = sales.filter(s => new Date(s.createdAt).toDateString() === todayStr);
     const todayRevenue = todayOrders.reduce((a, o) => a + o.total, 0) + todaySalesFiltered.reduce((a, s) => a + s.total, 0);
     const briefingPriorities: string[] = [];
-    if (pendingOrdersCount > 0) briefingPriorities.push(`📋 ${pendingOrdersCount} pedido${pendingOrdersCount > 1 ? "s" : ""} pendiente${pendingOrdersCount > 1 ? "s" : ""}`);
-    if (criticalStock.length > 0) briefingPriorities.push(`🚨 ${criticalStock.length} producto${criticalStock.length > 1 ? "s" : ""} con stock crítico`);
-    if (overdue.length > 0) briefingPriorities.push(`💰 ${overdue.length} pago${overdue.length > 1 ? "s" : ""} vencido${overdue.length > 1 ? "s" : ""}`);
-    if (atRiskClients.length > 0) briefingPriorities.push(`⚠️ ${atRiskClients.length} VIP${atRiskClients.length > 1 ? "s" : ""} en riesgo de pérdida`);
-    if (agotados.length > 0) briefingPriorities.push(`🔴 ${agotados.length} producto${agotados.length > 1 ? "s" : ""} agotado${agotados.length > 1 ? "s" : ""}`);
+    if (pendingOrdersCount > 0) briefingPriorities.push(`${pendingOrdersCount} pedido${pendingOrdersCount > 1 ? "s" : ""} pendiente${pendingOrdersCount > 1 ? "s" : ""}`);
+    if (criticalStock.length > 0) briefingPriorities.push(`${criticalStock.length} producto${criticalStock.length > 1 ? "s" : ""} con stock crítico`);
+    if (overdue.length > 0) briefingPriorities.push(`${overdue.length} pago${overdue.length > 1 ? "s" : ""} vencido${overdue.length > 1 ? "s" : ""}`);
+    if (atRiskClients.length > 0) briefingPriorities.push(`${atRiskClients.length} VIP${atRiskClients.length > 1 ? "s" : ""} en riesgo de pérdida`);
+    if (agotados.length > 0) briefingPriorities.push(`${agotados.length} producto${agotados.length > 1 ? "s" : ""} agotado${agotados.length > 1 ? "s" : ""}`);
 
     // ── Sprint 3 Feature 5: Cash flow forecast (7 days) ──
     const dailyRevMap = new Map<string,number>();
@@ -1107,13 +1103,13 @@ export default function DashboardTab() {
     }
   }, [orders, sales, products, customers, period, st]);
 
-  const [topTab, setTopTab] = useState<"revenue"|"profit"|"units">("revenue");
-  const [recentFilter, setRecentFilter] = useState<"all"|"pendiente"|"en_camino"|"entregado">("all");
-  const [recentPage, setRecentPage] = useState(1);
+  const [topTab, _setTopTab] = useState<"revenue"|"profit"|"units">("revenue");
+  const [_recentFilter, _setRecentFilter] = useState<"all"|"pendiente"|"en_camino"|"entregado">("all");
+  const [_recentPage, _setRecentPage] = useState(1);
   const [dashSearch, setDashSearch] = useState("");
-  const [dateFrom, setDateFrom] = useState("");
-  const [dateTo, setDateTo] = useState("");
-  const [selectedClientPhone, setSelectedClientPhone] = useState<string|null>(null);
+  const [_dateFrom, _setDateFrom] = useState("");
+  const [_dateTo, _setDateTo] = useState("");
+  const [_selectedClientPhone, _setSelectedClientPhone] = useState<string|null>(null);
   /* V3: Review filter */
   const [reviewFilter, setReviewFilter] = useState<number>(0);
 
@@ -1129,7 +1125,7 @@ export default function DashboardTab() {
     winner?: string;
   }
   const [abTests, setAbTests] = useState<ABTest[]>(() => {
-    try { return JSON.parse(localStorage.getItem("bsm-ab-tests") || "[]"); } catch { return []; }
+    try { return JSON.parse(localStorage.getItem("buleje-ab-tests") || "[]"); } catch { return []; }
   });
   const [showABTestModal, setShowABTestModal] = useState(false);
   const [abTestForm, setAbTestForm] = useState<{ name: string; hypothesis: string; variantA: string; variantB: string; metric: "revenue"|"conversion"|"aov"|"retention"; startDate: string; endDate: string }>({ name: "", hypothesis: "", variantA: "Control", variantB: "Variant B", metric: "conversion", startDate: "", endDate: "" });
@@ -1140,14 +1136,14 @@ export default function DashboardTab() {
 
   /* Z2: Daily summary banner — show once per day */
   const [dailySummaryDismissed, setDailySummaryDismissed] = useState(() => {
-    try { return localStorage.getItem("bsm-daily-summary") === new Date().toDateString(); } catch { return false; }
+    try { return localStorage.getItem("buleje-daily-summary") === new Date().toDateString(); } catch { return false; }
   });
   const dismissDailySummary = () => {
     setDailySummaryDismissed(true);
-    try { localStorage.setItem("bsm-daily-summary", new Date().toDateString()); } catch {}
+    try { localStorage.setItem("buleje-daily-summary", new Date().toDateString()); } catch {}
   };
   const topList = topTab==="revenue"?st.topRev:topTab==="profit"?st.topProfit:st.topUnits;
-  const topMax = topList.length>0?Math.max(...topList.map(p=>topTab==="units"?p.units:topTab==="profit"?p.profit:p.revenue)):1;
+  const _topMax = topList.length>0?Math.max(...topList.map(p=>topTab==="units"?p.units:topTab==="profit"?p.profit:p.revenue)):1;
 
   // C2 — Quick order status changes
   const [quickStatusMap, setQuickStatusMap] = useState<Record<string, Order["status"]>>({});
@@ -1155,7 +1151,7 @@ export default function DashboardTab() {
   const handleQuickStatus = useCallback(async (orderId: string, newStatus: Order["status"]) => {
     setChangingStatusId(orderId);
     try {
-      const res = await fetch(`/api/orders/${orderId}`, {
+      const res = await tenantFetch(`/api/orders/${orderId}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ status: newStatus }),
@@ -1167,9 +1163,9 @@ export default function DashboardTab() {
         const order = orders.find(o => o.id === orderId);
         if (order?.customer.phone) {
           const STATUS_MSG: Record<string, string> = {
-            confirmado: "✅ Tu pedido ha sido confirmado y lo estamos preparando.",
-            en_camino: "🚚 Tu pedido va en camino. ¡Prepárate para recibirlo!",
-            entregado: "🎉 Tu pedido fue entregado. ¡Gracias por tu compra!",
+            confirmado: "Tu pedido ha sido confirmado y lo estamos preparando.",
+            en_camino: "Tu pedido va en camino. ¡Prepárate para recibirlo!",
+            entregado: "Tu pedido fue entregado. ¡Gracias por tu compra!",
           };
           const msg = STATUS_MSG[newStatus];
           if (msg) {
@@ -1204,7 +1200,7 @@ ${o.customer.location ? `<p><b>Dir:</b> ${o.customer.location}</p>` : ""}
 <p><b>Fecha:</b> ${new Date(o.createdAt).toLocaleString("es-PE")}</p>
 <p><b>Pago:</b> ${o.paymentMethod === "yape" ? "Yape" : "Efectivo"}</p><hr>
 <table>${itemsHtml}</table><hr><p class="total">TOTAL: S/${(o.total ?? 0).toFixed(2)}</p>
-${o.notes ? `<hr><p style="font-size:11px">📝 ${o.notes}</p>` : ""}
+${o.notes ? `<hr><p style="font-size:11px">${o.notes}</p>` : ""}
 <p class="footer">¡Gracias por tu compra!</p></body></html>`);
     w.document.close();
     w.focus();
@@ -1212,7 +1208,7 @@ ${o.notes ? `<hr><p style="font-size:11px">📝 ${o.notes}</p>` : ""}
   }, []);
 
   // C3 — Export sales CSV
-  const exportVentas = useCallback(() => {
+  const _exportVentas = useCallback(() => {
     const orderRows = orders
       .filter(o => inPeriod(o.createdAt, period))
       .map(o => ({
@@ -1248,7 +1244,7 @@ ${o.notes ? `<hr><p style="font-size:11px">📝 ${o.notes}</p>` : ""}
     clearTimeout(adminNoteTimers.current[orderId]);
     adminNoteTimers.current[orderId] = setTimeout(async () => {
       try {
-        await fetch(`/api/orders/${orderId}`, {
+        await tenantFetch(`/api/orders/${orderId}`, {
           method: "PATCH",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ adminNote: note }),
@@ -1276,7 +1272,7 @@ ${o.notes ? `<hr><p style="font-size:11px">📝 ${o.notes}</p>` : ""}
     setBulkUpdating(true);
     const ids = [...selectedOrders];
     await Promise.allSettled(ids.map(id =>
-      fetch(`/api/orders/${id}`, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ status: newStatus }) })
+      tenantFetch(`/api/orders/${id}`, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ status: newStatus }) })
     ));
     setQuickStatusMap(prev => {
       const next = { ...prev };
@@ -1421,11 +1417,11 @@ ${o.notes ? `<hr><p style="font-size:11px">📝 ${o.notes}</p>` : ""}
             {showExport && (
               <div className="absolute right-0 top-full mt-1 bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-lg shadow-lg py-1 z-50 min-w-40">
                 {[
-                  { key:"ventas", label:"📊 Ventas CSV" },
-                  { key:"pedidos", label:"📋 Pedidos CSV" },
-                  { key:"productos", label:"📦 Inventario CSV" },
-                  { key:"clientes", label:"👤 Clientes CSV" },
-                  { key:"pdf", label:"📄 Reporte PDF" },
+                  { key:"ventas", label:"Ventas CSV" },
+                  { key:"pedidos", label:"Pedidos CSV" },
+                  { key:"productos", label:"Inventario CSV" },
+                  { key:"clientes", label:"Clientes CSV" },
+                  { key:"pdf", label:"Reporte PDF" },
                 ].map(opt => (
                   <button key={opt.key} onClick={()=>handleExport(opt.key)}
                     className="w-full text-left px-3 py-1.5 text-xs text-gray-700 dark:text-foreground hover:bg-gray-50 dark:hover:bg-accent transition-colors">
@@ -1442,15 +1438,15 @@ ${o.notes ? `<hr><p style="font-size:11px">📝 ${o.notes}</p>` : ""}
           <a
             href={(() => {
               const lines = [
-                `📊 *Resumen ${period === "hoy" ? "del día" : period === "semana" ? "semanal" : period === "mes" ? "del mes" : "general"}*`,
-                `💰 Ventas: ${fmt(st.ventas)}`,
-                `📈 Utilidad: ${fmt(st.utilidad)} (${st.margen.toFixed(1)}%)`,
-                `🎫 Tickets: ${st.tickets} (prom ${fmt(st.ticketProm)})`,
-                `👤 Clientes: ${st.clientesAtendidos}`,
+                `*Resumen ${period === "hoy" ? "del día" : period === "semana" ? "semanal" : period === "mes" ? "del mes" : "general"}*`,
+                `Ventas: ${fmt(st.ventas)}`,
+                `Utilidad: ${fmt(st.utilidad)} (${st.margen.toFixed(1)}%)`,
+                `Tickets: ${st.tickets} (prom ${fmt(st.ticketProm)})`,
+                `Clientes: ${st.clientesAtendidos}`,
                 "",
-                st.topRev.length > 0 ? `🏆 Top: ${st.topRev.slice(0,3).map(p => p.name).join(", ")}` : "",
-                st.stockCritico.length > 0 ? `⚠️ Stock bajo: ${st.stockCritico.slice(0,3).map(p => p.name).join(", ")}` : "",
-                st.agotados.length > 0 ? `🚫 Agotados: ${st.agotados.map(p => p.name).join(", ")}` : "",
+                st.topRev.length > 0 ? `Top: ${st.topRev.slice(0,3).map(p => p.name).join(", ")}` : "",
+                st.stockCritico.length > 0 ? `Stock bajo: ${st.stockCritico.slice(0,3).map(p => p.name).join(", ")}` : "",
+                st.agotados.length > 0 ? `Agotados: ${st.agotados.map(p => p.name).join(", ")}` : "",
               ].filter(Boolean);
               return `https://wa.me/?text=${encodeURIComponent(lines.join("\n"))}`;
             })()}
@@ -1470,14 +1466,14 @@ ${o.notes ? `<hr><p style="font-size:11px">📝 ${o.notes}</p>` : ""}
                 autoRefresh ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400" : "bg-gray-100 text-gray-400 dark:bg-surface dark:text-muted"
               )}
             >
-              {autoRefresh ? "⚡ En vivo" : "Auto"}
+              {autoRefresh ? "En vivo" : "Auto"}
             </button>
             {newOrderCount > 0 && autoRefresh && (
               <button
                 onClick={() => { setNewOrderCount(0); setSection("resumen"); }}
                 className="flex items-center gap-1 px-2 py-0.5 rounded-full bg-red-500 text-white text-[10px] font-bold animate-pulse"
               >
-                🛎️ +{newOrderCount} nuevo{newOrderCount > 1 ? "s" : ""}
+                +{newOrderCount} nuevo{newOrderCount > 1 ? "s" : ""}
               </button>
             )}
             {autoRefresh && (
@@ -1673,7 +1669,7 @@ ${o.notes ? `<hr><p style="font-size:11px">📝 ${o.notes}</p>` : ""}
                   </div>
                 </div>
                 {st.stockCritico.length === 0 && st.agotados.length === 0 ? (
-                  <div className="text-xs text-emerald-500 text-center py-1 font-medium">✓ Inventario saludable</div>
+                  <div className="text-xs text-emerald-500 text-center py-1 font-medium">Inventario saludable</div>
                 ) : (
                   <div className="space-y-1">
                     {st.agotados.slice(0, 2).map(p => (
@@ -1780,7 +1776,7 @@ ${o.notes ? `<hr><p style="font-size:11px">📝 ${o.notes}</p>` : ""}
                 {st.overdue.length > 0 && (
                   <div className="mt-2 pt-2 border-t border-gray-100 dark:border-card-border">
                     <p className="text-[10px] font-bold text-red-600 dark:text-red-400 mb-1">
-                      ⚠️ {st.overdue.length} cuenta{st.overdue.length !== 1 ? "s" : ""} vencida{st.overdue.length !== 1 ? "s" : ""}
+                      {st.overdue.length} cuenta{st.overdue.length !== 1 ? "s" : ""} vencida{st.overdue.length !== 1 ? "s" : ""}
                     </p>
                     {st.overdue.slice(0, 2).map(p => (
                       <div key={p.id} className="flex items-center justify-between py-1 text-xs">
@@ -1930,38 +1926,12 @@ ${o.notes ? `<hr><p style="font-size:11px">📝 ${o.notes}</p>` : ""}
         );
       })()}
 
-      {/* Z2: Daily summary banner */}
-      {!dailySummaryDismissed && !loading && (expandAll || section === "resumen") && (() => {
-        const yesterday = new Date(); yesterday.setDate(yesterday.getDate() - 1);
-        const yd = yesterday.toISOString().slice(0, 10);
-        const yOrders = orders.filter(o => o.createdAt.startsWith(yd) && o.status !== "cancelado");
-        const yRevenue = yOrders.reduce((a, o) => a + o.total, 0);
-        const topProduct = (() => {
-          const pMap = new Map<string, number>();
-          yOrders.forEach(o => o.items.forEach(i => pMap.set(i.name, (pMap.get(i.name) ?? 0) + i.quantity)));
-          let best = ""; let max = 0;
-          pMap.forEach((v, k) => { if (v > max) { max = v; best = k; } });
-          return best;
-        })();
-        if (yOrders.length === 0) return null;
-        return (
-          <div className="mb-4 rounded-xl border border-blue-200 dark:border-blue-800/50 bg-blue-50 dark:bg-blue-900/15 px-2 sm:px-4 py-2 sm:py-3 flex flex-wrap items-center justify-between gap-2 sm:gap-4">
-            <div className="flex flex-wrap items-center gap-3">
-              <CalendarDays className="h-5 w-5 text-blue-500 shrink-0" />
-              <div>
-                <p className="text-sm font-bold text-blue-700 dark:text-blue-400">Resumen de ayer</p>
-                <p className="text-xs text-blue-600/70 dark:text-blue-400/70">
-                  {yOrders.length} pedido{yOrders.length > 1 ? "s" : ""} · S/{yRevenue.toFixed(2)} en ventas
-                  {topProduct && <> · Top: <span className="font-semibold">{topProduct}</span></>}
-                </p>
-              </div>
-            </div>
-            <button onClick={dismissDailySummary} className="text-blue-400 hover:text-blue-600 transition-colors shrink-0">
-              <X className="h-4 w-4" />
-            </button>
-          </div>
-        );
-      })()}
+      {/* ── Panel Resumen del Día (API real) ── */}
+      {!loading && (expandAll || section === "resumen") && (
+        <div className="mb-4">
+          <DailySummaryPanel />
+        </div>
+      )}
 
       {/* ── Smart Insights ── */}
       {st.insights.length > 0 && (expandAll || section === "resumen") && (
@@ -2111,7 +2081,7 @@ ${o.notes ? `<hr><p style="font-size:11px">📝 ${o.notes}</p>` : ""}
                               status === "warning" && "text-amber-600 dark:text-amber-400",
                               status === "danger" && "text-red-600 dark:text-red-400"
                             )}>
-                              {pct.toFixed(0)}% {status === "complete" && "✓"}
+                              {pct.toFixed(0)}%
                             </span>
                           </div>
                           <div className="h-2 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
@@ -2233,7 +2203,7 @@ ${o.notes ? `<hr><p style="font-size:11px">📝 ${o.notes}</p>` : ""}
                     </div>
                   </div>
                   <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-100 dark:border-blue-800 rounded-xl p-3">
-                    <p className="text-xs text-blue-700 dark:text-blue-400"><strong>💡 Consejo:</strong> Establece metas realistas basadas en tu histórico y +10-15% de crecimiento.</p>
+                    <p className="text-xs text-blue-700 dark:text-blue-400"><strong>Consejo:</strong> Establece metas realistas basadas en tu histórico y +10-15% de crecimiento.</p>
                   </div>
                 </div>
                 <div className="flex flex-wrap justify-end gap-3 px-3 sm:px-6 py-4 border-t border-gray-100 dark:border-card-border">
@@ -2259,7 +2229,7 @@ ${o.notes ? `<hr><p style="font-size:11px">📝 ${o.notes}</p>` : ""}
                 </div>
                 <div className="overflow-y-auto flex-1 px-3 sm:px-6 py-5">
                   {(() => {
-                    const history = JSON.parse(localStorage.getItem("bsm-goals-history") || "{}");
+                    const history = JSON.parse(localStorage.getItem("buleje-goals-history") || "{}");
                     const entries = Object.entries(history).sort((a, b) => b[0].localeCompare(a[0]));
                     if (entries.length === 0) {
                       return <div className="text-center py-8 text-gray-400 dark:text-muted text-sm">No hay histórico disponible aún</div>;
@@ -2346,7 +2316,7 @@ ${o.notes ? `<hr><p style="font-size:11px">📝 ${o.notes}</p>` : ""}
                   <Lightbulb className="h-4 w-4 text-amber-400" />
                 </div>
                 <div>
-                  <h3 className="text-sm font-bold">Buenos días ☀️</h3>
+                  <h3 className="text-sm font-bold">Buenos días</h3>
                   <p className="text-[10px] text-gray-400">{new Date().toLocaleDateString("es-PE", { weekday: "long", day: "numeric", month: "long" })}</p>
                 </div>
               </div>
@@ -2370,7 +2340,7 @@ ${o.notes ? `<hr><p style="font-size:11px">📝 ${o.notes}</p>` : ""}
               {dailyGoal > 0 && (
                 <div className="text-right">
                   <span className={cn("text-xs font-bold", st.yesterdayRevenue >= dailyGoal ? "text-emerald-400" : "text-amber-400")}>
-                    {st.yesterdayRevenue >= dailyGoal ? "✓ Meta" : `${((st.yesterdayRevenue / dailyGoal) * 100).toFixed(0)}%`}
+                    {st.yesterdayRevenue >= dailyGoal ? "Meta" : `${((st.yesterdayRevenue / dailyGoal) * 100).toFixed(0)}%`}
                   </span>
                 </div>
               )}
@@ -2390,7 +2360,7 @@ ${o.notes ? `<hr><p style="font-size:11px">📝 ${o.notes}</p>` : ""}
               </div>
             )}
             {st.briefingPriorities.length === 0 && (
-              <div className="text-xs text-emerald-400 text-center py-1">✓ Sin prioridades pendientes. ¡Buen día!</div>
+              <div className="text-xs text-emerald-400 text-center py-1">Sin prioridades pendientes. ¡Buen día!</div>
             )}
           </div>
 
@@ -2413,18 +2383,18 @@ ${o.notes ? `<hr><p style="font-size:11px">📝 ${o.notes}</p>` : ""}
           {/* ── Alerts Panel (collapsible) ── */}
           {(() => {
             const alertItems: { type: "danger" | "warning" | "info"; msg: string }[] = [];
-            if (st.agotados.length > 0) alertItems.push({ type: "danger", msg: `🚫 ${st.agotados.length} producto${st.agotados.length>1?"s":""} agotado${st.agotados.length>1?"s":""}: ${st.agotados.slice(0,3).map(p => p.name).join(", ")}${st.agotados.length>3?" ...":""}` });
-            if (st.stockCritico.length > 0) alertItems.push({ type: "warning", msg: `⚠️ ${st.stockCritico.length} producto${st.stockCritico.length>1?"s":""} con stock bajo: ${st.stockCritico.slice(0,3).map(p => `${p.name} (${p.stock ?? 0})`).join(", ")}` });
+            if (st.agotados.length > 0) alertItems.push({ type: "danger", msg: `${st.agotados.length} producto${st.agotados.length>1?"s":""} agotado${st.agotados.length>1?"s":""}: ${st.agotados.slice(0,3).map(p => p.name).join(", ")}${st.agotados.length>3?" ...":""}` });
+            if (st.stockCritico.length > 0) alertItems.push({ type: "warning", msg: `${st.stockCritico.length} producto${st.stockCritico.length>1?"s":""} con stock bajo: ${st.stockCritico.slice(0,3).map(p => `${p.name} (${p.stock ?? 0})`).join(", ")}` });
             const pendingOrders = orders.filter(o => o.status === "pendiente").length;
-            if (pendingOrders > 0) alertItems.push({ type: "warning", msg: `📦 ${pendingOrders} pedido${pendingOrders>1?"s":""} pendiente${pendingOrders>1?"s":""} por confirmar` });
+            if (pendingOrders > 0) alertItems.push({ type: "warning", msg: `${pendingOrders} pedido${pendingOrders>1?"s":""} pendiente${pendingOrders>1?"s":""} por confirmar` });
             const nearExpiry = products.filter(p => {
               const exp = (p as unknown as { expiryDate?: string }).expiryDate;
               if (!exp) return false;
               const days = (new Date(exp).getTime() - Date.now()) / 86400000;
               return days >= 0 && days <= 7;
             });
-            if (nearExpiry.length > 0) alertItems.push({ type: "danger", msg: `🕐 ${nearExpiry.length} producto${nearExpiry.length>1?"s":""} próximo${nearExpiry.length>1?"s":""} a vencer (7 días)` });
-            if (st.margen < 15) alertItems.push({ type: "warning", msg: `📉 Margen general bajo: ${st.margen.toFixed(1)}% — revisar precios o costos` });
+            if (nearExpiry.length > 0) alertItems.push({ type: "danger", msg: `${nearExpiry.length} producto${nearExpiry.length>1?"s":""} próximo${nearExpiry.length>1?"s":""} a vencer (7 días)` });
+            if (st.margen < 15) alertItems.push({ type: "warning", msg: `Margen general bajo: ${st.margen.toFixed(1)}% — revisar precios o costos` });
             if (alertItems.length === 0) return null;
             return (
               <div className="rounded-xl border border-amber-200 dark:border-amber-900/40 bg-amber-50/50 dark:bg-amber-950/15 p-4">
@@ -2522,13 +2492,13 @@ ${o.notes ? `<hr><p style="font-size:11px">📝 ${o.notes}</p>` : ""}
                     <span className="text-xs text-gray-500 dark:text-muted">{fmt(todaySales)} de {fmt(dailyGoal)}</span>
                     <div className="flex items-center gap-1.5">
                       <span className={`text-xs font-bold ${pct >= 100 ? "text-emerald-600" : pct >= 60 ? "text-amber-600" : "text-red-500"}`}>{pct.toFixed(0)}%</span>
-                      <button onClick={() => setEditingGoal(true)} className="text-gray-300 hover:text-primary text-xs transition-colors">✏️</button>
+                      <button onClick={() => setEditingGoal(true)} className="text-gray-300 hover:text-primary transition-colors"><Edit3 className="h-3 w-3" /></button>
                     </div>
                   </div>
                   <div className="h-3 bg-gray-100 dark:bg-surface rounded-full overflow-hidden">
                     <div className={`h-full rounded-full transition-all duration-500 ${pct >= 100 ? "bg-emerald-500" : pct >= 60 ? "bg-amber-500" : "bg-red-400"}`} style={{ width: `${pct}%` }} />
                   </div>
-                  {pct >= 100 && <p className="text-[10px] text-emerald-600 font-bold mt-1.5 text-center">🎉 ¡Meta alcanzada!</p>}
+                  {pct >= 100 && <p className="text-[10px] text-emerald-600 font-bold mt-1.5 text-center">¡Meta alcanzada!</p>}
                 </div>
               );
             })() : (
@@ -2681,7 +2651,7 @@ ${o.notes ? `<hr><p style="font-size:11px">📝 ${o.notes}</p>` : ""}
                           <p className="text-[10px] text-gray-500 dark:text-muted mt-0.5">{test.hypothesis}</p>
                         </div>
                         <DBadge color={test.status === "running" ? "green" : test.status === "completed" ? "blue" : "gray"}>
-                          {test.status === "running" ? "▶ En curso" : test.status === "completed" ? "✓ Completo" : "⏸ Pausado"}
+                          {test.status === "running" ? "En curso" : test.status === "completed" ? "Completo" : "Pausado"}
                         </DBadge>
                       </div>
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mb-2">
@@ -2709,7 +2679,7 @@ ${o.notes ? `<hr><p style="font-size:11px">📝 ${o.notes}</p>` : ""}
                       {winner && isSignificant && (
                         <div className="bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-800 rounded-lg p-2 text-center">
                           <p className="text-[10px] font-bold text-emerald-700 dark:text-emerald-400">
-                            🏆 Ganador: {test.variants.find(v => v.id === winner)?.name} (+{Math.abs(diff).toFixed(1)}% mejor)
+                            Ganador: {test.variants.find(v => v.id === winner)?.name} (+{Math.abs(diff).toFixed(1)}% mejor)
                           </p>
                         </div>
                       )}
@@ -2790,7 +2760,7 @@ ${o.notes ? `<hr><p style="font-size:11px">📝 ${o.notes}</p>` : ""}
                     </div>
                   </div>
                   <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-100 dark:border-blue-800 rounded-xl p-3">
-                    <p className="text-xs text-blue-700 dark:text-blue-400"><strong>💡 Recomendación:</strong> Ejecuta pruebas por al menos 7-14 días y 100+ visitantes por variante para resultados confiables.</p>
+                    <p className="text-xs text-blue-700 dark:text-blue-400"><strong>Recomendación:</strong> Ejecuta pruebas por al menos 7-14 días y 100+ visitantes por variante para resultados confiables.</p>
                   </div>
                 </div>
                 <div className="flex flex-wrap justify-end gap-3 px-3 sm:px-6 py-4 border-t border-gray-100 dark:border-card-border">
@@ -2811,7 +2781,7 @@ ${o.notes ? `<hr><p style="font-size:11px">📝 ${o.notes}</p>` : ""}
                     };
                     const updated = [...abTests, newTest];
                     setAbTests(updated);
-                    localStorage.setItem("bsm-ab-tests", JSON.stringify(updated));
+                    localStorage.setItem("buleje-ab-tests", JSON.stringify(updated));
                     setShowABTestModal(false);
                     setAbTestForm({ name: "", hypothesis: "", variantA: "Control", variantB: "Variant B", metric: "conversion", startDate: "", endDate: "" });
                   }} className="px-2 sm:px-4 py-1.5 sm:py-2.5 rounded-xl text-sm font-bold text-white bg-linear-to-r from-violet-600 to-purple-600 hover:from-violet-700 hover:to-purple-700 transition-colors shadow-sm">Crear test</button>
@@ -2992,7 +2962,7 @@ function DBadge({ children, color }: { children: React.ReactNode; color: "green"
   return <span className={cn("inline-flex px-1.5 py-0.5 rounded text-xs font-semibold",m[color])}>{children}</span>;
 }
 
-function FlowRow({ label, value, color }: { label: string; value: string; color: string }) {
+function _FlowRow({ label, value, color }: { label: string; value: string; color: string }) {
   return (
     <div className="flex items-center justify-between">
       <span className="text-xs text-gray-500 dark:text-muted">{label}</span>
@@ -3003,24 +2973,6 @@ function FlowRow({ label, value, color }: { label: string; value: string; color:
 
 function Empty({ text = "Sin datos en este periodo" }: { text?: string }) {
   return <div className="py-8 text-center text-xs text-gray-300 dark:text-muted">{text}</div>;
-}
-
-/* V1: Elapsed timer component */
-function ElapsedTimer({ createdAt }: { createdAt: string }) {
-  const [now, setNow] = useState(() => Date.now());
-  useEffect(() => {
-    const t = setInterval(() => setNow(Date.now()), 60000);
-    return () => clearInterval(t);
-  }, []);
-  const mins = Math.floor((now - new Date(createdAt).getTime()) / 60000);
-  const h = Math.floor(mins / 60);
-  const m = mins % 60;
-  const color = mins > 60 ? "text-red-500" : mins > 30 ? "text-amber-500" : "text-emerald-500";
-  return (
-    <div className={cn("text-[10px] font-bold mt-0.5", color)}>
-      ⏱ {h > 0 ? `${h}h ${m}m` : `${m}m`}
-    </div>
-  );
 }
 
 function Donut({ data, total, size = 96 }: { data: { total: number; color: string }[]; total: number; size?: number }) {

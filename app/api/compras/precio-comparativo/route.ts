@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireAdmin } from "@/lib/require-admin";
 import { prisma } from "@/lib/prisma";
+import { toNumOrZero } from "@/lib/decimal-utils";
 
 export async function GET(req: NextRequest) {
   const auth = await requireAdmin(req, ["admin", "almacenero"]);
@@ -46,7 +47,8 @@ export async function GET(req: NextRequest) {
         supplierMap.set(sid, {
           supplierId: sid,
           supplierName: item.purchaseOrder.supplier?.name ?? item.purchaseOrder.supplierName,
-          lastPrice: item.unitCost,
+          // TD-018: unitCost es Decimal
+          lastPrice: toNumOrZero(item.unitCost),
           lastDate: item.purchaseOrder.createdAt.toISOString(),
           purchaseCount: 1,
         });

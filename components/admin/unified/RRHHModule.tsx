@@ -40,12 +40,12 @@ export default function RRHHModule() {
         activeTab={sub}
         onTabChange={setSub}
         moduleId={MODULE_ID}
-      />
-
-      {sub === "rrhh" && <HRTab />}
-      {sub === "nomina" && <PayrollTab />}
-      {sub === "comisiones" && <ComisionesTab />}
-      {sub === "sucursales" && <BranchesTab />}
+      >
+        {sub === "rrhh" && <HRTab />}
+        {sub === "nomina" && <PayrollTab />}
+        {sub === "comisiones" && <ComisionesTab />}
+        {sub === "sucursales" && <BranchesTab />}
+      </AdminTabBar>
     </div>
   );
 }

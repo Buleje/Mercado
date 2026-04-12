@@ -119,9 +119,9 @@ describe("POST /api/inventory-movements bulk-adjust – all succeed", () => {
     mockAdjust.mockResolvedValue(undefined);
     await POST(makeReq(BULK_BODY));
     expect(mockAdjust).toHaveBeenCalledTimes(3);
-    expect(mockAdjust).toHaveBeenCalledWith(1, 10, undefined, "conteo 1", "test");
-    expect(mockAdjust).toHaveBeenCalledWith(2, 20, undefined, "conteo 2", "test");
-    expect(mockAdjust).toHaveBeenCalledWith(3, 5, undefined, undefined, "test");
+    expect(mockAdjust).toHaveBeenCalledWith(1, 10, "main", undefined, "conteo 1", "test");
+    expect(mockAdjust).toHaveBeenCalledWith(2, 20, "main", undefined, "conteo 2", "test");
+    expect(mockAdjust).toHaveBeenCalledWith(3, 5, "main", undefined, undefined, "test");
   });
 });
 

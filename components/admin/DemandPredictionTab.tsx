@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { Brain, Loader2, TrendingUp, ShoppingCart, Calendar, AlertTriangle, Package, ClipboardList } from "lucide-react";
+import * as Sentry from "@sentry/nextjs";
 import type { Product, Sale } from "@/types/erp";
 
 type Prediction = { prediction: { productId: number; productName: string; estimatedDemand: number; confidence: string }[]; peakDays: string[]; purchaseSuggestions: string[]; summary: string };
@@ -43,7 +44,7 @@ export default function DemandPredictionTab() {
         setStockAlerts(alerts);
       } catch (err) {
         setError("Error al calcular alertas de stock");
-        console.error("Error calculating stock alerts:", err);
+        Sentry.captureException(err instanceof Error ? err : new Error(String(err)));
       }
       setLoadingAlerts(false);
     };
@@ -113,10 +114,10 @@ export default function DemandPredictionTab() {
 
       if (!res.ok) throw new Error("Error al generar OC");
       
-      window.alert("✅ Orden de compra generada exitosamente");
+      window.alert("Orden de compra generada exitosamente");
     } catch (err) {
-      window.alert("❌ Error al generar la orden de compra");
-      console.error(err);
+      window.alert("Error al generar la orden de compra");
+      Sentry.captureException(err instanceof Error ? err : new Error(String(err)));
     }
     setGeneratingPO(null);
   };
@@ -131,11 +132,11 @@ export default function DemandPredictionTab() {
         await generatePurchaseOrder(alert);
         successCount++;
       } catch (err) {
-        console.error("Error generating PO for", alert.product.name, err);
+        Sentry.captureException(err instanceof Error ? err : new Error(String(err)));
       }
     }
     
-    alert(`✅ ${successCount} órdenes generadas de ${criticalAlerts.length}`);
+    alert(`${successCount} órdenes generadas de ${criticalAlerts.length}`);
     setGeneratingBulk(false);
   };
 

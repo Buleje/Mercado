@@ -5,7 +5,7 @@ type Variant = { id: string; label: string; weight: number };
 type ABTest = { id: string; name: string; variants: Variant[]; active: boolean };
 
 function getVisitorId(): string {
-  const key = "bsm-visitor-id";
+  const key = "buleje-visitor-id";
   let id = typeof window !== "undefined" ? localStorage.getItem(key) : null;
   if (!id) {
     id = crypto.randomUUID();

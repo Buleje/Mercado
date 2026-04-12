@@ -4,7 +4,7 @@ import { useCallback, useEffect, useState, startTransition } from "react";
 
 type NotifPermission = "default" | "granted" | "denied";
 
-const STORAGE_KEY = "bsm-notif-asked";
+const STORAGE_KEY = "buleje-notif-asked";
 const VAPID_PUBLIC_KEY = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY ?? "";
 
 function urlBase64ToUint8Array(base64String: string): Uint8Array {
@@ -95,7 +95,7 @@ export function useHasCompletedFirstOrder(): boolean | null {
 
   useEffect(() => {
     // Check localStorage first (fast)
-    const local = localStorage.getItem("bsm-first-order-completed");
+    const local = localStorage.getItem("buleje-first-order-completed");
     if (local === "true") {
       setHasOrder(true);
       return;
@@ -108,7 +108,7 @@ export function useHasCompletedFirstOrder(): boolean | null {
         .then(data => {
           const completed = Array.isArray(data) && data.length > 0;
           setHasOrder(completed);
-          if (completed) localStorage.setItem("bsm-first-order-completed", "true");
+          if (completed) localStorage.setItem("buleje-first-order-completed", "true");
         })
         .catch(() => setHasOrder(false));
     } else {

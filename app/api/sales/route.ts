@@ -1,10 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { SalesDB, InventoryMovementsDB, CashRegistersDB, LoyaltyDB } from "@/lib/jsondb";
+import { toNumOrZero } from "@/lib/decimal-utils";
 import { requireAdmin } from "@/lib/require-admin";
 import { withDbRetry } from "@/lib/db-retry";
 import { prisma } from "@/lib/prisma";
 import { logAudit } from "@/lib/audit-logger";
+import { deductStockFEFO, hasBatchesWithStock } from "@/lib/inventory/fefo-deduct";
 
 const SaleItemSchema = z.object({
   productId: z.number().int().positive(),
@@ -75,11 +77,16 @@ export async function POST(req: NextRequest) {
   const total = data.items.reduce((s, i) => s + i.price * i.quantity, 0);
 
   // Look up costPrice for each product to capture COGS at sale time
+  // TD-018: product.costPrice / price son Decimal
   const pIds = data.items.map(i => i.productId);
   const costMap = new Map<number, number>();
   if (pIds.length > 0) {
     const prods = await prisma.product.findMany({ where: { id: { in: pIds } }, select: { id: true, costPrice: true, price: true } });
-    for (const p of prods) costMap.set(p.id, p.costPrice ?? p.price * 0.7);
+    for (const p of prods) {
+      const costNum = toNumOrZero(p.costPrice);
+      const priceNum = toNumOrZero(p.price);
+      costMap.set(p.id, costNum || priceNum * 0.7);
+    }
   }
   const itemsWithCost = data.items.map(i => ({ ...i, costPrice: costMap.get(i.productId) }));
   const totalCogs = itemsWithCost.reduce((s, i) => s + (i.costPrice ?? i.price * 0.7) * i.quantity, 0);
@@ -100,7 +107,7 @@ export async function POST(req: NextRequest) {
   }
 
   const id = `sale-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`;
-  const cashierId = !( auth instanceof NextResponse) ? auth.username : undefined;
+  const cashierId = auth.username;
 
   // ── Transacción ACID: venta + decremento de stock atómicos ──────────────────
   // Si el stock falla, la venta también se revierte. Ninguno queda a medias.
@@ -191,10 +198,7 @@ export async function POST(req: NextRequest) {
   let comprobanteNumero: string | undefined;
   if (data.comprobanteTipo && data.comprobanteTipo !== "ticket") {
     try {
-      comprobanteNumero = await generarNumeroComprobante(
-        !(auth instanceof NextResponse) ? auth.tenantId : "main",
-        data.comprobanteTipo
-      );
+      comprobanteNumero = await generarNumeroComprobante(auth.tenantId, data.comprobanteTipo);
       await prisma.sale.update({
         where: { id: sale.id },
         data: { comprobanteNumero },
@@ -209,7 +213,7 @@ export async function POST(req: NextRequest) {
   // ── Si es cotización, crear Cotizacion automática ──
   if (data.comprobanteTipo === "cotizacion") {
     try {
-      const tenantId = !(auth instanceof NextResponse) ? auth.tenantId : "main";
+      const tenantId = auth.tenantId;
       const cotNumero = comprobanteNumero || `COT-${Date.now()}`;
       const subtotal = finalTotal / 1.18;
       const igv = finalTotal - subtotal;
@@ -242,7 +246,7 @@ export async function POST(req: NextRequest) {
     }
   }
 
-  // Decrement stock for each item sold (fire-and-forget)
+  // Registrar movimientos de inventario + descontar lotes FEFO (fire-and-forget)
   for (const item of data.items) {
     InventoryMovementsDB.record({
       productId: item.productId,
@@ -250,11 +254,21 @@ export async function POST(req: NextRequest) {
       quantity: item.quantity,
       reference: sale.id,
       notes: `Venta POS: ${item.name}`,
+      tenantId: auth.tenantId,
     }).catch(() => {});
+
+    // FEFO: si el producto tiene lotes, descontar del más cercano a vencer primero
+    hasBatchesWithStock(auth.tenantId, item.productId)
+      .then((hasBatches) => {
+        if (hasBatches) {
+          return deductStockFEFO(auth.tenantId, item.productId, item.quantity);
+        }
+      })
+      .catch(() => {});
   }
 
   // Register cash movement if a register is open (fire-and-forget)
-  CashRegistersDB.getOpen().then(async (reg) => {
+  CashRegistersDB.getOpen(auth.tenantId).then(async (reg) => {
     if (reg) {
       await CashRegistersDB.addMovement(reg.id, {
         type: "venta",

@@ -4,6 +4,7 @@ import { withCronRetry } from "@/lib/cron-retry";
 import { prisma } from "@/lib/prisma";
 import { sendPushToPhone } from "@/lib/push-sender";
 import { logger } from "@/lib/logger";
+import { toNumOrZero } from "@/lib/decimal-utils";
 
 /**
  * GET /api/cron/zone-offers-push
@@ -83,7 +84,7 @@ export async function GET(req: NextRequest) {
         storeEntry.products.push({
           name: fp.product.name,
           discount: 0,
-          price: fp.retailPrice,
+          price: toNumOrZero(fp.retailPrice),
         });
         offersByZone.set(zone, list);
       }
@@ -104,7 +105,7 @@ export async function GET(req: NextRequest) {
             list.push({
               storeName: store.name,
               storeSlug: store.slug ?? "",
-              products: products.map((p) => ({ name: p.product.name, discount: 0, price: p.retailPrice })),
+              products: products.map((p) => ({ name: p.product.name, discount: 0, price: toNumOrZero(p.retailPrice) })),
             });
             offersByZone.set(zone, list);
           }

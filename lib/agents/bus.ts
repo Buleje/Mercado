@@ -135,7 +135,7 @@ class AgentBus {
 
 // ── Global singleton ──────────────────────────────────────────────────────────
 
-const globalForBus = global as typeof global & { __bsmAgentBus?: AgentBus };
+const globalForBus = global as typeof global & { __bulejeAgentBus?: AgentBus };
 
-export const agentBus: AgentBus = (globalForBus.__bsmAgentBus ??=
+export const agentBus: AgentBus = (globalForBus.__bulejeAgentBus ??=
   new AgentBus());

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback, useMemo, useRef } from "react";
+import Image from "next/image";
 import {
   Calculator, DollarSign, ArrowUp, ArrowDown, Clock,
   Loader2, Check, X, Banknote, History, RefreshCw,
@@ -52,7 +53,7 @@ function ModuleTooltip() {
       </button>
       {open && (
         <div className="absolute left-6 top-0 z-50 w-80 bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl shadow-xl p-4 text-xs leading-relaxed pointer-events-none">
-          <p className="font-extrabold text-gray-900 dark:text-foreground text-sm mb-2">💵 Caja Registradora</p>
+          <p className="font-extrabold text-gray-900 dark:text-foreground text-sm mb-2">Caja Registradora</p>
           <p className="text-gray-600 dark:text-muted mb-3">Controla las aperturas y cierres de caja, registra ingresos y egresos manuales, y consulta el historial de sesiones anteriores.</p>
           <div className="space-y-1.5">
             <p><span className="font-bold text-gray-800 dark:text-foreground">Actual:</span> <span className="text-gray-500 dark:text-muted">muestra la caja abierta ahora (saldo, movimientos del día).</span></p>
@@ -60,7 +61,7 @@ function ModuleTooltip() {
             <p><span className="font-bold text-gray-800 dark:text-foreground">Ingreso / Egreso:</span> <span className="text-gray-500 dark:text-muted">ejemplo: registrar S/50 de egreso por compra de bolsas.</span></p>
           </div>
           <div className="mt-3 bg-blue-50 dark:bg-blue-950/20 rounded-xl p-2">
-            <p className="text-blue-700 dark:text-blue-400 font-semibold">💡 Ejemplo</p>
+            <p className="text-blue-700 dark:text-blue-400 font-semibold">Ejemplo</p>
             <p className="text-blue-600 dark:text-blue-300">Valentina abre caja con S/200, vende durante el turno y al cerrar el sistema le dice si hay faltante o sobrante.</p>
           </div>
         </div>
@@ -91,7 +92,7 @@ function YapePlinConciliation({ breakdown }: { breakdown: Record<string, number>
   const [concilTab, setConcilTab] = useState<"yape" | "plin">(breakdown["yape"] ? "yape" : "plin");
   const [concilAmount, setConcilAmount] = useState("");
   const [concilHistory, setConcilHistory] = useState<{ fecha: string; ventasDigital: number; saldoApp: number; diferencia: number; metodo: string }[]>(() => {
-    try { const raw = localStorage.getItem("bsm-concil-history"); return raw ? JSON.parse(raw) : []; } catch { return []; }
+    try { const raw = localStorage.getItem("buleje-concil-history"); return raw ? JSON.parse(raw) : []; } catch { return []; }
   });
 
   const ventasDigital = breakdown[concilTab] ?? 0;
@@ -104,7 +105,7 @@ function YapePlinConciliation({ breakdown }: { breakdown: Record<string, number>
     const entry = { fecha: new Date().toISOString(), ventasDigital, saldoApp: saldoIngresado, diferencia, metodo: concilTab };
     const updated = [entry, ...concilHistory].slice(0, 5);
     setConcilHistory(updated);
-    localStorage.setItem("bsm-concil-history", JSON.stringify(updated));
+    localStorage.setItem("buleje-concil-history", JSON.stringify(updated));
     setConcilAmount("");
   };
 
@@ -1647,7 +1648,7 @@ export default function CashRegisterTab() {
                     </p>
                     <p className="text-[10px] text-gray-500 dark:text-muted mt-1">
                       {Math.abs(difference) < 0.5 
-                        ? "✓ Cuadra correctamente" 
+                        ? "Cuadra correctamente" 
                         : difference > 0 
                           ? "Hay más efectivo del esperado" 
                           : "Falta efectivo"}
@@ -1853,8 +1854,7 @@ export default function CashRegisterTab() {
               </label>
               {arqueoFoto ? (
                 <div className="relative inline-block">
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img src={arqueoFoto} alt="Foto del cajon" className="max-w-[200px] max-h-[120px] object-cover rounded-lg border border-gray-200" />
+                  <Image src={arqueoFoto} alt="Foto del cajon" width={200} height={120} className="object-cover rounded-lg border border-gray-200" unoptimized />
                   <button
                     onClick={() => setArqueoFoto(null)}
                     className="absolute -top-2 -right-2 h-5 w-5 rounded-full bg-red-500 text-white flex items-center justify-center"

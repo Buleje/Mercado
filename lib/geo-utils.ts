@@ -6,7 +6,7 @@
  * para que puedan ser testeadas aisladamente.
  */
 
-/** Coordenadas por defecto del local en Pucallpa (Bodega San Martín). */
+/** Coordenadas por defecto — Pucallpa, Ucayali (sede Buleje). */
 export const DEFAULT_STORE_LAT = -8.3791;
 export const DEFAULT_STORE_LON = -74.5539;
 

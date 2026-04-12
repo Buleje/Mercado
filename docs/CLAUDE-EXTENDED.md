@@ -1,4 +1,4 @@
-# CLAUDE-EXTENDED.md — Contenido on-demand del proyecto Bodega San Martín
+# CLAUDE-EXTENDED.md — Contenido on-demand del proyecto Buleje
 
 Este archivo contiene **todo el contenido del antiguo CLAUDE.md que NO era una regla siempre-on**. Vive en `docs/` como documentación extendida, no como contrato de reglas.
 

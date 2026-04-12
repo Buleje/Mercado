@@ -3,6 +3,11 @@ import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import ErrorBoundary, { ErrorBoundaryWrapper, SimpleErrorFallback } from "@/components/ErrorBoundary";
 
+// Mock @sentry/nextjs to avoid next/router import issues in test environment
+vi.mock("@sentry/nextjs", () => ({
+  captureException: vi.fn(),
+}));
+
 // Component that throws an error
 function ThrowError({ shouldThrow }: { shouldThrow: boolean }) {
   if (shouldThrow) {

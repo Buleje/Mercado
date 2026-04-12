@@ -18,6 +18,7 @@ import { logActivity } from "@/lib/activity-logger";
 import { sendInvoice } from "@/lib/sunat/nubefact-client";
 import { buildBoleta, buildFactura } from "@/lib/sunat/invoice-builder";
 import { calculateIGV } from "@/lib/sunat";
+import { toNumOrZero } from "@/lib/decimal-utils";
 import { DomainEvents } from "@/lib/domain-events";
 
 // ── Validación de entrada ─────────────────────────────────────────────────────
@@ -115,15 +116,17 @@ export async function POST(req: NextRequest) {
       : sunatConfig.lastFacturaNum + 1;
 
     // Construir datos para el builder
+    // TD-018: order.total y item.price son Decimal → convertir a number
+    const orderTotalNum = toNumOrZero(order.total);
     const builderOrder = {
       id: order.id,
       customerName: order.customerName,
       customerPhone: order.customerPhone,
-      total: order.total,
+      total: orderTotalNum,
       items: order.items.map((item) => ({
         name: item.name,
         quantity: item.quantity,
-        price: item.price,
+        price: toNumOrZero(item.price),
         unit: item.unit,
       })),
     };
@@ -152,7 +155,7 @@ export async function POST(req: NextRequest) {
           });
 
     // Calcular montos para el registro
-    const igvCalc = calculateIGV(order.total);
+    const igvCalc = calculateIGV(orderTotalNum);
 
     // Crear registro en estado pending antes de enviar
     const invoice = await prisma.sunatInvoice.create({

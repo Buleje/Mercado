@@ -1,22 +1,30 @@
 "use client";
 
 import dynamic from "next/dynamic";
-import { Users, SlidersHorizontal, ArrowUpDown, RefreshCw } from "lucide-react";
+import { Users, SlidersHorizontal, ArrowUpDown, RefreshCw, GraduationCap } from "lucide-react";
 import { TabSpinner } from "@/app/admin/_lib/tab-spinner";
 import type { Tab } from "@/app/admin/_lib/tabs.types";
 import type { TabCategory } from "@/app/admin/_lib/tab-categories";
 import type { StoreMode } from "@/lib/jsondb";
 
+// ── Lazy tab wrappers (TASK-003 — reusable dynamic shells) ─────────────────────
+// These four wrappers live under components/admin/tabs/* and wrap their
+// heavier unified/* counterparts with a shared TabSkeleton loader. Routing
+// through them keeps the admin route bundle lean and guarantees a single
+// chunk split per tab.
+const ReportsTab   = dynamic(() => import("@/components/admin/tabs/ReportsTab"),   { loading: TabSpinner });
+const InventoryTab = dynamic(() => import("@/components/admin/tabs/InventoryTab"), { loading: TabSpinner });
+const SettingsTab  = dynamic(() => import("@/components/admin/tabs/SettingsTab"),  { loading: TabSpinner });
+const AuditTab     = dynamic(() => import("@/components/admin/tabs/AuditTab"),     { loading: TabSpinner });
+
 // ── Unified Module Imports (módulos consolidados) ──────────────────────────────
 const VendorDashboardModule   = dynamic(() => import("@/components/admin/unified/VendorDashboardModule"),   { loading: TabSpinner });
 const AsistenteIAModule       = dynamic(() => import("@/components/admin/unified/AsistenteIAModule"),       { loading: TabSpinner });
 const POSCajaModule           = dynamic(() => import("@/components/admin/unified/POSCajaModule"),           { loading: TabSpinner });
-const InventarioAlmacenesModule = dynamic(() => import("@/components/admin/unified/InventarioAlmacenesModule"), { loading: TabSpinner });
 const CatalogoTiendaModule    = dynamic(() => import("@/components/admin/unified/CatalogoTiendaModule"),    { loading: TabSpinner });
 const ComprasModule           = dynamic(() => import("@/components/admin/unified/ComprasModule"),           { loading: TabSpinner });
 const FinanzasModule          = dynamic(() => import("@/components/admin/unified/FinanzasModule"),          { loading: TabSpinner });
 const CRMClientesModule       = dynamic(() => import("@/components/admin/unified/CRMClientesModule"),       { loading: TabSpinner });
-const AnalyticsProModule      = dynamic(() => import("@/components/admin/unified/AnalyticsProModule"),      { loading: TabSpinner });
 const AICommandModule         = dynamic(() => import("@/components/admin/unified/AICommandModule"),         { loading: TabSpinner });
 const SugerenciasIAModule     = dynamic(() => import("@/components/admin/unified/SugerenciasIAModule"),     { loading: TabSpinner });
 const MetasLogrosModule       = dynamic(() => import("@/components/admin/unified/MetasLogrosModule"),       { loading: TabSpinner });
@@ -27,7 +35,6 @@ const MarketplaceChatTab      = dynamic(() => import("@/components/admin/ChatTab
 const RendimientoModule       = dynamic(() => import("@/components/admin/unified/RendimientoModule"),       { loading: TabSpinner });
 
 // ── Módulos adicionales ────────────────────────────────────────────────────────
-const AuditTrailModule          = dynamic(() => import("@/components/admin/AuditTrailModule"),          { loading: TabSpinner });
 const DevolucionesProveedorModule = dynamic(() => import("@/components/admin/DevolucionesProveedorModule"), { loading: TabSpinner });
 const FiadosModule              = dynamic(() => import("@/components/admin/FiadosModule"),              { loading: TabSpinner });
 const TurnosModule              = dynamic(() => import("@/components/admin/TurnosModule"),              { loading: TabSpinner });
@@ -39,6 +46,8 @@ const ScoringCrediticioTab      = dynamic(() => import("@/components/admin/Scori
 const StoreCustomizer           = dynamic(() => import("@/components/admin/StoreCustomizer"),           { loading: TabSpinner });
 const MiPerfilTab               = dynamic(() => import("@/components/admin/MiPerfilTab"),               { loading: TabSpinner });
 const ColasTab                  = dynamic(() => import("@/components/admin/ColasTab"),                  { loading: TabSpinner });
+const StorePageAdminPage        = dynamic(() => import("@/app/admin/store-page/page"),                  { loading: TabSpinner });
+const ForecastingDashboard      = dynamic(() => import("@/components/admin/forecasting/ForecastingDashboard"), { loading: TabSpinner });
 
 // ── Módulos de documentos ──────────────────────────────────────────────────────
 const CotizacionesModule   = dynamic(() => import("@/components/admin/CotizacionesModule"),   { loading: TabSpinner });
@@ -46,11 +55,13 @@ const GuiasRemisionModule  = dynamic(() => import("@/components/admin/GuiasRemis
 const NotasCreditoModule   = dynamic(() => import("@/components/admin/NotasCreditoModule"),   { loading: TabSpinner });
 const ContratosModule      = dynamic(() => import("@/components/admin/ContratosModule"),      { loading: TabSpinner });
 
+// ── Facturación electrónica SUNAT ──────────────────────────────────────────────
+const FacturacionModule    = dynamic(() => import("@/components/admin/unified/FacturacionModule"), { loading: TabSpinner });
+
 // ── Módulos especiales ─────────────────────────────────────────────────────────
 const OrdersTab      = dynamic(() => import("@/components/admin/OrdersTab"),      { loading: TabSpinner });
 const TeamTab        = dynamic(() => import("@/components/admin/TeamTab"),        { loading: TabSpinner });
 const PlanTab        = dynamic(() => import("@/components/admin/PlanTab"),        { loading: TabSpinner });
-const SettingsModule = dynamic(() => import("@/components/admin/SettingsModule"), { loading: TabSpinner });
 
 // ── Componentes de configuración (no son tabs, se usan dentro del tab "config") ──
 import { NavDefaultTabsConfig } from "@/components/admin/NavDefaultTabsConfig";
@@ -68,9 +79,9 @@ export type TabRouterProps = {
   tab: Tab;
 
   // ── Props para el tab "config" ──────────────────────────────────────────────
-  /** Modo tienda (whatsapp / proveedor / delivery) — requerido por SettingsModule */
+  /** Modo tienda (whatsapp / proveedor / delivery) — forwarded to SettingsTab wrapper */
   storeMode: StoreMode;
-  /** Callback para cambiar el modo tienda — requerido por SettingsModule */
+  /** Callback para cambiar el modo tienda — forwarded to SettingsTab wrapper */
   onModeChange: (mode: StoreMode) => void;
   /** Lista de categorías visibles para SidebarReorderPanel */
   visibleCategories: CategoryMeta[];
@@ -106,7 +117,7 @@ export function TabRouter({
   if (tab === "ventas-caja") return <POSCajaModule />;
 
   // ── 3. Inventario ──
-  if (tab === "inventario") return <InventarioAlmacenesModule />;
+  if (tab === "inventario") return <InventoryTab />;
 
   // ── 4. Productos & Precios ──
   if (tab === "productos") return <CatalogoTiendaModule />;
@@ -132,8 +143,11 @@ export function TabRouter({
   if (tab === "notas-credito") return <NotasCreditoModule />;
   if (tab === "contratos")     return <ContratosModule />;
 
+  // ── Facturación SUNAT ──
+  if (tab === "facturacion") return <FacturacionModule />;
+
   // ── Módulos nuevos ──
-  if (tab === "auditoria")              return <AuditTrailModule />;
+  if (tab === "auditoria")              return <AuditTab />;
   if (tab === "devoluciones-proveedor") return <DevolucionesProveedorModule />;
   if (tab === "tesoreria")              return <TreasuryDashboard />;
   if (tab === "promociones")            return <PromocionesModule />;
@@ -145,7 +159,7 @@ export function TabRouter({
   if (tab === "config") {
     return (
       <div className="space-y-8">
-        <SettingsModule storeMode={storeMode} onModeChange={onModeChange} />
+        <SettingsTab storeMode={storeMode} onModeChange={onModeChange} />
 
         {/* ── Gestión de Equipo ── */}
         <div className="pt-8 border-t border-gray-200 dark:border-card-border">
@@ -197,7 +211,7 @@ export function TabRouter({
           <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl p-5 shadow-sm flex flex-col sm:flex-row sm:items-center gap-4">
             <div className="flex items-center gap-3 flex-1 min-w-0">
               <div className="w-11 h-11 rounded-xl bg-emerald-50 dark:bg-emerald-900/20 flex items-center justify-center shrink-0">
-                <span className="text-xl">🎓</span>
+                <GraduationCap className="h-5 w-5 text-emerald-600 dark:text-emerald-300" />
               </div>
               <div className="flex-1 min-w-0">
                 <p className="font-bold text-gray-900 dark:text-foreground text-sm">Tutorial de bienvenida</p>
@@ -225,7 +239,8 @@ export function TabRouter({
   if (tab === "plan")    return <PlanTab />;
 
   // ── Módulos avanzados ──
-  if (tab === "analytics-pro")  return <AnalyticsProModule />;
+  if (tab === "analytics-pro")  return <ReportsTab />;
+  if (tab === "forecasting")    return <ForecastingDashboard />;
   if (tab === "ai-command")     return <AICommandModule />;
   if (tab === "sugerencias-ia") return <SugerenciasIAModule />;
   if (tab === "metas-logros")   return <MetasLogrosModule />;
@@ -243,6 +258,9 @@ export function TabRouter({
   if (tab === "store-customizer") return <StoreCustomizer />;
   if (tab === "colas")            return <ColasTab />;
   if (tab === "mi-perfil")        return <MiPerfilTab />;
+
+  // ── Página individual de la tienda ──
+  if (tab === "pagina-inicio") return <StorePageAdminPage />;
 
   return null;
 }

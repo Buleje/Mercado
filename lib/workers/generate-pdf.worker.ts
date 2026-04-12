@@ -206,13 +206,13 @@ async function generateStockReportPdf(
 function getPdfSubject(pdfType: string, data: Record<string, unknown>): string {
   switch (pdfType) {
     case "invoice":
-      return `Factura N° ${String(data.invoiceNumber ?? "")} — Bodega San Martín`;
+      return `Factura N° ${String(data.invoiceNumber ?? "")} — Buleje`;
     case "order-receipt":
       return `Comprobante de pedido #${String(data.orderId ?? "").slice(-8).toUpperCase()}`;
     case "stock-report":
       return `Reporte de stock — ${new Date().toLocaleDateString("es-PE")}`;
     default:
-      return "Documento generado — Bodega San Martín";
+      return "Documento generado — Buleje";
   }
 }
 
@@ -224,7 +224,7 @@ function getPdfEmailHtml(pdfType: string, data: Record<string, unknown>): string
       </div>
       <div style="padding:20px 24px;">
         <p>Tu documento <strong>${getPdfSubject(pdfType, data)}</strong> ha sido generado.</p>
-        <p style="color:#666;font-size:13px;">Bodega San Martín</p>
+        <p style="color:#666;font-size:13px;">Buleje</p>
       </div>
     </div>
   `;

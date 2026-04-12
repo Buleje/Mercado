@@ -4,7 +4,7 @@
  * Server component — no "use client" needed.
  */
 
-import { SettingsDB } from "@/lib/jsondb";
+import { SettingsDB } from "@/lib/db/settings.db";
 import { headers } from "next/headers";
 
 export default async function LocalBusinessJsonLd() {

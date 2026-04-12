@@ -1,7 +1,6 @@
 "use client";
 
 import dynamic from "next/dynamic";
-import { BarChart3 } from "lucide-react";
 
 const S = () => (
   <div className="flex items-center justify-center py-12">

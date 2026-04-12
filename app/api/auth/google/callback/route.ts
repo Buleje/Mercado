@@ -74,7 +74,7 @@ export async function GET(req: NextRequest) {
     });
 
     // TODO: Phase 2 — Create or find Customer in DB using googleUser.email,
-    //   create a customer session cookie (separate from admin bsm-admin-sess),
+    //   create a customer session cookie (separate from admin buleje-admin-sess),
     //   and store the Google refresh_token for future use.
 
     const baseUrl =

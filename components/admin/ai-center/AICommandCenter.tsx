@@ -2,11 +2,10 @@
 
 import React, { useState, useEffect, useCallback, useRef, useMemo, Suspense } from "react";
 import {
-  Brain, RefreshCw, ClipboardList, Stethoscope, GraduationCap,
-  FlaskConical, Newspaper, AlertCircle, CreditCard, BookOpen,
-  Keyboard, WifiOff, ChevronLeft, ChevronRight, TrendingUp, MessageSquare,
-  DollarSign,
-} from "lucide-react";
+  ClipboardList, Stethoscope, GraduationCap,
+  FlaskConical, Newspaper, AlertCircle, CreditCard, BookOpen, WifiOff, ChevronLeft, ChevronRight, TrendingUp, MessageSquare,
+  DollarSign } from "lucide-react";
+import * as Sentry from "@sentry/nextjs";
 import { cn } from "@/lib/utils";
 
 // ── Lazy load ALL heavy tab components ─────────────────────────────────────────
@@ -121,7 +120,7 @@ const REFRESH_INTERVAL = 5 * 60 * 1000; // 5 min
 
 // ── Helpers ────────────────────────────────────────────────────────────────────
 
-function getRelativeTime(date: Date): string {
+function _getRelativeTime(date: Date): string {
   const diffSec = Math.floor((Date.now() - date.getTime()) / 1000);
   if (diffSec < 60) return "hace unos segundos";
   const min = Math.floor(diffSec / 60);
@@ -130,7 +129,7 @@ function getRelativeTime(date: Date): string {
   return `hace ${hrs}h ${min % 60}min`;
 }
 
-function getFreshnessColor(date: Date): string {
+function _getFreshnessColor(date: Date): string {
   const diffMin = (Date.now() - date.getTime()) / 60_000;
   if (diffMin < 1) return "bg-emerald-500";
   if (diffMin < 5) return "bg-amber-400";
@@ -143,180 +142,6 @@ function getStoredTab(): TabId {
     if (stored && TABS.some(t => t.id === stored)) return stored as TabId;
   } catch { /* noop */ }
   return "briefing";
-}
-
-// ── Voice Query Panel ─────────────────────────────────────────────────────────
-
-function VoiceQueryPanel({ data }: { data: BusinessData }) {
-  const [isListening, setIsListening] = React.useState(false);
-  const [transcript, setTranscript] = React.useState("");
-  const [voiceResponse, setVoiceResponse] = React.useState("");
-
-  const processVoiceQuery = React.useCallback((text: string) => {
-    const lower = text.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
-    const today = new Date().toISOString().slice(0, 10);
-    const salesToday = data.sales.filter(s => (s.createdAt ?? "").slice(0, 10) === today);
-    const ventasHoy = salesToday.reduce((s, sl) => s + sl.total, 0);
-    const cantidadVentas = salesToday.length;
-    const fiadosPendientes = data.orders.filter(o => o.status === "pendiente").length;
-
-    const prodQty: Record<string, { name: string; qty: number }> = {};
-    for (const s of data.sales) {
-      for (const i of s.items) {
-        const pid = String(i.productId);
-        if (!prodQty[pid]) prodQty[pid] = { name: i.name, qty: 0 };
-        prodQty[pid].qty += i.quantity;
-      }
-    }
-    const topProduct = Object.values(prodQty).sort((a, b) => b.qty - a.qty)[0];
-    const lowStock = data.products.filter(p => p.stock != null && p.stockMin != null && p.stock <= p.stockMin && p.active !== false).length;
-
-    let response = "";
-    if (lower.includes("cuanto vend") || lower.includes("ventas de hoy") || lower.includes("cuantas ventas")) {
-      response = cantidadVentas > 0 ? `Hoy llevas ${ventasHoy.toFixed(0)} soles en ${cantidadVentas} ventas.` : "Aun no hay ventas registradas hoy.";
-    } else if (lower.includes("cuanto deb") || lower.includes("fiado") || lower.includes("pendiente")) {
-      response = `Tienes ${fiadosPendientes} pedidos pendientes.`;
-    } else if (lower.includes("producto") && (lower.includes("mas") || lower.includes("mejor") || lower.includes("top"))) {
-      response = topProduct ? `Tu producto estrella es ${topProduct.name} con ${topProduct.qty} unidades vendidas.` : "Aun no hay suficientes datos de productos.";
-    } else if (lower.includes("cliente") || lower.includes("cuantos cliente")) {
-      response = `Hoy has atendido a ${new Set(salesToday.map(s => s.customerPhone ?? "anon")).size} clientes.`;
-    } else if (lower.includes("como va") || lower.includes("resumen") || lower.includes("general")) {
-      response = cantidadVentas > 0 ? `Hoy llevas ${ventasHoy.toFixed(0)} soles en ${cantidadVentas} ventas. ${lowStock > 0 ? `Hay ${lowStock} productos con stock bajo.` : "El stock esta bien."}` : "Aun no hay ventas hoy. Todo listo para empezar!";
-    } else if (lower.includes("stock") || lower.includes("inventario")) {
-      response = lowStock > 0 ? `Hay ${lowStock} productos con stock bajo que necesitan reposicion.` : "Todo el inventario esta en buen nivel.";
-    } else {
-      response = "No entendi. Prueba: cuanto vendi hoy, como va el dia, o que producto vendo mas.";
-    }
-
-    setVoiceResponse(response);
-    if ("speechSynthesis" in window) {
-      const utterance = new SpeechSynthesisUtterance(response);
-      utterance.lang = "es-PE";
-      utterance.rate = 0.9;
-      window.speechSynthesis.speak(utterance);
-    }
-  }, [data]);
-
-  const startListening = React.useCallback(() => {
-    if (!("webkitSpeechRecognition" in window) && !("SpeechRecognition" in window)) {
-      setVoiceResponse("Tu navegador no soporta reconocimiento de voz. Usa Chrome.");
-      return;
-    }
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const SpeechRecognitionAPI = (window as any).SpeechRecognition ?? (window as any).webkitSpeechRecognition;
-    if (!SpeechRecognitionAPI) return;
-
-    const recognition = new SpeechRecognitionAPI();
-    recognition.lang = "es-PE";
-    recognition.interimResults = false;
-    recognition.maxAlternatives = 1;
-    recognition.onstart = () => { setIsListening(true); setTranscript(""); setVoiceResponse(""); };
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    recognition.onresult = (event: any) => { setTranscript(event.results[0][0].transcript); processVoiceQuery(event.results[0][0].transcript); };
-    recognition.onerror = () => { setIsListening(false); setVoiceResponse("No se pudo escuchar. Intenta de nuevo."); };
-    recognition.onend = () => { setIsListening(false); };
-    recognition.start();
-  }, [processVoiceQuery]);
-
-  return (
-    <div className="rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 p-4">
-      <div className="flex items-center gap-3 mb-3">
-        <span className="text-lg">&#127908;</span>
-        <div className="flex-1">
-          <p className="text-sm font-bold text-gray-900 dark:text-gray-100">Preguntame en voz alta</p>
-          <p className="text-[10px] text-gray-400">Ejemplo: &quot;Cuanto vendi hoy?&quot; o &quot;Como va el dia?&quot;</p>
-        </div>
-        <button
-          onClick={startListening}
-          disabled={isListening}
-          className={cn(
-            "flex items-center gap-2 px-4 py-2.5 rounded-xl font-bold text-sm transition-all",
-            isListening ? "bg-red-500 text-white animate-pulse" : "bg-[#00B4A6] text-white hover:bg-[#235c42]"
-          )}
-        >
-          {isListening ? "Escuchando..." : "Hablar"}
-        </button>
-      </div>
-      {transcript && (
-        <div className="bg-gray-50 dark:bg-gray-800/50 rounded-lg px-3 py-2 mb-2">
-          <p className="text-xs text-gray-500 dark:text-gray-400">Tu pregunta: <strong className="text-gray-700 dark:text-gray-200">&quot;{transcript}&quot;</strong></p>
-        </div>
-      )}
-      {voiceResponse && (
-        <div className="bg-emerald-50 dark:bg-emerald-950/20 rounded-lg px-3 py-2">
-          <p className="text-sm font-semibold text-emerald-700 dark:text-emerald-400">{voiceResponse}</p>
-        </div>
-      )}
-    </div>
-  );
-}
-
-// ── Quick Actions Bar ────────────────────────────────────────────────────────
-
-function QuickActionsBar({ data, onChangeTab }: { data: BusinessData; onChangeTab: (tab: TabId) => void }) {
-  const [quickResult, setQuickResult] = React.useState<string | null>(null);
-
-  const today = new Date().toISOString().slice(0, 10);
-  const salesToday = data.sales.filter(s => (s.createdAt ?? "").slice(0, 10) === today);
-  const ventasHoy = salesToday.reduce((s, sl) => s + sl.total, 0);
-  const cantidadVentas = salesToday.length;
-  const fiadosPendientes = data.orders.filter(o => o.status === "pendiente");
-  const totalFiados = fiadosPendientes.reduce((s, o) => s + o.total, 0);
-  const lowStock = data.products.filter(p => p.stock != null && p.stockMin != null && p.stock <= p.stockMin && p.active !== false);
-  const pedidosPendientes = data.orders.filter(o => o.status === "pendiente" || o.status === "en_proceso");
-
-  const actions = [
-    {
-      icon: "\uD83D\uDCCA",
-      label: "Ventas hoy",
-      desc: "Ver resumen de ventas del dia",
-      onClick: () => { onChangeTab("briefing"); setQuickResult(`Hoy llevas S/${ventasHoy.toFixed(0)} en ${cantidadVentas} venta${cantidadVentas !== 1 ? "s" : ""}.`); },
-    },
-    {
-      icon: "\uD83D\uDCB0",
-      label: "Cobrar fiados",
-      desc: "Cobros pendientes y vencidos",
-      onClick: () => { setQuickResult(`Tienes ${fiadosPendientes.length} fiados pendientes por S/${totalFiados.toFixed(0)}.`); },
-    },
-    {
-      icon: "\uD83D\uDCE6",
-      label: "Stock bajo",
-      desc: "Productos que necesitan reposicion",
-      onClick: () => { setQuickResult(`${lowStock.length} producto${lowStock.length !== 1 ? "s" : ""} con stock bajo.`); },
-    },
-    {
-      icon: "\uD83D\uDCCB",
-      label: "Pedidos",
-      desc: "Pedidos en proceso o pendientes",
-      onClick: () => { setQuickResult(`${pedidosPendientes.length} pedido${pedidosPendientes.length !== 1 ? "s" : ""} pendiente${pedidosPendientes.length !== 1 ? "s" : ""}.`); },
-    },
-  ];
-
-  return (
-    <div className="space-y-2">
-      <div className="grid grid-cols-2 gap-3">
-        {actions.map((a, i) => (
-          <button
-            key={i}
-            onClick={a.onClick}
-            className="flex flex-col items-start gap-0.5 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl px-4 py-3 text-left hover:shadow-md transition-shadow"
-          >
-            <span className="flex items-center gap-1.5 text-sm font-medium text-gray-700 dark:text-gray-300">
-              <span>{a.icon}</span>
-              {a.label}
-            </span>
-            <span className="text-[10px] text-gray-400">{a.desc}</span>
-          </button>
-        ))}
-      </div>
-      {quickResult && (
-        <div className="flex items-center gap-2 bg-[#00B4A6]/5 border border-[#00B4A6]/20 rounded-lg px-3 py-2">
-          <p className="text-sm font-semibold text-[#00B4A6] dark:text-emerald-400 flex-1">{quickResult}</p>
-          <button onClick={() => setQuickResult(null)} className="text-xs text-gray-400 hover:text-gray-600 shrink-0">✕</button>
-        </div>
-      )}
-    </div>
-  );
 }
 
 // ── Business Calculators ─────────────────────────────────────────────────────
@@ -514,9 +339,9 @@ export default function AICommandCenter() {
   const [data, setData] = useState<BusinessData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [lastRefresh, setLastRefresh] = useState<Date | null>(null);
+  const [_lastRefresh, setLastRefresh] = useState<Date | null>(null);
   const [isOffline, setIsOffline] = useState(false);
-  const [showShortcuts, setShowShortcuts] = useState(false);
+  const [_showShortcuts, _setShowShortcuts] = useState(false);
   const [, setTick] = useState(0); // force re-render for relative time
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const tabBarRef = useRef<HTMLDivElement>(null);
@@ -613,7 +438,7 @@ export default function AICommandCenter() {
       setLastRefresh(new Date());
     } catch (e) {
       setError("No se pudo cargar los datos del negocio.");
-      console.error("[AICommandCenter] fetch error:", e);
+      Sentry.captureException(e instanceof Error ? e : new Error(String(e)));
     } finally {
       setLoading(false);
     }

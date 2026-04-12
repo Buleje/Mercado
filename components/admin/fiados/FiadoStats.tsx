@@ -289,7 +289,6 @@ export default function FiadoStats({ fiados, loading, totalSaldo, tendenciaMoros
       {/* Mejora P-10: Mejor pagador del mes */}
       {!loading && mejorPagadorMes && (
         <div className="rounded-xl bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-200 dark:border-emerald-800/30 px-4 py-2.5 flex items-center gap-2">
-          <span className="text-sm">🌟</span>
           <span className="text-xs font-bold text-emerald-700 dark:text-emerald-400">
             Mejor pagador: {mejorPagadorMes.nombre} — {formatCurrency(mejorPagadorMes.total)} este mes
           </span>

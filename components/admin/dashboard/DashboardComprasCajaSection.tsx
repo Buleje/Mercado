@@ -1,7 +1,6 @@
 "use client";
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-import { useMemo } from "react";
 import {
   DollarSign, TrendingUp, AlertCircle, CreditCard, Banknote, Truck, Star, BarChart3,
 } from "lucide-react";
@@ -229,7 +228,7 @@ export default function DashboardComprasCajaSection({ st, expandAll, section }: 
               {/* Warning if negative cash flow expected */}
               {st.forecastTotalRev - st.forecastTotalExp < 0 && (
                 <div className="bg-amber-50 dark:bg-amber-950/30 rounded-lg p-3 text-xs">
-                  <div className="font-semibold text-amber-700 dark:text-amber-400 mb-1">⚠️ Flujo negativo proyectado</div>
+                  <div className="font-semibold text-amber-700 dark:text-amber-400 mb-1">Flujo negativo proyectado</div>
                   <p className="text-amber-600 dark:text-amber-300 text-[10px]">
                     Se proyectan más egresos que ingresos esta semana. Considera postergar compras no urgentes o activar promociones para impulsar ventas.
                   </p>
@@ -237,7 +236,7 @@ export default function DashboardComprasCajaSection({ st, expandAll, section }: 
               )}
               {st.forecastTotalRev - st.forecastTotalExp >= 0 && (
                 <div className="bg-blue-50 dark:bg-blue-950/30 rounded-lg p-3 text-xs">
-                  <div className="font-semibold text-blue-700 dark:text-blue-400 mb-1">💡 Estimación por día de semana</div>
+                  <div className="font-semibold text-blue-700 dark:text-blue-400 mb-1">Estimación por día de semana</div>
                   <p className="text-blue-600 dark:text-blue-300 text-[10px]">
                     Basado en promedios de ingresos/egresos de los últimos 30 días agrupados por día de la semana.
                   </p>

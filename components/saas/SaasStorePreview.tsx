@@ -47,7 +47,7 @@ export default function SaasStorePreview() {
                 type="text"
                 value={storeName}
                 onChange={(e) => setStoreName(e.target.value)}
-                placeholder="Ej: Bodega San Martin"
+                placeholder="Ej: Mi Bodega"
                 maxLength={30}
                 className="w-full px-4 py-3 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white text-sm font-medium focus:outline-none focus:ring-2 focus:ring-teal-500/40 placeholder:text-gray-400"
               />

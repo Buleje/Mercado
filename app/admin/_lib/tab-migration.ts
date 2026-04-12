@@ -32,7 +32,7 @@ export const TAB_MIGRATION: Record<string, Tab> = {
   rentabilidad: "plata", margenes: "plata", finanzas: "plata",
   tesoreria: "plata", "proyeccion-liquidez": "plata", cheques: "plata",
   conciliacion: "plata", "centro-cobros": "plata", "cuentas-cobrar": "plata",
-  facturacion: "plata", "e-facturacion": "plata", impuestos: "plata", cuentas: "plata",
+  "e-facturacion": "facturacion", impuestos: "plata", cuentas: "plata",
   gastos: "plata", "centros-costo": "plata", seguros: "plata",
   activos: "plata", "gastos-activos": "plata",
   reportes: "plata", "reportes-auto": "plata", "importar-exportar": "plata", documentos: "plata",
@@ -66,7 +66,6 @@ export const TAB_MIGRATION: Record<string, Tab> = {
   recordatorios: "config", flujos: "config", "reglas-negocio": "config",
   "agenda-utilidades": "config", calendario: "config",
   "notas-rapidas": "config", "filtros-guardados": "config",
-  "pagina-inicio": "config",
   // Especiales
   pedidos: "pedidos",
   plan: "plan",

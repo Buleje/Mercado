@@ -37,8 +37,8 @@ export async function GET(req: NextRequest) {
       id: sp.id,
       name: sp.product.name,
       isActive: sp.isActive,
-      retailPrice: sp.retailPrice,
-      wholesalePrice: sp.wholesalePrice ?? 0,
+      retailPrice: Number(sp.retailPrice),
+      wholesalePrice: Number(sp.wholesalePrice ?? 0),
       stock: sp.product.stock ?? 0,
       sku: sp.product.barcode ?? "",
     }));

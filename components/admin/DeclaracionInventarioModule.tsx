@@ -583,7 +583,9 @@ export default function DeclaracionInventarioModule() {
       {/* Empty state when no data yet */}
       {!data && !loading && !error && (
         <div className="text-center py-16 px-4">
-          <div className="text-6xl mb-4">📊</div>
+          <div className="h-16 w-16 rounded-2xl bg-gray-100 dark:bg-surface flex items-center justify-center mx-auto mb-4">
+            <BarChart3 className="h-8 w-8 text-gray-400 dark:text-muted" />
+          </div>
           <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">Sin declaraciones</h3>
           <p className="text-sm text-gray-500 mb-6 max-w-md mx-auto">Genera un snapshot de tu inventario actual</p>
           <button onClick={handleGenerar} className="bg-[#00B4A6] text-white px-6 py-2.5 rounded-xl font-medium hover:bg-[#009690]">Generar declaración</button>

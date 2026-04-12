@@ -98,7 +98,7 @@ describe("InventoryMovementsDB.decrementFEFO", () => {
       makeBatch("batch-A", 20, new Date("2026-03-01")),
     ]);
 
-    await InventoryMovementsDB.decrementFEFO(1, 10);
+    await InventoryMovementsDB.decrementFEFO(1, 10, "test-tenant");
 
     expect(mockBatchUpdate).toHaveBeenCalledWith({
       where: { id: "batch-A" },
@@ -112,7 +112,7 @@ describe("InventoryMovementsDB.decrementFEFO", () => {
       makeBatch("batch-B", 20, new Date("2026-06-01")), // second
     ]);
 
-    await InventoryMovementsDB.decrementFEFO(1, 8); // need 8, first batch has 5
+    await InventoryMovementsDB.decrementFEFO(1, 8, "test-tenant"); // need 8, first batch has 5
 
     // batch-A exhausted: 5 - 5 = 0
     expect(mockBatchUpdate).toHaveBeenCalledWith({
@@ -133,7 +133,7 @@ describe("InventoryMovementsDB.decrementFEFO", () => {
       makeBatch("batch-B", 50, new Date("2026-12-01")),
     ]);
 
-    await InventoryMovementsDB.decrementFEFO(1, 10);
+    await InventoryMovementsDB.decrementFEFO(1, 10, "test-tenant");
 
     // Only batch-A should be updated (10 <= 50, no remainder)
     expect(mockBatchUpdate).toHaveBeenCalledTimes(1);
@@ -146,7 +146,7 @@ describe("InventoryMovementsDB.decrementFEFO", () => {
   it("does not update batches when no batches exist", async () => {
     mockBatchFindMany.mockResolvedValue([]);
 
-    await InventoryMovementsDB.decrementFEFO(1, 5);
+    await InventoryMovementsDB.decrementFEFO(1, 5, "test-tenant");
 
     expect(mockBatchUpdate).not.toHaveBeenCalled();
   });
@@ -154,7 +154,7 @@ describe("InventoryMovementsDB.decrementFEFO", () => {
   it("always calls record() to decrement Product.stock globally", async () => {
     mockBatchFindMany.mockResolvedValue([]);
 
-    await InventoryMovementsDB.decrementFEFO(1, 5);
+    await InventoryMovementsDB.decrementFEFO(1, 5, "test-tenant");
 
     expect(mockInventoryMovementCreate).toHaveBeenCalledTimes(1);
     const call = mockInventoryMovementCreate.mock.calls[0][0];
@@ -164,21 +164,21 @@ describe("InventoryMovementsDB.decrementFEFO", () => {
 
   it("uses 'venta_online' as default movement type", async () => {
     mockBatchFindMany.mockResolvedValue([]);
-    await InventoryMovementsDB.decrementFEFO(1, 3);
+    await InventoryMovementsDB.decrementFEFO(1, 3, "test-tenant");
     const call = mockInventoryMovementCreate.mock.calls[0][0];
     expect(call.data.type).toBe("venta_online");
   });
 
   it("accepts custom type parameter", async () => {
     mockBatchFindMany.mockResolvedValue([]);
-    await InventoryMovementsDB.decrementFEFO(1, 3, undefined, "venta");
+    await InventoryMovementsDB.decrementFEFO(1, 3, "test-tenant", undefined, "venta");
     const call = mockInventoryMovementCreate.mock.calls[0][0];
     expect(call.data.type).toBe("venta");
   });
 
   it("propagates reference to the movement record", async () => {
     mockBatchFindMany.mockResolvedValue([]);
-    await InventoryMovementsDB.decrementFEFO(1, 2, "REF-001");
+    await InventoryMovementsDB.decrementFEFO(1, 2, "test-tenant", "REF-001");
     const call = mockInventoryMovementCreate.mock.calls[0][0];
     expect(call.data.reference).toBe("REF-001");
   });
@@ -190,7 +190,7 @@ describe("InventoryMovementsDB.decrementFEFO", () => {
     ]);
 
     // Want 20 but only 7 available in batches — should exhaust both
-    await InventoryMovementsDB.decrementFEFO(1, 20);
+    await InventoryMovementsDB.decrementFEFO(1, 20, "test-tenant");
 
     expect(mockBatchUpdate).toHaveBeenCalledWith({ where: { id: "batch-A" }, data: { quantity: 0 } });
     expect(mockBatchUpdate).toHaveBeenCalledWith({ where: { id: "batch-B" }, data: { quantity: 0 } });

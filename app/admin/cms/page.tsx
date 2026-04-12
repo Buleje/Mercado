@@ -5,6 +5,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import * as Sentry from "@sentry/nextjs";
 import Link from "next/link";
 import { Plus, FileText, Image as ImageIcon, Palette, Menu as MenuIcon } from "lucide-react";
 
@@ -35,7 +36,7 @@ export default function CMSDashboard() {
         setPages(data);
       }
     } catch (error) {
-      console.error("Error fetching pages:", error);
+      Sentry.captureException(error instanceof Error ? error : new Error(String(error)));
     } finally {
       setLoading(false);
     }

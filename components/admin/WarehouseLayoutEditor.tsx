@@ -14,7 +14,7 @@ type Cell = {
 
 // ── Constants ────────────────────────────────────────────────────────────────
 
-const LS_KEY = "bsm_warehouse_layout";
+const LS_KEY = "buleje_warehouse_layout";
 const DEFAULT_ROWS = 4;
 const DEFAULT_COLS = 6;
 

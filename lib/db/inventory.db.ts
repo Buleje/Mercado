@@ -86,9 +86,8 @@ function mapWarehouse(w: PWarehouse): DbWarehouse {
 // ── Inventory Movements DB ────────────────────────────────────────────────────
 
 export const InventoryMovementsDB = {
-  async getAll(tenantId?: string, limit = 200): Promise<DbInventoryMovement[]> {
-    const where: Record<string, unknown> = {};
-    if (tenantId) where.tenantId = tenantId;
+  async getAll(tenantId: string, limit = 200): Promise<DbInventoryMovement[]> {
+    const where: Record<string, unknown> = { tenantId };
     return (await prisma.inventoryMovement.findMany({
       where,
       orderBy: { createdAt: "desc" },
@@ -109,12 +108,12 @@ export const InventoryMovementsDB = {
    * Returns up to `limit` rows plus the cursor for the next page.
    */
   async getPage(opts: {
-    tenantId?: string;
+    tenantId: string;
     cursor?: string;
     limit?: number;
     productId?: number;
     type?: string;
-  } = {}): Promise<{ movements: DbInventoryMovement[]; nextCursor: string | null; total: number }> {
+  }): Promise<{ movements: DbInventoryMovement[]; nextCursor: string | null; total: number }> {
     const limit = Math.min(Math.max(opts.limit ?? 50, 1), 500);
 
     const where: Record<string, unknown> = {};
@@ -139,7 +138,7 @@ export const InventoryMovementsDB = {
 
     return { movements: items.map(mapInventoryMovement), nextCursor, total };
   },
-  async record(data: { productId: number; type: string; lossType?: string; quantity: number; reference?: string; warehouseId?: string; notes?: string; createdBy?: string; tenantId?: string }): Promise<DbInventoryMovement> {
+  async record(data: { productId: number; type: string; lossType?: string; quantity: number; reference?: string; warehouseId?: string; notes?: string; createdBy?: string; tenantId: string }): Promise<DbInventoryMovement> {
     // Atomic: read current stock, compute new stock, update product, create movement
     const product = await prisma.product.findUnique({ where: { id: data.productId } });
     const prevStock = product?.stock ?? 0;
@@ -152,7 +151,7 @@ export const InventoryMovementsDB = {
         productId: data.productId, type: data.type, lossType: data.lossType, quantity: data.quantity,
         previousStock: prevStock, newStock: clampedNewStock,
         reference: data.reference, notes: data.notes,
-        tenantId: data.tenantId ?? (product as unknown as { tenantId?: string })?.tenantId ?? "main",
+        tenantId: data.tenantId,
         ...(data.warehouseId ? { warehouseId: data.warehouseId } : {}),
         ...(data.createdBy ? { createdBy: data.createdBy } : {}),
       },
@@ -160,7 +159,6 @@ export const InventoryMovementsDB = {
 
     // Fire-and-forget: push notification when stock drops below minimum
     const stockMin = (product as unknown as { stockMin?: number | null })?.stockMin;
-    const productTenantId = (product as unknown as { tenantId?: string })?.tenantId;
     if (
       !isIncrease &&
       stockMin != null &&
@@ -180,8 +178,8 @@ export const InventoryMovementsDB = {
       ).catch(() => {});
 
       // 2) Domain event — permite que otros módulos reaccionen (ver ADR 007)
-      if (productTenantId) {
-        DomainEvents.stockBajo(productTenantId, {
+      if (data.tenantId) {
+        DomainEvents.stockBajo(data.tenantId, {
           productId:     data.productId,
           productName:   product.name,
           currentStock:  clampedNewStock,
@@ -205,9 +203,9 @@ export const InventoryMovementsDB = {
    * Deducts from the earliest-expiring batch first, then moves to the next.
    * Also decrements Product.stock globally.
    */
-  async decrementFEFO(productId: number, quantity: number, reference?: string, type: string = "venta_online"): Promise<void> {
+  async decrementFEFO(productId: number, quantity: number, tenantId: string, reference?: string, type: string = "venta_online"): Promise<void> {
     // 1. Decrement Product.stock globally
-    await this.record({ productId, type, quantity, reference, notes: `FEFO: ${quantity} unidades` });
+    await this.record({ productId, type, quantity, reference, notes: `FEFO: ${quantity} unidades`, tenantId });
 
     // 2. Decrement from batches in FEFO order (earliest expiry first)
     // N+1 fix: resolve all deductions up-front, then update in a single transaction
@@ -240,16 +238,15 @@ export const InventoryMovementsDB = {
     await refreshProductExpiresAt(productId);
   },
 
-  async adjust(productId: number, newStock: number, warehouseId?: string, notes?: string, createdBy?: string, tenantId?: string): Promise<DbInventoryMovement> {
+  async adjust(productId: number, newStock: number, tenantId: string, warehouseId?: string, notes?: string, createdBy?: string): Promise<DbInventoryMovement> {
     const product = await prisma.product.findUnique({ where: { id: productId } });
     const prevStock = product?.stock ?? 0;
     const diff = newStock - prevStock;
     const type = diff >= 0 ? "ajuste_positivo" : "ajuste_negativo";
-    const resolvedTenantId = tenantId ?? (product as unknown as { tenantId?: string })?.tenantId ?? "main";
     await prisma.product.update({ where: { id: productId }, data: { stock: Math.max(0, newStock) } });
     const row = await prisma.inventoryMovement.create({
       data: { productId, type, quantity: Math.abs(diff), previousStock: prevStock, newStock: Math.max(0, newStock), notes,
-        tenantId: resolvedTenantId,
+        tenantId,
         ...(warehouseId ? { warehouseId } : {}),
         ...(createdBy ? { createdBy } : {}) },
     });
@@ -276,15 +273,15 @@ async function refreshProductExpiresAt(productId: number): Promise<void> {
 // ── Warehouses DB ─────────────────────────────────────────────────────────────
 
 export const WarehousesDB = {
-  async getAll(tenantId = "main"): Promise<DbWarehouse[]> {
+  async getAll(tenantId: string): Promise<DbWarehouse[]> {
     return (await prisma.warehouse.findMany({ where: { tenantId }, orderBy: { createdAt: "asc" } })).map(mapWarehouse);
   },
   async getById(id: string): Promise<DbWarehouse | null> {
     const row = await prisma.warehouse.findUnique({ where: { id } });
     return row ? mapWarehouse(row) : null;
   },
-  async create(data: { name: string; code: string; type?: string; location?: string; manager?: string; capacity?: number; tenantId?: string }): Promise<DbWarehouse> {
-    const row = await prisma.warehouse.create({ data: { ...data, tenantId: data.tenantId ?? "main" } });
+  async create(data: { name: string; code: string; type?: string; location?: string; manager?: string; capacity?: number; tenantId: string }): Promise<DbWarehouse> {
+    const row = await prisma.warehouse.create({ data: { ...data, tenantId: data.tenantId } });
     return mapWarehouse(row);
   },
   async update(id: string, data: Partial<{ name: string; location: string; manager: string; capacity: number; active: boolean }>): Promise<DbWarehouse | null> {
@@ -300,11 +297,11 @@ export const WarehousesDB = {
     }
   },
   /** Ensure the default "Almacén Principal" exists; returns all warehouses. */
-  async ensureDefault(): Promise<DbWarehouse[]> {
-    const all = await this.getAll();
+  async ensureDefault(tenantId: string): Promise<DbWarehouse[]> {
+    const all = await this.getAll(tenantId);
     if (all.length === 0) {
-      await prisma.warehouse.create({ data: { name: "Almacén Principal", code: "ALM-001", type: "principal", location: "Tienda San Martín", tenantId: "main" } });
-      return this.getAll();
+      await prisma.warehouse.create({ data: { name: "Almacén Principal", code: "ALM-001", type: "principal", location: "Tienda San Martín", tenantId } });
+      return this.getAll(tenantId);
     }
     return all;
   },
@@ -313,9 +310,10 @@ export const WarehousesDB = {
 // ── Auto-Reorder Helper ───────────────────────────────────────────────────────
 
 export const AutoReorderDB = {
-  async getLowStockProducts(): Promise<{ id: number; name: string; stock: number; stockMin: number; stockMax: number; category: string; unit: string }[]> {
+  async getLowStockProducts(tenantId: string): Promise<{ id: number; name: string; stock: number; stockMin: number; stockMax: number; category: string; unit: string }[]> {
     const prods = await prisma.product.findMany({
-      where: { active: true, stock: { not: null }, stockMin: { not: null } },
+      where: { tenantId, active: true, stock: { not: null }, stockMin: { not: null } },
+      select: { id: true, name: true, stock: true, stockMin: true, stockMax: true, category: true, unit: true },
     });
     return prods
       .filter(p => p.stock !== null && p.stockMin !== null && p.stock <= p.stockMin)

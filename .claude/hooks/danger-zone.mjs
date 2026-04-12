@@ -7,14 +7,15 @@
 import { readFileSync } from 'node:fs';
 
 const DANGER_ZONES = [
-  { pattern: /CheckoutModal\.tsx/, skill: 'checkout-flow', label: 'CheckoutModal (pagos, cupones, reservas) + todo components/checkout/**' },
-  { pattern: /role-permissions\.ts/, skill: 'security-auth', label: 'role-permissions.ts (RBAC 26 recursos × 6 roles)' },
-  { pattern: /lib\/db\/orders\.db\.ts/, skill: 'database-migrations', label: 'orders.db.ts (state machine, idempotency)' },
-  { pattern: /schema\.prisma/, skill: 'prisma-schema', label: 'schema.prisma (120 modelos, requiere DIRECT_URL)' },
-  { pattern: /cart-context\.tsx/, skill: 'state-management', label: 'cart-context.tsx (BroadcastChannel + localStorage multi-tab)' },
-  { pattern: /api\/batches/, skill: 'fefo-inventory', label: 'API batches (FEFO, expiryDate vs expiresAt)' },
-  { pattern: /proxy\.ts/, skill: 'security-auth', label: 'proxy.ts (auth + CSP + tenant + rate limit — 398 líneas)' },
-  { pattern: /CartSidebar\.tsx/, skill: 'state-management', label: 'CartSidebar.tsx (BroadcastChannel multi-tab sync)' },
+  { pattern: /CheckoutModal\.tsx/, skill: 'checkout-flow', label: 'CheckoutModal (pagos, cupones, reservas) + todo components/checkout/**', agent: 'checkout-squad', reason: 'Zona critica de pagos — usar /checkout-squad para coordinacion segura' },
+  { pattern: /components\/checkout\//, skill: 'checkout-flow', label: 'components/checkout/** (flujo de pago completo)', agent: 'checkout-squad', reason: 'Sub-componentes del checkout — requieren checkout-squad' },
+  { pattern: /role-permissions\.ts/, skill: 'security-auth', label: 'role-permissions.ts (RBAC 26 recursos × 6 roles)', agent: 'security-squad', reason: 'Cambiar permisos puede bloquear modulos enteros — usar security-squad' },
+  { pattern: /lib\/db\/orders\.db\.ts/, skill: 'database-migrations', label: 'orders.db.ts (state machine, idempotency)', agent: 'database-engineer', reason: 'State machine de ordenes — requiere database-engineer + migration-planner' },
+  { pattern: /schema\.prisma/, skill: 'prisma-schema', label: 'schema.prisma (131 modelos, requiere DIRECT_URL)', agent: 'database-engineer + migration-planner', reason: 'Cambio de schema requiere plan de migracion — usar /audit-first primero' },
+  { pattern: /cart-context\.tsx/, skill: 'state-management', label: 'cart-context.tsx (BroadcastChannel + localStorage multi-tab)', agent: 'frontend-engineer', reason: 'Estado compartido multi-tab — riesgo de race conditions' },
+  { pattern: /api\/batches/, skill: 'fefo-inventory', label: 'API batches (FEFO, expiryDate vs expiresAt)', agent: 'backend-platform-engineer', reason: 'Logica FEFO critica para inventario' },
+  { pattern: /proxy\.ts/, skill: 'security-auth', label: 'proxy.ts (auth + CSP + tenant + rate limit — 398 lineas)', agent: 'security-squad', reason: 'Middleware central de seguridad — cualquier error expone toda la app' },
+  { pattern: /CartSidebar\.tsx/, skill: 'state-management', label: 'CartSidebar.tsx (BroadcastChannel multi-tab sync)', agent: 'frontend-engineer', reason: 'Sincronizacion de carrito multi-tab' },
 ];
 
 try {
@@ -45,7 +46,13 @@ try {
         }
       });
       process.stdout.write(response);
-      process.stderr.write(`⚠️ ZONA DE PELIGRO: ${zone.label} — Lee skill "${zone.skill}" primero (${skillPath}).\n`);
+      process.stderr.write(
+        `⚠️ ZONA DE PELIGRO: ${zone.label}\n` +
+        `   📖 Skill requerido: "${zone.skill}" (${skillPath})\n` +
+        `   🤖 Agente recomendado: ${zone.agent}\n` +
+        `   💡 Razon: ${zone.reason}\n` +
+        `   Usa /audit-first o el agente recomendado antes de tocar este archivo.\n`
+      );
       process.exit(2); // Exit 2 = blocking error per official spec
     }
   }

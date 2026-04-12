@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import { Download, CheckCircle, AlertTriangle, Clock } from "lucide-react";
 import { cn } from "@/lib/utils";
 
-const STORAGE_KEY = "bsm-last-backup-date";
+const STORAGE_KEY = "buleje-last-backup-date";
 const ALERT_DAYS = 7;
 
 type Status = "idle" | "downloading" | "done" | "error";

@@ -3,7 +3,7 @@
  *
  * Separate session system for store customers (NOT admin users).
  * Uses the same HMAC-SHA256 approach as lib/session.ts but with:
- *   - Different cookie name (bsm-customer-sess)
+ *   - Different cookie name (buleje-customer-sess)
  *   - Different payload structure (CustomerPayload)
  *   - Longer expiry (30 days vs 15 min for admin access tokens)
  *   - Different secret derivation (AUTH_SECRET + "-customer" suffix)
@@ -11,7 +11,7 @@
  * Does NOT import "server-only" — must remain edge-compatible (middleware).
  */
 
-const CUSTOMER_COOKIE = "bsm-customer-sess";
+const CUSTOMER_COOKIE = "buleje-customer-sess";
 const CUSTOMER_SESSION_MS = 30 * 24 * 60 * 60 * 1000; // 30 days
 
 export interface CustomerPayload {
@@ -30,7 +30,7 @@ function getCustomerSecret(): string {
     if (process.env.NODE_ENV === "production") {
       throw new Error("AUTH_SECRET environment variable is required in production");
     }
-    return "bsm-dev-fallback-2024-change-in-production-customer";
+    return "buleje-dev-fallback-2024-change-in-production-customer";
   }
   // Derive a separate secret for customer tokens so admin and customer
   // tokens are cryptographically independent.

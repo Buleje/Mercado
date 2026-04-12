@@ -140,7 +140,7 @@ function getBaseUrl(): string {
  * Usar el mismo AUTH_SECRET del proyecto o definir WORKER_SECRET explícitamente.
  */
 function getWorkerSecret(): string {
-  return process.env.WORKER_SECRET ?? process.env.AUTH_SECRET ?? "bsm-worker-dev-secret";
+  return process.env.WORKER_SECRET ?? process.env.AUTH_SECRET ?? "buleje-worker-dev-secret";
 }
 
 // ── Dispatch (fetch interno fire-and-forget) ──────────────────────────────────

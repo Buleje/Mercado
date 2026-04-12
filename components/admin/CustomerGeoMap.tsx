@@ -112,7 +112,6 @@ export default function CustomerGeoMap({ className }: Props) {
     initRef.current = true;
 
     // Dynamically import leaflet CSS
-    // @ts-expect-error -- CSS module import
     await import("leaflet/dist/leaflet.css");
 
     const L = await import("leaflet");

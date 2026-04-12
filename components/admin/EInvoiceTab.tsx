@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect, useCallback } from "react";
 import {
   FileText, Download, Search, Eye, X, CheckCircle2,
   XCircle, Clock, Send, AlertTriangle, Receipt, Loader2,
@@ -75,12 +75,62 @@ export default function EInvoiceTab() {
   const [filterType, setFilterType] = useState<DocType | "todos">("todos");
   const [filterStatus, setFilterStatus] = useState<DocStatus | "todos">("todos");
   const [detail, setDetail] = useState<EDocument | null>(null);
+  const [loadingDocs, setLoadingDocs] = useState(true);
 
   // Emisión
   const [emitForm, setEmitForm] = useState<EmitForm | null>(null);
   const [emitLoading, setEmitLoading] = useState(false);
   const [emitError, setEmitError] = useState<string | null>(null);
   const [toast, setToast] = useState<string | null>(null);
+
+  // Cargar comprobantes reales desde la API
+  const loadInvoices = useCallback(async () => {
+    try {
+      setLoadingDocs(true);
+      const res = await fetch("/api/admin/sunat/invoices?limit=100");
+      if (!res.ok) { setLoadingDocs(false); return; }
+      const data = await res.json();
+      const invoices = (data.data ?? data.invoices ?? []) as Array<{
+        id: string;
+        serie: string;
+        numero: string;
+        tipo: string;
+        status: string;
+        clienteNombre?: string;
+        clienteDocumento?: string;
+        subtotal?: number;
+        igv?: number;
+        total?: number;
+        items?: number;
+        sunatResponse?: string;
+        pdfUrl?: string | null;
+        createdAt?: string;
+      }>;
+      const mapped: EDocument[] = invoices.map(inv => ({
+        id: inv.id,
+        serie: inv.serie || (inv.tipo === "factura" ? "F001" : "B001"),
+        number: inv.numero || "0",
+        date: inv.createdAt ? new Date(inv.createdAt).toLocaleDateString("es-PE") : "-",
+        type: (inv.tipo === "factura" ? "factura" : inv.tipo === "nota-credito" ? "nota-credito" : inv.tipo === "nota-debito" ? "nota-debito" : "boleta") as DocType,
+        status: (["emitido", "aceptado", "rechazado", "anulado", "pendiente"].includes(inv.status) ? inv.status : "emitido") as DocStatus,
+        clientName: inv.clienteNombre || "-",
+        clientRUC: inv.clienteDocumento || "-",
+        subtotal: inv.subtotal ?? 0,
+        igv: inv.igv ?? 0,
+        total: inv.total ?? 0,
+        items: inv.items ?? 0,
+        sunatResponse: inv.sunatResponse || "-",
+        pdfUrl: inv.pdfUrl,
+      }));
+      setDocs(mapped);
+    } catch {
+      // silently fail — user sees empty state
+    } finally {
+      setLoadingDocs(false);
+    }
+  }, []);
+
+  useEffect(() => { loadInvoices(); }, [loadInvoices]);
 
   const filtered = useMemo(() => {
     let list = [...docs];
@@ -120,26 +170,31 @@ export default function EInvoiceTab() {
     setEmitLoading(true);
     setEmitError(null);
 
-    const res = await fetch("/api/invoices/emit", {
+    const res = await fetch("/api/admin/sunat/generate-invoice", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         orderId: emitForm.orderId,
-        tipoDoc: emitForm.tipoDoc,
+        tipo: emitForm.tipoDoc === "01" ? "factura" : "boleta",
         clienteNombre: emitForm.clienteNombre,
-        clienteDni: emitForm.clienteDni || undefined,
-        clienteRuc: emitForm.clienteRuc || undefined,
-        clienteDireccion: emitForm.clienteDireccion || undefined,
+        clienteDocumento: emitForm.clienteDni || emitForm.clienteRuc || undefined,
+        clienteTipoDocumento: emitForm.tipoDoc === "01" ? "RUC" : "DNI",
       }),
     });
 
-    const data = await res.json() as {
+    let data: {
       ok?: boolean;
       pdfUrl?: string | null;
       xmlUrl?: string | null;
       hash?: string | null;
       error?: string;
+      invoice?: { id: string; serie: string; numero: string; total: number; subtotal: number; igv: number };
     };
+    try {
+      data = await res.json();
+    } catch {
+      data = { error: "Respuesta inválida del servidor" };
+    }
 
     setEmitLoading(false);
 
@@ -150,19 +205,19 @@ export default function EInvoiceTab() {
 
     // Agregar el documento emitido a la tabla local
     const tipo: DocType = emitForm.tipoDoc === "01" ? "factura" : "boleta";
-    const serie = emitForm.tipoDoc === "01" ? "F001" : "B001";
+    const serie = data.invoice?.serie || (emitForm.tipoDoc === "01" ? "F001" : "B001");
     const newDoc: EDocument = {
-      id: `${serie}-${Date.now()}`,
+      id: data.invoice?.id || `${serie}-${Date.now()}`,
       serie,
-      number: String(Math.floor(Date.now() / 1000) % 99999999).padStart(8, "0"),
+      number: data.invoice?.numero || String(Math.floor(Date.now() / 1000) % 99999999).padStart(8, "0"),
       date: new Date().toLocaleDateString("es-PE"),
       type: tipo,
       status: "emitido",
       clientName: emitForm.clienteNombre,
       clientRUC: emitForm.tipoDoc === "01" ? (emitForm.clienteRuc || "—") : (emitForm.clienteDni || "—"),
-      subtotal: 0,
-      igv: 0,
-      total: 0,
+      subtotal: data.invoice?.subtotal ?? 0,
+      igv: data.invoice?.igv ?? 0,
+      total: data.invoice?.total ?? 0,
       items: 0,
       sunatResponse: data.hash ? `Hash: ${data.hash}` : "Emitido vía Nubefact",
       pdfUrl: data.pdfUrl,

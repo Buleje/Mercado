@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { TrendingUp, TrendingDown, Minus, Lightbulb, X } from "lucide-react";
+import { TrendingUp, TrendingDown, Lightbulb, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface PriceSuggestionProps {
@@ -71,7 +71,7 @@ export default function PriceSuggestionBadge({
 
   if (!suggestion || dismissed || suggestion.action === "ok") return null;
 
-  const Icon = suggestion.action === "subir" ? TrendingUp : TrendingDown;
+  const _Icon = suggestion.action === "subir" ? TrendingUp : TrendingDown;
   const colors = suggestion.action === "subir"
     ? "bg-amber-50 dark:bg-amber-950/20 border-amber-200 dark:border-amber-800/30 text-amber-700 dark:text-amber-400"
     : "bg-blue-50 dark:bg-blue-950/20 border-blue-200 dark:border-blue-800/30 text-blue-700 dark:text-blue-400";

@@ -1,7 +1,8 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import SocialProofToast from "@/components/marketing/SocialProofToast";
 
-const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL ?? "https://buleje.com";
+const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL ?? "https://buleje.pe";
 
 export const metadata: Metadata = {
   title: {
@@ -22,7 +23,7 @@ export const metadata: Metadata = {
     url: BASE_URL,
     images: [
       {
-        url: `${BASE_URL}/og-image.png`,
+        url: `${BASE_URL}/api/og`,
         width: 1200,
         height: 630,
         alt: "Buleje ERP — Tu bodega, en línea",
@@ -53,6 +54,8 @@ const NAV_LINKS = [
   { href: "/plataforma/registro", label: "Registro" },
   { href: "/admin", label: "Iniciar sesión" },
 ];
+
+const CURRENT_YEAR = new Date().getFullYear();
 
 const FOOTER_LINKS = [
   { href: "/terminos", label: "Términos" },
@@ -109,12 +112,15 @@ export default function MarketingLayout({
         {children}
       </main>
 
+      {/* Social proof toast — shows recent activity to boost conversion */}
+      <SocialProofToast />
+
       {/* ── Footer ──────────────────────────────────────────────────────── */}
       <footer className="border-t border-border/60 bg-surface dark:bg-card">
         <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
           <div className="flex flex-col items-center gap-4 sm:flex-row sm:justify-between">
             <p className="text-sm text-muted">
-              &copy; {new Date().getFullYear()} Buleje — Pucallpa, Perú
+              &copy; {CURRENT_YEAR} Buleje — Pucallpa, Perú
             </p>
             <ul className="flex flex-wrap justify-center gap-x-4 gap-y-2">
               {FOOTER_LINKS.map((link) => (

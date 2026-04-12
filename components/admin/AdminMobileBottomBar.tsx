@@ -38,9 +38,9 @@ export interface AdminMobileBottomBarProps {
 }
 
 const MOBILE_PRIORITY: Record<string, Tab[]> = {
-  admin:      ["asistente-ia", "ventas-caja", "pedidos", "inventario"],
-  cajero:     ["asistente-ia", "ventas-caja", "pedidos", "clientes"],
-  almacenero: ["asistente-ia", "inventario", "compras", "plata"],
+  admin:      ["ventas-caja", "fiados", "pedidos", "inventario"],
+  cajero:     ["ventas-caja", "fiados", "pedidos", "clientes"],
+  almacenero: ["inventario", "compras", "pedidos", "plata"],
 };
 
 export function AdminMobileBottomBar({

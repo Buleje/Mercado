@@ -4,7 +4,8 @@ import { useMemo, useState, useEffect, useCallback } from "react";
 import {
   Sun, Sunset, Moon, TrendingUp, TrendingDown, Minus,
   CreditCard, DollarSign, AlertTriangle, Calendar,
-  ChevronDown, ChevronUp, Share2,
+  ChevronDown, ChevronUp, Share2, Clock3, CloudRain, CloudSun,
+  Package, Tags, Users, ReceiptText, Star, BarChart3, CheckCircle2,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { BusinessData } from "./AICommandCenter";
@@ -130,13 +131,12 @@ function getCalendarContext(): CalendarContext {
 type DayScoreResult = {
   score: number;
   label: string;
-  emoji: string;
   color: string;
   factors: string[];
 };
 
 function computeDayScore(analysis: ReturnType<typeof analyzeBusiness>, fiadosOverdue: boolean): DayScoreResult {
-  if (!analysis) return { score: 5, label: "Sin datos", emoji: "🤷", color: "text-gray-500", factors: [] };
+  if (!analysis) return { score: 5, label: "Sin datos", color: "text-gray-500", factors: [] };
 
   let score = 5;
   const factors: string[] = [];
@@ -173,10 +173,10 @@ function computeDayScore(analysis: ReturnType<typeof analyzeBusiness>, fiadosOve
 
   score = Math.max(1, Math.min(10, Math.round(score)));
 
-  if (score >= 8) return { score, label: "Excelente", emoji: "🌟", color: "text-emerald-600 dark:text-emerald-400", factors };
-  if (score >= 6) return { score, label: "Buen dia", emoji: "😊", color: "text-green-600 dark:text-green-400", factors };
-  if (score >= 4) return { score, label: "Regular", emoji: "😐", color: "text-amber-600 dark:text-amber-400", factors };
-  return { score, label: "Atencion", emoji: "⚠️", color: "text-red-600 dark:text-red-400", factors };
+  if (score >= 8) return { score, label: "Excelente", color: "text-emerald-600 dark:text-emerald-400", factors };
+  if (score >= 6) return { score, label: "Buen dia", color: "text-green-600 dark:text-green-400", factors };
+  if (score >= 4) return { score, label: "Regular", color: "text-amber-600 dark:text-amber-400", factors };
+  return { score, label: "Atencion", color: "text-red-600 dark:text-red-400", factors };
 }
 
 // ── Analysis engine ────────────────────────────────────────────────────────────
@@ -398,7 +398,14 @@ export default function AIDailyBriefing({ data }: Props) {
     setCollapsedSections((prev) => ({ ...prev, [id]: !prev[id] }));
   }, []);
 
-  if (!analysis) {
+  // ── Day Score (hoisted before early-return so hooks order stays stable) ──
+  const hasOverdueForScore = fiadosData?.fiados?.some((f) => f.dueDate && new Date(f.dueDate) < new Date()) ?? false;
+  const dayScore = useMemo(
+    () => (analysis ? computeDayScore(analysis, hasOverdueForScore) : null),
+    [analysis, hasOverdueForScore]
+  );
+
+  if (!analysis || !dayScore) {
     return <BriefingCard><p className="text-gray-500 dark:text-gray-400 text-sm">Cargando datos del negocio...</p></BriefingCard>;
   }
 
@@ -441,32 +448,36 @@ export default function AIDailyBriefing({ data }: Props) {
 
   const cashAvailable = analysis.cashSales - analysis.expensesToday;
 
-  // ── Day Score ─────────────────────────────────────────────────────────────
-  const dayScore = useMemo(() => computeDayScore(analysis, hasOverdue), [analysis, hasOverdue]);
-
   // ── Urgent items count ─────────────────────────────────────────────────────
   const urgentCount = analysis.outOfStock.length + (hasOverdue ? 1 : 0) + (analysis.pendingOrders > 5 ? 1 : 0);
 
-  // ── WhatsApp share ─────────────────────────────────────────────────────────
-  const shareBriefingWhatsApp = useCallback(() => {
+  // ── WhatsApp share (plain function; no memoization needed after early return) ──
+  const shareBriefingWhatsApp = () => {
     const lines = [
-      `📋 *Briefing ${new Date().toLocaleDateString("es-PE")}* ${dayScore.emoji} (${dayScore.score}/10)`,
+      `*Briefing ${new Date().toLocaleDateString("es-PE")}* — ${dayScore.label} (${dayScore.score}/10)`,
       "",
-      `💰 Ventas: ${fmt(analysis.todayRevenue)} (${analysis.todayTxns} txn)`,
-      analysis.yestRevenue > 0 ? `   vs ayer: ${revDelta >= 0 ? "+" : ""}${revDelta.toFixed(1)}%` : "",
-      `📦 Semana: ${fmt(analysis.weekRevenue)}`,
+      `Ventas: ${fmt(analysis.todayRevenue)} (${analysis.todayTxns} txn)`,
+      analysis.yestRevenue > 0 ? `  vs ayer: ${revDelta >= 0 ? "+" : ""}${revDelta.toFixed(1)}%` : "",
+      `Semana: ${fmt(analysis.weekRevenue)}`,
       "",
     ];
-    if (analysis.outOfStock.length > 0) lines.push(`🚫 ${analysis.outOfStock.length} agotados`);
-    if (analysis.lowStock.length > 0) lines.push(`⚠️ ${analysis.lowStock.length} stock bajo`);
-    if (analysis.pendingOrders > 0) lines.push(`📦 ${analysis.pendingOrders} pedidos pendientes`);
-    if (fiadosActive > 0) lines.push(`💳 ${fiadosActive} fiados: ${fmt(fiadosTotal)}`);
-    lines.push("", `💵 Caja: ${fmt(cashAvailable)}`);
-    lines.push("", `📅 ${calendar.dayTip}`);
+    if (analysis.outOfStock.length > 0) lines.push(`[!] ${analysis.outOfStock.length} agotados`);
+    if (analysis.lowStock.length > 0) lines.push(`[!] ${analysis.lowStock.length} stock bajo`);
+    if (analysis.pendingOrders > 0) lines.push(`${analysis.pendingOrders} pedidos pendientes`);
+    if (fiadosActive > 0) lines.push(`${fiadosActive} fiados: ${fmt(fiadosTotal)}`);
+    lines.push("", `Caja: ${fmt(cashAvailable)}`);
+    lines.push("", calendar.dayTip);
 
     const text = lines.filter(Boolean).join("\n");
     window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, "_blank", "noopener,noreferrer");
-  }, [analysis, dayScore, revDelta, fiadosActive, fiadosTotal, cashAvailable, calendar.dayTip]);
+  };
+
+  const isQuincenaToday = calendarApi?.esQuincena ?? calendar.isQuincena;
+  const seasonKey = calendarApi?.temporada ?? calendar.season;
+  const DayContextIcon = isQuincenaToday ? DollarSign : calendar.isWeekend ? TrendingUp : calendar.isMonday ? CreditCard : Clock3;
+  const dayContextLabel = isQuincenaToday ? "Quincena" : calendar.isWeekend ? "Fin de semana" : calendar.isMonday ? "Lunes" : "Hoy";
+  const SeasonStatusIcon = seasonKey === "lluvias" ? CloudRain : seasonKey === "seca" ? Sun : CloudSun;
+  const seasonBadge = seasonKey === "lluvias" ? "Lluvias" : seasonKey === "seca" ? "Seca" : "Transicion";
 
   return (
     <BriefingCard>
@@ -477,7 +488,6 @@ export default function AIDailyBriefing({ data }: Props) {
         </div>
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-1.5">
-            <span className="text-sm">{dayScore.emoji}</span>
             <span className={cn("text-sm font-bold", dayScore.color)}>{dayScore.label}</span>
             {urgentCount > 0 && (
               <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-red-100 dark:bg-red-950/30 text-red-600 dark:text-red-400 font-bold">
@@ -555,17 +565,17 @@ export default function AIDailyBriefing({ data }: Props) {
       {/* ── Period-aware hint ─────────────────────────────────────────────── */}
       {period === "morning" && analysis.todayRevenue === 0 && (
         <div className="mb-3 flex items-center gap-2 px-3 py-2 rounded-lg bg-blue-50 dark:bg-blue-950/20 border border-blue-200 dark:border-blue-800/30 text-xs text-blue-700 dark:text-blue-300">
-          ☀️ <span>Checklist de apertura: verifica caja, revisa stock critico, y atiende pedidos pendientes.</span>
+          <Sun className="w-3.5 h-3.5 shrink-0" /><span>Checklist de apertura: verifica caja, revisa stock critico, y atiende pedidos pendientes.</span>
         </div>
       )}
       {period === "afternoon" && analysis.todayTxns > 0 && (
         <div className="mb-3 flex items-center gap-2 px-3 py-2 rounded-lg bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-800/30 text-xs text-amber-700 dark:text-amber-300">
-          🌅 <span>Revisa como va el dia: llevas {analysis.todayTxns} transacciones y {fmt(analysis.todayRevenue)}. ¿Es buen ritmo para hoy?</span>
+          <Sunset className="w-3.5 h-3.5 shrink-0" /><span>Revisa como va el dia: llevas {analysis.todayTxns} transacciones y {fmt(analysis.todayRevenue)}. ¿Es buen ritmo para hoy?</span>
         </div>
       )}
       {period === "evening" && (
         <div className="mb-3 flex items-center gap-2 px-3 py-2 rounded-lg bg-indigo-50 dark:bg-indigo-950/20 border border-indigo-200 dark:border-indigo-800/30 text-xs text-indigo-700 dark:text-indigo-300">
-          🌙 <span>Cierre del dia: cuadra la caja, revisa pedidos pendientes para manana, y registra gastos.</span>
+          <Moon className="w-3.5 h-3.5 shrink-0" /><span>Cierre del dia: cuadra la caja, revisa pedidos pendientes para manana, y registra gastos.</span>
         </div>
       )}
 
@@ -818,16 +828,22 @@ export default function AIDailyBriefing({ data }: Props) {
           </div>
           <div className="flex flex-col gap-1.5">
             <div className="flex items-center gap-2">
-              <span className="text-sm">{(calendarApi?.esQuincena ?? calendar.isQuincena) ? "🎯" : calendar.isWeekend ? "📊" : calendar.isMonday ? "📋" : "🕒"}</span>
+              <DayContextIcon className="w-4 h-4 text-blue-600 dark:text-blue-400" />
+              <span className="inline-flex items-center rounded-full bg-blue-100 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-blue-700 dark:bg-blue-900/40 dark:text-blue-300">
+                {dayContextLabel}
+              </span>
               <span className="text-sm text-gray-700 dark:text-gray-300">{calendar.dayTip}</span>
             </div>
             <div className="flex items-center gap-2">
-              <span className="text-sm">{(calendarApi?.temporada ?? calendar.season) === "lluvias" ? "🌧️" : (calendarApi?.temporada ?? calendar.season) === "seca" ? "☀️" : "🌤️"}</span>
+              <SeasonStatusIcon className="h-4 w-4 text-blue-500 dark:text-blue-300" />
+              <span className="inline-flex items-center rounded-full bg-white/70 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-blue-700 dark:bg-blue-900/30 dark:text-blue-300">
+                {seasonBadge}
+              </span>
               <span className="text-xs text-gray-600 dark:text-gray-400">{calendar.seasonLabel}</span>
             </div>
             {(calendarApi?.proximoFeriado ?? calendar.nearHoliday) && (
               <div className="flex items-center gap-2 mt-0.5">
-                <span className="text-sm">🎉</span>
+                <Calendar className="h-4 w-4 text-blue-600 dark:text-blue-400" />
                 <span className="text-xs font-medium text-blue-700 dark:text-blue-300">
                   {calendarApi?.proximoFeriado
                     ? <>Feriado proximo: {calendarApi.proximoFeriado.nombre} (en {calendarApi.proximoFeriado.diasHasta} dia{calendarApi.proximoFeriado.diasHasta !== 1 ? "s" : ""}){calendarApi.proximoFeriado.impactoNegocio ? ` — ${calendarApi.proximoFeriado.impactoNegocio}` : " — prepara stock extra"}</>
@@ -861,10 +877,10 @@ export default function AIDailyBriefing({ data }: Props) {
             Hoy es <strong>{analysis.dayName}</strong>.{" "}
             {analysis.dayMultiplier >= 1.1 ? (
               <>Normalmente vendes <strong className="text-emerald-600 dark:text-emerald-400">{((analysis.dayMultiplier) * 100).toFixed(0)}%</strong> del promedio diario.{" "}
-              <span className="block mt-1 text-xs text-blue-600 dark:text-blue-400">📈 Dia fuerte — asegura stock y personal</span></>
+              <span className="block mt-1 text-xs text-blue-600 dark:text-blue-400">Dia fuerte — asegura stock y personal</span></>
             ) : analysis.dayMultiplier < 0.9 ? (
               <>Las ventas suelen ser mas bajas (aprox. <strong>{(analysis.dayMultiplier * 100).toFixed(0)}%</strong> del promedio).{" "}
-              <span className="block mt-1 text-xs text-blue-600 dark:text-blue-400">📉 Dia tranquilo — buen momento para inventario o limpieza</span></>
+              <span className="block mt-1 text-xs text-blue-600 dark:text-blue-400">Dia tranquilo — buen momento para inventario o limpieza</span></>
             ) : (
               <>Ventas esperadas al ritmo promedio.{" "}</>
             )}
@@ -884,6 +900,7 @@ export default function AIDailyBriefing({ data }: Props) {
           const month = new Date().getMonth() + 1;
           const isLluvias = month >= 11 || month <= 3;
           const isSeca = month >= 6 && month <= 9;
+          const SeasonPanelIcon = isLluvias ? CloudRain : isSeca ? Sun : CloudSun;
           const prodLluvias = ["sopa", "chocolate", "paraguas", "bota", "imperme", "atun", "conserva", "enlatado"];
           const prodSeca = ["helado", "gaseosa", "refresco", "bebida", "agua", "bloqueador", "cerveza", "jugo"];
           const temporadaProds = isLluvias ? prodLluvias : isSeca ? prodSeca : [...prodLluvias, ...prodSeca];
@@ -897,7 +914,7 @@ export default function AIDailyBriefing({ data }: Props) {
           return (
             <div className="rounded-lg border p-3" style={{ background: isLluvias ? "linear-gradient(135deg, #dbeafe, #e0f2fe)" : isSeca ? "linear-gradient(135deg, #fef3c7, #fef9c3)" : "linear-gradient(135deg, #f0f9ff, #fef9c3)" }}>
               <div className="flex items-center gap-2 mb-2">
-                <span className="text-xl">{isLluvias ? "🌧️" : isSeca ? "☀️" : "🌤️"}</span>
+                <SeasonPanelIcon className="h-5 w-5 text-gray-700" />
                 <span className="text-sm font-semibold text-gray-800">{isLluvias ? "Temporada de lluvias" : isSeca ? "Temporada seca" : "Temporada de transicion"}</span>
               </div>
               <div className="space-y-1.5 text-xs text-gray-700">
@@ -1029,19 +1046,20 @@ export default function AIDailyBriefing({ data }: Props) {
 
 // ── Tarea del dia ──────────────────────────────────────────────────────────────
 
-const TAREAS_DIA: Record<number, { tarea: string; detalle: string; icono: string }> = {
-  1: { tarea: "Revisar stock", detalle: "Lunes: revisa productos bajo stock y crea OC", icono: "📦" },
-  2: { tarea: "Cobrar fiados", detalle: "Martes: contacta deudores con mas de 7 dias", icono: "💰" },
-  3: { tarea: "Revisar precios", detalle: "Miercoles: compara precios con la competencia", icono: "🏷" },
-  4: { tarea: "Contactar clientes", detalle: "Jueves: envia mensaje a clientes inactivos", icono: "👥" },
-  5: { tarea: "Cuadrar la caja", detalle: "Viernes: haz arqueo completo y cierre semanal", icono: "🧾" },
-  6: { tarea: "Preparar ofertas", detalle: "Sabado: crea promociones para el fin de semana", icono: "⭐" },
-  0: { tarea: "Revisar la semana", detalle: "Domingo: revisa el reporte semanal y planifica", icono: "📊" },
+const TAREAS_DIA: Record<number, { tarea: string; detalle: string; icono: React.ElementType }> = {
+  1: { tarea: "Revisar stock", detalle: "Lunes: revisa productos bajo stock y crea OC", icono: Package },
+  2: { tarea: "Cobrar fiados", detalle: "Martes: contacta deudores con mas de 7 dias", icono: DollarSign },
+  3: { tarea: "Revisar precios", detalle: "Miercoles: compara precios con la competencia", icono: Tags },
+  4: { tarea: "Contactar clientes", detalle: "Jueves: envia mensaje a clientes inactivos", icono: Users },
+  5: { tarea: "Cuadrar la caja", detalle: "Viernes: haz arqueo completo y cierre semanal", icono: ReceiptText },
+  6: { tarea: "Preparar ofertas", detalle: "Sabado: crea promociones para el fin de semana", icono: Star },
+  0: { tarea: "Revisar la semana", detalle: "Domingo: revisa el reporte semanal y planifica", icono: BarChart3 },
 };
 
 function DailyTaskCard() {
   const dow = new Date().getDay();
   const task = TAREAS_DIA[dow];
+  const TaskIcon = task?.icono;
   const storageKey = `daily-task-${new Date().toISOString().slice(0, 10)}`;
   const [done, setDone] = useState(() => {
     if (typeof window === "undefined") return false;
@@ -1063,8 +1081,17 @@ function DailyTaskCard() {
           ? "bg-emerald-50 dark:bg-emerald-950/20 border-emerald-200 dark:border-emerald-800/40"
           : "bg-amber-50 dark:bg-amber-950/20 border-amber-200 dark:border-amber-800/40"
       )}>
-        <button onClick={toggleDone} className="mt-0.5 shrink-0 text-lg" aria-label={done ? "Desmarcar tarea" : "Marcar como hecha"}>
-          {done ? "✅" : task.icono}
+        <button
+          onClick={toggleDone}
+          className={cn(
+            "mt-0.5 shrink-0 inline-flex h-9 w-9 items-center justify-center rounded-full transition-colors",
+            done
+              ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-950/30 dark:text-emerald-300"
+              : "bg-white/80 text-amber-700 dark:bg-gray-900/40 dark:text-amber-300"
+          )}
+          aria-label={done ? "Desmarcar tarea" : "Marcar como hecha"}
+        >
+          {done ? <CheckCircle2 className="h-5 w-5" /> : TaskIcon ? <TaskIcon className="h-4 w-4" /> : null}
         </button>
         <div className="flex-1 min-w-0">
           <p className={cn("text-sm font-semibold", done ? "text-emerald-700 dark:text-emerald-400 line-through" : "text-gray-800 dark:text-gray-200")}>

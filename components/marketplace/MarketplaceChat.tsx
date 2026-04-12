@@ -6,6 +6,7 @@ import {
   useRef,
   useCallback,
 } from "react";
+import * as Sentry from "@sentry/nextjs";
 import { motion, AnimatePresence } from "framer-motion";
 
 // ---------- tipos ----------
@@ -182,7 +183,7 @@ export default function MarketplaceChat({
       // Revertir optimistic
       setMessages((prev) => prev.filter((m) => m.id !== optimistic.id));
       setInput(text);
-      console.error("[MarketplaceChat send]", err);
+      Sentry.captureException(err instanceof Error ? err : new Error(String(err)));
     } finally {
       setIsSending(false);
     }

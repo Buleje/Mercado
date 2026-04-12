@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { requireAdmin } from "@/lib/require-admin";
 import { prisma } from "@/lib/prisma";
 import { withDbRetry } from "@/lib/db-retry";
+import { toNumOrZero } from "@/lib/decimal-utils";
+import { logger } from "@/lib/logger";
 
 /**
  * GET /api/analytics/kpis
@@ -33,7 +35,7 @@ export async function GET(req: NextRequest) {
       costosMesItems,
       costosMesAnteriorItems,
       fiadosPendientes,
-      stockCritico,
+      _stockCritico,
     ] = await withDbRetry(() => Promise.all([
       // 1. Ventas hoy
       prisma.sale.aggregate({
@@ -112,10 +114,17 @@ export async function GET(req: NextRequest) {
       (p) => p.stock !== null && p.stockMin !== null && p.stock <= p.stockMin
     ).length;
 
-    // Helper: calculate total cost from SaleItems
-    function calcCost(items: { costPrice: number | null; quantity: number; product: { costPrice: number | null } }[]): number {
+    // Helper: calculate total cost from SaleItems (TD-018: costPrice es Decimal)
+    type SaleItemForCost = {
+      costPrice: unknown;
+      quantity: number;
+      product: { costPrice: unknown };
+    };
+    function calcCost(items: SaleItemForCost[]): number {
       return items.reduce((sum, item) => {
-        const cost = item.costPrice ?? item.product.costPrice ?? 0;
+        const cost =
+          toNumOrZero(item.costPrice as never) ||
+          toNumOrZero(item.product.costPrice as never);
         return sum + cost * item.quantity;
       }, 0);
     }
@@ -126,29 +135,28 @@ export async function GET(req: NextRequest) {
       return Math.round(((current - previous) / previous) * 10000) / 100;
     }
 
-    const ingresosHoy = ventasHoy._sum.total ?? 0;
-    const ingresosAyer = ventasAyer._sum.total ?? 0;
+    // TD-018: _sum.total ahora es Prisma.Decimal | null → convertir con toNumOrZero
+    const ingresosHoy = toNumOrZero(ventasHoy._sum.total);
+    const ingresosAyer = toNumOrZero(ventasAyer._sum.total);
     const txHoy = ventasHoy._count.id;
     const txAyer = ventasAyer._count.id;
 
-    const ingresosMes = ventasMes._sum.total ?? 0;
+    const ingresosMes = toNumOrZero(ventasMes._sum.total);
     const txMes = ventasMes._count.id;
-    const ingresosMesAnt = ventasMesAnterior._sum.total ?? 0;
+    const ingresosMesAnt = toNumOrZero(ventasMesAnterior._sum.total);
     const txMesAnt = ventasMesAnterior._count.id;
 
     const ticketPromedioMes = txMes > 0 ? ingresosMes / txMes : 0;
     const ticketPromedioMesAnt = txMesAnt > 0 ? ingresosMesAnt / txMesAnt : 0;
 
     const costosHoy = calcCost(costosHoyItems);
-    const costosMes = calcCost(costosMesItems);
+    const _costosMes = calcCost(costosMesItems);
     const costosMesAnt = calcCost(costosMesAnteriorItems);
 
     const margenHoy = ingresosHoy > 0 ? ((ingresosHoy - costosHoy) / ingresosHoy) * 100 : 0;
     const margenMesAnt = ingresosMesAnt > 0 ? ((ingresosMesAnt - costosMesAnt) / ingresosMesAnt) * 100 : 0;
 
-    const fiadoSaldo = fiadosPendientes._sum.saldo
-      ? Number(fiadosPendientes._sum.saldo)
-      : 0;
+    const fiadoSaldo = toNumOrZero(fiadosPendientes._sum.saldo);
 
     return NextResponse.json({
       ingresosHoy: {
@@ -176,7 +184,7 @@ export async function GET(req: NextRequest) {
       },
     });
   } catch (e) {
-    console.error("[analytics/kpis] GET error:", e);
+    logger.error("[analytics/kpis] GET error", { error: (e as Error).message, tenantId: auth.tenantId });
     return NextResponse.json({ error: "Database error" }, { status: 503 });
   }
 }

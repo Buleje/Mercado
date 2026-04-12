@@ -1,0 +1,75 @@
+name: Claude PR Review
+
+on:
+  pull_request:
+    types: [opened, synchronize]
+
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  claude-review:
+    name: Claude Security & Quality Review
+    runs-on: ubuntu-latest
+    if: github.event.pull_request.user.login != 'dependabot[bot]'
+    timeout-minutes: 15
+
+    env:
+      ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+
+    steps:
+      - name: Skip if no API key
+        if: env.ANTHROPIC_API_KEY == ''
+        run: echo "ANTHROPIC_API_KEY not set — skipping review" && exit 0
+
+      - name: Checkout PR
+        if: env.ANTHROPIC_API_KEY != ''
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node.js
+        if: env.ANTHROPIC_API_KEY != ''
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Install Claude Code
+        if: env.ANTHROPIC_API_KEY != ''
+        run: npm install -g @anthropic-ai/claude-code
+
+      - name: Get PR diff
+        if: env.ANTHROPIC_API_KEY != ''
+        id: diff
+        run: |
+          git diff origin/${{ github.base_ref }}...HEAD --stat > /tmp/diff-stat.txt
+          echo "files=$(wc -l < /tmp/diff-stat.txt)" >> $GITHUB_OUTPUT
+
+      - name: Run Claude review
+        if: env.ANTHROPIC_API_KEY != '' && steps.diff.outputs.files != '0'
+        run: |
+          claude -p "Review this PR diff for security vulnerabilities, bugs, and code quality issues.
+          Focus on: OWASP Top 10, missing tenantId, unsafe .parse() instead of .safeParse(),
+          hardcoded secrets, missing requireAdmin, SQL injection via string interpolation.
+          Be concise. Output markdown with: ## Findings (table: severity, file, issue, suggestion).
+          If no issues found, say 'No critical issues found.'
+          Diff stat: $(cat /tmp/diff-stat.txt)" \
+          --allowedTools "Read,Grep,Glob" \
+          --max-turns 20 \
+          --model claude-sonnet-4-6 > /tmp/review.md 2>&1 || true
+
+      - name: Comment on PR
+        if: env.ANTHROPIC_API_KEY != '' && steps.diff.outputs.files != '0'
+        run: |
+          if [ -f /tmp/review.md ] && [ -s /tmp/review.md ]; then
+            gh pr comment ${{ github.event.pull_request.number }} \
+              --body "## 🤖 Claude Code Review
+
+          $(cat /tmp/review.md)
+
+          ---
+          *Automated review by Claude Sonnet 4.6 via GitHub Actions*"
+          fi
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}

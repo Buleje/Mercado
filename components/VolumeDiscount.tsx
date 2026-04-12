@@ -19,7 +19,7 @@ export default function VolumeDiscount() {
   const totalQty = items.reduce((s, i) => s + i.quantity, 0);
   const [dismissed, setDismissed] = useState(() => {
     if (typeof window === "undefined") return false;
-    return sessionStorage.getItem("bsm-vd-dismissed") === "1";
+    return sessionStorage.getItem("buleje-vd-dismissed") === "1";
   });
   const [mounted, setMounted] = useState(false);
 
@@ -51,7 +51,7 @@ export default function VolumeDiscount() {
             )}
           </p>
           <button
-            onClick={() => { setDismissed(true); sessionStorage.setItem("bsm-vd-dismissed", "1"); }}
+            onClick={() => { setDismissed(true); sessionStorage.setItem("buleje-vd-dismissed", "1"); }}
             className="p-1 rounded-full hover:bg-gray-100 dark:hover:bg-surface transition-colors text-muted shrink-0"
             aria-label="Cerrar"
           >
@@ -64,7 +64,7 @@ export default function VolumeDiscount() {
       <div className="hidden sm:block fixed bottom-24 right-4 w-80 z-40 animate-[fadeUp_0.4s_ease-out]">
         <div className="bg-white dark:bg-card rounded-2xl shadow-2xl border border-gray-100 dark:border-card-border p-4 relative">
           <button
-            onClick={() => { setDismissed(true); sessionStorage.setItem("bsm-vd-dismissed", "1"); }}
+            onClick={() => { setDismissed(true); sessionStorage.setItem("buleje-vd-dismissed", "1"); }}
             className="absolute top-2 right-2 p-1 rounded-full hover:bg-gray-100 dark:hover:bg-surface transition-colors text-muted"
             aria-label="Cerrar"
           >

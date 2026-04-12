@@ -5,6 +5,7 @@ disable-model-invocation: false
 user-invocable: true
 allowed-tools: Bash, Read, Grep, Glob, Edit, Write
 argument-hint: [nombre-de-feature]
+model: haiku
 ---
 
 # New Feature — Buleje

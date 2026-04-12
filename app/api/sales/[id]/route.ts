@@ -3,6 +3,7 @@ import { z } from "zod";
 import { SalesDB, InventoryMovementsDB, CashRegistersDB, LoyaltyDB } from "@/lib/jsondb";
 import { requireAdmin } from "@/lib/require-admin";
 import { withDbRetry } from "@/lib/db-retry";
+import { deductStockFEFO, hasBatchesWithStock } from "@/lib/inventory/fefo-deduct";
 
 const SaleItemSchema = z.object({
   productId: z.number().int().positive(),
@@ -20,7 +21,7 @@ const SaleSchema = z.object({
 });
 
 export async function GET(req: NextRequest) {
-  const auth = await requireAdmin(req);
+  const auth = await requireAdmin(req, ["admin", "cajero"]);
   if (auth instanceof NextResponse) return auth;
 
   try {
@@ -53,7 +54,7 @@ export async function POST(req: NextRequest) {
     createdAt: new Date().toISOString(),
   });
 
-  // Decrement stock for each item sold (fire-and-forget)
+  // Registrar movimientos de inventario + descontar lotes FEFO (fire-and-forget)
   for (const item of data.items) {
     InventoryMovementsDB.record({
       productId: item.productId,
@@ -61,11 +62,21 @@ export async function POST(req: NextRequest) {
       quantity: item.quantity,
       reference: sale.id,
       notes: `Venta POS: ${item.name}`,
+      tenantId: auth.tenantId,
     }).catch(() => {});
+
+    // FEFO: si el producto tiene lotes, descontar del más cercano a vencer primero
+    hasBatchesWithStock(auth.tenantId, item.productId)
+      .then((hasBatches) => {
+        if (hasBatches) {
+          return deductStockFEFO(auth.tenantId, item.productId, item.quantity);
+        }
+      })
+      .catch(() => {});
   }
 
   // Register cash movement if a register is open (fire-and-forget)
-  CashRegistersDB.getOpen().then(async (reg) => {
+  CashRegistersDB.getOpen(auth.tenantId).then(async (reg) => {
     if (reg) {
       await CashRegistersDB.addMovement(reg.id, {
         type: "venta",

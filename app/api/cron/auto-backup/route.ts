@@ -37,7 +37,7 @@ export async function GET(req: NextRequest) {
         ProductsDB.getAll("main"),
         CustomersDB.getAll("main"),
         SalesDB.getAll("main"),
-        OrdersDB.getAllFiltered({ since: startOfDayISO }),
+        OrdersDB.getAllFiltered({ since: startOfDayISO, tenantId: "main" }),
       ]);
 
       // Productos

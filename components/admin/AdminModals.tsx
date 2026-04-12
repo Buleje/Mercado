@@ -186,7 +186,7 @@ export function ClearDataModal({
     // Nuclear localStorage clear: wipe everything EXCEPT UI preferences
     const KEEP_KEYS = new Set([
       "admin_compact", "admin_fav_tabs", "admin_hidden_tabs",
-      "admin_recent_tabs", "bsm-admin-theme-set", "theme",
+      "admin_recent_tabs", "buleje-admin-theme-set", "theme",
     ]);
     try {
       const allKeys: string[] = [];

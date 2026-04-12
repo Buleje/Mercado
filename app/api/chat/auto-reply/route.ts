@@ -40,7 +40,7 @@ const FAQ_ENTRIES: { keywords: string[]; answer: string }[] = [
   },
   {
     keywords: ["ubicacion", "ubicación", "direccion", "dirección", "donde estan", "dónde están", "mapa"],
-    answer: "📍 Estamos ubicados en Jr. San Martín, Callería — Pucallpa, Ucayali. Puedes ver nuestra ubicación en el mapa de la página principal.",
+    answer: "📍 Puedes ver nuestra ubicacion en el mapa de la pagina principal. Buleje tiene cobertura en todo el Peru.",
   },
   {
     keywords: ["receta", "preparar", "cocinar", "ingredientes"],
@@ -82,7 +82,7 @@ function findAutoReply(message: string): string | null {
 
 // ── Product search for inventory queries ──────────────────────────────────────
 
-async function searchProducts(query: string): Promise<string | null> {
+async function searchProducts(query: string, tenantId: string): Promise<string | null> {
   const normalized = query
     .toLowerCase()
     .normalize("NFD")
@@ -98,7 +98,7 @@ async function searchProducts(query: string): Promise<string | null> {
   if (!isProductQuery) return null;
 
   try {
-    const allProducts = await ProductsDB.getAll();
+    const allProducts = await ProductsDB.getAll(tenantId);
     const activeProducts = allProducts.filter(p => p.active !== false);
 
     // Extract the product name from the query by removing known verbs/words
@@ -149,6 +149,7 @@ export async function POST(req: NextRequest) {
   }
 
   const message = parsed.data.message;
+  const tenantId = req.headers.get("x-tenant-id") ?? "main";
 
   // 1. Try FAQ first (instant, no API cost)
   const faqReply = findAutoReply(message);
@@ -160,15 +161,13 @@ export async function POST(req: NextRequest) {
   const provider = getActiveProvider();
   if (provider) {
     // Search for real product info if the customer asks about products
-    const productInfo = await searchProducts(message);
+    const productInfo = await searchProducts(message, tenantId);
 
     try {
-      const systemContent = `Eres el asistente virtual de Bodega San Martín, una bodega familiar en Pucallpa, Perú.
-Responde en español de forma amable y breve (máximo 3 oraciones).
-Solo responde sobre temas de la bodega: productos, precios, delivery, horarios, pagos, pedidos.
-Si preguntan algo que no sabes o no es del negocio, di amablemente que pasarás su consulta al equipo.
-Horario: Lun-Sáb 7AM-10PM, Dom 8AM-8PM.
-Delivery gratis en pedidos mayores a S/30. Zona: Callería, Pucallpa.
+      const systemContent = `Eres el asistente virtual de esta tienda, parte de la plataforma Buleje — software ERP para bodegas del Peru.
+Responde en español de forma amable y breve (maximo 3 oraciones).
+Solo responde sobre temas de la tienda: productos, precios, delivery, horarios, pagos, pedidos.
+Si preguntan algo que no sabes o no es del negocio, di amablemente que pasaras su consulta al equipo.
 Aceptamos: Yape, Plin, efectivo, transferencia.
 ${productInfo ? `\nINVENTARIO REAL (usa estos datos para responder, son precios y stock ACTUALIZADOS):\n${productInfo}\nSi el producto aparece en la lista, da el precio y stock REAL. Si está agotado, dilo y sugiere alternativas de la lista.` : ""}
 NO inventes precios ni stock. Si no encuentras el producto en los datos, sugiere al cliente visitar la tienda o escribir el nombre exacto.`;
@@ -193,7 +192,7 @@ NO inventes precios ni stock. Si no encuentras el producto en los datos, sugiere
   }
 
   // 3. No AI available or AI failed — try direct product response, then generic fallback
-  const directProducts = await searchProducts(message);
+  const directProducts = await searchProducts(message, tenantId);
   if (directProducts) {
     return NextResponse.json({
       reply: `📋 Esto encontré en nuestro inventario:\n\n${directProducts}\n\n¿Te gustaría hacer un pedido? 🛒`,

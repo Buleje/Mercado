@@ -27,7 +27,7 @@ async function pendingSummary(
   log.info("Generating pending orders summary", { action: task.action });
 
   const orders = await cache.getOrSet("orders:pending", 60, () =>
-    OrdersDB.getAllFiltered({ status: "pendiente,confirmado" }),
+    OrdersDB.getAllFiltered({ status: "pendiente,confirmado", tenantId: task.tenantId }),
   );
 
   const totalAmount = orders.reduce((sum, o) => sum + o.total, 0);
@@ -72,10 +72,10 @@ async function deliverySchedule(
 
   const slots = await DeliverySlotsDB.getByDate(date);
 
-  // Enrich with order data
+  // Enrich with order data — scope to the task's tenant (HOTFIX-002)
   const enrichedSlots = await Promise.all(
     slots.map(async (slot) => {
-      const order = await OrdersDB.getById(slot.orderId);
+      const order = await OrdersDB.getById(task.tenantId, slot.orderId);
       return {
         slotId: slot.id,
         orderId: slot.orderId,
@@ -123,7 +123,7 @@ async function returnsAnalysis(
   log.info("Analyzing returns", { action: task.action });
 
   const returns = await cache.getOrSet("orders:returns-all", 120, () =>
-    ReturnsDB.getAll(),
+    ReturnsDB.getAll(task.tenantId),
   );
 
   const totalReturns = returns.length;
@@ -190,6 +190,7 @@ async function statusOverview(
   const orders = await cache.getOrSet("orders:all-recent", 60, () =>
     OrdersDB.getAllFiltered({
       since: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString(),
+      tenantId: task.tenantId,
     }),
   );
 
@@ -235,10 +236,11 @@ async function dailySalesReport(
   const orders = await OrdersDB.getAllFiltered({
     status: "entregado",
     since: todayStart.toISOString(),
+    tenantId: task.tenantId,
   });
 
   // POS sales today
-  const allSales = await SalesDB.getAll();
+  const allSales = await SalesDB.getAll(task.tenantId);
   const todaySales = allSales.filter(
     (s) => new Date(s.createdAt).toISOString().split("T")[0] === todayStr,
   );

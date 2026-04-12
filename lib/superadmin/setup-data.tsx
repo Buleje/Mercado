@@ -145,7 +145,7 @@ export const SETUP_ITEMS: SetupItem[] = [
     },
     steps: [
       "Settings → Developer Settings → New Internal Integration",
-      "Name: 'Claude BSM Automation'",
+      "Name: 'Claude Buleje Automation'",
       "Permissions: Project Admin + Alerts Admin",
       "Copia el token (sntrys_...)",
       "Pega en .env.local: SENTRY_AUTH_TOKEN, SENTRY_ORG, SENTRY_PROJECT",
@@ -335,7 +335,7 @@ export const SETUP_ITEMS: SetupItem[] = [
       "Regla 2 (Latencia P95 > 500ms): Metric Alert → transaction.duration P95 → warning 500ms / critical 1000ms → ventana 5 min",
       "Regla 3 (Excepción No Manejada): Issue Alert → 'A new issue is created' → filtro handled:no → notif inmediata",
       "Regla 4 (Tasa Fallos > 5%): Metric Alert → transaction.failure_rate → warning 5% / critical 10% → ventana 10 min",
-      "Prefijo de nombres: 'BSM —' (ej: BSM — Error Rate Alto)",
+      "Prefijo de nombres: 'Buleje —' (ej: Buleje — Error Rate Alto)",
       "Si no tienes Slack integration, cae a email-only por ahora",
     ],
   },

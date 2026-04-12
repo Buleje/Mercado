@@ -6,7 +6,7 @@ import { requireAdmin } from "@/lib/require-admin";
  * GET /api/abandoned-cart/stats
  *
  * Retorna conteo y valor estimado de carritos abandonados (>2h, <24h)
- * para mostrar en el dashboard admin.
+ * para mostrar en el dashboard admin. Filtrado por tenantId.
  */
 export async function GET(req: NextRequest) {
   const auth = await requireAdmin(req, ["admin", "cajero"]);
@@ -18,6 +18,7 @@ export async function GET(req: NextRequest) {
 
     const carts = await prisma.savedCart.findMany({
       where: {
+        tenantId: auth.tenantId,
         updatedAt: { lt: cutoff, gt: maxAge },
         NOT: { itemsJson: "[]" },
       },

@@ -1,6 +1,7 @@
 import "server-only";
 import { prisma } from "@/lib/prisma";
 import type { ProductAnalytics as PProductAnalytics } from "@/lib/generated/prisma/client";
+import { toNumOrZero } from "@/lib/decimal-utils";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -38,7 +39,8 @@ function mapAnalytics(r: PProductAnalytics): DbProductAnalytics {
     clicks: r.clicks,
     addsToCart: r.addsToCart,
     conversions: r.conversions,
-    revenue: r.revenue,
+    // TD-018: revenue es Decimal
+    revenue: toNumOrZero(r.revenue),
     createdAt: r.createdAt.toISOString(),
     updatedAt: r.updatedAt.toISOString(),
   };
@@ -136,7 +138,8 @@ export const ProductAnalyticsDB = {
       totalClicks: agg._sum.clicks ?? 0,
       totalAddsToCart: agg._sum.addsToCart ?? 0,
       totalConversions: agg._sum.conversions ?? 0,
-      totalRevenue: agg._sum.revenue ?? 0,
+      // TD-018: revenue es Decimal | null
+      totalRevenue: toNumOrZero(agg._sum.revenue),
     };
   },
 };

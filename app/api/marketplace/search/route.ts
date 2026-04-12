@@ -5,6 +5,7 @@ import { toErrorPayload, newTraceId } from "@/lib/api-error";
 import { logger } from "@/lib/logger";
 import { SearchSuggestionsDB } from "@/lib/db/search-suggestions.db";
 import { applyBoostsToProducts } from "@/lib/marketplace/sponsored-ranker";
+import { toNumOrZero } from "@/lib/decimal-utils";
 
 // ── Batch helpers ─────────────────────────────────────────────────────────────
 
@@ -141,7 +142,8 @@ export async function GET(req: NextRequest) {
             ? { store: { rating: "desc" as const } }
             : { retailPrice: "asc" as const }; // price_asc | distance | default
 
-    const results: RawResult[] = await prisma.storeProduct.findMany({
+    // TD-018: Prisma devuelve retailPrice / rating como Decimal — convertir después del query
+    const rawResults = await prisma.storeProduct.findMany({
       where: {
         isActive: true,
         ...(minPrice !== undefined || maxPrice !== undefined
@@ -189,6 +191,16 @@ export async function GET(req: NextRequest) {
       orderBy: prismaOrderBy,
       take: 80, // margen para ordenar por distancia en post-process
     });
+
+    // TD-018: serializar Decimal → number para que encaje con RawResult
+    const results: RawResult[] = rawResults.map((r) => ({
+      ...r,
+      retailPrice: toNumOrZero(r.retailPrice),
+      store: {
+        ...r.store,
+        rating: toNumOrZero(r.store.rating),
+      },
+    }));
 
     // Post-process: filtrar/ordenar por distancia cuando el cliente envía coordenadas GPS
     let finalResults = results;

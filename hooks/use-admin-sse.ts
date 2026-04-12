@@ -44,6 +44,9 @@ export function useAdminSSE(): UseAdminSSEResult {
   const esRef = useRef<EventSource | null>(null);
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const mountedRef = useRef(true);
+  // Ref holding the latest connect fn, so the retry inside onerror can call itself
+  // without an "access-before-declaration" error (React Compiler immutability rule).
+  const connectRef = useRef<() => void>(() => {});
 
   const connect = useCallback(() => {
     if (!mountedRef.current) return;
@@ -98,11 +101,16 @@ export function useAdminSSE(): UseAdminSSEResult {
 
       setReconnectCount((prev) => {
         if (prev >= MAX_RECONNECTS) return prev;
-        timerRef.current = setTimeout(connect, RECONNECT_DELAY_MS);
+        timerRef.current = setTimeout(() => connectRef.current(), RECONNECT_DELAY_MS);
         return prev + 1;
       });
     };
   }, []);
+
+  useEffect(() => {
+    // Keep the ref pointed at the latest connect fn (updated inside an effect, not render)
+    connectRef.current = connect;
+  }, [connect]);
 
   useEffect(() => {
     mountedRef.current = true;

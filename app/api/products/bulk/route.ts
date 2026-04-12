@@ -3,6 +3,7 @@ import { z } from "zod";
 import { requireAdmin } from "@/lib/require-admin";
 import { prisma } from "@/lib/prisma";
 import { ProductsDB } from "@/lib/db/products.db";
+import { toNumOrZero } from "@/lib/decimal-utils";
 import { logActivity } from "@/lib/activity-logger";
 import { logger } from "@/lib/logger";
 import { invalidate } from "@/lib/cache";
@@ -55,12 +56,13 @@ export async function POST(req: NextRequest) {
 
     if (fields.priceAdjust !== undefined) {
       // Percentage-based price adjustment requires per-product update
+      // TD-018: p.price es Decimal
       const products = await prisma.product.findMany({
         where: { id: { in: ids } },
         select: { id: true, price: true },
       });
       for (const p of products) {
-        const newPrice = Math.max(0.01, +(p.price * (1 + fields.priceAdjust / 100)).toFixed(2));
+        const newPrice = Math.max(0.01, +(toNumOrZero(p.price) * (1 + fields.priceAdjust / 100)).toFixed(2));
         await prisma.product.update({ where: { id: p.id }, data: { price: newPrice } });
         updated++;
       }

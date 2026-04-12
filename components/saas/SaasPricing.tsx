@@ -3,7 +3,7 @@
 import { useState, useRef, useEffect, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Zap, Crown, Building2, Globe, Check, ChevronDown } from "lucide-react";
-import { PLANS } from "@/lib/plans";
+import { PLANS, PLAN_PRICES } from "@/lib/plans";
 
 // ─── Animation variants ───────────────────────────────────────────────────────
 const fadeUp = {
@@ -210,10 +210,13 @@ function PillSwitch({
 }
 
 // ─── Plan prices lookup (for payback calculation) ────────────────────────────
-const PLAN_PRICES: Record<string, number> = {
-  Free: 0,
-  Pro: PLANS.pro.priceMonthly ?? 0,
-  Business: PLANS.business.priceMonthly ?? 0,
+// Usamos PLAN_PRICES de @/lib/plans (single source of truth).
+// Las claves del ROI calculator usan nombres con mayúscula ("Free", "Pro", "Business"),
+// así que mapeamos al lookup canónico.
+const PLAN_PRICES_DISPLAY: Record<string, number> = {
+  Free: PLAN_PRICES["free"] ?? 0,
+  Pro: PLAN_PRICES["pro"] ?? 0,
+  Business: PLAN_PRICES["business"] ?? 0,
 };
 
 // ─── Animated counter hook ────────────────────────────────────────────────────
@@ -332,7 +335,7 @@ function RoiCalculator({
       planLabel = "Business";
     }
 
-    const precioPlan = PLAN_PRICES[planLabel] ?? 0;
+    const precioPlan = PLAN_PRICES_DISPLAY[planLabel] ?? 0;
     const diasPayback =
       precioPlan === 0 || totalAhorro === 0
         ? 0

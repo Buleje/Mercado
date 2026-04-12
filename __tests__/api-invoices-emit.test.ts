@@ -87,7 +87,7 @@ const BODY_BOLETA = {
 };
 
 // Body válido para factura (requiere RUC)
-const BODY_FACTURA = {
+const _BODY_FACTURA = {
   orderId: "order-001",
   tipoDoc: "01",
   clienteNombre: "Empresa SAC",
@@ -182,7 +182,7 @@ describe("POST /api/invoices/emit", () => {
     mockGetById.mockResolvedValue(ORDER_MOCK);
 
     await POST(makeReq(BODY_BOLETA));
-    expect(mockGetById).toHaveBeenCalledWith("order-001");
+    expect(mockGetById).toHaveBeenCalledWith("main", "order-001");
     expect(mockGetById).toHaveBeenCalledTimes(1);
   });
 

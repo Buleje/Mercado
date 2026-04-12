@@ -106,9 +106,8 @@ function computePoints(amount: number): number {
 // ── CustomersDB ───────────────────────────────────────────────────────────────
 
 export const CustomersDB = {
-  async getAll(tenantId?: string): Promise<DbCustomer[]> {
-    const where: Record<string, unknown> = {};
-    if (tenantId) where.tenantId = tenantId;
+  async getAll(tenantId: string): Promise<DbCustomer[]> {
+    const where: Record<string, unknown> = { tenantId };
     const rows = await prisma.customer.findMany({ where, include: { locations: true }, orderBy: { updatedAt: "desc" } });
     return rows.map(mapCustomer);
   },
@@ -118,11 +117,11 @@ export const CustomersDB = {
    * Uses phone as the cursor since it's the PK. Returns up to `limit` rows.
    */
   async getPage(opts: {
-    tenantId?: string;
+    tenantId: string;
     cursor?: string;
     limit?: number;
     search?: string;
-  } = {}): Promise<{ customers: DbCustomer[]; nextCursor: string | null; total: number }> {
+  }): Promise<{ customers: DbCustomer[]; nextCursor: string | null; total: number }> {
     const limit = Math.min(Math.max(opts.limit ?? 50, 1), 500);
 
     const where: Record<string, unknown> = {};
@@ -155,7 +154,7 @@ export const CustomersDB = {
     const row = await prisma.customer.findUnique({ where: { phone: normalizePhone(phone) }, include: { locations: true } });
     return row ? mapCustomer(row) : null;
   },
-  async upsert(data: Omit<DbCustomer, "createdAt" | "updatedAt">, tenantId = "main"): Promise<DbCustomer> {
+  async upsert(data: Omit<DbCustomer, "createdAt" | "updatedAt">, tenantId: string): Promise<DbCustomer> {
     const locs = (data.locations ?? []).map((l) => ({ id: l.id, location: l.location, reference: l.reference }));
     const row = await prisma.customer.upsert({
       where: { phone: data.phone },
@@ -260,9 +259,8 @@ export const LoyaltyDB = {
 // ── ReviewsDB ─────────────────────────────────────────────────────────────────
 
 export const ReviewsDB = {
-  async getAll(tenantId?: string): Promise<DbReview[]> {
-    const where: Record<string, unknown> = {};
-    if (tenantId) where.tenantId = tenantId;
+  async getAll(tenantId: string): Promise<DbReview[]> {
+    const where: Record<string, unknown> = { tenantId };
     return (await prisma.review.findMany({ where, orderBy: { date: "desc" } })).map(mapReview);
   },
   async getApproved(productId?: number): Promise<DbReview[]> {
@@ -271,7 +269,7 @@ export const ReviewsDB = {
       : { status: "approved" };
     return (await prisma.review.findMany({ where, orderBy: { date: "desc" } })).map(mapReview);
   },
-  async add(r: DbReview, tenantId = "main"): Promise<DbReview> {
+  async add(r: DbReview, tenantId: string): Promise<DbReview> {
     const productIdVal = r.productId ?? null;
     const row = await prisma.review.upsert({
       where: { id: r.id },
@@ -296,7 +294,7 @@ export const ReviewsDB = {
   },
 
   /** Aggregate ratings per product (approved reviews only) */
-  async getAggregatedRatings(tenantId = "main"): Promise<Record<number, { rating: number; reviewCount: number }>> {
+  async getAggregatedRatings(tenantId: string): Promise<Record<number, { rating: number; reviewCount: number }>> {
     const rows = await prisma.review.groupBy({
       by: ["productId"],
       where: { status: "approved", productId: { not: null }, tenantId, deletedAt: null },
@@ -326,11 +324,11 @@ export const ShoppingListsDB = {
       orderBy: { updatedAt: "desc" },
     })).map(mapShoppingList);
   },
-  async add(data: { customerPhone: string; name: string; items: { productId: number; quantity: number }[]; tenantId?: string }): Promise<DbShoppingList> {
+  async add(data: { customerPhone: string; name: string; items: { productId: number; quantity: number }[]; tenantId: string }): Promise<DbShoppingList> {
     const row = await prisma.shoppingList.create({
       data: {
         customerPhone: normalizePhone(data.customerPhone), name: data.name,
-        tenantId: data.tenantId ?? "main",
+        tenantId: data.tenantId,
         items: { create: data.items },
       },
       include: { items: true },

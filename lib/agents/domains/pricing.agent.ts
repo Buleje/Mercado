@@ -33,7 +33,7 @@ async function marginCheck(
   const products = await cache.getOrSet(
     "pricing:all-products",
     120,
-    () => ProductsDB.getAll(),
+    () => ProductsDB.getAll(task.tenantId),
   );
 
   const analyzed = products
@@ -88,7 +88,7 @@ async function competitorGap(
   const products = await cache.getOrSet(
     "pricing:all-products",
     120,
-    () => ProductsDB.getAll(),
+    () => ProductsDB.getAll(task.tenantId),
   );
 
   const activeProducts = products.filter((p) => p.active);
@@ -135,7 +135,7 @@ async function promotionCandidates(
   const products = await cache.getOrSet(
     "pricing:all-products",
     120,
-    () => ProductsDB.getAll(),
+    () => ProductsDB.getAll(task.tenantId),
   );
 
   // Products suitable for promotion:
@@ -211,10 +211,11 @@ async function bundleSuggestions(
       OrdersDB.getAllFiltered({
         status: "entregado",
         since,
+        tenantId: task.tenantId,
       }),
     ),
-    cache.getOrSet("pricing:all-sales", 60, () => SalesDB.getAll()),
-    BundlesDB.getAll(),
+    cache.getOrSet("pricing:all-sales", 60, () => SalesDB.getAll(task.tenantId)),
+    BundlesDB.getAll(task.tenantId),
   ]);
 
   const sinceDate = new Date(since);

@@ -37,7 +37,8 @@ async function sendOrderUpdate(
     };
   }
 
-  const order = await OrdersDB.getById(orderId);
+  // Scope to the task's tenant — prevents cross-tenant notifications (HOTFIX-002)
+  const order = await OrdersDB.getById(task.tenantId, orderId);
   if (!order) {
     return { success: false, error: `Pedido no encontrado: ${orderId}` };
   }
@@ -62,7 +63,7 @@ async function sendOrderUpdate(
     message,
     status: "sent",
     orderId,
-  }).catch(() => {});
+  }, task.tenantId).catch(() => {});
 
   log.info("Order update notification sent", {
     orderId,
@@ -90,7 +91,7 @@ async function sendStockAlert(
 
   log.info("Sending stock alert", { action: task.action });
 
-  const lowStockProducts = await AutoReorderDB.getLowStockProducts();
+  const lowStockProducts = await AutoReorderDB.getLowStockProducts(task.tenantId);
 
   if (lowStockProducts.length === 0) {
     return {
@@ -123,7 +124,7 @@ async function sendStockAlert(
     recipient: "admin",
     message: alertMessage,
     status: "sent",
-  }).catch(() => {});
+  }, task.tenantId).catch(() => {});
 
   agentBus.emit("agent:alert", {
     domain: "notifications",
@@ -200,7 +201,7 @@ async function sendExpiryWarning(
     recipient: "admin",
     message: warningMessage,
     status: "sent",
-  }).catch(() => {});
+  }, task.tenantId).catch(() => {});
 
   agentBus.emit("agent:alert", {
     domain: "notifications",
@@ -241,7 +242,7 @@ async function sendPromotion(
     return { success: false, error: "Se requiere 'promoId'" };
   }
 
-  const allPromos = await PromotionsDB.getAll();
+  const allPromos = await PromotionsDB.getAll(task.tenantId);
   const promo = allPromos.find((p) => p.id === promoId);
   if (!promo) {
     return {
@@ -254,7 +255,7 @@ async function sendPromotion(
   let recipients: Array<{ phone: string; name: string }> = [];
 
   if (promo.targetType === "all" || !segment) {
-    const customers = await CustomersDB.getAll();
+    const customers = await CustomersDB.getAll(task.tenantId);
     recipients = customers
       .filter((c) => c.notifPromotions)
       .map((c) => ({ phone: c.phone, name: c.name }));
@@ -274,7 +275,7 @@ async function sendPromotion(
       recipient: r.phone,
       message,
       status: "sent",
-    }).catch(() => {});
+    }, task.tenantId).catch(() => {});
   }
 
   log.info("Promotional notifications queued", {
@@ -307,9 +308,9 @@ async function digestPending(
 
   const [recentLogs, lowStock] = await Promise.all([
     cache.getOrSet("notifications:recent-logs", 60, () =>
-      NotificationLogsDB.getAll(),
+      NotificationLogsDB.getAll(task.tenantId),
     ),
-    AutoReorderDB.getLowStockProducts(),
+    AutoReorderDB.getLowStockProducts(task.tenantId),
   ]);
 
   // Check for unsent notifications in the last 24h
@@ -343,6 +344,7 @@ async function digestPending(
   // Pending orders without notification?
   const pendingOrders = await OrdersDB.getAllFiltered({
     status: "pendiente",
+    tenantId: task.tenantId,
   });
   if (pendingOrders.length > 3) {
     pendingActions.push({

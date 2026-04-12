@@ -79,7 +79,7 @@ function serviceStatus(ok: boolean, ms: number): "operativo" | "degradado" | "ca
 // ── GET /api/admin/health ─────────────────────────────────────────────────────
 
 export async function GET(req: NextRequest) {
-  const auth = await requireAdmin(req, ["admin"]);
+  const auth = await requireAdmin(req, ["admin", "owner", "manager", "tienda_owner", "cajero"]);
   if (auth instanceof NextResponse) return auth;
 
   try {

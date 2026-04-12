@@ -1,0 +1,589 @@
+{
+  "timestamp": "2026-04-09T06:33:08.752Z",
+  "total_statements": 73,
+  "applied": 71,
+  "already_decimal": 0,
+  "skipped_drift": 2,
+  "failed": 0,
+  "total_duration_ms": 27636,
+  "results": [
+    {
+      "table": "Settings",
+      "column": "cashOpeningAmount",
+      "status": "applied",
+      "duration_ms": 341,
+      "before_type": "float8",
+      "after_type": "numeric"
+    },
+    {
+      "table": "Settings",
+      "column": "cashAlertMax",
+      "status": "applied",
+      "duration_ms": 133,
+      "before_type": "float8",
+      "after_type": "numeric"
+    },
+    {
+      "table": "Settings",
+      "column": "returnMaxNoAuth",
+      "status": "applied",
+      "duration_ms": 135,
+      "before_type": "float8",
+      "after_type": "numeric"
+    },
+    {
+      "table": "Settings",
+      "column": "freeDeliveryMin",
+      "status": "applied",
+      "duration_ms": 135,
+      "before_type": "float8",
+      "after_type": "numeric"
+    },
+    {
+      "table": "CommissionRule",
+      "column": "minSales",
+      "status": "applied",
+      "duration_ms": 136,
+      "before_type": "float8",
+      "after_type": "numeric"
+    },
+    {
+      "table": "CommissionRule",
+      "column": "maxSales",
+      "status": "applied",
+      "duration_ms": 127,
+      "before_type": "float8",
+      "after_type": "numeric"
+    },
+    {
+      "table": "DiscountRule",
+      "column": "valor",
+      "status": "applied",
+      "duration_ms": 139,
+      "before_type": "float8",
+      "after_type": "numeric"
+    },
+    {
+      "table": "Promotion",
+      "column": "minPurchase",
+      "status": "applied",
+      "duration_ms": 132,
+      "before_type": "float8",
+      "after_type": "numeric"
+    },
+    {
+      "table": "Coupon",
+      "column": "discountValue",
+      "status": "applied",
+      "duration_ms": 143,
+      "before_type": "float8",
+      "after_type": "numeric"
+    },
+    {
+      "table": "Coupon",
+      "column": "balance",
+      "status": "applied",
+      "duration_ms": 135,
+      "before_type": "float8",
+      "after_type": "numeric"
+    },
+    {
+      "table": "Coupon",
+      "column": "minPurchase",
+      "status": "applied",
+      "duration_ms": 134,
+      "before_type": "float8",
+      "after_type": "numeric"
+    },
+    {
+      "table": "Bundle",
+      "column": "price",
+      "status": "applied",
+      "duration_ms": 136,
+      "before_type": "float8",
+      "after_type": "numeric"
+    },
+    {
+      "table": "PriceHistory",
+      "column": "oldPrice",
+      "status": "applied",
+      "duration_ms": 169,
+      "before_type": "float8",
+      "after_type": "numeric"
+    },
+    {
+      "table": "PriceHistory",
+      "column": "newPrice",
+      "status": "applied",
+      "duration_ms": 129,
+      "before_type": "float8",
+      "after_type": "numeric"
+    },
+    {
+      "table": "SupplierPriceVersion",
+      "column": "oldPrice",
+      "status": "applied",
+      "duration_ms": 142,
+      "before_type": "float8",
+      "after_type": "numeric"
+    },
+    {
+      "table": "SupplierPriceVersion",
+      "column": "newPrice",
+      "status": "applied",
+      "duration_ms": 135,
+      "before_type": "float8",
+      "after_type": "numeric"
+    },
+    {
+      "table": "Campaign",
+      "column": "revenue",
+      "status": "applied",
+      "duration_ms": 137,
+      "before_type": "float8",
+      "after_type": "numeric"
+    },
+    {
+      "table": "ProductAnalytics",
+      "column": "revenue",
+      "status": "applied",
+      "duration_ms": 140,
+      "before_type": "float8",
+      "after_type": "numeric"
+    },
+    {
+      "table": "ABTestEvent",
+      "column": "value",
+      "status": "applied",
+      "duration_ms": 139,
+      "before_type": "float8",
+      "after_type": "numeric"
+    },
+    {
+      "table": "Batch",
+      "column": "costUnit",
+      "status": "applied",
+      "duration_ms": 148,
+      "before_type": "float8",
+      "after_type": "numeric"
+    },
+    {
+      "table": "PurchaseItem",
+      "column": "unitCost",
+      "status": "applied",
+      "duration_ms": 140,
+      "before_type": "float8",
+      "after_type": "numeric"
+    },
+    {
+      "table": "PurchaseOrder",
+      "column": "total",
+      "status": "applied",
+      "duration_ms": 136,
+      "before_type": "float8",
+      "after_type": "numeric"
+    },
+    {
+      "table": "PurchaseOrder",
+      "column": "discount",
+      "status": "applied",
+      "duration_ms": 134,
+      "before_type": "float8",
+      "after_type": "numeric"
+    },
+    {
+      "table": "Expense",
+      "column": "amount",
+      "status": "applied",
+      "duration_ms": 144,
+      "before_type": "float8",
+      "after_type": "numeric"
+    },
+    {
+      "table": "Payment",
+      "column": "amount",
+      "status": "applied",
+      "duration_ms": 132,
+      "before_type": "float8",
+      "after_type": "numeric"
+    },
+    {
+      "table": "Payable",
+      "column": "amount",
+      "status": "applied",
+      "duration_ms": 135,
+      "before_type": "float8",
+      "after_type": "numeric"
+    },
+    {
+      "table": "Payable",
+      "column": "paidAmount",
+      "status": "applied",
+      "duration_ms": 131,
+      "before_type": "float8",
+      "after_type": "numeric"
+    },
+    {
+      "table": "ReturnItem",
+      "column": "price",
+      "status": "applied",
+      "duration_ms": 126,
+      "before_type": "float8",
+      "after_type": "numeric"
+    },
+    {
+      "table": "Return",
+      "column": "total",
+      "status": "applied",
+      "duration_ms": 139,
+      "before_type": "float8",
+      "after_type": "numeric"
+    },
+    {
+      "table": "DeliveryPartner",
+      "column": "fee",
+      "status": "applied",
+      "duration_ms": 138,
+      "before_type": "float8",
+      "after_type": "numeric"
+    },
+    {
+      "table": "DeliveryAssignment",
+      "column": "fee",
+      "status": "applied",
+      "duration_ms": 133,
+      "before_type": "float8",
+      "after_type": "numeric"
+    },
+    {
+      "table": "WholesaleOrderItem",
+      "column": "unitPrice",
+      "status": "applied",
+      "duration_ms": 133,
+      "before_type": "float8",
+      "after_type": "numeric"
+    },
+    {
+      "table": "WholesaleOrderItem",
+      "column": "total",
+      "status": "applied",
+      "duration_ms": 126,
+      "before_type": "float8",
+      "after_type": "numeric"
+    },
+    {
+      "table": "WholesaleOrder",
+      "column": "total",
+      "status": "applied",
+      "duration_ms": 135,
+      "before_type": "float8",
+      "after_type": "numeric"
+    },
+    {
+      "table": "WholesaleOrder",
+      "column": "commission",
+      "status": "applied",
+      "duration_ms": 128,
+      "before_type": "float8",
+      "after_type": "numeric"
+    },
+    {
+      "table": "CommissionLedger",
+      "column": "amount",
+      "status": "applied",
+      "duration_ms": 147,
+      "before_type": "float8",
+      "after_type": "numeric"
+    },
+    {
+      "table": "StoreProduct",
+      "column": "retailPrice",
+      "status": "applied",
+      "duration_ms": 139,
+      "before_type": "float8",
+      "after_type": "numeric"
+    },
+    {
+      "table": "StoreProduct",
+      "column": "wholesalePrice",
+      "status": "applied",
+      "duration_ms": 133,
+      "before_type": "float8",
+      "after_type": "numeric"
+    },
+    {
+      "table": "SalesAnomaly",
+      "column": "expected",
+      "status": "skipped-drift"
+    },
+    {
+      "table": "SalesAnomaly",
+      "column": "actual",
+      "status": "skipped-drift"
+    },
+    {
+      "table": "CreditProfile",
+      "column": "creditLimit",
+      "status": "applied",
+      "duration_ms": 132,
+      "before_type": "float8",
+      "after_type": "numeric"
+    },
+    {
+      "table": "CreditProfile",
+      "column": "usedCredit",
+      "status": "applied",
+      "duration_ms": 130,
+      "before_type": "float8",
+      "after_type": "numeric"
+    },
+    {
+      "table": "CreditProfile",
+      "column": "availableCredit",
+      "status": "applied",
+      "duration_ms": 130,
+      "before_type": "float8",
+      "after_type": "numeric"
+    },
+    {
+      "table": "CreditProfile",
+      "column": "avgTicket",
+      "status": "applied",
+      "duration_ms": 131,
+      "before_type": "float8",
+      "after_type": "numeric"
+    },
+    {
+      "table": "CreditInstallment",
+      "column": "totalAmount",
+      "status": "applied",
+      "duration_ms": 135,
+      "before_type": "float8",
+      "after_type": "numeric"
+    },
+    {
+      "table": "CreditInstallment",
+      "column": "installmentAmount",
+      "status": "applied",
+      "duration_ms": 131,
+      "before_type": "float8",
+      "after_type": "numeric"
+    },
+    {
+      "table": "CreditInstallment",
+      "column": "paidAmount",
+      "status": "applied",
+      "duration_ms": 126,
+      "before_type": "float8",
+      "after_type": "numeric"
+    },
+    {
+      "table": "ProductVariant",
+      "column": "priceModifier",
+      "status": "applied",
+      "duration_ms": 147,
+      "before_type": "float8",
+      "after_type": "numeric"
+    },
+    {
+      "table": "CashMovement",
+      "column": "amount",
+      "status": "applied",
+      "duration_ms": 130,
+      "before_type": "float8",
+      "after_type": "numeric"
+    },
+    {
+      "table": "CashRegister",
+      "column": "openingAmount",
+      "status": "applied",
+      "duration_ms": 126,
+      "before_type": "float8",
+      "after_type": "numeric"
+    },
+    {
+      "table": "CashRegister",
+      "column": "closingAmount",
+      "status": "applied",
+      "duration_ms": 128,
+      "before_type": "float8",
+      "after_type": "numeric"
+    },
+    {
+      "table": "CashRegister",
+      "column": "expectedAmount",
+      "status": "applied",
+      "duration_ms": 125,
+      "before_type": "float8",
+      "after_type": "numeric"
+    },
+    {
+      "table": "CashRegister",
+      "column": "difference",
+      "status": "applied",
+      "duration_ms": 126,
+      "before_type": "float8",
+      "after_type": "numeric"
+    },
+    {
+      "table": "Customer",
+      "column": "totalSpent",
+      "status": "applied",
+      "duration_ms": 142,
+      "before_type": "float8",
+      "after_type": "numeric"
+    },
+    {
+      "table": "Customer",
+      "column": "creditBalance",
+      "status": "applied",
+      "duration_ms": 130,
+      "before_type": "float8",
+      "after_type": "numeric"
+    },
+    {
+      "table": "Customer",
+      "column": "creditLimit",
+      "status": "applied",
+      "duration_ms": 129,
+      "before_type": "float8",
+      "after_type": "numeric"
+    },
+    {
+      "table": "SunatInvoice",
+      "column": "subtotal",
+      "status": "applied",
+      "duration_ms": 130,
+      "before_type": "float8",
+      "after_type": "numeric"
+    },
+    {
+      "table": "SunatInvoice",
+      "column": "igv",
+      "status": "applied",
+      "duration_ms": 131,
+      "before_type": "float8",
+      "after_type": "numeric"
+    },
+    {
+      "table": "SunatInvoice",
+      "column": "total",
+      "status": "applied",
+      "duration_ms": 133,
+      "before_type": "float8",
+      "after_type": "numeric"
+    },
+    {
+      "table": "SaleItem",
+      "column": "price",
+      "status": "applied",
+      "duration_ms": 125,
+      "before_type": "float8",
+      "after_type": "numeric"
+    },
+    {
+      "table": "SaleItem",
+      "column": "costPrice",
+      "status": "applied",
+      "duration_ms": 129,
+      "before_type": "float8",
+      "after_type": "numeric"
+    },
+    {
+      "table": "Sale",
+      "column": "total",
+      "status": "applied",
+      "duration_ms": 128,
+      "before_type": "float8",
+      "after_type": "numeric"
+    },
+    {
+      "table": "Sale",
+      "column": "totalCogs",
+      "status": "applied",
+      "duration_ms": 127,
+      "before_type": "float8",
+      "after_type": "numeric"
+    },
+    {
+      "table": "Sale",
+      "column": "amountPaid",
+      "status": "applied",
+      "duration_ms": 126,
+      "before_type": "float8",
+      "after_type": "numeric"
+    },
+    {
+      "table": "Sale",
+      "column": "change",
+      "status": "applied",
+      "duration_ms": 127,
+      "before_type": "float8",
+      "after_type": "numeric"
+    },
+    {
+      "table": "OrderItem",
+      "column": "price",
+      "status": "applied",
+      "duration_ms": 132,
+      "before_type": "float8",
+      "after_type": "numeric"
+    },
+    {
+      "table": "OrderItem",
+      "column": "costPrice",
+      "status": "applied",
+      "duration_ms": 126,
+      "before_type": "float8",
+      "after_type": "numeric"
+    },
+    {
+      "table": "Order",
+      "column": "total",
+      "status": "applied",
+      "duration_ms": 134,
+      "before_type": "float8",
+      "after_type": "numeric"
+    },
+    {
+      "table": "Order",
+      "column": "couponDiscount",
+      "status": "applied",
+      "duration_ms": 131,
+      "before_type": "float8",
+      "after_type": "numeric"
+    },
+    {
+      "table": "Order",
+      "column": "discountAmount",
+      "status": "applied",
+      "duration_ms": 132,
+      "before_type": "float8",
+      "after_type": "numeric"
+    },
+    {
+      "table": "Order",
+      "column": "totalCogs",
+      "status": "applied",
+      "duration_ms": 130,
+      "before_type": "float8",
+      "after_type": "numeric"
+    },
+    {
+      "table": "Product",
+      "column": "price",
+      "status": "applied",
+      "duration_ms": 144,
+      "before_type": "float8",
+      "after_type": "numeric"
+    },
+    {
+      "table": "Product",
+      "column": "costPrice",
+      "status": "applied",
+      "duration_ms": 134,
+      "before_type": "float8",
+      "after_type": "numeric"
+    }
+  ]
+}

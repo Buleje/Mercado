@@ -17,7 +17,7 @@ export function useInView<T extends Element = HTMLDivElement>(
         setIsInView(true);
         observer.disconnect();
       }
-    }, { threshold: 0.1, rootMargin: "-80px", ...options });
+    }, { threshold: 0.05, rootMargin: "200px", ...options });
 
     observer.observe(el);
     return () => observer.disconnect();

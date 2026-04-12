@@ -1,10 +1,14 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireAdmin } from "@/lib/require-admin";
+import { toNumOrZero } from "@/lib/decimal-utils";
+import { logger } from "@/lib/logger";
 
 export async function GET(req: NextRequest) {
   const auth = await requireAdmin(req, ["admin", "analista"]);
   if (auth instanceof NextResponse) return auth;
+
+  const { tenantId } = auth;
 
   try {
     const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
@@ -17,6 +21,7 @@ export async function GET(req: NextRequest) {
     const [currentAgg, prevAgg] = await Promise.all([
       prisma.order.aggregate({
         where: {
+          tenantId,
           status: { in: validStatuses },
           createdAt: { gte: thirtyDaysAgo }
         },
@@ -25,6 +30,7 @@ export async function GET(req: NextRequest) {
       }),
       prisma.order.aggregate({
         where: {
+          tenantId,
           status: { in: validStatuses },
           createdAt: { gte: sixtyDaysAgo, lt: thirtyDaysAgo }
         },
@@ -33,8 +39,9 @@ export async function GET(req: NextRequest) {
       })
     ]);
 
-    const currentRevenue = currentAgg._sum.total ?? 0;
-    const previousRevenue = prevAgg._sum.total ?? 0;
+    // TD-018: _sum.total es Decimal | null → convertir
+    const currentRevenue = toNumOrZero(currentAgg._sum.total);
+    const previousRevenue = toNumOrZero(prevAgg._sum.total);
     const currentCount = currentAgg._count.id;
     const previousCount = prevAgg._count.id;
 
@@ -58,7 +65,7 @@ export async function GET(req: NextRequest) {
       categoryTrends,
     });
   } catch (e) {
-    console.error("[analytics] GET error:", e);
+    logger.error("[analytics] GET error", { tenantId, error: (e as Error).message });
     return NextResponse.json({ error: "Database error" }, { status: 503 });
   }
 }

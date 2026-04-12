@@ -24,16 +24,16 @@ export async function GET(
   const normalized = normalizePhone(phone);
 
   const [orders, notifications, reviews, sales, inAppNotifs] = await Promise.all([
-    OrdersDB.getByCustomerPhone(normalized),
-    NotificationLogsDB.getByRecipient(normalized),
+    OrdersDB.getByCustomerPhone(auth.tenantId, normalized),
+    NotificationLogsDB.getByRecipient(normalized, auth.tenantId),
     ReviewsDB.getAll(auth.tenantId).then(all => all.filter(r => r.phone === normalized)),
     prisma.sale.findMany({
-      where: { customerPhone: normalized },
+      where: { tenantId: auth.tenantId, customerPhone: normalized },
       include: { items: true },
       orderBy: { createdAt: "desc" },
     }),
     prisma.customerNotification.findMany({
-      where: { customerPhone: normalized },
+      where: { tenantId: auth.tenantId, customerPhone: normalized },
       orderBy: { createdAt: "desc" },
       take: 50,
     }),

@@ -51,7 +51,7 @@ const ENTRY_TYPES: { value: EntryType; label: string; color: string; dot: string
   },
 ];
 
-const LS_KEY = "bsm_content_calendar";
+const LS_KEY = "buleje_content_calendar";
 const DAYS_OF_WEEK = ["Dom", "Lun", "Mar", "Mie", "Jue", "Vie", "Sab"];
 const MONTH_NAMES = [
   "Enero","Febrero","Marzo","Abril","Mayo","Junio",

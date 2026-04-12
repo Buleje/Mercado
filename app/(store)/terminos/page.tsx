@@ -12,7 +12,7 @@ export default function TerminosPage() {
         Términos y Condiciones
       </h1>
       <p className="text-sm text-gray-500 dark:text-muted mb-8">
-        Última actualización: {new Date().toLocaleDateString("es-PE", { year: "numeric", month: "long", day: "numeric" })}
+        Última actualización: 12 de abril de 2026
       </p>
 
       <div className="prose prose-sm dark:prose-invert max-w-none space-y-6">

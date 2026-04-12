@@ -125,13 +125,13 @@ export function useCheckoutSubmit({
         const data = (await res.json()) as { id: string };
         dispatch({ type: "SET_UI", patch: { orderId: data.id } });
 
-        saveLastOrder(data.id, items, finalTotal);
+        saveLastOrder(data.id, items, finalTotal, effective.phone);
 
         cartActions.clear();
         cartActions.closeCart();
         cartActions.markOrderPending();
         window.dispatchEvent(
-          new CustomEvent("bsm:orderCreated", { detail: { orderId: data.id } })
+          new CustomEvent("buleje:orderCreated", { detail: { orderId: data.id } })
         );
 
         trackPurchase({

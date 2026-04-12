@@ -442,36 +442,36 @@ export default function SugerenciasIAModule({ tenantId: _tenantId }: Props) {
         activeTab={tab}
         onTabChange={(id) => setTab(id)}
         moduleId={MODULE_ID}
-      />
+      >
+        {tab === "combos" && (
+          <div className="rounded-2xl border border-gray-200 overflow-hidden">
+            <ComboSuggestionCard />
+          </div>
+        )}
 
-      {tab === "combos" && (
-        <div className="rounded-2xl border border-gray-200 overflow-hidden">
-          <ComboSuggestionCard />
-        </div>
-      )}
+        {tab === "clientes" && (
+          <div className="bg-white rounded-2xl border border-gray-200 p-5">
+            <TabClientes />
+          </div>
+        )}
 
-      {tab === "clientes" && (
-        <div className="bg-white rounded-2xl border border-gray-200 p-5">
-          <TabClientes />
-        </div>
-      )}
+        {tab === "comprar" && (
+          <div className="space-y-4">
+            <SmartPurchaseAdvisor />
+            <SmartReorderCard />
+          </div>
+        )}
 
-      {tab === "comprar" && (
-        <div className="space-y-4">
-          <SmartPurchaseAdvisor />
-          <SmartReorderCard />
-        </div>
-      )}
+        {tab === "crosssell" && (
+          <div className="bg-white rounded-2xl border border-gray-200 p-5">
+            <TabCrossSell />
+          </div>
+        )}
 
-      {tab === "crosssell" && (
-        <div className="bg-white rounded-2xl border border-gray-200 p-5">
-          <TabCrossSell />
-        </div>
-      )}
-
-      {tab === "alertas" && (
-        <SmartSuggestionsPanel context="general" />
-      )}
+        {tab === "alertas" && (
+          <SmartSuggestionsPanel context="general" />
+        )}
+      </AdminTabBar>
     </div>
   );
 }

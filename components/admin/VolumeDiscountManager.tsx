@@ -3,7 +3,6 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import { cn } from "@/lib/utils";
 import { Plus, Trash2, Edit3, Save, X, Tag } from "lucide-react";
 
 // ── Types ─────────────────────────────────────────────────────────────────────

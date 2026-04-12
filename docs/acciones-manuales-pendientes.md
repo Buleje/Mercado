@@ -14,7 +14,7 @@ Estas son las acciones que **solo Brandon puede hacer** porque requieren acceso 
 ### Pasos
 
 1. Abrir https://vercel.com/dashboard
-2. Seleccionar proyecto **Bodega San Martín**
+2. Seleccionar proyecto **Buleje**
 3. **Settings** → **General** → **Rolling Releases**
 4. Activar **"Enable Rolling Releases"**
 5. Confirmar que detecte la config de `vercel.json`
@@ -33,14 +33,14 @@ En el próximo deploy a producción, el dashboard de Vercel debe mostrar el prog
 
 ### Pasos
 
-Ir a https://sentry.io → proyecto Bodega San Martín → **Alerts** → **Create Alert Rule**
+Ir a https://sentry.io → proyecto Buleje → **Alerts** → **Create Alert Rule**
 
 | # | Tipo | Nombre | Condición |
 |---|---|---|---|
-| 1 | Issue Alert | `BSM — Error Rate Alto` | "Number of events > 10 in 1 hour" + `is:unresolved` |
-| 2 | Metric Alert | `BSM — Latencia Alta (P95)` | `transaction.duration` P95 > 500ms warning, > 1000ms critical |
-| 3 | Issue Alert | `BSM — Excepción No Manejada` | "A new issue is created" + `handled:no` |
-| 4 | Metric Alert | `BSM — Tasa de Fallos Crítica` | `transaction.failure_rate` > 5% warning, > 10% critical |
+| 1 | Issue Alert | `Buleje — Error Rate Alto` | "Number of events > 10 in 1 hour" + `is:unresolved` |
+| 2 | Metric Alert | `Buleje — Latencia Alta (P95)` | `transaction.duration` P95 > 500ms warning, > 1000ms critical |
+| 3 | Issue Alert | `Buleje — Excepción No Manejada` | "A new issue is created" + `handled:no` |
+| 4 | Metric Alert | `Buleje — Tasa de Fallos Crítica` | `transaction.failure_rate` > 5% warning, > 10% critical |
 
 Acción para todas: enviar email + Slack al canal `#alertas-bsm`.
 

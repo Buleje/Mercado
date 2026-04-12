@@ -1,4 +1,4 @@
-# Configuracion de Alertas en Sentry -- Bodega San Martin
+# Configuracion de Alertas en Sentry -- Buleje
 
 Guia paso a paso para configurar las 4 reglas de alerta recomendadas en el dashboard de Sentry.
 Estas reglas complementan los helpers programaticos de `lib/sentry-alerts.ts` (`reportCriticalError()`, `reportPerformanceAnomaly()`, `setupAlertRules()`).
@@ -18,7 +18,7 @@ Detecta cuando la tasa de errores supera el 1% del total de transacciones en una
 2. **Condicion:** "Number of events is more than 10 in 1 hour"
 3. **Filtro:** `is:unresolved`
 4. **Accion:** Enviar email + Slack notification al canal `#alertas-bsm`
-5. **Nombre:** `BSM -- Error Rate Alto`
+5. **Nombre:** `Buleje -- Error Rate Alto`
 6. **Frecuencia:** No mas de una alerta cada 60 minutos
 
 ### Por que importa
@@ -35,7 +35,7 @@ Detecta degradacion de rendimiento en las transacciones (API routes, page loads)
    - Warning: > 500ms
    - Critical: > 1000ms
 4. **Ventana:** 5 minutos
-5. **Nombre:** `BSM -- Latencia Alta (P95)`
+5. **Nombre:** `Buleje -- Latencia Alta (P95)`
 6. **Filtro de transaccion (opcional):** `transaction:/api/*` para enfocarse en API routes
 
 ### Por que importa
@@ -50,7 +50,7 @@ Detecta excepciones no capturadas que aparecen por primera vez (bugs nuevos).
 2. **Condicion:** "A new issue is created"
 3. **Filtro:** `handled:no`
 4. **Accion:** Notificacion inmediata (email + Slack al canal `#alertas-bsm`)
-5. **Nombre:** `BSM -- Excepcion No Manejada`
+5. **Nombre:** `Buleje -- Excepcion No Manejada`
 6. **Frecuencia:** Cada vez que ocurra (sin limite)
 
 ### Por que importa
@@ -67,7 +67,7 @@ Detecta cuando mas del 5% de las transacciones fallan (HTTP 5xx, timeouts).
    - Warning: > 5%
    - Critical: > 10%
 4. **Ventana:** 10 minutos
-5. **Nombre:** `BSM -- Tasa de Fallos Critica`
+5. **Nombre:** `Buleje -- Tasa de Fallos Critica`
 6. **Filtro de transaccion (opcional):** `transaction:/api/billing/*` para monitorear pagos especificamente
 
 ### Por que importa

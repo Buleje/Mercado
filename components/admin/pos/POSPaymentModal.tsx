@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useCallback, useEffect } from "react";
+import Image from "next/image";
 import {
   X,
   Plus,
@@ -796,8 +797,7 @@ export default function POSPaymentModal({
                       {/* QR basado en el numero guardado */}
                       {savedNumber ? (
                         <div className="text-center">
-                          {/* eslint-disable-next-line @next/next/no-img-element */}
-                          <img
+                          <Image
                             src={`https://chart.googleapis.com/chart?chs=180x180&cht=qr&chl=${encodeURIComponent(savedNumber)}&choe=UTF-8`}
                             alt={`QR ${currentMethod}`}
                             width={180}

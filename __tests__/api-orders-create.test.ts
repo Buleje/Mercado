@@ -161,6 +161,12 @@ vi.mock("@/lib/prisma", () => ({
     customerNotification: {
       create: mockCustomerNotifCreate,
     },
+    $transaction: vi.fn(async (fn: (tx: unknown) => Promise<unknown>) => {
+      const txProxy = {
+        $executeRaw: vi.fn(async () => 1),
+      };
+      return fn(txProxy);
+    }),
   },
 }));
 
@@ -228,14 +234,26 @@ const SAVED_ORDER = {
 // Tests
 // ─────────────────────────────────────────────────────────────────────────────
 
+/** Minimal Prisma.Decimal shape that `toNumOrZero` understands. */
+function dec(n: number) {
+  return {
+    toNumber: () => n,
+    toFixed: (d = 2) => n.toFixed(d),
+    toString: () => String(n),
+  };
+}
+
 describe("POST /api/orders", () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    // Default prisma returns: no idempotency duplicate, free tenant, no products, customer allows notifs
+    // Default prisma returns: no idempotency duplicate, free tenant, products exist, customer allows notifs
     mockOrderFindFirst.mockResolvedValue(null);
     mockOrderCount.mockResolvedValue(0);
     mockTenantFindFirst.mockResolvedValue({ plan: "free" });
-    mockProductFindMany.mockResolvedValue([]);
+    // HOTFIX-001: server-authoritative pricing needs product in DB
+    mockProductFindMany.mockResolvedValue([
+      { id: 1, price: dec(5.5), costPrice: dec(3.85), stock: null },
+    ]);
     mockCustomerFindUnique.mockResolvedValue(null);
     mockCustomerNotifCreate.mockResolvedValue(undefined);
     // Default OrdersDB mocks

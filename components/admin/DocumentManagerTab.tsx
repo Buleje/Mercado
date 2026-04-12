@@ -4,7 +4,7 @@ import { useState, useMemo, useEffect, useCallback } from "react";
 import {
   FolderOpen, Download, Search, Plus, X,
   Eye, Trash2, FileText, FileCheck, AlertCircle, Clock,
-  RefreshCw, FileSignature, ExternalLink, Loader2,
+  RefreshCw, FileSignature, Loader2,
 } from "lucide-react";
 import { cn, exportToCSV } from "@/lib/utils";
 
@@ -96,7 +96,6 @@ export default function DocumentManagerTab() {
       if (res.ok) {
         const data = await res.json();
         const contratos: ContratoAPI[] = data.contratos || [];
-        const now = new Date();
 
         const contratoDocs: Doc[] = contratos
           .filter((c) => c.estado !== "ANULADO")
@@ -262,7 +261,7 @@ export default function DocumentManagerTab() {
               {stats.contratosPorVencer > 0 && (
                 <span className="block mt-1 font-bold text-violet-600 dark:text-violet-400">
                   <FileSignature className="h-3 w-3 inline mr-0.5" />
-                  {stats.contratosPorVencer} contrato(s) por vencer — usa la accion "Renovar" para extenderlos.
+                  {stats.contratosPorVencer} contrato(s) por vencer — usa la accion &ldquo;Renovar&rdquo; para extenderlos.
                 </span>
               )}
             </p>

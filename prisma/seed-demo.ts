@@ -8,6 +8,7 @@
 import { PrismaClient } from "../lib/generated/prisma/client";
 import { PrismaPg } from "@prisma/adapter-pg";
 import { hash } from "bcryptjs";
+import { toNumOrZero } from "../lib/decimal-utils";
 
 const SLUG = "demo";
 const TENANT_NAME = "Bodega Demo — Plan Enterprise";
@@ -207,7 +208,7 @@ async function main() {
       const p2 = products[(i + 5) % products.length];
       const p3 = products[(i + 10) % products.length];
       const q1 = (i % 3) + 1, q2 = (i % 2) + 1, q3 = i % 4 === 0 ? 1 : 0;
-      const total = p1.price * q1 + p2.price * q2 + (q3 > 0 ? p3.price * q3 : 0);
+      const total = toNumOrZero(p1.price) * q1 + toNumOrZero(p2.price) * q2 + (q3 > 0 ? toNumOrZero(p3.price) * q3 : 0);
 
       await prisma.order.create({
         data: {
@@ -234,7 +235,7 @@ async function main() {
     for (let i = 0; i < 15; i++) {
       const p1 = products[i % products.length];
       const p2 = products[(i + 3) % products.length];
-      const total = p1.price * 2 + p2.price * 3;
+      const total = toNumOrZero(p1.price) * 2 + toNumOrZero(p2.price) * 3;
       await prisma.sale.create({
         data: {
           id: `demo-sale-${String(i).padStart(3, "0")}`,
@@ -266,14 +267,14 @@ async function main() {
         data: {
           id: `demo-po-${String(i).padStart(3, "0")}`,
           tenantId: tenant.id, supplierId: sup.id, supplierName: sup.name,
-          total: (p1.price * 0.7 * 100) + (p2.price * 0.7 * 50),
+          total: (toNumOrZero(p1.price) * 0.7 * 100) + (toNumOrZero(p2.price) * 0.7 * 50),
           status: PO_STATUSES[i], paymentMethod: i % 2 === 0 ? "transferencia" : "efectivo",
           deliveryDate: new Date(Date.now() + (i - 3) * 48 * 60 * 60 * 1000),
           createdAt: new Date(Date.now() - (6 - i) * 72 * 60 * 60 * 1000),
           items: {
             create: [
-              { productId: p1.id, name: p1.name, quantity: 100, unitCost: p1.price * 0.7, unit: "unidad" },
-              { productId: p2.id, name: p2.name, quantity: 50, unitCost: p2.price * 0.7, unit: "unidad" },
+              { productId: p1.id, name: p1.name, quantity: 100, unitCost: toNumOrZero(p1.price) * 0.7, unit: "unidad" },
+              { productId: p2.id, name: p2.name, quantity: 50, unitCost: toNumOrZero(p2.price) * 0.7, unit: "unidad" },
             ],
           },
         },
@@ -337,7 +338,7 @@ async function main() {
           quantity: b.qty, unit: "unidad", productId: p.id,
           entryDate: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000),
           expiryDate: new Date(Date.now() + b.daysToExpiry * 24 * 60 * 60 * 1000),
-          costUnit: (p.costPrice ?? p.price * 0.7) as number,
+          costUnit: toNumOrZero(p.costPrice) || toNumOrZero(p.price) * 0.7,
           supplierName: SUPPLIERS[b.productIdx % SUPPLIERS.length].name,
           supplierId: SUPPLIERS[b.productIdx % SUPPLIERS.length].id,
         },

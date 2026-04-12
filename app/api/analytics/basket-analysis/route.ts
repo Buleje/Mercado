@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireAdmin } from "@/lib/require-admin";
 import { prisma } from "@/lib/prisma";
+import { toNumOrZero } from "@/lib/decimal-utils";
 
 export type Association = {
   productA: string; productB: string; support: number;
@@ -57,7 +58,8 @@ export async function GET(req: NextRequest) {
     associations.sort((a, b) => b.count - a.count);
 
     const avgBasketSize = orders.reduce((s, o) => s + (o.items?.length ?? 0), 0) / totalOrders;
-    const avgBasketValue = orders.reduce((s, o) => s + (o.total ?? 0), 0) / totalOrders;
+    // TD-018: o.total es Decimal
+    const avgBasketValue = orders.reduce((s, o) => s + toNumOrZero(o.total), 0) / totalOrders;
 
     return NextResponse.json({ associations: associations.slice(0, 50), avgBasketSize, avgBasketValue, totalOrders });
   } catch {

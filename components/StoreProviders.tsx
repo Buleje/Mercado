@@ -14,6 +14,7 @@ import { PromotionsProvider } from "@/contexts/promotions-context";
 import { FavoritesProvider } from "@/contexts/favorites-context";
 import { CompareProvider } from "@/contexts/compare-context";
 import { TenantSlugProvider } from "@/contexts/tenant-context";
+import { WishlistProvider } from "@/contexts/wishlist-context";
 import ThemeInjector from "@/components/store/ThemeInjector";
 
 export default function StoreProviders({
@@ -32,9 +33,11 @@ export default function StoreProviders({
             <PromotionsProvider>
               <CartProvider tenantSlug={tenantSlug}>
                 <FavoritesProvider>
-                  <CompareProvider>
-                    <CustomerProvider>{children}</CustomerProvider>
-                  </CompareProvider>
+                  <WishlistProvider>
+                    <CompareProvider>
+                      <CustomerProvider>{children}</CustomerProvider>
+                    </CompareProvider>
+                  </WishlistProvider>
                 </FavoritesProvider>
               </CartProvider>
             </PromotionsProvider>

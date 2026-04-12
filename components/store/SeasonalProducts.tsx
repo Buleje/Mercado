@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useRef } from "react";
+import Image from "next/image";
 import { motion } from "framer-motion";
 import { ShoppingCart, ChevronLeft, ChevronRight } from "lucide-react";
 import { useCart } from "@/contexts/cart-context";
@@ -172,7 +173,7 @@ export default function SeasonalProducts() {
                   style={{ background: `linear-gradient(135deg, ${temporada.color.from}20, ${temporada.color.to}20)` }}
                 >
                   {p.image ? (
-                    <img src={p.image} alt={p.name} className="h-full w-full object-cover" />
+                    <Image src={p.image} alt={p.name} fill className="object-cover" sizes="(max-width: 768px) 176px, 192px" />
                   ) : (
                     <span className="text-4xl opacity-50">{temporada.emoji}</span>
                   )}

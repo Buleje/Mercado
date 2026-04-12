@@ -1,0 +1,20 @@
+[
+  {
+    "name": "redis-proxy",
+    "listen": "0.0.0.0:6380",
+    "upstream": "host.docker.internal:6379",
+    "enabled": true
+  },
+  {
+    "name": "postgres-proxy",
+    "listen": "0.0.0.0:5433",
+    "upstream": "host.docker.internal:5432",
+    "enabled": true
+  },
+  {
+    "name": "external-api-proxy",
+    "listen": "0.0.0.0:8081",
+    "upstream": "host.docker.internal:443",
+    "enabled": true
+  }
+]

@@ -56,6 +56,16 @@ const REQUIRED: EnvSpec[] = [
     description: "Stripe webhook signing secret (whsec_*) — required for billing",
     productionOnly: true,
   },
+  {
+    key: "STRIPE_STARTER_PRICE_ID",
+    description: "Stripe Price ID para el plan Starter (price_*) — S/49.00/mes",
+    productionOnly: true,
+  },
+  {
+    key: "STRIPE_PRO_PRICE_ID",
+    description: "Stripe Price ID para el plan Pro (price_*) — S/149.00/mes",
+    productionOnly: true,
+  },
   // ── Cron security ─────────────────────────────────────────────────────────
   {
     key: "CRON_SECRET",
@@ -74,6 +84,13 @@ const REQUIRED: EnvSpec[] = [
 // Redis:
 //   REDIS_URL              — Redis connection URL for distributed cache
 //
+// Upstash Redis (distributed rate limiting — ADR-022):
+//   UPSTASH_REDIS_REST_URL    — REST endpoint from Upstash console
+//   UPSTASH_REDIS_REST_TOKEN  — REST token from Upstash console
+//   If BOTH are missing, lib/rate-limit.ts falls back to per-instance in-memory
+//   rate limiting. In production this is checked by `validateEnv()` below and
+//   logged as a warning (NOT a throw) so existing deploys keep working.
+//
 // Email (SMTP):
 //   SMTP_USER, SMTP_PASS   — Nodemailer credentials
 //
@@ -82,9 +99,22 @@ const REQUIRED: EnvSpec[] = [
 //
 // WhatsApp:
 //   WHATSAPP_API_URL, WHATSAPP_API_TOKEN
+//   NOTIFY_PHONE / WHATSAPP_OWNER_PHONE — fallback owner phone for single-tenant mode
+//   DAILY_DIGEST_WA_ENABLED — feature flag (default: enabled). Set to "false"
+//                             to skip WhatsApp delivery of the daily digest
+//                             while keeping the email path intact (Roadmap #5
+//                             gradual rollout).
 //
 // Analytics:
 //   NEXT_PUBLIC_GA_MEASUREMENT_ID — Google Analytics 4
+//
+// Churn engine (ver app/api/cron/churn-score/route.ts):
+//   CHURN_AUTORUN          — "true" para ejecutar playbooks automáticamente en
+//                            el cron /api/cron/churn-score. Cualquier otro
+//                            valor (o vacío) mantiene el motor en dry-run
+//                            (calcula y persiste scores + signals pero NO
+//                            dispara emails/WhatsApp/descuentos). Default:
+//                            dry-run (safe-by-default).
 //
 // LLM providers (ver lib/llm-router.ts y ADR-010):
 //   GROQ_API_KEY           — Groq (primario) — ya usado por lib/ai-assistant
@@ -119,6 +149,21 @@ export function validateEnv(): void {
 
   if (warnings.length > 0) {
     logger.warn("[env] Optional env vars not set (OK for dev)", { warnings });
+  }
+
+  // Soft-check for Upstash Redis rate-limiting (ADR-022). In production,
+  // missing env vars mean distributed rate limiting is disabled — we log
+  // a warning but do NOT throw, so existing deploys on Vercel continue to
+  // boot while the human toggles the Upstash integration.
+  const upstashUrl = process.env.UPSTASH_REDIS_REST_URL;
+  const upstashToken = process.env.UPSTASH_REDIS_REST_TOKEN;
+  if (isProd && (!upstashUrl || !upstashToken)) {
+    logger.warn(
+      "[env] Upstash Redis REST env vars missing — rate limiting will fall " +
+        "back to per-instance in-memory (not distributed across Vercel " +
+        "replicas). Set UPSTASH_REDIS_REST_URL + UPSTASH_REDIS_REST_TOKEN to " +
+        "close this gap. See docs/adr/022-upstash-rate-limit-distribuido.md.",
+    );
   }
 
   if (missing.length > 0) {

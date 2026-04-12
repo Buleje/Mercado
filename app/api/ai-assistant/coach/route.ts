@@ -222,7 +222,7 @@ export async function POST(req: NextRequest) {
     });
 
     if (!res.ok) {
-      console.error("[ai-coach] LLM router error:", res.error);
+      logger.error("[ai-coach] LLM router error", { error: String(res.error), tenantId: auth.tenantId });
       recordAIFailure("ai-coach", res.error ?? "unknown");
       return NextResponse.json({
         response: generateFallbackResponse(snapshot.metrics, fecha, temporada, feriadoStr),
@@ -327,7 +327,7 @@ export async function POST(req: NextRequest) {
     });
   } catch (err) {
     const errMsg = err instanceof Error ? err.message : String(err);
-    console.error("[ai-coach] Fetch error:", errMsg);
+    logger.error("[ai-coach] Fetch error", { error: errMsg, tenantId: auth.tenantId });
     recordAIFailure("ai-coach", errMsg);
     return NextResponse.json({
       response: generateFallbackResponse(snapshot.metrics, fecha, temporada, feriadoStr),

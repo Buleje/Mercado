@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { requireAdmin } from "@/lib/require-admin";
 import { prisma } from "@/lib/prisma";
 import { withDbRetry } from "@/lib/db-retry";
+import { toNumOrZero } from "@/lib/decimal-utils";
 
 // GET — Returns batches grouped by expiry urgency: expired, 7d, 30d
 export async function GET(req: NextRequest) {
@@ -70,11 +71,12 @@ export async function GET(req: NextRequest) {
         unit: b.unit,
         expiryDate: b.expiryDate.toISOString(),
         entryDate: b.entryDate.toISOString(),
-        costUnit: b.costUnit,
-        salePrice: b.product?.price ?? 0,
+        // TD-018: costUnit y product.price son Decimal
+        costUnit: toNumOrZero(b.costUnit),
+        salePrice: toNumOrZero(b.product?.price),
         warehouseName: b.warehouse?.name ?? null,
         daysUntilExpiry,
-        valorRiesgo: b.quantity * b.costUnit,
+        valorRiesgo: b.quantity * toNumOrZero(b.costUnit),
       };
     };
 

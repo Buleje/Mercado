@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef, type FormEvent } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import {
   Loader2,
   Lock,
@@ -77,7 +77,9 @@ function StatBadge({ label, value }: { label: string; value: string }) {
 
 export default function SuperAdminLoginPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const usernameRef = useRef<HTMLInputElement>(null);
+  const sessionExpired = searchParams.get("reason") === "expired";
 
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
@@ -93,7 +95,7 @@ export default function SuperAdminLoginPage() {
 
   // Si ya tiene cookie de sesión, redirigir al dashboard
   useEffect(() => {
-    if (document.cookie.includes("bsm-platform-sess")) {
+    if (document.cookie.includes("buleje-platform-sess")) {
       router.replace("/superadmin/dashboard");
     }
     usernameRef.current?.focus();
@@ -344,6 +346,13 @@ export default function SuperAdminLoginPage() {
 
             {!challengeId ? (
               <>
+                {/* Session expired banner */}
+                {sessionExpired && (
+                  <div className="mb-4 flex items-center gap-2 rounded-xl bg-amber-50 border border-amber-200 px-4 py-3 text-amber-800 text-sm">
+                    <AlertTriangle className="w-4 h-4 shrink-0" />
+                    Tu sesión expiró. Ingresa de nuevo para continuar.
+                  </div>
+                )}
                 {/* Título del formulario */}
                 <div className="mb-7">
                   <h1

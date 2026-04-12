@@ -54,23 +54,34 @@ const STATUS_CONFIG: Record<
 };
 
 // ── Confetti simple ────────────────────────────────────────────────────────
+const CONFETTI_COLORS = ["#33C4B8", "#f4a261", "#fbbf24", "#34d399", "#60a5fa"];
 function MiniConfetti() {
-  const colors = ["#33C4B8", "#f4a261", "#fbbf24", "#34d399", "#60a5fa"];
+  // Lazy-init random particle config once per mount (React Compiler purity rule forbids Math.random during render)
+  const [particles] = useState(() =>
+    Array.from({ length: 30 }, (_, i) => ({
+      left: Math.random() * 100,
+      top: Math.random() * 60,
+      round: Math.random() > 0.5,
+      duration: 0.5 + Math.random() * 1,
+      delay: Math.random() * 0.5,
+      color: CONFETTI_COLORS[i % CONFETTI_COLORS.length],
+    }))
+  );
   return (
     <div className="pointer-events-none fixed inset-0 z-50 overflow-hidden">
-      {Array.from({ length: 30 }).map((_, i) => (
+      {particles.map((p, i) => (
         <div
           key={i}
           className="absolute animate-bounce"
           style={{
-            left: `${Math.random() * 100}%`,
-            top: `${Math.random() * 60}%`,
+            left: `${p.left}%`,
+            top: `${p.top}%`,
             width: 8,
             height: 8,
-            borderRadius: Math.random() > 0.5 ? "50%" : 2,
-            backgroundColor: colors[i % colors.length],
-            animationDuration: `${0.5 + Math.random() * 1}s`,
-            animationDelay: `${Math.random() * 0.5}s`,
+            borderRadius: p.round ? "50%" : 2,
+            backgroundColor: p.color,
+            animationDuration: `${p.duration}s`,
+            animationDelay: `${p.delay}s`,
           }}
         />
       ))}

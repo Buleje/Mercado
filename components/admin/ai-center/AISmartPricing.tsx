@@ -265,7 +265,7 @@ Responde en español, directo, sin rodeos.`,
                       Margen: {s.currentMargin.toFixed(0)}%{s.direction !== "keep" ? ` → ${s.suggestedMargin.toFixed(0)}%` : ""}
                     </span>
                     <span className="text-[10px] font-medium text-amber-600 dark:text-amber-400">
-                      💰 {s.impact}
+                      {s.impact}
                     </span>
                   </div>
                 </div>

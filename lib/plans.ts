@@ -102,8 +102,11 @@ export const PLANS: Record<PlanId, PlanDef> = {
     id: "enterprise",
     name: "Enterprise",
     description: "Para cadenas y franquicias con requerimientos avanzados",
-    priceMonthly: 399,
-    priceYearly: 3830, // ~20% discount ($319.17/mo)
+    // Canonical price. Matches lib/superadmin-types.ts:DEFAULT_SETTINGS.priceEnterprise.
+    // NOTE: static default only — runtime consumers must use `getPlanPrice("enterprise")`
+    // which reads from the PlatformSetting("plan-prices") row in DB.
+    priceMonthly: 499,
+    priceYearly: 4790, // ~20% discount (~$399.17/mo)
     color: "amber",
     limits: {
       maxProducts: -1,
@@ -156,4 +159,40 @@ export function planLimitPayload(resource: string, current: number, max: number,
     plan,
     upgrade: true,
   };
+}
+
+// ─── Single source of truth para precios de planes ────────────────────────────
+// Fix del bug MRR fake 2026-04-09 — antes había 3 lugares desincronizados:
+//   · lib/superadmin-types.ts:DEFAULT_SETTINGS (499)
+//   · app/api/superadmin/analytics/route.ts PLAN_PRICES (399) ← estaba mal
+//   · lib/plans.ts PLANS.enterprise.priceMonthly (399)        ← estaba mal
+//
+// Los defaults canónicos viven acá (archivo client-safe). Los helpers runtime
+// `getPlanPrice` / `getAllPlanPrices` que consultan `PlatformSetting` viven en
+// `@/lib/plans-server` — ese archivo tiene `server-only` y NO debe importarse
+// desde Client Components (fetchear vía API en ese caso).
+
+/** Defaults canónicos — si no hay override en DB, se usan estos. */
+export const DEFAULT_PLAN_PRICES: Record<PlanId, number> = {
+  free: 0,
+  pro: 49,
+  business: 149,
+  enterprise: 499,
+};
+
+/**
+ * Alias para consumidores que solo necesitan el mapa de precios.
+ * Client-safe — NO consulta DB. Para precios runtime (con overrides de
+ * superadmin), usar `getPlanPrice()` / `getAllPlanPrices()` de
+ * `@/lib/plans-server` (server-only).
+ */
+export const PLAN_PRICES: Record<string, number> = DEFAULT_PLAN_PRICES;
+
+/**
+ * Retorna el precio estático de un plan. Client-safe.
+ * Para precios runtime con overrides de DB, usar la versión de
+ * `@/lib/plans-server`.
+ */
+export function getPlanPrice(plan: string): number {
+  return PLAN_PRICES[plan] ?? 0;
 }

@@ -6,6 +6,7 @@ import { enqueueNotification } from "@/lib/queue";
 import { sendPushToPhone } from "@/lib/push-sender";
 import { logger } from "@/lib/logger";
 import { logActivity } from "@/lib/activity-logger";
+import { toNumOrZero } from "@/lib/decimal-utils";
 
 /**
  * GET /api/cron/category-margins-report
@@ -33,11 +34,22 @@ export async function GET(req: NextRequest) {
       const now = new Date();
       const sevenDaysAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
 
+      // Iterate over all active tenants (multi-tenant)
+      const tenants = await prisma.tenant.findMany({
+        where: { active: true },
+        select: { id: true, name: true },
+      });
+
+      const allResults: { tenantId: string; categoriesCount: number; totalProfit: number }[] = [];
+
+      for (const tenant of tenants) {
+        const tenantId = tenant.id;
+
       // Get all sale items from the last 7 days with product category
       const saleItems = await prisma.saleItem.findMany({
         where: {
           sale: {
-            tenantId: "main",
+            tenantId,
             createdAt: { gte: sevenDaysAgo },
           },
           costPrice: { not: null },
@@ -55,7 +67,7 @@ export async function GET(req: NextRequest) {
       });
 
       if (saleItems.length === 0) {
-        return { ok: true, categories: [], message: "Sin ventas con costo en los últimos 7 días" };
+        continue;
       }
 
       // Group by category and calculate margins
@@ -68,8 +80,8 @@ export async function GET(req: NextRequest) {
         const cat = item.product?.category || "Sin categoría";
         const existing = categoryMap.get(cat) || { revenue: 0, cost: 0, units: 0, items: 0 };
 
-        const itemRevenue = item.price * item.quantity;
-        const itemCost = (item.costPrice ?? 0) * item.quantity;
+        const itemRevenue = toNumOrZero(item.price) * item.quantity;
+        const itemCost = toNumOrZero(item.costPrice) * item.quantity;
 
         existing.revenue += itemRevenue;
         existing.cost += itemCost;
@@ -92,7 +104,7 @@ export async function GET(req: NextRequest) {
             units: data.units,
           };
         })
-        .sort((a, b) => b.profit - a.profit); // Most profit first
+        .sort((a, b) => b.profit - a.profit);
 
       // Totals
       const totalRevenue = categories.reduce((s, c) => s + c.revenue, 0);
@@ -107,13 +119,13 @@ export async function GET(req: NextRequest) {
       // Build WhatsApp message
       const lines: string[] = [
         `📊 *Márgenes por Categoría — Semana*`,
+        `🏪 *${tenant.name}*`,
         ``,
         `💰 Venta total: S/ ${totalRevenue.toFixed(2)}`,
         `📈 Ganancia total: S/ ${totalProfit.toFixed(2)} (${overallMargin.toFixed(1)}%)`,
         ``,
       ];
 
-      // Show top 10 categories
       const top = categories.slice(0, 10);
       for (const cat of top) {
         const emoji = cat.marginPct >= 30 ? "🟢" : cat.marginPct >= 15 ? "🟡" : "🔴";
@@ -134,7 +146,7 @@ export async function GET(req: NextRequest) {
 
       // Send to owner
       const settings = await prisma.settings.findFirst({
-        where: { tenantId: "main" },
+        where: { tenantId },
         select: { businessPhone: true },
       });
       const phone = settings?.businessPhone || process.env.NOTIFY_PHONE;
@@ -144,7 +156,7 @@ export async function GET(req: NextRequest) {
           type: "whatsapp",
           recipient: phone,
           message,
-          tenantId: "main",
+          tenantId,
         }).catch(() => {});
         sendPushToPhone(phone, {
           title: "📊 Márgenes semanales",
@@ -159,15 +171,13 @@ export async function GET(req: NextRequest) {
         `${categories.length} categorías, ganancia S/ ${totalProfit.toFixed(2)} (${overallMargin.toFixed(1)}%)`,
       ).catch(() => {});
 
+      allResults.push({ tenantId, categoriesCount: categories.length, totalProfit });
+      } // end for tenant
+
       return {
         ok: true,
-        categories,
-        totals: {
-          revenue: totalRevenue,
-          cost: totalCost,
-          profit: totalProfit,
-          marginPct: Math.round(overallMargin * 10) / 10,
-        },
+        tenantsProcessed: tenants.length,
+        results: allResults,
       };
     });
 

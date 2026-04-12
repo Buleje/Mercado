@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { requireAdmin } from "@/lib/require-admin";
 import { ProductsDB, CustomersDB, OrdersDB, SettingsDB, FiadosDB } from "@/lib/db";
 import { logActivity } from "@/lib/activity-logger";
+import { logger } from "@/lib/logger";
 
 export async function GET(req: NextRequest) {
   // 1. Auth — solo admin puede descargar backup completo
@@ -18,9 +19,9 @@ export async function GET(req: NextRequest) {
     const [products, customers, orders, fiados, settings] = await Promise.all([
       ProductsDB.getAll(auth.tenantId),
       CustomersDB.getAll(auth.tenantId),
-      OrdersDB.getAllFiltered({ since: sinceISO }),
+      OrdersDB.getAllFiltered({ since: sinceISO, tenantId: auth.tenantId }),
       FiadosDB.list(auth.tenantId),
-      SettingsDB.get(),
+      SettingsDB.get(auth.tenantId),
     ]);
 
     // 3. Construir payload de backup — solo campos relevantes, sin IDs internos
@@ -107,7 +108,7 @@ export async function GET(req: NextRequest) {
       },
     });
   } catch (error) {
-    console.error("[backup/export] error:", error);
+    logger.error("[backup/export] error", { error: (error as Error).message, tenantId: auth.tenantId });
     return NextResponse.json(
       { error: "Error al generar backup", detail: error instanceof Error ? error.message : "Error desconocido" },
       { status: 500 }

@@ -292,15 +292,15 @@ export default function PreciosPromosModule() {
         activeTab={sub}
         onTabChange={setSub}
         moduleId={MODULE_ID}
-      />
+      >
+        {showBulkEdit && <BulkPriceEditor onClose={() => setShowBulkEdit(false)} />}
 
-      {showBulkEdit && <BulkPriceEditor onClose={() => setShowBulkEdit(false)} />}
-
-      {sub === "benchmark" && <PriceBenchmarkTab />}
-      {sub === "historial" && <PriceHistoryTab />}
-      {sub === "promociones" && <PromotionsTab />}
-      {sub === "cupones" && <CouponsTab />}
-      {sub === "ab-tests" && <ABTestsTab />}
+        {sub === "benchmark" && <PriceBenchmarkTab />}
+        {sub === "historial" && <PriceHistoryTab />}
+        {sub === "promociones" && <PromotionsTab />}
+        {sub === "cupones" && <CouponsTab />}
+        {sub === "ab-tests" && <ABTestsTab />}
+      </AdminTabBar>
     </div>
   );
 }

@@ -2,6 +2,7 @@ import { NextResponse, type NextRequest } from "next/server";
 import { requireAdmin } from "@/lib/require-admin";
 import { prisma } from "@/lib/prisma";
 import { z } from "zod";
+import { toNumOrZero } from "@/lib/decimal-utils";
 
 const PatchItemSchema = z.object({
   productId: z.number().int().positive(),
@@ -42,7 +43,8 @@ export async function PATCH(req: NextRequest) {
             continue;
           }
 
-          const oldPrice = product.price;
+          // TD-018: product.price es Decimal
+          const oldPrice = toNumOrZero(product.price);
 
           await tx.product.update({
             where: { id: u.productId },
@@ -111,10 +113,11 @@ export async function PUT(req: NextRequest) {
     }
 
     const multiplier = 1 + percentage / 100;
+    // TD-018: p.price es Decimal
     const updates = products.map((p) =>
       prisma.product.update({
         where: { id: p.id },
-        data: { price: Math.round(p.price * multiplier * 100) / 100 },
+        data: { price: Math.round(toNumOrZero(p.price) * multiplier * 100) / 100 },
       }),
     );
 

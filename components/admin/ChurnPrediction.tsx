@@ -3,13 +3,11 @@
 
 import { useState, useEffect, useMemo } from "react";
 import {
-  AlertTriangle,
   Loader2,
   AlertCircle,
   Phone,
   Tag,
-  RefreshCw,
-} from "lucide-react";
+  RefreshCw } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 // ── Types ───────────────────────────────────────────────────────────────────

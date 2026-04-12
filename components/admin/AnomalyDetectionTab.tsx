@@ -123,7 +123,7 @@ export default function AnomalyDetectionTab() {
                     <h3 className="font-bold text-gray-900 dark:text-foreground">{a.title}</h3>
                     <span className={cn("text-xs font-bold px-2 py-0.5 rounded-full", SEV_COLORS[a.severity])}>{a.severity.toUpperCase()}</span>
                     <span className={cn("text-xs font-bold px-2 py-0.5 rounded-full", config.color)}>{config.label}</span>
-                    {isResolved && <span className="text-xs font-bold px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400">✓ Resuelta</span>}
+                    {isResolved && <span className="text-xs font-bold px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400">Resuelta</span>}
                   </div>
                   <p className="text-sm text-gray-500 dark:text-muted mt-1">{a.description}</p>
                   <div className="flex flex-wrap items-center gap-2 sm:gap-4 mt-2 text-xs text-gray-400 dark:text-muted">

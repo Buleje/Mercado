@@ -130,7 +130,7 @@ Una vez tengas el token, dime "Doppler listo" y yo:
 #### Pasos
 1. Ve a https://sentry.io/settings/{tu-org}/developer-settings/new-internal/
 2. **Create New Internal Integration**:
-   - **Name:** `Claude BSM Automation`
+   - **Name:** `Claude Buleje Automation`
    - **Permissions:**
      - Project: **Admin**
      - Alerts: **Admin**
