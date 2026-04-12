@@ -163,19 +163,21 @@ export type TabCategory = {
   tabs: Tab[];
 };
 
-// ── 17 módulos básicos del sidebar ──────────────────────────────────────────
+// ── 12 módulos consolidados del sidebar (antes: 19 categorías con datos duplicados) ──
+// Consolidación 2026-04-12: fusión A1-A9 (fiados+prestamos+scoring→clientes,
+// plata+tesoreria+facturacion→finanzas, pedidos+turnos→ventas, etc.)
 export const BASIC_MODULES: TabCategory[] = [
   {
-    id: "asistente-ia",
-    label: "IA & Analítica",
+    id: "dashboard",
+    label: "Dashboard",
     icon: Brain,
-    tabs: ["asistente-ia", "analytics-pro", "forecasting"],
+    tabs: ["asistente-ia"],
   },
   {
-    id: "ventas-caja",
-    label: "Ventas & Caja",
+    id: "ventas",
+    label: "Ventas",
     icon: ShoppingCart,
-    tabs: ["ventas-caja", "pedidos"],
+    tabs: ["ventas-caja", "pedidos", "turnos"],
   },
   {
     id: "inventario",
@@ -185,39 +187,33 @@ export const BASIC_MODULES: TabCategory[] = [
   },
   {
     id: "productos",
-    label: "Productos & Precios",
+    label: "Productos",
     icon: Tag,
-    tabs: ["productos"],
+    tabs: ["productos", "promociones"],
   },
   {
-    id: "compras-mod",
+    id: "compras",
     label: "Compras",
     icon: Truck,
-    tabs: ["compras"],
+    tabs: ["compras", "devoluciones-proveedor"],
   },
   {
-    id: "plata",
-    label: "Mi Plata",
+    id: "finanzas",
+    label: "Finanzas",
     icon: DollarSign,
-    tabs: ["plata"],
+    tabs: ["plata", "tesoreria", "facturacion"],
   },
   {
     id: "clientes",
-    label: "Mis Clientes",
+    label: "Clientes",
     icon: Users,
-    tabs: ["clientes"],
+    tabs: ["clientes", "fiados", "prestamos", "scoring"],
   },
   {
-    id: "fiados",
-    label: "Fíados",
-    icon: CreditCard,
-    tabs: ["fiados"],
-  },
-  {
-    id: "turnos",
-    label: "Turnos",
-    icon: Clock,
-    tabs: ["turnos"],
+    id: "analytics",
+    label: "Analytics",
+    icon: Brain,
+    tabs: ["analytics-pro", "forecasting"],
   },
   {
     id: "recetas",
@@ -226,58 +222,16 @@ export const BASIC_MODULES: TabCategory[] = [
     tabs: ["recetas"],
   },
   {
-    id: "prestamos",
-    label: "Préstamos",
-    icon: Landmark,
-    tabs: ["prestamos"],
-  },
-  {
-    id: "auditoria",
-    label: "Auditoría",
-    icon: Shield,
-    tabs: ["auditoria"],
-  },
-  {
-    id: "devoluciones-proveedor",
-    label: "Devoluciones",
-    icon: RotateCcw,
-    tabs: ["devoluciones-proveedor"],
-  },
-  {
-    id: "tesoreria",
-    label: "Tesorería",
-    icon: Landmark,
-    tabs: ["tesoreria"],
-  },
-  {
-    id: "promociones",
-    label: "Promociones",
-    icon: Tag,
-    tabs: ["promociones"],
-  },
-  {
-    id: "scoring",
-    label: "Scoring Crédito",
-    icon: Shield,
-    tabs: ["scoring"],
-  },
-  {
-    id: "facturacion-sunat",
-    label: "Facturación SUNAT",
-    icon: Receipt,
-    tabs: ["facturacion"],
+    id: "marketplace-ops",
+    label: "Marketplace",
+    icon: Store,
+    tabs: ["marketplace", "delivery-partners", "delivery-live", "marketplace-chat"],
   },
   {
     id: "documentos",
     label: "Documentos",
     icon: FileText,
     tabs: ["cotizaciones", "guias-remision", "notas-credito", "contratos"],
-  },
-  {
-    id: "marketplace-ops",
-    label: "Marketplace",
-    icon: Store,
-    tabs: ["marketplace", "delivery-partners", "delivery-live", "marketplace-chat"],
   },
 ];
 
@@ -294,7 +248,7 @@ export const CONFIG_MODULE: TabCategory = {
   id: "config",
   label: "Configuración",
   icon: Settings,
-  tabs: ["config", "plan"],
+  tabs: ["config", "plan", "auditoria"],
 };
 
 // ── TAB_CATEGORIES: composición final del sidebar ────────────────────────────
