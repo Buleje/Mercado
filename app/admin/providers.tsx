@@ -2,6 +2,7 @@
 
 import dynamic from "next/dynamic";
 import { VocabularyProvider } from "@/contexts/vocabulary-context";
+import { ModuleTabsProvider } from "@/contexts/module-tabs-context";
 
 const NotificationToast = dynamic(
   () => import("@/components/admin/shared/NotificationToast"),
@@ -11,8 +12,10 @@ const NotificationToast = dynamic(
 export function AdminProviders({ children }: { children: React.ReactNode }) {
   return (
     <VocabularyProvider>
-      {children}
-      <NotificationToast />
+      <ModuleTabsProvider>
+        {children}
+        <NotificationToast />
+      </ModuleTabsProvider>
     </VocabularyProvider>
   );
 }

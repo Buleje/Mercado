@@ -4,6 +4,7 @@ import { useState, useRef, useEffect, useCallback, type ReactNode } from "react"
 import { ChevronLeft, ChevronRight, GripVertical } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { LucideIcon } from "lucide-react";
+import { useModuleTabs } from "@/contexts/module-tabs-context";
 
 export interface AdminTab {
   id: string;
@@ -35,6 +36,28 @@ export default function AdminTabBar({
   vertical = false,
   children,
 }: AdminTabBarProps) {
+  const { registerSubTabs, registerOnChange, clearSubTabs } = useModuleTabs();
+
+  // Register tabs in sidebar context so sidebar can render them
+  useEffect(() => {
+    registerSubTabs(
+      tabs.map((t) => ({ id: t.id, label: t.label, icon: t.icon })),
+      activeTab,
+    );
+    registerOnChange(onTabChange);
+    return () => clearSubTabs();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [tabs.length, registerSubTabs, registerOnChange, clearSubTabs]);
+
+  // Keep sidebar in sync with active tab changes from module
+  useEffect(() => {
+    registerSubTabs(
+      tabs.map((t) => ({ id: t.id, label: t.label, icon: t.icon })),
+      activeTab,
+    );
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeTab]);
+
   const tabsRef = useRef<HTMLDivElement>(null);
   const [canScrollLeft, setCanScrollLeft] = useState(false);
   const [canScrollRight, setCanScrollRight] = useState(false);
@@ -173,7 +196,8 @@ export default function AdminTabBar({
 
   return (
     <>
-    <div className={cn("relative", className)}>
+    {/* Hidden on desktop — sidebar renders these tabs instead */}
+    <div className={cn("relative sm:hidden", className)}>
       {canScrollLeft && (
         <button
           onClick={() => scrollTabs("left")}

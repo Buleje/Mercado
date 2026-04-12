@@ -19,6 +19,7 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { resolveActiveTenantSlug } from "@/lib/tenant-fetch";
+import { useModuleTabs } from "@/contexts/module-tabs-context";
 import type { Tab } from "@/app/admin/_lib/tabs.types";
 import type { TabCategory } from "@/app/admin/_lib/tab-categories";
 import { DEMO_DATA_MODULES } from "@/app/admin/_lib/tab-categories";
@@ -116,8 +117,8 @@ export function AdminSidebar({
   allowedTabs,
   filteredTabs,
   visibleCategories,
-  openAccordionCategories,
-  onToggleAccordion,
+  openAccordionCategories: _openAccordionCategories,
+  onToggleAccordion: _onToggleAccordion,
   sidebarFlyout,
   onSidebarFlyoutChange,
   flyoutTimerRef,
@@ -143,6 +144,7 @@ export function AdminSidebar({
   sidebarSearch,
   allTabs,
 }: AdminSidebarProps) {
+  const { subTabs, activeSubTab, setActiveSubTab } = useModuleTabs();
   const [storeHref, setStoreHref] = React.useState("/tienda");
 
   React.useEffect(() => {
@@ -395,6 +397,33 @@ export function AdminSidebar({
               </div>
             );
           })}
+
+          {/* Module internal sub-tabs — shown below categories when a module registers them */}
+          {!focusMode && subTabs.length > 1 && (
+            <div className="mt-1 pt-1 border-t border-gray-100 dark:border-card-border">
+              <p className="text-[9px] font-bold text-gray-400/70 dark:text-muted/50 uppercase tracking-widest px-4 pt-1 pb-1">
+                Sub-secciones
+              </p>
+              {subTabs.map((st) => {
+                const SubIcon = st.icon;
+                return (
+                  <button
+                    key={st.id}
+                    onClick={() => setActiveSubTab(st.id)}
+                    className={cn(
+                      "w-full flex items-center gap-2 px-4 py-1.5 text-[12px] transition-all",
+                      activeSubTab === st.id
+                        ? "text-primary font-semibold bg-primary/5"
+                        : "text-gray-500 dark:text-muted hover:text-gray-800 dark:hover:text-gray-200 hover:bg-gray-50 dark:hover:bg-accent"
+                    )}
+                  >
+                    {SubIcon && <SubIcon className="h-3 w-3 shrink-0" />}
+                    <span className="truncate">{st.label}</span>
+                  </button>
+                );
+              })}
+            </div>
+          )}
 
           {/* Flat list when searching */}
           {!focusMode && sidebarSearch && filteredTabs.map(({ id, label, icon: Icon }) => (

@@ -1,117 +1,322 @@
 "use client";
 
-import { useEffect, useState, useRef } from "react";
-import { useCustomer } from "@/contexts/customer-context";
-import { useCart } from "@/contexts/cart-context";
-import { formatCurrency } from "@/lib/currency";
-import type { Product } from "@/data/products";
-import { ShoppingCart, Sparkles } from "lucide-react";
+import { useEffect, useState, useRef, useCallback } from "react";
+import { Sparkles, Plus, ShoppingCart, Package } from "lucide-react";
+import { cn } from "@/lib/utils";
 
-type RecProduct = {
+// ── Types ─────────────────────────────────────────────────────────────────────
+
+interface CartItem {
+  id: number;
+  category: string;
+  name: string;
+}
+
+interface RecommendedProduct {
   id: number;
   name: string;
   category: string;
   price: number;
-  image: string;
-  unit: string;
-};
+  image?: string;
+  unit?: string;
+  popularity?: number;
+}
 
-export default function RecommendedProducts() {
-  const { customer } = useCustomer();
-  const { addItem } = useCart();
-  const [products, setProducts] = useState<RecProduct[]>([]);
-  const [loading, setLoading] = useState(true);
-  const scrollRef = useRef<HTMLDivElement>(null);
+interface RecommendedProductsProps {
+  currentCartItems: CartItem[];
+  onAddToCart: (productId: number) => void;
+}
 
-  useEffect(() => {
-    let cancelled = false;
-    (async () => {
-      try {
-        const params = new URLSearchParams({ limit: "10" });
-        if (customer?.phone) params.set("phone", customer.phone);
-        const res = await fetch(`/api/recommendations?${params}`);
-        if (res.ok && !cancelled) {
-          const data = await res.json();
-          setProducts(data);
-        }
-      } catch { /* silent */ }
-      if (!cancelled) setLoading(false);
-    })();
-    return () => { cancelled = true; };
-  }, [customer?.phone]);
+// ── Skeleton ──────────────────────────────────────────────────────────────────
 
-  if (loading || products.length === 0) return null;
+function SkeletonCard() {
+  return (
+    <div className="snap-start shrink-0 w-[140px] rounded-xl bg-white dark:bg-card border border-gray-100 dark:border-white/5 overflow-hidden shadow-sm animate-pulse">
+      <div className="aspect-square bg-gray-100 dark:bg-white/5" />
+      <div className="p-2.5 space-y-2">
+        <div className="h-3 bg-gray-100 dark:bg-white/5 rounded-full w-4/5" />
+        <div className="h-3 bg-gray-100 dark:bg-white/5 rounded-full w-3/5" />
+        <div className="h-7 bg-gray-100 dark:bg-white/5 rounded-lg w-full mt-1" />
+      </div>
+    </div>
+  );
+}
 
-  const handleAdd = (p: RecProduct) => {
-    addItem({
-      id: p.id,
-      name: p.name,
-      category: p.category,
-      price: p.price,
-      image: p.image,
-      unit: p.unit,
-    } as Product);
-  };
+// ── Product Card ──────────────────────────────────────────────────────────────
+
+interface ProductCardProps {
+  product: RecommendedProduct;
+  onAdd: (id: number) => void;
+  justAdded: boolean;
+}
+
+function ProductCard({ product, onAdd, justAdded }: ProductCardProps) {
+  const [imgError, setImgError] = useState(false);
 
   return (
-    <section className="py-10 px-4 bg-linear-to-b from-orange-50/60 to-white dark:from-orange-950/10 dark:to-background">
-      <div className="max-w-7xl mx-auto">
-        <div className="flex items-center gap-2 mb-6">
-          <Sparkles className="h-5 w-5 text-orange-500" />
-          <h2 className="text-xl font-extrabold text-gray-900 dark:text-foreground">
-            {customer?.phone ? "Te puede interesar" : "Los más vendidos"}
-          </h2>
-        </div>
+    <div
+      className={cn(
+        "snap-start shrink-0 w-[140px] rounded-xl bg-white dark:bg-card",
+        "border border-gray-100 dark:border-white/5",
+        "shadow-sm hover:shadow-md transition-all duration-200",
+        "overflow-hidden group",
+      )}
+    >
+      {/* Imagen */}
+      <div className="aspect-square relative bg-gray-50 dark:bg-white/[0.03] overflow-hidden">
+        {product.image && !imgError ? (
+          /* eslint-disable-next-line @next/next/no-img-element -- URLs externas dinámicas de productos */
+          <img
+            src={product.image}
+            alt={product.name}
+            loading="lazy"
+            onError={() => setImgError(true)}
+            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+          />
+        ) : (
+          <div className="w-full h-full flex items-center justify-center">
+            <Package className="h-8 w-8 text-gray-200 dark:text-white/10" />
+          </div>
+        )}
 
-        <div
-          ref={scrollRef}
-          className="flex gap-4 overflow-x-auto pb-4 snap-x snap-mandatory scrollbar-hide"
-        >
-          {products.map((p) => (
-            <div
-              key={p.id}
-              data-testid="product-card"
-              className="snap-start shrink-0 w-44 bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl overflow-hidden shadow-sm hover:shadow-md transition-shadow"
-            >
-              <div className="aspect-square relative bg-gray-50 dark:bg-card">
-                {p.image ? (
-                  /* eslint-disable-next-line @next/next/no-img-element -- External product images with dynamic URLs */
-                  <img
-                    src={p.image}
-                    alt={p.name}
-                    loading="lazy"
-                    className="w-full h-full object-cover"
-                  />
-                ) : (
-                  <div className="w-full h-full flex items-center justify-center text-3xl bg-gray-100 dark:bg-card">📦</div>
-                )}
-                <span className="absolute top-2 left-2 text-[10px] font-bold bg-orange-100 dark:bg-orange-900/40 text-orange-700 dark:text-orange-300 px-1.5 py-0.5 rounded-full">
-                  {p.category}
-                </span>
-              </div>
-              <div className="p-3 space-y-1.5">
-                <p className="text-sm font-bold text-gray-900 dark:text-foreground line-clamp-2 leading-tight">
-                  {p.name}
-                </p>
-                <p className="text-xs text-gray-400 dark:text-muted">{p.unit}</p>
-                <div className="flex items-center justify-between gap-1">
-                  <span className="text-sm font-extrabold text-orange-600 dark:text-orange-400">
-                    {formatCurrency(p.price)}
-                  </span>
-                  <button
-                    onClick={() => handleAdd(p)}
-                    className="flex items-center justify-center h-10 w-10 rounded-xl bg-orange-500 text-white hover:bg-orange-600 transition-colors"
-                    aria-label={`Agregar ${p.name} al carrito`}
-                    title="Agregar al carrito"
-                  >
-                    <ShoppingCart className="h-5 w-5" />
-                  </button>
-                </div>
-              </div>
-            </div>
-          ))}
+        {/* Badge de categoría */}
+        <span className="absolute top-1.5 left-1.5 text-[9px] font-bold uppercase tracking-wide bg-white/90 dark:bg-black/50 text-gray-600 dark:text-gray-300 px-1.5 py-0.5 rounded-full backdrop-blur-sm leading-none">
+          {product.category}
+        </span>
+      </div>
+
+      {/* Info */}
+      <div className="p-2.5 space-y-1.5">
+        <p className="text-[12px] font-semibold text-gray-900 dark:text-foreground line-clamp-2 leading-tight">
+          {product.name}
+        </p>
+
+        {product.unit && (
+          <p className="text-[10px] text-gray-400 dark:text-muted leading-none">
+            {product.unit}
+          </p>
+        )}
+
+        <div className="flex items-center justify-between gap-1 pt-0.5">
+          <span className="text-[13px] font-extrabold text-[#00B4A6] dark:text-[#00cfc0] leading-none">
+            S/{product.price.toFixed(2)}
+          </span>
+
+          {/* Botón agregar — touch target 44x44 */}
+          <button
+            onClick={() => onAdd(product.id)}
+            aria-label={`Agregar ${product.name} al carrito`}
+            className={cn(
+              "min-h-[44px] min-w-[44px] -mr-1 -mb-1 flex items-center justify-center gap-0.5",
+              "rounded-xl text-white text-[11px] font-bold",
+              "transition-all duration-200 active:scale-90",
+              justAdded
+                ? "bg-emerald-500 dark:bg-emerald-600"
+                : "bg-[#00B4A6] hover:bg-[#009990] dark:bg-[#00B4A6] dark:hover:bg-[#009990]",
+            )}
+          >
+            {justAdded ? (
+              <span className="text-[10px] px-1">✓</span>
+            ) : (
+              <Plus className="h-4 w-4" />
+            )}
+          </button>
         </div>
       </div>
+    </div>
+  );
+}
+
+// ── Fisher–Yates shuffle (deterministic fallback sin popularidad) ─────────────
+
+function shuffleArray<T>(arr: T[]): T[] {
+  const copy = [...arr];
+  for (let i = copy.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [copy[i], copy[j]] = [copy[j], copy[i]];
+  }
+  return copy;
+}
+
+// ── Componente principal ──────────────────────────────────────────────────────
+
+export default function RecommendedProducts({
+  currentCartItems,
+  onAddToCart,
+}: RecommendedProductsProps) {
+  const [recommendations, setRecommendations] = useState<RecommendedProduct[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [justAdded, setJustAdded] = useState<Set<number>>(new Set());
+  const fetchedKeyRef = useRef<string>("");
+
+  // Derivados estables de las props
+  const cartIds = currentCartItems.map((i) => i.id);
+  const cartCategories = [...new Set(currentCartItems.map((i) => i.category))];
+
+  const fetchRecommendations = useCallback(async () => {
+    // Evitar re-fetch si el carrito no cambió
+    const key = `${cartIds.sort().join(",")}_${cartCategories.sort().join(",")}`;
+    if (key === fetchedKeyRef.current) return;
+    fetchedKeyRef.current = key;
+
+    setLoading(true);
+
+    const cartIdSet = new Set(cartIds);
+
+    // ── Intento 1: endpoint /api/recommendations ───────────────────────────
+    if (cartCategories.length > 0) {
+      try {
+        const params = new URLSearchParams({
+          categories: cartCategories.join(","),
+          exclude: cartIds.join(","),
+        });
+        const res = await fetch(`/api/recommendations?${params}`);
+        if (res.ok) {
+          const data = await res.json();
+          const list: RecommendedProduct[] = Array.isArray(data)
+            ? data
+            : data.data ?? data.products ?? [];
+          const filtered = list.filter((p) => !cartIdSet.has(p.id)).slice(0, 6);
+          if (filtered.length >= 2) {
+            setRecommendations(filtered);
+            setLoading(false);
+            return;
+          }
+        }
+      } catch {
+        // caer al fallback
+      }
+    }
+
+    // ── Fallback: /api/products filtrado en cliente ────────────────────────
+    try {
+      const res = await fetch("/api/products");
+      if (!res.ok) {
+        setLoading(false);
+        return;
+      }
+      const raw = await res.json();
+      const allProducts: RecommendedProduct[] = Array.isArray(raw)
+        ? raw
+        : raw.data ?? raw.products ?? [];
+
+      // 1. Mismas categorías que el carrito, excluir los ya agregados
+      let pool = allProducts.filter(
+        (p) =>
+          !cartIdSet.has(p.id) &&
+          cartCategories.includes(p.category),
+      );
+
+      // 2. Si no hay suficientes del mismo category, completar con cualquier producto
+      if (pool.length < 4) {
+        const extraPool = allProducts.filter(
+          (p) => !cartIdSet.has(p.id) && !pool.some((x) => x.id === p.id),
+        );
+        pool = [...pool, ...extraPool];
+      }
+
+      // 3. Ordenar: por popularidad desc si existe, si no, shuffle
+      const hasPop = pool.some((p) => typeof p.popularity === "number");
+      const sorted = hasPop
+        ? [...pool].sort((a, b) => (b.popularity ?? 0) - (a.popularity ?? 0))
+        : shuffleArray(pool);
+
+      setRecommendations(sorted.slice(0, 6));
+    } catch {
+      // silencioso — no renderizar nada
+    } finally {
+      setLoading(false);
+    }
+  }, [cartIds.join(","), cartCategories.join(",")]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  useEffect(() => {
+    fetchRecommendations();
+  }, [fetchRecommendations]);
+
+  // Feedback visual de "agregado"
+  const handleAdd = (productId: number) => {
+    onAddToCart(productId);
+    setJustAdded((prev) => new Set(prev).add(productId));
+    setTimeout(() => {
+      setJustAdded((prev) => {
+        const next = new Set(prev);
+        next.delete(productId);
+        return next;
+      });
+    }, 1500);
+  };
+
+  // ── Esqueleto de carga ────────────────────────────────────────────────────
+  if (loading) {
+    return (
+      <section className="w-full px-4 py-3">
+        {/* Header skeleton */}
+        <div className="flex items-center gap-2 mb-3">
+          <div className="h-4 w-4 rounded-full bg-gray-100 dark:bg-white/5 animate-pulse" />
+          <div className="h-4 w-44 rounded-full bg-gray-100 dark:bg-white/5 animate-pulse" />
+        </div>
+        {/* Row skeleton */}
+        <div
+          className="flex gap-3 overflow-hidden"
+          aria-hidden="true"
+        >
+          {Array.from({ length: 4 }).map((_, i) => (
+            <SkeletonCard key={i} />
+          ))}
+        </div>
+      </section>
+    );
+  }
+
+  // ── Sin resultados: no renderizar nada ───────────────────────────────────
+  if (recommendations.length === 0) return null;
+
+  // ── Vista principal ───────────────────────────────────────────────────────
+  return (
+    <section
+      aria-label="Productos recomendados"
+      className="w-full px-4 py-3 bg-linear-to-b from-[#f0faf9]/60 to-transparent dark:from-[#00B4A6]/5 dark:to-transparent"
+    >
+      {/* Header */}
+      <div className="flex items-center gap-2 mb-3">
+        <Sparkles className="h-4 w-4 text-[#f4a261] shrink-0" aria-hidden="true" />
+        <h3 className="text-[13px] font-bold text-gray-800 dark:text-foreground tracking-tight">
+          También te puede interesar
+        </h3>
+        <ShoppingCart
+          className="h-3.5 w-3.5 text-gray-300 dark:text-white/20 ml-auto shrink-0"
+          aria-hidden="true"
+        />
+      </div>
+
+      {/* Scroll horizontal con snap */}
+      <div
+        role="list"
+        className={cn(
+          "flex gap-3 overflow-x-auto pb-2",
+          "snap-x snap-mandatory scroll-smooth",
+          "scrollbar-hide",
+          // Padding final para que el último card no quede pegado al borde
+          "pr-4 -mr-4",
+        )}
+      >
+        {recommendations.map((product) => (
+          <div key={product.id} role="listitem">
+            <ProductCard
+              product={product}
+              onAdd={handleAdd}
+              justAdded={justAdded.has(product.id)}
+            />
+          </div>
+        ))}
+      </div>
+
+      {/* Indicador de scroll (solo cuando hay más de 3 items) */}
+      {recommendations.length > 3 && (
+        <p className="text-[10px] text-gray-300 dark:text-white/20 text-right mt-1.5 select-none">
+          Desliza para ver más →
+        </p>
+      )}
     </section>
   );
 }
