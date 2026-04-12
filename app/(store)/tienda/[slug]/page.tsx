@@ -118,7 +118,7 @@ async function ProductDetailContent({ params }: Props) {
               url: `https://www.buleje.pe/tienda/${slug}`,
               price: product.price.toFixed(2),
               priceCurrency: "PEN",
-              priceValidUntil: new Date(new Date().getFullYear(), 11, 31).toISOString().split("T")[0],
+              priceValidUntil: "2026-12-31",
               availability: product.badge?.toLowerCase() === "agotado"
                 ? "https://schema.org/OutOfStock"
                 : "https://schema.org/InStock",

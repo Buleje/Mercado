@@ -34,9 +34,6 @@ import {
   seedTenantDefaults,
 } from "@/lib/db/tenant-onboarding.db";
 
-// ─── Next.js: forzar evaluación dinámica (lee cookies/headers) ──────────────
-export const dynamic = "force-dynamic";
-
 // ─── Rate limit: 5 registros por IP en 24 horas (distribuido via Upstash) ──
 const onboardingLimiter = createDistributedRateLimiter({
   key: "onboarding:register",

@@ -55,6 +55,8 @@ const NAV_LINKS = [
   { href: "/admin", label: "Iniciar sesión" },
 ];
 
+const CURRENT_YEAR = new Date().getFullYear();
+
 const FOOTER_LINKS = [
   { href: "/terminos", label: "Términos" },
   { href: "/privacidad", label: "Privacidad" },
@@ -118,7 +120,7 @@ export default function MarketingLayout({
         <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
           <div className="flex flex-col items-center gap-4 sm:flex-row sm:justify-between">
             <p className="text-sm text-muted">
-              &copy; {new Date().getFullYear()} Buleje — Pucallpa, Perú
+              &copy; {CURRENT_YEAR} Buleje — Pucallpa, Perú
             </p>
             <ul className="flex flex-wrap justify-center gap-x-4 gap-y-2">
               {FOOTER_LINKS.map((link) => (
