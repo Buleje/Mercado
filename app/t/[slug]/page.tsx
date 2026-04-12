@@ -251,8 +251,8 @@ async function TenantLandingContent({ params, searchParams }: TenantLandingProps
       </section>
 
       {/* Active promotions banner */}
-      {promotions.length > 0 && (
-        <section className="max-w-5xl mx-auto px-4 -mt-6 relative z-20">
+      <section className="max-w-5xl mx-auto px-4 -mt-6 relative z-20">
+        {promotions.length > 0 ? (
           <div className="space-y-2">
             {promotions.slice(0, 3).map((p) => (
               <div
@@ -281,17 +281,30 @@ async function TenantLandingContent({ params, searchParams }: TenantLandingProps
               </div>
             ))}
           </div>
-        </section>
-      )}
+        ) : (
+          <div className="flex items-center gap-3 p-4 rounded-2xl shadow-lg border-2 border-dashed border-gray-200 dark:border-gray-700 bg-white/80 dark:bg-gray-900/80 backdrop-blur">
+            <div className="w-10 h-10 rounded-xl bg-gray-100 dark:bg-gray-800 flex items-center justify-center flex-shrink-0">
+              <Tag className="w-5 h-5 text-gray-300 dark:text-gray-600" />
+            </div>
+            <div className="min-w-0 flex-1">
+              <p className="font-bold text-gray-400 dark:text-gray-500">Promoción destacada</p>
+              <p className="text-gray-300 dark:text-gray-600 text-sm">Configura desde Mi Tienda &gt; Secciones</p>
+            </div>
+            <div className="flex-shrink-0 px-3 py-1 rounded-full bg-gray-100 dark:bg-gray-800 text-gray-300 dark:text-gray-600 font-black text-sm">
+              % OFF
+            </div>
+          </div>
+        )}
+      </section>
 
       {/* Featured products */}
-      {featured.length > 0 && (
-        <section className="max-w-5xl mx-auto px-4 py-12">
-          <h2 className="text-2xl font-black mb-6 flex items-center gap-2">
-            <Sparkles className="w-6 h-6" style={{ color: primary }} />
-            Productos destacados
-          </h2>
+      <section className="max-w-5xl mx-auto px-4 py-12">
+        <h2 className="text-2xl font-black mb-6 flex items-center gap-2">
+          <Sparkles className="w-6 h-6" style={{ color: featured.length > 0 ? primary : "#d1d5db" }} />
+          Productos destacados
+        </h2>
 
+        {featured.length > 0 ? (
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
             {featured.map((p) => {
               const isExclusive =
@@ -351,11 +364,33 @@ async function TenantLandingContent({ params, searchParams }: TenantLandingProps
               );
             })}
           </div>
-        </section>
-      )}
+        ) : (
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
+            {Array.from({ length: 8 }).map((_, i) => (
+              <div
+                key={i}
+                className="rounded-2xl overflow-hidden bg-white dark:bg-gray-900 border-2 border-dashed border-gray-200 dark:border-gray-700"
+              >
+                <div className="aspect-square bg-gray-50 dark:bg-gray-800 flex items-center justify-center">
+                  <div className="text-center">
+                    <div className="w-12 h-12 mx-auto mb-2 rounded-xl bg-gray-100 dark:bg-gray-700 flex items-center justify-center">
+                      <ShoppingBag className="w-6 h-6 text-gray-300 dark:text-gray-600" />
+                    </div>
+                    <p className="text-xs font-semibold text-gray-300 dark:text-gray-600">Imagen {i + 1}</p>
+                  </div>
+                </div>
+                <div className="p-3 space-y-2">
+                  <div className="h-4 w-20 bg-gray-100 dark:bg-gray-800 rounded" />
+                  <div className="h-5 w-14 bg-gray-100 dark:bg-gray-800 rounded" />
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </section>
 
       {/* About */}
-      {(customization.aboutTitle || customization.aboutBody) && (
+      {(customization.aboutTitle || customization.aboutBody) ? (
         <section className="max-w-3xl mx-auto px-4 py-8">
           <div className="p-6 rounded-2xl bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800">
             <h2 className="text-xl font-black mb-3">
@@ -366,6 +401,20 @@ async function TenantLandingContent({ params, searchParams }: TenantLandingProps
                 {customization.aboutBody}
               </p>
             )}
+          </div>
+        </section>
+      ) : (
+        <section className="max-w-3xl mx-auto px-4 py-8">
+          <div className="p-6 rounded-2xl border-2 border-dashed border-gray-200 dark:border-gray-700 bg-white/60 dark:bg-gray-900/60">
+            <h2 className="text-xl font-black mb-3 text-gray-300 dark:text-gray-600">
+              Sobre nosotros
+            </h2>
+            <div className="space-y-2">
+              <div className="h-4 w-full bg-gray-100 dark:bg-gray-800 rounded" />
+              <div className="h-4 w-4/5 bg-gray-100 dark:bg-gray-800 rounded" />
+              <div className="h-4 w-3/5 bg-gray-100 dark:bg-gray-800 rounded" />
+            </div>
+            <p className="text-xs text-gray-300 dark:text-gray-600 mt-3">Configura desde Mi Tienda &gt; Identidad</p>
           </div>
         </section>
       )}
@@ -410,7 +459,7 @@ async function TenantLandingContent({ params, searchParams }: TenantLandingProps
           customization.contactEmail ||
           customization.address ||
           tenant.ownerPhone ||
-          tenant.customDomain) && (
+          tenant.customDomain) ? (
           <div className="bg-white dark:bg-gray-900 rounded-2xl p-6 shadow-sm border border-gray-100 dark:border-gray-800 space-y-3">
             <h3 className="text-sm font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider">
               Contacto
@@ -443,6 +492,21 @@ async function TenantLandingContent({ params, searchParams }: TenantLandingProps
                 </a>
               </div>
             )}
+          </div>
+        ) : (
+          <div className="rounded-2xl p-6 border-2 border-dashed border-gray-200 dark:border-gray-700 bg-white/60 dark:bg-gray-900/60 space-y-3">
+            <h3 className="text-sm font-bold text-gray-300 dark:text-gray-600 uppercase tracking-wider">
+              Contacto
+            </h3>
+            <div className="flex items-center gap-3">
+              <Phone className="w-4 h-4 text-gray-200 dark:text-gray-700 flex-shrink-0" />
+              <div className="h-4 w-32 bg-gray-100 dark:bg-gray-800 rounded" />
+            </div>
+            <div className="flex items-center gap-3">
+              <MapPin className="w-4 h-4 text-gray-200 dark:text-gray-700 flex-shrink-0" />
+              <div className="h-4 w-48 bg-gray-100 dark:bg-gray-800 rounded" />
+            </div>
+            <p className="text-xs text-gray-300 dark:text-gray-600">Configura desde Mi Tienda &gt; Contacto</p>
           </div>
         )}
 

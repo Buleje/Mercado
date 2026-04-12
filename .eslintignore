@@ -1,0 +1,8 @@
+node_modules
+.next
+out
+coverage
+*.config.js
+*.config.mjs
+worktree-*
+.claude/worktrees
