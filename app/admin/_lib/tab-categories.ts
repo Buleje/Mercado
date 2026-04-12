@@ -38,6 +38,9 @@ import {
   Palette,
   Settings,
   Receipt,
+  ShoppingBag,
+  Zap,
+  ChefHat,
 } from "lucide-react";
 import type { Tab } from "./tabs.types";
 
@@ -49,90 +52,104 @@ export const DEMO_DATA_MODULES: Partial<Record<Tab, { label: string; api?: strin
   },
 };
 
-// Rich metadata for every module: emoji, priority, description and a helpful tip
+// Rich metadata for every module: icon, color, priority, description and a helpful tip
 export const MODULE_INFO: Partial<
-  Record<Tab, { emoji: string; priority: "core" | "high" | "medium" | "low"; desc: string; tip: string }>
+  Record<Tab, { icon: ComponentType<{ className?: string }>; iconColor: string; priority: "core" | "high" | "medium" | "low"; desc: string; tip: string }>
 > = {
   "asistente-ia": {
-    emoji: "🧠",
+    icon: Brain,
+    iconColor: "text-teal-600",
     priority: "core",
     desc: "Dashboard IA, chat con asistente y centro de alertas del negocio.",
     tip: "Empieza aquí cada mañana para tener el pulso del negocio.",
   },
   "ventas-caja": {
-    emoji: "🖥️",
+    icon: ShoppingCart,
+    iconColor: "text-emerald-600",
     priority: "core",
     desc: "Punto de venta, caja registradora, arqueo, pedidos y cuentas por cobrar.",
     tip: "Todo lo que necesitas para operar el mostrador en un solo lugar.",
   },
   inventario: {
-    emoji: "📦",
+    icon: Package,
+    iconColor: "text-amber-600",
     priority: "core",
-    desc: "Stock, Kardex, vencimientos, mermas y alertas de inventario.",
+    desc: "Stock, movimientos de stock, vencimientos, mermas y alertas de inventario.",
     tip: "Control completo del inventario desde una sola vista.",
   },
   productos: {
-    emoji: "🏪",
+    icon: Tag,
+    iconColor: "text-violet-600",
     priority: "high",
     desc: "Catálogo, categorías, ofertas, cupones e historial de precios.",
     tip: "Gestiona tu catálogo y optimiza precios.",
   },
   compras: {
-    emoji: "📋",
+    icon: Truck,
+    iconColor: "text-blue-600",
     priority: "high",
     desc: "Pedidos a proveedor, directorio de proveedores y recepción.",
     tip: "Flujo completo de compras desde la cotización hasta la recepción.",
   },
   plata: {
-    emoji: "💵",
+    icon: DollarSign,
+    iconColor: "text-green-600",
     priority: "high",
     desc: "Ingresos, egresos, gastos, ganancias, reportes y exportación.",
     tip: "Visión financiera completa del negocio en un solo módulo.",
   },
   clientes: {
-    emoji: "👥",
+    icon: Users,
+    iconColor: "text-pink-600",
     priority: "high",
     desc: "CRM, delivery, opiniones y programa de fidelización.",
     tip: "Conoce a tus clientes y personaliza la atención.",
   },
   config: {
-    emoji: "⚙️",
+    icon: Settings,
+    iconColor: "text-gray-600",
     priority: "core",
     desc: "Usuarios, permisos, plan y configuración de la página web.",
     tip: "Configura esto primero para que todo funcione correctamente.",
   },
   pedidos: {
-    emoji: "🛒",
+    icon: ShoppingBag,
+    iconColor: "text-orange-600",
     priority: "core",
     desc: "Gestiona pedidos recibidos, su estado, asignación y entrega.",
     tip: "Centraliza pedidos de WhatsApp, tienda online y mostrador.",
   },
   plan: {
-    emoji: "⚡",
+    icon: Zap,
+    iconColor: "text-yellow-600",
     priority: "medium",
     desc: "Tu plan actual, límites y opciones de mejora.",
     tip: "Revisa tu plan para aprovechar al máximo la plataforma.",
   },
   fiados: {
-    emoji: "💰",
+    icon: CreditCard,
+    iconColor: "text-red-600",
     priority: "high",
     desc: "Control de créditos informales: registro, pagos y saldos pendientes.",
     tip: "Lleva la cuenta de lo que te deben tus clientes de confianza.",
   },
   turnos: {
-    emoji: "⏱️",
+    icon: Clock,
+    iconColor: "text-indigo-600",
     priority: "high",
     desc: "Apertura y cierre de turnos con conteo de efectivo.",
     tip: "Control de caja por turno para saber exactamente cuánto entró.",
   },
   recetas: {
-    emoji: "🍳",
+    icon: ChefHat,
+    iconColor: "text-orange-500",
     priority: "medium",
     desc: "Recetas de producción con ingredientes y control de lotes.",
     tip: "Calcula costos de producción y descuenta stock automáticamente.",
   },
   prestamos: {
-    emoji: "🏦",
+    icon: Landmark,
+    iconColor: "text-slate-600",
     priority: "medium",
     desc: "Préstamos a clientes con cuotas, interés y tabla de amortización.",
     tip: "Gestiona préstamos con calculadora integrada y seguimiento de pagos.",

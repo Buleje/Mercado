@@ -18,7 +18,8 @@ import type { Tab } from "../../app/admin/_lib/tabs.types";
 export type ModulePriority = "core" | "high" | "medium" | "low";
 
 export interface ModuleInfo {
-  emoji: string;
+  icon: React.ComponentType<{ className?: string }>;
+  iconColor: string;
   priority: ModulePriority;
   desc: string;
   tip: string;
@@ -174,13 +175,14 @@ export function AdminModuleManagerModal({
                             isHidden ? "bg-gray-100 dark:bg-surface" : "bg-primary/10"
                           )}
                         >
-                          {info?.emoji ? (
-                            <span className="text-lg leading-none select-none">{info.emoji}</span>
-                          ) : (
-                            <TabIcon
-                              className={cn("h-4 w-4", isHidden ? "text-gray-400" : "text-primary")}
-                            />
-                          )}
+                          {(() => {
+                            const ModIcon = info?.icon ?? TabIcon;
+                            return (
+                              <ModIcon
+                                className={cn("h-4 w-4", isHidden ? "text-gray-400" : info?.iconColor ?? "text-primary")}
+                              />
+                            );
+                          })()}
                           {hasDemo && (
                             <span className="absolute -top-0.5 -right-0.5 h-2 w-2 rounded-full bg-red-500" />
                           )}

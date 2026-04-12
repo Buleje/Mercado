@@ -56,9 +56,7 @@ export function AdminMainContent({
     });
   }
   breadcrumbItems.push({
-    label: modInfo?.emoji
-      ? `${modInfo.emoji} ${modInfo?.desc?.split(".")[0] || tab}`
-      : cat?.label || tab,
+    label: modInfo?.desc?.split(".")[0] || cat?.label || tab,
   });
 
   return (

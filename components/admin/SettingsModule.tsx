@@ -1425,6 +1425,45 @@ export default function SettingsModule({ storeMode, onModeChange }: { storeMode:
         </div>
       </SectionCard>
 
+      <SectionCard title="Modo de lenguaje" desc="Elige cómo se muestran los términos en el panel">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <button
+            type="button"
+            onClick={() => {
+              try { localStorage.setItem("buleje-vocabulary-mode", "simple"); } catch {}
+              window.dispatchEvent(new Event("vocabulary-change"));
+            }}
+            className={cn(
+              "p-4 rounded-xl border-2 text-left transition-all",
+              (typeof window !== "undefined" && localStorage.getItem("buleje-vocabulary-mode") !== "technical")
+                ? "border-primary bg-primary/5"
+                : "border-gray-200 dark:border-card-border hover:border-gray-300"
+            )}
+          >
+            <p className="font-bold text-sm">Sencillo</p>
+            <p className="text-xs text-gray-500 mt-1">Palabras simples y claras. Ideal para dueños de bodega.</p>
+            <p className="text-[10px] text-gray-400 mt-2 italic">Ejemplo: &ldquo;Ganancia&rdquo; en vez de &ldquo;Margen bruto&rdquo;</p>
+          </button>
+          <button
+            type="button"
+            onClick={() => {
+              try { localStorage.setItem("buleje-vocabulary-mode", "technical"); } catch {}
+              window.dispatchEvent(new Event("vocabulary-change"));
+            }}
+            className={cn(
+              "p-4 rounded-xl border-2 text-left transition-all",
+              (typeof window !== "undefined" && localStorage.getItem("buleje-vocabulary-mode") === "technical")
+                ? "border-primary bg-primary/5"
+                : "border-gray-200 dark:border-card-border hover:border-gray-300"
+            )}
+          >
+            <p className="font-bold text-sm">Profesional</p>
+            <p className="text-xs text-gray-500 mt-1">Terminología técnica. Ideal para contadores y profesionales.</p>
+            <p className="text-[10px] text-gray-400 mt-2 italic">Ejemplo: &ldquo;Margen bruto&rdquo;, &ldquo;FEFO&rdquo;, &ldquo;SKU&rdquo;, &ldquo;ROI&rdquo;</p>
+          </button>
+        </div>
+      </SectionCard>
+
       <SaveButton saving={saving} saved={savedSection === "appearance"} onClick={() => patch({ primaryColor, secondaryColor, slogan })} />
     </div>
   );
