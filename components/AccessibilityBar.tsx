@@ -4,7 +4,7 @@ import { useState, useEffect, startTransition } from "react";
 import { Type, Sun, Moon, RotateCcw } from "lucide-react";
 import { useTheme } from "@/contexts/theme-context";
 
-const STORAGE_KEY = "bsm-a11y-prefs";
+const STORAGE_KEY = "buleje-a11y-prefs";
 
 type A11yPrefs = {
   fontSize: number; // 0 = normal, 1 = large, 2 = extra-large
