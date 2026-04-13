@@ -39,7 +39,7 @@ export function GeolocationPrompt() {
         type="button"
         onClick={handleGeo}
         disabled={loading}
-        className="inline-flex items-center gap-2 bg-white/20 hover:bg-white/30 text-white font-semibold px-5 py-2.5 rounded-xl border border-white/20 backdrop-blur-sm transition-all text-sm disabled:opacity-50"
+        className="inline-flex items-center gap-2 border border-gray-300 dark:border-gray-700 text-gray-700 dark:text-gray-300 font-semibold px-5 py-2.5 rounded-xl hover:bg-gray-50 dark:hover:bg-gray-800 transition-all text-sm disabled:opacity-50"
       >
         {loading ? (
           <span className="h-4 w-4 border-2 border-white/40 border-t-white rounded-full animate-spin" />
@@ -49,7 +49,7 @@ export function GeolocationPrompt() {
         {loading ? "Buscando..." : "Tiendas cerca de mí"}
       </button>
       {error && (
-        <span className="text-xs text-white/70">{error}</span>
+        <span className="text-xs text-gray-400">{error}</span>
       )}
     </div>
   );
@@ -109,7 +109,7 @@ export function AnimatedSearchBar() {
     <form action="/marketplace" method="GET" className="mt-8 max-w-xl mx-auto">
       <div className="relative group">
         <svg
-          className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400 pointer-events-none transition-colors group-focus-within:text-teal-500"
+          className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400 pointer-events-none transition-colors group-focus-within:text-primary"
           fill="none"
           viewBox="0 0 24 24"
           stroke="currentColor"
@@ -123,17 +123,17 @@ export function AnimatedSearchBar() {
           placeholder={isFocused ? "¿Qué necesitas?" : displayText || "¿Qué necesitas?"}
           onFocus={() => setIsFocused(true)}
           onBlur={() => setIsFocused(false)}
-          className="w-full rounded-2xl bg-white pl-12 pr-28 py-4 text-base text-gray-900 placeholder-gray-400 outline-none shadow-xl shadow-black/10 focus:ring-4 focus:ring-white/30 focus:scale-[1.02] transition-all duration-300"
+          className="w-full rounded-xl bg-gray-100 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 pl-12 pr-28 py-4 text-base text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary/40 transition-all duration-300"
         />
         <button
           type="submit"
-          className="absolute right-2 top-1/2 -translate-y-1/2 bg-teal-600 hover:bg-teal-700 text-white font-bold px-5 py-2.5 rounded-xl text-sm transition-colors"
+          className="absolute right-2 top-1/2 -translate-y-1/2 bg-primary hover:bg-primary-dark text-white font-bold px-5 py-2.5 rounded-xl text-sm transition-colors"
         >
           Buscar
         </button>
         {/* Pulsing dot indicator */}
         {!isFocused && (
-          <span className="absolute right-24 top-1/2 -translate-y-1/2 h-2 w-2 rounded-full bg-teal-500 animate-pulse" />
+          <span className="absolute right-24 top-1/2 -translate-y-1/2 h-2 w-2 rounded-full bg-primary animate-pulse" />
         )}
       </div>
     </form>
@@ -181,26 +181,21 @@ export function CategoriesGridClient({ categories }: { categories: CategoryDef[]
               key={cat.slug}
               href={`/marketplace?categoria=${cat.slug}`}
               onClick={() => handleClick(cat.slug, cat.label)}
-              className="group relative overflow-hidden rounded-2xl p-6 sm:p-7 transition-all duration-300 hover:-translate-y-2 hover:shadow-2xl hover:scale-[1.03]"
+              className="group bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-2xl p-6 sm:p-7 transition-all duration-300 hover:border-primary/30 hover:shadow-sm"
             >
-              <div className={`absolute inset-0 bg-linear-to-br ${cat.color} opacity-90 group-hover:opacity-100 transition-opacity duration-300`} />
-              {/* Shine effect on hover */}
-              <div className="absolute inset-0 bg-linear-to-br from-white/0 via-white/20 to-white/0 opacity-0 group-hover:opacity-100 -translate-x-full group-hover:translate-x-full transition-all duration-700 ease-out" />
-              <div className="relative z-10">
-                <span className="text-4xl sm:text-5xl block mb-3 group-hover:scale-125 group-hover:rotate-[-8deg] transition-transform duration-300">
-                  {cat.emoji}
-                </span>
-                <h3 className="text-lg sm:text-xl font-bold text-white">
-                  {cat.label}
-                </h3>
-                <p className="text-sm text-white/75 mt-1 group-hover:text-white/95 transition-colors">
-                  {cat.desc}
-                </p>
-                {/* Hover CTA */}
-                <span className="mt-3 inline-flex items-center gap-1.5 text-sm font-bold text-white/0 group-hover:text-white transition-all duration-300 transform translate-y-2 group-hover:translate-y-0">
-                  Ir a comprar <ChevronRightIcon className="h-4 w-4" />
-                </span>
-              </div>
+              <span className="text-4xl sm:text-5xl block mb-3 group-hover:scale-110 transition-transform duration-300">
+                {cat.emoji}
+              </span>
+              <h3 className="text-lg sm:text-xl font-bold text-gray-900 dark:text-white">
+                {cat.label}
+              </h3>
+              <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
+                {cat.desc}
+              </p>
+              {/* Hover CTA */}
+              <span className="mt-3 inline-flex items-center gap-1.5 text-sm font-bold text-transparent group-hover:text-primary transition-all duration-300 transform translate-y-2 group-hover:translate-y-0">
+                Ir a comprar <ChevronRightIcon className="h-4 w-4" />
+              </span>
             </Link>
           ))}
         </div>
@@ -304,7 +299,7 @@ export function ReviewsCarousel({ reviews }: { reviews: ReviewData[] }) {
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <div className="text-center mb-10">
           <h2 className="text-2xl sm:text-3xl font-extrabold text-gray-900 dark:text-white">
-            Lo que dicen nuestros <span className="text-teal-600">clientes</span>
+            Lo que dicen nuestros <span className="text-primary">clientes</span>
           </h2>
           <p className="mt-2 text-gray-500 dark:text-gray-400">
             Miles de personas ya compran en Buleje
@@ -335,7 +330,7 @@ export function ReviewsCarousel({ reviews }: { reviews: ReviewData[] }) {
                 className="shrink-0 w-[320px] sm:w-90 snap-start"
               >
                 <div
-                  className="bg-gray-50 dark:bg-gray-800 rounded-2xl p-6 border border-gray-100 dark:border-gray-700 h-full hover:shadow-xl hover:-translate-y-1 transition-all duration-300"
+                  className="bg-white dark:bg-gray-800 rounded-2xl p-6 border border-gray-200 dark:border-gray-800 h-full hover:shadow-md hover:-translate-y-1 transition-all duration-300"
                   style={{
                     animationDelay: `${idx * 100}ms`,
                   }}
@@ -355,7 +350,7 @@ export function ReviewsCarousel({ reviews }: { reviews: ReviewData[] }) {
                   </p>
                   {/* Author */}
                   <div className="flex items-center gap-3 pt-3 border-t border-gray-200 dark:border-gray-700">
-                    <div className="h-9 w-9 rounded-full bg-teal-100 dark:bg-teal-900/40 flex items-center justify-center text-teal-700 dark:text-teal-300 font-bold text-sm">
+                    <div className="h-9 w-9 rounded-full bg-gray-100 dark:bg-gray-700 flex items-center justify-center text-gray-600 dark:text-gray-300 font-bold text-sm">
                       {r.name.charAt(0)}
                     </div>
                     <div>
@@ -392,7 +387,7 @@ export function ReviewsCarousel({ reviews }: { reviews: ReviewData[] }) {
                 el.scrollTo({ left: cardWidth * idx, behavior: "smooth" });
               }}
               className={`h-2 rounded-full transition-all duration-300 ${
-                idx === activeIdx ? "w-6 bg-teal-600" : "w-2 bg-gray-300 dark:bg-gray-600 hover:bg-gray-400"
+                idx === activeIdx ? "w-6 bg-primary" : "w-2 bg-gray-300 dark:bg-gray-600 hover:bg-gray-400"
               }`}
               aria-label={`Ir a opinión ${idx + 1}`}
             />

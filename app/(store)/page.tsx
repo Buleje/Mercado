@@ -168,46 +168,38 @@ async function HeroSection() {
   const stats = await getMarketplaceStats();
 
   return (
-    <section className="relative overflow-hidden bg-linear-to-br from-teal-600 via-teal-700 to-emerald-800">
-      {/* Decorative circles */}
-      <div className="pointer-events-none absolute inset-0">
-        <div className="absolute -top-20 -right-20 h-80 w-80 rounded-full bg-white/5 blur-2xl" />
-        <div className="absolute -bottom-32 -left-16 h-96 w-96 rounded-full bg-emerald-400/10 blur-3xl" />
-      </div>
+    <section className="py-16 sm:py-20 bg-white dark:bg-gray-950">
+      <div className="mx-auto max-w-5xl px-4 sm:px-6 text-center">
+        <h1 className="text-4xl sm:text-5xl lg:text-6xl font-extrabold text-gray-900 dark:text-white leading-tight">
+          Pide lo que{" "}
+          <span className="text-primary">quieras</span>,{" "}
+          te lo llevamos
+        </h1>
+        <p className="mt-6 text-lg text-gray-500 dark:text-gray-400 max-w-2xl mx-auto">
+          Bodegas, minimarkets, licorerías, farmacias y más — todo desde tu celular con delivery rápido.
+        </p>
 
-      <div className="relative z-10 mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 pt-12 pb-16 sm:pt-16 sm:pb-20 lg:pt-20 lg:pb-24">
-        <div className="text-center max-w-3xl mx-auto">
-          <h1 className="text-4xl sm:text-5xl lg:text-6xl font-extrabold text-white leading-tight">
-            Pide lo que{" "}
-            <span className="text-yellow-300">quieras</span>,{" "}
-            te lo llevamos
-          </h1>
-          <p className="mt-4 text-lg sm:text-xl text-white/80 max-w-2xl mx-auto">
-            Bodegas, minimarkets, licorerías, farmacias y más — todo desde tu celular con delivery rápido.
-          </p>
+        {/* Animated search bar */}
+        <AnimatedSearchBar />
 
-          {/* Animated search bar */}
-          <AnimatedSearchBar />
+        {/* Mini stats */}
+        <div className="mt-8 flex flex-wrap justify-center gap-6 text-gray-500 dark:text-gray-400 text-sm">
+          <span className="flex items-center gap-1.5">
+            <span className="font-bold text-gray-900 dark:text-white">{stats.storeCount || "10+"}
+            </span> tiendas
+          </span>
+          <span className="flex items-center gap-1.5">
+            <span className="font-bold text-gray-900 dark:text-white">{stats.productCount || "500+"}
+            </span> productos
+          </span>
+          <span className="flex items-center gap-1.5">
+            <span className="font-bold text-gray-900 dark:text-white">{stats.avgRating}</span> valoración
+          </span>
+        </div>
 
-          {/* Mini stats */}
-          <div className="mt-8 flex flex-wrap justify-center gap-6 text-white/80 text-sm">
-            <span className="flex items-center gap-1.5">
-              <span className="font-bold text-white">{stats.storeCount || "10+"}
-              </span> tiendas
-            </span>
-            <span className="flex items-center gap-1.5">
-              <span className="font-bold text-white">{stats.productCount || "500+"}
-              </span> productos
-            </span>
-            <span className="flex items-center gap-1.5">
-              ⭐ <span className="font-bold text-white">{stats.avgRating}</span> valoración
-            </span>
-          </div>
-
-          {/* Geolocation prompt */}
-          <div className="mt-2 flex justify-center">
-            <GeolocationPrompt />
-          </div>
+        {/* Geolocation prompt */}
+        <div className="mt-4 flex justify-center">
+          <GeolocationPrompt />
         </div>
       </div>
     </section>
@@ -216,18 +208,18 @@ async function HeroSection() {
 
 // ── Categories grid — big colorful cards (Rappi / PedidosYa style) ──
 const CATEGORIES = [
-  { emoji: "🏪", label: "Bodegas", slug: "bodegas", color: "from-teal-600 to-teal-700", desc: "Abarrotes, bebidas y más" },
-  { emoji: "🍔", label: "Restaurantes", slug: "restaurantes", color: "from-amber-500 to-amber-600", desc: "Comida lista para ti" },
-  { emoji: "🍺", label: "Licorería", slug: "licoreria", color: "from-teal-700 to-emerald-800", desc: "Cervezas, vinos y licores" },
-  { emoji: "💊", label: "Farmacia", slug: "farmacia", color: "from-teal-500 to-teal-600", desc: "Medicinas y cuidado personal" },
-  { emoji: "🥦", label: "Frutas y Verduras", slug: "frutas-verduras", color: "from-emerald-500 to-emerald-600", desc: "Frescos del mercado" },
-  { emoji: "🍞", label: "Panadería", slug: "panaderia", color: "from-amber-400 to-amber-500", desc: "Pan caliente y pasteles" },
-  { emoji: "🧹", label: "Limpieza", slug: "limpieza", color: "from-teal-400 to-teal-500", desc: "Productos para tu hogar" },
-  { emoji: "🐾", label: "Mascotas", slug: "mascotas", color: "from-emerald-600 to-emerald-700", desc: "Alimento y accesorios" },
-  { emoji: "🥩", label: "Carnicería", slug: "carniceria", color: "from-amber-600 to-amber-700", desc: "Carnes frescas del día" },
-  { emoji: "🧊", label: "Congelados", slug: "congelados", color: "from-teal-400 to-teal-600", desc: "Helados y comida congelada" },
-  { emoji: "🍿", label: "Snacks", slug: "snacks", color: "from-amber-500 to-amber-700", desc: "Galletas, dulces y más" },
-  { emoji: "🧴", label: "Cuidado Personal", slug: "higiene", color: "from-emerald-500 to-teal-600", desc: "Jabones, shampoo, crema" },
+  { emoji: "🏪", label: "Bodegas", slug: "bodegas", color: "", desc: "Abarrotes, bebidas y más" },
+  { emoji: "🍔", label: "Restaurantes", slug: "restaurantes", color: "", desc: "Comida lista para ti" },
+  { emoji: "🍺", label: "Licorería", slug: "licoreria", color: "", desc: "Cervezas, vinos y licores" },
+  { emoji: "💊", label: "Farmacia", slug: "farmacia", color: "", desc: "Medicinas y cuidado personal" },
+  { emoji: "🥦", label: "Frutas y Verduras", slug: "frutas-verduras", color: "", desc: "Frescos del mercado" },
+  { emoji: "🍞", label: "Panadería", slug: "panaderia", color: "", desc: "Pan caliente y pasteles" },
+  { emoji: "🧹", label: "Limpieza", slug: "limpieza", color: "", desc: "Productos para tu hogar" },
+  { emoji: "🐾", label: "Mascotas", slug: "mascotas", color: "", desc: "Alimento y accesorios" },
+  { emoji: "🥩", label: "Carnicería", slug: "carniceria", color: "", desc: "Carnes frescas del día" },
+  { emoji: "🧊", label: "Congelados", slug: "congelados", color: "", desc: "Helados y comida congelada" },
+  { emoji: "🍿", label: "Snacks", slug: "snacks", color: "", desc: "Galletas, dulces y más" },
+  { emoji: "🧴", label: "Cuidado Personal", slug: "higiene", color: "", desc: "Jabones, shampoo, crema" },
 ];
 
 function CategoriesGrid() {
@@ -275,10 +267,10 @@ function HowItWorks() {
           {steps.map((s) => (
             <div
               key={s.num}
-              className="bg-white dark:bg-gray-800 rounded-2xl p-6 border border-gray-100 dark:border-gray-700 text-center"
+              className="bg-white dark:bg-gray-800 rounded-2xl p-6 border border-gray-200 dark:border-gray-800 hover:shadow-sm transition-all text-center"
             >
               <span className="text-4xl block mb-3">{s.emoji}</span>
-              <div className="inline-flex items-center justify-center h-8 w-8 rounded-full bg-teal-100 dark:bg-teal-900/40 text-teal-700 dark:text-teal-300 font-bold text-sm mb-2">
+              <div className="inline-flex items-center justify-center h-8 w-8 rounded-full bg-primary/10 dark:bg-primary/20 text-primary dark:text-primary-light font-bold text-sm mb-2">
                 {s.num}
               </div>
               <h3 className="text-lg font-bold text-gray-900 dark:text-white">
@@ -306,7 +298,7 @@ async function FeaturedStoresSection() {
         <div className="flex items-center justify-between mb-8">
           <div>
             <h2 className="text-2xl sm:text-3xl font-extrabold text-gray-900 dark:text-white">
-              ⭐ Tiendas destacadas
+              Tiendas destacadas
             </h2>
             <p className="mt-1 text-gray-500 dark:text-gray-400 text-sm">
               Las mejor valoradas por nuestros clientes
@@ -314,7 +306,7 @@ async function FeaturedStoresSection() {
           </div>
           <Link
             href="/marketplace"
-            className="text-teal-600 dark:text-teal-400 font-semibold text-sm hover:underline hidden sm:block"
+            className="text-primary dark:text-primary-light font-semibold text-sm hover:underline hidden sm:block"
           >
             Ver todas →
           </Link>
@@ -324,7 +316,7 @@ async function FeaturedStoresSection() {
             <Link
               key={store.id}
               href={`/marketplace/${store.slug}`}
-              className="group bg-white dark:bg-gray-800 rounded-2xl border border-gray-100 dark:border-gray-700 p-4 text-center hover:shadow-lg hover:-translate-y-1 transition-all"
+              className="group bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-800 p-4 text-center hover:shadow-md hover:-translate-y-1 transition-all"
             >
               <div className="relative w-16 h-16 mx-auto mb-3 rounded-xl overflow-hidden bg-gray-100 dark:bg-gray-700">
                 {store.logo ? (
@@ -392,7 +384,7 @@ async function FeaturedStoresSection() {
         <div className="text-center mt-6 sm:hidden">
           <Link
             href="/marketplace"
-            className="text-teal-600 dark:text-teal-400 font-semibold text-sm hover:underline"
+            className="text-primary dark:text-primary-light font-semibold text-sm hover:underline"
           >
             Ver todas las tiendas →
           </Link>
@@ -427,50 +419,44 @@ function PromoBanners() {
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <div className="grid sm:grid-cols-2 gap-6">
           {/* For businesses */}
-          <div className="relative overflow-hidden rounded-2xl bg-linear-to-br from-teal-600 to-emerald-700 p-8 sm:p-10 text-white">
-            <div className="pointer-events-none absolute -top-8 -right-8 h-40 w-40 rounded-full bg-white/10 blur-2xl" />
-            <div className="relative z-10">
+          <div className="rounded-2xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 p-8 sm:p-10">
               <span className="text-4xl block mb-4">🏪</span>
-              <h3 className="text-2xl font-extrabold mb-2">
+              <h3 className="text-2xl font-extrabold text-gray-900 dark:text-white mb-2">
                 ¿Tienes un negocio?
               </h3>
-              <p className="text-white/80 mb-6 max-w-sm">
+              <p className="text-gray-500 dark:text-gray-400 mb-6 max-w-sm">
                 Registra tu bodega, minimarket o tienda y empieza a vender online gratis. Miles de clientes te esperan.
               </p>
               <div className="flex flex-wrap gap-3">
                 <Link
                   href="/marketplace/apply"
-                  className="inline-flex items-center gap-2 bg-white text-teal-700 font-bold px-6 py-3 rounded-xl hover:bg-white/90 transition-colors"
+                  className="inline-flex items-center gap-2 bg-primary text-white font-bold px-6 py-3 rounded-xl hover:bg-primary-dark transition-colors"
                 >
                   Registrar mi negocio
                 </Link>
                 <Link
                   href="/negocios"
-                  className="inline-flex items-center gap-2 bg-white/15 text-white font-semibold px-6 py-3 rounded-xl border border-white/20 hover:bg-white/25 transition-colors"
+                  className="inline-flex items-center gap-2 border border-gray-300 dark:border-gray-700 text-gray-700 dark:text-gray-300 font-semibold px-6 py-3 rounded-xl hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
                 >
                   Ver planes
                 </Link>
               </div>
-            </div>
           </div>
           {/* For drivers */}
-          <div className="relative overflow-hidden rounded-2xl bg-linear-to-br from-orange-500 to-amber-600 p-8 sm:p-10 text-white">
-            <div className="pointer-events-none absolute -bottom-8 -left-8 h-40 w-40 rounded-full bg-white/10 blur-2xl" />
-            <div className="relative z-10">
+          <div className="rounded-2xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 p-8 sm:p-10">
               <span className="text-4xl block mb-4">🛵</span>
-              <h3 className="text-2xl font-extrabold mb-2">
+              <h3 className="text-2xl font-extrabold text-gray-900 dark:text-white mb-2">
                 ¿Quieres repartir?
               </h3>
-              <p className="text-white/80 mb-6 max-w-sm">
+              <p className="text-gray-500 dark:text-gray-400 mb-6 max-w-sm">
                 Únete como repartidor y genera ingresos extra entregando pedidos en tu zona. Tú eliges tu horario.
               </p>
               <Link
                 href="/marketplace/repartidor"
-                className="inline-flex items-center gap-2 bg-white text-orange-600 font-bold px-6 py-3 rounded-xl hover:bg-white/90 transition-colors"
+                className="inline-flex items-center gap-2 bg-primary text-white font-bold px-6 py-3 rounded-xl hover:bg-primary-dark transition-colors"
               >
                 Quiero ser repartidor
               </Link>
-            </div>
           </div>
         </div>
       </div>
@@ -488,25 +474,25 @@ function PaymentMethods() {
         </h3>
         <div className="flex flex-wrap justify-center gap-6 sm:gap-10">
           <div className="flex flex-col items-center gap-2">
-            <div className="h-14 w-14 rounded-2xl bg-teal-100 dark:bg-teal-900/30 flex items-center justify-center text-2xl">
+            <div className="h-14 w-14 rounded-2xl bg-gray-100 dark:bg-gray-800 flex items-center justify-center text-2xl">
               💜
             </div>
             <span className="text-sm font-semibold text-gray-700 dark:text-gray-300">Yape</span>
           </div>
           <div className="flex flex-col items-center gap-2">
-            <div className="h-14 w-14 rounded-2xl bg-emerald-100 dark:bg-emerald-900/30 flex items-center justify-center text-2xl">
+            <div className="h-14 w-14 rounded-2xl bg-gray-100 dark:bg-gray-800 flex items-center justify-center text-2xl">
               💚
             </div>
             <span className="text-sm font-semibold text-gray-700 dark:text-gray-300">Plin</span>
           </div>
           <div className="flex flex-col items-center gap-2">
-            <div className="h-14 w-14 rounded-2xl bg-amber-100 dark:bg-amber-900/30 flex items-center justify-center text-2xl">
+            <div className="h-14 w-14 rounded-2xl bg-gray-100 dark:bg-gray-800 flex items-center justify-center text-2xl">
               💵
             </div>
             <span className="text-sm font-semibold text-gray-700 dark:text-gray-300">Efectivo</span>
           </div>
           <div className="flex flex-col items-center gap-2">
-            <div className="h-14 w-14 rounded-2xl bg-teal-50 dark:bg-teal-900/30 flex items-center justify-center text-2xl">
+            <div className="h-14 w-14 rounded-2xl bg-gray-100 dark:bg-gray-800 flex items-center justify-center text-2xl">
               💳
             </div>
             <span className="text-sm font-semibold text-gray-700 dark:text-gray-300">Tarjeta</span>
@@ -520,27 +506,27 @@ function PaymentMethods() {
 // ── Final CTA ──
 function FinalCTA() {
   return (
-    <section className="py-14 sm:py-20 bg-linear-to-br from-teal-700 to-emerald-800 text-white">
+    <section className="py-14 sm:py-20 bg-gray-50 dark:bg-gray-900/50">
       <div className="max-w-4xl mx-auto px-4 text-center">
-        <h2 className="text-3xl sm:text-4xl font-extrabold">
+        <h2 className="text-3xl sm:text-4xl font-extrabold text-gray-900 dark:text-white">
           Todo lo que necesitas,{" "}
-          <span className="text-yellow-300">en un solo lugar</span>
+          <span className="text-primary">en un solo lugar</span>
         </h2>
-        <p className="mt-4 text-lg text-white/70 max-w-xl mx-auto">
+        <p className="mt-4 text-lg text-gray-500 dark:text-gray-400 max-w-xl mx-auto">
           Únete a miles de personas que ya compran en Buleje. Delivery rápido, pagos fáciles y las mejores tiendas de tu zona.
         </p>
         <div className="mt-8 flex flex-wrap justify-center gap-4">
           <Link
             href="/marketplace"
-            className="inline-flex items-center gap-2 bg-white text-teal-700 font-bold px-8 py-4 rounded-xl hover:bg-white/90 transition-colors shadow-lg text-lg"
+            className="inline-flex items-center gap-2 bg-primary text-white font-bold px-8 py-4 rounded-xl hover:bg-primary-dark transition-colors text-lg"
           >
-            🛒 Explorar Marketplace
+            Explorar Marketplace
           </Link>
           <Link
             href="/negocios"
-            className="inline-flex items-center gap-2 bg-white/15 hover:bg-white/25 text-white font-semibold px-8 py-4 rounded-xl border border-white/25 transition-colors text-lg"
+            className="inline-flex items-center gap-2 border border-gray-300 dark:border-gray-700 text-gray-700 dark:text-gray-300 font-semibold px-8 py-4 rounded-xl hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors text-lg"
           >
-            🏪 Soy un negocio
+            Soy un negocio
           </Link>
         </div>
       </div>
@@ -576,11 +562,11 @@ export default async function Home() {
 
 function HeroSkeleton() {
   return (
-    <div className="bg-linear-to-br from-teal-600 to-emerald-800 py-20 sm:py-28">
-      <div className="mx-auto max-w-7xl px-4 text-center">
-        <div className="h-12 w-80 bg-white/20 rounded-xl mx-auto mb-4 animate-pulse" />
-        <div className="h-6 w-96 bg-white/10 rounded-lg mx-auto mb-8 animate-pulse" />
-        <div className="h-14 max-w-xl mx-auto bg-white/20 rounded-2xl animate-pulse" />
+    <div className="py-16 sm:py-20 bg-white dark:bg-gray-950">
+      <div className="mx-auto max-w-5xl px-4 text-center">
+        <div className="h-12 w-80 bg-gray-200 dark:bg-gray-800 rounded-xl mx-auto mb-4 animate-pulse" />
+        <div className="h-6 w-96 bg-gray-100 dark:bg-gray-800 rounded-lg mx-auto mb-8 animate-pulse" />
+        <div className="h-14 max-w-xl mx-auto bg-gray-200 dark:bg-gray-800 rounded-2xl animate-pulse" />
       </div>
     </div>
   );

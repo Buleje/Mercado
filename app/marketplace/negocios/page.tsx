@@ -104,65 +104,61 @@ export default function NegociosPage() {
   return (
     <>
       {/* ── HERO ── */}
-      <section className="relative overflow-hidden py-20 sm:py-28 lg:py-36 bg-gradient-to-br from-blue-900 via-blue-800 to-indigo-950">
-        <div className="pointer-events-none absolute inset-0">
-          <div className="absolute -top-32 -left-32 h-125 w-125 rounded-full bg-blue-500/20 blur-[120px]" />
-          <div className="absolute -bottom-40 -right-40 h-100 w-100 rounded-full bg-violet-500/15 blur-[100px]" />
-        </div>
-        <div className="relative z-10 mx-auto max-w-4xl px-4 sm:px-6 lg:px-8 text-center">
-          <span className="inline-flex items-center gap-2 text-xs font-bold uppercase tracking-widest text-blue-300 mb-6 bg-blue-500/15 rounded-full px-5 py-2 border border-blue-400/30">
+      <section className="py-16 sm:py-20 bg-white dark:bg-gray-950">
+        <div className="mx-auto max-w-4xl px-4 sm:px-6 lg:px-8 text-center">
+          <span className="inline-flex items-center gap-2 text-xs font-medium text-gray-500 bg-gray-100 dark:bg-gray-800 rounded-full px-4 py-1.5 mb-6">
             <Zap className="h-3.5 w-3.5" />
             Software ERP + Marketplace
           </span>
-          <h1 className="text-4xl sm:text-5xl lg:text-6xl font-black text-white leading-tight tracking-tight">
-            Tu bodega, <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-violet-400">digital</span>
+          <h1 className="text-4xl sm:text-5xl lg:text-6xl font-black text-gray-900 dark:text-white leading-tight tracking-tight">
+            Tu bodega, <span className="text-primary">digital</span>
           </h1>
-          <p className="mt-6 text-lg sm:text-xl text-blue-200/80 max-w-2xl mx-auto leading-relaxed">
+          <p className="mt-6 text-lg sm:text-xl text-gray-500 dark:text-gray-400 max-w-2xl mx-auto leading-relaxed">
             El sistema completo para administrar y hacer crecer tu bodega. Inventario, ventas, delivery, fiado y facturacion — todo en un solo lugar.
           </p>
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mt-10">
             <Link
               href="/marketplace/apply"
-              className="inline-flex items-center gap-2 bg-white text-blue-900 font-bold text-base px-8 py-4 rounded-xl hover:bg-blue-50 transition-all shadow-xl shadow-blue-900/30"
+              className="inline-flex items-center gap-2 bg-primary text-white font-bold text-base px-8 py-4 rounded-xl hover:bg-primary-dark transition-all"
             >
               Empezar gratis
               <ArrowRight className="h-5 w-5" />
             </Link>
             <Link
               href="https://wa.me/51916409675?text=Hola%2C%20quiero%20una%20demo%20de%20Buleje"
-              className="inline-flex items-center gap-2 text-white font-semibold text-base px-8 py-4 rounded-xl border border-white/20 hover:bg-white/10 transition-all"
+              className="inline-flex items-center gap-2 border border-gray-300 dark:border-gray-700 text-gray-700 dark:text-gray-300 font-semibold text-base px-8 py-4 rounded-xl hover:bg-gray-50 dark:hover:bg-gray-800 transition-all"
             >
               <MessageCircle className="h-5 w-5" />
               Pedir demo
             </Link>
           </div>
-          <p className="mt-6 text-sm text-blue-300/50">Sin tarjeta de credito. Configura en 5 minutos.</p>
+          <p className="mt-6 text-sm text-gray-400">Sin tarjeta de credito. Configura en 5 minutos.</p>
         </div>
       </section>
 
       {/* ── QUE INCLUYE ── */}
-      <section className="py-20 sm:py-28 bg-white">
+      <section className="py-16 sm:py-20 bg-gray-50 dark:bg-gray-900/50">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-16">
-            <span className="inline-flex items-center gap-1.5 bg-blue-50 text-blue-600 text-xs font-bold uppercase tracking-wider px-3.5 py-1.5 rounded-full mb-4">
+            <span className="inline-flex items-center gap-1.5 bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 text-xs font-medium rounded-full px-3 py-1 mb-4">
               <Box className="h-3.5 w-3.5" />
               Que incluye
             </span>
-            <h2 className="text-3xl sm:text-4xl font-black text-gray-900">
+            <h2 className="text-3xl sm:text-4xl font-black text-gray-900 dark:text-white">
               Todo lo que tu bodega necesita
             </h2>
-            <p className="mt-4 text-gray-500 max-w-2xl mx-auto">
+            <p className="mt-4 text-gray-500 dark:text-gray-400 max-w-2xl mx-auto">
               12 modulos integrados que trabajan juntos para que administres tu negocio completo desde un solo panel.
             </p>
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
             {FEATURES.map((f) => (
-              <div key={f.title} className="group p-5 rounded-2xl border border-gray-100 hover:border-blue-200 hover:shadow-lg hover:shadow-blue-50 transition-all duration-300">
-                <div className="h-10 w-10 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center mb-4 group-hover:bg-blue-600 group-hover:text-white transition-colors">
+              <div key={f.title} className="group p-5 rounded-2xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 hover:border-gray-300 dark:hover:border-gray-700 hover:shadow-sm transition-all duration-300">
+                <div className="h-10 w-10 rounded-xl bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 flex items-center justify-center mb-4">
                   <f.icon className="h-5 w-5" />
                 </div>
-                <h3 className="font-bold text-gray-900 mb-1.5">{f.title}</h3>
-                <p className="text-sm text-gray-500 leading-relaxed">{f.desc}</p>
+                <h3 className="font-bold text-gray-900 dark:text-white mb-1.5">{f.title}</h3>
+                <p className="text-sm text-gray-500 dark:text-gray-400 leading-relaxed">{f.desc}</p>
               </div>
             ))}
           </div>
@@ -170,24 +166,24 @@ export default function NegociosPage() {
       </section>
 
       {/* ── COMO TE AYUDA ── */}
-      <section className="py-20 sm:py-28 bg-gray-50">
+      <section className="py-16 sm:py-20 bg-white dark:bg-gray-950">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-16">
-            <span className="inline-flex items-center gap-1.5 bg-emerald-50 text-emerald-600 text-xs font-bold uppercase tracking-wider px-3.5 py-1.5 rounded-full mb-4">
+            <span className="inline-flex items-center gap-1.5 bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 text-xs font-medium rounded-full px-3 py-1 mb-4">
               <TrendingUp className="h-3.5 w-3.5" />
               Beneficios
             </span>
-            <h2 className="text-3xl sm:text-4xl font-black text-gray-900">
+            <h2 className="text-3xl sm:text-4xl font-black text-gray-900 dark:text-white">
               Como Buleje ayuda a tu negocio
             </h2>
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-8 max-w-4xl mx-auto">
             {BENEFITS.map((b) => (
-              <div key={b.title} className="flex gap-5 p-6 rounded-2xl bg-white shadow-sm border border-gray-100">
+              <div key={b.title} className="flex gap-5 p-6 rounded-2xl bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800">
                 <span className="text-4xl shrink-0">{b.emoji}</span>
                 <div>
-                  <h3 className="font-bold text-gray-900 text-lg mb-1">{b.title}</h3>
-                  <p className="text-sm text-gray-500 leading-relaxed">{b.desc}</p>
+                  <h3 className="font-bold text-gray-900 dark:text-white text-lg mb-1">{b.title}</h3>
+                  <p className="text-sm text-gray-500 dark:text-gray-400 leading-relaxed">{b.desc}</p>
                 </div>
               </div>
             ))}
@@ -196,17 +192,17 @@ export default function NegociosPage() {
       </section>
 
       {/* ── PLANES Y PRECIOS ── */}
-      <section className="py-20 sm:py-28 bg-white">
+      <section className="py-16 sm:py-20 bg-gray-50 dark:bg-gray-900/50">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-16">
-            <span className="inline-flex items-center gap-1.5 bg-violet-50 text-violet-600 text-xs font-bold uppercase tracking-wider px-3.5 py-1.5 rounded-full mb-4">
+            <span className="inline-flex items-center gap-1.5 bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 text-xs font-medium rounded-full px-3 py-1 mb-4">
               <Wallet className="h-3.5 w-3.5" />
               Planes
             </span>
-            <h2 className="text-3xl sm:text-4xl font-black text-gray-900">
+            <h2 className="text-3xl sm:text-4xl font-black text-gray-900 dark:text-white">
               Precios simples, sin sorpresas
             </h2>
-            <p className="mt-4 text-gray-500">
+            <p className="mt-4 text-gray-500 dark:text-gray-400">
               Empieza gratis y escala cuando lo necesites. Sin contratos, cancela cuando quieras.
             </p>
           </div>
@@ -216,28 +212,28 @@ export default function NegociosPage() {
                 key={plan.name}
                 className={`relative rounded-2xl p-6 sm:p-8 flex flex-col ${
                   plan.popular
-                    ? "bg-blue-900 text-white shadow-2xl shadow-blue-900/30 scale-105 border-2 border-blue-400"
-                    : "bg-white border border-gray-200 shadow-sm"
+                    ? "bg-primary text-white scale-105 border-2 border-primary shadow-lg"
+                    : "bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800"
                 }`}
               >
                 {plan.popular && (
-                  <span className="absolute -top-3 left-1/2 -translate-x-1/2 bg-gradient-to-r from-blue-400 to-violet-400 text-white text-xs font-bold uppercase tracking-wider px-4 py-1 rounded-full">
+                  <span className="absolute -top-3 left-1/2 -translate-x-1/2 bg-gray-900 text-white text-xs font-bold uppercase tracking-wider px-4 py-1 rounded-full">
                     Mas popular
                   </span>
                 )}
                 <div className="mb-6">
-                  <h3 className={`text-lg font-bold ${plan.popular ? "text-blue-200" : "text-gray-500"}`}>{plan.name}</h3>
+                  <h3 className={`text-lg font-bold ${plan.popular ? "text-white/80" : "text-gray-500 dark:text-gray-400"}`}>{plan.name}</h3>
                   <div className="flex items-baseline gap-1 mt-2">
-                    <span className={`text-4xl font-black ${plan.popular ? "text-white" : "text-gray-900"}`}>{plan.price}</span>
-                    <span className={`text-sm ${plan.popular ? "text-blue-300" : "text-gray-400"}`}>{plan.period}</span>
+                    <span className={`text-4xl font-black ${plan.popular ? "text-white" : "text-gray-900 dark:text-white"}`}>{plan.price}</span>
+                    <span className={`text-sm ${plan.popular ? "text-white/70" : "text-gray-400"}`}>{plan.period}</span>
                   </div>
-                  <p className={`text-sm mt-2 ${plan.popular ? "text-blue-200/70" : "text-gray-500"}`}>{plan.desc}</p>
+                  <p className={`text-sm mt-2 ${plan.popular ? "text-white/70" : "text-gray-500 dark:text-gray-400"}`}>{plan.desc}</p>
                 </div>
                 <ul className="space-y-3 mb-8 flex-1">
                   {plan.features.map((f) => (
                     <li key={f} className="flex items-start gap-2.5 text-sm">
-                      <Check className={`h-4 w-4 shrink-0 mt-0.5 ${plan.popular ? "text-blue-400" : "text-emerald-500"}`} />
-                      <span className={plan.popular ? "text-blue-100" : "text-gray-600"}>{f}</span>
+                      <Check className={`h-4 w-4 shrink-0 mt-0.5 ${plan.popular ? "text-white/80" : "text-primary"}`} />
+                      <span className={plan.popular ? "text-white/90" : "text-gray-600 dark:text-gray-300"}>{f}</span>
                     </li>
                   ))}
                 </ul>
@@ -245,8 +241,8 @@ export default function NegociosPage() {
                   href={plan.href}
                   className={`block text-center font-bold text-sm py-3.5 rounded-xl transition-all ${
                     plan.popular
-                      ? "bg-white text-blue-900 hover:bg-blue-50 shadow-lg"
-                      : "bg-blue-600 text-white hover:bg-blue-700"
+                      ? "bg-white text-primary hover:bg-gray-50"
+                      : "bg-primary text-white hover:bg-primary-dark"
                   }`}
                 >
                   {plan.cta}
@@ -258,16 +254,16 @@ export default function NegociosPage() {
       </section>
 
       {/* ── TESTIMONIOS ── */}
-      <section className="py-20 sm:py-28 bg-gray-50">
+      <section className="py-16 sm:py-20 bg-white dark:bg-gray-950">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-16">
-            <h2 className="text-3xl sm:text-4xl font-black text-gray-900">
+            <h2 className="text-3xl sm:text-4xl font-black text-gray-900 dark:text-white">
               Negocios que ya usan Buleje
             </h2>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-5xl mx-auto">
             {TESTIMONIALS.map((t) => (
-              <div key={t.name} className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
+              <div key={t.name} className="bg-white dark:bg-gray-900 rounded-2xl p-6 border border-gray-200 dark:border-gray-800">
                 <div className="flex gap-0.5 mb-4">
                   {Array.from({ length: t.rating }).map((_, i) => (
                     <Star key={i} className="h-4 w-4 fill-amber-400 text-amber-400" />
@@ -285,25 +281,25 @@ export default function NegociosPage() {
       </section>
 
       {/* ── CTA FINAL ── */}
-      <section className="py-20 sm:py-28 bg-gradient-to-br from-blue-900 via-blue-800 to-indigo-950">
+      <section className="py-16 sm:py-20 bg-gray-50 dark:bg-gray-900/50">
         <div className="mx-auto max-w-3xl px-4 sm:px-6 text-center">
-          <h2 className="text-3xl sm:text-4xl font-black text-white mb-6">
+          <h2 className="text-3xl sm:text-4xl font-black text-gray-900 dark:text-white mb-6">
             Digitaliza tu bodega hoy
           </h2>
-          <p className="text-lg text-blue-200/70 mb-10">
+          <p className="text-lg text-gray-500 dark:text-gray-400 mb-10">
             Unete a los negocios que ya venden mas con Buleje. Empieza gratis, sin compromiso.
           </p>
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
             <Link
               href="/marketplace/apply"
-              className="inline-flex items-center gap-2 bg-white text-blue-900 font-bold text-base px-8 py-4 rounded-xl hover:bg-blue-50 transition-all shadow-xl"
+              className="inline-flex items-center gap-2 bg-primary text-white font-bold text-base px-8 py-4 rounded-xl hover:bg-primary-dark transition-all"
             >
               Registrar mi negocio gratis
               <ArrowRight className="h-5 w-5" />
             </Link>
             <Link
               href="https://wa.me/51916409675?text=Hola%2C%20quiero%20información%20sobre%20Buleje%20para%20mi%20negocio"
-              className="inline-flex items-center gap-2 text-white font-semibold text-base px-8 py-4 rounded-xl border border-white/20 hover:bg-white/10 transition-all"
+              className="inline-flex items-center gap-2 border border-gray-300 dark:border-gray-700 text-gray-700 dark:text-gray-300 font-semibold text-base px-8 py-4 rounded-xl hover:bg-gray-50 dark:hover:bg-gray-800 transition-all"
             >
               <MessageCircle className="h-5 w-5" />
               Hablar con un asesor

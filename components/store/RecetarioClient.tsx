@@ -55,11 +55,11 @@ const CATEGORIAS = [
 ];
 
 const CATEGORIA_GRADIENTS: Record<string, { from: string; to: string }> = {
-  "Entradas": { from: "#0d9488", to: "#14b8a6" },
-  "Platos de fondo": { from: "#f59e0b", to: "#d97706" },
-  "Postres": { from: "#0f766e", to: "#0d9488" },
-  "Bebidas": { from: "#fbbf24", to: "#f59e0b" },
-  "Sopas": { from: "#10b981", to: "#0d9488" },
+  "Entradas": { from: "#e5e7eb", to: "#d1d5db" },
+  "Platos de fondo": { from: "#e5e7eb", to: "#d1d5db" },
+  "Postres": { from: "#e5e7eb", to: "#d1d5db" },
+  "Bebidas": { from: "#e5e7eb", to: "#d1d5db" },
+  "Sopas": { from: "#e5e7eb", to: "#d1d5db" },
 };
 
 const DIFICULTAD_LABELS: Record<string, { label: string; icon: string }> = {
@@ -119,7 +119,7 @@ function RecetaCard({
 
   const colors = receta.colorFrom && receta.colorTo
     ? { from: receta.colorFrom, to: receta.colorTo }
-    : CATEGORIA_GRADIENTS[receta.categoria || ""] || { from: "#0d9488", to: "#0f766e" };
+    : CATEGORIA_GRADIENTS[receta.categoria || ""] || { from: "#e5e7eb", to: "#d1d5db" };
 
   const dif = DIFICULTAD_LABELS[receta.dificultad || ""] || null;
   // Variable aspect ratio based on category
@@ -390,21 +390,8 @@ export default function RecetarioClient() {
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-950">
       {/* ═══════════════════════ HERO SECTION ═══════════════════════ */}
-      <section className="relative overflow-hidden bg-linear-to-br from-teal-600 via-teal-700 to-emerald-800">
-        {/* Decorative circles */}
-        <div className="pointer-events-none absolute inset-0">
-          <div className="absolute -top-20 -right-20 h-80 w-80 rounded-full bg-white/5 blur-2xl" />
-          <div className="absolute -bottom-32 -left-16 h-96 w-96 rounded-full bg-emerald-400/10 blur-3xl" />
-        </div>
-        {/* Pattern overlay */}
-        <div
-          className="absolute inset-0 opacity-[0.04]"
-          style={{
-            backgroundImage: "radial-gradient(circle, #fff 1px, transparent 1px)",
-            backgroundSize: "30px 30px",
-          }}
-        />
-        <div className="relative z-10 mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-16 sm:py-20 lg:py-28">
+      <section className="py-16 sm:py-20 bg-white dark:bg-gray-950">
+        <div className="mx-auto max-w-5xl px-4 sm:px-6 lg:px-8">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
@@ -415,20 +402,20 @@ export default function RecetarioClient() {
               initial={{ opacity: 0, scale: 0.9 }}
               animate={{ opacity: 1, scale: 1 }}
               transition={{ duration: 0.4, delay: 0.1 }}
-              className="inline-flex items-center gap-2 px-5 py-2 rounded-full bg-white/10 backdrop-blur-sm text-white/90 text-sm font-bold mb-6 border border-white/10"
+              className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400 text-xs font-medium mb-6"
             >
-              <ChefHat className="h-4 w-4 text-yellow-300" />
+              <ChefHat className="h-4 w-4" />
               RECETARIO PERUANO
             </motion.span>
 
-            <h1 className="text-4xl sm:text-5xl lg:text-6xl font-extrabold text-white leading-tight">
+            <h1 className="text-4xl sm:text-5xl lg:text-6xl font-extrabold text-gray-900 dark:text-white leading-tight">
               Cocina con{" "}
-              <span className="text-yellow-300">
+              <span className="text-primary">
                 lo que hay
               </span>{" "}
               en la bodega
             </h1>
-            <p className="mt-5 text-lg sm:text-xl text-white/60 max-w-2xl mx-auto leading-relaxed">
+            <p className="mt-6 text-lg text-gray-500 dark:text-gray-400 max-w-2xl mx-auto leading-relaxed">
               Cocina los mejores platos con ingredientes de tu bodega. Recetas paso a paso, con todos los ingredientes disponibles para compra.
             </p>
 
@@ -441,33 +428,33 @@ export default function RecetarioClient() {
                   placeholder="Busca por plato, ingrediente..."
                   value={search}
                   onChange={e => setSearch(e.target.value)}
-                  className="w-full h-14 pl-14 pr-12 rounded-2xl bg-white/95 dark:bg-gray-800/95 border-0 text-gray-900 dark:text-white placeholder:text-gray-400 text-base focus:outline-none focus:ring-4 focus:ring-white/30 transition-all shadow-xl shadow-black/10"
+                  className="w-full h-14 pl-14 pr-12 rounded-xl bg-gray-100 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-900 dark:text-white placeholder:text-gray-400 dark:placeholder:text-gray-500 text-base focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary/40 transition-all"
                 />
                 {search && (
                   <button
                     onClick={() => setSearch("")}
-                    className="absolute right-4 top-1/2 -translate-y-1/2 h-8 w-8 rounded-full bg-white/15 flex items-center justify-center hover:bg-white/25 transition-colors"
+                    className="absolute right-4 top-1/2 -translate-y-1/2 h-8 w-8 rounded-full bg-gray-200 dark:bg-gray-700 flex items-center justify-center hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors"
                   >
-                    <X className="h-4 w-4 text-white" />
+                    <X className="h-4 w-4 text-gray-500 dark:text-gray-400" />
                   </button>
                 )}
               </div>
             </div>
 
             {/* Stats */}
-            <div className="mt-8 flex items-center justify-center gap-4 sm:gap-8 text-white/80 text-sm">
+            <div className="mt-8 flex items-center justify-center gap-4 sm:gap-8 text-gray-500 dark:text-gray-400 text-sm">
               <span className="flex items-center gap-1.5">
-                <Star className="h-4 w-4 text-yellow-300" />
-                {recetas.length} recetas
+                <Star className="h-4 w-4 text-primary" />
+                <span className="font-bold text-gray-900 dark:text-white">{recetas.length}</span> recetas
               </span>
-              <span className="w-px h-4 bg-white/20" />
+              <span className="w-px h-4 bg-gray-200 dark:bg-gray-700" />
               <span className="flex items-center gap-1.5">
-                <ChefHat className="h-4 w-4 text-yellow-300" />
-                {Object.keys(categoryCounts).length} categorias
+                <ChefHat className="h-4 w-4 text-primary" />
+                <span className="font-bold text-gray-900 dark:text-white">{Object.keys(categoryCounts).length}</span> categorias
               </span>
-              <span className="w-px h-4 bg-white/20 hidden sm:block" />
+              <span className="w-px h-4 bg-gray-200 dark:bg-gray-700 hidden sm:block" />
               <span className="hidden sm:flex items-center gap-1.5">
-                <ShoppingCart className="h-4 w-4 text-yellow-300" />
+                <ShoppingCart className="h-4 w-4 text-primary" />
                 Compra directo
               </span>
             </div>
@@ -620,12 +607,12 @@ export default function RecetarioClient() {
         <section className="border-t border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900">
           <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-12">
             <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-6 flex items-center gap-2">
-              <ChefHat className="h-6 w-6 text-teal-600" />
+              <ChefHat className="h-6 w-6 text-gray-500" />
               Categorias destacadas
             </h2>
             <div className="flex items-stretch gap-4 overflow-x-auto pb-4 scrollbar-hide">
               {Object.entries(categoryCounts).map(([cat, count]) => {
-                const colors = CATEGORIA_GRADIENTS[cat] || { from: "#0d9488", to: "#0f766e" };
+                const colors = CATEGORIA_GRADIENTS[cat] || { from: "#e5e7eb", to: "#d1d5db" };
                 const catEntry = CATEGORIAS.find(c => c.label === cat);
                 const emoji = catEntry?.emoji || "\uD83C\uDF7D\uFE0F";
                 return (
@@ -680,17 +667,17 @@ export default function RecetarioClient() {
       </section>
 
       {/* ═══════════════════════ FINAL CTA ═══════════════════════ */}
-      <section className="border-t border-gray-200 dark:border-gray-800 bg-linear-to-br from-teal-700 to-emerald-800 text-white">
+      <section className="border-t border-gray-200 dark:border-gray-800 bg-gray-50 dark:bg-gray-900/50">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-12 text-center">
-          <h2 className="text-2xl font-bold mb-3">
+          <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-3">
             Todos los ingredientes en un solo lugar
           </h2>
-          <p className="text-white/70 mb-6 max-w-md mx-auto">
+          <p className="text-gray-500 dark:text-gray-400 mb-6 max-w-md mx-auto">
             Buleje tiene todo lo que necesitas para preparar tus recetas favoritas. Delivery en Pucallpa.
           </p>
           <Link
             href="/marketplace"
-            className="inline-flex items-center gap-2 px-8 py-4 rounded-2xl bg-white text-teal-700 font-bold text-lg hover:bg-white/90 transition-all shadow-xl active:scale-[0.98]"
+            className="inline-flex items-center gap-2 px-8 py-4 rounded-xl bg-primary text-white font-bold text-lg hover:bg-primary-dark transition-all active:scale-[0.98]"
           >
             Ver tienda <ArrowRight className="h-5 w-5" />
           </Link>
@@ -714,7 +701,7 @@ function RecetaListItem({
   const inView = useInView(cardRef);
   const colors = receta.colorFrom && receta.colorTo
     ? { from: receta.colorFrom, to: receta.colorTo }
-    : CATEGORIA_GRADIENTS[receta.categoria || ""] || { from: "#0d9488", to: "#0f766e" };
+    : CATEGORIA_GRADIENTS[receta.categoria || ""] || { from: "#e5e7eb", to: "#d1d5db" };
 
   return (
     <motion.div
