@@ -14,6 +14,7 @@ import {
 } from "@/components/LoadingSkeleton";
 import { zones } from "@/data/zones";
 import { categories } from "@/data/products";
+import StoreProductsHydrator from "@/components/StoreProductsHydrator";
 
 export const metadata: Metadata = {
   title: "Catalogo de Productos — Buleje ERP",
@@ -143,11 +144,12 @@ export default async function TiendaPage() {
 
   // Server-side product prefetch — #42: uses cached function for 5min revalidation
   let initialProducts: Array<Record<string, unknown>> = [];
+  let tenantSlug = "main";
   try {
     const { headers } = await import("next/headers");
     const hdrs = await headers();
-    const tenantId = hdrs.get("x-tenant-id") ?? "main";
-    initialProducts = await getCachedProducts(tenantId) as unknown as Array<Record<string, unknown>>;
+    tenantSlug = hdrs.get("x-tenant-id") ?? "main";
+    initialProducts = await getCachedProducts(tenantSlug) as unknown as Array<Record<string, unknown>>;
   } catch {
     // Fallback to empty — client will retry via useCachedData
   }
@@ -198,6 +200,9 @@ export default async function TiendaPage() {
       {/* Spacer to push content below fixed header (h-11 announcement + h-16/h-20 header) */}
       <div className="h-[6.75rem] sm:h-[7.75rem]" />
       <main id="main-content">
+        {/* Pre-populate client-side product cache with server data to prevent flash-of-empty */}
+        <StoreProductsHydrator tenantSlug={tenantSlug} products={initialProducts as any} />
+
         {/* Default hero — always visible, gives the store a strong first impression */}
         <section className="relative overflow-hidden py-12 sm:py-16 bg-gradient-to-br from-primary via-primary/90 to-primary-dark">
           <div className="pointer-events-none absolute inset-0">

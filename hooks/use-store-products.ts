@@ -96,6 +96,21 @@ export function useStoreProducts() {
 }
 
 /**
+ * Pre-populate the cache with server-loaded products.
+ * Call this BEFORE any useStoreProducts() hook mounts to prevent
+ * the flash-of-empty-content during hydration.
+ */
+export function hydrateStoreProductsCache(tenantSlug: string, products: Product[]) {
+  if (cacheByTenant.has(tenantSlug)) return; // don't overwrite if already cached
+  const catSet = new Set(products.map((p) => p.category));
+  const cats: Category[] = [{ id: "todos", label: "Todos", emoji: "🛒" }];
+  catSet.forEach((cat) => {
+    if (cat) cats.push({ id: cat.toLowerCase().replace(/\s+/g, "-"), label: cat, emoji: "📦" });
+  });
+  cacheByTenant.set(tenantSlug, { products, categories: cats });
+}
+
+/**
  * Invalidar el cache (llamar cuando el tenant cambia o se agrega un producto).
  */
 export function invalidateStoreProductsCache(tenantSlug?: string) {
