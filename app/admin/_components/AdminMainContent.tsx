@@ -15,7 +15,9 @@
  */
 
 import type { ComponentProps, TouchEventHandler } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+// Use `m` (tree-shakeable) + AnimatePresence from the admin LazyMotion boundary.
+// This avoids pulling the full framer-motion bundle into the initial admin chunk.
+import { m, AnimatePresence } from "@/components/admin/providers";
 import { cn } from "@/lib/utils";
 import AdminBreadcrumb from "@/components/admin/shared/AdminBreadcrumb";
 import type { Tab } from "../_lib/tabs.types";
@@ -82,7 +84,7 @@ export function AdminMainContent({
       <AdminBreadcrumb items={breadcrumbItems} />
 
       <AnimatePresence mode="wait">
-        <motion.div
+        <m.div
           key={tab}
           initial={{ opacity: 0, y: 8 }}
           animate={{ opacity: 1, y: 0 }}
@@ -90,7 +92,7 @@ export function AdminMainContent({
           transition={{ duration: 0.15 }}
         >
           <TabRouter tab={tab} onNavigateTab={navigateTab} {...tabRouter} />
-        </motion.div>
+        </m.div>
       </AnimatePresence>
     </main>
   );

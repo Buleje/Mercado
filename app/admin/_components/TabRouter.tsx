@@ -65,9 +65,16 @@ const OrdersTab      = dynamic(() => import("@/components/admin/OrdersTab"),    
 const TeamTab        = dynamic(() => import("@/components/admin/TeamTab"),        { loading: TabSpinner });
 const PlanTab        = dynamic(() => import("@/components/admin/PlanTab"),        { loading: TabSpinner });
 
-// ── Componentes de configuración (no son tabs, se usan dentro del tab "config") ──
-import { NavDefaultTabsConfig } from "@/components/admin/NavDefaultTabsConfig";
-import SidebarReorderPanel from "@/components/admin/SidebarReorderPanel";
+// ── Componentes de configuración — solo visibles en el tab "config" ──────────
+// Se cargan bajo demanda para que no entren en el chunk inicial del admin.
+const NavDefaultTabsConfig = dynamic(
+  () => import("@/components/admin/NavDefaultTabsConfig").then(m => ({ default: m.NavDefaultTabsConfig })),
+  { loading: TabSpinner },
+);
+const SidebarReorderPanel = dynamic(
+  () => import("@/components/admin/SidebarReorderPanel"),
+  { loading: TabSpinner },
+);
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Props del TabRouter
