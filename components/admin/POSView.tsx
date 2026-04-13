@@ -11,7 +11,7 @@ import {
 } from "lucide-react";
 import EmptyState from "@/components/admin/shared/EmptyState";
 import Image from "next/image";
-import { motion } from "framer-motion";
+import { m } from "@/components/admin/providers";
 import { cn } from "@/lib/utils";
 import { categories } from "@/data/products";
 import { useScrollLock } from "@/hooks/use-scroll-lock";
@@ -524,7 +524,7 @@ function SaleCompleteModal({
           };
           const info = map[method] || map["efectivo"];
           return (
-            <motion.div
+            <m.div
               initial={{ scale: 0, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
               transition={{ type: "spring", stiffness: 300, damping: 15, delay: 0.05 }}
@@ -532,31 +532,31 @@ function SaleCompleteModal({
             >
               <span className="text-4xl leading-none">{info.emoji}</span>
               <span className="text-[9px] font-bold text-gray-500 dark:text-muted mt-1 capitalize">{method || "efectivo"}</span>
-            </motion.div>
+            </m.div>
           );
         })()}
 
         {/* Animated success icon */}
-        <motion.div
+        <m.div
           initial={{ scale: 0, opacity: 0 }}
           animate={{ scale: 1, opacity: 1 }}
           transition={{ type: "spring", stiffness: 260, damping: 20, delay: 0.1 }}
           className="h-14 w-14 rounded-full bg-emerald-50 dark:bg-emerald-950/30 flex items-center justify-center mx-auto mb-3 relative z-20"
         >
           <Check className="h-7 w-7 text-emerald-600" />
-        </motion.div>
-        <motion.h3
+        </m.div>
+        <m.h3
           initial={{ opacity: 0, y: 8 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.2 }}
           className="text-lg font-extrabold text-gray-900 dark:text-foreground mb-0.5"
         >
           Venta completada!
-        </motion.h3>
+        </m.h3>
         <p className="text-xs text-gray-400 dark:text-muted mb-1">ID: {saleComplete.id}</p>
 
         {/* Sale summary with count-up */}
-        <motion.div
+        <m.div
           initial={{ opacity: 0, y: 6 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.3 }}
@@ -586,7 +586,7 @@ function SaleCompleteModal({
               )}
             </>
           )}
-        </motion.div>
+        </m.div>
 
         {/* Change */}
         {saleComplete.change === -1 ? (
@@ -752,11 +752,11 @@ function ShiftSummaryWidget() {
   if (!data?.turnoActivo) return null;
 
   const h = Math.floor((data.turnoMinutos ?? 0) / 60);
-  const m = (data.turnoMinutos ?? 0) % 60;
-  const timeStr = h > 0 ? `${h}h ${m}m` : `${m}m`;
+  const mins = (data.turnoMinutos ?? 0) % 60;
+  const timeStr = h > 0 ? `${h}h ${mins}m` : `${mins}m`;
 
   return (
-    <motion.div
+    <m.div
       layout
       onClick={() => setExpanded(e => !e)}
       className="fixed bottom-4 left-4 z-40 bg-white dark:bg-gray-800 shadow-lg border border-gray-200 dark:border-card-border cursor-pointer select-none transition-all"
@@ -771,7 +771,7 @@ function ShiftSummaryWidget() {
         <span className="text-gray-500 dark:text-muted">&#128203; {data.cantidadVentas ?? 0}</span>
       </div>
       {expanded && (
-        <motion.div
+        <m.div
           initial={{ opacity: 0, height: 0 }}
           animate={{ opacity: 1, height: "auto" }}
           exit={{ opacity: 0, height: 0 }}
@@ -787,9 +787,9 @@ function ShiftSummaryWidget() {
               {(data.turnoMinutos ?? 0) > 0 ? ((data.cantidadVentas ?? 0) / ((data.turnoMinutos ?? 1) / 60)).toFixed(1) : "0"}
             </span>
           </div>
-        </motion.div>
+        </m.div>
       )}
-    </motion.div>
+    </m.div>
   );
 }
 

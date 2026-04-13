@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback, useMemo } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import { m, AnimatePresence } from "@/components/admin/providers";
 import {
   Eye, Package, MapPin, Clock, CheckCircle, Truck, Phone,
   Search, Filter, Download, RefreshCw, User, AlertCircle,
@@ -106,7 +106,7 @@ function ProgressBar({ status }: { status: OrderStatus }) {
                 done ? "bg-primary" : "bg-gray-200 dark:bg-gray-700"
               )} />
             )}
-            <motion.div
+            <m.div
               className={cn(
                 "relative z-10 h-6 w-6 rounded-full flex items-center justify-center",
                 done ? "bg-primary text-white" : "bg-gray-200 dark:bg-gray-700 text-gray-400",
@@ -117,7 +117,7 @@ function ProgressBar({ status }: { status: OrderStatus }) {
               {i === 0 && <Package className="h-3 w-3" />}
               {i === 1 && <Truck className="h-3 w-3" />}
               {i === 2 && <CheckCircle className="h-3 w-3" />}
-            </motion.div>
+            </m.div>
             <span className={cn(
               "text-[9px] mt-1 font-semibold",
               done ? "text-primary" : "text-gray-400"
@@ -147,7 +147,7 @@ function OrderCard({
   const itemCount = order.items?.reduce((a, i) => a + i.quantity, 0) ?? 0;
 
   return (
-    <motion.div
+    <m.div
       layout
       initial={{ opacity: 0, y: 8 }}
       animate={{ opacity: 1, y: 0 }}
@@ -164,14 +164,14 @@ function OrderCard({
               <h4 className="font-bold text-sm text-gray-900 dark:text-foreground">
                 #{order.id.slice(-6).toUpperCase()}
               </h4>
-              <motion.span
+              <m.span
                 key={order.status}
                 initial={{ scale: 0.85, opacity: 0 }}
                 animate={{ scale: 1, opacity: 1 }}
                 className={cn("text-[10px] font-bold px-2 py-0.5 rounded-full", cfg.bg, cfg.color)}
               >
                 {cfg.label}
-              </motion.span>
+              </m.span>
               <span className="text-[10px] text-gray-400 flex items-center gap-0.5">
                 <TimerReset className="h-3 w-3" /> {mins}min
               </span>
@@ -265,7 +265,7 @@ function OrderCard({
       {/* Timeline expandible */}
       <AnimatePresence>
         {expanded && (
-          <motion.div
+          <m.div
             initial={{ height: 0, opacity: 0 }}
             animate={{ height: "auto", opacity: 1 }}
             exit={{ height: 0, opacity: 0 }}
@@ -275,10 +275,10 @@ function OrderCard({
             <div className="p-3 sm:p-5">
               <OrderTrackingTimeline orderId={order.id} currentStatus={order.status} />
             </div>
-          </motion.div>
+          </m.div>
         )}
       </AnimatePresence>
-    </motion.div>
+    </m.div>
   );
 }
 

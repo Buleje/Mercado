@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useCallback, useMemo } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import { m, AnimatePresence } from "@/components/admin/providers";
 import {
   Search, Plus, X, Loader2, AlertTriangle, ChevronLeft, ChevronRight,
   Package, FlaskConical, Layers,
@@ -100,7 +100,7 @@ function RecetasDashboard() {
   return (
     <div className="space-y-6">
       {/* KPIs */}
-      <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0 * 0.1 }}>
+      <m.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0 * 0.1 }}>
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
         {[
           { label: "Recetas activas", value: String(recetasActivas), border: "border-b-4 border-[#00B4A6]" },
@@ -114,10 +114,10 @@ function RecetasDashboard() {
           </div>
         ))}
       </div>
-      </motion.div>
+      </m.div>
 
       {/* Lotes producidos por semana */}
-      <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 1 * 0.1 }}>
+      <m.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 1 * 0.1 }}>
       <div className="bg-white dark:bg-card rounded-2xl border border-gray-200 dark:border-card-border p-6 shadow-sm">
         <h3 className="text-sm font-bold text-gray-700 dark:text-foreground mb-4">Lotes producidos por semana</h3>
         {weeklyData.some(d => d.lotes > 0) ? (
@@ -134,9 +134,9 @@ function RecetasDashboard() {
           <EmptyChart message="Sin lotes producidos en las ultimas semanas" />
         )}
       </div>
-      </motion.div>
+      </m.div>
 
-      <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 2 * 0.1 }}>
+      <m.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 2 * 0.1 }}>
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* PieChart: recetas por categoria */}
         <div className="bg-white dark:bg-card rounded-2xl border border-gray-200 dark:border-card-border p-6 shadow-sm">
@@ -173,7 +173,7 @@ function RecetasDashboard() {
           )}
         </div>
       </div>
-      </motion.div>
+      </m.div>
     </div>
   );
 }
@@ -726,7 +726,7 @@ export default function RecetasModule() {
       <AnimatePresence>
         {selected && (
           <>
-            <motion.div
+            <m.div
               key="receta-backdrop"
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
@@ -734,7 +734,7 @@ export default function RecetasModule() {
               className="fixed inset-0 z-40 bg-black/40 backdrop-blur-sm"
               onClick={() => setSelected(null)}
             />
-            <motion.div
+            <m.div
               key="receta-panel"
               initial={{ x: "100%" }}
               animate={{ x: 0 }}
@@ -932,7 +932,7 @@ export default function RecetasModule() {
                   );
                 })()}
               </div>
-            </motion.div>
+            </m.div>
           </>
         )}
       </AnimatePresence>
@@ -941,7 +941,7 @@ export default function RecetasModule() {
       <AnimatePresence>
         {showNew && (
           <>
-            <motion.div
+            <m.div
               key="new-receta-backdrop"
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
@@ -949,7 +949,7 @@ export default function RecetasModule() {
               className="fixed inset-0 z-50 bg-black/40 backdrop-blur-sm"
               onClick={resetNew}
             />
-            <motion.div
+            <m.div
               key="new-receta-modal"
               initial={{ opacity: 0, scale: 0.95, y: 10 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
@@ -1123,7 +1123,7 @@ export default function RecetasModule() {
                   )}
                 </div>
               </div>
-            </motion.div>
+            </m.div>
           </>
         )}
       </AnimatePresence>
@@ -1132,7 +1132,7 @@ export default function RecetasModule() {
       <AnimatePresence>
         {showProducir && selected && (
           <>
-            <motion.div
+            <m.div
               key="producir-backdrop"
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
@@ -1140,7 +1140,7 @@ export default function RecetasModule() {
               className="fixed inset-0 z-[60] bg-black/40 backdrop-blur-sm"
               onClick={() => setShowProducir(false)}
             />
-            <motion.div
+            <m.div
               key="producir-modal"
               initial={{ opacity: 0, scale: 0.95, y: 10 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
@@ -1282,7 +1282,7 @@ export default function RecetasModule() {
                   </button>
                 </div>
               </div>
-            </motion.div>
+            </m.div>
           </>
         )}
       </AnimatePresence>

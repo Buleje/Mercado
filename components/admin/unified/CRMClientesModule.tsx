@@ -1,7 +1,7 @@
 "use client";
 import { useState, useEffect, useMemo } from "react";
 import dynamic from "next/dynamic";
-import { motion } from "framer-motion";
+import { m } from "@/components/admin/providers";
 import {
   Users, Bike, Star, Award, Layers, AlertTriangle, MapPin, FileUp, MessageSquare,
   X as XIcon,
@@ -329,7 +329,7 @@ function ClientesDashboard({ onNavigate }: { onNavigate?: (tab: string) => void 
   return (
     <div className="space-y-6">
       {/* ── Controls: Period + Refresh + Export ── */}
-      <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3, delay: 0 }}>
+      <m.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3, delay: 0 }}>
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="flex gap-1.5">
           {([{ id: "today" as const, label: "Hoy" }, { id: "7d" as const, label: "7 dias" }, { id: "30d" as const, label: "30 dias" }, { id: "month" as const, label: "Este mes" }]).map(p => (
@@ -344,7 +344,7 @@ function ClientesDashboard({ onNavigate }: { onNavigate?: (tab: string) => void 
           <button onClick={() => window.print()} className="flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-medium text-gray-500 hover:bg-gray-100 transition-colors"><FileDown className="h-3 w-3" /> Exportar</button>
         </div>
       </div>
-      </motion.div>
+      </m.div>
 
       {/* ── Alertas CRM ── */}
       {inactiveLast30 > 0 && (
@@ -361,7 +361,7 @@ function ClientesDashboard({ onNavigate }: { onNavigate?: (tab: string) => void 
       )}
 
       {/* ── KPI Cards ── */}
-      <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3, delay: 0.05 }}>
+      <m.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3, delay: 0.05 }}>
       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
         {[
           {
@@ -445,10 +445,10 @@ function ClientesDashboard({ onNavigate }: { onNavigate?: (tab: string) => void 
         })}
       </div>
 
-      </motion.div>
+      </m.div>
 
       {/* ── Segmentación + Top 10 ── */}
-      <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3, delay: 0.05 }}>
+      <m.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3, delay: 0.05 }}>
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* PieChart: Clientes por segmento */}
         <div className="bg-white rounded-2xl border border-gray-200 p-6 shadow-sm">
@@ -553,10 +553,10 @@ function ClientesDashboard({ onNavigate }: { onNavigate?: (tab: string) => void 
         </div>
       </div>
 
-      </motion.div>
+      </m.div>
 
       {/* ── Nuevos clientes por mes (AreaChart) ── */}
-      <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3, delay: 0.10 }}>
+      <m.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3, delay: 0.10 }}>
       <div className="bg-white rounded-2xl border border-gray-200 p-6 shadow-sm">
         <h3 className="text-sm font-bold text-gray-900 mb-4">
           Nuevos clientes por mes
@@ -586,10 +586,10 @@ function ClientesDashboard({ onNavigate }: { onNavigate?: (tab: string) => void 
         </ResponsiveContainer>
       </div>
 
-      </motion.div>
+      </m.div>
 
       {/* ── Frecuencia + Mapa de valor ── */}
-      <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3, delay: 0.15 }}>
+      <m.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3, delay: 0.15 }}>
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* BarChart vertical: Distribución por frecuencia */}
         <div className="bg-white rounded-2xl border border-gray-200 p-6 shadow-sm">
@@ -678,10 +678,10 @@ function ClientesDashboard({ onNavigate }: { onNavigate?: (tab: string) => void 
         </div>
       </div>
 
-      </motion.div>
+      </m.div>
 
       {/* ── Retencion mensual (Mejora 6) ── */}
-      <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3, delay: 0.18 }}>
+      <m.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3, delay: 0.18 }}>
       <div className="bg-white rounded-2xl border border-gray-200 p-6 shadow-sm">
         <h3 className="text-sm font-bold text-gray-900 mb-4">Retencion mensual</h3>
         {(() => {
@@ -716,10 +716,10 @@ function ClientesDashboard({ onNavigate }: { onNavigate?: (tab: string) => void 
           );
         })()}
       </div>
-      </motion.div>
+      </m.div>
 
       {/* ── Alertas de clientes ── */}
-      <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3, delay: 0.22 }}>
+      <m.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3, delay: 0.22 }}>
       <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
         <div className="bg-red-50 border-l-4 border-red-500 rounded-xl p-4">
           <div className="flex items-center gap-2 mb-1">
@@ -757,7 +757,7 @@ function ClientesDashboard({ onNavigate }: { onNavigate?: (tab: string) => void 
           </p>
         </div>
       </div>
-      </motion.div>
+      </m.div>
 
       {/* Mejora 13: Expand chart modal */}
       {expandedChart && (

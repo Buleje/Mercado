@@ -7,7 +7,7 @@ import {
   CheckCircle, XCircle, Truck, AlertCircle, Loader2, Save,
   MessageCircle, Bell, ShoppingBag, X, FileText, Award,
 } from "lucide-react";
-import { motion, AnimatePresence } from "framer-motion";
+import { m, AnimatePresence } from "@/components/admin/providers";
 import { cn } from "@/lib/utils";
 import EstadoCuentaModal from "./EstadoCuentaModal";
 import ClienteFormModal from "./clientes/ClienteFormModal";
@@ -721,7 +721,7 @@ export default function Customer360Tab({ phone, onClose }: Props) {
       </div>
 
       {/* Profile card */}
-      <motion.div
+      <m.div
         initial={{ opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
         className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl p-4 sm:p-6"
@@ -790,7 +790,7 @@ export default function Customer360Tab({ phone, onClose }: Props) {
             </a>
           </div>
         </div>
-      </motion.div>
+      </m.div>
 
       {/* Mejora 10R2: Notas rapidas (observaciones) */}
       <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl overflow-hidden">
@@ -1075,7 +1075,7 @@ export default function Customer360Tab({ phone, onClose }: Props) {
           { label: "Ticket prom.",   value: fmt(avgTicket),         icon: TrendingUp,   color: "text-violet-500" },
           { label: "Primera compra", value: firstOrder ? fmtDate(firstOrder.createdAt) : "—", icon: Calendar, color: "text-amber-500" },
         ].map(k => (
-          <motion.div
+          <m.div
             key={k.label}
             initial={{ opacity: 0, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}
@@ -1086,7 +1086,7 @@ export default function Customer360Tab({ phone, onClose }: Props) {
               <p className="text-[10px] font-semibold text-gray-500 dark:text-muted uppercase tracking-wide">{k.label}</p>
             </div>
             <p className="text-sm sm:text-base font-extrabold text-gray-900 dark:text-foreground">{k.value}</p>
-          </motion.div>
+          </m.div>
         ))}
       </div>
 
@@ -1276,9 +1276,9 @@ export default function Customer360Tab({ phone, onClose }: Props) {
         <div className="flex items-center justify-between mt-2">
           <AnimatePresence>
             {notesSaved && (
-              <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="text-xs text-emerald-600 dark:text-emerald-400 flex items-center gap-1">
+              <m.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="text-xs text-emerald-600 dark:text-emerald-400 flex items-center gap-1">
                 <CheckCircle className="h-3 w-3" /> Guardado
-              </motion.p>
+              </m.p>
             )}
           </AnimatePresence>
           <button

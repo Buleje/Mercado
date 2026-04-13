@@ -8,7 +8,7 @@ import {
   ChevronLeft, ChevronRight, BarChart3,
 } from "lucide-react";
 import EmptyState from "@/components/admin/shared/EmptyState";
-import { motion, AnimatePresence } from "framer-motion";
+import { m, AnimatePresence } from "@/components/admin/providers";
 import { PieChart, Pie, Cell, ResponsiveContainer } from "recharts";
 import { cn, exportToCSV } from "@/lib/utils";
 import { exportToExcel } from "@/lib/export-excel";
@@ -345,14 +345,14 @@ export default function CRMTab() {
   if (detail) {
     return (
       <AnimatePresence>
-        <motion.div
+        <m.div
           key="360"
           initial={{ opacity: 0, x: 20 }}
           animate={{ opacity: 1, x: 0 }}
           exit={{ opacity: 0, x: 20 }}
         >
           <Customer360Tab phone={detail} onClose={() => setDetail(null)} />
-        </motion.div>
+        </m.div>
       </AnimatePresence>
     );
   }
@@ -430,7 +430,7 @@ export default function CRMTab() {
           { label: "Nuevos",           value: String(stats.nuevos),  icon: UserPlus,    color: "text-violet-500",  bg: "bg-violet-50 dark:bg-violet-950/30" },
           { label: "CLV promedio",     value: fmt(stats.clvProm),    icon: TrendingUp,  color: "text-amber-500",   bg: "bg-amber-50 dark:bg-amber-950/30" },
         ].map(k => (
-          <motion.div
+          <m.div
             key={k.label}
             initial={{ opacity: 0, y: 6 }}
             animate={{ opacity: 1, y: 0 }}
@@ -441,7 +441,7 @@ export default function CRMTab() {
               <p className="text-xs font-semibold text-gray-500 dark:text-muted">{k.label}</p>
             </div>
             <p className={cn("text-xl font-extrabold", k.color)}>{k.value}</p>
-          </motion.div>
+          </m.div>
         ))}
       </div>
 
@@ -679,7 +679,7 @@ export default function CRMTab() {
                 const cfg = SEGMENT_CONFIG[seg];
                 const Icon = cfg.Icon;
                 return (
-                  <motion.tr
+                  <m.tr
                     key={c.phone}
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 1 }}
@@ -823,7 +823,7 @@ export default function CRMTab() {
                         <ShoppingCart className="h-3 w-3" />360°
                       </button>
                     </td>
-                  </motion.tr>
+                  </m.tr>
                 );
               })}
             </tbody>
@@ -902,7 +902,7 @@ export default function CRMTab() {
       <AnimatePresence>
         {showCompareModal && compareCustomers.length >= 2 && (
           <>
-            <motion.div
+            <m.div
               key="compare-backdrop"
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
@@ -910,7 +910,7 @@ export default function CRMTab() {
               className="fixed inset-0 z-50 bg-black/40 backdrop-blur-sm"
               onClick={() => setShowCompareModal(false)}
             />
-            <motion.div
+            <m.div
               key="compare-modal"
               initial={{ opacity: 0, scale: 0.95, y: 10 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
@@ -1030,7 +1030,7 @@ export default function CRMTab() {
                   </table>
                 </div>
               </div>
-            </motion.div>
+            </m.div>
           </>
         )}
       </AnimatePresence>

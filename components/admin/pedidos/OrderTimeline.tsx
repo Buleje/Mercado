@@ -1,6 +1,6 @@
 "use client";
 
-import { motion } from "framer-motion";
+import { m } from "@/components/admin/providers";
 import { Check, X, Clock, Package, Truck, CheckCircle } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -105,12 +105,12 @@ export default function OrderTimeline({
                   ) : isCompleted ? (
                     <Check className="h-4 w-4" />
                   ) : isCurrent ? (
-                    <motion.div
+                    <m.div
                       animate={{ scale: [1, 1.2, 1] }}
                       transition={{ repeat: Infinity, duration: 2 }}
                     >
                       <StepIcon className="h-4 w-4" />
-                    </motion.div>
+                    </m.div>
                   ) : (
                     <StepIcon className="h-4 w-4" />
                   )}

@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback, useMemo } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import { m, AnimatePresence } from "@/components/admin/providers";
 import {
   Search, Plus, X, ChevronLeft, ChevronRight, Loader2, AlertTriangle,
   FileText, User, Calendar, Printer, Send, Check, XCircle, ShoppingCart,
@@ -199,7 +199,7 @@ function CotizacionesDashboard({ cotizaciones, loading: parentLoading }: { cotiz
   return (
     <div className="space-y-6">
       {/* KPIs */}
-      <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0 * 0.1 }}>
+      <m.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0 * 0.1 }}>
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
         {[
           { label: "Emitidas mes", value: String(emitidasMes), border: "border-b-4 border-blue-500" },
@@ -213,10 +213,10 @@ function CotizacionesDashboard({ cotizaciones, loading: parentLoading }: { cotiz
           </div>
         ))}
       </div>
-      </motion.div>
+      </m.div>
 
       {/* Funnel */}
-      <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 1 * 0.1 }}>
+      <m.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 1 * 0.1 }}>
       <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl p-6 shadow-sm">
         <h3 className="text-sm font-bold text-gray-700 dark:text-foreground mb-4">Funnel de conversion</h3>
         {cotizaciones.length > 0 ? (
@@ -237,9 +237,9 @@ function CotizacionesDashboard({ cotizaciones, loading: parentLoading }: { cotiz
           </div>
         ) : emptyCot("Sin cotizaciones para analizar")}
       </div>
-      </motion.div>
+      </m.div>
 
-      <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 2 * 0.1 }}>
+      <m.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 2 * 0.1 }}>
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* AreaChart: cotizaciones emitidas por mes */}
         <div className="bg-white dark:bg-card rounded-2xl border border-gray-200 dark:border-card-border p-6 shadow-sm">
@@ -279,7 +279,7 @@ function CotizacionesDashboard({ cotizaciones, loading: parentLoading }: { cotiz
           ) : emptyCot("Sin datos de clientes")}
         </div>
       </div>
-      </motion.div>
+      </m.div>
     </div>
   );
 }
@@ -763,7 +763,7 @@ export default function CotizacionesModule() {
           {/* Mejora 10: Alerta cotizaciones vencidas mejorada */}
           <AnimatePresence>
             {vencidas.length > 0 && (
-              <motion.div
+              <m.div
                 initial={{ opacity: 0, y: -20 }}
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -20 }}
@@ -817,7 +817,7 @@ export default function CotizacionesModule() {
                     </div>
                   </div>
                 </div>
-              </motion.div>
+              </m.div>
             )}
           </AnimatePresence>
 
@@ -1191,7 +1191,7 @@ export default function CotizacionesModule() {
       <AnimatePresence>
         {selected && (
           <>
-            <motion.div
+            <m.div
               key="cot-backdrop"
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
@@ -1199,7 +1199,7 @@ export default function CotizacionesModule() {
               className="fixed inset-0 z-40 bg-black/40 backdrop-blur-sm"
               onClick={() => setSelected(null)}
             />
-            <motion.div
+            <m.div
               key="cot-panel"
               initial={{ x: "100%" }}
               animate={{ x: 0 }}
@@ -1458,7 +1458,7 @@ export default function CotizacionesModule() {
                   </div>
                 )}
               </div>
-            </motion.div>
+            </m.div>
           </>
         )}
       </AnimatePresence>
@@ -1467,7 +1467,7 @@ export default function CotizacionesModule() {
       <AnimatePresence>
         {showTemplateModal && (
           <>
-            <motion.div
+            <m.div
               key="tpl-select-backdrop"
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
@@ -1475,7 +1475,7 @@ export default function CotizacionesModule() {
               className="fixed inset-0 z-[60] bg-black/40 backdrop-blur-sm"
               onClick={() => setShowTemplateModal(false)}
             />
-            <motion.div
+            <m.div
               key="tpl-select-modal"
               initial={{ opacity: 0, scale: 0.95, y: 10 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
@@ -1516,7 +1516,7 @@ export default function CotizacionesModule() {
                   </div>
                 )}
               </div>
-            </motion.div>
+            </m.div>
           </>
         )}
       </AnimatePresence>
@@ -1525,7 +1525,7 @@ export default function CotizacionesModule() {
       <AnimatePresence>
         {showTemplateList && (
           <>
-            <motion.div
+            <m.div
               key="tpl-manage-backdrop"
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
@@ -1533,7 +1533,7 @@ export default function CotizacionesModule() {
               className="fixed inset-0 z-[60] bg-black/40 backdrop-blur-sm"
               onClick={() => setShowTemplateList(false)}
             />
-            <motion.div
+            <m.div
               key="tpl-manage-modal"
               initial={{ opacity: 0, scale: 0.95, y: 10 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
@@ -1584,7 +1584,7 @@ export default function CotizacionesModule() {
                   </div>
                 )}
               </div>
-            </motion.div>
+            </m.div>
           </>
         )}
       </AnimatePresence>

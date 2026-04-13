@@ -1,6 +1,6 @@
 "use client";
 
-import { motion, AnimatePresence } from "framer-motion";
+import { m, AnimatePresence } from "@/components/admin/providers";
 import { Unlock, Check, X, ArrowRight } from "lucide-react";
 import Link from "next/link";
 
@@ -141,7 +141,7 @@ export default function UpgradeBanner({ moduleId, moduleName, onDismiss }: Upgra
 
   return (
     <AnimatePresence>
-      <motion.div
+      <m.div
         key="upgrade-banner-overlay"
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
@@ -150,7 +150,7 @@ export default function UpgradeBanner({ moduleId, moduleName, onDismiss }: Upgra
         className="fixed inset-0 z-[9998] flex items-center justify-center bg-black/60 backdrop-blur-sm px-4"
         onClick={onDismiss}
       >
-        <motion.div
+        <m.div
           initial={{ opacity: 0, scale: 0.92, y: 24 }}
           animate={{ opacity: 1, scale: 1, y: 0 }}
           exit={{ opacity: 0, scale: 0.92, y: 24 }}
@@ -184,14 +184,14 @@ export default function UpgradeBanner({ moduleId, moduleName, onDismiss }: Upgra
           {/* Contenido */}
           <div className="relative z-10 px-7 py-8 flex flex-col items-center text-center">
             {/* Icono de candado */}
-            <motion.div
+            <m.div
               initial={{ scale: 0.5, rotate: -10 }}
               animate={{ scale: 1, rotate: 0 }}
               transition={{ delay: 0.1, duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
               className="w-20 h-20 rounded-2xl bg-white/20 backdrop-blur-sm flex items-center justify-center mb-5 shadow-lg"
             >
               <Unlock className="h-10 w-10 text-white" strokeWidth={1.5} />
-            </motion.div>
+            </m.div>
 
             {/* Badge Plan Pro */}
             <span className="inline-block px-3 py-1 rounded-full bg-white/20 text-white text-xs font-bold uppercase tracking-widest mb-3">
@@ -211,7 +211,7 @@ export default function UpgradeBanner({ moduleId, moduleName, onDismiss }: Upgra
             {/* Lista de beneficios */}
             <ul className="w-full text-left space-y-2.5 mb-8">
               {info.benefits.map((benefit, i) => (
-                <motion.li
+                <m.li
                   key={i}
                   initial={{ opacity: 0, x: -12 }}
                   animate={{ opacity: 1, x: 0 }}
@@ -222,7 +222,7 @@ export default function UpgradeBanner({ moduleId, moduleName, onDismiss }: Upgra
                     <Check className="h-3 w-3 text-white" strokeWidth={2.5} />
                   </span>
                   <span className="text-white text-sm leading-snug">{benefit}</span>
-                </motion.li>
+                </m.li>
               ))}
             </ul>
 
@@ -243,8 +243,8 @@ export default function UpgradeBanner({ moduleId, moduleName, onDismiss }: Upgra
               Seguir con Plan Basico
             </button>
           </div>
-        </motion.div>
-      </motion.div>
+        </m.div>
+      </m.div>
     </AnimatePresence>
   );
 }

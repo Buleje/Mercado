@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import { m, AnimatePresence } from "@/components/admin/providers";
 import {
   Clock, Play, Square, DollarSign, Loader2, AlertTriangle,
   User, ChevronLeft, ChevronRight, X, ShoppingCart, Download,
@@ -402,7 +402,7 @@ export default function TurnosModule() {
       {/* Mejora M3: Config meta inline */}
       <AnimatePresence>
         {showMetaConfig && (
-          <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: "auto" }} exit={{ opacity: 0, height: 0 }} className="overflow-hidden">
+          <m.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: "auto" }} exit={{ opacity: 0, height: 0 }} className="overflow-hidden">
             <div className="bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-800 rounded-xl p-3 flex items-center gap-3">
               <label className="text-xs font-bold text-amber-700 dark:text-amber-400 shrink-0">Meta por turno (S/):</label>
               <input
@@ -425,7 +425,7 @@ export default function TurnosModule() {
                 Guardar
               </button>
             </div>
-          </motion.div>
+          </m.div>
         )}
       </AnimatePresence>
 
@@ -1114,7 +1114,7 @@ export default function TurnosModule() {
       <AnimatePresence>
         {showCierre && turnoActivo && (
           <>
-            <motion.div
+            <m.div
               key="cierre-backdrop"
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
@@ -1122,7 +1122,7 @@ export default function TurnosModule() {
               className="fixed inset-0 z-50 bg-black/40 backdrop-blur-sm"
               onClick={() => setShowCierre(false)}
             />
-            <motion.div
+            <m.div
               key="cierre-modal"
               initial={{ opacity: 0, scale: 0.95, y: 10 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
@@ -1219,7 +1219,7 @@ export default function TurnosModule() {
                   </button>
                 </div>
               </div>
-            </motion.div>
+            </m.div>
           </>
         )}
       </AnimatePresence>
@@ -1228,7 +1228,7 @@ export default function TurnosModule() {
       <AnimatePresence>
         {showResumen && resumen && (
           <>
-            <motion.div
+            <m.div
               key="resumen-backdrop"
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
@@ -1236,7 +1236,7 @@ export default function TurnosModule() {
               className="fixed inset-0 z-50 bg-black/40 backdrop-blur-sm"
               onClick={() => setShowResumen(false)}
             />
-            <motion.div
+            <m.div
               key="resumen-modal"
               initial={{ opacity: 0, scale: 0.95, y: 10 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
@@ -1377,7 +1377,7 @@ export default function TurnosModule() {
                   const diferenciaMeta = ventas - meta;
 
                   return superada ? (
-                    <motion.div
+                    <m.div
                       initial={{ scale: 0.8 }}
                       animate={{ scale: [0.8, 1.1, 1] }}
                       transition={{ duration: 0.5, times: [0, 0.6, 1] }}
@@ -1387,7 +1387,7 @@ export default function TurnosModule() {
                       <p className="text-sm text-amber-700 dark:text-amber-300">
                         Vendiste {formatCurrency(ventas)} — Meta: {formatCurrency(meta)} — Excedente: <span className="font-bold text-emerald-600">{formatCurrency(diferenciaMeta)}</span>
                       </p>
-                    </motion.div>
+                    </m.div>
                   ) : (
                     <div className="bg-gray-50 dark:bg-white/5 rounded-xl p-4 space-y-2">
                       <p className="text-sm text-gray-700 dark:text-gray-300">
@@ -1535,7 +1535,7 @@ export default function TurnosModule() {
                   </button>
                 </div>
               </div>
-            </motion.div>
+            </m.div>
           </>
         )}
       </AnimatePresence>

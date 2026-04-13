@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback, useRef, useMemo } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import { m, AnimatePresence } from "@/components/admin/providers";
 import {
   Search, Plus, X, ChevronLeft, ChevronRight, Loader2, AlertTriangle,
   FileText, User, Printer, DollarSign, Clock, CheckCircle, BookOpen, FileSignature, LayoutGrid, List,
@@ -1316,7 +1316,7 @@ ${content.split("\n\n").map(p => `<p>${p}</p>`).join("")}
       {/* Tab Content */}
       {!loading && !error && (
         <AnimatePresence mode="wait">
-          <motion.div
+          <m.div
             key={activeTab}
             initial={{ opacity: 0, y: 8 }}
             animate={{ opacity: 1, y: 0 }}
@@ -1416,7 +1416,7 @@ ${content.split("\n\n").map(p => `<p>${p}</p>`).join("")}
                 <p className="text-sm text-gray-500">Selecciona una plantilla para crear un contrato con clausulas legales peruanas reales.</p>
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                   {PLANTILLAS.map(tpl => (
-                    <motion.div
+                    <m.div
                       key={tpl.id}
                       whileHover={{ scale: 1.02 }}
                       className="bg-white dark:bg-white/5 border border-gray-200 dark:border-white/10 rounded-xl p-4 cursor-pointer hover:border-[#00B4A6] hover:shadow-lg transition-all group"
@@ -1437,7 +1437,7 @@ ${content.split("\n\n").map(p => `<p>${p}</p>`).join("")}
                           <p className="text-[10px] text-gray-400 mt-1 italic">{tpl.legalBasis}</p>
                         </div>
                       </div>
-                    </motion.div>
+                    </m.div>
                   ))}
                 </div>
               </div>
@@ -2057,7 +2057,7 @@ ${content.split("\n\n").map(p => `<p>${p}</p>`).join("")}
                 )}
               </div>
             )}
-          </motion.div>
+          </m.div>
         </AnimatePresence>
       )}
 
@@ -2065,8 +2065,8 @@ ${content.split("\n\n").map(p => `<p>${p}</p>`).join("")}
       <AnimatePresence>
         {selected && (
           <>
-            <motion.div key="ct-backdrop" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-40 bg-black/40 backdrop-blur-sm" onClick={() => setSelected(null)} />
-            <motion.div
+            <m.div key="ct-backdrop" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-40 bg-black/40 backdrop-blur-sm" onClick={() => setSelected(null)} />
+            <m.div
               key="ct-panel"
               initial={{ x: "100%" }}
               animate={{ x: 0 }}
@@ -2236,7 +2236,7 @@ ${content.split("\n\n").map(p => `<p>${p}</p>`).join("")}
                   </button>
                 </div>
               </div>
-            </motion.div>
+            </m.div>
           </>
         )}
       </AnimatePresence>

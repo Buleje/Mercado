@@ -1,7 +1,7 @@
 "use client";
 
 import type { Dispatch, SetStateAction } from "react";
-import { motion } from "framer-motion";
+import { m } from "@/components/admin/providers";
 import {
   X, DollarSign, Calendar, User, FileText,
   Camera, Loader2, Plus,
@@ -64,7 +64,7 @@ export default function FiadoFormModal({
     <>
         {showNew && (
           <>
-            <motion.div
+            <m.div
               key="new-backdrop"
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
@@ -72,7 +72,7 @@ export default function FiadoFormModal({
               className="fixed inset-0 z-50 bg-black/40 backdrop-blur-sm"
               onClick={() => setShowNew(false)}
             />
-            <motion.div
+            <m.div
               key="new-modal"
               initial={{ opacity: 0, scale: 0.95, y: 10 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
@@ -269,7 +269,7 @@ export default function FiadoFormModal({
                   </button>
                 </div>
               </div>
-            </motion.div>
+            </m.div>
           </>
         )}
     </>

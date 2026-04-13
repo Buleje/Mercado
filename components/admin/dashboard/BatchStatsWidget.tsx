@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { Package, AlertTriangle, CheckCircle2, TrendingDown, RefreshCw } from "lucide-react";
-import { motion } from "framer-motion";
+import { m } from "@/components/admin/providers";
 import { cn } from "@/lib/utils";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
@@ -44,7 +44,7 @@ function StatCard({
   }
 
   return (
-    <motion.div
+    <m.div
       initial={{ opacity: 0, y: 8 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.25 }}
@@ -57,7 +57,7 @@ function StatCard({
         <span className="text-[11px] font-medium text-gray-500 dark:text-muted leading-tight">{label}</span>
       </div>
       <span className={cn("text-2xl font-bold", colorClass)}>{value.toLocaleString("es-PE")}</span>
-    </motion.div>
+    </m.div>
   );
 }
 

@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback, useMemo } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import { m, AnimatePresence } from "@/components/admin/providers";
 import {
   Search, Plus, X, Loader2, AlertTriangle,
   ChevronLeft, ChevronRight, Landmark, Building2,
@@ -155,7 +155,7 @@ function TresoDashboard({ cuentas, resumen }: { cuentas: Cuenta[]; resumen: Resu
   return (
     <div className="space-y-6">
       {/* KPIs */}
-      <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
+      <m.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
           <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl shadow-sm p-4 border-b-4 border-b-[#00B4A6]">
             <div className="flex items-center justify-between mb-2">
@@ -206,11 +206,11 @@ function TresoDashboard({ cuentas, resumen }: { cuentas: Cuenta[]; resumen: Resu
             </p>
           </div>
         </div>
-      </motion.div>
+      </m.div>
 
       {/* Account cards */}
       {cuentas.length > 0 && (
-        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}>
+        <m.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}>
           <h3 className="text-sm font-bold text-gray-700 dark:text-foreground mb-3">Mis cuentas</h3>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
             {cuentas.filter(c => c.activa).map(cuenta => {
@@ -238,11 +238,11 @@ function TresoDashboard({ cuentas, resumen }: { cuentas: Cuenta[]; resumen: Resu
               );
             })}
           </div>
-        </motion.div>
+        </m.div>
       )}
 
       {/* Charts */}
-      <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}>
+      <m.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}>
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {/* Flow chart */}
           <div className="bg-white dark:bg-card rounded-2xl border border-gray-200 dark:border-card-border p-6 shadow-sm">
@@ -302,11 +302,11 @@ function TresoDashboard({ cuentas, resumen }: { cuentas: Cuenta[]; resumen: Resu
             )}
           </div>
         </div>
-      </motion.div>
+      </m.div>
 
       {/* Low Balance Alerts */}
       {cuentas.filter(c => c.activa && c.saldo < LOW_BALANCE_THRESHOLD).length > 0 && (
-        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }}>
+        <m.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }}>
           <div className="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-2xl p-4">
             <div className="flex items-center gap-2 mb-2">
               <AlertCircle className="h-4 w-4 text-amber-600 dark:text-amber-400" />
@@ -324,7 +324,7 @@ function TresoDashboard({ cuentas, resumen }: { cuentas: Cuenta[]; resumen: Resu
               Umbral: menos de S/{LOW_BALANCE_THRESHOLD.toFixed(2)}
             </p>
           </div>
-        </motion.div>
+        </m.div>
       )}
     </div>
   );
@@ -879,7 +879,7 @@ export default function TesoreriaModule() {
                 const meta = TIPO_META[cuenta.tipo];
                 const Icon = meta.icon;
                 return (
-                  <motion.div
+                  <m.div
                     key={cuenta.id}
                     initial={{ opacity: 0, scale: 0.95 }}
                     animate={{ opacity: 1, scale: 1 }}
@@ -931,7 +931,7 @@ export default function TesoreriaModule() {
                         <Power className={cn("h-3.5 w-3.5", cuenta.activa ? "text-red-400" : "text-emerald-400")} />
                       </button>
                     </div>
-                  </motion.div>
+                  </m.div>
                 );
               })}
             </div>
@@ -994,7 +994,7 @@ export default function TesoreriaModule() {
           {/* Advanced Filters (collapsible) */}
           <AnimatePresence>
             {showAdvancedFilters && (
-              <motion.div
+              <m.div
                 initial={{ height: 0, opacity: 0 }}
                 animate={{ height: "auto", opacity: 1 }}
                 exit={{ height: 0, opacity: 0 }}
@@ -1062,7 +1062,7 @@ export default function TesoreriaModule() {
                     </button>
                   )}
                 </div>
-              </motion.div>
+              </m.div>
             )}
           </AnimatePresence>
 
@@ -1211,7 +1211,7 @@ export default function TesoreriaModule() {
                 const origenMeta = origenCuenta ? TIPO_META[origenCuenta.tipo] : null;
                 const destinoMeta = destinoCuenta ? TIPO_META[destinoCuenta.tipo] : null;
                 return (
-                <motion.div
+                <m.div
                   key={t.id}
                   initial={{ opacity: 0, y: 10 }}
                   animate={{ opacity: 1, y: 0 }}
@@ -1246,7 +1246,7 @@ export default function TesoreriaModule() {
                     </div>
                   </div>
                   {t.descripcion && <p className="text-xs text-gray-400 mt-2 text-center truncate">{t.descripcion}</p>}
-                </motion.div>
+                </m.div>
                 );
               })}
             </div>
@@ -1262,13 +1262,13 @@ export default function TesoreriaModule() {
       <AnimatePresence>
         {(showCreateCuenta || editCuenta) && (
           <>
-            <motion.div
+            <m.div
               key="cuenta-bg"
               initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
               className="fixed inset-0 z-40 bg-black/40 backdrop-blur-sm"
               onClick={() => { setShowCreateCuenta(false); setEditCuenta(null); }}
             />
-            <motion.div
+            <m.div
               key="cuenta-modal"
               initial={{ opacity: 0, scale: 0.95, y: 20 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
@@ -1397,7 +1397,7 @@ export default function TesoreriaModule() {
                   </button>
                 </div>
               </div>
-            </motion.div>
+            </m.div>
           </>
         )}
       </AnimatePresence>
@@ -1406,13 +1406,13 @@ export default function TesoreriaModule() {
       <AnimatePresence>
         {showCreateMov && (
           <>
-            <motion.div
+            <m.div
               key="mov-bg"
               initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
               className="fixed inset-0 z-40 bg-black/40 backdrop-blur-sm"
               onClick={() => setShowCreateMov(false)}
             />
-            <motion.div
+            <m.div
               key="mov-modal"
               initial={{ opacity: 0, scale: 0.95, y: 20 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
@@ -1563,7 +1563,7 @@ export default function TesoreriaModule() {
                   </button>
                 </div>
               </div>
-            </motion.div>
+            </m.div>
           </>
         )}
       </AnimatePresence>
@@ -1572,13 +1572,13 @@ export default function TesoreriaModule() {
       <AnimatePresence>
         {showCreateTransfer && (
           <>
-            <motion.div
+            <m.div
               key="trans-bg"
               initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
               className="fixed inset-0 z-40 bg-black/40 backdrop-blur-sm"
               onClick={() => setShowCreateTransfer(false)}
             />
-            <motion.div
+            <m.div
               key="trans-modal"
               initial={{ opacity: 0, scale: 0.95, y: 20 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
@@ -1693,7 +1693,7 @@ export default function TesoreriaModule() {
                   </button>
                 </div>
               </div>
-            </motion.div>
+            </m.div>
           </>
         )}
       </AnimatePresence>
@@ -1702,13 +1702,13 @@ export default function TesoreriaModule() {
       <AnimatePresence>
         {showDeactivateModal && deactivateTarget && (
           <>
-            <motion.div
+            <m.div
               key="deact-bg"
               initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
               className="fixed inset-0 z-40 bg-black/40 backdrop-blur-sm"
               onClick={() => { setShowDeactivateModal(false); setDeactivateTarget(null); }}
             />
-            <motion.div
+            <m.div
               key="deact-modal"
               initial={{ opacity: 0, scale: 0.95, y: 20 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
@@ -1766,7 +1766,7 @@ export default function TesoreriaModule() {
                   </button>
                 </div>
               </div>
-            </motion.div>
+            </m.div>
           </>
         )}
       </AnimatePresence>

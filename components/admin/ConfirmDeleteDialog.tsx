@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import { m, AnimatePresence } from "@/components/admin/providers";
 import { AlertTriangle, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -39,7 +39,7 @@ export function ConfirmDeleteDialog({
   return (
     <AnimatePresence>
       {open && (
-        <motion.div
+        <m.div
           className="fixed inset-0 z-50 flex items-center justify-center p-4"
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
@@ -47,7 +47,7 @@ export function ConfirmDeleteDialog({
           transition={{ duration: 0.15 }}
         >
           {/* Overlay */}
-          <motion.div
+          <m.div
             className="absolute inset-0 bg-black/50 backdrop-blur-sm"
             onClick={onClose}
             initial={{ opacity: 0 }}
@@ -56,7 +56,7 @@ export function ConfirmDeleteDialog({
           />
 
           {/* Dialog */}
-          <motion.div
+          <m.div
             className={cn(
               "relative z-10 w-full max-w-md",
               "bg-white dark:bg-card",
@@ -130,8 +130,8 @@ export function ConfirmDeleteDialog({
                 {confirmText}
               </button>
             </div>
-          </motion.div>
-        </motion.div>
+          </m.div>
+        </m.div>
       )}
     </AnimatePresence>
   );

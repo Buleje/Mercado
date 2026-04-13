@@ -1,7 +1,7 @@
 "use client";
 import { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import Image from "next/image";
-import { motion, AnimatePresence } from "framer-motion";
+import { m, AnimatePresence } from "@/components/admin/providers";
 import { cn } from "@/lib/utils";
 import type { StoreMode } from "@/lib/jsondb";
 import dynamic from "next/dynamic";
@@ -206,7 +206,7 @@ function OverviewCard({ section, completionPct, onClick }: {
   section: typeof SECTION_META[number]; completionPct: number; onClick: () => void;
 }) {
   return (
-    <motion.button
+    <m.button
       whileHover={{ scale: 1.02, y: -2 }}
       whileTap={{ scale: 0.98 }}
       onClick={onClick}
@@ -230,7 +230,7 @@ function OverviewCard({ section, completionPct, onClick }: {
           <CheckCircle className="h-4 w-4 text-emerald-500" />
         </div>
       )}
-    </motion.button>
+    </m.button>
   );
 }
 
@@ -1717,7 +1717,7 @@ export default function SettingsModule({ storeMode, onModeChange }: { storeMode:
 
       {/* ── Breadcrumb ── */}
       {!showOverview && (
-        <motion.div initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }} className="flex items-center gap-2 text-sm">
+        <m.div initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }} className="flex items-center gap-2 text-sm">
           <button onClick={() => setShowOverview(true)} className="text-primary hover:text-primary/80 font-semibold transition-colors">
             Configuración
           </button>
@@ -1725,13 +1725,13 @@ export default function SettingsModule({ storeMode, onModeChange }: { storeMode:
           <span className="text-gray-700 dark:text-foreground font-medium">
             {SECTION_META.find(s => s.id === activeSection)?.title}
           </span>
-        </motion.div>
+        </m.div>
       )}
 
       {/* ── Overview Grid / Section Detail ── */}
       <AnimatePresence mode="wait">
         {showOverview ? (
-          <motion.div
+          <m.div
             key="overview"
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
@@ -1756,13 +1756,13 @@ export default function SettingsModule({ storeMode, onModeChange }: { storeMode:
 
             <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
               {filteredSections.map((s, i) => (
-                <motion.div key={s.id} initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.03 }}>
+                <m.div key={s.id} initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.03 }}>
                   <OverviewCard
                     section={s}
                     completionPct={sectionCompletion[s.id] || 0}
                     onClick={() => { setActiveSection(s.id); setShowOverview(false); setSearchQuery(""); }}
                   />
-                </motion.div>
+                </m.div>
               ))}
             </div>
             {filteredSections.length === 0 && (
@@ -1771,9 +1771,9 @@ export default function SettingsModule({ storeMode, onModeChange }: { storeMode:
                 <p className="text-sm text-gray-500">No se encontraron secciones para &quot;{searchQuery}&quot;</p>
               </div>
             )}
-          </motion.div>
+          </m.div>
         ) : (
-          <motion.div
+          <m.div
             key="section-detail"
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
@@ -1857,7 +1857,7 @@ export default function SettingsModule({ storeMode, onModeChange }: { storeMode:
 
                 {/* Animated section content */}
                 <AnimatePresence mode="wait">
-                  <motion.div
+                  <m.div
                     key={activeSection}
                     initial={{ opacity: 0, x: 20 }}
                     animate={{ opacity: 1, x: 0 }}
@@ -1865,18 +1865,18 @@ export default function SettingsModule({ storeMode, onModeChange }: { storeMode:
                     transition={{ duration: 0.15 }}
                   >
                     {renderSection()}
-                  </motion.div>
+                  </m.div>
                 </AnimatePresence>
               </div>
             </div>
-          </motion.div>
+          </m.div>
         )}
       </AnimatePresence>
 
       {/* Map picker modal */}
       {showMapPicker && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60" onClick={() => setShowMapPicker(false)}>
-          <motion.div
+          <m.div
             initial={{ opacity: 0, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}
             className="bg-white dark:bg-card rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] flex flex-col"
@@ -1896,7 +1896,7 @@ export default function SettingsModule({ storeMode, onModeChange }: { storeMode:
               <button onClick={() => setShowMapPicker(false)} className="px-4 py-2.5 rounded-xl text-sm font-semibold text-gray-600 hover:bg-gray-100">Cancelar</button>
               <button onClick={() => setShowMapPicker(false)} className="px-4 py-2.5 rounded-xl text-sm font-bold text-white bg-primary hover:bg-primary/90">Confirmar</button>
             </div>
-          </motion.div>
+          </m.div>
         </div>
       )}
     </div>

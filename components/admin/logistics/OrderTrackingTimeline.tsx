@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { motion } from "framer-motion";
+import { m } from "@/components/admin/providers";
 import {
   Package, Truck, CheckCircle, XCircle, ShoppingCart,
   RefreshCw, AlertCircle,
@@ -156,7 +156,7 @@ export default function OrderTrackingTimeline({
 
       <div className="space-y-0">
         {steps.map((step, i) => (
-          <motion.div
+          <m.div
             key={step.status}
             initial={{ opacity: 0, x: -8 }}
             animate={{ opacity: 1, x: 0 }}
@@ -164,7 +164,7 @@ export default function OrderTrackingTimeline({
             className={cn("relative flex gap-4", compact ? "pb-4" : "pb-5")}
           >
             {/* Icono */}
-            <motion.div
+            <m.div
               className={cn(
                 "relative z-10 flex h-8 w-8 shrink-0 items-center justify-center rounded-full border-2",
                 step.done
@@ -175,7 +175,7 @@ export default function OrderTrackingTimeline({
               transition={step.current ? { repeat: Infinity, duration: 2 } : {}}
             >
               <step.icon className="h-3.5 w-3.5" />
-            </motion.div>
+            </m.div>
 
             {/* Contenido */}
             <div className="flex-1 min-w-0 pt-0.5">
@@ -210,12 +210,12 @@ export default function OrderTrackingTimeline({
                 </p>
               )}
             </div>
-          </motion.div>
+          </m.div>
         ))}
 
         {/* Paso de cancelación */}
         {isCancelled && (
-          <motion.div
+          <m.div
             initial={{ opacity: 0, x: -8 }}
             animate={{ opacity: 1, x: 0 }}
             transition={{ delay: 0.28 }}
@@ -242,7 +242,7 @@ export default function OrderTrackingTimeline({
                 </p>
               )}
             </div>
-          </motion.div>
+          </m.div>
         )}
       </div>
     </div>

@@ -2,7 +2,7 @@
 
 import React from "react";
 import Link from "next/link";
-import { motion } from "framer-motion";
+import { m } from "@/components/admin/providers";
 import {
   Star,
   ShoppingBasket,
@@ -595,7 +595,7 @@ export function AdminSidebar({
         const catTabs = cat.tabs.filter(t => allowedTabs.includes(t as Tab));
         if (catTabs.length <= 1) return null;
         return (
-          <motion.div
+          <m.div
             key={sidebarFlyout.categoryId}
             initial={{ opacity: 0, x: -8, scale: 0.97 }}
             animate={{ opacity: 1, x: 0, scale: 1 }}
@@ -626,7 +626,7 @@ export function AdminSidebar({
                 </button>
               );
             })}
-          </motion.div>
+          </m.div>
         );
       })()}
     </>

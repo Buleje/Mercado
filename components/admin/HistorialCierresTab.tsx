@@ -1,6 +1,6 @@
 "use client";
 import { useState, useEffect, useCallback } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import { m, AnimatePresence } from "@/components/admin/providers";
 import { Download, Eye, X, ChevronLeft, ChevronRight, CalendarOff } from "lucide-react";
 import { exportToExcel } from "@/lib/export-excel";
 import EmptyState from "@/components/admin/shared/EmptyState";
@@ -212,7 +212,7 @@ export default function HistorialCierresTab() {
         {detail && (
           <div className="fixed inset-0 z-[100] flex items-center justify-center">
             <div className="fixed inset-0 bg-black/40 backdrop-blur-sm" onClick={() => setDetail(null)} />
-            <motion.div
+            <m.div
               initial={{ scale: 0.9, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
               exit={{ scale: 0.9, opacity: 0 }}
@@ -351,7 +351,7 @@ export default function HistorialCierresTab() {
                   Creado por: {detail.creadoPor} &middot; {new Date(detail.createdAt).toLocaleString("es-PE")}
                 </div>
               </div>
-            </motion.div>
+            </m.div>
           </div>
         )}
       </AnimatePresence>

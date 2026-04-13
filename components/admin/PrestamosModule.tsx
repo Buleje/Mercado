@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback, useMemo } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import { m, AnimatePresence } from "@/components/admin/providers";
 import {
   Search, Plus, X, DollarSign, Loader2, AlertTriangle,
   ChevronLeft, ChevronRight, User, Landmark,
@@ -292,7 +292,7 @@ function PrestamosDashboard({ prestamos, resumen }: { prestamos: Prestamo[]; res
   return (
     <div className="space-y-6">
       {/* Mejora 1: KPI Cards con sparklines */}
-      <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0 }}>
+      <m.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0 }}>
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
           <SparklineKPICard title="Dados" value={formatCurrency(totalDados)} sub={`${resumen?.activosDados ?? prestamos.filter(p=>p.direccion==="DADO"&&p.status==="ACTIVO").length} activos`} accentColor="#ef4444" icon={ArrowUpFromLine} sparkData={spark1} />
           <SparklineKPICard title="Recibidos" value={formatCurrency(totalRecibidos)} sub={`${resumen?.activosRecibidos ?? prestamos.filter(p=>p.direccion==="RECIBIDO"&&p.status==="ACTIVO").length} activos`} accentColor="#10b981" icon={ArrowDownToLine} sparkData={spark2} />
@@ -301,11 +301,11 @@ function PrestamosDashboard({ prestamos, resumen }: { prestamos: Prestamo[]; res
           <SparklineKPICard title="Mora acumulada" value={formatCurrency(moraAcumulada)} accentColor="#f59e0b" icon={AlertTriangle} sparkData={spark5} />
           <SparklineKPICard title="Recuperación" value={`${tasaRecuperacion.toFixed(1)}%`} accentColor={tasaRecuperacion > 80 ? "#10b981" : tasaRecuperacion > 50 ? "#f59e0b" : "#ef4444"} icon={TrendingUp} sparkData={spark6} />
         </div>
-      </motion.div>
+      </m.div>
 
       {/* Mejora 5: Indicador de mora destacado */}
       {moraAcumulada > 0 && (
-        <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.05 }}>
+        <m.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.05 }}>
           <div className="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-700 rounded-2xl p-4 flex items-center gap-4">
             <div className="h-12 w-12 rounded-xl bg-amber-500 flex items-center justify-center shrink-0 shadow-md">
               <AlertTriangle className="h-6 w-6 text-white" />
@@ -322,11 +322,11 @@ function PrestamosDashboard({ prestamos, resumen }: { prestamos: Prestamo[]; res
               </div>
             </div>
           </div>
-        </motion.div>
+        </m.div>
       )}
 
       {/* AreaChart: cobros vs nuevos */}
-      <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}>
+      <m.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}>
         <div className="bg-white dark:bg-card rounded-2xl border border-gray-200 dark:border-card-border p-6 shadow-sm">
           <h3 className="text-sm font-bold text-gray-700 dark:text-foreground mb-4">Cobros vs Nuevos préstamos (6 meses)</h3>
           {areaData.some(d => d.cobrado > 0 || d.nuevos > 0) ? (
@@ -355,10 +355,10 @@ function PrestamosDashboard({ prestamos, resumen }: { prestamos: Prestamo[]; res
             <EmptyChartPrestamos message="Sin movimiento en los últimos 6 meses" />
           )}
         </div>
-      </motion.div>
+      </m.div>
 
       {/* Mejoras 3, 4 y 6: Top deudores + Donut riesgo + Dirección */}
-      <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}>
+      <m.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}>
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* Mejora 3: Top 5 deudores */}
           <div className="bg-white dark:bg-card rounded-2xl border border-gray-200 dark:border-card-border p-6 shadow-sm">
@@ -428,7 +428,7 @@ function PrestamosDashboard({ prestamos, resumen }: { prestamos: Prestamo[]; res
                   <span className="text-xs font-bold font-mono text-red-600 dark:text-red-400">{formatCurrency(totalDados)}</span>
                 </div>
                 <div className="h-3 bg-gray-100 dark:bg-gray-800 rounded-full overflow-hidden">
-                  <motion.div className="h-full bg-red-500 rounded-full" initial={{ width: 0 }} animate={{ width: `${(totalDados / maxDireccion) * 100}%` }} transition={{ duration: 0.8, delay: 0.3 }} />
+                  <m.div className="h-full bg-red-500 rounded-full" initial={{ width: 0 }} animate={{ width: `${(totalDados / maxDireccion) * 100}%` }} transition={{ duration: 0.8, delay: 0.3 }} />
                 </div>
                 <p className="text-[10px] text-gray-400 mt-0.5">{prestamos.filter(p=>p.direccion==="DADO").length} préstamos</p>
               </div>
@@ -441,7 +441,7 @@ function PrestamosDashboard({ prestamos, resumen }: { prestamos: Prestamo[]; res
                   <span className="text-xs font-bold font-mono text-emerald-600 dark:text-emerald-400">{formatCurrency(totalRecibidos)}</span>
                 </div>
                 <div className="h-3 bg-gray-100 dark:bg-gray-800 rounded-full overflow-hidden">
-                  <motion.div className="h-full bg-emerald-500 rounded-full" initial={{ width: 0 }} animate={{ width: `${(totalRecibidos / maxDireccion) * 100}%` }} transition={{ duration: 0.8, delay: 0.5 }} />
+                  <m.div className="h-full bg-emerald-500 rounded-full" initial={{ width: 0 }} animate={{ width: `${(totalRecibidos / maxDireccion) * 100}%` }} transition={{ duration: 0.8, delay: 0.5 }} />
                 </div>
                 <p className="text-[10px] text-gray-400 mt-0.5">{prestamos.filter(p=>p.direccion==="RECIBIDO").length} préstamos</p>
               </div>
@@ -455,7 +455,7 @@ function PrestamosDashboard({ prestamos, resumen }: { prestamos: Prestamo[]; res
             </div>
           </div>
         </div>
-      </motion.div>
+      </m.div>
     </div>
   );
 }
@@ -1098,13 +1098,13 @@ export default function PrestamosModule() {
         const venciendoProx = activos.filter(p => p.cuotas.some(c => !c.pagadoEn && new Date(c.fechaVence) >= hoy && new Date(c.fechaVence) <= semana));
         if (venciendoProx.length === 0) return null;
         return (
-          <motion.div initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }} className="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-700 rounded-xl p-3 flex items-center gap-3">
+          <m.div initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }} className="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-700 rounded-xl p-3 flex items-center gap-3">
             <Bell className="h-4 w-4 text-amber-600 dark:text-amber-400 shrink-0" />
             <p className="text-xs text-amber-700 dark:text-amber-400 font-semibold flex-1">
               ⚠️ {venciendoProx.length} préstamo{venciendoProx.length > 1 ? "s" : ""} con cuotas venciendo esta semana
             </p>
             <button onClick={() => { setPrestamoStatusFilter("ACTIVO"); setActiveTab("activos"); }} className="text-xs font-bold text-amber-700 dark:text-amber-400 hover:underline shrink-0">Ver</button>
-          </motion.div>
+          </m.div>
         );
       })()}
 
@@ -1126,7 +1126,7 @@ export default function PrestamosModule() {
           </div>
           <AnimatePresence>
             {showFilters && (
-              <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: "auto" }} exit={{ opacity: 0, height: 0 }} className="overflow-hidden">
+              <m.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: "auto" }} exit={{ opacity: 0, height: 0 }} className="overflow-hidden">
                 <div className="bg-gray-50 dark:bg-white/5 rounded-xl border border-gray-200 dark:border-white/10 p-4">
                   <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
                     <div><label className="block text-[10px] font-bold uppercase text-gray-400 mb-1">Desde</label><input type="date" value={filterFechaFrom} onChange={e => { setFilterFechaFrom(e.target.value); setPage(1); }} className="w-full px-2.5 py-2 rounded-lg border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 text-xs text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-[#00B4A6]/30" /></div>
@@ -1139,7 +1139,7 @@ export default function PrestamosModule() {
                     <div className="flex items-end"><button onClick={clearFilters} className="w-full flex items-center justify-center gap-2 px-3 py-2 rounded-lg text-xs font-bold text-gray-500 hover:text-red-600 bg-gray-100 dark:bg-white/10 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"><Trash2 className="h-3.5 w-3.5" /> Limpiar</button></div>
                   </div>
                 </div>
-              </motion.div>
+              </m.div>
             )}
           </AnimatePresence>
         </div>
@@ -1621,7 +1621,7 @@ export default function PrestamosModule() {
       <AnimatePresence>
         {selected && (
           <>
-            <motion.div
+            <m.div
               key="prestamo-backdrop"
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
@@ -1629,7 +1629,7 @@ export default function PrestamosModule() {
               className="fixed inset-0 z-40 bg-black/40 backdrop-blur-sm"
               onClick={() => setSelected(null)}
             />
-            <motion.div
+            <m.div
               key="prestamo-panel"
               initial={{ x: "100%" }}
               animate={{ x: 0 }}
@@ -2192,7 +2192,7 @@ ${cuotas.map(c => { const row = `<tr>
                   )}
                 </div>
               </div>
-            </motion.div>
+            </m.div>
           </>
         )}
       </AnimatePresence>
@@ -2201,8 +2201,8 @@ ${cuotas.map(c => { const row = `<tr>
       <AnimatePresence>
         {showRefinanciar && selected && (
           <>
-            <motion.div key="ref-bd" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-[60] bg-black/40 backdrop-blur-sm" onClick={() => setShowRefinanciar(false)} />
-            <motion.div key="ref-modal" initial={{ opacity: 0, scale: 0.95, y: 10 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.95, y: 10 }} className="fixed inset-0 z-[60] flex items-center justify-center p-4" onClick={e => e.target === e.currentTarget && setShowRefinanciar(false)}>
+            <m.div key="ref-bd" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-[60] bg-black/40 backdrop-blur-sm" onClick={() => setShowRefinanciar(false)} />
+            <m.div key="ref-modal" initial={{ opacity: 0, scale: 0.95, y: 10 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.95, y: 10 }} className="fixed inset-0 z-[60] flex items-center justify-center p-4" onClick={e => e.target === e.currentTarget && setShowRefinanciar(false)}>
               <div className="w-full max-w-sm bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl shadow-2xl p-5 space-y-4">
                 <div className="flex items-center justify-between">
                   <h3 className="text-lg font-bold text-gray-900 dark:text-white flex items-center gap-2"><RotateCcw className="h-5 w-5 text-blue-500" /> Refinanciar Préstamo</h3>
@@ -2222,7 +2222,7 @@ ${cuotas.map(c => { const row = `<tr>
                   </button>
                 </div>
               </div>
-            </motion.div>
+            </m.div>
           </>
         )}
       </AnimatePresence>
@@ -2231,8 +2231,8 @@ ${cuotas.map(c => { const row = `<tr>
       <AnimatePresence>
         {showCancelConfirm && selected && (
           <>
-            <motion.div key="cancel-bd" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-[60] bg-black/40 backdrop-blur-sm" onClick={() => setShowCancelConfirm(false)} />
-            <motion.div key="cancel-modal" initial={{ opacity: 0, scale: 0.95, y: 10 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.95, y: 10 }} className="fixed inset-0 z-[60] flex items-center justify-center p-4" onClick={e => e.target === e.currentTarget && setShowCancelConfirm(false)}>
+            <m.div key="cancel-bd" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-[60] bg-black/40 backdrop-blur-sm" onClick={() => setShowCancelConfirm(false)} />
+            <m.div key="cancel-modal" initial={{ opacity: 0, scale: 0.95, y: 10 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.95, y: 10 }} className="fixed inset-0 z-[60] flex items-center justify-center p-4" onClick={e => e.target === e.currentTarget && setShowCancelConfirm(false)}>
               <div className="w-full max-w-sm bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl shadow-2xl p-5 space-y-4">
                 <div className="flex items-center gap-3 p-3 bg-red-50 dark:bg-red-900/20 rounded-xl border border-red-200 dark:border-red-800">
                   <AlertCircle className="h-6 w-6 text-red-500 shrink-0" />
@@ -2249,7 +2249,7 @@ ${cuotas.map(c => { const row = `<tr>
                   </button>
                 </div>
               </div>
-            </motion.div>
+            </m.div>
           </>
         )}
       </AnimatePresence>
@@ -2258,7 +2258,7 @@ ${cuotas.map(c => { const row = `<tr>
       <AnimatePresence>
         {showPago && selected && (
           <>
-            <motion.div
+            <m.div
               key="pago-prestamo-backdrop"
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
@@ -2266,7 +2266,7 @@ ${cuotas.map(c => { const row = `<tr>
               className="fixed inset-0 z-[60] bg-black/40 backdrop-blur-sm"
               onClick={() => setShowPago(false)}
             />
-            <motion.div
+            <m.div
               key="pago-prestamo-modal"
               initial={{ opacity: 0, scale: 0.95, y: 10 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
@@ -2302,7 +2302,7 @@ ${cuotas.map(c => { const row = `<tr>
                   </button>
                 </div>
               </div>
-            </motion.div>
+            </m.div>
           </>
         )}
       </AnimatePresence>
@@ -2311,7 +2311,7 @@ ${cuotas.map(c => { const row = `<tr>
       <AnimatePresence>
         {showCreate && (
           <>
-            <motion.div
+            <m.div
               key="create-prestamo-backdrop"
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
@@ -2319,7 +2319,7 @@ ${cuotas.map(c => { const row = `<tr>
               className="fixed inset-0 z-50 bg-black/40 backdrop-blur-sm"
               onClick={() => { setShowCreate(false); resetCreateForm(); }}
             />
-            <motion.div
+            <m.div
               key="create-prestamo-modal"
               initial={{ opacity: 0, scale: 0.95, y: 10 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
@@ -2682,7 +2682,7 @@ ${cuotas.map(c => { const row = `<tr>
                   </div>
                 )}
               </div>
-            </motion.div>
+            </m.div>
           </>
         )}
       </AnimatePresence>

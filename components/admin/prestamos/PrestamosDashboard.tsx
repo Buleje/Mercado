@@ -1,6 +1,6 @@
 "use client";
 
-import { motion } from "framer-motion";
+import { m } from "@/components/admin/providers";
 import {
   DollarSign, AlertTriangle, TrendingUp,
   ArrowUpFromLine, ArrowDownToLine, XCircle,
@@ -193,7 +193,7 @@ export function PrestamosDashboard({ prestamos, resumen }: Props) {
 
   return (
     <div className="space-y-6">
-      <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0 }}>
+      <m.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0 }}>
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
           <SparklineKPICard title="Dados" value={formatCurrency(totalDados)} sub={`${resumen?.activosDados ?? prestamos.filter(p=>p.direccion==="DADO"&&p.status==="ACTIVO").length} activos`} accentColor="#ef4444" icon={ArrowUpFromLine} sparkData={spark1} />
           <SparklineKPICard title="Recibidos" value={formatCurrency(totalRecibidos)} sub={`${resumen?.activosRecibidos ?? prestamos.filter(p=>p.direccion==="RECIBIDO"&&p.status==="ACTIVO").length} activos`} accentColor="#10b981" icon={ArrowDownToLine} sparkData={spark2} />
@@ -202,10 +202,10 @@ export function PrestamosDashboard({ prestamos, resumen }: Props) {
           <SparklineKPICard title="Mora acumulada" value={formatCurrency(moraAcumulada)} accentColor="#f59e0b" icon={AlertTriangle} sparkData={spark5} />
           <SparklineKPICard title="Recuperación" value={`${tasaRecuperacion.toFixed(1)}%`} accentColor={tasaRecuperacion > 80 ? "#10b981" : tasaRecuperacion > 50 ? "#f59e0b" : "#ef4444"} icon={TrendingUp} sparkData={spark6} />
         </div>
-      </motion.div>
+      </m.div>
 
       {moraAcumulada > 0 && (
-        <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.05 }}>
+        <m.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.05 }}>
           <div className="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-700 rounded-2xl p-4 flex items-center gap-4">
             <div className="h-12 w-12 rounded-xl bg-amber-500 flex items-center justify-center shrink-0 shadow-md">
               <AlertTriangle className="h-6 w-6 text-white" />
@@ -222,10 +222,10 @@ export function PrestamosDashboard({ prestamos, resumen }: Props) {
               </div>
             </div>
           </div>
-        </motion.div>
+        </m.div>
       )}
 
-      <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}>
+      <m.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}>
         <div className="bg-white dark:bg-card rounded-2xl border border-gray-200 dark:border-card-border p-6 shadow-sm">
           <h3 className="text-sm font-bold text-gray-700 dark:text-foreground mb-4">Cobros vs Nuevos préstamos (6 meses)</h3>
           {areaData.some(d => d.cobrado > 0 || d.nuevos > 0) ? (
@@ -254,9 +254,9 @@ export function PrestamosDashboard({ prestamos, resumen }: Props) {
             <EmptyChartPrestamos message="Sin movimiento en los últimos 6 meses" />
           )}
         </div>
-      </motion.div>
+      </m.div>
 
-      <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}>
+      <m.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}>
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           <div className="bg-white dark:bg-card rounded-2xl border border-gray-200 dark:border-card-border p-6 shadow-sm">
             <h3 className="text-sm font-bold text-gray-700 dark:text-foreground mb-4 flex items-center gap-2">
@@ -323,7 +323,7 @@ export function PrestamosDashboard({ prestamos, resumen }: Props) {
                   <span className="text-xs font-bold font-mono text-red-600 dark:text-red-400">{formatCurrency(totalDados)}</span>
                 </div>
                 <div className="h-3 bg-gray-100 dark:bg-gray-800 rounded-full overflow-hidden">
-                  <motion.div className="h-full bg-red-500 rounded-full" initial={{ width: 0 }} animate={{ width: `${(totalDados / maxDireccion) * 100}%` }} transition={{ duration: 0.8, delay: 0.3 }} />
+                  <m.div className="h-full bg-red-500 rounded-full" initial={{ width: 0 }} animate={{ width: `${(totalDados / maxDireccion) * 100}%` }} transition={{ duration: 0.8, delay: 0.3 }} />
                 </div>
                 <p className="text-[10px] text-gray-400 mt-0.5">{prestamos.filter(p=>p.direccion==="DADO").length} préstamos</p>
               </div>
@@ -336,7 +336,7 @@ export function PrestamosDashboard({ prestamos, resumen }: Props) {
                   <span className="text-xs font-bold font-mono text-emerald-600 dark:text-emerald-400">{formatCurrency(totalRecibidos)}</span>
                 </div>
                 <div className="h-3 bg-gray-100 dark:bg-gray-800 rounded-full overflow-hidden">
-                  <motion.div className="h-full bg-emerald-500 rounded-full" initial={{ width: 0 }} animate={{ width: `${(totalRecibidos / maxDireccion) * 100}%` }} transition={{ duration: 0.8, delay: 0.5 }} />
+                  <m.div className="h-full bg-emerald-500 rounded-full" initial={{ width: 0 }} animate={{ width: `${(totalRecibidos / maxDireccion) * 100}%` }} transition={{ duration: 0.8, delay: 0.5 }} />
                 </div>
                 <p className="text-[10px] text-gray-400 mt-0.5">{prestamos.filter(p=>p.direccion==="RECIBIDO").length} préstamos</p>
               </div>
@@ -350,7 +350,7 @@ export function PrestamosDashboard({ prestamos, resumen }: Props) {
             </div>
           </div>
         </div>
-      </motion.div>
+      </m.div>
     </div>
   );
 }

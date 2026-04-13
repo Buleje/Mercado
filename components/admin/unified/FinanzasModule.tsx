@@ -1,7 +1,7 @@
 "use client";
 import { useState, useEffect, useMemo, useCallback } from "react";
 import dynamic from "next/dynamic";
-import { motion } from "framer-motion";
+import { m } from "@/components/admin/providers";
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend,
   ReferenceLine, PieChart, Pie, Cell, LabelList,
@@ -802,13 +802,13 @@ function FinanzasEmptyChart({ message }: { message: string }) {
 // Mejora 11: Stagger animation wrapper
 function StaggerItem({ children, index }: { children: React.ReactNode; index: number }) {
   return (
-    <motion.div
+    <m.div
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.3, delay: index * 0.05 }}
     >
       {children}
-    </motion.div>
+    </m.div>
   );
 }
 

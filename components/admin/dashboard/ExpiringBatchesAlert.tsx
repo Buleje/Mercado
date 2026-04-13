@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { AlertTriangle, ChevronRight, Calendar, Package, RefreshCw } from "lucide-react";
-import { motion, AnimatePresence } from "framer-motion";
+import { m, AnimatePresence } from "@/components/admin/providers";
 import { cn } from "@/lib/utils";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
@@ -101,7 +101,7 @@ export default function ExpiringBatchesAlert() {
       {/* Banner de alerta */}
       <AnimatePresence>
         {!loading && batches.length > 0 && (
-          <motion.div
+          <m.div
             initial={{ opacity: 0, y: -6 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -6 }}
@@ -120,7 +120,7 @@ export default function ExpiringBatchesAlert() {
             >
               <RefreshCw className={cn("h-3.5 w-3.5", loading && "animate-spin")} />
             </button>
-          </motion.div>
+          </m.div>
         )}
       </AnimatePresence>
 
@@ -150,7 +150,7 @@ export default function ExpiringBatchesAlert() {
                   const isSoon = days <= 5;
 
                   return (
-                    <motion.div
+                    <m.div
                       key={batch.id}
                       initial={{ opacity: 0 }}
                       animate={{ opacity: 1 }}
@@ -204,7 +204,7 @@ export default function ExpiringBatchesAlert() {
                           {days}d
                         </span>
                       </div>
-                    </motion.div>
+                    </m.div>
                   );
                 })}
           </div>

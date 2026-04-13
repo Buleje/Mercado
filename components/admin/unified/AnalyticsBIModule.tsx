@@ -2,7 +2,7 @@
 import React, { useState, useEffect, useCallback, lazy, Suspense } from "react";
 import Image from "next/image";
 import dynamic from "next/dynamic";
-import { motion, AnimatePresence } from "framer-motion";
+import { m, AnimatePresence } from "@/components/admin/providers";
 import {
   BarChart3, Flame, TrendingUp,
   CreditCard, Users, Trophy, Package,
@@ -815,7 +815,7 @@ export default function AnalyticsBIModule() {
       >
         {/* ── Section content with AnimatePresence ── */}
         <AnimatePresence mode="wait">
-          <motion.div
+          <m.div
             key={activeSection}
             initial={{ opacity: 0, y: 12 }}
             animate={{ opacity: 1, y: 0 }}
@@ -823,7 +823,7 @@ export default function AnalyticsBIModule() {
             transition={{ duration: 0.25, ease: "easeOut" }}
           >
             {renderSection()}
-          </motion.div>
+          </m.div>
         </AnimatePresence>
       </AdminTabBar>
     </div>

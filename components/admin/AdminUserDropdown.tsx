@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useRef, useEffect } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import { m, AnimatePresence } from "@/components/admin/providers";
 import { Settings, CreditCard, UserCircle, LogOut, ChevronDown } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -72,7 +72,7 @@ export default function AdminUserDropdown({ userName, userRole, onNavigate, onLo
       {/* Dropdown menu */}
       <AnimatePresence>
         {open && (
-          <motion.div
+          <m.div
             initial={{ opacity: 0, y: -4, scale: 0.97 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: -4, scale: 0.97 }}
@@ -119,7 +119,7 @@ export default function AdminUserDropdown({ userName, userRole, onNavigate, onLo
                 <span>Cerrar sesión</span>
               </button>
             </div>
-          </motion.div>
+          </m.div>
         )}
       </AnimatePresence>
     </div>

@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { Bell, BellOff, X, Loader2, CheckCircle2 } from "lucide-react";
-import { motion, AnimatePresence } from "framer-motion";
+import { m, AnimatePresence } from "@/components/admin/providers";
 import { cn } from "@/lib/utils";
 
 type BannerState = "checking" | "unsupported" | "subscribed" | "unsubscribed" | "loading" | "error" | "success";
@@ -80,7 +80,7 @@ export default function PushNotificationBanner() {
   return (
     <AnimatePresence>
       {(state === "unsubscribed" || state === "loading" || state === "error" || state === "success") && (
-        <motion.div
+        <m.div
           key="push-banner"
           initial={{ opacity: 0, y: -8 }}
           animate={{ opacity: 1, y: 0 }}
@@ -179,7 +179,7 @@ export default function PushNotificationBanner() {
               <X className="h-3.5 w-3.5" />
             </button>
           )}
-        </motion.div>
+        </m.div>
       )}
     </AnimatePresence>
   );

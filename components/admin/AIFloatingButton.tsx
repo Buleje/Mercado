@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { Bot, X } from "lucide-react";
-import { motion, AnimatePresence } from "framer-motion";
+import { m, AnimatePresence } from "@/components/admin/providers";
 import dynamic from "next/dynamic";
 import { cn } from "@/lib/utils";
 
@@ -68,12 +68,12 @@ export default function AIFloatingButton({ moduleContext, onNavigate }: Props) {
         aria-label={open ? "Cerrar asistente" : "Abrir asistente IA"}
         title="Asistente IA (Ctrl+K)"
       >
-        <motion.div
+        <m.div
           animate={{ rotate: open ? 90 : 0 }}
           transition={{ duration: 0.2 }}
         >
           {open ? <X className="w-6 h-6" /> : <Bot className="w-7 h-7" />}
-        </motion.div>
+        </m.div>
 
         {/* Alert badge */}
         {alertCount > 0 && !open && (
@@ -102,7 +102,7 @@ export default function AIFloatingButton({ moduleContext, onNavigate }: Props) {
       {/* Chat popup */}
       <AnimatePresence>
         {open && (
-          <motion.div
+          <m.div
             initial={{ opacity: 0, y: 20, scale: 0.95 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 20, scale: 0.95 }}
@@ -114,7 +114,7 @@ export default function AIFloatingButton({ moduleContext, onNavigate }: Props) {
               moduleContext={moduleContext}
               onNavigate={onNavigate}
             />
-          </motion.div>
+          </m.div>
         )}
       </AnimatePresence>
     </>

@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useCallback, useEffect } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import { m, AnimatePresence } from "@/components/admin/providers";
 import { X, Search, Loader2, Check, RotateCcw, Package, FileText } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -202,7 +202,7 @@ export default function POSReturnModal({
 
   return (
     <AnimatePresence>
-      <motion.div
+      <m.div
         key="return-backdrop"
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
@@ -210,7 +210,7 @@ export default function POSReturnModal({
         className="fixed inset-0 z-50 bg-black/40 backdrop-blur-sm"
         onClick={resetAndClose}
       />
-      <motion.div
+      <m.div
         key="return-modal"
         initial={{ opacity: 0, scale: 0.95, y: 10 }}
         animate={{ opacity: 1, scale: 1, y: 0 }}
@@ -499,7 +499,7 @@ export default function POSReturnModal({
             </div>
           )}
         </div>
-      </motion.div>
+      </m.div>
     </AnimatePresence>
   );
 }

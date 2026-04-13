@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback, useMemo, useRef } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import { m, AnimatePresence } from "@/components/admin/providers";
 import {
   Search, Plus, X, ChevronLeft, ChevronRight, Loader2, AlertTriangle,
   Calendar, DollarSign, FileX, Download, ArrowUpDown, ArrowUp,
@@ -182,7 +182,7 @@ function StatusTimeline({ nc }: { nc: NotaCredito }) {
 function NCCard({ nc, onSelect, selected, onToggle }: { nc: NotaCredito; onSelect: () => void; selected: boolean; onToggle: () => void }) {
   const meta = STATUS_META[nc.status];
   return (
-    <motion.div layout initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }}
+    <m.div layout initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }}
       className={cn("bg-white dark:bg-card border rounded-2xl p-4 cursor-pointer transition-all hover:shadow-md",
         selected ? "border-[#00B4A6] ring-2 ring-[#00B4A6]/20" : "border-gray-200 dark:border-card-border")}>
       <div className="flex items-start gap-3">
@@ -215,7 +215,7 @@ function NCCard({ nc, onSelect, selected, onToggle }: { nc: NotaCredito; onSelec
           </div>
         </div>
       </div>
-    </motion.div>
+    </m.div>
   );
 }
 
@@ -255,7 +255,7 @@ function WizardProgress({ step }: { step: number }) {
           <span className={cn("text-xs font-semibold hidden sm:block", i <= step ? "text-gray-900 dark:text-white" : "text-gray-400")}>{label}</span>
           {i < WIZARD_STEPS.length - 1 && (
             <div className="flex-1 h-0.5 rounded-full overflow-hidden bg-gray-200 dark:bg-gray-700">
-              <motion.div className="h-full bg-[#00B4A6]" initial={{ width: "0%" }} animate={{ width: i < step ? "100%" : "0%" }} transition={{ duration: 0.4 }} />
+              <m.div className="h-full bg-[#00B4A6]" initial={{ width: "0%" }} animate={{ width: i < step ? "100%" : "0%" }} transition={{ duration: 0.4 }} />
             </div>
           )}
         </div>
@@ -269,7 +269,7 @@ function WizardProgress({ step }: { step: number }) {
 function SaleDocCard({ doc, isSelected, onSelect }: { doc: SaleDoc; isSelected: boolean; onSelect: () => void }) {
   const style = DOC_STYLE[doc.comprobanteTipo] || DOC_STYLE.ticket;
   return (
-    <motion.button type="button" layout onClick={onSelect}
+    <m.button type="button" layout onClick={onSelect}
       initial={{ opacity: 0, scale: 0.97 }} animate={{ opacity: 1, scale: 1 }}
       whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}
       className={cn(
@@ -325,13 +325,13 @@ function SaleDocCard({ doc, isSelected, onSelect }: { doc: SaleDoc; isSelected: 
           )}
         </div>
         {isSelected && (
-          <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }} transition={{ type: "spring", stiffness: 400, damping: 20 }}
+          <m.div initial={{ scale: 0 }} animate={{ scale: 1 }} transition={{ type: "spring", stiffness: 400, damping: 20 }}
             className="w-7 h-7 rounded-full bg-[#00B4A6] text-white flex items-center justify-center shrink-0 shadow-sm">
             <span className="text-xs font-bold">{"\u2713"}</span>
-          </motion.div>
+          </m.div>
         )}
       </div>
-    </motion.button>
+    </m.button>
   );
 }
 
@@ -370,7 +370,7 @@ function AmountBreakdown({ monto, igv, total, originalTotal }: { monto: number; 
             <span className="font-bold text-gray-700 dark:text-gray-300">{pct.toFixed(0)}%</span>
           </div>
           <div className="h-3 bg-gray-100 dark:bg-gray-800 rounded-full overflow-hidden">
-            <motion.div initial={{ width: 0 }} animate={{ width: `${pct}%` }} transition={{ duration: 0.6, ease: "easeOut" }}
+            <m.div initial={{ width: 0 }} animate={{ width: `${pct}%` }} transition={{ duration: 0.6, ease: "easeOut" }}
               className="h-full rounded-full bg-linear-to-r from-red-400 to-red-600" />
           </div>
           <div className="flex justify-between text-[10px] text-gray-400 mt-1">
@@ -1036,7 +1036,7 @@ export default function NotasCreditoModule() {
 
         <AnimatePresence>
           {showAdvFilters && (
-            <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: "auto", opacity: 1 }} exit={{ height: 0, opacity: 0 }} className="overflow-hidden">
+            <m.div initial={{ height: 0, opacity: 0 }} animate={{ height: "auto", opacity: 1 }} exit={{ height: 0, opacity: 0 }} className="overflow-hidden">
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 bg-gray-50 dark:bg-white/5 rounded-xl p-3">
                 <div>
                   <label className="text-[10px] font-bold text-gray-400 block mb-1">Desde</label>
@@ -1059,7 +1059,7 @@ export default function NotasCreditoModule() {
                     className="w-full px-2 py-1.5 rounded-lg border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 text-xs text-gray-900 dark:text-white" />
                 </div>
               </div>
-            </motion.div>
+            </m.div>
           )}
         </AnimatePresence>
       </div>
@@ -1067,7 +1067,7 @@ export default function NotasCreditoModule() {
       {/* ── Bulk Actions Bar ───────────────────────────────────────────── */}
       <AnimatePresence>
         {someChecked && (
-          <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: "auto", opacity: 1 }} exit={{ height: 0, opacity: 0 }}>
+          <m.div initial={{ height: 0, opacity: 0 }} animate={{ height: "auto", opacity: 1 }} exit={{ height: 0, opacity: 0 }}>
             <div className="flex items-center gap-3 px-4 py-3 bg-[#00B4A6]/5 border border-[#00B4A6]/20 rounded-xl">
               <CheckSquare className="h-4 w-4 text-[#00B4A6]" />
               <span className="text-sm font-bold text-[#00B4A6]">{checkedIds.size} seleccionado{checkedIds.size !== 1 ? "s" : ""}</span>
@@ -1082,7 +1082,7 @@ export default function NotasCreditoModule() {
               </button>
               <button onClick={() => setCheckedIds(new Set())} className="text-xs text-gray-400 hover:text-gray-600">Deseleccionar</button>
             </div>
-          </motion.div>
+          </m.div>
         )}
       </AnimatePresence>
 
@@ -1106,7 +1106,7 @@ export default function NotasCreditoModule() {
                       <p className="text-[10px]">Sin NCs en {meta.label}</p>
                     </div>
                   ) : col.map(nc => (
-                    <motion.div key={nc.id} layout initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }}
+                    <m.div key={nc.id} layout initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }}
                       onClick={() => setSelected(nc)}
                       className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl p-3 cursor-pointer hover:shadow-sm hover:border-[#00B4A6]/40 transition-all">
                       <div className="flex items-center justify-between mb-1.5">
@@ -1130,7 +1130,7 @@ export default function NotasCreditoModule() {
                           </button>
                         </div>
                       </div>
-                    </motion.div>
+                    </m.div>
                   ))}
                 </div>
               </div>
@@ -1274,8 +1274,8 @@ export default function NotasCreditoModule() {
       <AnimatePresence>
         {selected && (
           <>
-            <motion.div key="nc-backdrop" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-40 bg-black/40 backdrop-blur-sm" onClick={() => setSelected(null)} />
-            <motion.div key="nc-panel" initial={{ x: "100%" }} animate={{ x: 0 }} exit={{ x: "100%" }} transition={{ type: "spring", damping: 25, stiffness: 250 }}
+            <m.div key="nc-backdrop" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-40 bg-black/40 backdrop-blur-sm" onClick={() => setSelected(null)} />
+            <m.div key="nc-panel" initial={{ x: "100%" }} animate={{ x: 0 }} exit={{ x: "100%" }} transition={{ type: "spring", damping: 25, stiffness: 250 }}
               className="fixed inset-y-0 right-0 z-50 w-full max-w-lg bg-white dark:bg-card border-l border-gray-200 dark:border-card-border shadow-2xl overflow-y-auto">
               <div className="p-4 sm:p-6 space-y-5">
                 <div className="flex items-center justify-between">
@@ -1375,7 +1375,7 @@ export default function NotasCreditoModule() {
                       Esta NC representa el <strong>{impactoVentas.toFixed(1)}%</strong> del total devuelto este mes (<strong>{formatCurrency(kpis.total)}</strong>)
                     </p>
                     <div className="mt-2 h-2 bg-amber-100 dark:bg-amber-900/30 rounded-full overflow-hidden">
-                      <motion.div className="h-full bg-amber-400 rounded-full" initial={{ width: 0 }} animate={{ width: `${Math.min(100, impactoVentas)}%` }} transition={{ duration: 0.6 }} />
+                      <m.div className="h-full bg-amber-400 rounded-full" initial={{ width: 0 }} animate={{ width: `${Math.min(100, impactoVentas)}%` }} transition={{ duration: 0.6 }} />
                     </div>
                   </div>
                 )}
@@ -1397,7 +1397,7 @@ export default function NotasCreditoModule() {
                   </div>
                 )}
               </div>
-            </motion.div>
+            </m.div>
           </>
         )}
       </AnimatePresence>
@@ -1408,8 +1408,8 @@ export default function NotasCreditoModule() {
       <AnimatePresence>
         {showNew && (
           <>
-            <motion.div key="nnc-backdrop" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-50 bg-black/40 backdrop-blur-sm" onClick={() => resetWizard()} />
-            <motion.div key="nnc-modal" initial={{ opacity: 0, scale: 0.95, y: 20 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.95, y: 20 }} transition={{ type: "spring", damping: 25, stiffness: 300 }}
+            <m.div key="nnc-backdrop" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-50 bg-black/40 backdrop-blur-sm" onClick={() => resetWizard()} />
+            <m.div key="nnc-modal" initial={{ opacity: 0, scale: 0.95, y: 20 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.95, y: 20 }} transition={{ type: "spring", damping: 25, stiffness: 300 }}
               className="fixed inset-0 z-50 flex items-center justify-center p-4" onClick={e => e.target === e.currentTarget && resetWizard()}>
               <div className={cn(
                 "w-full bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl shadow-2xl overflow-hidden",
@@ -1471,7 +1471,7 @@ export default function NotasCreditoModule() {
                       {/* Selected Document Banner */}
                       <AnimatePresence>
                         {selectedVenta && (
-                          <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: "auto" }} exit={{ opacity: 0, height: 0 }} className="overflow-hidden">
+                          <m.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: "auto" }} exit={{ opacity: 0, height: 0 }} className="overflow-hidden">
                             <div className="bg-[#00B4A6]/5 border-2 border-[#00B4A6]/30 rounded-xl p-4">
                               <div className="flex items-center justify-between mb-2">
                                 <div className="flex items-center gap-2">
@@ -1493,7 +1493,7 @@ export default function NotasCreditoModule() {
                                 <span>{"\u2713"}</span> Documento seleccionado {"\u2014"} en el paso siguiente podr{"\u00e1"}s elegir qu{"\u00e9"} items devolver
                               </div>
                             </div>
-                          </motion.div>
+                          </m.div>
                         )}
                       </AnimatePresence>
 
@@ -1553,7 +1553,7 @@ export default function NotasCreditoModule() {
                           </button>
                           <AnimatePresence>
                             {showTemplates && (
-                              <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: "auto", opacity: 1 }} exit={{ height: 0, opacity: 0 }} className="overflow-hidden">
+                              <m.div initial={{ height: 0, opacity: 0 }} animate={{ height: "auto", opacity: 1 }} exit={{ height: 0, opacity: 0 }} className="overflow-hidden">
                                 <div className="mt-2 space-y-1">
                                   {templates.map(t => (
                                     <div key={t.id} className="flex items-center gap-2 bg-white dark:bg-white/5 rounded-lg px-3 py-2">
@@ -1565,7 +1565,7 @@ export default function NotasCreditoModule() {
                                     </div>
                                   ))}
                                 </div>
-                              </motion.div>
+                              </m.div>
                             )}
                           </AnimatePresence>
                         </div>
@@ -1775,7 +1775,7 @@ export default function NotasCreditoModule() {
                   )}
                 </div>
               </div>
-            </motion.div>
+            </m.div>
           </>
         )}
       </AnimatePresence>

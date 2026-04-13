@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import { m, AnimatePresence } from "@/components/admin/providers";
 import {
   X, DollarSign,
   Loader2,
@@ -106,7 +106,7 @@ export default function FiadoModals({
       <AnimatePresence>
         {showPago && selected && (
           <>
-            <motion.div
+            <m.div
               key="pago-backdrop"
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
@@ -114,7 +114,7 @@ export default function FiadoModals({
               className="fixed inset-0 z-[60] bg-black/40 backdrop-blur-sm"
               onClick={() => setShowPago(false)}
             />
-            <motion.div
+            <m.div
               key="pago-modal"
               initial={{ opacity: 0, scale: 0.95, y: 10 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
@@ -175,7 +175,7 @@ export default function FiadoModals({
                   </button>
                 </div>
               </div>
-            </motion.div>
+            </m.div>
           </>
         )}
       </AnimatePresence>
@@ -214,7 +214,7 @@ export default function FiadoModals({
       <AnimatePresence>
         {showCobroMasivo && (
           <>
-            <motion.div
+            <m.div
               key="cobro-backdrop"
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
@@ -222,7 +222,7 @@ export default function FiadoModals({
               className="fixed inset-0 z-[60] bg-black/40 backdrop-blur-sm"
               onClick={() => setShowCobroMasivo(false)}
             />
-            <motion.div
+            <m.div
               key="cobro-modal"
               initial={{ opacity: 0, scale: 0.95, y: 10 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
@@ -303,7 +303,7 @@ export default function FiadoModals({
                   </button>
                 </div>
               </div>
-            </motion.div>
+            </m.div>
           </>
         )}
       </AnimatePresence>
@@ -312,7 +312,7 @@ export default function FiadoModals({
       <AnimatePresence>
         {showRecibo && reciboData && (
           <>
-            <motion.div
+            <m.div
               key="recibo-backdrop"
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
@@ -320,7 +320,7 @@ export default function FiadoModals({
               className="fixed inset-0 z-[70] bg-black/40 backdrop-blur-sm"
               onClick={() => setShowRecibo(false)}
             />
-            <motion.div
+            <m.div
               key="recibo-modal"
               initial={{ opacity: 0, scale: 0.95, y: 10 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
@@ -409,7 +409,7 @@ export default function FiadoModals({
                   </button>
                 </div>
               </div>
-            </motion.div>
+            </m.div>
           </>
         )}
       </AnimatePresence>
@@ -418,7 +418,7 @@ export default function FiadoModals({
       <AnimatePresence>
         {showCompromiso && selected && (
           <>
-            <motion.div
+            <m.div
               key="compromiso-backdrop"
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
@@ -426,7 +426,7 @@ export default function FiadoModals({
               className="fixed inset-0 z-[70] bg-black/40 backdrop-blur-sm"
               onClick={() => setShowCompromiso(false)}
             />
-            <motion.div
+            <m.div
               key="compromiso-modal"
               initial={{ opacity: 0, scale: 0.95, y: 10 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
@@ -607,7 +607,7 @@ export default function FiadoModals({
                   </button>
                 </div>
               </div>
-            </motion.div>
+            </m.div>
           </>
         )}
       </AnimatePresence>
@@ -616,7 +616,7 @@ export default function FiadoModals({
       <AnimatePresence>
         {showDebtorsMap && (
           <>
-            <motion.div
+            <m.div
               key="map-backdrop"
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
@@ -624,7 +624,7 @@ export default function FiadoModals({
               className="fixed inset-0 z-[70] bg-black/40 backdrop-blur-sm"
               onClick={() => setShowDebtorsMap(false)}
             />
-            <motion.div
+            <m.div
               key="map-modal"
               initial={{ opacity: 0, scale: 0.95, y: 10 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
@@ -780,7 +780,7 @@ export default function FiadoModals({
                   })()}
                 </div>
               </div>
-            </motion.div>
+            </m.div>
           </>
         )}
       </AnimatePresence>

@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import { m, AnimatePresence } from "@/components/admin/providers";
 import { useOnlineStatus } from "@/hooks/use-online-status";
 import { WifiOff, Wifi, Loader2, Check } from "lucide-react";
 
@@ -44,7 +44,7 @@ export default function OfflineIndicator() {
   return (
     <AnimatePresence>
       {bannerState !== "hidden" && (
-        <motion.div
+        <m.div
           key={bannerState}
           variants={variants}
           initial="initial"
@@ -93,7 +93,7 @@ export default function OfflineIndicator() {
               <Wifi className="h-4 w-4 shrink-0 opacity-70" />
             </>
           )}
-        </motion.div>
+        </m.div>
       )}
     </AnimatePresence>
   );

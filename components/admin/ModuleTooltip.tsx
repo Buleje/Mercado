@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
-import { motion, AnimatePresence } from "framer-motion";
+import { m, AnimatePresence } from "@/components/admin/providers";
 import type { LucideIcon } from "lucide-react";
 import type { ModuleDescription } from "@/lib/module-descriptions";
 
@@ -40,7 +40,7 @@ export default function ModuleTooltip({
   return createPortal(
     <AnimatePresence>
       {visible && (
-        <motion.div
+        <m.div
           key="module-tooltip"
           initial={{ opacity: 0, x: -8 }}
           animate={{ opacity: 1, x: 0 }}
@@ -78,7 +78,7 @@ export default function ModuleTooltip({
               {description.example}
             </p>
           </div>
-        </motion.div>
+        </m.div>
       )}
     </AnimatePresence>,
     document.body

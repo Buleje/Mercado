@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import { m, AnimatePresence } from "@/components/admin/providers";
 import {
   Search, Plus, X, Loader2, Trash2, ChevronUp, ChevronDown,
   Eye, EyeOff, Save, BookOpen, Clock, Users, BarChart3,
@@ -366,8 +366,8 @@ export default function RecetarioAdminTab() {
       <AnimatePresence>
         {deleteConfirm && (
           <>
-            <motion.div key="del-bg" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-50 bg-black/40 backdrop-blur-sm" onClick={() => setDeleteConfirm(null)} />
-            <motion.div key="del-modal" initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.95 }} className="fixed inset-0 z-50 flex items-center justify-center p-4">
+            <m.div key="del-bg" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-50 bg-black/40 backdrop-blur-sm" onClick={() => setDeleteConfirm(null)} />
+            <m.div key="del-modal" initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.95 }} className="fixed inset-0 z-50 flex items-center justify-center p-4">
               <div className="bg-white dark:bg-card rounded-2xl shadow-2xl p-6 max-w-sm w-full space-y-4">
                 <p className="text-base font-bold text-gray-900 dark:text-white">Eliminar receta?</p>
                 <p className="text-sm text-gray-500">Esta accion no se puede deshacer. La receta se eliminara del recetario publico.</p>
@@ -376,7 +376,7 @@ export default function RecetarioAdminTab() {
                   <button onClick={() => handleDelete(deleteConfirm)} className="flex-1 px-4 py-2.5 rounded-xl text-sm font-bold bg-red-500 text-white hover:bg-red-600 transition-colors">Eliminar</button>
                 </div>
               </div>
-            </motion.div>
+            </m.div>
           </>
         )}
       </AnimatePresence>
@@ -385,8 +385,8 @@ export default function RecetarioAdminTab() {
       <AnimatePresence>
         {showModal && (
           <>
-            <motion.div key="modal-bg" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-50 bg-black/40 backdrop-blur-sm" onClick={() => { setShowModal(false); resetForm(); }} />
-            <motion.div
+            <m.div key="modal-bg" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-50 bg-black/40 backdrop-blur-sm" onClick={() => { setShowModal(false); resetForm(); }} />
+            <m.div
               key="modal-content"
               initial={{ opacity: 0, scale: 0.95, y: 10 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
@@ -664,7 +664,7 @@ export default function RecetarioAdminTab() {
                   </button>
                 </div>
               </div>
-            </motion.div>
+            </m.div>
           </>
         )}
       </AnimatePresence>

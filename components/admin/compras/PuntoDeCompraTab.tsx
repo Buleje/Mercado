@@ -8,7 +8,7 @@ import {
   FileText, History, Filter,
   Check, AlertTriangle, Repeat, RotateCcw, Loader2, Hash, Building2, Phone, Percent, Clock } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { AnimatePresence, motion } from "framer-motion";
+import { m, AnimatePresence } from "@/components/admin/providers";
 import dynamic from "next/dynamic";
 
 const BarcodeScanner = dynamic(() => import("../BarcodeScanner"), { ssr: false });
@@ -650,7 +650,7 @@ export default function PuntoDeCompraTab() {
           {/* Filters bar */}
           <AnimatePresence>
             {showFilters && (
-              <motion.div
+              <m.div
                 initial={{ height: 0, opacity: 0 }}
                 animate={{ height: "auto", opacity: 1 }}
                 exit={{ height: 0, opacity: 0 }}
@@ -704,7 +704,7 @@ export default function PuntoDeCompraTab() {
                     </select>
                   </div>
                 </div>
-              </motion.div>
+              </m.div>
             )}
           </AnimatePresence>
 
@@ -836,7 +836,7 @@ export default function PuntoDeCompraTab() {
                 {/* Supplier Dropdown */}
                 <AnimatePresence>
                   {showSupplierDropdown && !selectedSupplier && (
-                    <motion.div
+                    <m.div
                       initial={{ opacity: 0, y: -4 }}
                       animate={{ opacity: 1, y: 0 }}
                       exit={{ opacity: 0, y: -4 }}
@@ -872,7 +872,7 @@ export default function PuntoDeCompraTab() {
                           </button>
                         ))
                       )}
-                    </motion.div>
+                    </m.div>
                   )}
                 </AnimatePresence>
               </div>
@@ -927,7 +927,7 @@ export default function PuntoDeCompraTab() {
             </div>
           ) : (
             cart.map((item) => (
-              <motion.div
+              <m.div
                 key={item.productId}
                 layout
                 initial={{ opacity: 0, x: 20 }}
@@ -999,7 +999,7 @@ export default function PuntoDeCompraTab() {
                     </div>
                   </div>
                 </div>
-              </motion.div>
+              </m.div>
             ))
           )}
         </div>
@@ -1089,14 +1089,14 @@ export default function PuntoDeCompraTab() {
       {/* ── Barcode Scanner ── */}
       <AnimatePresence>
         {showBarcode && (
-          <motion.div
+          <m.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             className="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4"
             onClick={() => setShowBarcode(false)}
           >
-            <motion.div
+            <m.div
               initial={{ scale: 0.9, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
               exit={{ scale: 0.9, opacity: 0 }}
@@ -1110,22 +1110,22 @@ export default function PuntoDeCompraTab() {
                 </button>
               </div>
               <BarcodeScanner onDetected={handleBarcodeScan} onClose={() => setShowBarcode(false)} />
-            </motion.div>
-          </motion.div>
+            </m.div>
+          </m.div>
         )}
       </AnimatePresence>
 
       {/* ── Order History ── */}
       <AnimatePresence>
         {showHistory && (
-          <motion.div
+          <m.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             className="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4"
             onClick={() => setShowHistory(false)}
           >
-            <motion.div
+            <m.div
               initial={{ scale: 0.95, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
               exit={{ scale: 0.95, opacity: 0 }}
@@ -1195,7 +1195,7 @@ export default function PuntoDeCompraTab() {
 
                       <AnimatePresence>
                         {expandedHistoryId === order.id && (
-                          <motion.div
+                          <m.div
                             initial={{ height: 0, opacity: 0 }}
                             animate={{ height: "auto", opacity: 1 }}
                             exit={{ height: 0, opacity: 0 }}
@@ -1253,29 +1253,29 @@ export default function PuntoDeCompraTab() {
                                 </button>
                               </div>
                             </div>
-                          </motion.div>
+                          </m.div>
                         )}
                       </AnimatePresence>
                     </div>
                   ))
                 )}
               </div>
-            </motion.div>
-          </motion.div>
+            </m.div>
+          </m.div>
         )}
       </AnimatePresence>
 
       {/* ── New Supplier Modal ── */}
       <AnimatePresence>
         {showSupplierForm && (
-          <motion.div
+          <m.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             className="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4"
             onClick={() => setShowSupplierForm(false)}
           >
-            <motion.div
+            <m.div
               initial={{ scale: 0.95, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
               exit={{ scale: 0.95, opacity: 0 }}
@@ -1380,22 +1380,22 @@ export default function PuntoDeCompraTab() {
                   Crear Proveedor
                 </button>
               </form>
-            </motion.div>
-          </motion.div>
+            </m.div>
+          </m.div>
         )}
       </AnimatePresence>
 
       {/* ── Confirm Order Modal ── */}
       <AnimatePresence>
         {showConfirm && (
-          <motion.div
+          <m.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             className="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4"
             onClick={() => !submitting && setShowConfirm(false)}
           >
-            <motion.div
+            <m.div
               initial={{ scale: 0.95, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
               exit={{ scale: 0.95, opacity: 0 }}
@@ -1499,36 +1499,36 @@ export default function PuntoDeCompraTab() {
                   Confirmar
                 </button>
               </div>
-            </motion.div>
-          </motion.div>
+            </m.div>
+          </m.div>
         )}
       </AnimatePresence>
 
       {/* ── Success Modal ── */}
       <AnimatePresence>
         {showSuccess && (
-          <motion.div
+          <m.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             className="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4"
             onClick={() => setShowSuccess(false)}
           >
-            <motion.div
+            <m.div
               initial={{ scale: 0.8, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
               exit={{ scale: 0.8, opacity: 0 }}
               onClick={(e) => e.stopPropagation()}
               className="bg-white dark:bg-card rounded-2xl w-full max-w-sm p-6 text-center"
             >
-              <motion.div
+              <m.div
                 initial={{ scale: 0 }}
                 animate={{ scale: 1 }}
                 transition={{ type: "spring", damping: 12, delay: 0.1 }}
                 className="mx-auto mb-4 h-16 w-16 rounded-full bg-emerald-100 dark:bg-emerald-900/30 flex items-center justify-center"
               >
                 <Check className="h-8 w-8 text-emerald-600" />
-              </motion.div>
+              </m.div>
               <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-1">
                 ¡Orden Generada!
               </h3>
@@ -1546,8 +1546,8 @@ export default function PuntoDeCompraTab() {
               >
                 Continuar
               </button>
-            </motion.div>
-          </motion.div>
+            </m.div>
+          </m.div>
         )}
       </AnimatePresence>
     </div>

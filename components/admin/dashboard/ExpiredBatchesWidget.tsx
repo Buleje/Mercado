@@ -13,7 +13,7 @@ import {
   Square,
   Loader2,
 } from "lucide-react";
-import { motion, AnimatePresence } from "framer-motion";
+import { m, AnimatePresence } from "@/components/admin/providers";
 import { cn } from "@/lib/utils";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
@@ -262,19 +262,19 @@ export default function ExpiredBatchesWidget() {
       {/* Banner rojo de alerta */}
       <AnimatePresence>
         {!loading && batches.length > 0 && (
-          <motion.div
+          <m.div
             initial={{ opacity: 0, y: -8 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -8 }}
             transition={{ duration: 0.25, ease: "easeOut" }}
             className="flex items-center gap-3 rounded-xl border border-red-200 dark:border-red-800/50 bg-red-50 dark:bg-red-950/20 px-4 py-3"
           >
-            <motion.div
+            <m.div
               animate={{ scale: [1, 1.15, 1] }}
               transition={{ duration: 1.2, repeat: Infinity, repeatDelay: 2 }}
             >
               <AlertOctagon className="h-4 w-4 text-red-600 dark:text-red-400 shrink-0" />
-            </motion.div>
+            </m.div>
             <span className="text-xs font-semibold text-red-700 dark:text-red-400 flex-1">
               {batches.length} lote{batches.length > 1 ? "s" : ""} vencido
               {batches.length > 1 ? "s" : ""} con stock disponible
@@ -284,7 +284,7 @@ export default function ExpiredBatchesWidget() {
                 Pérdida potencial: {fmtCurrency(totalLoss)}
               </span>
             )}
-          </motion.div>
+          </m.div>
         )}
       </AnimatePresence>
 
@@ -334,7 +334,7 @@ export default function ExpiredBatchesWidget() {
                     batch.costUnit > 0 ? batch.costUnit * batch.quantity : null;
 
                   return (
-                    <motion.div
+                    <m.div
                       key={batch.id}
                       initial={{ opacity: 0, x: -4 }}
                       animate={{ opacity: 1, x: 0 }}
@@ -410,7 +410,7 @@ export default function ExpiredBatchesWidget() {
                           {expired}d vencido
                         </span>
                       </div>
-                    </motion.div>
+                    </m.div>
                   );
                 })}
           </div>
@@ -443,7 +443,7 @@ export default function ExpiredBatchesWidget() {
       {/* Toast fuera del modal */}
       <AnimatePresence>
         {!modal.open && modal.toast && (
-          <motion.div
+          <m.div
             key="toast"
             initial={{ opacity: 0, y: 8 }}
             animate={{ opacity: 1, y: 0 }}
@@ -460,14 +460,14 @@ export default function ExpiredBatchesWidget() {
             )}
           >
             {modal.toast.message}
-          </motion.div>
+          </m.div>
         )}
       </AnimatePresence>
 
       {/* Modal de registro de merma */}
       <AnimatePresence>
         {modal.open && (
-          <motion.div
+          <m.div
             key="merma-modal-backdrop"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
@@ -476,7 +476,7 @@ export default function ExpiredBatchesWidget() {
             className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 dark:bg-black/60 px-4"
             onClick={(e) => { if (e.target === e.currentTarget) closeModal(); }}
           >
-            <motion.div
+            <m.div
               key="merma-modal"
               initial={{ opacity: 0, scale: 0.96, y: 12 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
@@ -559,7 +559,7 @@ export default function ExpiredBatchesWidget() {
               {/* Toast inline (errores mientras el modal está abierto) */}
               <AnimatePresence>
                 {modal.toast && modal.open && (
-                  <motion.div
+                  <m.div
                     initial={{ opacity: 0, height: 0 }}
                     animate={{ opacity: 1, height: "auto" }}
                     exit={{ opacity: 0, height: 0 }}
@@ -568,7 +568,7 @@ export default function ExpiredBatchesWidget() {
                     <div className="rounded-xl border border-red-200 dark:border-red-800/50 bg-red-50 dark:bg-red-950/20 px-3 py-2 text-xs text-red-600 dark:text-red-400">
                       {modal.toast.message}
                     </div>
-                  </motion.div>
+                  </m.div>
                 )}
               </AnimatePresence>
 
@@ -592,8 +592,8 @@ export default function ExpiredBatchesWidget() {
                   Confirmar registro ({modal.selected.size})
                 </button>
               </div>
-            </motion.div>
-          </motion.div>
+            </m.div>
+          </m.div>
         )}
       </AnimatePresence>
     </div>

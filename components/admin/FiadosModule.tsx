@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback, useRef, useMemo } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import { m, AnimatePresence } from "@/components/admin/providers";
 import {
   Plus, X, DollarSign, Calendar, User, FileText,
   ChevronLeft, ChevronRight, Loader2, AlertTriangle, CreditCard,
@@ -1462,7 +1462,7 @@ export default function FiadosModule() {
       <AnimatePresence>
         {selected && (
           <>
-            <motion.div
+            <m.div
               key="sheet-backdrop"
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
@@ -1470,7 +1470,7 @@ export default function FiadosModule() {
               className="fixed inset-0 z-40 bg-black/40 backdrop-blur-sm"
               onClick={() => setSelected(null)}
             />
-            <motion.div
+            <m.div
               key="sheet-panel"
               initial={{ x: "100%" }}
               animate={{ x: 0 }}
@@ -1645,7 +1645,7 @@ export default function FiadosModule() {
                   </div>
                 )}
               </div>
-            </motion.div>
+            </m.div>
           </>
         )}
       </AnimatePresence>

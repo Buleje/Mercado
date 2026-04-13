@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useRef } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import { m, AnimatePresence } from "@/components/admin/providers";
 import {
   Brain,
   ShoppingCart,
@@ -430,12 +430,12 @@ function ModuleItem({
               </div>
             )}
             {!editMode && hasMultipleTabs && (
-              <motion.div
+              <m.div
                 animate={{ rotate: isActive ? 90 : 0 }}
                 transition={{ duration: 0.2 }}
               >
                 <ChevronRight className="h-3.5 w-3.5 shrink-0 text-gray-400" />
-              </motion.div>
+              </m.div>
             )}
           </>
         )}
@@ -445,7 +445,7 @@ function ModuleItem({
       {!collapsed && hasMultipleTabs && (
         <AnimatePresence initial={false}>
           {isActive && (
-            <motion.div
+            <m.div
               key="subtabs"
               initial={{ height: 0, opacity: 0 }}
               animate={{ height: "auto", opacity: 1 }}
@@ -480,7 +480,7 @@ function ModuleItem({
                   );
                 })}
               </div>
-            </motion.div>
+            </m.div>
           )}
         </AnimatePresence>
       )}
@@ -515,7 +515,7 @@ function FlyoutPanel({
   const top = Math.min(Math.max(8, anchorTop), maxTop);
 
   return (
-    <motion.div
+    <m.div
       initial={{ opacity: 0, x: -10 }}
       animate={{ opacity: 1, x: 0 }}
       exit={{ opacity: 0, x: -10 }}
@@ -563,7 +563,7 @@ function FlyoutPanel({
           );
         })}
       </div>
-    </motion.div>
+    </m.div>
   );
 }
 
@@ -646,12 +646,12 @@ function CategorySection({
                 </span>
               </div>
               {/* Chevron rotado cuando está abierto */}
-              <motion.div animate={{ rotate: isOpen ? 90 : 0 }} transition={{ duration: 0.2 }}>
+              <m.div animate={{ rotate: isOpen ? 90 : 0 }} transition={{ duration: 0.2 }}>
                 <ChevronRight className={cn(
                   "h-3.5 w-3.5 shrink-0 transition-colors",
                   isOpen || isAnyActive ? col.icon : "text-gray-300 dark:text-gray-600"
                 )} />
-              </motion.div>
+              </m.div>
             </>
           )}
         </button>
@@ -661,7 +661,7 @@ function CategorySection({
       {!isCollapsed && (
         <AnimatePresence initial={false}>
           {isOpen && (
-            <motion.div
+            <m.div
               key={`cat-${group}`}
               initial={{ height: 0, opacity: 0 }}
               animate={{ height: "auto", opacity: 1 }}
@@ -692,7 +692,7 @@ function CategorySection({
                   );
                 })}
               </div>
-            </motion.div>
+            </m.div>
           )}
         </AnimatePresence>
       )}
@@ -929,7 +929,7 @@ export default function AdminSidebar({
           </button>
 
           {!isCollapsed && (
-            <motion.div
+            <m.div
               initial={{ opacity: 0, x: -8 }}
               animate={{ opacity: 1, x: 0 }}
               exit={{ opacity: 0, x: -8 }}
@@ -947,7 +947,7 @@ export default function AdminSidebar({
                   Panel Admin
                 </p>
               </div>
-            </motion.div>
+            </m.div>
           )}
         </div>
 
@@ -962,7 +962,7 @@ export default function AdminSidebar({
             <User className="h-4 w-4 text-white" />
           </div>
           {!isCollapsed && (
-            <motion.div
+            <m.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               className="min-w-0"
@@ -973,7 +973,7 @@ export default function AdminSidebar({
               <p className="text-[10px] text-gray-400 dark:text-gray-500 truncate">
                 Admin General
               </p>
-            </motion.div>
+            </m.div>
           )}
         </div>
 
@@ -1195,14 +1195,14 @@ export default function AdminSidebar({
     <>
       {/* ── Desktop sidebar ── */}
       <div className="hidden md:flex h-full shrink-0">
-        <motion.div
+        <m.div
           animate={{ width: collapsed ? 64 : 280 }}
           transition={{ duration: 0.25, ease: "easeInOut" }}
           className="h-full overflow-hidden"
           style={{ minWidth: collapsed ? 64 : 280 }}
         >
           {sidebarContent(false)}
-        </motion.div>
+        </m.div>
       </div>
 
       {/* ── Mobile: boton de apertura ── */}
@@ -1222,7 +1222,7 @@ export default function AdminSidebar({
       <AnimatePresence>
         {mobileOpen && (
           <>
-            <motion.div
+            <m.div
               key="backdrop"
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
@@ -1232,7 +1232,7 @@ export default function AdminSidebar({
               onClick={() => setMobileOpen(false)}
               ref={overlayRef}
             />
-            <motion.div
+            <m.div
               key="drawer"
               initial={{ x: "-100%" }}
               animate={{ x: 0 }}
@@ -1241,7 +1241,7 @@ export default function AdminSidebar({
               className="md:hidden fixed inset-y-0 left-0 z-50 h-full shadow-2xl"
             >
               {sidebarContent(true)}
-            </motion.div>
+            </m.div>
           </>
         )}
       </AnimatePresence>
