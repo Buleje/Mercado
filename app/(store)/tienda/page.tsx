@@ -198,6 +198,27 @@ export default async function TiendaPage() {
       {/* Spacer to push content below fixed header (h-11 announcement + h-16/h-20 header) */}
       <div className="h-[6.75rem] sm:h-[7.75rem]" />
       <main id="main-content">
+        {/* Default hero — always visible, gives the store a strong first impression */}
+        <section className="relative overflow-hidden py-12 sm:py-16 bg-gradient-to-br from-primary via-primary/90 to-primary-dark">
+          <div className="pointer-events-none absolute inset-0">
+            <div className="absolute -top-20 -right-20 h-60 w-60 rounded-full bg-white/10 blur-[80px]" />
+            <div className="absolute -bottom-20 -left-20 h-48 w-48 rounded-full bg-white/5 blur-[60px]" />
+          </div>
+          <div className="relative z-10 mx-auto max-w-5xl px-4 sm:px-6 text-center">
+            <h1 className="text-2xl sm:text-3xl lg:text-4xl font-black text-white leading-tight">
+              Tu tienda online
+            </h1>
+            <p className="mt-3 text-sm sm:text-base text-white/70 max-w-xl mx-auto">
+              Explora nuestro catalogo completo. Compra facil, paga con Yape o efectivo, y recibe en tu puerta.
+            </p>
+            <div className="flex items-center justify-center gap-6 mt-5 text-xs sm:text-sm text-white/50">
+              <span>{initialProducts.length > 0 ? `${initialProducts.length} productos` : "Catalogo completo"}</span>
+              <span>Delivery rapido</span>
+              <span>Pago con Yape</span>
+            </div>
+          </div>
+        </section>
+
         {order.map((key) => {
           if (!show(key)) return null;
           switch (key) {
