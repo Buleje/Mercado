@@ -44,12 +44,15 @@ interface TiendaSectionsProps {
   visibleSections: Set<string>;
   /** Order of sections (from admin config) */
   sectionOrder: string[];
+  /** If true, show placeholder for empty sections (admin preview). If false, hide them (public). */
+  showEmptyPlaceholders?: boolean;
 }
 
 export default function TiendaSections({
   serverProducts,
   visibleSections,
   sectionOrder,
+  showEmptyPlaceholders = false,
 }: TiendaSectionsProps) {
   // Use server products if available, fallback to client hook
   const hook = useStoreProducts();
@@ -68,13 +71,13 @@ export default function TiendaSections({
           case "daily_special":
             return (
               <Suspense key={key} fallback={null}>
-                <DailySpecial serverProducts={products} />
+                <DailySpecial serverProducts={products} showEmpty={showEmptyPlaceholders} />
               </Suspense>
             );
           case "seasonal_promo":
             return (
               <Suspense key={key} fallback={null}>
-                <SeasonalPromo serverProducts={products} />
+                <SeasonalPromo serverProducts={products} showEmpty={showEmptyPlaceholders} />
               </Suspense>
             );
           case "countdown":
@@ -86,31 +89,31 @@ export default function TiendaSections({
           case "flash_deals":
             return (
               <Suspense key={key} fallback={null}>
-                <FlashDeals serverProducts={products} />
+                <FlashDeals serverProducts={products} showEmpty={showEmptyPlaceholders} />
               </Suspense>
             );
           case "popular_products":
             return (
               <Suspense key={key} fallback={null}>
-                <PopularProducts serverProducts={products} />
+                <PopularProducts serverProducts={products} showEmpty={showEmptyPlaceholders} />
               </Suspense>
             );
           case "featured_carousel":
             return (
               <Suspense key={key} fallback={null}>
-                <FeaturedCarousel serverProducts={products} />
+                <FeaturedCarousel serverProducts={products} showEmpty={showEmptyPlaceholders} />
               </Suspense>
             );
           case "combos":
             return (
               <Suspense key={key} fallback={null}>
-                <CombosSection serverProducts={products} />
+                <CombosSection serverProducts={products} showEmpty={showEmptyPlaceholders} />
               </Suspense>
             );
           case "last_units":
             return (
               <Suspense key={key} fallback={null}>
-                <LastUnitsSection serverProducts={products} />
+                <LastUnitsSection serverProducts={products} showEmpty={showEmptyPlaceholders} />
               </Suspense>
             );
           default:

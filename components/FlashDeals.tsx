@@ -77,7 +77,7 @@ function loadOrCreateDeals(allProducts: Product[], discount: number) {
   return deals;
 }
 
-export default function FlashDeals({ serverProducts }: { serverProducts?: Product[] }) {
+export default function FlashDeals({ serverProducts, showEmpty = false }: { serverProducts?: Product[]; showEmpty?: boolean }) {
   const { homepage: hp } = useSettings();
   const [deals, setDeals] = useState<Array<Product & { originalPrice: number; discount: number }>>([]);
   const [endTime] = useState(getEndOfDay);
@@ -103,9 +103,8 @@ export default function FlashDeals({ serverProducts }: { serverProducts?: Produc
     return () => clearInterval(t);
   }, [endTime]);
 
-  // Show skeleton only while loading, hide section if no deals after load
   if (isLoading) return <SectionPlaceholder title="Ofertas Relampago" hint="Cargando..." cols={6} />;
-  if (deals.length === 0) return null;
+  if (deals.length === 0) return showEmpty ? <SectionPlaceholder title="Ofertas Relampago" hint="Configura ofertas desde Mi Tienda en el panel admin" cols={6} /> : null;
 
   /* JSON-LD Offer schema for flash deals */
   const flashOffersSchema = {

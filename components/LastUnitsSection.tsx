@@ -21,7 +21,7 @@ function getLowStockProducts(allProducts: Product[]): Product[] {
     .slice(0, 8);
 }
 
-export default function LastUnitsSection({ serverProducts }: { serverProducts?: Product[] }) {
+export default function LastUnitsSection({ serverProducts, showEmpty = false }: { serverProducts?: Product[]; showEmpty?: boolean }) {
   const { addItem, items, updateQty } = useCart();
   const [ref, inView] = useInView({ threshold: 0.1 });
   const hook = useStoreProducts();
@@ -42,7 +42,7 @@ export default function LastUnitsSection({ serverProducts }: { serverProducts?: 
 
   // Show skeleton only while loading, hide section if no products after load
   if (isLoading) return <SectionPlaceholder title="Ultimas Unidades" hint="Cargando..." cols={4} />;
-  if (lowStock.length === 0) return null;
+  if (lowStock.length === 0) return showEmpty ? <SectionPlaceholder title="Ultimas Unidades" hint="Productos con stock bajo apareceran aqui" cols={4} /> : null;
 
   return (
     <section

@@ -75,7 +75,7 @@ const ALL_PROMOS: Promo[] = [
 
 const INTERVAL = 5000;
 
-export default function SeasonalPromo({ serverProducts }: { serverProducts?: import("@/data/products").Product[] }) {
+export default function SeasonalPromo({ serverProducts, showEmpty = false }: { serverProducts?: import("@/data/products").Product[]; showEmpty?: boolean }) {
   const ref = useRef<HTMLElement>(null);
   const [idx, setIdx] = useState(0);
   const [paused, setPaused] = useState(false);
@@ -101,9 +101,8 @@ export default function SeasonalPromo({ serverProducts }: { serverProducts?: imp
     return () => clearInterval(t);
   }, [paused, next]);
 
-  // Show skeleton only while loading, hide section if no promos after load
   if (isLoading) return <SectionPlaceholder title="Promo de Temporada" hint="Cargando..." cols={6} />;
-  if (PROMOS.length === 0) return null;
+  if (PROMOS.length === 0) return showEmpty ? <SectionPlaceholder title="Promo de Temporada" hint="Las promos se activan segun tus categorias de productos" cols={6} /> : null;
 
   // Clamp idx to valid range
   const safeIdx = idx % PROMOS.length;

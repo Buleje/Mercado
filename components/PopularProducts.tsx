@@ -34,7 +34,7 @@ function getPopularProducts(allProducts: Product[]) {
   return scored.sort((a, b) => b.score - a.score).slice(0, 6);
 }
 
-export default function PopularProducts({ serverProducts }: { serverProducts?: Product[] }) {
+export default function PopularProducts({ serverProducts, showEmpty = false }: { serverProducts?: Product[]; showEmpty?: boolean }) {
   const { addItem, items, updateQty } = useCart();
   const [ref, inView] = useInView({ threshold: 0.1 });
   const hook = useStoreProducts();
@@ -51,7 +51,7 @@ export default function PopularProducts({ serverProducts }: { serverProducts?: P
 
   // Show skeleton only while loading, hide section if no products after load
   if (isLoading) return <SectionPlaceholder title="Mas Vendidos" hint="Cargando..." cols={6} />;
-  if (popular.length === 0) return null;
+  if (popular.length === 0) return showEmpty ? <SectionPlaceholder title="Mas Vendidos" hint="Los productos populares apareceran aqui automaticamente" cols={6} /> : null;
 
   return (
     <section ref={ref} className="py-14 sm:py-20 bg-surface">

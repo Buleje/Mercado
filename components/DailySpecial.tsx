@@ -50,7 +50,7 @@ function useCountdown() {
   return remaining;
 }
 
-export default function DailySpecial({ serverProducts }: { serverProducts?: Product[] }) {
+export default function DailySpecial({ serverProducts, showEmpty = false }: { serverProducts?: Product[]; showEmpty?: boolean }) {
   const { addItem, items } = useCart();
   const hook = useStoreProducts();
   const products = serverProducts && serverProducts.length > 0 ? serverProducts : hook.products;
@@ -60,9 +60,8 @@ export default function DailySpecial({ serverProducts }: { serverProducts?: Prod
   const product = useMemo(() => getDailyProduct(products), [products]);
   const countdown = useCountdown();
 
-  // Show skeleton only while loading, hide section if no products after load
   if (isLoading) return <SectionPlaceholder title="Oferta del Dia" hint="Cargando..." cols={4} />;
-  if (!product) return null;
+  if (!product) return showEmpty ? <SectionPlaceholder title="Oferta del Dia" hint="Agrega productos para activar la oferta diaria" cols={4} /> : null;
 
   const inCart = items.find((i) => i.id === product.id);
   const qty = inCart?.quantity ?? 0;

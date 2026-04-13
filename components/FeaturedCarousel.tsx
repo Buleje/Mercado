@@ -7,8 +7,9 @@ import { useStoreProducts } from "@/hooks/use-store-products";
 import { useCart } from "@/contexts/cart-context";
 import { useToast } from "@/contexts/toast-context";
 import { cn } from "@/lib/utils";
+import SectionPlaceholder from "@/components/SectionPlaceholder";
 
-export default function FeaturedCarousel({ serverProducts }: { serverProducts?: import("@/data/products").Product[] }) {
+export default function FeaturedCarousel({ serverProducts, showEmpty = false }: { serverProducts?: import("@/data/products").Product[]; showEmpty?: boolean }) {
   const hook = useStoreProducts();
   const products = serverProducts && serverProducts.length > 0 ? serverProducts : hook.products;
   const isLoading = serverProducts ? false : hook.isLoading;
@@ -40,7 +41,8 @@ export default function FeaturedCarousel({ serverProducts }: { serverProducts?: 
   }, [products]);
 
   // No mostrar el carrusel mientras carga o si el tenant no tiene productos destacados
-  if (isLoading || featured.length === 0) return null;
+  if (isLoading) return null;
+  if (featured.length === 0) return showEmpty ? <SectionPlaceholder title="Productos Destacados" hint="Los productos con badge Popular u Oferta apareceran aqui" cols={6} /> : null;
 
   return (
     <section className="py-6 sm:py-8" style={{ background: "linear-gradient(to bottom, rgba(0,180,166,0.05), transparent)" }}>
