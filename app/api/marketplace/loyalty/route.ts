@@ -71,14 +71,15 @@ function buildMetadata(input: {
 export async function GET(req: NextRequest) {
   const traceId = newTraceId();
   try {
-    // Allow public read (marketplace customers) — fallback to header tenantId
-    let tenantId = "main";
-    const auth = await requireAdmin(req, ["admin", "manager", "cajero"]);
-    if (auth instanceof NextResponse) {
-      // Not an admin — use x-tenant-id header (set by proxy) for public read
-      tenantId = req.headers.get("x-tenant-id") ?? "main";
-    } else {
-      tenantId = auth.tenantId;
+    // Public read for marketplace customers — try admin auth, fallback to tenant header
+    let tenantId = req.headers.get("x-tenant-id") ?? "main";
+    try {
+      const auth = await requireAdmin(req, ["admin", "manager", "cajero"]);
+      if (!(auth instanceof NextResponse)) {
+        tenantId = auth.tenantId;
+      }
+    } catch {
+      // Not authenticated as admin — continue with public read using header tenantId
     }
 
     const parsed = HistoryQuerySchema.safeParse({
