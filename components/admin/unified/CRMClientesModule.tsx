@@ -53,7 +53,7 @@ const TABS = [
 ];
 
 /* ─── Dashboard Analytics CRM ─── */
-const _DASH_COLORS = ["#00B4A6","#f97316","#457b9d","#e63946","#9b5de5","#2dd4bf","#264653","#6b705c"];
+const _DASH_COLORS = ["#2563EB","#f97316","#457b9d","#e63946","#9b5de5","#2dd4bf","#264653","#6b705c"];
 
 function DashboardSkeleton() {
   return (
@@ -128,7 +128,7 @@ function ClientesDashboard({ onNavigate }: { onNavigate?: (tab: string) => void 
         <h3 className="text-lg font-semibold text-gray-700">Sin clientes registrados</h3>
         <p className="text-sm text-gray-500 mt-1">Importa o registra tu primer cliente para ver el dashboard</p>
         {onNavigate && (
-          <button onClick={() => onNavigate("importar")} className="mt-4 px-4 py-2 bg-[#00B4A6] text-white rounded-xl text-sm hover:bg-[#009690] transition-colors">
+          <button onClick={() => onNavigate("importar")} className="mt-4 px-4 py-2 bg-[#2563EB] text-white rounded-xl text-sm hover:bg-[#1D4ED8] transition-colors">
             Importar Clientes →
           </button>
         )}
@@ -180,7 +180,7 @@ function ClientesDashboard({ onNavigate }: { onNavigate?: (tab: string) => void 
       }
     }
     return [
-      { name: "VIP", value: vipCount, color: "#00B4A6" },
+      { name: "VIP", value: vipCount, color: "#2563EB" },
       { name: "Premium", value: premiumCount, color: "#f97316" },
       { name: "Regular", value: regularCount, color: "#457b9d" },
       { name: "Nuevo", value: nuevoCount, color: "#9b5de5" },
@@ -239,7 +239,7 @@ function ClientesDashboard({ onNavigate }: { onNavigate?: (tab: string) => void 
       }
     }
     return [
-      { name: "Frecuente (>10)", value: frecuente, fill: "#00B4A6" },
+      { name: "Frecuente (>10)", value: frecuente, fill: "#2563EB" },
       { name: "Regular (3-10)", value: regular, fill: "#2dd4bf" },
       { name: "Ocasional (1-3)", value: ocasional, fill: "#f97316" },
       { name: "Raro (1)", value: raro, fill: "#e63946" },
@@ -258,7 +258,7 @@ function ClientesDashboard({ onNavigate }: { onNavigate?: (tab: string) => void 
       const lastOrder = c.lastOrderAt ? new Date(c.lastOrderAt) : null;
       let color = "#6b705c"; // Inactivo
       if (lastOrder && lastOrder > thirtyDaysAgo) {
-        color = spent > 500 ? "#00B4A6" : "#457b9d";
+        color = spent > 500 ? "#2563EB" : "#457b9d";
       }
       return {
         name: c.name || c.fullName || `Cliente ${c.id}`,
@@ -333,7 +333,7 @@ function ClientesDashboard({ onNavigate }: { onNavigate?: (tab: string) => void 
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="flex gap-1.5">
           {([{ id: "today" as const, label: "Hoy" }, { id: "7d" as const, label: "7 dias" }, { id: "30d" as const, label: "30 dias" }, { id: "month" as const, label: "Este mes" }]).map(p => (
-            <button key={p.id} onClick={() => setPeriod(p.id)} className={cn("px-3 py-1 rounded-full text-xs font-medium transition-colors", period === p.id ? "bg-[#00B4A6] text-white" : "bg-gray-100 text-gray-600 hover:bg-gray-200")}>{p.label}</button>
+            <button key={p.id} onClick={() => setPeriod(p.id)} className={cn("px-3 py-1 rounded-full text-xs font-medium transition-colors", period === p.id ? "bg-[#2563EB] text-white" : "bg-gray-100 text-gray-600 hover:bg-gray-200")}>{p.label}</button>
           ))}
         </div>
         <div className="flex items-center gap-2">
@@ -368,8 +368,8 @@ function ClientesDashboard({ onNavigate }: { onNavigate?: (tab: string) => void 
             label: "Total clientes",
             value: total,
             icon: Users,
-            color: "border-l-4 border-[#00B4A6]",
-            iconBg: "bg-[#00B4A6]/10 text-[#00B4A6]",
+            color: "border-l-4 border-[#2563EB]",
+            iconBg: "bg-[#2563EB]/10 text-[#2563EB]",
           },
           {
             label: "Activos (30d)",
@@ -459,9 +459,9 @@ function ClientesDashboard({ onNavigate }: { onNavigate?: (tab: string) => void 
             <div className="flex items-center gap-2">
               {/* Mejora 16: Filter badge */}
               {filterSegment && (
-                <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-[#00B4A6]/10 text-[#00B4A6] text-xs font-bold">
+                <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-[#2563EB]/10 text-[#2563EB] text-xs font-bold">
                   Filtrando: {filterSegment}
-                  <button onClick={() => setFilterSegment(null)} className="hover:bg-[#00B4A6]/20 rounded-full p-0.5 transition-colors">
+                  <button onClick={() => setFilterSegment(null)} className="hover:bg-[#2563EB]/20 rounded-full p-0.5 transition-colors">
                     <XIcon className="h-3 w-3" />
                   </button>
                 </span>
@@ -565,8 +565,8 @@ function ClientesDashboard({ onNavigate }: { onNavigate?: (tab: string) => void 
           <AreaChart data={newByMonth} margin={{ left: 0, right: 10, top: 10, bottom: 0 }}>
             <defs>
               <linearGradient id="gradClientes" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="5%" stopColor="#00B4A6" stopOpacity={0.3} />
-                <stop offset="95%" stopColor="#00B4A6" stopOpacity={0} />
+                <stop offset="5%" stopColor="#2563EB" stopOpacity={0.3} />
+                <stop offset="95%" stopColor="#2563EB" stopOpacity={0} />
               </linearGradient>
             </defs>
             <CartesianGrid strokeDasharray="3 3" opacity={0.3} />
@@ -576,10 +576,10 @@ function ClientesDashboard({ onNavigate }: { onNavigate?: (tab: string) => void 
             <Area
               type="monotone"
               dataKey="count"
-              stroke="#00B4A6"
+              stroke="#2563EB"
               strokeWidth={2.5}
               fill="url(#gradClientes)"
-              dot={{ r: 4, fill: "#00B4A6", strokeWidth: 2, stroke: "white" }}
+              dot={{ r: 4, fill: "#2563EB", strokeWidth: 2, stroke: "white" }}
               activeDot={{ r: 6 }}
             />
           </AreaChart>
@@ -704,12 +704,12 @@ function ClientesDashboard({ onNavigate }: { onNavigate?: (tab: string) => void 
                 <YAxis domain={[0, 100]} tick={{ fontSize: 11 }} tickFormatter={(v: number) => `${v}%`} />
                 <ReferenceLine y={40} stroke="#f97316" strokeDasharray="5 5" strokeWidth={1.5} label={{ value: "Promedio retail: 40%", position: "insideTopRight", style: { fontSize: 10, fill: "#f97316" } }} />
                 <Tooltip content={<ChartTooltip />} />
-                <Line type="monotone" dataKey="retencion" stroke="#00B4A6" strokeWidth={2.5} dot={{ r: 4, fill: "#00B4A6", strokeWidth: 2, stroke: "white" }} activeDot={{ r: 6 }} />
+                <Line type="monotone" dataKey="retencion" stroke="#2563EB" strokeWidth={2.5} dot={{ r: 4, fill: "#2563EB", strokeWidth: 2, stroke: "white" }} activeDot={{ r: 6 }} />
               </LineChart>
             </ResponsiveContainer>
           ) : (
             <div className="flex flex-col items-center justify-center py-8 text-center">
-              <div className="text-4xl mb-3">📊</div>
+              <div className="h-12 w-12 rounded-2xl bg-primary/10 flex items-center justify-center mb-3"><Users className="h-6 w-6 text-primary" /></div>
               <p className="text-sm font-medium text-gray-500">Sin datos de retencion</p>
               <p className="text-xs text-gray-400 mt-1">Los datos apareceran cuando tengas clientes recurrentes</p>
             </div>
@@ -867,7 +867,7 @@ function RFMWrapper({ onSendToSegment }: { onSendToSegment: (phones: string[], l
             onClick={() => setSelectedSegment(selectedSegment === segment ? null : segment)}
             className={cn(
               "rounded-xl border-2 p-3 text-left transition-all hover:shadow-md",
-              selectedSegment === segment ? "ring-2 ring-offset-1 ring-[#00B4A6]" : "",
+              selectedSegment === segment ? "ring-2 ring-offset-1 ring-[#2563EB]" : "",
             )}
             style={{ borderColor: data.color, backgroundColor: `${data.color}15` }}
           >
@@ -886,16 +886,16 @@ function RFMWrapper({ onSendToSegment }: { onSendToSegment: (phones: string[], l
 
       {/* Action button to send to segment */}
       {selectedSegment && segmentCounts[selectedSegment] && (
-        <div className="flex items-center justify-between rounded-xl border border-[#00B4A6]/30 bg-[#00B4A6]/5 px-4 py-3">
+        <div className="flex items-center justify-between rounded-xl border border-[#2563EB]/30 bg-[#2563EB]/5 px-4 py-3">
           <div className="flex items-center gap-2">
-            <MessageSquare className="h-4 w-4 text-[#00B4A6]" />
+            <MessageSquare className="h-4 w-4 text-[#2563EB]" />
             <span className="text-sm font-medium text-gray-700 dark:text-gray-200">
               {segmentCounts[selectedSegment].count} clientes en &ldquo;{selectedSegment}&rdquo;
             </span>
           </div>
           <button
             onClick={() => onSendToSegment(segmentCounts[selectedSegment].phones, selectedSegment)}
-            className="rounded-lg bg-[#00B4A6] px-3 py-1.5 text-xs font-semibold text-white hover:bg-[#009690] transition-colors"
+            className="rounded-lg bg-[#2563EB] px-3 py-1.5 text-xs font-semibold text-white hover:bg-[#1D4ED8] transition-colors"
           >
             Enviar mensaje masivo a este segmento →
           </button>
@@ -945,7 +945,7 @@ function RFMWrapper({ onSendToSegment }: { onSendToSegment: (phones: string[], l
                 <td className="px-2 py-2 text-right font-mono text-gray-600 dark:text-gray-300">
                   {c.frequency}
                 </td>
-                <td className="px-2 py-2 text-right font-mono font-medium text-[#00B4A6] dark:text-[#2dd4bf]">
+                <td className="px-2 py-2 text-right font-mono font-medium text-[#2563EB] dark:text-[#2dd4bf]">
                   {formatCurrency(c.monetary)}
                 </td>
               </tr>

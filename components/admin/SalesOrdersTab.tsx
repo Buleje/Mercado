@@ -5,7 +5,7 @@ import {
   ShoppingBag, RefreshCw, Clock, CheckCircle, XCircle, Truck,
   Search, ChevronDown, ChevronUp, ChevronRight, Download, FileSpreadsheet, Receipt,
   ArrowRight, Package, Bell, BellOff, Lock, LayoutList, Columns3, MapPin,
-  CheckSquare, DollarSign, Target, AlertTriangle, Maximize2, X as XIcon2,
+  CheckSquare, DollarSign, Target, AlertTriangle, Maximize2, X as XIcon2, ShoppingCart,
 } from "lucide-react";
 import EmptyState from "@/components/admin/shared/EmptyState";
 import {
@@ -1425,7 +1425,7 @@ function DashTooltip({ active, payload, label }: any) {
   );
 }
 
-const DASH_COLORS = ['#00B4A6', '#f97316', '#457b9d', '#e63946', '#9b5de5', '#2dd4bf', '#264653'];
+const DASH_COLORS = ['#2563EB', '#f97316', '#457b9d', '#e63946', '#9b5de5', '#2dd4bf', '#264653'];
 
 const DASH_STATUS_COLORS: Record<string, string> = {
   pendiente: '#f59e0b', confirmado: '#3b82f6', preparando: '#8b5cf6',
@@ -1441,14 +1441,14 @@ const DASH_STATUS_LABELS: Record<string, string> = {
   delivering: 'En camino', delivered: 'Entregado', cancelled: 'Cancelado',
 };
 
-const DASH_PAYMENT_COLORS: Record<string, string> = { efectivo: '#00B4A6', yape: '#8b5cf6', plin: '#06b6d4', tarjeta: '#3b82f6', fiado: '#f59e0b', otro: '#6b7280' };
+const DASH_PAYMENT_COLORS: Record<string, string> = { efectivo: '#2563EB', yape: '#8b5cf6', plin: '#06b6d4', tarjeta: '#3b82f6', fiado: '#f59e0b', otro: '#6b7280' };
 const DASH_PAYMENT_LABELS: Record<string, string> = { efectivo: 'Efectivo', yape: 'Yape', plin: 'Plin', tarjeta: 'Tarjeta', fiado: 'Fiado', otro: 'Otro' };
 
 // ── Empty state for charts (Mejora 10) ───────────────────────────────────────
 function OrdersEmptyChart({ message }: { message: string }) {
   return (
     <div className="flex flex-col items-center justify-center py-12 text-center">
-      <div className="text-4xl mb-3">📊</div>
+      <div className="h-12 w-12 rounded-2xl bg-primary/10 flex items-center justify-center mb-3"><ShoppingCart className="h-6 w-6 text-primary" /></div>
       <p className="text-sm font-medium text-gray-500 dark:text-gray-400">{message}</p>
       <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">Los datos apareceran cuando registres ventas</p>
     </div>
@@ -1582,7 +1582,7 @@ function OrdersDashboard({ orders }: { orders: Order[] }) {
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="flex gap-1.5">
           {([{ id: "today" as const, label: "Hoy" }, { id: "7d" as const, label: "7 dias" }, { id: "30d" as const, label: "30 dias" }, { id: "month" as const, label: "Este mes" }]).map(p => (
-            <button key={p.id} onClick={() => setOrdPeriod(p.id)} className={cn("px-3 py-1 rounded-full text-xs font-medium transition-colors", ordPeriod === p.id ? "bg-[#00B4A6] text-white" : "bg-gray-100 dark:bg-white/5 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-white/10")}>{p.label}</button>
+            <button key={p.id} onClick={() => setOrdPeriod(p.id)} className={cn("px-3 py-1 rounded-full text-xs font-medium transition-colors", ordPeriod === p.id ? "bg-[#2563EB] text-white" : "bg-gray-100 dark:bg-white/5 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-white/10")}>{p.label}</button>
           ))}
         </div>
         <div className="flex items-center gap-2">
@@ -1604,7 +1604,7 @@ function OrdersDashboard({ orders }: { orders: Order[] }) {
 
       {/* === SECCION 1: 8 KPIs con iconos === */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-        <DashKpi icon={<ShoppingBag className="h-4 w-4" />} iconBg="bg-emerald-100 dark:bg-emerald-900/40 text-emerald-600 dark:text-emerald-400" label="Pedidos hoy" value={kpis.pedidosHoy} border="border-l-[#00B4A6]" sparkColor="#00B4A6" sparkVal={kpis.pedidosHoy} />
+        <DashKpi icon={<ShoppingBag className="h-4 w-4" />} iconBg="bg-emerald-100 dark:bg-emerald-900/40 text-emerald-600 dark:text-emerald-400" label="Pedidos hoy" value={kpis.pedidosHoy} border="border-l-[#2563EB]" sparkColor="#2563EB" sparkVal={kpis.pedidosHoy} />
         <DashKpi icon={<DollarSign className="h-4 w-4" />} iconBg="bg-blue-100 dark:bg-blue-900/40 text-blue-600 dark:text-blue-400" label="Monto hoy" value={`S/${kpis.totalMonto.toFixed(2)}`} border="border-l-blue-500" sparkColor="#3b82f6" sparkVal={kpis.totalMonto} />
         <DashKpi icon={<Receipt className="h-4 w-4" />} iconBg="bg-purple-100 dark:bg-purple-900/40 text-purple-600 dark:text-purple-400" label="Ticket promedio" value={`S/${kpis.ticketProm.toFixed(2)}`} border="border-l-purple-500" sparkColor="#8b5cf6" sparkVal={kpis.ticketProm} />
         <DashKpi icon={<Clock className="h-4 w-4" />} iconBg="bg-amber-100 dark:bg-amber-900/40 text-amber-600 dark:text-amber-400" label="Pendientes" value={kpis.pendientes} border="border-l-amber-500" pulse={kpis.pendientes > 5} />
@@ -1662,7 +1662,7 @@ function OrdersDashboard({ orders }: { orders: Order[] }) {
               <Tooltip content={<DashTooltip />} />
               <Bar dataKey="count" name="Pedidos" radius={[4, 4, 0, 0]}>
                 {hourlyData.map((entry, i) => (
-                  <Cell key={i} fill={entry.isCurrent ? '#f97316' : '#00B4A6'} />
+                  <Cell key={i} fill={entry.isCurrent ? '#f97316' : '#2563EB'} />
                 ))}
               </Bar>
             </BarChart>
@@ -1700,8 +1700,8 @@ function OrdersDashboard({ orders }: { orders: Order[] }) {
           <ComposedChart data={weeklyData}>
             <defs>
               <linearGradient id="ordersBarGrad" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="0%" stopColor="#00B4A6" stopOpacity={0.9} />
-                <stop offset="100%" stopColor="#00B4A6" stopOpacity={0.5} />
+                <stop offset="0%" stopColor="#2563EB" stopOpacity={0.9} />
+                <stop offset="100%" stopColor="#2563EB" stopOpacity={0.5} />
               </linearGradient>
             </defs>
             <CartesianGrid strokeDasharray="3 3" stroke="rgba(107,114,128,0.12)" />
@@ -1730,7 +1730,7 @@ function OrdersDashboard({ orders }: { orders: Order[] }) {
                 <XAxis type="number" tick={{ fontSize: 10 }} allowDecimals={false} />
                 <YAxis type="category" dataKey="zona" tick={{ fontSize: 11 }} width={80} />
                 <Tooltip content={<DashTooltip />} />
-                <Bar dataKey="count" fill="#00B4A6" radius={[0, 4, 4, 0]} name="Pedidos" barSize={20} />
+                <Bar dataKey="count" fill="#2563EB" radius={[0, 4, 4, 0]} name="Pedidos" barSize={20} />
               </BarChart>
             </ResponsiveContainer>
           )}

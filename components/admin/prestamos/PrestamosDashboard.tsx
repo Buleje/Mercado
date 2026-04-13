@@ -4,7 +4,7 @@ import { m } from "@/components/admin/providers";
 import {
   DollarSign, AlertTriangle, TrendingUp,
   ArrowUpFromLine, ArrowDownToLine, XCircle,
-  User, Shield, Scale,
+  User, Shield, Scale, BarChart3,
 } from "lucide-react";
 import {
   BarChart, Bar, AreaChart, Area, PieChart, Pie, Cell,
@@ -89,7 +89,7 @@ function genSparkData(base: number): { v: number }[] {
 function EmptyChartPrestamos({ message }: { message: string }) {
   return (
     <div className="flex flex-col items-center justify-center py-12 text-center">
-      <div className="text-4xl mb-3">📊</div>
+      <div className="h-12 w-12 rounded-2xl bg-primary/10 flex items-center justify-center mb-3"><BarChart3 className="h-6 w-6 text-primary" /></div>
       <p className="text-sm font-medium text-gray-500 dark:text-gray-400">{message}</p>
       <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">Los datos aparecerán cuando registres préstamos</p>
     </div>
@@ -233,8 +233,8 @@ export function PrestamosDashboard({ prestamos, resumen }: Props) {
               <AreaChart data={areaData}>
                 <defs>
                   <linearGradient id="prestCobGrad" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="0%" stopColor="#00B4A6" stopOpacity={0.3} />
-                    <stop offset="100%" stopColor="#00B4A6" stopOpacity={0} />
+                    <stop offset="0%" stopColor="#2563EB" stopOpacity={0.3} />
+                    <stop offset="100%" stopColor="#2563EB" stopOpacity={0} />
                   </linearGradient>
                   <linearGradient id="prestNuevGrad" x1="0" y1="0" x2="0" y2="1">
                     <stop offset="0%" stopColor="#e63946" stopOpacity={0.3} />
@@ -246,7 +246,7 @@ export function PrestamosDashboard({ prestamos, resumen }: Props) {
                 <YAxis tickFormatter={(v: number) => `S/${v}`} tick={{ fontSize: 11 }} />
                 <Tooltip formatter={((v: number, name: string) => [formatCurrency(Number(v)), name === "cobrado" ? "Cobrado" : "Nuevos"]) as never} contentStyle={{ borderRadius: "12px", border: "1px solid #e5e7eb", fontSize: "12px" }} />
                 <Legend formatter={(v: string) => v === "cobrado" ? "Cobrado" : "Nuevos préstamos"} />
-                <Area type="monotone" dataKey="cobrado" stroke="#00B4A6" fill="url(#prestCobGrad)" strokeWidth={2} />
+                <Area type="monotone" dataKey="cobrado" stroke="#2563EB" fill="url(#prestCobGrad)" strokeWidth={2} />
                 <Area type="monotone" dataKey="nuevos" stroke="#e63946" fill="url(#prestNuevGrad)" strokeWidth={2} />
               </AreaChart>
             </ResponsiveContainer>

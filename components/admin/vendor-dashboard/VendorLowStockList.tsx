@@ -1,7 +1,7 @@
 "use client";
 
 import type { VendorLowStockProduct } from "./vendor-dashboard.types";
-import { AlertTriangle } from "lucide-react";
+import { AlertTriangle, Package } from "lucide-react";
 import Image from "next/image";
 
 type Props = {
@@ -24,7 +24,7 @@ export function VendorLowStockList({ products }: Props) {
           Stock bajo
         </h3>
         <div className="text-center py-8">
-          <span className="text-3xl">📦</span>
+          <div className="h-10 w-10 rounded-xl bg-amber-50 flex items-center justify-center"><Package className="h-5 w-5 text-amber-500" /></div>
           <p className="mt-2 text-sm font-medium text-gray-600 dark:text-muted">
             Todo tu stock está en buen nivel.
           </p>

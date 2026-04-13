@@ -8,20 +8,29 @@ import {
   Megaphone,
   BarChart3,
   ExternalLink,
+  Percent,
+  Boxes,
+  Gamepad2,
 } from "lucide-react";
 import AppearanceTab from "./_components/AppearanceTab";
 import ProductsTab from "./_components/ProductsTab";
 import PromotionsTab from "./_components/PromotionsTab";
 import AnalyticsTab from "./_components/AnalyticsTab";
+import CombosTab from "./_components/CombosTab";
+import DiscountsTab from "./_components/DiscountsTab";
+import EngagementTab from "./_components/EngagementTab";
 import { resolveActiveTenantSlug } from "@/lib/tenant-fetch";
 
-type TabId = "appearance" | "products" | "promotions" | "analytics";
+type TabId = "appearance" | "products" | "promotions" | "combos" | "discounts" | "engagement" | "analytics";
 
 const TABS: { id: TabId; label: string; icon: typeof Palette }[] = [
   { id: "appearance", label: "Apariencia", icon: Palette },
   { id: "products", label: "Productos", icon: Package },
+  { id: "combos", label: "Combos", icon: Boxes },
+  { id: "discounts", label: "Descuentos", icon: Percent },
   { id: "promotions", label: "Promociones", icon: Megaphone },
-  { id: "analytics", label: "Métricas", icon: BarChart3 },
+  { id: "engagement", label: "Engagement", icon: Gamepad2 },
+  { id: "analytics", label: "Metricas", icon: BarChart3 },
 ];
 
 export default function StorePageAdminPage() {
@@ -57,7 +66,7 @@ export default function StorePageAdminPage() {
           href={`/t/${slug}`}
           target="_blank"
           rel="noopener"
-          className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-teal-600 hover:bg-teal-700 text-white font-semibold text-sm transition-colors"
+          className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-semibold text-sm transition-colors"
         >
           Ver página pública
           <ExternalLink className="w-4 h-4" />
@@ -76,7 +85,7 @@ export default function StorePageAdminPage() {
                 onClick={() => setTab(t.id)}
                 className={`flex items-center gap-2 px-4 py-3 border-b-2 font-semibold text-sm transition-colors ${
                   active
-                    ? "border-teal-600 text-teal-600 dark:text-teal-400"
+                    ? "border-blue-600 text-blue-600 dark:text-blue-400"
                     : "border-transparent text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
                 }`}
               >
@@ -92,7 +101,10 @@ export default function StorePageAdminPage() {
       <div>
         {tab === "appearance" && <AppearanceTab />}
         {tab === "products" && <ProductsTab />}
+        {tab === "combos" && <CombosTab />}
+        {tab === "discounts" && <DiscountsTab />}
         {tab === "promotions" && <PromotionsTab />}
+        {tab === "engagement" && <EngagementTab />}
         {tab === "analytics" && <AnalyticsTab />}
       </div>
     </div>

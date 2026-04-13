@@ -19,12 +19,12 @@ export default function EmptyState({
   className,
 }: Props) {
   return (
-    <div className={cn("flex flex-col items-center justify-center py-16 px-4 text-center", className)}>
-      <div className="h-16 w-16 rounded-2xl bg-gray-100 flex items-center justify-center mb-4">
-        <Icon className="h-8 w-8 text-gray-400" />
+    <div className={cn("flex flex-col items-center justify-center py-12 px-4 text-center", className)}>
+      <div className="h-14 w-14 rounded-2xl bg-primary/10 dark:bg-primary/20 flex items-center justify-center mb-4">
+        <Icon className="h-7 w-7 text-primary" />
       </div>
-      <h3 className="text-sm font-semibold text-gray-700 mb-1">{title}</h3>
-      <p className="text-xs text-gray-500 max-w-xs">{description}</p>
+      <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1">{title}</h3>
+      <p className="text-xs text-gray-400 dark:text-gray-500 max-w-xs">{description}</p>
       {action && (
         <button
           onClick={action.onClick}

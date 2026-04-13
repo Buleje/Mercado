@@ -119,7 +119,7 @@ export default function ProductsTab() {
             if (catalog.length === 0) await loadCatalog();
             setShowPicker((v) => !v);
           }}
-          className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-teal-600 hover:bg-teal-700 text-white font-semibold text-sm"
+          className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-semibold text-sm"
         >
           <Plus className="w-4 h-4" />
           Agregar producto
@@ -128,7 +128,7 @@ export default function ProductsTab() {
 
       {/* Picker modal inline */}
       {showPicker && (
-        <section className="p-4 rounded-xl border-2 border-teal-500 bg-teal-50 dark:bg-teal-900/10 space-y-2 max-h-96 overflow-y-auto">
+        <section className="p-4 rounded-xl border-2 border-blue-500 bg-blue-50 dark:bg-blue-900/10 space-y-2 max-h-96 overflow-y-auto">
           <h4 className="font-bold text-sm mb-2">Selecciona un producto del inventario</h4>
           {catalogFiltered.length === 0 ? (
             <p className="text-sm text-gray-500">Sin resultados</p>
@@ -151,7 +151,7 @@ export default function ProductsTab() {
                     S/{p.price.toFixed(2)} · {p.category}
                   </p>
                 </div>
-                <Plus className="w-4 h-4 text-teal-600" />
+                <Plus className="w-4 h-4 text-blue-600" />
               </button>
             ))
           )}

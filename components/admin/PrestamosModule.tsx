@@ -98,7 +98,7 @@ const TIPO_META: Record<PrestamoTipo, { label: string; color: string; bg: string
   PERSONAL:  { label: "Personal",  color: "text-blue-700 dark:text-blue-400",     bg: "bg-blue-100 dark:bg-blue-900/30",     icon: User },
   BANCARIO:  { label: "Bancario",  color: "text-purple-700 dark:text-purple-400", bg: "bg-purple-100 dark:bg-purple-900/30", icon: Building2 },
   TERCERO:   { label: "Tercero",   color: "text-orange-700 dark:text-orange-400", bg: "bg-orange-100 dark:bg-orange-900/30", icon: ArrowUpDown },
-  PROVEEDOR: { label: "Proveedor", color: "text-teal-700 dark:text-teal-400",     bg: "bg-teal-100 dark:bg-teal-900/30",     icon: Coins },
+  PROVEEDOR: { label: "Proveedor", color: "text-blue-700 dark:text-blue-400",     bg: "bg-blue-100 dark:bg-blue-900/30",     icon: Coins },
 };
 
 const DIRECCION_META: Record<PrestamoDireccion, { label: string; shortLabel: string; color: string; bg: string; icon: typeof ArrowDownToLine }> = {
@@ -133,7 +133,9 @@ const PER_PAGE = 10;
 function EmptyChartPrestamos({ message }: { message: string }) {
   return (
     <div className="flex flex-col items-center justify-center py-12 text-center">
-      <div className="text-4xl mb-3">📊</div>
+      <div className="h-12 w-12 rounded-2xl bg-primary/10 flex items-center justify-center mb-3">
+        <BarChart3 className="h-6 w-6 text-primary" />
+      </div>
       <p className="text-sm font-medium text-gray-500 dark:text-gray-400">{message}</p>
       <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">Los datos aparecerán cuando registres préstamos</p>
     </div>
@@ -334,8 +336,8 @@ function PrestamosDashboard({ prestamos, resumen }: { prestamos: Prestamo[]; res
               <AreaChart data={areaData}>
                 <defs>
                   <linearGradient id="prestCobGrad" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="0%" stopColor="#00B4A6" stopOpacity={0.3} />
-                    <stop offset="100%" stopColor="#00B4A6" stopOpacity={0} />
+                    <stop offset="0%" stopColor="#2563EB" stopOpacity={0.3} />
+                    <stop offset="100%" stopColor="#2563EB" stopOpacity={0} />
                   </linearGradient>
                   <linearGradient id="prestNuevGrad" x1="0" y1="0" x2="0" y2="1">
                     <stop offset="0%" stopColor="#e63946" stopOpacity={0.3} />
@@ -347,7 +349,7 @@ function PrestamosDashboard({ prestamos, resumen }: { prestamos: Prestamo[]; res
                 <YAxis tickFormatter={(v: number) => `S/${v}`} tick={{ fontSize: 11 }} />
                 <Tooltip formatter={((v: number, name: string) => [formatCurrency(Number(v)), name === "cobrado" ? "Cobrado" : "Nuevos"]) as never} contentStyle={{ borderRadius: "12px", border: "1px solid #e5e7eb", fontSize: "12px" }} />
                 <Legend formatter={(v: string) => v === "cobrado" ? "Cobrado" : "Nuevos préstamos"} />
-                <Area type="monotone" dataKey="cobrado" stroke="#00B4A6" fill="url(#prestCobGrad)" strokeWidth={2} />
+                <Area type="monotone" dataKey="cobrado" stroke="#2563EB" fill="url(#prestCobGrad)" strokeWidth={2} />
                 <Area type="monotone" dataKey="nuevos" stroke="#e63946" fill="url(#prestNuevGrad)" strokeWidth={2} />
               </AreaChart>
             </ResponsiveContainer>
@@ -951,7 +953,7 @@ export default function PrestamosModule() {
       {/* Header — Mejora 20 */}
       <div className="flex flex-col sm:flex-row sm:items-center gap-3">
         <div className="flex items-center gap-3 flex-1 min-w-0">
-          <div className="h-10 w-10 rounded-xl bg-[#00B4A6] text-white flex items-center justify-center shadow-sm shrink-0">
+          <div className="h-10 w-10 rounded-xl bg-[#2563EB] text-white flex items-center justify-center shadow-sm shrink-0">
             <DollarSign className="h-5 w-5" />
           </div>
           <div>
@@ -987,7 +989,7 @@ export default function PrestamosModule() {
             className={cn(
               "shrink-0 px-3 sm:px-4 py-2.5 text-xs sm:text-sm font-bold whitespace-nowrap transition-colors border-b-2 flex items-center gap-1.5",
               activeTab === t.id
-                ? "border-[#00B4A6] text-[#00B4A6] dark:text-emerald-400"
+                ? "border-[#2563EB] text-[#2563EB] dark:text-emerald-400"
                 : "border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300"
             )}
           >
@@ -1005,7 +1007,7 @@ export default function PrestamosModule() {
       {activeTab === "dashboard" && !loading && <PrestamosDashboard prestamos={prestamos} resumen={resumen} />}
       {activeTab === "dashboard" && loading && (
         <div className="flex items-center justify-center py-12">
-          <Loader2 className="h-6 w-6 animate-spin text-[#00B4A6]" />
+          <Loader2 className="h-6 w-6 animate-spin text-[#2563EB]" />
         </div>
       )}
 
@@ -1037,7 +1039,7 @@ export default function PrestamosModule() {
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
               <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl shadow-sm hover:shadow-md transition-shadow p-3">
                 <div className="flex items-center gap-2 mb-1">
-                  <Landmark className="h-4 w-4 text-[#00B4A6]" />
+                  <Landmark className="h-4 w-4 text-[#2563EB]" />
                   <p className="text-[10px] uppercase font-bold text-gray-400">Total prestado</p>
                 </div>
                 <p className="text-2xl font-extrabold font-mono text-gray-900 dark:text-white">{formatCurrency(totalPrestado)}</p>
@@ -1081,7 +1083,7 @@ export default function PrestamosModule() {
                     <YAxis tick={{ fontSize: 10 }} width={50} tickFormatter={(v: number) => `S/${v}`} />
                     <Tooltip formatter={(v) => formatCurrency(Number(v))} />
                     <Legend wrapperStyle={{ fontSize: 11 }} />
-                    <Bar dataKey="cobrado" name="Cobrado" fill="#00B4A6" radius={[4, 4, 0, 0]} />
+                    <Bar dataKey="cobrado" name="Cobrado" fill="#2563EB" radius={[4, 4, 0, 0]} />
                     <Bar dataKey="nuevos" name="Nuevos" fill="#ef4444" radius={[4, 4, 0, 0]} />
                   </BarChart>
                 </ResponsiveContainer>
@@ -1114,9 +1116,9 @@ export default function PrestamosModule() {
           <div className="flex gap-2">
             <div className="relative flex-1">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
-              <input type="text" value={searchQuery} onChange={e => { setSearchQuery(e.target.value); setPage(1); }} placeholder="Buscar por cliente, entidad, N° operación..." className="w-full pl-9 pr-3 py-2.5 rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 text-sm text-gray-900 dark:text-white placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#00B4A6]/30" />
+              <input type="text" value={searchQuery} onChange={e => { setSearchQuery(e.target.value); setPage(1); }} placeholder="Buscar por cliente, entidad, N° operación..." className="w-full pl-9 pr-3 py-2.5 rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 text-sm text-gray-900 dark:text-white placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#2563EB]/30" />
             </div>
-            <button onClick={() => setShowFilters(f => !f)} className={cn("flex items-center gap-1.5 px-4 py-2.5 rounded-xl border text-sm font-semibold transition-colors", showFilters ? "bg-[#00B4A6] text-white border-[#00B4A6]" : "bg-white dark:bg-white/5 text-gray-600 dark:text-gray-400 border-gray-200 dark:border-white/10 hover:border-[#00B4A6] hover:text-[#00B4A6]")}>
+            <button onClick={() => setShowFilters(f => !f)} className={cn("flex items-center gap-1.5 px-4 py-2.5 rounded-xl border text-sm font-semibold transition-colors", showFilters ? "bg-[#2563EB] text-white border-[#2563EB]" : "bg-white dark:bg-white/5 text-gray-600 dark:text-gray-400 border-gray-200 dark:border-white/10 hover:border-[#2563EB] hover:text-[#2563EB]")}>
               <Filter className="h-4 w-4" />
               Filtros {activeFilterCount > 0 && <span className="bg-[#f97316] text-white rounded-full text-[10px] font-bold px-1.5 py-0.5">{activeFilterCount}</span>}
             </button>
@@ -1129,10 +1131,10 @@ export default function PrestamosModule() {
               <m.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: "auto" }} exit={{ opacity: 0, height: 0 }} className="overflow-hidden">
                 <div className="bg-gray-50 dark:bg-white/5 rounded-xl border border-gray-200 dark:border-white/10 p-4">
                   <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
-                    <div><label className="block text-[10px] font-bold uppercase text-gray-400 mb-1">Desde</label><input type="date" value={filterFechaFrom} onChange={e => { setFilterFechaFrom(e.target.value); setPage(1); }} className="w-full px-2.5 py-2 rounded-lg border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 text-xs text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-[#00B4A6]/30" /></div>
-                    <div><label className="block text-[10px] font-bold uppercase text-gray-400 mb-1">Hasta</label><input type="date" value={filterFechaTo} onChange={e => { setFilterFechaTo(e.target.value); setPage(1); }} className="w-full px-2.5 py-2 rounded-lg border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 text-xs text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-[#00B4A6]/30" /></div>
-                    <div><label className="block text-[10px] font-bold uppercase text-gray-400 mb-1">Monto mín.</label><input type="number" value={filterMontoMin} onChange={e => { setFilterMontoMin(e.target.value); setPage(1); }} placeholder="0" className="w-full px-2.5 py-2 rounded-lg border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 text-xs text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-[#00B4A6]/30" /></div>
-                    <div><label className="block text-[10px] font-bold uppercase text-gray-400 mb-1">Monto máx.</label><input type="number" value={filterMontoMax} onChange={e => { setFilterMontoMax(e.target.value); setPage(1); }} placeholder="∞" className="w-full px-2.5 py-2 rounded-lg border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 text-xs text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-[#00B4A6]/30" /></div>
+                    <div><label className="block text-[10px] font-bold uppercase text-gray-400 mb-1">Desde</label><input type="date" value={filterFechaFrom} onChange={e => { setFilterFechaFrom(e.target.value); setPage(1); }} className="w-full px-2.5 py-2 rounded-lg border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 text-xs text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-[#2563EB]/30" /></div>
+                    <div><label className="block text-[10px] font-bold uppercase text-gray-400 mb-1">Hasta</label><input type="date" value={filterFechaTo} onChange={e => { setFilterFechaTo(e.target.value); setPage(1); }} className="w-full px-2.5 py-2 rounded-lg border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 text-xs text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-[#2563EB]/30" /></div>
+                    <div><label className="block text-[10px] font-bold uppercase text-gray-400 mb-1">Monto mín.</label><input type="number" value={filterMontoMin} onChange={e => { setFilterMontoMin(e.target.value); setPage(1); }} placeholder="0" className="w-full px-2.5 py-2 rounded-lg border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 text-xs text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-[#2563EB]/30" /></div>
+                    <div><label className="block text-[10px] font-bold uppercase text-gray-400 mb-1">Monto máx.</label><input type="number" value={filterMontoMax} onChange={e => { setFilterMontoMax(e.target.value); setPage(1); }} placeholder="∞" className="w-full px-2.5 py-2 rounded-lg border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 text-xs text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-[#2563EB]/30" /></div>
                     <div><label className="block text-[10px] font-bold uppercase text-gray-400 mb-1">Tipo</label><select value={filterTipo} onChange={e => { setFilterTipo(e.target.value as ""|PrestamoTipo); setPage(1); }} className="w-full px-2.5 py-2 rounded-lg border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 text-xs text-gray-900 dark:text-white focus:outline-none"><option value="">Todos</option>{Object.entries(TIPO_META).map(([k, v]) => <option key={k} value={k}>{v.label}</option>)}</select></div>
                     <div><label className="block text-[10px] font-bold uppercase text-gray-400 mb-1">Dirección</label><select value={filterDireccion} onChange={e => { setFilterDireccion(e.target.value as ""|PrestamoDireccion); setPage(1); }} className="w-full px-2.5 py-2 rounded-lg border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 text-xs text-gray-900 dark:text-white focus:outline-none"><option value="">Todos</option><option value="DADO">Dado</option><option value="RECIBIDO">Recibido</option></select></div>
                     <div><label className="block text-[10px] font-bold uppercase text-gray-400 mb-1">Sistema amort.</label><select value={filterSistema} onChange={e => { setFilterSistema(e.target.value as ""|SistemaAmortizacion); setPage(1); }} className="w-full px-2.5 py-2 rounded-lg border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 text-xs text-gray-900 dark:text-white focus:outline-none"><option value="">Todos</option><option value="FRANCES">Francés</option><option value="ALEMAN">Alemán</option><option value="AMERICANO">Americano</option></select></div>
@@ -1149,7 +1151,7 @@ export default function PrestamosModule() {
       {(activeTab === "activos" || activeTab === "historial") && !loading && prestamos.length > 0 && (() => {
         const counts = { ACTIVO: prestamos.filter(p => p.status === "ACTIVO").length, PAGADO: prestamos.filter(p => p.status === "PAGADO").length, VENCIDO: prestamos.filter(p => p.status === "VENCIDO").length, CANCELADO: prestamos.filter(p => p.status === "CANCELADO").length };
         const pills = [
-          { id: "" as "" | PrestamoStatus, label: "Todos", count: prestamos.length, activeBg: "bg-[#00B4A6] text-white", inactiveClass: "bg-gray-100 dark:bg-white/5 text-gray-600 dark:text-gray-400" },
+          { id: "" as "" | PrestamoStatus, label: "Todos", count: prestamos.length, activeBg: "bg-[#2563EB] text-white", inactiveClass: "bg-gray-100 dark:bg-white/5 text-gray-600 dark:text-gray-400" },
           { id: "ACTIVO" as PrestamoStatus, label: "Activos", count: counts.ACTIVO, activeBg: "bg-emerald-500 text-white", inactiveClass: "bg-emerald-50 dark:bg-emerald-900/20 text-emerald-700 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800" },
           { id: "PAGADO" as PrestamoStatus, label: "Pagados", count: counts.PAGADO, activeBg: "bg-gray-500 text-white", inactiveClass: "bg-gray-100 dark:bg-white/5 text-gray-600 dark:text-gray-400 border border-gray-200 dark:border-gray-700" },
           { id: "VENCIDO" as PrestamoStatus, label: "Vencidos", count: counts.VENCIDO, activeBg: "bg-red-500 text-white", inactiveClass: "bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-400 border border-red-200 dark:border-red-800" },
@@ -1163,16 +1165,16 @@ export default function PrestamosModule() {
               </button>
             ))}
             {selectedIds.size > 0 && (
-              <div className="ml-auto flex items-center gap-2 px-3 py-1.5 rounded-xl bg-[#00B4A6]/10 dark:bg-[#00B4A6]/20 border border-[#00B4A6]/20">
-                <span className="text-xs font-bold text-[#00B4A6]">{selectedIds.size} selec.</span>
+              <div className="ml-auto flex items-center gap-2 px-3 py-1.5 rounded-xl bg-[#2563EB]/10 dark:bg-[#2563EB]/20 border border-[#2563EB]/20">
+                <span className="text-xs font-bold text-[#2563EB]">{selectedIds.size} selec.</span>
                 <button onClick={() => {
                   const sel = prestamos.filter(p => selectedIds.has(p.id));
                   const rows = sel.map(p => [p.id, p.entidadNombre||p.customerId||"", p.monto, p.tasaInteres, p.numeroCuotas, p.status].join(","));
                   const csv = ["ID,Cliente,Monto,Tasa,Cuotas,Status", ...rows].join("\n");
                   const url = URL.createObjectURL(new Blob([csv], { type: "text/csv" }));
                   const a = document.createElement("a"); a.href = url; a.download = "prestamos.csv"; a.click(); URL.revokeObjectURL(url);
-                }} className="flex items-center gap-1 text-[10px] font-bold text-[#00B4A6] hover:underline"><FileDown className="h-3 w-3" /> CSV</button>
-                <button onClick={() => setSelectedIds(new Set())} className="text-[#00B4A6] hover:text-red-500"><X className="h-3 w-3" /></button>
+                }} className="flex items-center gap-1 text-[10px] font-bold text-[#2563EB] hover:underline"><FileDown className="h-3 w-3" /> CSV</button>
+                <button onClick={() => setSelectedIds(new Set())} className="text-[#2563EB] hover:text-red-500"><X className="h-3 w-3" /></button>
               </div>
             )}
           </div>
@@ -1182,20 +1184,20 @@ export default function PrestamosModule() {
         <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl overflow-hidden shadow-sm">
           {loading ? (
             <div className="flex items-center justify-center py-12">
-              <Loader2 className="h-6 w-6 animate-spin text-[#00B4A6]" />
+              <Loader2 className="h-6 w-6 animate-spin text-[#2563EB]" />
             </div>
           ) : error ? (
             <div className="flex flex-col items-center justify-center py-12 gap-2">
               <AlertTriangle className="h-8 w-8 text-red-400" />
               <p className="text-sm text-red-600 dark:text-red-400">{error}</p>
-              <button onClick={fetchPrestamos} className="text-xs text-[#00B4A6] hover:underline font-semibold">Reintentar</button>
+              <button onClick={fetchPrestamos} className="text-xs text-[#2563EB] hover:underline font-semibold">Reintentar</button>
             </div>
           ) : displayList.length === 0 ? (
             <div className="text-center py-16 px-4">
               <div className="text-6xl mb-4">🏦</div>
               <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">Sin préstamos</h3>
               <p className="text-sm text-gray-500 mb-6 max-w-md mx-auto">Registra préstamos a clientes con cuotas</p>
-              <button onClick={() => { setShowCreate(true); setCreateError(null); }} className="bg-[#00B4A6] text-white px-6 py-2.5 rounded-xl font-medium hover:bg-[#009690]">Crear préstamo</button>
+              <button onClick={() => { setShowCreate(true); setCreateError(null); }} className="bg-[#2563EB] text-white px-6 py-2.5 rounded-xl font-medium hover:bg-[#1D4ED8]">Crear préstamo</button>
             </div>
           ) : (
             <>
@@ -1204,7 +1206,7 @@ export default function PrestamosModule() {
                   <thead>
                     <tr className="border-b border-gray-100 dark:border-white/5 text-left">
                       <th className="px-3 py-3 w-8">
-                        <input type="checkbox" checked={selectedIds.size > 0 && selectedIds.size === paginated.length} onChange={toggleSelectAll} className="rounded accent-[#00B4A6] cursor-pointer" />
+                        <input type="checkbox" checked={selectedIds.size > 0 && selectedIds.size === paginated.length} onChange={toggleSelectAll} className="rounded accent-[#2563EB] cursor-pointer" />
                       </th>
                       <th className="px-4 py-3 font-semibold text-gray-500 dark:text-gray-400">Cliente</th>
                       <th className="px-2 py-3 font-semibold text-gray-500 dark:text-gray-400 text-center hidden sm:table-cell">Sys</th>
@@ -1237,9 +1239,9 @@ export default function PrestamosModule() {
                       const sisBadge = p.sistemaAmortizacion === "FRANCES" ? "F" : p.sistemaAmortizacion === "ALEMAN" ? "A" : "AM";
                       const sisBg = p.sistemaAmortizacion === "FRANCES" ? "bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400" : p.sistemaAmortizacion === "ALEMAN" ? "bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-400" : "bg-orange-100 dark:bg-orange-900/30 text-orange-700 dark:text-orange-400";
                       return (
-                        <tr key={p.id} className={cn("border-b border-gray-50 dark:border-white/5 hover:bg-gray-50 dark:hover:bg-white/5 transition-colors", selectedIds.has(p.id) && "bg-[#00B4A6]/5 dark:bg-[#00B4A6]/10")}>
+                        <tr key={p.id} className={cn("border-b border-gray-50 dark:border-white/5 hover:bg-gray-50 dark:hover:bg-white/5 transition-colors", selectedIds.has(p.id) && "bg-[#2563EB]/5 dark:bg-[#2563EB]/10")}>
                           <td className="px-3 py-3 w-8" onClick={e => e.stopPropagation()}>
-                            <input type="checkbox" checked={selectedIds.has(p.id)} onChange={() => toggleSelect(p.id)} className="rounded accent-[#00B4A6] cursor-pointer" />
+                            <input type="checkbox" checked={selectedIds.has(p.id)} onChange={() => toggleSelect(p.id)} className="rounded accent-[#2563EB] cursor-pointer" />
                           </td>
                           <td className="px-4 py-3 cursor-pointer" onClick={() => openDetail(p)}>
                             <div className="flex items-center gap-2">
@@ -1250,7 +1252,7 @@ export default function PrestamosModule() {
                               <div className="min-w-0">
                                 <p className="font-medium text-gray-900 dark:text-white truncate">{p.entidadNombre || p.customerId}</p>
                                 <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-1.5 mt-1">
-                                  <div className="bg-[#00B4A6] h-1.5 rounded-full" style={{ width: `${p.numeroCuotas > 0 ? (cuotasPagadas / p.numeroCuotas) * 100 : 0}%` }} />
+                                  <div className="bg-[#2563EB] h-1.5 rounded-full" style={{ width: `${p.numeroCuotas > 0 ? (cuotasPagadas / p.numeroCuotas) * 100 : 0}%` }} />
                                 </div>
                                 <span className="text-[9px] text-gray-400">{cuotasPagadas}/{p.numeroCuotas} cuotas</span>
                                 {proxVence && (
@@ -1312,7 +1314,7 @@ export default function PrestamosModule() {
             <button
               onClick={fetchCobros}
               disabled={cobrosLoading}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#00B4A6] text-white text-xs font-bold hover:opacity-90 transition disabled:opacity-50"
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#2563EB] text-white text-xs font-bold hover:opacity-90 transition disabled:opacity-50"
             >
               <RefreshCcw className={cn("h-3.5 w-3.5", cobrosLoading && "animate-spin")} />
               Actualizar
@@ -1321,7 +1323,7 @@ export default function PrestamosModule() {
 
           {cobrosLoading && (
             <div className="flex items-center justify-center py-10">
-              <Loader2 className="h-6 w-6 animate-spin text-[#00B4A6]" />
+              <Loader2 className="h-6 w-6 animate-spin text-[#2563EB]" />
             </div>
           )}
 
@@ -1467,7 +1469,7 @@ export default function PrestamosModule() {
                   value={calcMonto}
                   onChange={e => setCalcMonto(e.target.value)}
                   placeholder="1000"
-                  className="w-full px-3 py-2 rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 text-sm text-gray-900 dark:text-white placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#00B4A6]/30"
+                  className="w-full px-3 py-2 rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 text-sm text-gray-900 dark:text-white placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#2563EB]/30"
                 />
               </div>
               <div>
@@ -1480,17 +1482,17 @@ export default function PrestamosModule() {
                   value={calcTasa}
                   onChange={e => setCalcTasa(e.target.value)}
                   placeholder="12"
-                  className="w-full px-3 py-2 rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 text-sm text-gray-900 dark:text-white placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#00B4A6]/30"
+                  className="w-full px-3 py-2 rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 text-sm text-gray-900 dark:text-white placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#2563EB]/30"
                 />
               </div>
               <div>
                 <label className="block text-xs font-bold text-gray-600 dark:text-gray-400 mb-1">N° cuotas</label>
-                <input type="number" min="1" max="60" value={calcCuotas} onChange={e => setCalcCuotas(e.target.value)} placeholder="12" className="w-full px-3 py-2 rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 text-sm text-gray-900 dark:text-white placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#00B4A6]/30" />
+                <input type="number" min="1" max="60" value={calcCuotas} onChange={e => setCalcCuotas(e.target.value)} placeholder="12" className="w-full px-3 py-2 rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 text-sm text-gray-900 dark:text-white placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#2563EB]/30" />
               </div>
               {/* Mejora 19: Sistema selector */}
               <div>
                 <label className="block text-xs font-bold text-gray-600 dark:text-gray-400 mb-1">Sistema amortización</label>
-                <select value={calcSistema} onChange={e => setCalcSistema(e.target.value as SistemaAmortizacion)} className="w-full px-3 py-2 rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 text-sm text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-[#00B4A6]/30">
+                <select value={calcSistema} onChange={e => setCalcSistema(e.target.value as SistemaAmortizacion)} className="w-full px-3 py-2 rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 text-sm text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-[#2563EB]/30">
                   {Object.entries(SISTEMA_LABELS).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
                 </select>
               </div>
@@ -1498,7 +1500,7 @@ export default function PrestamosModule() {
             <div className="flex flex-wrap gap-2">
               {amortizacion.length > 0 && (
                 <>
-                  <button onClick={() => { setShowCreate(true); setCreateError(null); }} className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-bold text-white bg-[#00B4A6] hover:bg-[#009690] shadow-sm transition-colors">
+                  <button onClick={() => { setShowCreate(true); setCreateError(null); }} className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-bold text-white bg-[#2563EB] hover:bg-[#1D4ED8] shadow-sm transition-colors">
                     <Plus className="h-4 w-4" /> Crear Préstamo con estos datos
                   </button>
                   <button onClick={() => setShowComparador(c => !c)} className={cn("inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-bold shadow-sm transition-colors border", showComparador ? "bg-blue-600 text-white border-blue-600" : "border-gray-200 dark:border-white/10 text-gray-600 dark:text-gray-400 hover:border-blue-500 hover:text-blue-600")}>
@@ -1551,7 +1553,7 @@ export default function PrestamosModule() {
           {amortizacion.length > 0 && (
             <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl p-4 sm:p-6 shadow-sm">
               <h3 className="text-sm font-bold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
-                <TrendingUp className="h-4 w-4 text-[#00B4A6]" /> Evolución Capital vs Interés ({calcSistema})
+                <TrendingUp className="h-4 w-4 text-[#2563EB]" /> Evolución Capital vs Interés ({calcSistema})
               </h3>
               <ResponsiveContainer width="100%" height={220}>
                 <LineChart data={amortizacion}>
@@ -1560,7 +1562,7 @@ export default function PrestamosModule() {
                   <YAxis tickFormatter={(v: number) => `S/${v.toFixed(0)}`} tick={{ fontSize: 10 }} axisLine={false} tickLine={false} />
                   <Tooltip formatter={((v: number, n: string) => [formatCurrency(Number(v)), n === "capital" ? "💹 Capital" : n === "interes" ? "🔴 Interés" : "📈 Saldo"]) as never} contentStyle={{ borderRadius: "12px", fontSize: "12px" }} />
                   <Legend formatter={(v: string) => v === "capital" ? "💹 Capital" : v === "interes" ? "🔴 Interés" : "📈 Saldo"} wrapperStyle={{ fontSize: 11 }} />
-                  <Line type="monotone" dataKey="capital" stroke="#00B4A6" strokeWidth={2.5} dot={false} />
+                  <Line type="monotone" dataKey="capital" stroke="#2563EB" strokeWidth={2.5} dot={false} />
                   <Line type="monotone" dataKey="interes" stroke="#e63946" strokeWidth={2.5} dot={false} />
                   <Line type="monotone" dataKey="saldo" stroke="#3b82f6" strokeWidth={1.5} dot={false} strokeDasharray="4 2" />
                 </LineChart>
@@ -1576,7 +1578,7 @@ export default function PrestamosModule() {
             const montoBase = parseFloat(calcMonto) || 0;
             return (
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-                {[{ label: "Total a pagar", value: formatCurrency(totalPagar), color: "text-gray-900 dark:text-white" }, { label: "Total intereses", value: formatCurrency(totalInt), color: "text-red-600 dark:text-red-400" }, { label: "Cuota promedio", value: formatCurrency(cuotaProm), color: "text-[#00B4A6]" }, { label: "Costo / capital", value: montoBase > 0 ? `${((totalInt / montoBase) * 100).toFixed(1)}%` : "—", color: "text-amber-600 dark:text-amber-400" }].map(kpi => (
+                {[{ label: "Total a pagar", value: formatCurrency(totalPagar), color: "text-gray-900 dark:text-white" }, { label: "Total intereses", value: formatCurrency(totalInt), color: "text-red-600 dark:text-red-400" }, { label: "Cuota promedio", value: formatCurrency(cuotaProm), color: "text-[#2563EB]" }, { label: "Costo / capital", value: montoBase > 0 ? `${((totalInt / montoBase) * 100).toFixed(1)}%` : "—", color: "text-amber-600 dark:text-amber-400" }].map(kpi => (
                   <div key={kpi.label} className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl p-3 shadow-sm text-center">
                     <p className="text-[10px] uppercase font-bold text-gray-400 mb-1">{kpi.label}</p>
                     <p className={cn("text-lg font-extrabold font-mono", kpi.color)}>{kpi.value}</p>
@@ -1589,7 +1591,7 @@ export default function PrestamosModule() {
           {/* Mejora 19: Comparador de los 3 sistemas */}
           {showComparador && amortizacionAll && (() => {
             const sistemas = Object.entries(amortizacionAll) as [SistemaAmortizacion, { num: number; cuota: number; interes: number; capital: number; saldo: number }[]][];
-            const colores: Record<SistemaAmortizacion, string> = { FRANCES: "#00B4A6", ALEMAN: "#3b82f6", AMERICANO: "#f97316" };
+            const colores: Record<SistemaAmortizacion, string> = { FRANCES: "#2563EB", ALEMAN: "#3b82f6", AMERICANO: "#f97316" };
             return (
               <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl p-4 sm:p-6 shadow-sm space-y-4">
                 <h3 className="text-sm font-bold text-gray-900 dark:text-white flex items-center gap-2">
@@ -1772,13 +1774,13 @@ export default function PrestamosModule() {
                     <div className="flex bg-gray-100 dark:bg-white/5 rounded-lg p-0.5">
                       <button
                         onClick={() => setDetailView("timeline")}
-                        className={cn("px-2.5 py-1 rounded-md text-[10px] font-bold transition-colors", detailView === "timeline" ? "bg-white dark:bg-white/10 text-[#00B4A6] shadow-sm" : "text-gray-500")}
+                        className={cn("px-2.5 py-1 rounded-md text-[10px] font-bold transition-colors", detailView === "timeline" ? "bg-white dark:bg-white/10 text-[#2563EB] shadow-sm" : "text-gray-500")}
                       >
                         Timeline
                       </button>
                       <button
                         onClick={() => setDetailView("amortizacion")}
-                        className={cn("px-2.5 py-1 rounded-md text-[10px] font-bold transition-colors", detailView === "amortizacion" ? "bg-white dark:bg-white/10 text-[#00B4A6] shadow-sm" : "text-gray-500")}
+                        className={cn("px-2.5 py-1 rounded-md text-[10px] font-bold transition-colors", detailView === "amortizacion" ? "bg-white dark:bg-white/10 text-[#2563EB] shadow-sm" : "text-gray-500")}
                       >
                         Tabla
                       </button>
@@ -1786,7 +1788,7 @@ export default function PrestamosModule() {
                   </div>
                   {detailLoading ? (
                     <div className="flex justify-center py-6">
-                      <Loader2 className="h-5 w-5 animate-spin text-[#00B4A6]" />
+                      <Loader2 className="h-5 w-5 animate-spin text-[#2563EB]" />
                     </div>
                   ) : selected.cuotas.length === 0 ? (
                     <p className="text-sm text-gray-400 text-center py-4">Sin cuotas</p>
@@ -1920,12 +1922,12 @@ export default function PrestamosModule() {
 <style>
   @media print { @page { margin: 1.5cm; } body { -webkit-print-color-adjust: exact; print-color-adjust: exact; } }
   body { font-family: Arial, sans-serif; color: #333; padding: 20px; }
-  h1 { color: #00B4A6; font-size: 16px; margin-bottom: 4px; text-align: center; }
+  h1 { color: #2563EB; font-size: 16px; margin-bottom: 4px; text-align: center; }
   .sub { text-align: center; color: #666; font-size: 12px; margin-bottom: 20px; }
   .info { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 20px; font-size: 13px; }
-  .info b { color: #00B4A6; }
+  .info b { color: #2563EB; }
   table { width: 100%; border-collapse: collapse; font-size: 11px; }
-  th { background: #00B4A6; color: white; padding: 8px; text-align: left; }
+  th { background: #2563EB; color: white; padding: 8px; text-align: left; }
   td { padding: 6px 8px; border-bottom: 1px solid #eee; }
   tr:nth-child(even) { background: #f9f9f9; }
   .paid { color: #059669; font-weight: bold; }
@@ -1987,12 +1989,12 @@ ${cuotas.map(c => { const row = `<tr>
 <style>
   @media print { @page { margin: 1.5cm; } body { -webkit-print-color-adjust: exact; print-color-adjust: exact; } }
   body { font-family: 'Courier New', monospace; color: #333; padding: 20px; max-width: 600px; margin: 0 auto; }
-  .header { text-align: center; border-top: 3px double #00B4A6; border-bottom: 3px double #00B4A6; padding: 12px 0; margin-bottom: 20px; }
-  .header h1 { color: #00B4A6; font-size: 16px; margin: 0; }
+  .header { text-align: center; border-top: 3px double #2563EB; border-bottom: 3px double #2563EB; padding: 12px 0; margin-bottom: 20px; }
+  .header h1 { color: #2563EB; font-size: 16px; margin: 0; }
   .header p { color: #666; font-size: 11px; margin: 4px 0 0; }
   .section { border-top: 1px dashed #999; padding: 12px 0; font-size: 13px; }
   .row { display: flex; justify-content: space-between; margin: 4px 0; }
-  .row b { color: #00B4A6; }
+  .row b { color: #2563EB; }
   table { width: 100%; border-collapse: collapse; font-size: 11px; margin: 10px 0; }
   th { background: #f0f0f0; padding: 6px; text-align: left; border: 1px solid #ddd; }
   td { padding: 5px 6px; border: 1px solid #eee; }
@@ -2047,7 +2049,7 @@ ${cuotas.map(c => { const row = `<tr>
                             w.document.close();
                             setTimeout(() => w.print(), 300);
                           }}
-                          className="flex-1 flex items-center justify-center gap-2 px-4 py-2 rounded-xl text-xs font-bold text-[#00B4A6] bg-[#00B4A6]/10 hover:bg-[#00B4A6]/20 transition-colors"
+                          className="flex-1 flex items-center justify-center gap-2 px-4 py-2 rounded-xl text-xs font-bold text-[#2563EB] bg-[#2563EB]/10 hover:bg-[#2563EB]/20 transition-colors"
                         >
                           <FileText className="h-3.5 w-3.5" /> Resumen Deuda
                         </button>
@@ -2067,7 +2069,7 @@ ${cuotas.map(c => { const row = `<tr>
                                   key={c.id}
                                   className={cn(
                                     "flex items-center gap-2 px-3 py-2 rounded-xl border cursor-pointer transition-all",
-                                    isSelected ? "border-[#00B4A6] bg-[#00B4A6]/5 dark:bg-[#00B4A6]/10" : "border-gray-200 dark:border-white/10 hover:border-gray-300",
+                                    isSelected ? "border-[#2563EB] bg-[#2563EB]/5 dark:bg-[#2563EB]/10" : "border-gray-200 dark:border-white/10 hover:border-gray-300",
                                     isOverdue && !isSelected && "border-red-200 dark:border-red-800 bg-red-50/50 dark:bg-red-900/10"
                                   )}
                                 >
@@ -2079,7 +2081,7 @@ ${cuotas.map(c => { const row = `<tr>
                                       if (next.has(c.id)) next.delete(c.id); else next.add(c.id);
                                       setSelectedCuotaIds(next);
                                     }}
-                                    className="accent-[#00B4A6] h-3.5 w-3.5"
+                                    className="accent-[#2563EB] h-3.5 w-3.5"
                                   />
                                   <span className="flex-1 text-xs">
                                     <span className="font-bold text-gray-900 dark:text-white">Cuota {c.numeroCuota}</span>
@@ -2097,7 +2099,7 @@ ${cuotas.map(c => { const row = `<tr>
                               <button
                                 onClick={handlePagoMultiple}
                                 disabled={payingMultiple}
-                                className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold text-white bg-[#00B4A6] hover:bg-[#009690] disabled:opacity-50 shadow-sm transition-colors"
+                                className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold text-white bg-[#2563EB] hover:bg-[#1D4ED8] disabled:opacity-50 shadow-sm transition-colors"
                               >
                                 {payingMultiple ? <Loader2 className="h-4 w-4 animate-spin" /> : <DollarSign className="h-4 w-4" />}
                                 Pagar {selectedCuotaIds.size} cuota{selectedCuotaIds.size > 1 ? "s" : ""} ({formatCurrency(selected.cuotas.filter(c => selectedCuotaIds.has(c.id)).reduce((s, c) => s + c.monto, 0))})
@@ -2108,7 +2110,7 @@ ${cuotas.map(c => { const row = `<tr>
                                   const next = selected.cuotas.find(c => !c.pagadoEn);
                                   if (next) { setPagoCuotaId(next.id); setPagoMonto(String(next.monto)); setPagoError(null); setShowPago(true); }
                                 }}
-                                className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold text-white bg-[#00B4A6] hover:bg-[#009690] shadow-sm transition-colors"
+                                className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold text-white bg-[#2563EB] hover:bg-[#1D4ED8] shadow-sm transition-colors"
                               >
                                 <DollarSign className="h-4 w-4" /> Pagar siguiente cuota
                               </button>
@@ -2157,7 +2159,7 @@ ${cuotas.map(c => { const row = `<tr>
                             const file = e.target.files?.[0]; if (!file) return; setUploadingDoc(true);
                             try { const form = new FormData(); form.append("file", file); form.append("nombre", file.name); await fetch(`/api/prestamos/${selected.id}/documentos`, { method: "POST", body: form }); await openDetail(selected); } catch { /* silent */ } finally { setUploadingDoc(false); e.target.value = ""; }
                           }} />
-                          {uploadingDoc ? <Loader2 className="h-3.5 w-3.5 animate-spin text-[#00B4A6]" /> : <Plus className="h-3.5 w-3.5 text-[#00B4A6]" />}
+                          {uploadingDoc ? <Loader2 className="h-3.5 w-3.5 animate-spin text-[#2563EB]" /> : <Plus className="h-3.5 w-3.5 text-[#2563EB]" />}
                           <span className="text-xs text-gray-500">Subir documento</span>
                         </label>
                       </div>
@@ -2169,7 +2171,7 @@ ${cuotas.map(c => { const row = `<tr>
                         return (
                           <div>
                             <h4 className="text-sm font-bold text-gray-900 dark:text-white mb-2 flex items-center gap-2">
-                              <History className="h-4 w-4 text-[#00B4A6]" /> Historial de pagos ({pagadas.length})
+                              <History className="h-4 w-4 text-[#2563EB]" /> Historial de pagos ({pagadas.length})
                             </h4>
                             <div className="space-y-2 max-h-52 overflow-y-auto">
                               {pagadas.map(c => (
@@ -2284,7 +2286,7 @@ ${cuotas.map(c => { const row = `<tr>
                     min="0.01"
                     value={pagoMonto}
                     onChange={e => setPagoMonto(e.target.value)}
-                    className="w-full px-3 py-2 rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 text-sm text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-[#00B4A6]/30"
+                    className="w-full px-3 py-2 rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 text-sm text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-[#2563EB]/30"
                   />
                 </div>
                 {pagoError && <p className="text-xs text-red-600 dark:text-red-400 font-semibold">{pagoError}</p>}
@@ -2295,7 +2297,7 @@ ${cuotas.map(c => { const row = `<tr>
                   <button
                     onClick={handlePago}
                     disabled={paying}
-                    className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-sm font-bold text-white bg-[#00B4A6] hover:bg-[#009690] disabled:opacity-50 shadow-sm transition-colors"
+                    className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-sm font-bold text-white bg-[#2563EB] hover:bg-[#1D4ED8] disabled:opacity-50 shadow-sm transition-colors"
                   >
                     {paying ? <Loader2 className="h-4 w-4 animate-spin" /> : <DollarSign className="h-4 w-4" />}
                     Pagar
@@ -2332,7 +2334,7 @@ ${cuotas.map(c => { const row = `<tr>
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
                     <h3 className="text-lg font-bold text-gray-900 dark:text-white">Crear Préstamo</h3>
-                    <span className="text-xs font-medium px-2 py-0.5 rounded-full bg-[#00B4A6]/10 text-[#00B4A6] dark:bg-[#00B4A6]/20 dark:text-[#2dd4bf]">
+                    <span className="text-xs font-medium px-2 py-0.5 rounded-full bg-[#2563EB]/10 text-[#2563EB] dark:bg-[#2563EB]/20 dark:text-[#2dd4bf]">
                       Paso {createStep} de 2
                     </span>
                   </div>
@@ -2343,8 +2345,8 @@ ${cuotas.map(c => { const row = `<tr>
 
                 {/* Step indicator */}
                 <div className="flex gap-2">
-                  <div className={`flex-1 h-1 rounded-full transition-colors ${createStep >= 1 ? "bg-[#00B4A6]" : "bg-gray-200 dark:bg-white/10"}`} />
-                  <div className={`flex-1 h-1 rounded-full transition-colors ${createStep >= 2 ? "bg-[#00B4A6]" : "bg-gray-200 dark:bg-white/10"}`} />
+                  <div className={`flex-1 h-1 rounded-full transition-colors ${createStep >= 1 ? "bg-[#2563EB]" : "bg-gray-200 dark:bg-white/10"}`} />
+                  <div className={`flex-1 h-1 rounded-full transition-colors ${createStep >= 2 ? "bg-[#2563EB]" : "bg-gray-200 dark:bg-white/10"}`} />
                 </div>
 
                 {/* ── STEP 1: Tipo, Dirección, Entidad ──────────── */}
@@ -2362,7 +2364,7 @@ ${cuotas.map(c => { const row = `<tr>
                             <button
                               key={dir}
                               onClick={() => setCreateDireccion(dir)}
-                              className={`flex items-center gap-2 px-3 py-2.5 rounded-xl border-2 text-sm font-bold transition-all ${active ? "border-[#00B4A6] bg-[#00B4A6]/5 text-[#00B4A6] dark:bg-[#00B4A6]/10 dark:text-[#2dd4bf]" : "border-gray-200 dark:border-white/10 text-gray-500 dark:text-gray-400 hover:border-gray-300"}`}
+                              className={`flex items-center gap-2 px-3 py-2.5 rounded-xl border-2 text-sm font-bold transition-all ${active ? "border-[#2563EB] bg-[#2563EB]/5 text-[#2563EB] dark:bg-[#2563EB]/10 dark:text-[#2dd4bf]" : "border-gray-200 dark:border-white/10 text-gray-500 dark:text-gray-400 hover:border-gray-300"}`}
                             >
                               <Icon className="h-4 w-4" />
                               {meta.label}
@@ -2412,7 +2414,7 @@ ${cuotas.map(c => { const row = `<tr>
                               <button
                                 key={preset.nombre}
                                 onClick={() => applyBankPreset(preset)}
-                                className={`px-2 py-1.5 rounded-lg text-[11px] font-bold transition-all border ${active ? "border-[#00B4A6] bg-[#00B4A6]/10 text-[#00B4A6] dark:text-[#2dd4bf]" : "border-gray-200 dark:border-white/10 text-gray-600 dark:text-gray-400 hover:border-[#00B4A6]/50"}`}
+                                className={`px-2 py-1.5 rounded-lg text-[11px] font-bold transition-all border ${active ? "border-[#2563EB] bg-[#2563EB]/10 text-[#2563EB] dark:text-[#2dd4bf]" : "border-gray-200 dark:border-white/10 text-gray-600 dark:text-gray-400 hover:border-[#2563EB]/50"}`}
                               >
                                 <span className="block">{preset.nombre}</span>
                                 <span className="block text-[9px] opacity-60">TEA ~{preset.teaRef}%</span>
@@ -2433,7 +2435,7 @@ ${cuotas.map(c => { const row = `<tr>
                             value={createEntidadNombre}
                             onChange={e => setCreateEntidadNombre(e.target.value)}
                             placeholder={createTipo === "BANCARIO" ? "Ej: BCP" : createTipo === "PROVEEDOR" ? "Ej: Distribuidora Lima" : "Ej: Juan Pérez"}
-                            className="w-full px-3 py-2 rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 text-sm text-gray-900 dark:text-white placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#00B4A6]/30"
+                            className="w-full px-3 py-2 rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 text-sm text-gray-900 dark:text-white placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#2563EB]/30"
                           />
                         </div>
                         <div>
@@ -2441,7 +2443,7 @@ ${cuotas.map(c => { const row = `<tr>
                           <select
                             value={createEntidadTipo}
                             onChange={e => setCreateEntidadTipo(e.target.value as PrestamoEntidadTipo)}
-                            className="w-full px-3 py-2 rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 text-sm text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-[#00B4A6]/30"
+                            className="w-full px-3 py-2 rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 text-sm text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-[#2563EB]/30"
                           >
                             <option value="">Seleccionar...</option>
                             {(Object.entries(ENTIDAD_LABELS) as [PrestamoEntidadTipo, string][]).map(([k, v]) => (
@@ -2462,12 +2464,12 @@ ${cuotas.map(c => { const row = `<tr>
                             value={createCustomerId}
                             onChange={e => setCreateCustomerId(e.target.value)}
                             placeholder="Ej: 987654321"
-                            className="flex-1 px-3 py-2 rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 text-sm text-gray-900 dark:text-white placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#00B4A6]/30"
+                            className="flex-1 px-3 py-2 rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 text-sm text-gray-900 dark:text-white placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#2563EB]/30"
                           />
                           <button
                             type="button"
                             onClick={() => setShowQuickClient(true)}
-                            className="shrink-0 h-[38px] w-[38px] flex items-center justify-center rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 hover:bg-[#00B4A6] hover:text-white hover:border-[#00B4A6] text-gray-500 transition-colors"
+                            className="shrink-0 h-[38px] w-[38px] flex items-center justify-center rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 hover:bg-[#2563EB] hover:text-white hover:border-[#2563EB] text-gray-500 transition-colors"
                             title="Crear cliente rápido"
                           >
                             <Plus className="h-4 w-4" />
@@ -2484,7 +2486,7 @@ ${cuotas.map(c => { const row = `<tr>
                         value={createNroOperacion}
                         onChange={e => setCreateNroOperacion(e.target.value)}
                         placeholder="Ej: OP-2025-001234"
-                        className="w-full px-3 py-2 rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 text-sm text-gray-900 dark:text-white placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#00B4A6]/30"
+                        className="w-full px-3 py-2 rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 text-sm text-gray-900 dark:text-white placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#2563EB]/30"
                       />
                     </div>
 
@@ -2496,7 +2498,7 @@ ${cuotas.map(c => { const row = `<tr>
                       </button>
                       <button
                         onClick={() => { setCreateError(null); setCreateStep(2); }}
-                        className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-sm font-bold text-white bg-[#00B4A6] hover:bg-[#009690] shadow-sm transition-colors"
+                        className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-sm font-bold text-white bg-[#2563EB] hover:bg-[#1D4ED8] shadow-sm transition-colors"
                       >
                         Siguiente
                         <ChevronRight className="h-4 w-4" />
@@ -2516,7 +2518,7 @@ ${cuotas.map(c => { const row = `<tr>
                         <span style={{ color: TIPO_META[createTipo].color }} className="font-bold">{TIPO_META[createTipo].label}</span>
                         {createEntidadNombre && <><span>·</span><span className="font-medium">{createEntidadNombre}</span></>}
                       </div>
-                      <button onClick={() => setCreateStep(1)} className="text-[11px] font-bold text-[#00B4A6] dark:text-[#2dd4bf] hover:underline">Editar</button>
+                      <button onClick={() => setCreateStep(1)} className="text-[11px] font-bold text-[#2563EB] dark:text-[#2dd4bf] hover:underline">Editar</button>
                     </div>
 
                     {/* Moneda + Monto */}
@@ -2526,7 +2528,7 @@ ${cuotas.map(c => { const row = `<tr>
                         <select
                           value={createMoneda}
                           onChange={e => setCreateMoneda(e.target.value)}
-                          className="w-full px-3 py-2 rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 text-sm text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-[#00B4A6]/30"
+                          className="w-full px-3 py-2 rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 text-sm text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-[#2563EB]/30"
                         >
                           <option value="PEN">S/ Soles</option>
                           <option value="USD">$ Dólares</option>
@@ -2541,7 +2543,7 @@ ${cuotas.map(c => { const row = `<tr>
                           value={calcMonto}
                           onChange={e => setCalcMonto(e.target.value)}
                           placeholder="10000"
-                          className="w-full px-3 py-2 rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 text-sm text-gray-900 dark:text-white placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#00B4A6]/30"
+                          className="w-full px-3 py-2 rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 text-sm text-gray-900 dark:text-white placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#2563EB]/30"
                         />
                       </div>
                     </div>
@@ -2558,7 +2560,7 @@ ${cuotas.map(c => { const row = `<tr>
                           value={calcTasa}
                           onChange={e => setCalcTasa(e.target.value)}
                           placeholder="1.5"
-                          className="w-full px-3 py-2 rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 text-sm text-gray-900 dark:text-white placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#00B4A6]/30"
+                          className="w-full px-3 py-2 rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 text-sm text-gray-900 dark:text-white placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#2563EB]/30"
                         />
                       </div>
                       <div>
@@ -2571,7 +2573,7 @@ ${cuotas.map(c => { const row = `<tr>
                           value={createTea}
                           onChange={e => setCreateTea(e.target.value)}
                           placeholder="19.56"
-                          className="w-full px-3 py-2 rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 text-sm text-gray-900 dark:text-white placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#00B4A6]/30"
+                          className="w-full px-3 py-2 rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 text-sm text-gray-900 dark:text-white placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#2563EB]/30"
                         />
                       </div>
                       <div>
@@ -2584,7 +2586,7 @@ ${cuotas.map(c => { const row = `<tr>
                           value={createMoraInteres}
                           onChange={e => setCreateMoraInteres(e.target.value)}
                           placeholder="15"
-                          className="w-full px-3 py-2 rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 text-sm text-gray-900 dark:text-white placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#00B4A6]/30"
+                          className="w-full px-3 py-2 rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 text-sm text-gray-900 dark:text-white placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#2563EB]/30"
                         />
                       </div>
                     </div>
@@ -2600,7 +2602,7 @@ ${cuotas.map(c => { const row = `<tr>
                           value={calcCuotas}
                           onChange={e => setCalcCuotas(e.target.value)}
                           placeholder="12"
-                          className="w-full px-3 py-2 rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 text-sm text-gray-900 dark:text-white placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#00B4A6]/30"
+                          className="w-full px-3 py-2 rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 text-sm text-gray-900 dark:text-white placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#2563EB]/30"
                         />
                       </div>
                       <div>
@@ -2608,7 +2610,7 @@ ${cuotas.map(c => { const row = `<tr>
                         <select
                           value={calcSistema}
                           onChange={e => setCalcSistema(e.target.value as SistemaAmortizacion)}
-                          className="w-full px-3 py-2 rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 text-sm text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-[#00B4A6]/30"
+                          className="w-full px-3 py-2 rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 text-sm text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-[#2563EB]/30"
                         >
                           {(Object.entries(SISTEMA_LABELS) as [SistemaAmortizacion, string][]).map(([k, v]) => (
                             <option key={k} value={k}>{v}</option>
@@ -2624,7 +2626,7 @@ ${cuotas.map(c => { const row = `<tr>
                           value={createPeriodoGracia}
                           onChange={e => setCreatePeriodoGracia(e.target.value)}
                           placeholder="0"
-                          className="w-full px-3 py-2 rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 text-sm text-gray-900 dark:text-white placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#00B4A6]/30"
+                          className="w-full px-3 py-2 rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 text-sm text-gray-900 dark:text-white placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#2563EB]/30"
                         />
                       </div>
                     </div>
@@ -2637,7 +2639,7 @@ ${cuotas.map(c => { const row = `<tr>
                           type="date"
                           value={createFechaDesembolso}
                           onChange={e => setCreateFechaDesembolso(e.target.value)}
-                          className="w-full px-3 py-2 rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 text-sm text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-[#00B4A6]/30"
+                          className="w-full px-3 py-2 rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 text-sm text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-[#2563EB]/30"
                         />
                       </div>
                       <div>
@@ -2647,7 +2649,7 @@ ${cuotas.map(c => { const row = `<tr>
                           value={createGarantia}
                           onChange={e => setCreateGarantia(e.target.value)}
                           placeholder="Ej: Título de propiedad"
-                          className="w-full px-3 py-2 rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 text-sm text-gray-900 dark:text-white placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#00B4A6]/30"
+                          className="w-full px-3 py-2 rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 text-sm text-gray-900 dark:text-white placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#2563EB]/30"
                         />
                       </div>
                     </div>
@@ -2660,7 +2662,7 @@ ${cuotas.map(c => { const row = `<tr>
                         value={createNotas}
                         onChange={e => setCreateNotas(e.target.value)}
                         placeholder="Motivo del préstamo, condiciones especiales..."
-                        className="w-full px-3 py-2 rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 text-sm text-gray-900 dark:text-white placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#00B4A6]/30"
+                        className="w-full px-3 py-2 rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 text-sm text-gray-900 dark:text-white placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#2563EB]/30"
                       />
                     </div>
 
@@ -2673,7 +2675,7 @@ ${cuotas.map(c => { const row = `<tr>
                       <button
                         onClick={handleCreate}
                         disabled={creating}
-                        className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-sm font-bold text-white bg-[#00B4A6] hover:bg-[#009690] disabled:opacity-50 shadow-sm transition-colors"
+                        className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-sm font-bold text-white bg-[#2563EB] hover:bg-[#1D4ED8] disabled:opacity-50 shadow-sm transition-colors"
                       >
                         {creating ? <Loader2 className="h-4 w-4 animate-spin" /> : <Plus className="h-4 w-4" />}
                         Crear Préstamo

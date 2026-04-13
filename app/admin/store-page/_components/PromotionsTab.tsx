@@ -103,7 +103,7 @@ export default function PromotionsTab() {
         <h3 className="font-bold">Promociones de la página individual</h3>
         <button
           onClick={() => setShowForm((v) => !v)}
-          className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-teal-600 hover:bg-teal-700 text-white font-semibold text-sm"
+          className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-semibold text-sm"
         >
           <Plus className="w-4 h-4" />
           Nueva promoción
@@ -111,7 +111,7 @@ export default function PromotionsTab() {
       </div>
 
       {showForm && (
-        <section className="p-5 rounded-xl border-2 border-teal-500 bg-teal-50 dark:bg-teal-900/10 space-y-4">
+        <section className="p-5 rounded-xl border-2 border-blue-500 bg-blue-50 dark:bg-blue-900/10 space-y-4">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <label className="block">
               <span className="block text-xs font-semibold text-gray-600 dark:text-gray-400 mb-1.5">
@@ -235,7 +235,7 @@ export default function PromotionsTab() {
             <button
               onClick={create}
               disabled={saving || !form.title.trim()}
-              className="px-4 py-2 rounded-lg bg-teal-600 hover:bg-teal-700 disabled:opacity-50 text-white font-semibold text-sm"
+              className="px-4 py-2 rounded-lg bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white font-semibold text-sm"
             >
               {saving ? "Creando…" : "Crear promoción"}
             </button>
