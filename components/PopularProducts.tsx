@@ -47,8 +47,9 @@ export default function PopularProducts() {
     addItem(p);
   }, [addItem]);
 
-  // No render while loading or if empty
-  if (isLoading || popular.length === 0) return <SectionPlaceholder title="Mas Vendidos" hint="Los productos mas populares apareceran aqui automaticamente" cols={6} />;
+  // Show skeleton only while loading, hide section if no products after load
+  if (isLoading) return <SectionPlaceholder title="Mas Vendidos" hint="Cargando..." cols={6} />;
+  if (popular.length === 0) return null;
 
   return (
     <section ref={ref} className="py-14 sm:py-20 bg-surface">

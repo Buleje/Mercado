@@ -247,8 +247,9 @@ export default function CombosSection() {
     [liveProducts, settingsTemplates]
   );
 
-  // No render while loading or if no combos
-  if (isLoading || liveProducts.length === 0 || combos.length === 0) return <SectionPlaceholder title="Combos" hint="Crea combos de productos desde el panel admin para mostrarlos aqui" cols={4} />;
+  // Show skeleton only while loading, hide section if no combos after load
+  if (isLoading) return <SectionPlaceholder title="Combos" hint="Cargando..." cols={4} />;
+  if (liveProducts.length === 0 || combos.length === 0) return null;
 
   return (
     <section className="py-16 sm:py-20 bg-white dark:bg-background">

@@ -58,7 +58,9 @@ export default function DailySpecial() {
   const product = useMemo(() => getDailyProduct(products), [products]);
   const countdown = useCountdown();
 
-  if (isLoading || !product) return <SectionPlaceholder title="Oferta del Dia" hint="Agrega productos para activar la oferta diaria automatica" cols={4} />;
+  // Show skeleton only while loading, hide section if no products after load
+  if (isLoading) return <SectionPlaceholder title="Oferta del Dia" hint="Cargando..." cols={4} />;
+  if (!product) return null;
 
   const inCart = items.find((i) => i.id === product.id);
   const qty = inCart?.quantity ?? 0;

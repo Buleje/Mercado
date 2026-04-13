@@ -38,8 +38,9 @@ export default function LastUnitsSection() {
     [addItem]
   );
 
-  // No render while loading or if empty
-  if (isLoading || lowStock.length === 0) return <SectionPlaceholder title="Ultimas Unidades" hint="Productos con poco stock apareceran aqui para generar urgencia" cols={4} />;
+  // Show skeleton only while loading, hide section if no products after load
+  if (isLoading) return <SectionPlaceholder title="Ultimas Unidades" hint="Cargando..." cols={4} />;
+  if (lowStock.length === 0) return null;
 
   return (
     <section

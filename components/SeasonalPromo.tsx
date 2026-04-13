@@ -99,8 +99,9 @@ export default function SeasonalPromo() {
     return () => clearInterval(t);
   }, [paused, next]);
 
-  // Don't render if loading or no matching promos for actual products
-  if (isLoading || PROMOS.length === 0) return <SectionPlaceholder title="Promo de Temporada" hint="Las promociones de temporada se activan automaticamente" cols={6} />;
+  // Show skeleton only while loading, hide section if no promos after load
+  if (isLoading) return <SectionPlaceholder title="Promo de Temporada" hint="Cargando..." cols={6} />;
+  if (PROMOS.length === 0) return null;
 
   // Clamp idx to valid range
   const safeIdx = idx % PROMOS.length;
