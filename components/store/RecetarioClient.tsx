@@ -55,13 +55,8 @@ const CATEGORIAS = [
   { id: "rapidas", label: "Rapidas", emoji: "\u26A1" },
 ];
 
-const CATEGORIA_GRADIENTS: Record<string, { from: string; to: string }> = {
-  "Entradas": { from: "#e5e7eb", to: "#d1d5db" },
-  "Platos de fondo": { from: "#e5e7eb", to: "#d1d5db" },
-  "Postres": { from: "#e5e7eb", to: "#d1d5db" },
-  "Bebidas": { from: "#e5e7eb", to: "#d1d5db" },
-  "Sopas": { from: "#e5e7eb", to: "#d1d5db" },
-};
+/** Neutral fallback — no rainbow gradients, just gray for all categories */
+const CATEGORIA_GRADIENTS: Record<string, { from: string; to: string }> = {};
 
 const DIFICULTAD_LABELS: Record<string, { label: string; icon: string }> = {
   "Facil": { label: "Facil", icon: "\u2B50" },
@@ -118,10 +113,6 @@ function RecetaCard({
   const cardRef = useRef<HTMLDivElement>(null);
   const inView = useInView(cardRef);
 
-  const colors = receta.colorFrom && receta.colorTo
-    ? { from: receta.colorFrom, to: receta.colorTo }
-    : CATEGORIA_GRADIENTS[receta.categoria || ""] || { from: "#e5e7eb", to: "#d1d5db" };
-
   const dif = DIFICULTAD_LABELS[receta.dificultad || ""] || null;
   // Variable aspect ratio based on category
   const isWide = receta.categoria === "Bebidas" || receta.categoria === "Sopas";
@@ -135,7 +126,7 @@ function RecetaCard({
       transition={{ duration: 0.4, delay: Math.min(index * 0.05, 0.5) }}
       className="group break-inside-avoid mb-6"
     >
-      <div className="rounded-2xl overflow-hidden bg-white dark:bg-gray-900 shadow-sm hover:shadow-2xl border border-gray-100 dark:border-gray-800 transition-all duration-500">
+      <div className="rounded-2xl overflow-hidden bg-white dark:bg-gray-900 shadow-sm hover:shadow-2xl border border-gray-200 dark:border-gray-800 transition-all duration-500">
         {/* Image area */}
         <Link href={`/recetas/${receta.id}`} className="block relative overflow-hidden">
           <div className={cn("relative w-full overflow-hidden", aspectClass)}>
@@ -149,13 +140,8 @@ function RecetaCard({
               />
             ) : (
               /* Gray placeholder with ChefHat icon */
-              <div
-                className="absolute inset-0 flex flex-col items-center justify-center"
-                style={{
-                  background: `linear-gradient(135deg, ${colors.from} 0%, ${colors.to} 100%)`,
-                }}
-              >
-                <ChefHat className="h-16 w-16 text-white/30" strokeWidth={1.5} />
+              <div className="absolute inset-0 flex flex-col items-center justify-center bg-gray-100 dark:bg-gray-800">
+                <ChefHat className="h-16 w-16 text-gray-300 dark:text-gray-600" strokeWidth={1.5} />
               </div>
             )}
 
@@ -166,8 +152,8 @@ function RecetaCard({
               </span>
             )}
 
-            {/* Bottom gradient overlay */}
-            <div className="absolute inset-x-0 bottom-0 h-1/3 bg-gradient-to-t from-black/40 to-transparent" />
+            {/* Subtle bottom gradient for readability of floating badges */}
+            <div className="absolute inset-x-0 bottom-0 h-1/3 bg-gradient-to-t from-black/20 to-transparent" />
 
             {/* Floating badges on image */}
             <div className="absolute bottom-3 left-3 flex items-center gap-2 flex-wrap">
@@ -212,6 +198,11 @@ function RecetaCard({
               {receta.nombre}
             </h3>
           </Link>
+          {receta.categoria && (
+            <span className="inline-block mt-1.5 rounded-full bg-gray-100 dark:bg-gray-800 px-2.5 py-0.5 text-[10px] font-medium text-gray-500 dark:text-gray-400">
+              {receta.categoria}
+            </span>
+          )}
           {receta.descripcion && (
             <p className="text-sm text-gray-500 dark:text-gray-400 line-clamp-2 mt-2 leading-relaxed">
               {receta.descripcion}
@@ -224,7 +215,7 @@ function RecetaCard({
               {receta.ingredientes.length} ingredientes
             </span>
             <span className="text-lg font-extrabold text-primary dark:text-primary-light">
-              S/ {receta.totalIngredientes.toFixed(2)}
+              S/ {Number(receta.totalIngredientes).toFixed(2)}
             </span>
           </div>
 
@@ -251,30 +242,25 @@ function CategoriaCard({
   nombre,
   emoji,
   count,
-  colors,
   onClick,
 }: {
   nombre: string;
   emoji: string;
   count: number;
-  colors: { from: string; to: string };
+  colors?: { from: string; to: string };
   onClick: () => void;
 }) {
   return (
     <button
       onClick={onClick}
-      className="flex-shrink-0 w-40 sm:w-48 rounded-2xl overflow-hidden shadow-md hover:shadow-xl transition-all duration-300 group active:scale-[0.97]"
+      className="flex-shrink-0 w-40 sm:w-48 rounded-2xl overflow-hidden border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 shadow-sm hover:shadow-xl transition-all duration-300 group active:scale-[0.97]"
     >
-      <div
-        className="h-28 flex items-center justify-center relative"
-        style={{ background: `linear-gradient(135deg, ${colors.from}, ${colors.to})` }}
-      >
+      <div className="h-28 flex items-center justify-center relative bg-gray-50 dark:bg-gray-800">
         <span className="text-5xl group-hover:scale-110 transition-transform duration-300 drop-shadow-lg">
           {emoji}
         </span>
-        <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors duration-300" />
       </div>
-      <div className="bg-white dark:bg-gray-900 px-4 py-3 text-left">
+      <div className="px-4 py-3 text-left">
         <p className="font-bold text-sm text-gray-900 dark:text-white">{nombre}</p>
         <p className="text-xs text-gray-500 dark:text-gray-400">{count} receta{count !== 1 ? "s" : ""}</p>
       </div>
@@ -697,9 +683,6 @@ function RecetaListItem({
 }) {
   const cardRef = useRef<HTMLDivElement>(null);
   const inView = useInView(cardRef);
-  const colors = receta.colorFrom && receta.colorTo
-    ? { from: receta.colorFrom, to: receta.colorTo }
-    : CATEGORIA_GRADIENTS[receta.categoria || ""] || { from: "#e5e7eb", to: "#d1d5db" };
 
   return (
     <motion.div
@@ -708,17 +691,23 @@ function RecetaListItem({
       animate={inView ? { opacity: 1, x: 0 } : { opacity: 0, x: -20 }}
       transition={{ duration: 0.3, delay: Math.min(index * 0.03, 0.3) }}
     >
-      <div className="flex gap-4 bg-white dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-gray-800 overflow-hidden shadow-sm hover:shadow-lg transition-all duration-300 group">
+      <div className="flex gap-4 bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-800 overflow-hidden shadow-sm hover:shadow-lg transition-all duration-300 group">
         {/* Mini image */}
         <Link href={`/recetas/${receta.id}`} className="shrink-0 w-28 sm:w-36 relative overflow-hidden">
-          <div
-            className="h-full min-h-30 flex items-center justify-center relative"
-            style={{ background: `linear-gradient(135deg, ${colors.from}, ${colors.to})` }}
-          >
-            <span className="text-5xl group-hover:scale-110 transition-transform duration-500 drop-shadow-lg">
-              {receta.emoji || "\uD83C\uDF73"}
-            </span>
-          </div>
+          {receta.imageUrl ? (
+            <div className="h-full min-h-30 relative">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={receta.imageUrl}
+                alt={receta.nombre}
+                className="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+              />
+            </div>
+          ) : (
+            <div className="h-full min-h-30 flex items-center justify-center bg-gray-100 dark:bg-gray-800">
+              <ChefHat className="h-10 w-10 text-gray-300 dark:text-gray-600" strokeWidth={1.5} />
+            </div>
+          )}
         </Link>
 
         {/* Content */}
@@ -741,7 +730,7 @@ function RecetaListItem({
             )}
             <span>{receta.ingredientes.length} ingredientes</span>
             <span className="font-bold text-primary dark:text-primary-light">
-              S/ {receta.totalIngredientes.toFixed(2)}
+              S/ {Number(receta.totalIngredientes).toFixed(2)}
             </span>
           </div>
         </div>

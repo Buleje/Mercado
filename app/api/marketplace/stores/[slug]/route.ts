@@ -27,6 +27,7 @@ export async function GET(
         vacationMode:    true,
         vacationMessage: true,
         createdAt:       true,
+        tenant: { select: { slug: true } },
         _count: {
           select: {
             // La relación en Store se llama 'products' (StoreProduct[])
@@ -43,9 +44,10 @@ export async function GET(
     // Explicitly pick only public-safe fields (defense-in-depth against accidental
     // leaks if select or a mock returns extra fields like tenantId or commission)
     const { id, slug: storeSlug, name, description, logo, banner, category, zone,
-            rating, reviewCount, vacationMode, vacationMessage, createdAt, _count } = store;
+            rating, reviewCount, vacationMode, vacationMessage, createdAt, tenant, _count } = store;
     return NextResponse.json({ data: { id, slug: storeSlug, name, description, logo, banner,
-      category, zone, rating, reviewCount, vacationMode, vacationMessage, createdAt, _count } });
+      category, zone, rating, reviewCount, vacationMode, vacationMessage, createdAt,
+      tenantSlug: tenant?.slug ?? null, _count } });
   } catch (err) {
     const { payload, status } = toErrorPayload(err, traceId);
     return NextResponse.json(payload, { status });

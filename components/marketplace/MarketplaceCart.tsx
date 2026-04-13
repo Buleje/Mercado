@@ -115,7 +115,8 @@ export function CartBadge({ onClick }: { onClick: () => void }) {
   const [showPreview, setShowPreview] = useState(false);
 
   const allItems = Object.values(byStore).flatMap(s => s.items).slice(0, 3);
-  const fmtPrice = (n: number) => `S/${n.toFixed(2)}`;
+  const fmtPrice = (n: number) =>
+    new Intl.NumberFormat("es-PE", { style: "currency", currency: "PEN" }).format(n);
 
   return (
     <div
@@ -293,7 +294,7 @@ export default function MarketplaceCart({
       .then((r) => (r.ok ? r.json() : null))
       .then((d) => {
         if (!cancelled && d) {
-          setLoyaltyPoints(d.points ?? 0);
+          setLoyaltyPoints(d.data?.points ?? 0);
         }
       })
       .catch(() => {})

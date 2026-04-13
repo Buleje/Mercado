@@ -1,9 +1,9 @@
 import "server-only";
 import { NextRequest, NextResponse } from "next/server";
 import {
-  exchangeCodeForTokens,
-  getGoogleUserInfo,
-} from "@/lib/auth/oauth-google";
+  exchangeCodeForToken,
+  getFacebookUserInfo,
+} from "@/lib/auth/oauth-facebook";
 import { isFeatureEnabled } from "@/lib/feature-flags";
 import { logger } from "@/lib/logger";
 import { CustomersDB } from "@/lib/db/customers.db";
@@ -15,10 +15,10 @@ import {
 const PLATFORM_TENANT_ID = "main";
 
 /**
- * GET /api/auth/google/callback
+ * GET /api/auth/facebook/callback
  *
- * Handles the OAuth 2.0 callback from Google.
- * Validates CSRF state, exchanges the code for tokens, fetches the user profile,
+ * Handles the OAuth 2.0 callback from Facebook.
+ * Validates CSRF state, exchanges the code for a token, fetches the user profile,
  * creates or finds the customer in DB, and sets a customer session cookie.
  */
 export async function GET(req: NextRequest) {
@@ -27,11 +27,11 @@ export async function GET(req: NextRequest) {
     req.headers.get("x-tenant-id") ??
     PLATFORM_TENANT_ID;
 
-  const enabled = isFeatureEnabled("oauth-google", tenantId);
+  const enabled = isFeatureEnabled("oauth-facebook", tenantId);
   if (!enabled) {
     return NextResponse.json(
-      { error: "Google OAuth not enabled for this tenant" },
-      { status: 404 }
+      { error: "Facebook OAuth not enabled for this tenant" },
+      { status: 404 },
     );
   }
 
@@ -40,20 +40,20 @@ export async function GET(req: NextRequest) {
   const storedState = req.cookies.get("oauth-state")?.value;
   const errorParam = req.nextUrl.searchParams.get("error");
 
-  // Google returned an error (user denied consent, etc.)
+  // Facebook returned an error (user denied consent, etc.)
   if (errorParam) {
-    logger.warn("[oauth/google] Google returned error", {
+    logger.warn("[oauth/facebook] Facebook returned error", {
       error: errorParam,
       tenantId,
     });
     return NextResponse.redirect(
-      new URL(`/?oauth=error&provider=google`, req.url)
+      new URL("/?oauth=error&provider=facebook", req.url),
     );
   }
 
   // CSRF state validation
   if (!state || !storedState || state !== storedState) {
-    logger.warn("[oauth/google] CSRF state mismatch", {
+    logger.warn("[oauth/facebook] CSRF state mismatch", {
       hasState: !!state,
       hasStoredState: !!storedState,
       tenantId,
@@ -62,37 +62,39 @@ export async function GET(req: NextRequest) {
   }
 
   if (!code) {
-    logger.warn("[oauth/google] No authorization code received", { tenantId });
+    logger.warn("[oauth/facebook] No authorization code received", { tenantId });
     return NextResponse.redirect(new URL("/?oauth=error&reason=no_code", req.url));
   }
 
   try {
-    const tokens = await exchangeCodeForTokens(code);
-    const googleUser = await getGoogleUserInfo(tokens.access_token);
+    const tokens = await exchangeCodeForToken(code);
+    const fbUser = await getFacebookUserInfo(tokens.access_token);
 
-    logger.info("[oauth/google] User authenticated", {
-      email: googleUser.email,
-      name: googleUser.name,
-      googleId: googleUser.id,
-      verified: googleUser.verified_email,
+    const email = fbUser.email ?? `fb_${fbUser.id}@facebook.buleje.pe`;
+
+    logger.info("[oauth/facebook] User authenticated", {
+      email,
+      name: fbUser.name,
+      facebookId: fbUser.id,
       tenantId,
     });
 
-    // ── Upsert customer by email ──
-    // Google OAuth users may not have a phone, so we use a synthetic phone
-    // derived from the Google ID as the PK (Customer.phone is the @id).
-    // If a customer with that email already exists (e.g. from a previous OTP
-    // registration), we link to them instead.
-    const existing = await CustomersDB.getByEmail(googleUser.email, tenantId);
-    const syntheticPhone = `google_${googleUser.id}`;
+    // ── Upsert customer ──
+    // Facebook OAuth users may not have a phone, so we use a synthetic phone
+    // derived from the Facebook ID as the PK (Customer.phone is the @id).
+    // If a customer with that email already exists, we link to them instead.
+    const existing = fbUser.email
+      ? await CustomersDB.getByEmail(fbUser.email, tenantId)
+      : null;
+    const syntheticPhone = `facebook_${fbUser.id}`;
     const phone = existing?.phone ?? syntheticPhone;
     const isNew = !existing;
 
     const customer = await CustomersDB.upsert(
       {
         phone,
-        name: existing?.name || googleUser.name,
-        email: googleUser.email,
+        name: existing?.name || fbUser.name,
+        email,
         location: existing?.location ?? "",
         reference: existing?.reference ?? "",
         locations: existing?.locations ?? [],
@@ -112,19 +114,16 @@ export async function GET(req: NextRequest) {
     // ── Create customer session ──
     const token = await createCustomerToken({
       customerId: customer.phone,
-      email: googleUser.email,
+      email,
       name: customer.name,
       tenantId,
-      provider: "google",
+      provider: "facebook",
     });
 
     const baseUrl =
       process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:3000";
     const response = NextResponse.redirect(
-      new URL(
-        `/?oauth=success&provider=google`,
-        baseUrl
-      )
+      new URL("/?oauth=success&provider=facebook", baseUrl),
     );
 
     // Set customer session cookie
@@ -140,21 +139,21 @@ export async function GET(req: NextRequest) {
     response.cookies.set("oauth-state", "", { maxAge: 0, path: "/" });
     response.cookies.set("oauth-tenant", "", { maxAge: 0, path: "/" });
 
-    logger.info("[oauth/google] Customer session created", {
+    logger.info("[oauth/facebook] Customer session created", {
       phone: customer.phone,
-      email: googleUser.email,
+      email,
       isNew,
       tenantId,
     });
 
     return response;
   } catch (err) {
-    logger.error("[oauth/google] Callback failed", {
+    logger.error("[oauth/facebook] Callback failed", {
       error: String(err),
       tenantId,
     });
     return NextResponse.redirect(
-      new URL("/?oauth=error&provider=google", req.url)
+      new URL("/?oauth=error&provider=facebook", req.url),
     );
   }
 }

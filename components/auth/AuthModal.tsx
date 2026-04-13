@@ -10,6 +10,16 @@ import {
 import { X } from "lucide-react";
 
 // ---------------------------------------------------------------------------
+// Tipos de respuesta de la API
+// ---------------------------------------------------------------------------
+interface VerifyResponse {
+  ok: boolean;
+  customer?: { id: string; name: string; phone: string };
+  isNew?: boolean;
+  error?: string;
+}
+
+// ---------------------------------------------------------------------------
 // Hook público — permite abrir/cerrar el modal desde cualquier componente
 // ---------------------------------------------------------------------------
 export function useAuthModal() {
@@ -23,6 +33,7 @@ export function useAuthModal() {
 // Tipos
 // ---------------------------------------------------------------------------
 type Tab = "login" | "register";
+type Step = "phone" | "otp";
 
 interface AuthModalProps {
   open: boolean;
@@ -77,8 +88,11 @@ function FacebookIcon() {
 // ---------------------------------------------------------------------------
 export function AuthModal({ open, onClose }: AuthModalProps) {
   const [tab, setTab] = useState<Tab>("login");
+  const [step, setStep] = useState<Step>("phone");
   const [phone, setPhone] = useState("");
   const [name, setName] = useState("");
+  const [otpCode, setOtpCode] = useState("");
+  const [loading, setLoading] = useState(false);
   const [toast, setToast] = useState<string | null>(null);
   const [rendered, setRendered] = useState(false);
   const [visible, setVisible] = useState(false);
@@ -87,6 +101,7 @@ export function AuthModal({ open, onClose }: AuthModalProps) {
   const closeButtonRef = useRef<HTMLButtonElement>(null);
   const firstFocusableRef = useRef<HTMLButtonElement>(null);
   const lastFocusableRef = useRef<HTMLButtonElement>(null);
+  const otpInputRef = useRef<HTMLInputElement>(null);
 
   // Controla la animación CSS de entrada / salida
   useEffect(() => {
@@ -118,12 +133,15 @@ export function AuthModal({ open, onClose }: AuthModalProps) {
     };
   }, [open, onClose]);
 
-  // Focus al primer elemento interactivo cuando abre
+  // Focus al primer elemento interactivo cuando abre o cambia step
   useEffect(() => {
-    if (open && firstFocusableRef.current) {
+    if (!open) return;
+    if (step === "otp") {
+      otpInputRef.current?.focus();
+    } else if (firstFocusableRef.current) {
       firstFocusableRef.current.focus();
     }
-  }, [open, tab]);
+  }, [open, tab, step]);
 
   // Focus trap dentro del modal
   const handleFocusTrap = useCallback(
@@ -151,17 +169,93 @@ export function AuthModal({ open, onClose }: AuthModalProps) {
     setTimeout(() => setToast(null), 3500);
   }, []);
 
-  const handleSendOtp = useCallback(() => {
-    showToast("Funcion en desarrollo — pronto podrás recibir tu codigo.");
+  // Normaliza el numero: elimina espacios y guiones
+  const normalizedPhone = phone.replace(/\D/g, "");
+
+  const handleSendOtp = useCallback(async () => {
+    if (!normalizedPhone || normalizedPhone.length < 9) {
+      showToast("Ingresa un numero de celular valido (9 digitos).");
+      return;
+    }
+    if (tab === "register" && !name.trim()) {
+      showToast("Ingresa tu nombre completo para registrarte.");
+      return;
+    }
+    setLoading(true);
+    try {
+      const res = await fetch("/api/auth/otp/send", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ phone: normalizedPhone }),
+      });
+      const data = await res.json() as { ok?: boolean; error?: string };
+      if (!res.ok) {
+        showToast(data.error ?? "No se pudo enviar el codigo. Intenta de nuevo.");
+        return;
+      }
+      showToast("Codigo enviado. Revisa tu WhatsApp.");
+      setStep("otp");
+    } catch {
+      showToast("Error de conexion. Verifica tu internet.");
+    } finally {
+      setLoading(false);
+    }
+  }, [normalizedPhone, name, tab, showToast]);
+
+  const handleVerifyOtp = useCallback(async () => {
+    if (otpCode.length !== 6) {
+      showToast("El codigo tiene 6 digitos.");
+      return;
+    }
+    setLoading(true);
+    try {
+      const body: { phone: string; code: string; name?: string } = {
+        phone: normalizedPhone,
+        code: otpCode,
+      };
+      if (tab === "register" && name.trim()) {
+        body.name = name.trim();
+      }
+      const res = await fetch("/api/auth/otp/verify", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body),
+      });
+      const data = await res.json() as VerifyResponse;
+      if (!res.ok) {
+        showToast(data.error ?? "Codigo incorrecto. Intenta de nuevo.");
+        return;
+      }
+      showToast(data.isNew ? `Bienvenido, ${data.customer?.name ?? ""}!` : `Hola de nuevo, ${data.customer?.name ?? ""}!`);
+      setTimeout(() => onClose(), 1500);
+    } catch {
+      showToast("Error de conexion. Verifica tu internet.");
+    } finally {
+      setLoading(false);
+    }
+  }, [otpCode, normalizedPhone, name, tab, showToast, onClose]);
+
+  const handleResendOtp = useCallback(async () => {
+    setOtpCode("");
+    setStep("phone");
+    showToast("Puedes solicitar un nuevo codigo.");
   }, [showToast]);
 
   const handleGoogle = useCallback(() => {
-    showToast("Funcion en desarrollo — login con Google proximamente.");
-  }, [showToast]);
+    // Redirect to Google OAuth flow — the server handles CSRF + consent
+    window.location.href = "/api/auth/google";
+  }, []);
 
   const handleFacebook = useCallback(() => {
-    showToast("Funcion en desarrollo — login con Facebook proximamente.");
-  }, [showToast]);
+    // Redirect to Facebook OAuth flow — the server handles CSRF + consent
+    window.location.href = "/api/auth/facebook";
+  }, []);
+
+  const handleTabChange = useCallback((newTab: Tab) => {
+    setTab(newTab);
+    setStep("phone");
+    setOtpCode("");
+  }, []);
 
   const handleBackdropClick = useCallback(
     (e: React.MouseEvent<HTMLDivElement>) => {
@@ -210,7 +304,7 @@ export function AuthModal({ open, onClose }: AuthModalProps) {
         {toast && (
           <div
             role="alert"
-            className="absolute inset-x-4 top-4 z-10 rounded-xl bg-[#00B4A6] px-4 py-2.5 text-center text-sm font-medium text-white shadow-lg"
+            className="absolute inset-x-4 top-4 z-10 rounded-xl bg-[#2563EB] px-4 py-2.5 text-center text-sm font-medium text-white shadow-lg"
           >
             {toast}
           </div>
@@ -221,152 +315,215 @@ export function AuthModal({ open, onClose }: AuthModalProps) {
           ref={closeButtonRef}
           onClick={onClose}
           aria-label="Cerrar modal"
-          className="absolute right-4 top-4 flex h-8 w-8 items-center justify-center rounded-full text-gray-400 hover:bg-gray-100 hover:text-gray-600 transition-colors focus-visible:outline-2 focus-visible:outline-[#00B4A6]"
+          className="absolute right-4 top-4 flex h-8 w-8 items-center justify-center rounded-full text-gray-400 hover:bg-gray-100 hover:text-gray-600 transition-colors focus-visible:outline-2 focus-visible:outline-[#2563EB]"
         >
           <X className="h-4 w-4" />
         </button>
 
         <div className="px-6 pb-8 pt-6 sm:px-8">
           {/* Logo + título */}
-          <div className="mb-6 flex flex-col items-center gap-3">
-            <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-[#00B4A6] text-white text-xl font-black shadow-md">
+          <div className="mb-6 flex flex-col items-center gap-2">
+            <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-br from-blue-500 to-blue-700 text-white text-2xl font-black shadow-lg shadow-blue-500/25">
               B
             </div>
             <h2 className="text-xl font-bold text-gray-900">
-              Bienvenido a Buleje
+              {tab === "register" ? "Crea tu cuenta" : "Bienvenido"}
             </h2>
+            <p className="text-sm text-gray-400">
+              {tab === "register" ? "Regístrate para comprar y recibir ofertas" : "Inicia sesión con tu celular"}
+            </p>
           </div>
 
-          {/* Tabs */}
-          <div className="mb-6 flex rounded-xl border border-gray-200 p-1 bg-gray-50">
-            <button
-              ref={firstFocusableRef}
-              onClick={() => setTab("login")}
-              className={[
-                "flex-1 rounded-lg py-2 text-sm font-semibold transition-all",
-                "min-h-[44px]", // touch target 44px
-                tab === "login"
-                  ? "bg-white text-[#00B4A6] shadow-sm border-b-2 border-[#00B4A6]"
-                  : "text-gray-500 hover:text-gray-700",
-              ].join(" ")}
-            >
-              Iniciar sesion
-            </button>
-            <button
-              onClick={() => setTab("register")}
-              className={[
-                "flex-1 rounded-lg py-2 text-sm font-semibold transition-all",
-                "min-h-[44px]",
-                tab === "register"
-                  ? "bg-white text-[#00B4A6] shadow-sm border-b-2 border-[#00B4A6]"
-                  : "text-gray-500 hover:text-gray-700",
-              ].join(" ")}
-            >
-              Registrarse
-            </button>
-          </div>
+          {/* Tabs — solo visibles en paso "phone" */}
+          {step === "phone" && (
+            <div className="mb-6 flex rounded-xl border border-gray-200 p-1 bg-gray-50">
+              <button
+                ref={firstFocusableRef}
+                onClick={() => handleTabChange("login")}
+                className={[
+                  "flex-1 rounded-lg py-2 text-sm font-semibold transition-all",
+                  "min-h-[44px]",
+                  tab === "login"
+                    ? "bg-white text-[#2563EB] shadow-sm border-b-2 border-[#2563EB]"
+                    : "text-gray-500 hover:text-gray-700",
+                ].join(" ")}
+              >
+                Iniciar sesion
+              </button>
+              <button
+                onClick={() => handleTabChange("register")}
+                className={[
+                  "flex-1 rounded-lg py-2 text-sm font-semibold transition-all",
+                  "min-h-[44px]",
+                  tab === "register"
+                    ? "bg-white text-[#2563EB] shadow-sm border-b-2 border-[#2563EB]"
+                    : "text-gray-500 hover:text-gray-700",
+                ].join(" ")}
+              >
+                Registrarse
+              </button>
+            </div>
+          )}
 
-          {/* Formulario por tab */}
-          <div className="space-y-4">
-            {/* Campo nombre — solo en registro */}
-            {tab === "register" && (
+          {/* ── Paso 1: Ingresar telefono ── */}
+          {step === "phone" && (
+            <div className="space-y-4">
+              {/* Campo nombre — solo en registro */}
+              {tab === "register" && (
+                <div>
+                  <label
+                    htmlFor="auth-name"
+                    className="mb-1.5 block text-xs font-semibold text-gray-600 uppercase tracking-wide"
+                  >
+                    Nombre completo
+                  </label>
+                  <input
+                    id="auth-name"
+                    type="text"
+                    value={name}
+                    onChange={(e) => setName(e.target.value)}
+                    placeholder="Tu nombre"
+                    autoComplete="name"
+                    className="w-full rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 text-sm text-gray-900 placeholder-gray-400 outline-none transition-all focus:border-[#2563EB] focus:ring-2 focus:ring-[#2563EB]/20"
+                  />
+                </div>
+              )}
+
+              {/* Celular */}
               <div>
                 <label
-                  htmlFor="auth-name"
+                  htmlFor="auth-phone"
                   className="mb-1.5 block text-xs font-semibold text-gray-600 uppercase tracking-wide"
                 >
-                  Nombre completo
+                  Numero de celular
+                </label>
+                <div className="flex gap-2">
+                  <div className="flex items-center gap-1.5 rounded-xl border border-gray-200 bg-gray-50 px-3 py-3 text-sm font-semibold text-gray-700 shrink-0">
+                    <span className="text-base leading-none">🇵🇪</span>
+                    <span>+51</span>
+                  </div>
+                  <input
+                    id="auth-phone"
+                    type="tel"
+                    value={phone}
+                    onChange={(e) => setPhone(e.target.value)}
+                    placeholder="987 654 321"
+                    autoComplete="tel-national"
+                    inputMode="numeric"
+                    className="flex-1 rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 text-sm text-gray-900 placeholder-gray-400 outline-none transition-all focus:border-[#2563EB] focus:ring-2 focus:ring-[#2563EB]/20"
+                  />
+                </div>
+              </div>
+
+              {/* Boton enviar OTP */}
+              <button
+                onClick={() => { void handleSendOtp(); }}
+                disabled={loading}
+                className="w-full min-h-[44px] rounded-xl bg-[#2563EB] px-4 py-3 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-[#1D4ED8] active:scale-[0.98] focus-visible:outline-2 focus-visible:outline-[#2563EB] disabled:opacity-60 disabled:cursor-not-allowed"
+              >
+                {loading
+                  ? "Enviando..."
+                  : tab === "login"
+                  ? "Enviar codigo"
+                  : "Crear cuenta y enviar codigo"}
+              </button>
+            </div>
+          )}
+
+          {/* ── Paso 2: Ingresar codigo OTP ── */}
+          {step === "otp" && (
+            <div className="space-y-4">
+              <p className="text-sm text-gray-600 text-center">
+                Ingresa el codigo de 6 digitos enviado a{" "}
+                <span className="font-semibold text-gray-900">+51 {phone}</span>
+              </p>
+
+              <div>
+                <label
+                  htmlFor="auth-otp"
+                  className="mb-1.5 block text-xs font-semibold text-gray-600 uppercase tracking-wide"
+                >
+                  Codigo de verificacion
                 </label>
                 <input
-                  id="auth-name"
+                  id="auth-otp"
+                  ref={otpInputRef}
                   type="text"
-                  value={name}
-                  onChange={(e) => setName(e.target.value)}
-                  placeholder="Tu nombre"
-                  autoComplete="name"
-                  className="w-full rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 text-sm text-gray-900 placeholder-gray-400 outline-none transition-all focus:border-[#00B4A6] focus:ring-2 focus:ring-[#00B4A6]/20"
-                />
-              </div>
-            )}
-
-            {/* Celular + OTP */}
-            <div>
-              <label
-                htmlFor="auth-phone"
-                className="mb-1.5 block text-xs font-semibold text-gray-600 uppercase tracking-wide"
-              >
-                Numero de celular
-              </label>
-              <div className="flex gap-2">
-                {/* Selector de pais — por ahora solo Peru */}
-                <div className="flex items-center gap-1.5 rounded-xl border border-gray-200 bg-gray-50 px-3 py-3 text-sm font-semibold text-gray-700 shrink-0">
-                  <span className="text-base leading-none">🇵🇪</span>
-                  <span>+51</span>
-                </div>
-                <input
-                  id="auth-phone"
-                  type="tel"
-                  value={phone}
-                  onChange={(e) => setPhone(e.target.value)}
-                  placeholder="987 654 321"
-                  autoComplete="tel-national"
+                  value={otpCode}
+                  onChange={(e) => setOtpCode(e.target.value.replace(/\D/g, "").slice(0, 6))}
+                  placeholder="123456"
                   inputMode="numeric"
-                  className="flex-1 rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 text-sm text-gray-900 placeholder-gray-400 outline-none transition-all focus:border-[#00B4A6] focus:ring-2 focus:ring-[#00B4A6]/20"
+                  autoComplete="one-time-code"
+                  maxLength={6}
+                  className="w-full rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 text-center text-2xl font-bold tracking-[0.5em] text-gray-900 placeholder-gray-300 outline-none transition-all focus:border-[#2563EB] focus:ring-2 focus:ring-[#2563EB]/20"
                 />
               </div>
+
+              {/* Boton verificar */}
+              <button
+                onClick={() => { void handleVerifyOtp(); }}
+                disabled={loading || otpCode.length !== 6}
+                className="w-full min-h-[44px] rounded-xl bg-[#2563EB] px-4 py-3 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-[#1D4ED8] active:scale-[0.98] focus-visible:outline-2 focus-visible:outline-[#2563EB] disabled:opacity-60 disabled:cursor-not-allowed"
+              >
+                {loading ? "Verificando..." : "Verificar y entrar"}
+              </button>
+
+              {/* Reenviar */}
+              <button
+                onClick={() => { void handleResendOtp(); }}
+                disabled={loading}
+                className="w-full text-sm text-[#2563EB] underline hover:text-[#1D4ED8] transition-colors disabled:opacity-50"
+              >
+                Volver y solicitar nuevo codigo
+              </button>
             </div>
+          )}
 
-            {/* Boton enviar OTP */}
-            <button
-              onClick={handleSendOtp}
-              className="w-full min-h-[44px] rounded-xl bg-[#00B4A6] px-4 py-3 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-[#009e92] active:scale-[0.98] focus-visible:outline-2 focus-visible:outline-[#00B4A6]"
-            >
-              {tab === "login" ? "Enviar codigo" : "Crear cuenta y enviar codigo"}
-            </button>
-          </div>
+          {/* Divisor + botones sociales — solo en paso phone */}
+          {step === "phone" && (
+            <>
+              <div className="my-5 flex items-center gap-3">
+                <div className="h-px flex-1 bg-gray-200" />
+                <span className="text-xs text-gray-400 font-medium">
+                  o continua con
+                </span>
+                <div className="h-px flex-1 bg-gray-200" />
+              </div>
 
-          {/* Divisor */}
-          <div className="my-5 flex items-center gap-3">
-            <div className="h-px flex-1 bg-gray-200" />
-            <span className="text-xs text-gray-400 font-medium">
-              o continua con
-            </span>
-            <div className="h-px flex-1 bg-gray-200" />
-          </div>
+              <div className="space-y-3">
+                <button
+                  onClick={handleGoogle}
+                  className="flex w-full min-h-[44px] items-center justify-center gap-3 rounded-xl border border-gray-200 bg-white px-4 py-3 text-sm font-semibold text-gray-700 shadow-sm transition-colors hover:bg-gray-50 active:scale-[0.98] focus-visible:outline-2 focus-visible:outline-[#2563EB]"
+                >
+                  <GoogleIcon />
+                  Continuar con Google
+                </button>
 
-          {/* Botones sociales */}
-          <div className="space-y-3">
-            <button
-              onClick={handleGoogle}
-              className="flex w-full min-h-[44px] items-center justify-center gap-3 rounded-xl border border-gray-200 bg-white px-4 py-3 text-sm font-semibold text-gray-700 shadow-sm transition-colors hover:bg-gray-50 active:scale-[0.98] focus-visible:outline-2 focus-visible:outline-[#00B4A6]"
-            >
-              <GoogleIcon />
-              Continuar con Google
-            </button>
-
-            <button
-              ref={lastFocusableRef}
-              onClick={handleFacebook}
-              className="flex w-full min-h-[44px] items-center justify-center gap-3 rounded-xl border border-gray-200 bg-white px-4 py-3 text-sm font-semibold text-gray-700 shadow-sm transition-colors hover:bg-gray-50 active:scale-[0.98] focus-visible:outline-2 focus-visible:outline-[#00B4A6]"
-            >
-              <FacebookIcon />
-              Continuar con Facebook
-            </button>
-          </div>
+                <button
+                  ref={lastFocusableRef}
+                  onClick={handleFacebook}
+                  className="flex w-full min-h-[44px] items-center justify-center gap-3 rounded-xl border border-gray-200 bg-white px-4 py-3 text-sm font-semibold text-gray-700 shadow-sm transition-colors hover:bg-gray-50 active:scale-[0.98] focus-visible:outline-2 focus-visible:outline-[#2563EB]"
+                >
+                  <FacebookIcon />
+                  Continuar con Facebook
+                </button>
+              </div>
+            </>
+          )}
 
           {/* Aviso legal */}
           <p className="mt-5 text-center text-xs text-gray-400 leading-relaxed">
             Al continuar aceptas los{" "}
             <a
               href="/terminos"
-              className="underline hover:text-[#00B4A6] transition-colors"
+              className="underline hover:text-[#2563EB] transition-colors"
             >
               Terminos
             </a>{" "}
             y la{" "}
             <a
               href="/privacidad"
-              className="underline hover:text-[#00B4A6] transition-colors"
+              className="underline hover:text-[#2563EB] transition-colors"
             >
               Politica de Privacidad
             </a>
