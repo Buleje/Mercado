@@ -70,6 +70,7 @@ model Tenant {
   pageProductOverrides   TenantPageProductOverride[]
   pagePromotions         TenantPagePromotion[]
   pageVisits             TenantPageVisit[]
+  pageHeroes             PageHero[]
 
   @@index([slug])
   @@index([active])
@@ -1138,6 +1139,29 @@ model CustomerNotification {
 // ═══════════════════════════════════════════════════════
 // CMS - CONTENT MANAGEMENT SYSTEM
 // ═══════════════════════════════════════════════════════
+
+// ─── Page Heroes (customizable banners per page) ────────
+model PageHero {
+  id           String   @id @default(cuid())
+  tenantId     String
+  pageSlug     String   // home | marketplace | recetas | negocios | tienda
+  title        String?
+  subtitle     String?
+  imageUrl     String?  // banner image URL
+  ctaText      String?  // button text
+  ctaLink      String?  // button href
+  gradientFrom String?  // tailwind color or hex
+  gradientTo   String?  // tailwind color or hex
+  active       Boolean  @default(true)
+  sortOrder    Int      @default(0) // for multiple banners per page
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  tenant Tenant @relation(fields: [tenantId], references: [id])
+
+  @@unique([tenantId, pageSlug, sortOrder])
+  @@index([tenantId, pageSlug])
+}
 
 // ─── Pages ──────────────────────────────────────────────
 enum PageStatus {
