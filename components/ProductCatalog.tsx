@@ -536,7 +536,7 @@ export default function ProductCatalog({ initialProducts = [] }: { initialProduc
   );
 
   return (
-    <section id="productos" className="py-20 sm:py-28 bg-surface">
+    <section id="productos" className="py-10 sm:py-16 bg-surface">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         {/* Section Header */}
         <div className="text-center mb-12">
@@ -714,7 +714,7 @@ export default function ProductCatalog({ initialProducts = [] }: { initialProduc
               .price-range-slider input[type="range"]::-webkit-slider-thumb {
                 -webkit-appearance: none; appearance: none;
                 width: 18px; height: 18px; border-radius: 50%;
-                background: #00B4A6; border: 3px solid #fff;
+                background: #2563EB; border: 3px solid #fff;
                 box-shadow: 0 1px 6px rgba(0,0,0,0.2);
                 cursor: grab; pointer-events: all;
                 transition: transform 0.15s, box-shadow 0.15s;
@@ -725,7 +725,7 @@ export default function ProductCatalog({ initialProducts = [] }: { initialProduc
               .price-range-slider input[type="range"]::-webkit-slider-thumb:active { cursor: grabbing; }
               .price-range-slider input[type="range"]::-moz-range-thumb {
                 width: 18px; height: 18px; border-radius: 50%;
-                background: #00B4A6; border: 3px solid #fff;
+                background: #2563EB; border: 3px solid #fff;
                 box-shadow: 0 1px 6px rgba(0,0,0,0.2);
                 cursor: grab; pointer-events: all;
               }
@@ -753,7 +753,7 @@ export default function ProductCatalog({ initialProducts = [] }: { initialProduc
                   style={{
                     left: `${(priceRange[0] / maxPrice) * 100}%`,
                     right: `${100 - (priceRange[1] / maxPrice) * 100}%`,
-                    background: "linear-gradient(90deg, #f97316, #00B4A6)",
+                    background: "linear-gradient(90deg, #f97316, #2563EB)",
                   }}
                 />
                 <input

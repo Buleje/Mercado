@@ -70,22 +70,22 @@ export default function TiendaClientShell({
     <>
       {/* Below-fold: deferred until scrolled near */}
       {showRecentlyViewed && (
-        <LazyLoad fallback={<SectionLoadingSkeleton />}>
-          <Suspense fallback={<SectionLoadingSkeleton />}>
+        <LazyLoad fallback={null}>
+          <Suspense fallback={null}>
             <RecentlyViewed />
           </Suspense>
         </LazyLoad>
       )}
       {showFavorites && (
-        <LazyLoad fallback={<SectionLoadingSkeleton />}>
-          <Suspense fallback={<SectionLoadingSkeleton />}>
+        <LazyLoad fallback={null}>
+          <Suspense fallback={null}>
             <FavoritesSection />
           </Suspense>
         </LazyLoad>
       )}
       {showRecipes && (
-        <LazyLoad fallback={<SectionLoadingSkeleton />}>
-          <Suspense fallback={<SectionLoadingSkeleton />}>
+        <LazyLoad fallback={null}>
+          <Suspense fallback={null}>
             <RecipeSuggestions />
           </Suspense>
         </LazyLoad>
