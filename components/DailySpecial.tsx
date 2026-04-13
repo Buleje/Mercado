@@ -50,9 +50,11 @@ function useCountdown() {
   return remaining;
 }
 
-export default function DailySpecial() {
+export default function DailySpecial({ serverProducts }: { serverProducts?: Product[] }) {
   const { addItem, items } = useCart();
-  const { products, isLoading } = useStoreProducts();
+  const hook = useStoreProducts();
+  const products = serverProducts && serverProducts.length > 0 ? serverProducts : hook.products;
+  const isLoading = serverProducts ? false : hook.isLoading;
   const [ref, inView] = useInView({ threshold: 0.15 });
   const [imgError, setImgError] = useState(false);
   const product = useMemo(() => getDailyProduct(products), [products]);

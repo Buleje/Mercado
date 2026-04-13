@@ -77,14 +77,16 @@ function loadOrCreateDeals(allProducts: Product[], discount: number) {
   return deals;
 }
 
-export default function FlashDeals() {
+export default function FlashDeals({ serverProducts }: { serverProducts?: Product[] }) {
   const { homepage: hp } = useSettings();
   const [deals, setDeals] = useState<Array<Product & { originalPrice: number; discount: number }>>([]);
   const [endTime] = useState(getEndOfDay);
   const [time, setTime] = useState(getTimeLeft(endTime));
   const { addItem, items, updateQty } = useCart();
   const { showToast } = useToast();
-  const { products, isLoading } = useStoreProducts();
+  const hook = useStoreProducts();
+  const products = serverProducts && serverProducts.length > 0 ? serverProducts : hook.products;
+  const isLoading = serverProducts ? false : hook.isLoading;
   const discount = hp.flashDealDiscount ?? 20;
 
   useEffect(() => {

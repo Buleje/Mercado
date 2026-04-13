@@ -8,8 +8,10 @@ import { useCart } from "@/contexts/cart-context";
 import { useToast } from "@/contexts/toast-context";
 import { cn } from "@/lib/utils";
 
-export default function FeaturedCarousel() {
-  const { products, isLoading } = useStoreProducts();
+export default function FeaturedCarousel({ serverProducts }: { serverProducts?: import("@/data/products").Product[] }) {
+  const hook = useStoreProducts();
+  const products = serverProducts && serverProducts.length > 0 ? serverProducts : hook.products;
+  const isLoading = serverProducts ? false : hook.isLoading;
   const { addItem, items, updateQty } = useCart();
   const { showToast } = useToast();
   const lastClickRef = useRef(0);

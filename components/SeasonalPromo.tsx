@@ -75,11 +75,13 @@ const ALL_PROMOS: Promo[] = [
 
 const INTERVAL = 5000;
 
-export default function SeasonalPromo() {
+export default function SeasonalPromo({ serverProducts }: { serverProducts?: import("@/data/products").Product[] }) {
   const ref = useRef<HTMLElement>(null);
   const [idx, setIdx] = useState(0);
   const [paused, setPaused] = useState(false);
-  const { products, isLoading } = useStoreProducts();
+  const hook = useStoreProducts();
+  const products = serverProducts && serverProducts.length > 0 ? serverProducts : hook.products;
+  const isLoading = serverProducts ? false : hook.isLoading;
 
   // Only show promos for categories that have at least 1 product
   const PROMOS = useMemo(() => {

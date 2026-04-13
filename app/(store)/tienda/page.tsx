@@ -226,17 +226,19 @@ export default async function TiendaPage() {
 
         {order.map((key) => {
           if (!show(key)) return null;
+          // Pass server products to eliminate client-side fetch dependency
+          const sp = initialProducts as any;
           switch (key) {
             case "daily_special":
               return (
                 <Suspense key={key} fallback={null}>
-                  <DailySpecial />
+                  <DailySpecial serverProducts={sp} />
                 </Suspense>
               );
             case "seasonal_promo":
               return (
                 <Suspense key={key} fallback={null}>
-                  <SeasonalPromo />
+                  <SeasonalPromo serverProducts={sp} />
                 </Suspense>
               );
             case "countdown":
@@ -244,31 +246,31 @@ export default async function TiendaPage() {
             case "flash_deals":
               return (
                 <Suspense key={key} fallback={null}>
-                  <FlashDeals />
+                  <FlashDeals serverProducts={sp} />
                 </Suspense>
               );
             case "popular_products":
               return (
                 <Suspense key={key} fallback={null}>
-                  <PopularProducts />
+                  <PopularProducts serverProducts={sp} />
                 </Suspense>
               );
             case "featured_carousel":
               return (
                 <Suspense key={key} fallback={null}>
-                  <FeaturedCarousel />
+                  <FeaturedCarousel serverProducts={sp} />
                 </Suspense>
               );
             case "combos":
               return (
                 <Suspense key={key} fallback={null}>
-                  <CombosSection />
+                  <CombosSection serverProducts={sp} />
                 </Suspense>
               );
             case "last_units":
               return (
                 <Suspense key={key} fallback={null}>
-                  <LastUnitsSection />
+                  <LastUnitsSection serverProducts={sp} />
                 </Suspense>
               );
             // recipes, favorites, recently_viewed → handled by TiendaClientShell

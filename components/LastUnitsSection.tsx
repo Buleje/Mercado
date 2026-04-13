@@ -21,10 +21,12 @@ function getLowStockProducts(allProducts: Product[]): Product[] {
     .slice(0, 8);
 }
 
-export default function LastUnitsSection() {
+export default function LastUnitsSection({ serverProducts }: { serverProducts?: Product[] }) {
   const { addItem, items, updateQty } = useCart();
   const [ref, inView] = useInView({ threshold: 0.1 });
-  const { products, isLoading } = useStoreProducts();
+  const hook = useStoreProducts();
+  const products = serverProducts && serverProducts.length > 0 ? serverProducts : hook.products;
+  const isLoading = serverProducts ? false : hook.isLoading;
   const lowStock = useMemo(() => getLowStockProducts(products), [products]);
   const lastClickRef = useRef(0);
 

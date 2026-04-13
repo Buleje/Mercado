@@ -34,10 +34,12 @@ function getPopularProducts(allProducts: Product[]) {
   return scored.sort((a, b) => b.score - a.score).slice(0, 6);
 }
 
-export default function PopularProducts() {
+export default function PopularProducts({ serverProducts }: { serverProducts?: Product[] }) {
   const { addItem, items, updateQty } = useCart();
   const [ref, inView] = useInView({ threshold: 0.1 });
-  const { products, isLoading } = useStoreProducts();
+  const hook = useStoreProducts();
+  const products = serverProducts && serverProducts.length > 0 ? serverProducts : hook.products;
+  const isLoading = serverProducts ? false : hook.isLoading;
   const popular = useMemo(() => getPopularProducts(products), [products]);
   const lastClickRef = useRef(0);
   const guardedAdd = useCallback((p: Product) => {

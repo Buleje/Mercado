@@ -225,8 +225,11 @@ function ComboCard({ combo, categories }: { combo: Combo; categories: Category[]
   );
 }
 
-export default function CombosSection() {
-  const { products: liveProducts, categories, isLoading } = useStoreProducts();
+export default function CombosSection({ serverProducts }: { serverProducts?: import("@/data/products").Product[] }) {
+  const hook = useStoreProducts();
+  const liveProducts = serverProducts && serverProducts.length > 0 ? serverProducts : hook.products;
+  const { categories } = hook;
+  const isLoading = serverProducts ? false : hook.isLoading;
   const [settingsTemplates, setSettingsTemplates] = useState<ComboTemplate[] | null>(null);
 
   // Load settings combo templates from admin configuration
