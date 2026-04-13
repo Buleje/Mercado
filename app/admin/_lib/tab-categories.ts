@@ -41,6 +41,8 @@ import {
   ShoppingBag,
   Zap,
   ChefHat,
+  BarChart3,
+  MessageCircle,
 } from "lucide-react";
 import type { Tab } from "./tabs.types";
 
@@ -58,18 +60,12 @@ export const MODULE_INFO: Partial<
 > = {
   "asistente-ia": {
     icon: Brain,
-    iconColor: "text-teal-600",
+    iconColor: "text-blue-600",
     priority: "core",
     desc: "Dashboard IA, chat con asistente y centro de alertas del negocio.",
     tip: "Empieza aquí cada mañana para tener el pulso del negocio.",
   },
-  "ventas-caja": {
-    icon: ShoppingCart,
-    iconColor: "text-emerald-600",
-    priority: "core",
-    desc: "Punto de venta, caja registradora, arqueo, pedidos y cuentas por cobrar.",
-    tip: "Todo lo que necesitas para operar el mostrador en un solo lugar.",
-  },
+  // ventas-caja removido — funcionalidad cubierta por Analytics Pro + Pedidos
   inventario: {
     icon: Package,
     iconColor: "text-amber-600",
@@ -163,21 +159,28 @@ export type TabCategory = {
   tabs: Tab[];
 };
 
-// ── 12 módulos consolidados del sidebar (antes: 19 categorías con datos duplicados) ──
-// Consolidación 2026-04-12: fusión A1-A9 (fiados+prestamos+scoring→clientes,
-// plata+tesoreria+facturacion→finanzas, pedidos+turnos→ventas, etc.)
+// ── Sidebar modules — organized by business workflow ────────────────────────
+// Group 1: Daily operations (what you use every day)
+// Group 2: Inventory & catalog (product management)
+// Group 3: Money & clients (financial + CRM)
+// Group 4: Growth & channels (marketplace, analytics)
+// Group 5: Documents & production (back-office)
 export const BASIC_MODULES: TabCategory[] = [
+  // ─── DAILY OPS ────────────────────────────────
   {
     id: "dashboard",
     label: "Dashboard",
     icon: Brain,
     tabs: ["asistente-ia"],
   },
+  // ventas-caja category removida — pedidos y turnos accesibles desde otros módulos
+
+  // ─── PRODUCTOS & STOCK ────────────────────────
   {
-    id: "ventas",
-    label: "Ventas",
-    icon: ShoppingCart,
-    tabs: ["ventas-caja", "pedidos", "turnos"],
+    id: "productos",
+    label: "Productos",
+    icon: Tag,
+    tabs: ["productos", "promociones"],
   },
   {
     id: "inventario",
@@ -186,17 +189,13 @@ export const BASIC_MODULES: TabCategory[] = [
     tabs: ["inventario"],
   },
   {
-    id: "productos",
-    label: "Productos",
-    icon: Tag,
-    tabs: ["productos", "promociones"],
-  },
-  {
     id: "compras",
     label: "Compras",
     icon: Truck,
     tabs: ["compras", "devoluciones-proveedor"],
   },
+
+  // ─── DINERO & CLIENTES ────────────────────────
   {
     id: "finanzas",
     label: "Finanzas",
@@ -205,28 +204,26 @@ export const BASIC_MODULES: TabCategory[] = [
   },
   {
     id: "clientes",
-    label: "Clientes",
+    label: "Clientes y Créditos",
     icon: Users,
     tabs: ["clientes", "fiados", "prestamos", "scoring"],
   },
-  {
-    id: "analytics",
-    label: "Analytics",
-    icon: Brain,
-    tabs: ["analytics-pro", "forecasting"],
-  },
-  {
-    id: "recetas",
-    label: "Recetas",
-    icon: FlaskConical,
-    tabs: ["recetas"],
-  },
+
+  // ─── CANALES & CRECIMIENTO ────────────────────
   {
     id: "marketplace-ops",
     label: "Marketplace",
     icon: Store,
     tabs: ["marketplace", "delivery-partners", "delivery-live", "marketplace-chat"],
   },
+  {
+    id: "analytics",
+    label: "Analytics",
+    icon: BarChart3,
+    tabs: ["analytics-pro", "forecasting"],
+  },
+
+  // ─── DOCS ─────────────────────────────────────
   {
     id: "documentos",
     label: "Documentos",

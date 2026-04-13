@@ -55,9 +55,8 @@ export function AdminTopHeader({
   return (
     <header
       className={cn(
-        "bg-white dark:bg-card border-b border-gray-200 dark:border-card-border px-4 sm:px-6 py-2.5 flex items-center justify-between gap-2 sticky z-40",
-        presentationMode && "hidden!",
-        isSuperAdminImpersonating ? "top-10" : "top-0"
+        "bg-white dark:bg-card border-b border-gray-200 dark:border-card-border px-4 sm:px-6 py-2 flex items-center justify-between gap-2 sticky top-0 z-40",
+        presentationMode && "hidden!"
       )}
     >
       {/* Left: hamburger (mobile) + search */}

@@ -41,7 +41,7 @@ import type { Tab } from "./tabs.types";
 export const ALL_TABS = [
   { id: "vendor-dashboard" as Tab,    label: "Mi Panel",            icon: LayoutDashboard },
   { id: "asistente-ia" as Tab,        label: "Asistente IA",        icon: Brain },
-  { id: "ventas-caja" as Tab,         label: "Ventas & Caja",       icon: ShoppingCart },
+  // ventas-caja removido — usar Analytics Pro para métricas de ventas
   { id: "inventario" as Tab,          label: "Inventario",          icon: Package },
   { id: "productos" as Tab,           label: "Productos & Precios", icon: Tag },
   { id: "compras" as Tab,             label: "Compras",             icon: Truck },

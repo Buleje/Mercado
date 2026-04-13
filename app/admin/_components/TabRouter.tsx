@@ -22,7 +22,7 @@ const AuditTab     = dynamic(() => import("@/components/admin/tabs/AuditTab"),  
 // ── Unified Module Imports (módulos consolidados) ──────────────────────────────
 const VendorDashboardModule   = dynamic(() => import("@/components/admin/unified/VendorDashboardModule"),   { loading: TabSpinner });
 const AsistenteIAModule       = dynamic(() => import("@/components/admin/unified/AsistenteIAModule"),       { loading: TabSpinner });
-const POSCajaModule           = dynamic(() => import("@/components/admin/unified/POSCajaModule"),           { loading: TabSpinner });
+// POSCajaModule removido — ventas-caja eliminado del panel
 const CatalogoTiendaModule    = dynamic(() => import("@/components/admin/unified/CatalogoTiendaModule"),    { loading: TabSpinner });
 const ComprasModule           = dynamic(() => import("@/components/admin/unified/ComprasModule"),           { loading: TabSpinner });
 const FinanzasModule          = dynamic(() => import("@/components/admin/unified/FinanzasModule"),          { loading: TabSpinner });
@@ -128,8 +128,7 @@ export function TabRouter({
     </>
   );
 
-  // ── 2. Ventas & Caja ──
-  if (tab === "ventas-caja") return <POSCajaModule />;
+  // ventas-caja removido — funcionalidad cubierta por Analytics + Pedidos
 
   // ── 3. Inventario ──
   if (tab === "inventario") return <InventoryTab />;
@@ -238,7 +237,7 @@ export function TabRouter({
                 onboarding.resetTour();
                 onNavigateTab("asistente-ia");
               }}
-              className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-bold text-white bg-[#00B4A6] hover:bg-primary-dark shadow-sm transition-colors shrink-0"
+              className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-bold text-white bg-[#2563EB] hover:bg-primary-dark shadow-sm transition-colors shrink-0"
             >
               <RefreshCw className="h-4 w-4" />
               Repetir tutorial de bienvenida
