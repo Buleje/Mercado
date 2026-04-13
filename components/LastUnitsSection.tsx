@@ -7,6 +7,7 @@ import { useCart } from "@/contexts/cart-context";
 import { useInView } from "@/hooks/use-in-view";
 import { useStoreProducts } from "@/hooks/use-store-products";
 import type { Product } from "@/data/products";
+import SectionPlaceholder from "@/components/SectionPlaceholder";
 
 const BLUR_DATA_URL =
   "data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNCIgaGVpZ2h0PSI0IiB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciPjxyZWN0IHdpZHRoPSI0IiBoZWlnaHQ9IjQiIGZpbGw9IiNlNWU3ZWIiLz48L3N2Zz4=";
@@ -37,8 +38,8 @@ export default function LastUnitsSection() {
     [addItem]
   );
 
-  // No render while loading or if empty — prevents blank gaps
-  if (isLoading || lowStock.length === 0) return null;
+  // No render while loading or if empty
+  if (isLoading || lowStock.length === 0) return <SectionPlaceholder title="Ultimas Unidades" hint="Productos con poco stock apareceran aqui para generar urgencia" cols={4} />;
 
   return (
     <section

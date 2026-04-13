@@ -5,7 +5,7 @@ import MotionProvider from "@/components/MotionProvider";
 import MaintenancePage from "@/components/MaintenancePage";
 import StoreClientShell from "@/components/StoreClientShell";
 import StoreProviders from "@/components/StoreProviders";
-import TenantIndicatorBar from "@/components/store/TenantIndicatorBar";
+// TenantIndicatorBar removed — public pages shouldn't show tenant context
 import LocalBusinessJsonLd from "@/components/store/LocalBusinessJsonLd";
 import StoreFloatingWidgets from "@/components/store/StoreFloatingWidgets";
 import { SettingsDB } from "@/lib/db/settings.db";
@@ -96,7 +96,6 @@ async function StoreLayoutContent({
 
   return (
     <StoreProviders tenantSlug={tenantId}>
-      <TenantIndicatorBar />
       <MotionProvider>
         {children}
         <StoreClientShell />

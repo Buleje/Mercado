@@ -101,8 +101,8 @@ export default function FlashDeals() {
     return () => clearInterval(t);
   }, [endTime]);
 
-  // No render while loading or if no deals — prevents blank gaps
-  if (isLoading || deals.length === 0) return null;
+  // No render while loading or if no deals
+  if (isLoading || deals.length === 0) return <SectionPlaceholder title="Ofertas Relampago" hint="Configura ofertas con descuento y temporizador desde el panel admin" cols={6} />;
 
   /* JSON-LD Offer schema for flash deals */
   const flashOffersSchema = {

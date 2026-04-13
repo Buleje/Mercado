@@ -100,7 +100,7 @@ export default function SeasonalPromo() {
   }, [paused, next]);
 
   // Don't render if loading or no matching promos for actual products
-  if (isLoading || PROMOS.length === 0) return null;
+  if (isLoading || PROMOS.length === 0) return <SectionPlaceholder title="Promo de Temporada" hint="Las promociones de temporada se activan automaticamente" cols={6} />;
 
   // Clamp idx to valid range
   const safeIdx = idx % PROMOS.length;

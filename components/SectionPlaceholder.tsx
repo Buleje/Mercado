@@ -1,45 +1,69 @@
 "use client";
 
+import { Package, ShoppingBag, Sparkles } from "lucide-react";
+
 /**
- * Placeholder for store sections that are enabled but have no content.
- * Shows a dashed card with placeholder images to fill the gap.
+ * Elegant empty state for store sections without content.
+ * Shows styled placeholder cards that match the marketplace card format.
  */
 export default function SectionPlaceholder({
   title,
   hint,
   cols = 4,
+  icon: Icon = Package,
 }: {
   title: string;
   hint: string;
   cols?: number;
+  icon?: React.ComponentType<{ className?: string }>;
 }) {
   return (
-    <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-      <div className="rounded-2xl border-2 border-dashed border-gray-200 dark:border-gray-700 bg-white/60 dark:bg-gray-900/40 p-6">
-        <h3 className="text-lg font-bold text-gray-300 dark:text-gray-600 mb-4">
+    <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 sm:py-14">
+      {/* Section header */}
+      <div className="text-center mb-8">
+        <div className="inline-flex items-center gap-1.5 bg-primary/8 text-primary text-xs font-bold uppercase tracking-wider px-3.5 py-1.5 rounded-full mb-3">
+          <Icon className="w-3.5 h-3.5" />
           {title}
-        </h3>
-        <div
-          className={`grid gap-3 ${
-            cols >= 6
-              ? "grid-cols-3 sm:grid-cols-6"
-              : "grid-cols-2 sm:grid-cols-4"
-          }`}
-        >
-          {Array.from({ length: cols }).map((_, i) => (
-            <div
-              key={i}
-              className="aspect-[4/3] rounded-xl bg-gray-50 dark:bg-gray-800/50 border border-dashed border-gray-200 dark:border-gray-700 flex items-center justify-center"
-            >
-              <span className="text-xs font-semibold text-gray-300 dark:text-gray-600">
-                Imagen {i + 1}
-              </span>
-            </div>
-          ))}
         </div>
-        <p className="text-xs text-gray-300 dark:text-gray-600 mt-3">
-          {hint}
-        </p>
+        <p className="text-sm text-muted-foreground">{hint}</p>
+      </div>
+
+      {/* Placeholder cards grid — styled like marketplace cards */}
+      <div
+        className={`grid gap-3 sm:gap-4 ${
+          cols >= 6
+            ? "grid-cols-2 sm:grid-cols-3 lg:grid-cols-6"
+            : "grid-cols-2 sm:grid-cols-3 lg:grid-cols-4"
+        }`}
+      >
+        {Array.from({ length: cols }).map((_, i) => (
+          <div
+            key={i}
+            className="group relative rounded-2xl bg-card border border-border/50 overflow-hidden transition-all duration-300 hover:shadow-md"
+          >
+            {/* Image placeholder */}
+            <div className="relative aspect-square bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-800/50 dark:to-gray-900/50 flex items-center justify-center">
+              <div className="flex flex-col items-center gap-2 opacity-40">
+                <ShoppingBag className="h-8 w-8 text-gray-400" />
+                {i === 0 && (
+                  <Sparkles className="h-4 w-4 text-primary/50 absolute top-3 right-3" />
+                )}
+              </div>
+              {/* Shimmer effect */}
+              <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-full animate-[shimmer_3s_ease-in-out_infinite]" />
+            </div>
+
+            {/* Content placeholder */}
+            <div className="p-3 sm:p-4 space-y-2.5">
+              <div className="h-4 bg-gray-100 dark:bg-gray-800 rounded-lg w-4/5" />
+              <div className="h-3 bg-gray-100 dark:bg-gray-800 rounded-lg w-3/5" />
+              <div className="flex items-center justify-between pt-1">
+                <div className="h-5 bg-primary/10 rounded-lg w-20" />
+                <div className="h-8 w-8 bg-primary/10 rounded-full" />
+              </div>
+            </div>
+          </div>
+        ))}
       </div>
     </section>
   );
