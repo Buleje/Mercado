@@ -29,6 +29,7 @@ import { AdminTenantBar } from "@/components/admin/AdminTenantBar";
 import { AdminTopHeader } from "@/components/admin/AdminTopHeader";
 import { AdminNavigation } from "./_components/AdminNavigation";
 import { AdminMainContent } from "./_components/AdminMainContent";
+import { AdminSubSidebar } from "@/components/admin/layout/AdminSubSidebar";
 
 // ── Deferred chrome (sessions 4-7) ─────────────────────────────────────────────
 // AdminCommandPalette, AdminGlobalModals and AdminOverlaysLayer are not on the
@@ -158,6 +159,41 @@ function AdminPage() {
 
   const commandItems = useCommandItems(navigateTab);
 
+  // Find active category based on current tab — drives the sub-sidebar
+  const activeCategory = visibleCategories.find(cat => cat.tabs.includes(tab));
+  const hasSubSidebar = !focusMode && !presentationMode && activeCategory && activeCategory.tabs.length > 1;
+  const subSidebarTabs = hasSubSidebar
+    ? activeCategory.tabs
+        .map(tabId => ALL_TABS.find(t => t.id === tabId))
+        .filter(Boolean)
+        .map(t => ({ id: t!.id, label: t!.label, icon: t!.icon }))
+    : [];
+  const [subSidebarMobileOpen, setSubSidebarMobileOpen] = React.useState(false);
+
+  // When sub-sidebar is active, main sidebar goes slim (icons only)
+  const effectiveFocusMode = focusMode || !!hasSubSidebar;
+  const mainSidebarWidth = effectiveFocusMode ? 64 : 256; // px
+
+  // Keyboard: Arrow Up/Down navigate sub-tabs, Escape closes sub-sidebar
+  React.useEffect(() => {
+    if (!hasSubSidebar || subSidebarTabs.length === 0) return;
+    const handler = (e: KeyboardEvent) => {
+      if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) return;
+      const idx = subSidebarTabs.findIndex(t => t.id === tab);
+      if (e.key === "ArrowDown" && e.altKey && idx < subSidebarTabs.length - 1) {
+        e.preventDefault();
+        navigateTab(subSidebarTabs[idx + 1].id as Tab);
+      } else if (e.key === "ArrowUp" && e.altKey && idx > 0) {
+        e.preventDefault();
+        navigateTab(subSidebarTabs[idx - 1].id as Tab);
+      } else if (e.key === "Escape" && hasSubSidebar) {
+        navigateTab("asistente-ia" as Tab);
+      }
+    };
+    window.addEventListener("keydown", handler);
+    return () => window.removeEventListener("keydown", handler);
+  }, [hasSubSidebar, subSidebarTabs, tab, navigateTab]);
+
   if (!authReady) {
     return (
       <div className="min-h-screen bg-gray-50 dark:bg-background flex items-center justify-center">
@@ -201,7 +237,7 @@ function AdminPage() {
           onLogout: handleLogout,
         }}
         sidebar={{
-          focusMode, presentationMode, isSuperAdminImpersonating,
+          focusMode: effectiveFocusMode, presentationMode, isSuperAdminImpersonating,
           activeTenantLogo, activeTenantSlug, userName, userRole, openAccordionCategories,
           onToggleAccordion: (categoryId) =>
             setOpenAccordionCategories(prev =>
@@ -212,9 +248,28 @@ function AdminPage() {
         }}
       />
 
+      {/* Secondary sidebar — sub-sections of active module */}
+      {hasSubSidebar && (
+        <AdminSubSidebar
+          categoryLabel={activeCategory.label}
+          categoryIcon={activeCategory.icon}
+          tabs={subSidebarTabs}
+          activeTab={tab}
+          onTabChange={(id) => navigateTab(id as Tab)}
+          onBack={() => navigateTab("asistente-ia" as Tab)}
+          mainSidebarWidth={mainSidebarWidth}
+          alerts={alerts}
+          mobileOpen={subSidebarMobileOpen}
+          onMobileClose={() => setSubSidebarMobileOpen(false)}
+        />
+      )}
+
       <div className={cn(
         "flex flex-col min-h-screen transition-[margin] duration-300",
-        presentationMode ? "sm:ml-0" : focusMode ? "sm:ml-16" : "sm:ml-64",
+        presentationMode ? "sm:ml-0"
+          : hasSubSidebar ? "sm:ml-[256px]"  /* 64 (slim sidebar) + 192 (sub-sidebar) */
+          : focusMode ? "sm:ml-16"
+          : "sm:ml-64",
       )}>
         <AdminTopHeader
           presentationMode={presentationMode}
@@ -230,6 +285,29 @@ function AdminPage() {
           onNavigate={(t) => navigateTab(t as Tab)}
           onLogout={handleLogout}
         />
+
+        {/* Breadcrumb — Category > Sub-section */}
+        {hasSubSidebar && (
+          <div className="px-4 sm:px-6 py-2 flex items-center gap-1.5 text-sm border-b border-gray-100 dark:border-card-border bg-white/50 dark:bg-card/30">
+            <button
+              onClick={() => navigateTab("asistente-ia" as Tab)}
+              className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors"
+            >
+              Admin
+            </button>
+            <span className="text-gray-300 dark:text-gray-600">/</span>
+            <button
+              onClick={() => navigateTab(activeCategory.tabs[0] as Tab)}
+              className="text-gray-500 hover:text-primary dark:hover:text-primary transition-colors font-medium"
+            >
+              {activeCategory.label}
+            </button>
+            <span className="text-gray-300 dark:text-gray-600">/</span>
+            <span className="text-gray-800 dark:text-foreground font-semibold">
+              {ALL_TABS.find(t => t.id === tab)?.label ?? tab}
+            </span>
+          </div>
+        )}
 
         <AdminCommandPalette items={commandItems} />
 

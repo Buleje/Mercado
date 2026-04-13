@@ -9,6 +9,7 @@ import {
   Clock,
   ChevronDown,
   ChevronUp,
+  ChevronRight,
   Zap,
   Check,
   X,
@@ -144,7 +145,7 @@ export function AdminSidebar({
   sidebarSearch,
   allTabs,
 }: AdminSidebarProps) {
-  const { subTabs, activeSubTab, setActiveSubTab } = useModuleTabs();
+  const { subTabs: _subTabs, activeSubTab: _activeSubTab } = useModuleTabs();
   const [storeHref, setStoreHref] = React.useState("/tienda");
 
   React.useEffect(() => {
@@ -309,16 +310,18 @@ export function AdminSidebar({
                       <button
                         data-tour-tab={tabId}
                         onClick={() => navigateTab(tabId as Tab)}
+                        title={focusMode ? tabInfo.label : undefined}
                         className={cn(
-                          "group w-full flex items-center gap-2.5 px-4 py-2.5 rounded-xl text-sm font-semibold transition-all",
+                          "group w-full flex items-center gap-2.5 rounded-xl text-sm font-semibold transition-all",
+                          focusMode ? "px-3 py-2.5 justify-center" : "px-4 py-2.5",
                           tab === tabId
                             ? "bg-primary text-white shadow-sm"
                             : "text-gray-600 dark:text-muted hover:bg-gray-100 dark:hover:bg-accent"
                         )}
                       >
                         <TabIcon className="h-4 w-4 shrink-0" />
-                        <span className="truncate flex-1 text-left">{tabInfo.label}</span>
-                        {alerts[tabId] && (
+                        {!focusMode && <span className="truncate flex-1 text-left">{tabInfo.label}</span>}
+                        {!focusMode && alerts[tabId] && (
                           <span className={cn(
                             "text-xs font-bold rounded-full px-1.5 py-0.5 min-w-5 text-center",
                             tab === tabId ? "bg-white/20 text-white" : "bg-red-500 text-white"
@@ -326,60 +329,7 @@ export function AdminSidebar({
                             {alerts[tabId]}
                           </span>
                         )}
-                        <Star
-                          onClick={e => { e.stopPropagation(); onToggleFavorite(tabId as Tab); }}
-                          className={cn(
-                            "h-3.5 w-3.5 shrink-0 transition-all cursor-pointer",
-                            favoriteTabs.has(tabId as Tab)
-                              ? "fill-amber-400 text-amber-400"
-                              : "opacity-0 group-hover:opacity-60 text-gray-400"
-                          )}
-                        />
-                      </button>
-                    );
-                  })()
-                ) : (
-                  /* Multi-tab category: section header + always-visible sub-tabs */
-                  <>
-                    <p className="text-[10px] font-bold text-gray-400/80 dark:text-muted/70 uppercase tracking-widest px-4 pt-1.5 pb-1 flex items-center gap-1.5">
-                      <CategoryIcon className="h-3 w-3" />
-                      {category.label}
-                    </p>
-                    {catTabs.map(tabId => {
-                      const tabInfo = allTabs.find(t => t.id === tabId);
-                      if (!tabInfo) return null;
-                      const TabIcon = tabInfo.icon;
-                      return (
-                        <button
-                          key={tabId}
-                          data-tour-tab={tabId}
-                          onClick={() => navigateTab(tabId as Tab)}
-                          className={cn(
-                            "group w-full flex items-center gap-2.5 px-4 py-2 rounded-xl text-sm font-medium transition-all mb-0.5",
-                            tab === tabId
-                              ? "bg-primary text-white shadow-sm"
-                              : "text-gray-600 dark:text-muted hover:bg-gray-100 dark:hover:bg-accent"
-                          )}
-                        >
-                          <TabIcon className="h-4 w-4 shrink-0" />
-                          <span className="truncate flex-1 text-left">{tabInfo.label}</span>
-                          {DEMO_DATA_MODULES[tabId as Tab] && !clearedDemoTabs.has(tabId as Tab) && (
-                            <span
-                              title="Datos de ejemplo"
-                              className={cn(
-                                "h-1.5 w-1.5 rounded-full shrink-0",
-                                tab === tabId ? "bg-red-300" : "bg-red-500"
-                              )}
-                            />
-                          )}
-                          {alerts[tabId] && (
-                            <span className={cn(
-                              "text-xs font-bold rounded-full px-1.5 py-0.5 min-w-5 text-center",
-                              tab === tabId ? "bg-white/20 text-white" : "bg-red-500 text-white"
-                            )}>
-                              {alerts[tabId]}
-                            </span>
-                          )}
+                        {!focusMode && (
                           <Star
                             onClick={e => { e.stopPropagation(); onToggleFavorite(tabId as Tab); }}
                             className={cn(
@@ -389,41 +339,53 @@ export function AdminSidebar({
                                 : "opacity-0 group-hover:opacity-60 text-gray-400"
                             )}
                           />
-                        </button>
-                      );
-                    })}
-                  </>
+                        )}
+                      </button>
+                    );
+                  })()
+                ) : (
+                  /* Multi-tab category: render as single category button — sub-tabs go to sub-sidebar */
+                  (() => {
+                    const isCategoryActive = (catTabs as string[]).includes(tab as string);
+                    const totalAlerts = catTabs.reduce((sum, t) => sum + (alerts[t] || 0), 0);
+                    return (
+                      <button
+                        data-tour-tab={category.id}
+                        onClick={() => navigateTab(catTabs[0] as Tab)}
+                        title={focusMode ? category.label : undefined}
+                        className={cn(
+                          "group w-full flex items-center gap-2.5 rounded-xl text-sm font-semibold transition-all",
+                          focusMode ? "px-3 py-2.5 justify-center" : "px-4 py-2.5",
+                          isCategoryActive
+                            ? "bg-primary text-white shadow-sm"
+                            : "text-gray-600 dark:text-muted hover:bg-gray-100 dark:hover:bg-accent"
+                        )}
+                      >
+                        <CategoryIcon className="h-4 w-4 shrink-0" />
+                        {!focusMode && <span className="truncate flex-1 text-left">{category.label}</span>}
+                        {!focusMode && totalAlerts > 0 && (
+                          <span className={cn(
+                            "text-xs font-bold rounded-full px-1.5 py-0.5 min-w-5 text-center",
+                            isCategoryActive ? "bg-white/20 text-white" : "bg-red-500 text-white"
+                          )}>
+                            {totalAlerts}
+                          </span>
+                        )}
+                        {!focusMode && (
+                          <ChevronRight className={cn(
+                            "h-3.5 w-3.5 shrink-0 transition-transform",
+                            isCategoryActive ? "text-white/70 rotate-90" : "text-gray-400 opacity-0 group-hover:opacity-60"
+                          )} />
+                        )}
+                      </button>
+                    );
+                  })()
                 )}
               </div>
             );
           })}
 
-          {/* Module internal sub-tabs — shown below categories when a module registers them */}
-          {!focusMode && subTabs.length > 1 && (
-            <div className="mt-1 pt-1 border-t border-gray-100 dark:border-card-border">
-              <p className="text-[9px] font-bold text-gray-400/70 dark:text-muted/50 uppercase tracking-widest px-4 pt-1 pb-1">
-                Sub-secciones
-              </p>
-              {subTabs.map((st) => {
-                const SubIcon = st.icon;
-                return (
-                  <button
-                    key={st.id}
-                    onClick={() => setActiveSubTab(st.id)}
-                    className={cn(
-                      "w-full flex items-center gap-2 px-4 py-1.5 text-[12px] transition-all",
-                      activeSubTab === st.id
-                        ? "text-primary font-semibold bg-primary/5"
-                        : "text-gray-500 dark:text-muted hover:text-gray-800 dark:hover:text-gray-200 hover:bg-gray-50 dark:hover:bg-accent"
-                    )}
-                  >
-                    {SubIcon && <SubIcon className="h-3 w-3 shrink-0" />}
-                    <span className="truncate">{st.label}</span>
-                  </button>
-                );
-              })}
-            </div>
-          )}
+          {/* Sub-secciones removed — now shown in AdminSubSidebar */}
 
           {/* Flat list when searching */}
           {!focusMode && sidebarSearch && filteredTabs.map(({ id, label, icon: Icon }) => (
