@@ -16,7 +16,7 @@ import {
 } from "react";
 import { Search, X, Loader2, ArrowRight } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { motion, AnimatePresence } from "framer-motion";
+import { m, AnimatePresence } from "framer-motion";
 
 // ── Tipos ─────────────────────────────────────────────────────────────────────
 
@@ -58,7 +58,7 @@ export default function SearchAutocomplete({
 
   // Fetch sugerencias con debounce 300ms
   const fetchSuggestions = useCallback(async (q: string) => {
-    if (q.trim().length < 2) {
+    if (q.trim().length < 1) {
       setSuggestions([]);
       setDidYouMean([]);
       setLoading(false);
@@ -112,7 +112,7 @@ export default function SearchAutocomplete({
     if (debounceRef.current) clearTimeout(debounceRef.current);
     debounceRef.current = setTimeout(() => {
       fetchSuggestions(v);
-    }, 300);
+    }, 150);
   };
 
   const handleSubmit = useCallback(
@@ -190,7 +190,7 @@ export default function SearchAutocomplete({
           value={value}
           onChange={(e) => handleChange(e.target.value)}
           onKeyDown={handleKeyDown}
-          onFocus={() => { if (value.length >= 2) setOpen(true); }}
+          onFocus={() => { if (value.length >= 1) setOpen(true); }}
           placeholder={placeholder}
           autoComplete="off"
           className={cn(
@@ -219,11 +219,11 @@ export default function SearchAutocomplete({
       {/* Dropdown */}
       <AnimatePresence>
         {showDropdown && (
-          <motion.div
-            initial={{ opacity: 0, y: -6 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -6 }}
-            transition={{ duration: 0.15 }}
+          <m.div
+            initial={{ opacity: 0, y: -10, scale: 0.98 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: -10, scale: 0.98 }}
+            transition={{ duration: 0.2, ease: "easeOut" }}
             className={cn(
               "absolute top-full left-0 right-0 mt-2 z-50 rounded-2xl shadow-2xl overflow-hidden",
               "border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900",
@@ -300,7 +300,7 @@ export default function SearchAutocomplete({
                 )}
               </div>
             )}
-          </motion.div>
+          </m.div>
         )}
       </AnimatePresence>
     </div>

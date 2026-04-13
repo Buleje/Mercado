@@ -17,7 +17,7 @@ import {
 import Image from "next/image";
 import Link from "next/link";
 import { cn } from "@/lib/utils";
-import { motion, AnimatePresence } from "framer-motion";
+import { m, AnimatePresence } from "framer-motion";
 import MarketplaceFilters, {
   type MarketplaceFiltersState,
 } from "@/components/marketplace/MarketplaceFilters";
@@ -150,7 +150,7 @@ function StoreCard({ store, index }: { store: MarketplaceStore; index: number })
   }, [store.slug, previewLoaded, previewLoading]);
 
   return (
-    <motion.div
+    <m.div
       initial={{ opacity: 0, y: 24 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.35, delay: index * 0.05 }}
@@ -242,7 +242,7 @@ function StoreCard({ store, index }: { store: MarketplaceStore; index: number })
           {/* Product preview strip — visible on hover */}
           <AnimatePresence>
             {(previewLoading || previewLoaded) && (
-              <motion.div
+              <m.div
                 initial={{ opacity: 0, height: 0 }}
                 animate={{ opacity: 1, height: "auto" }}
                 exit={{ opacity: 0, height: 0 }}
@@ -288,12 +288,12 @@ function StoreCard({ store, index }: { store: MarketplaceStore; index: number })
                 ) : (
                   <p className="text-xs text-gray-400 dark:text-muted text-center py-1">Sin productos disponibles</p>
                 )}
-              </motion.div>
+              </m.div>
             )}
           </AnimatePresence>
         </div>
       </Link>
-    </motion.div>
+    </m.div>
   );
 }
 
@@ -451,7 +451,7 @@ export default function MarketplaceContent() {
         <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           {/* Title — compact since search is in navbar now */}
           <div className="text-center mb-5">
-            <motion.h1
+            <m.h1
               className="text-2xl sm:text-3xl md:text-4xl font-extrabold text-gray-900 dark:text-foreground leading-tight"
               initial={{ opacity: 0, y: 16 }}
               animate={{ opacity: 1, y: 0 }}
@@ -474,9 +474,9 @@ export default function MarketplaceContent() {
                   />
                 </svg>
               </span>
-            </motion.h1>
+            </m.h1>
 
-            <motion.p
+            <m.p
               className="text-gray-500 dark:text-muted mt-2 text-sm sm:text-base max-w-xl mx-auto"
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
@@ -484,10 +484,10 @@ export default function MarketplaceContent() {
             >
               Encuentra las mejores bodegas y tiendas cerca de ti.
               Compra de varios negocios en un solo pedido.
-            </motion.p>
+            </m.p>
 
             {/* Search bar — SearchAutocomplete con sugerencias IA + did you mean */}
-            <motion.div
+            <m.div
               className="mt-5 max-w-xl mx-auto"
               initial={{ opacity: 0, y: 8 }}
               animate={{ opacity: 1, y: 0 }}
@@ -500,11 +500,11 @@ export default function MarketplaceContent() {
                 }}
                 placeholder="Busca productos, tiendas o categorías..."
               />
-            </motion.div>
+            </m.div>
           </div>
 
           {/* Stats row */}
-          <motion.div
+          <m.div
             className="flex items-center justify-center gap-4 sm:gap-8 text-sm text-gray-500 dark:text-muted flex-wrap"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
@@ -528,10 +528,10 @@ export default function MarketplaceContent() {
                 Ordenado por cercanía
               </span>
             )}
-          </motion.div>
+          </m.div>
 
           {/* ── View Mode Toggle ── */}
-          <motion.div
+          <m.div
             className="flex items-center justify-center mt-5"
             initial={{ opacity: 0, y: 8 }}
             animate={{ opacity: 1, y: 0 }}
@@ -563,18 +563,13 @@ export default function MarketplaceContent() {
                 Catálogo
               </button>
             </div>
-          </motion.div>
+          </m.div>
         </div>
-      </section>
-
-      {/* ── Curated Catalog Sections ── */}
-      <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
-        <CatalogSections />
       </section>
 
       {/* ── Filters + Grid ── */}
       <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-10">
-        {/* Category pills — categoría de TIENDA (bodega, minimarket, etc.) */}
+        {/* Category pills — arriba de todo */}
         <div className="flex items-center gap-2 overflow-x-auto pb-3 scrollbar-hide -mx-4 px-4 sm:mx-0 sm:px-0">
           {CATEGORIES.map((cat) => (
             <button
@@ -641,6 +636,13 @@ export default function MarketplaceContent() {
             </button>
           )}
         </div>
+
+        {/* ── Curated Catalog Sections (solo modo catalogo) ── */}
+        {viewMode === "catalogo" && (
+          <div className="mt-4">
+            <CatalogSections />
+          </div>
+        )}
 
         {/* ── C2: Recomendaciones personalizadas (solo modo catalogo) ── */}
         {viewMode === "catalogo" && <PersonalizedRecommendations />}
