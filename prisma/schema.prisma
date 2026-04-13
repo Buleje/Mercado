@@ -1891,19 +1891,26 @@ model Turno {
 // ═══════════════════════════════════════════════════════
 
 model Receta {
-  id           String              @id @default(cuid())
-  tenantId     String
-  nombre       String
-  descripcion  String?
-  productoId   Int?
-  costoTotal   Decimal             @default(0) @db.Decimal(10, 2)
-  activa       Boolean             @default(true)
-  createdAt    DateTime            @default(now())
-  updatedAt    DateTime            @updatedAt
-  tenant       Tenant              @relation(fields: [tenantId], references: [id])
-  producto     Product?            @relation("RecetaProducto", fields: [productoId], references: [id])
-  ingredientes RecetaIngrediente[]
-  producciones ProduccionLote[]
+  id             String              @id @default(cuid())
+  tenantId       String
+  nombre         String
+  descripcion    String?
+  productoId     Int?
+  costoTotal     Decimal             @default(0) @db.Decimal(10, 2)
+  activa         Boolean             @default(true)
+  emoji          String?
+  tiempoMinutos  Int?
+  porciones      Int?
+  dificultad     String?             // "Facil" | "Media" | "Dificil"
+  categoria      String?             // "Entradas" | "Platos de fondo" | "Sopas" | "Postres" | "Bebidas"
+  pasosJson      String?             // JSON array of steps
+  imageUrl       String?
+  createdAt      DateTime            @default(now())
+  updatedAt      DateTime            @updatedAt
+  tenant         Tenant              @relation(fields: [tenantId], references: [id])
+  producto       Product?            @relation("RecetaProducto", fields: [productoId], references: [id])
+  ingredientes   RecetaIngrediente[]
+  producciones   ProduccionLote[]
 
   @@index([tenantId])
 }

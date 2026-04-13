@@ -38,6 +38,7 @@ type Receta = {
   costoTotal?: number;
   colorFrom?: string;
   colorTo?: string;
+  imageUrl?: string | null;
   ingredientes: Ingrediente[];
   totalIngredientes: number;
   pasos?: string[];
@@ -135,38 +136,35 @@ function RecetaCard({
       className="group break-inside-avoid mb-6"
     >
       <div className="rounded-2xl overflow-hidden bg-white dark:bg-gray-900 shadow-sm hover:shadow-2xl border border-gray-100 dark:border-gray-800 transition-all duration-500">
-        {/* Image placeholder */}
+        {/* Image area */}
         <Link href={`/recetas/${receta.id}`} className="block relative overflow-hidden">
-          <div
-            className={cn("relative w-full overflow-hidden", aspectClass)}
-            style={{
-              background: `linear-gradient(135deg, ${colors.from} 0%, ${colors.to} 100%)`,
-            }}
-          >
-            {/* Decorative pattern */}
-            <div className="absolute inset-0 opacity-10">
-              <div className="absolute inset-0" style={{
-                backgroundImage: "radial-gradient(circle, rgba(255,255,255,0.3) 1px, transparent 1px)",
-                backgroundSize: "20px 20px",
-              }} />
-            </div>
-
-            {/* Large emoji centered */}
-            <div className="absolute inset-0 flex items-center justify-center">
-              <span
-                className="text-[96px] drop-shadow-lg group-hover:scale-110 transition-transform duration-500 select-none"
-                style={{ filter: "drop-shadow(0 4px 12px rgba(0,0,0,0.2))" }}
+          <div className={cn("relative w-full overflow-hidden", aspectClass)}>
+            {receta.imageUrl ? (
+              /* Recipe image */
+              /* eslint-disable-next-line @next/next/no-img-element */
+              <img
+                src={receta.imageUrl}
+                alt={receta.nombre}
+                className="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+              />
+            ) : (
+              /* Gray placeholder with ChefHat icon */
+              <div
+                className="absolute inset-0 flex flex-col items-center justify-center"
+                style={{
+                  background: `linear-gradient(135deg, ${colors.from} 0%, ${colors.to} 100%)`,
+                }}
               >
-                {receta.emoji || "\uD83C\uDF73"}
-              </span>
-            </div>
+                <ChefHat className="h-16 w-16 text-white/30" strokeWidth={1.5} />
+              </div>
+            )}
 
-            {/* Dish name in diagonal (watermark) */}
-            <div className="absolute inset-0 flex items-end justify-start pointer-events-none">
-              <span className="text-white/10 text-3xl font-black uppercase tracking-widest rotate-[-8deg] translate-x-4 translate-y-[-20px] whitespace-nowrap select-none">
-                {receta.nombre}
+            {/* Emoji badge in corner (if exists) */}
+            {receta.emoji && (
+              <span className="absolute top-3 left-3 text-2xl drop-shadow-lg select-none bg-black/20 backdrop-blur-sm rounded-full w-10 h-10 flex items-center justify-center">
+                {receta.emoji}
               </span>
-            </div>
+            )}
 
             {/* Bottom gradient overlay */}
             <div className="absolute inset-x-0 bottom-0 h-1/3 bg-gradient-to-t from-black/40 to-transparent" />
@@ -211,7 +209,7 @@ function RecetaCard({
         <div className="p-5">
           <Link href={`/recetas/${receta.id}`}>
             <h3 className="text-lg font-bold text-gray-900 dark:text-white leading-tight group-hover:text-primary dark:group-hover:text-primary-light transition-colors">
-              {receta.emoji} {receta.nombre}
+              {receta.nombre}
             </h3>
           </Link>
           {receta.descripcion && (
