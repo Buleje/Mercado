@@ -102,7 +102,7 @@ export default function FlashDeals() {
   }, [endTime]);
 
   // No render while loading or if no deals — prevents blank gaps
-  if (isLoading || deals.length === 0) return <SectionPlaceholder title="Ofertas Relampago" hint="Configura desde Admin → Mi Tienda → Secciones" cols={6} />;
+  if (isLoading || deals.length === 0) return null;
 
   /* JSON-LD Offer schema for flash deals */
   const flashOffersSchema = {

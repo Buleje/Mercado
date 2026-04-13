@@ -50,7 +50,7 @@ const ALL_PROMOS: Promo[] = [
     subtitle: "Leche, yogurt y quesos siempre frescos",
     cta: "Ver Lácteos",
     category: "lacteos",
-    gradient: "linear-gradient(to right, #00B4A6, #33C4B8)",
+    gradient: "linear-gradient(to right, #2563EB, #3B82F6)",
     accent: "bg-blue-600",
   },
   {
@@ -100,7 +100,7 @@ export default function SeasonalPromo() {
   }, [paused, next]);
 
   // Don't render if loading or no matching promos for actual products
-  if (isLoading || PROMOS.length === 0) return <SectionPlaceholder title="Promo de Temporada" hint="Se activan automaticamente segun la epoca del ano" cols={6} />;
+  if (isLoading || PROMOS.length === 0) return null;
 
   // Clamp idx to valid range
   const safeIdx = idx % PROMOS.length;

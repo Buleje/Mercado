@@ -7,7 +7,7 @@ import type { Product } from "@/data/products";
 import { useCart } from "@/contexts/cart-context";
 import { useInView } from "@/hooks/use-in-view";
 import { useStoreProducts } from "@/hooks/use-store-products";
-import SectionPlaceholder from "@/components/SectionPlaceholder";
+
 
 const FALLBACK_IMAGE = "https://images.unsplash.com/photo-1542838132-92c53300491e?w=400&h=400&fit=crop&q=80";
 
@@ -57,7 +57,7 @@ export default function DailySpecial() {
   const product = useMemo(() => getDailyProduct(products), [products]);
   const countdown = useCountdown();
 
-  if (isLoading || !product) return <SectionPlaceholder title="Oferta del Dia" hint="Se selecciona automaticamente un producto cada dia" cols={4} />;
+  if (isLoading || !product) return null;
 
   const inCart = items.find((i) => i.id === product.id);
   const qty = inCart?.quantity ?? 0;

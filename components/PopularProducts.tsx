@@ -6,7 +6,6 @@ import { ShoppingCart, TrendingUp, Minus, Plus, Package } from "lucide-react";
 import { useCart } from "@/contexts/cart-context";
 import { useInView } from "@/hooks/use-in-view";
 import { useStoreProducts } from "@/hooks/use-store-products";
-import SectionPlaceholder from "@/components/SectionPlaceholder";
 import type { Product } from "@/data/products";
 
 // Tiny 4×4 gray placeholder for blur-up effect while images load
@@ -48,7 +47,7 @@ export default function PopularProducts() {
   }, [addItem]);
 
   // No render while loading or if empty — prevents blank gaps
-  if (isLoading || popular.length === 0) return <SectionPlaceholder title="Productos Populares" hint="Se muestran automaticamente los mas vendidos" cols={4} />;
+  if (isLoading || popular.length === 0) return null;
 
   return (
     <section ref={ref} className="py-14 sm:py-20 bg-surface">
@@ -121,7 +120,7 @@ export default function PopularProducts() {
                   {product.badge && (
                     <span
                       className="absolute bottom-2 right-2 text-white text-[10px] font-bold px-2 py-0.5 rounded-full shadow-md"
-                      style={{ background: product.badge === "Popular" ? "#00B4A6" : product.badge === "Oferta" ? "#ef4444" : product.badge === "Fresco" ? "#10b981" : "#6b7280" }}
+                      style={{ background: product.badge === "Popular" ? "#2563EB" : product.badge === "Oferta" ? "#ef4444" : product.badge === "Fresco" ? "#10b981" : "#6b7280" }}
                     >
                       {product.badge}
                     </span>
