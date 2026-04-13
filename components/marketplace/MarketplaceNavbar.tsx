@@ -7,6 +7,7 @@ import { Search, ChefHat, Menu, X } from "lucide-react";
 import { CartBadge } from "@/components/marketplace/MarketplaceCart";
 import MarketplaceCart from "@/components/marketplace/MarketplaceCart";
 import { useRouter } from "next/navigation";
+import { AuthModal, useAuthModal } from "@/components/auth/AuthModal";
 
 const MarketplaceCheckoutModal = dynamic(
   () => import("@/components/marketplace/MarketplaceCheckoutModal"),
@@ -19,6 +20,7 @@ export default function MarketplaceNavbar() {
   const [searchQuery, setSearchQuery] = useState("");
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const router = useRouter();
+  const { authModalOpen, openAuthModal, closeAuthModal } = useAuthModal();
 
   const handleOpenCart = useCallback(() => setCartOpen(true), []);
   const handleCloseCart = useCallback(() => setCartOpen(false), []);
@@ -99,12 +101,12 @@ export default function MarketplaceNavbar() {
               >
                 Abre tu tienda
               </Link>
-              <Link
-                href="/registro"
-                className="rounded-lg bg-white/15 px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-white/25 focus-visible:outline-2 focus-visible:outline-white"
+              <button
+                onClick={openAuthModal}
+                className="rounded-lg bg-white/15 px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-white/25 focus-visible:outline-2 focus-visible:outline-white min-h-[44px]"
               >
-                Iniciar sesión
-              </Link>
+                Ingresar
+              </button>
             </div>
 
             {/* Mobile: cart + hamburger */}
@@ -136,9 +138,12 @@ export default function MarketplaceNavbar() {
             <Link href="/negocios" onClick={() => setMobileMenuOpen(false)} className="block rounded-lg px-3 py-2.5 text-sm font-semibold text-white/90 hover:bg-white/10">
               Para Negocios
             </Link>
-            <Link href="/registro" onClick={() => setMobileMenuOpen(false)} className="block rounded-lg px-3 py-2.5 text-sm font-semibold text-white/90 hover:bg-white/10">
-              Iniciar sesión
-            </Link>
+            <button
+              onClick={() => { setMobileMenuOpen(false); openAuthModal(); }}
+              className="w-full text-left rounded-lg px-3 py-2.5 text-sm font-semibold text-white/90 hover:bg-white/10 min-h-[44px]"
+            >
+              Ingresar
+            </button>
           </div>
         )}
       </nav>
@@ -152,6 +157,7 @@ export default function MarketplaceNavbar() {
         isOpen={checkoutOpen}
         onClose={handleCloseCheckout}
       />
+      <AuthModal open={authModalOpen} onClose={closeAuthModal} />
     </>
   );
 }
