@@ -6,10 +6,11 @@ export const TAB_MIGRATION: Record<string, Tab> = {
   // → Asistente IA (absorbe dashboard, agentes, changelog)
   dashboard: "asistente-ia", "dashboard-ejecutivo": "asistente-ia", "panel-principal": "asistente-ia",
   agentes: "asistente-ia", changelog: "asistente-ia",
-  // → Ventas & Caja
-  pos: "ventas-caja", caja: "ventas-caja", "pos-caja": "ventas-caja", "arqueo-caja": "ventas-caja",
-  "ventas-marketing": "ventas-caja", marketing: "ventas-caja", "forecast-ventas": "ventas-caja",
-  "metricas-conversion": "ventas-caja", referidos: "ventas-caja",
+  // → Ventas & Caja (ventas-caja removido — redirigir a pedidos/analytics-pro)
+  pos: "pedidos", caja: "pedidos", "pos-caja": "pedidos", "arqueo-caja": "pedidos",
+  "ventas-marketing": "analytics-pro", marketing: "analytics-pro", "forecast-ventas": "analytics-pro",
+  "metricas-conversion": "analytics-pro", referidos: "analytics-pro",
+  "ventas-caja": "pedidos",
   // → Inventario
   inventario: "inventario", kardex: "inventario", lotes: "inventario",
   "inventario-fisico": "inventario", mermas: "inventario", almacenes: "inventario",

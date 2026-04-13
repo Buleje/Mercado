@@ -35,7 +35,6 @@ interface ModuleEntry {
 
 const MODULES: ModuleEntry[] = [
   { id: "asistente-ia",   label: "Asistente IA",            icon: "🧠", category: "Módulo" },
-  { id: "ventas-caja",    label: "Ventas & Caja (POS)",     icon: "🖥️", category: "Módulo" },
   { id: "inventario",     label: "Inventario & Almacenes",  icon: "📦", category: "Módulo" },
   { id: "productos",      label: "Productos & Precios",     icon: "🏪", category: "Módulo" },
   { id: "compras",        label: "Compras & Proveedores",   icon: "📋", category: "Módulo" },
@@ -64,7 +63,7 @@ export function useCommandItems(navigateTab: (id: Tab) => void): CommandItem[] {
 
     // Quick actions
     items.push(
-      { id: "action-new-sale",     label: "Nueva venta (POS)",  icon: "➕", category: "Acción", onSelect: () => navigateTab("ventas-caja") },
+      { id: "action-new-sale",     label: "Nueva venta",        icon: "➕", category: "Acción", onSelect: () => navigateTab("pedidos") },
       { id: "action-new-product",  label: "Nuevo producto",     icon: "➕", category: "Acción", onSelect: () => navigateTab("productos") },
       { id: "action-new-customer", label: "Nuevo cliente",      icon: "➕", category: "Acción", onSelect: () => navigateTab("clientes") },
       { id: "action-inventario",   label: "Ver stock",          icon: "🔍", category: "Acción", onSelect: () => navigateTab("inventario") },

@@ -5,19 +5,6 @@ import { Check } from "lucide-react";
 
 const NAV_MODULES = [
   {
-    id: "ventas-caja",
-    name: "Ventas & Caja",
-    tabs: [
-      { id: "dashboard", label: "Dashboard" },
-      { id: "vender", label: "Vender" },
-      { id: "turnos", label: "Turnos" },
-      { id: "caja", label: "Caja" },
-      { id: "pedidos", label: "Pedidos" },
-      { id: "fiados", label: "Me deben" },
-      { id: "cuadrar", label: "Cuadrar" },
-    ],
-  },
-  {
     id: "inventario",
     name: "Inventario",
     tabs: [
@@ -112,7 +99,7 @@ export function NavDefaultTabsConfig() {
             <select
               value={defaults[mod.id] ?? mod.tabs[0].id}
               onChange={(e) => handleChange(mod.id, e.target.value)}
-              className="text-xs border border-gray-200 dark:border-card-border bg-white dark:bg-card rounded-lg px-2.5 py-1.5 text-gray-700 dark:text-foreground focus:ring-2 focus:ring-[#00B4A6]/30 focus:border-[#00B4A6] outline-none transition-all"
+              className="text-xs border border-gray-200 dark:border-card-border bg-white dark:bg-card rounded-lg px-2.5 py-1.5 text-gray-700 dark:text-foreground focus:ring-2 focus:ring-[#2563EB]/30 focus:border-[#2563EB] outline-none transition-all"
             >
               {mod.tabs.map((t) => (
                 <option key={t.id} value={t.id}>{t.label}</option>

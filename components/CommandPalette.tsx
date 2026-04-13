@@ -53,7 +53,7 @@ const STORE_ITEMS: SearchableItem[] = [
 
 const ADMIN_TABS: SearchableItem[] = [
   { id: "dashboard", type: "tab", title: "Dashboard / Asistente IA", category: "Navegación", href: "/admin?tab=asistente-ia" },
-  { id: "pos", type: "tab", title: "Punto de Venta", category: "Navegación", href: "/admin?tab=ventas-caja" },
+  { id: "pos", type: "tab", title: "Pedidos", category: "Navegación", href: "/admin?tab=pedidos" },
   { id: "inventario", type: "tab", title: "Inventario", category: "Navegación", href: "/admin?tab=inventario" },
   { id: "pedidos", type: "tab", title: "Pedidos", category: "Navegación", href: "/admin?tab=pedidos" },
   { id: "clientes", type: "tab", title: "Clientes / CRM", category: "Navegación", href: "/admin?tab=clientes" },
@@ -68,15 +68,15 @@ const ADMIN_TABS: SearchableItem[] = [
 // ── Admin Quick Actions (12) — filtrables por rol ────────────────────────────
 export const ADMIN_QUICK_ACTIONS: AdminQuickAction[] = [
   { id: "a-crear-producto",  label: "Crear producto",       subtitle: "Agregar nuevo producto al inventario",      icon: <Package    className="w-4 h-4 text-blue-500"    />, href: "/admin?tab=productos&new=1",                 roles: ["admin", "almacenero"] },
-  { id: "a-nueva-venta",     label: "Nueva venta",          subtitle: "Abrir punto de venta",                      icon: <Zap        className="w-4 h-4 text-emerald-500" />, href: "/admin?tab=ventas-caja",                     roles: ["admin", "cajero"] },
+  { id: "a-nueva-venta",     label: "Nueva venta",          subtitle: "Registrar un pedido nuevo",                  icon: <Zap        className="w-4 h-4 text-emerald-500" />, href: "/admin?tab=pedidos",                         roles: ["admin", "cajero"] },
   { id: "a-registrar-gasto", label: "Registrar gasto",      subtitle: "Ir a Mi Plata para registrar un gasto",    icon: <DollarSign className="w-4 h-4 text-red-500"     />, href: "/admin?tab=plata",                           roles: ["admin"] },
   { id: "a-cobrar-fiado",    label: "Cobrar fiado",         subtitle: "Gestionar cuentas por cobrar",              icon: <Receipt    className="w-4 h-4 text-amber-500"   />, href: "/admin?tab=fiados",                          roles: ["admin", "cajero"] },
   { id: "a-crear-oc",        label: "Crear OC",             subtitle: "Nueva orden de compra a proveedor",        icon: <ShoppingCart className="w-4 h-4 text-violet-500" />, href: "/admin?tab=compras",                        roles: ["admin", "almacenero"] },
   { id: "a-abrir-turno",     label: "Abrir turno",          subtitle: "Iniciar turno de caja",                    icon: <Clock      className="w-4 h-4 text-cyan-500"     />, href: "/admin?tab=turnos",                          roles: ["admin", "cajero"] },
   { id: "a-ver-reportes",    label: "Ver reportes",         subtitle: "Reportes financieros y analíticas",        icon: <BarChart2  className="w-4 h-4 text-indigo-500"   />, href: "/admin?tab=plata",                           roles: ["admin"] },
-  { id: "a-cerrar-dia",      label: "Cerrar día",           subtitle: "Cierre diario de caja",                    icon: <Settings   className="w-4 h-4 text-gray-500"     />, href: "/admin?tab=ventas-caja",                     roles: ["admin", "cajero"] },
+  { id: "a-cerrar-dia",      label: "Cerrar día",           subtitle: "Cierre diario de caja",                    icon: <Settings   className="w-4 h-4 text-gray-500"     />, href: "/admin?tab=turnos",                          roles: ["admin", "cajero"] },
   { id: "a-pedidos-hoy",     label: "Ver pedidos hoy",      subtitle: "Pedidos recibidos en el día",              icon: <ShoppingBasketIcon className="w-4 h-4 text-orange-500" />, href: "/admin?tab=pedidos&filter=today",      roles: ["admin", "cajero", "almacenero"] },
-  { id: "a-nuevo-cliente",   label: "Nuevo cliente",        subtitle: "Registrar un nuevo cliente en el CRM",     icon: <UserPlus   className="w-4 h-4 text-teal-500"     />, href: "/admin?tab=clientes&new=1",                  roles: ["admin", "cajero"] },
+  { id: "a-nuevo-cliente",   label: "Nuevo cliente",        subtitle: "Registrar un nuevo cliente en el CRM",     icon: <UserPlus   className="w-4 h-4 text-blue-500"     />, href: "/admin?tab=clientes&new=1",                  roles: ["admin", "cajero"] },
   { id: "a-soporte",         label: "Reportar bug / soporte", subtitle: "Ir a la bandeja de soporte unificada",  icon: <Inbox      className="w-4 h-4 text-pink-500"      />, href: "/admin?tab=support-inbox",                  roles: ["admin"] },
   { id: "a-prediccion",      label: "Predicción de demanda", subtitle: "Ver forecasting de stock",               icon: <TrendingUp className="w-4 h-4 text-green-500"    />, href: "/admin?tab=forecasting",                     roles: ["admin", "almacenero"] },
 ];

@@ -35,7 +35,6 @@ export const TIER_LABELS: Record<ModuleTier, { label: string; description: strin
 export const MODULE_TIER_MAP: Record<string, ModuleTier> = {
   // Principal — operaciones básicas del día a día
   "asistente-ia": "principal",
-  "ventas-caja": "principal",
   "inventario": "principal",
   "productos": "principal",
   "compras": "principal",

@@ -194,7 +194,7 @@ function toggleFavorite(prompt: string) {
 
 const MODULE_SUGGESTIONS: Record<string, string[]> = {
   inventario: ["¿Stock bajo?", "¿Productos por vencer?", "¿Qué debo reponer?"],
-  "ventas-caja": ["¿Ventas de hoy?", "¿Pedidos pendientes?", "¿Cuánto vendí ayer?"],
+  "analytics-pro": ["¿Ventas de hoy?", "¿Pedidos pendientes?", "¿Cuánto vendí ayer?"],
   compras: ["¿Qué debo pedir?", "¿A quién le debo?", "¿Compras del mes?"],
   plata: ["¿Cuánto gané hoy?", "¿Gastos del mes?", "¿Balance general?"],
   clientes: ["¿Clientes inactivos?", "¿Quién me debe?", "¿Clientes frecuentes?"],
@@ -214,7 +214,7 @@ function getTimeSuggestions(): string[] {
 // ── Mejora 21: Command Palette Commands ──────────────────────────────────────
 
 const CMD_PALETTE_ITEMS = [
-  { cmd: "/ventas", label: "Ver ventas de hoy", navTo: "ventas-caja", icon: BarChart },
+  { cmd: "/ventas", label: "Ver ventas de hoy", navTo: "analytics-pro", icon: BarChart },
   { cmd: "/inventario", label: "Revisar inventario", navTo: "inventario-almacenes", icon: Package },
   { cmd: "/clientes", label: "Panel de clientes", navTo: "clientes", icon: Users },
   { cmd: "/pedidos", label: "Gestionar pedidos", navTo: "pedidos", icon: Table },
@@ -434,7 +434,7 @@ export default function AIAssistant({ onNavigate, embedded, moduleContext }: AIA
 
     // Mejora 22: Intent detection → auto-navigation
     const navIntents: Record<string, string> = {
-      "quiero ver ventas": "ventas-caja",
+      "quiero ver ventas": "analytics-pro",
       "ir a inventario": "inventario-almacenes",
       "abrir clientes": "clientes",
       "ver pedidos": "pedidos",

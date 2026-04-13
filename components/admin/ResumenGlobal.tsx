@@ -67,9 +67,9 @@ export default function ResumenGlobal({ onNavigate }: { onNavigate?: (tab: strin
   }, []);
 
   const cards = [
-    { label: "Ventas hoy", value: formatCurrency(data.ventasHoy), icon: DollarSign, color: "#00B4A6", alert: false, tab: "ventas-caja" },
-    { label: "Transacciones", value: String(data.transaccionesHoy), icon: ShoppingCart, color: "#3b82f6", alert: false, tab: "ventas-caja" },
-    { label: "Ticket promedio", value: formatCurrency(data.ticketPromedio), icon: TrendingUp, color: "#8b5cf6", alert: false, tab: "ventas-caja" },
+    { label: "Ventas hoy", value: formatCurrency(data.ventasHoy), icon: DollarSign, color: "#2563EB", alert: false, tab: "analytics-pro" },
+    { label: "Transacciones", value: String(data.transaccionesHoy), icon: ShoppingCart, color: "#3b82f6", alert: false, tab: "analytics-pro" },
+    { label: "Ticket promedio", value: formatCurrency(data.ticketPromedio), icon: TrendingUp, color: "#8b5cf6", alert: false, tab: "analytics-pro" },
     { label: "Pedidos pendientes", value: String(data.pedidosPendientes), icon: Clock, color: "#f59e0b", alert: data.pedidosPendientes > 3, tab: "pedidos" },
     { label: "Sin stock", value: String(data.productosAgotados), icon: Package, color: "#ef4444", alert: data.productosAgotados > 0, tab: "inventario" },
     { label: "Alertas stock", value: String(data.alertasStock), icon: AlertTriangle, color: "#f97316", alert: data.alertasStock > 5, tab: "inventario" },

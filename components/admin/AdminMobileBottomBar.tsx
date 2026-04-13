@@ -7,8 +7,8 @@
  * Muestra 4 tabs prioritarias por rol + un botón "Más" que abre el drawer.
  *
  * Las tabs prioritarias dependen del rol:
- *  - admin     → asistente-ia, ventas-caja, pedidos, inventario
- *  - cajero    → asistente-ia, ventas-caja, pedidos, clientes
+ *  - admin     → pedidos, fiados, inventario, productos
+ *  - cajero    → pedidos, fiados, clientes, inventario
  *  - almacenero → asistente-ia, inventario, compras, plata
  *
  * Cada botón muestra el badge de alertas si lo tiene. El botón "Más"
@@ -38,8 +38,8 @@ export interface AdminMobileBottomBarProps {
 }
 
 const MOBILE_PRIORITY: Record<string, Tab[]> = {
-  admin:      ["ventas-caja", "fiados", "pedidos", "inventario"],
-  cajero:     ["ventas-caja", "fiados", "pedidos", "clientes"],
+  admin:      ["pedidos", "fiados", "inventario", "productos"],
+  cajero:     ["pedidos", "fiados", "clientes", "inventario"],
   almacenero: ["inventario", "compras", "pedidos", "plata"],
 };
 

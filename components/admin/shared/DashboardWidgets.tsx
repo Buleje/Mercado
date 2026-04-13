@@ -69,7 +69,7 @@ export default function DashboardWidgets({ onNavigate }: DashboardWidgetsProps) 
       value: `S/${data.ventasHoy.toFixed(0)}`,
       icon: DollarSign,
       color: "text-emerald-600 bg-emerald-50 dark:bg-emerald-950/30",
-      tab: "ventas-caja",
+      tab: "analytics-pro",
     },
     {
       label: "Pedidos pendientes",

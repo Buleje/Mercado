@@ -12,10 +12,7 @@ export const MODULE_DESCRIPTIONS: Record<string, ModuleDescription> = {
     summary: "Tu asistente inteligente que te dice como va el negocio",
     example: 'Ej: "Hoy vendiste S/.1,240 y te queda poco arroz"',
   },
-  "ventas-caja": {
-    summary: "Aqui vendes productos y manejas el dinero de la caja",
-    example: "Ej: Cobrar S/.25 de fideos a dona Rosa",
-  },
+  // ventas-caja removido — funcionalidad cubierta por pedidos + analytics-pro
   inventario: {
     summary: "Mira cuanto tienes de cada producto en tu almacen",
     example: "Ej: Te quedan 50 bolsas de arroz y 12 vencen pronto",

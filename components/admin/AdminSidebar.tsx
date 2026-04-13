@@ -102,19 +102,7 @@ export const BASIC_SIDEBAR_MODULES: SidebarModule[] = [
       { id: "alertas", label: "Alertas" },
     ],
   },
-  {
-    id: "ventas-caja",
-    label: "Ventas & Caja",
-    icon: ShoppingCart,
-    group: "operaciones",
-    tabs: [
-      { id: "pos", label: "Punto de venta" },
-      { id: "caja-registradora", label: "Caja" },
-      { id: "arqueo", label: "Arqueo de caja" },
-      { id: "pedidos", label: "Pedidos" },
-      { id: "cuentas-cobrar", label: "Me deben (fiao)" },
-    ],
-  },
+  // ventas-caja removido — funcionalidad cubierta por pedidos + fiados
   {
     id: "inventario",
     label: "Inventario",
@@ -359,13 +347,13 @@ function ModuleItem({
         className={cn(
           "w-full flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all duration-200 group relative",
           isActive
-            ? "bg-[#00B4A6]/10 dark:bg-[#00B4A6]/20 text-[#00B4A6] dark:text-emerald-400"
+            ? "bg-[#2563EB]/10 dark:bg-[#2563EB]/20 text-[#2563EB] dark:text-emerald-400"
             : "text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-white/5"
         )}
       >
         {/* Active indicator bar */}
         {isActive && (
-          <span className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-6 bg-[#00B4A6] rounded-r-full" />
+          <span className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-6 bg-[#2563EB] rounded-r-full" />
         )}
 
         <Icon
@@ -373,7 +361,7 @@ function ModuleItem({
             "shrink-0 transition-colors",
             collapsed ? "h-5 w-5" : "h-4.5 w-4.5",
             isActive
-              ? "text-[#00B4A6] dark:text-emerald-400"
+              ? "text-[#2563EB] dark:text-emerald-400"
               : "text-gray-500 dark:text-gray-500 group-hover:text-gray-700 dark:group-hover:text-gray-300"
           )}
         />
@@ -407,7 +395,7 @@ function ModuleItem({
                   className={cn(
                     "p-0.5 rounded transition-colors",
                     canMoveUp
-                      ? "text-gray-500 hover:text-[#00B4A6] hover:bg-[#00B4A6]/10"
+                      ? "text-gray-500 hover:text-[#2563EB] hover:bg-[#2563EB]/10"
                       : "text-gray-300 dark:text-gray-600 cursor-not-allowed"
                   )}
                   title="Subir"
@@ -420,7 +408,7 @@ function ModuleItem({
                   className={cn(
                     "p-0.5 rounded transition-colors",
                     canMoveDown
-                      ? "text-gray-500 hover:text-[#00B4A6] hover:bg-[#00B4A6]/10"
+                      ? "text-gray-500 hover:text-[#2563EB] hover:bg-[#2563EB]/10"
                       : "text-gray-300 dark:text-gray-600 cursor-not-allowed"
                   )}
                   title="Bajar"
@@ -463,7 +451,7 @@ function ModuleItem({
                       className={cn(
                         "w-full flex items-center gap-2 px-2 py-1.5 rounded-lg text-xs transition-all duration-150",
                         isTabActive
-                          ? "bg-[#00B4A6]/10 dark:bg-[#00B4A6]/20 text-[#00B4A6] dark:text-emerald-400 font-semibold"
+                          ? "bg-[#2563EB]/10 dark:bg-[#2563EB]/20 text-[#2563EB] dark:text-emerald-400 font-semibold"
                           : "text-gray-500 dark:text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 hover:bg-gray-100 dark:hover:bg-white/5"
                       )}
                     >
@@ -471,7 +459,7 @@ function ModuleItem({
                         className={cn(
                           "shrink-0 h-1.5 w-1.5 rounded-full",
                           isTabActive
-                            ? "bg-[#00B4A6] dark:bg-emerald-400"
+                            ? "bg-[#2563EB] dark:bg-emerald-400"
                             : "bg-gray-300 dark:bg-gray-600"
                         )}
                       />
@@ -547,7 +535,7 @@ function FlyoutPanel({
               className={cn(
                 "w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-sm transition-all",
                 isActive
-                  ? "bg-[#00B4A6]/10 dark:bg-[#00B4A6]/20 text-[#00B4A6] dark:text-emerald-400 font-semibold"
+                  ? "bg-[#2563EB]/10 dark:bg-[#2563EB]/20 text-[#2563EB] dark:text-emerald-400 font-semibold"
                   : "text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-white/5"
               )}
             >
@@ -558,7 +546,7 @@ function FlyoutPanel({
                   {badge > 99 ? "99+" : badge}
                 </span>
               )}
-              {isActive && <span className="w-1.5 h-1.5 rounded-full bg-[#00B4A6] dark:bg-emerald-400 shrink-0" />}
+              {isActive && <span className="w-1.5 h-1.5 rounded-full bg-[#2563EB] dark:bg-emerald-400 shrink-0" />}
             </button>
           );
         })}
@@ -615,7 +603,7 @@ function CategorySection({
           className={cn(
             "w-full flex items-center gap-2.5 px-3 py-2 rounded-xl transition-all group",
             isAnyActive
-              ? "bg-[#00B4A6]/10 dark:bg-[#00B4A6]/20"
+              ? "bg-[#2563EB]/10 dark:bg-[#2563EB]/20"
               : "hover:bg-gray-50 dark:hover:bg-white/5"
           )}
         >
@@ -636,7 +624,7 @@ function CategorySection({
                 <span className={cn(
                   "text-xs font-bold uppercase tracking-wide block",
                   isAnyActive
-                    ? "text-[#00B4A6] dark:text-emerald-400"
+                    ? "text-[#2563EB] dark:text-emerald-400"
                     : "text-gray-500 dark:text-gray-400 group-hover:text-gray-700 dark:group-hover:text-gray-300"
                 )}>
                   {GROUP_LABELS[group]}
@@ -936,7 +924,7 @@ export default function AdminSidebar({
               transition={{ duration: 0.18 }}
               className="flex items-center gap-2 min-w-0"
             >
-              <div className="h-7 w-7 rounded-lg bg-[#00B4A6] flex items-center justify-center shrink-0">
+              <div className="h-7 w-7 rounded-lg bg-[#2563EB] flex items-center justify-center shrink-0">
                 <span className="text-white text-xs font-bold">B</span>
               </div>
               <div className="min-w-0">
@@ -1003,7 +991,7 @@ export default function AdminSidebar({
               className={cn(
                 "w-full flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-colors",
                 editMode
-                  ? "bg-[#00B4A6] text-white"
+                  ? "bg-[#2563EB] text-white"
                   : "text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-white/5 border border-gray-200 dark:border-card-border"
               )}
             >
@@ -1023,7 +1011,7 @@ export default function AdminSidebar({
                 placeholder="Buscar módulo..."
                 value={search}
                 onChange={e => setSearch(e.target.value)}
-                className="w-full h-8 pl-8 pr-8 text-xs rounded-lg border border-gray-200 dark:border-white/10 bg-gray-50 dark:bg-white/5 focus:outline-none focus:ring-1 focus:ring-[#00B4A6] focus:border-[#00B4A6] placeholder:text-gray-400 dark:placeholder:text-gray-500 text-gray-700 dark:text-gray-200"
+                className="w-full h-8 pl-8 pr-8 text-xs rounded-lg border border-gray-200 dark:border-white/10 bg-gray-50 dark:bg-white/5 focus:outline-none focus:ring-1 focus:ring-[#2563EB] focus:border-[#2563EB] placeholder:text-gray-400 dark:placeholder:text-gray-500 text-gray-700 dark:text-gray-200"
               />
               {search && (
                 <button
@@ -1111,7 +1099,7 @@ export default function AdminSidebar({
                       className={cn(
                         "w-full flex items-center justify-center p-2 rounded-xl transition-all",
                         isAnyActive
-                          ? "bg-[#00B4A6]/10 dark:bg-[#00B4A6]/20"
+                          ? "bg-[#2563EB]/10 dark:bg-[#2563EB]/20"
                           : "hover:bg-gray-100 dark:hover:bg-white/5"
                       )}
                     >

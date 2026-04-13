@@ -6,7 +6,6 @@ import { ChevronLeft, ChevronRight, X, Sparkles } from "lucide-react";
 
 type Tab =
   | "asistente-ia"
-  | "ventas-caja"
   | "inventario"
   | "productos"
   | "compras"
@@ -33,10 +32,10 @@ const TOUR_STEPS: TourStep[] = [
     emoji: "🧠",
   },
   {
-    tabId: "ventas-caja",
+    tabId: "pedidos",
     title: "Vender y cobrar",
-    text: "Aquí cobras a tus clientes. Puedes ver cuánto hay en la caja y llevar la cuenta de quién te debe.",
-    example: "Ej: Cobrar S/.25 de fideos a doña Rosa",
+    text: "Aqui gestionas los pedidos, cobras a tus clientes y llevas la cuenta de quien te debe.",
+    example: "Ej: Cobrar S/.25 de fideos a dona Rosa",
     emoji: "🛒",
   },
   {
@@ -156,7 +155,7 @@ export function OnboardingTour({
         {/* Header with step counter */}
         <div className="flex items-center justify-between px-4 pt-3 pb-1">
           <div className="flex items-center gap-2">
-            <span className="text-xs font-bold text-[#00B4A6] dark:text-emerald-400 uppercase tracking-wider">
+            <span className="text-xs font-bold text-[#2563EB] dark:text-emerald-400 uppercase tracking-wider">
               Paso {currentStep + 1} de {totalSteps}
             </span>
           </div>
@@ -173,7 +172,7 @@ export function OnboardingTour({
         <div className="px-4 pb-2">
           <div className="h-1 bg-gray-100 dark:bg-gray-700 rounded-full overflow-hidden">
             <div
-              className="h-full bg-[#00B4A6] rounded-full transition-all duration-500 ease-out"
+              className="h-full bg-[#2563EB] rounded-full transition-all duration-500 ease-out"
               style={{ width: `${((currentStep + 1) / totalSteps) * 100}%` }}
             />
           </div>
@@ -214,7 +213,7 @@ export function OnboardingTour({
 
           <button
             onClick={isLastStep ? onComplete : onNext}
-            className="flex items-center gap-1 px-4 py-1.5 rounded-lg text-sm font-bold text-white bg-[#00B4A6] hover:bg-[#009690] shadow-sm transition-colors"
+            className="flex items-center gap-1 px-4 py-1.5 rounded-lg text-sm font-bold text-white bg-[#2563EB] hover:bg-[#1D4ED8] shadow-sm transition-colors"
           >
             {isLastStep ? (
               <>

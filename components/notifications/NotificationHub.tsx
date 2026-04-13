@@ -253,7 +253,7 @@ export default function NotificationHub({
             title: `${stats.pendingOrders} pedidos pendientes`,
             description: "Tienes pedidos que necesitan atención",
             timestamp: Date.now(),
-            action: { label: "Ver pedidos", moduleId: "ventas-caja", tabId: "pedidos" },
+            action: { label: "Ver pedidos", moduleId: "pedidos", tabId: "pedidos" },
           });
         }
         if (stats?.overduePayables > 0) {

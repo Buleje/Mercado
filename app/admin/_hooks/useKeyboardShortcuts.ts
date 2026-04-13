@@ -27,13 +27,13 @@ import type { Tab } from "../_lib/tabs.types";
 
 const SHORTCUT_MAP: Record<string, Tab> = {
   "1": "asistente-ia",
-  "2": "ventas-caja",
+  "2": "pedidos",
   "3": "inventario",
-  "4": "pedidos",
-  "5": "productos",
-  "6": "compras",
-  "7": "plata",
-  "8": "clientes",
+  "4": "productos",
+  "5": "compras",
+  "6": "plata",
+  "7": "clientes",
+  "8": "fiados",
   "9": "config",
   "0": "plan",
 };

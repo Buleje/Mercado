@@ -13,7 +13,6 @@
 import { useEffect } from "react";
 
 const TAB_LABELS: Record<string, string> = {
-  "ventas-caja": "POS",
   inventario: "Inventario",
   productos: "Productos",
   compras: "Compras",

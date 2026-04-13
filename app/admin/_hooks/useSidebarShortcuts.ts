@@ -53,7 +53,7 @@ const DEFAULT_SHORTCUTS: ShortcutItem[] = [
   { id: "asistente-ia", label: "Dashboard" },
   { id: "inventario", label: "Stock" },
   { id: "pedidos", label: "Pedidos" },
-  { id: "ventas-caja", label: "Caja POS" },
+  { id: "fiados", label: "Fiados" },
 ];
 
 export function useSidebarShortcuts(

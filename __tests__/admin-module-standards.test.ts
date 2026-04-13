@@ -28,7 +28,7 @@ const DARK_MODE_MODULES = [
   "CRMClientesModule.tsx",
   "FinanzasModule.tsx",
   "InventarioAlmacenesModule.tsx",
-  "POSCajaModule.tsx",
+  // POSCajaModule.tsx removido — ventas-caja eliminado
 ];
 
 function getModuleFiles(): string[] {

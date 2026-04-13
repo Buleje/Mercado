@@ -62,7 +62,7 @@ export type Tab =
 export const VALID_TABS: readonly Tab[] = [
   "vendor-dashboard",
   "asistente-ia",
-  "ventas-caja",
+  // ventas-caja removido de VALID_TABS — migración lo redirige a "pedidos"
   "inventario",
   "productos",
   "compras",

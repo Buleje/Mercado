@@ -156,7 +156,7 @@ export default function MiNegocioHoyCard({ onNavigate }: MiNegocioHoyCardProps) 
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
         {/* Card 1: Ventas del día */}
         <button
-          onClick={() => onNavigate?.("ventas-caja")}
+          onClick={() => onNavigate?.("analytics-pro")}
           className="group relative overflow-hidden rounded-2xl bg-white dark:bg-card border border-gray-200 dark:border-card-border p-4 text-left hover:border-primary/30 transition-colors"
         >
           <div className="flex items-center justify-between mb-2">

@@ -61,10 +61,11 @@ export const TAB_MIGRATION: Record<string, Tab> = {
   // → Asistente IA (absorbe dashboard, agentes, changelog)
   dashboard: "asistente-ia", "dashboard-ejecutivo": "asistente-ia", "panel-principal": "asistente-ia",
   agentes: "asistente-ia", changelog: "asistente-ia",
-  // ��� Ventas & Caja
-  pos: "ventas-caja", caja: "ventas-caja", "pos-caja": "ventas-caja", "arqueo-caja": "ventas-caja",
-  "ventas-marketing": "ventas-caja", marketing: "ventas-caja", "forecast-ventas": "ventas-caja",
-  "metricas-conversion": "ventas-caja", referidos: "ventas-caja",
+  // Ventas & Caja (ventas-caja removido — redirigir a pedidos/analytics-pro)
+  pos: "pedidos", caja: "pedidos", "pos-caja": "pedidos", "arqueo-caja": "pedidos",
+  "ventas-marketing": "analytics-pro", marketing: "analytics-pro", "forecast-ventas": "analytics-pro",
+  "metricas-conversion": "analytics-pro", referidos: "analytics-pro",
+  "ventas-caja": "pedidos",
   // → Inventario
   inventario: "inventario", kardex: "inventario", lotes: "inventario",
   "inventario-fisico": "inventario", mermas: "inventario", almacenes: "inventario",
@@ -158,7 +159,7 @@ export const DEMO_DATA_MODULES: Partial<Record<Tab, { label: string; api?: strin
 // Rich metadata for every module: emoji, priority, description and a helpful tip
 export const MODULE_INFO: Partial<Record<Tab, { emoji: string; priority: "core" | "high" | "medium" | "low"; desc: string; tip: string }>> = {
   "asistente-ia":  { emoji: "\u{1F9E0}", priority: "core",   desc: "Dashboard IA, chat con asistente y centro de alertas del negocio.",     tip: "Empieza aqu\u00ED cada ma\u00F1ana para tener el pulso del negocio." },
-  "ventas-caja":   { emoji: "\u{1F5A5}\uFE0F", priority: "core",   desc: "Punto de venta, caja registradora, arqueo, pedidos y cuentas por cobrar.", tip: "Todo lo que necesitas para operar el mostrador en un solo lugar." },
+  // ventas-caja removido — funcionalidad cubierta por pedidos + analytics-pro
   "inventario":    { emoji: "\u{1F4E6}", priority: "core",   desc: "Stock, Kardex, vencimientos, mermas y alertas de inventario.",           tip: "Control completo del inventario desde una sola vista." },
   "productos":     { emoji: "\u{1F3EA}", priority: "high",   desc: "Cat\u00E1logo, categor\u00EDas, ofertas, cupones e historial de precios.",         tip: "Gestiona tu cat\u00E1logo y optimiza precios." },
   "compras":       { emoji: "\u{1F4CB}", priority: "high",   desc: "Pedidos a proveedor, directorio de proveedores y recepci\u00F3n.",            tip: "Flujo completo de compras desde la cotizaci\u00F3n hasta la recepci\u00F3n." },
@@ -198,10 +199,10 @@ const BASIC_MODULES: TabCategory[] = [
     tabs: ["asistente-ia", "analytics-pro"],
   },
   {
-    id: "ventas-caja",
-    label: "Ventas & Caja",
+    id: "pedidos-ops",
+    label: "Pedidos",
     icon: ShoppingCart,
-    tabs: ["ventas-caja", "pedidos"],
+    tabs: ["pedidos"],
   },
   {
     id: "inventario",
@@ -324,24 +325,12 @@ export const TAB_CATEGORIES: TabCategory[] = [
 ];
 
 export const VALID_TABS: Tab[] = [
-  "asistente-ia","ventas-caja","inventario","productos","compras","plata","clientes","config","pedidos","plan","analytics-pro","ai-command","fiados","turnos","cotizaciones","guias-remision","notas-credito","contratos","sugerencias-ia","metas-logros","marketplace","delivery-partners","delivery-live","marketplace-chat","store-customizer","colas",
+  "asistente-ia","inventario","productos","compras","plata","clientes","config","pedidos","plan","analytics-pro","ai-command","fiados","turnos","cotizaciones","guias-remision","notas-credito","contratos","sugerencias-ia","metas-logros","marketplace","delivery-partners","delivery-live","marketplace-chat","store-customizer","colas",
 ];
 
 // Nav module defaults configuration
 export const NAV_MODULES = [
-  {
-    id: "ventas-caja",
-    name: "Ventas & Caja",
-    tabs: [
-      { id: "dashboard", label: "Dashboard" },
-      { id: "vender", label: "Vender" },
-      { id: "turnos", label: "Turnos" },
-      { id: "caja", label: "Caja" },
-      { id: "pedidos", label: "Pedidos" },
-      { id: "fiados", label: "Me deben" },
-      { id: "cuadrar", label: "Cuadrar" },
-    ],
-  },
+  // ventas-caja module removido
   {
     id: "inventario",
     name: "Inventario",
@@ -402,14 +391,14 @@ export const NAV_MODULES = [
 
 // Keyboard shortcut mapping for Alt+number keys
 export const SHORTCUT_MAP: Record<string, Tab> = {
-  "1": "asistente-ia", "2": "ventas-caja", "3": "inventario", "4": "pedidos",
+  "1": "asistente-ia", "2": "pedidos", "3": "inventario", "4": "productos",
   "5": "productos", "6": "compras", "7": "plata", "8": "clientes",
   "9": "config", "0": "plan",
 };
 
 // Dynamic browser title labels
 export const TAB_TITLE_LABELS: Record<string, string> = {
-  "ventas-caja": "POS",
+  // ventas-caja title removido
   "inventario": "Inventario",
   "productos": "Productos",
   "compras": "Compras",
@@ -435,12 +424,12 @@ export const DEFAULT_SHORTCUTS: Array<{ id: string; label: string }> = [
   { id: "asistente-ia", label: "Dashboard" },
   { id: "inventario", label: "Stock" },
   { id: "pedidos", label: "Pedidos" },
-  { id: "ventas-caja", label: "Caja POS" },
+  { id: "fiados", label: "Fiados" },
 ];
 
 // Mobile bottom bar tab priorities per role
 export const MOBILE_PRIORITY: Record<string, Tab[]> = {
-  admin:      ["asistente-ia", "ventas-caja", "pedidos", "inventario"],
-  cajero:     ["asistente-ia", "ventas-caja", "pedidos", "clientes"],
+  admin:      ["asistente-ia", "pedidos", "inventario", "productos"],
+  cajero:     ["asistente-ia", "pedidos", "clientes", "inventario"],
   almacenero: ["asistente-ia", "inventario", "compras", "plata"],
 };
