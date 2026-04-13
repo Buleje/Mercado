@@ -14,7 +14,7 @@ import {
 } from "@/components/LoadingSkeleton";
 import { zones } from "@/data/zones";
 import { categories } from "@/data/products";
-import StoreProductsHydrator from "@/components/StoreProductsHydrator";
+import TiendaSections from "@/components/TiendaSections";
 
 export const metadata: Metadata = {
   title: "Catalogo de Productos — Buleje ERP",
@@ -40,17 +40,7 @@ export const metadata: Metadata = {
   },
 };
 
-// ── Above-the-fold (SSR + eager hydration) ──
-const DailySpecial      = dynamic(() => import("@/components/DailySpecial"));
-const CountdownBanner   = dynamic(() => import("@/components/CountdownBanner"));
-const FlashDeals        = dynamic(() => import("@/components/FlashDeals"));
-const SeasonalPromo     = dynamic(() => import("@/components/SeasonalPromo"));
-
-// ── Main catalog & sections ──
-const PopularProducts   = dynamic(() => import("@/components/PopularProducts"));
-const FeaturedCarousel  = dynamic(() => import("@/components/FeaturedCarousel"));
-const CombosSection     = dynamic(() => import("@/components/CombosSection"));
-const LastUnitsSection  = dynamic(() => import("@/components/LastUnitsSection"));
+// ── Main catalog (still loaded individually — always visible) ──
 const ProductCatalog    = dynamic(() => import("@/components/ProductCatalog"));
 const Footer            = dynamic(() => import("@/components/Footer"));
 
@@ -200,10 +190,7 @@ export default async function TiendaPage() {
       {/* Spacer to push content below fixed header (h-11 announcement + h-16/h-20 header) */}
       <div className="h-[6.75rem] sm:h-[7.75rem]" />
       <main id="main-content">
-        {/* Pre-populate client-side product cache with server data to prevent flash-of-empty */}
-        <StoreProductsHydrator tenantSlug={tenantSlug} products={initialProducts as any} />
-
-        {/* Default hero — always visible, gives the store a strong first impression */}
+        {/* Default hero — always visible */}
         <section className="relative overflow-hidden py-12 sm:py-16 bg-gradient-to-br from-primary via-primary/90 to-primary-dark">
           <div className="pointer-events-none absolute inset-0">
             <div className="absolute -top-20 -right-20 h-60 w-60 rounded-full bg-white/10 blur-[80px]" />
@@ -224,60 +211,12 @@ export default async function TiendaPage() {
           </div>
         </section>
 
-        {order.map((key) => {
-          if (!show(key)) return null;
-          // Pass server products to eliminate client-side fetch dependency
-          const sp = initialProducts as any;
-          switch (key) {
-            case "daily_special":
-              return (
-                <Suspense key={key} fallback={null}>
-                  <DailySpecial serverProducts={sp} />
-                </Suspense>
-              );
-            case "seasonal_promo":
-              return (
-                <Suspense key={key} fallback={null}>
-                  <SeasonalPromo serverProducts={sp} />
-                </Suspense>
-              );
-            case "countdown":
-              return <CountdownBanner key={key} />;
-            case "flash_deals":
-              return (
-                <Suspense key={key} fallback={null}>
-                  <FlashDeals serverProducts={sp} />
-                </Suspense>
-              );
-            case "popular_products":
-              return (
-                <Suspense key={key} fallback={null}>
-                  <PopularProducts serverProducts={sp} />
-                </Suspense>
-              );
-            case "featured_carousel":
-              return (
-                <Suspense key={key} fallback={null}>
-                  <FeaturedCarousel serverProducts={sp} />
-                </Suspense>
-              );
-            case "combos":
-              return (
-                <Suspense key={key} fallback={null}>
-                  <CombosSection serverProducts={sp} />
-                </Suspense>
-              );
-            case "last_units":
-              return (
-                <Suspense key={key} fallback={null}>
-                  <LastUnitsSection serverProducts={sp} />
-                </Suspense>
-              );
-            // recipes, favorites, recently_viewed → handled by TiendaClientShell
-            default:
-              return null;
-          }
-        })}
+        {/* All dynamic sections — single component handles loading + distribution */}
+        <TiendaSections
+          serverProducts={initialProducts as any}
+          visibleSections={visible}
+          sectionOrder={order}
+        />
 
         {/* Always visible — main product catalog */}
         <Suspense fallback={<CatalogLoadingSkeleton />}>
