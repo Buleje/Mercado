@@ -4,11 +4,7 @@ import dynamic from "next/dynamic";
 import { Brain } from "lucide-react";
 import AdminModuleHeader from "@/components/admin/shared/AdminModuleHeader";
 
-const S = () => (
-  <div className="flex items-center justify-center py-12">
-    <div className="h-8 w-8 border-4 border-primary border-t-transparent rounded-full animate-spin" />
-  </div>
-);
+import { TabLoadingSkeleton as S } from "@/components/ui/skeletons";
 
 const AICommandCenter = dynamic(
   () => import("@/components/admin/ai-center/AICommandCenter"),

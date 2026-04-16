@@ -12,7 +12,7 @@ import AdminModuleHeader from "@/components/admin/shared/AdminModuleHeader";
 
 const Spinner = () => (
   <div className="flex items-center justify-center py-12">
-    <div className="h-8 w-8 border-4 border-[#00B4A6] border-t-transparent rounded-full animate-spin" />
+    <div className="h-8 w-8 border-4 border-primary border-t-transparent rounded-full animate-spin" />
   </div>
 );
 
@@ -64,7 +64,7 @@ const LS_MONTHLY_GOAL = "monthly-goal";
 // ─── Confetti simple (igual que DailyGoalTracker) ─────────────────────────────
 
 function Confetti() {
-  const colors = ["#00B4A6", "#f97316", "#2dd4bf", "#f4d03f", "#e76f51"];
+  const colors = ["var(--color-primary)", "#f97316", "#2dd4bf", "#f4d03f", "#e76f51"];
   return (
     <div className="pointer-events-none absolute inset-0 overflow-hidden rounded-2xl z-10">
       {Array.from({ length: 24 }).map((_, i) => {
@@ -176,8 +176,8 @@ function SemaMesTab() {
       <div className="rounded-2xl border border-gray-200 bg-white p-5 space-y-4">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <span className="flex items-center justify-center w-8 h-8 rounded-lg bg-[#00B4A6]/10">
-              <Calendar className="w-4 h-4 text-[#00B4A6]" />
+            <span className="flex items-center justify-center w-8 h-8 rounded-lg bg-primary/10">
+              <Calendar className="w-4 h-4 text-primary" />
             </span>
             <span className="text-xs font-semibold text-gray-500 uppercase tracking-wide">
               Meta del mes
@@ -186,7 +186,7 @@ function SemaMesTab() {
           {!editing ? (
             <button
               onClick={() => { setTempGoal(String(monthlyGoal)); setEditing(true); }}
-              className="flex items-center gap-1 text-[10px] font-semibold text-gray-400 hover:text-[#00B4A6] transition-colors px-2 py-1 rounded-lg hover:bg-gray-50"
+              className="flex items-center gap-1 text-[10px] font-semibold text-gray-400 hover:text-primary transition-colors px-2 py-1 rounded-lg hover:bg-gray-50"
             >
               <Pencil className="w-3 h-3" /> Editar
             </button>
@@ -199,7 +199,7 @@ function SemaMesTab() {
                 onChange={(e) => setTempGoal(e.target.value)}
                 onKeyDown={(e) => e.key === "Enter" && handleSave()}
                 autoFocus
-                className="w-20 px-2 py-1 text-xs rounded-lg border border-gray-200 bg-white text-gray-900 outline-none focus:border-[#00B4A6]"
+                className="w-20 px-2 py-1 text-xs rounded-lg border border-gray-200 bg-white text-gray-900 outline-none focus:border-primary"
               />
               <button onClick={handleSave} className="p-1 rounded-lg hover:bg-emerald-50 text-emerald-600">
                 <Check className="w-3.5 h-3.5" />
@@ -346,7 +346,7 @@ function LogrosTab() {
         </p>
         <div className="h-2 w-32 rounded-full bg-gray-100 overflow-hidden">
           <div
-            className="h-full rounded-full bg-[#00B4A6] transition-all duration-500"
+            className="h-full rounded-full bg-primary transition-all duration-500"
             style={{ width: `${(totalUnlocked / ACHIEVEMENTS_DEF.length) * 100}%` }}
           />
         </div>
@@ -364,14 +364,14 @@ function LogrosTab() {
                 className={cn(
                   "relative rounded-2xl border p-4 flex flex-col items-center text-center gap-2 transition-all duration-300",
                   isUnlocked
-                    ? "border-[#00B4A6]/40 bg-gradient-to-b from-[#00B4A6]/5 to-[#00B4A6]/10 shadow-sm"
+                    ? "border-primary/40 bg-gradient-to-b from-primary/5 to-primary/10 shadow-sm"
                     : "border-gray-200 bg-gray-50 opacity-40"
                 )}
               >
                 {/* Efecto brillo si desbloqueado */}
                 {isUnlocked && (
                   <div className="absolute inset-0 rounded-2xl overflow-hidden pointer-events-none">
-                    <div className="absolute -inset-full animate-[spin_4s_linear_infinite] bg-gradient-conic from-transparent via-[#00B4A6]/10 to-transparent" />
+                    <div className="absolute -inset-full animate-[spin_4s_linear_infinite] bg-gradient-conic from-transparent via-primary/10 to-transparent" />
                   </div>
                 )}
                 <span className="text-3xl leading-none">{a.emoji}</span>
@@ -387,7 +387,7 @@ function LogrosTab() {
                   </p>
                 </div>
                 {isUnlocked ? (
-                  <span className="text-[9px] font-semibold text-[#00B4A6] bg-[#00B4A6]/10 px-2 py-0.5 rounded-full">
+                  <span className="text-[9px] font-semibold text-primary bg-primary/10 px-2 py-0.5 rounded-full">
                     {unlocked[a.id]}
                   </span>
                 ) : (
@@ -448,7 +448,7 @@ export default function MetasLogrosModule({ tenantId: _tenantId }: Props) {
   }, [goals, streak]);
 
   const _kpiCards = [
-    { label: "Metas activas",   value: String(kpis.active),   icon: Target,      color: "text-[#00B4A6]", bg: "bg-[#00B4A6]/10" },
+    { label: "Metas activas",   value: String(kpis.active),   icon: Target,      color: "text-primary", bg: "bg-primary/10" },
     { label: "Logradas",        value: String(kpis.achieved), icon: Trophy,       color: "text-amber-600",   bg: "bg-amber-50"        },
     { label: "Racha (días)",    value: String(kpis.streak),   icon: Flame,        color: "text-orange-600", bg: "bg-orange-50"      },
     { label: "Tasa de éxito",   value: `${kpis.rate}%`,       icon: TrendingUp,   color: "text-blue-600",     bg: "bg-blue-50"          },

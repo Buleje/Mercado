@@ -99,7 +99,7 @@ export interface ResumenSubTabProps {
 
 function SkeletonCard({ className }: { className?: string }) {
   return (
-    <div className={cn("rounded-xl border border-gray-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 p-4 animate-pulse", className)}>
+    <div className={cn("rounded-xl border border-gray-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 p-5 animate-pulse", className)}>
       <div className="h-3 w-1/3 rounded bg-gray-200 dark:bg-zinc-700 mb-3" />
       <div className="h-7 w-1/2 rounded bg-gray-200 dark:bg-zinc-700 mb-2" />
       <div className="h-1 w-full rounded bg-gray-200 dark:bg-zinc-700 mt-3" />
@@ -449,14 +449,14 @@ export function ResumenSubTab(props: ResumenSubTabProps) {
 
       {/* High-impact cards row */}
       {!loading && (
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
           {/* Proximos pagos */}
-          <div className="rounded-xl border border-gray-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 p-4 shadow-sm">
+          <div className="rounded-xl border border-gray-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 p-5 shadow-sm">
             <div className="flex items-center gap-2 mb-3">
               <span className="flex items-center justify-center w-7 h-7 rounded-lg bg-amber-50 dark:bg-amber-900/20">
                 <DollarSign className="w-3.5 h-3.5 text-amber-500" />
               </span>
-              <span className="text-xs font-bold text-gray-600 dark:text-zinc-300">Pagos esta semana</span>
+              <span className="text-sm font-medium text-gray-500 dark:text-zinc-400 uppercase tracking-wider">Pagos esta semana</span>
             </div>
             {upcomingPayables.overdue > 0 && (
               <div className="flex items-center gap-1.5 mb-2 px-2 py-1 rounded-lg bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800">
@@ -484,14 +484,14 @@ export function ResumenSubTab(props: ResumenSubTabProps) {
           </div>
 
           {/* Clientes del dia */}
-          <div className="rounded-xl border border-gray-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 p-4 shadow-sm">
+          <div className="rounded-xl border border-gray-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 p-5 shadow-sm">
             <div className="flex items-center gap-2 mb-3">
               <span className="flex items-center justify-center w-7 h-7 rounded-lg bg-blue-50 dark:bg-blue-900/20">
                 <Users className="w-3.5 h-3.5 text-blue-500" />
               </span>
-              <span className="text-xs font-bold text-gray-600 dark:text-zinc-300">Clientes hoy</span>
+              <span className="text-sm font-medium text-gray-500 dark:text-zinc-400 uppercase tracking-wider">Clientes hoy</span>
             </div>
-            <p className="text-2xl font-extrabold font-mono text-gray-900 dark:text-zinc-100">{clientesHoy}</p>
+            <p className="text-2xl font-bold font-mono text-gray-900 dark:text-zinc-100">{clientesHoy}</p>
             <p className="text-xs text-gray-400 mt-0.5">Promedio: {clientesPromedio}/dia</p>
             <div className="flex items-center gap-1.5 mt-2">
               {clientesHoy > clientesAyer ? (
@@ -505,12 +505,12 @@ export function ResumenSubTab(props: ResumenSubTabProps) {
           </div>
 
           {/* Productos que se agotan */}
-          <div className="rounded-xl border border-gray-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 p-4 shadow-sm">
+          <div className="rounded-xl border border-gray-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 p-5 shadow-sm">
             <div className="flex items-center gap-2 mb-3">
               <span className="flex items-center justify-center w-7 h-7 rounded-lg bg-red-50 dark:bg-red-900/20">
                 <Package className="w-3.5 h-3.5 text-red-500" />
               </span>
-              <span className="text-xs font-bold text-gray-600 dark:text-zinc-300">Se agotan esta semana</span>
+              <span className="text-sm font-medium text-gray-500 dark:text-zinc-400 uppercase tracking-wider">Se agotan esta semana</span>
             </div>
             {productsRunningOut.length > 0 ? (
               <ul className="space-y-1.5">
@@ -600,10 +600,10 @@ export function ResumenSubTab(props: ResumenSubTabProps) {
 
           {/* Top 10 productos section */}
           {sectionId === "top-productos" && (
-            <div className="rounded-xl border border-gray-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 p-4 shadow-sm">
+            <div className="rounded-xl border border-gray-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 p-5 shadow-sm">
               <div className="flex items-center gap-2 mb-4">
                 <TrendingUp className="w-4 h-4" style={{ color: "var(--color-primary)" }} />
-                <span className="text-sm font-semibold text-gray-700 dark:text-zinc-300">Top 10 productos mas vendidos</span>
+                <span className="text-sm font-medium text-gray-500 dark:text-zinc-400 uppercase tracking-wider">Top 10 productos mas vendidos</span>
               </div>
               {loading ? (
                 <SkeletonBar rows={10} />
@@ -632,10 +632,10 @@ export function ResumenSubTab(props: ResumenSubTabProps) {
 
           {/* Horario pico section */}
           {sectionId === "horario-pico" && (
-            <div className="rounded-xl border border-gray-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 p-4 shadow-sm">
+            <div className="rounded-xl border border-gray-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 p-5 shadow-sm">
               <div className="flex items-center gap-2 mb-4">
                 <Clock className="w-4 h-4" style={{ color: "#f97316" }} />
-                <span className="text-sm font-semibold text-gray-700 dark:text-zinc-300">Ventas por hora (hoy)</span>
+                <span className="text-sm font-medium text-gray-500 dark:text-zinc-400 uppercase tracking-wider">Ventas por hora (hoy)</span>
               </div>
               {loading ? (
                 <SkeletonBar rows={4} />
@@ -666,10 +666,10 @@ export function ResumenSubTab(props: ResumenSubTabProps) {
           {sectionId === "margen-comparador" && (loading ? (
             <SkeletonCard />
           ) : (
-            <div className="rounded-xl border border-gray-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 p-4 shadow-sm">
+            <div className="rounded-xl border border-gray-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 p-5 shadow-sm">
               <div className="flex items-center gap-2 mb-3">
                 <BarChart3 className="w-4 h-4" style={{ color: "#f97316" }} />
-                <span className="text-xs font-semibold text-gray-500 dark:text-zinc-400 uppercase tracking-wide">Este mes vs anterior</span>
+                <span className="text-sm font-medium text-gray-500 dark:text-zinc-400 uppercase tracking-wider">Este mes vs anterior</span>
               </div>
               <div className="flex items-end gap-3">
                 <div>
@@ -705,9 +705,9 @@ export function ResumenSubTab(props: ResumenSubTabProps) {
 
           {/* KPIs extra section */}
           {sectionId === "kpis" && !loading && (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
               {monthProjection && (
-                <div className="rounded-xl border border-gray-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 p-4 shadow-sm">
+                <div className="rounded-xl border border-gray-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 p-5 shadow-sm">
                   <span className="text-xs font-medium text-gray-500 dark:text-zinc-400 uppercase tracking-wide">Proyeccion mensual</span>
                   <p className="text-lg font-bold font-mono text-gray-900 dark:text-zinc-100 mt-1">
                     {fmtR(monthProjection.ventasMes)} <span className="text-xs font-normal text-gray-400">de {fmtR(monthProjection.proyeccion)}</span>
@@ -735,7 +735,7 @@ export function ResumenSubTab(props: ResumenSubTabProps) {
                 </div>
               )}
               {productosSinVenderHoy.length > 0 && (
-                <div className="rounded-xl border border-gray-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 p-4 shadow-sm">
+                <div className="rounded-xl border border-gray-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 p-5 shadow-sm">
                   <span className="text-xs font-medium text-gray-500 dark:text-zinc-400 uppercase tracking-wide">Sin vender hoy</span>
                   <div className="mt-2 space-y-1">
                     {productosSinVenderHoy.map((p, i) => (
@@ -782,7 +782,7 @@ export function ResumenSubTab(props: ResumenSubTabProps) {
               )}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 {/* Top 5 clientes */}
-                <div className="rounded-xl border border-gray-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 p-4 shadow-sm">
+                <div className="rounded-xl border border-gray-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 p-5 shadow-sm">
                   <div className="flex items-center gap-2 mb-4">
                     <Users className="w-4 h-4" style={{ color: "var(--color-primary)" }} />
                     <span className="text-sm font-semibold text-gray-700 dark:text-zinc-300">Top 5 clientes del mes</span>
@@ -816,7 +816,7 @@ export function ResumenSubTab(props: ResumenSubTabProps) {
                 </div>
 
                 {/* Alertas activas */}
-                <div className="rounded-xl border border-gray-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 p-4 shadow-sm">
+                <div className="rounded-xl border border-gray-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 p-5 shadow-sm">
                   <div className="flex items-center gap-2 mb-4">
                     <AlertTriangle className="w-4 h-4 text-amber-500" />
                     <span className="text-sm font-semibold text-gray-700 dark:text-zinc-300">Alertas activas</span>

@@ -39,16 +39,16 @@ export default function BulkActionsBar({
 
   return (
     <div className={cn(
-      "sticky top-0 z-20 flex items-center gap-3 px-4 py-2.5 rounded-xl border border-[#00B4A6]/20 bg-[#00B4A6]/5 backdrop-blur-sm shadow-sm",
+      "sticky top-0 z-20 flex items-center gap-3 px-4 py-2.5 rounded-xl border border-primary/20 bg-primary/5 backdrop-blur-sm shadow-sm",
       className,
     )}>
       {/* Selection info */}
-      <button onClick={count === totalCount ? onClearSelection : onSelectAll} className="flex items-center gap-1.5 text-xs font-semibold text-[#00B4A6] hover:underline">
+      <button onClick={count === totalCount ? onClearSelection : onSelectAll} className="flex items-center gap-1.5 text-xs font-semibold text-primary hover:underline">
         {count === totalCount ? <CheckSquare className="h-3.5 w-3.5" /> : <Square className="h-3.5 w-3.5" />}
         {count} de {totalCount} seleccionados
       </button>
 
-      <div className="h-4 w-px bg-[#00B4A6]/20" />
+      <div className="h-4 w-px bg-primary/20" />
 
       {/* Visible actions */}
       {visibleActions.map(action => {

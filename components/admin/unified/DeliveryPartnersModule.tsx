@@ -26,12 +26,13 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import AdminModuleHeader from "@/components/admin/shared/AdminModuleHeader";
+import EmptyState from "@/components/admin/shared/EmptyState";
 import AdminTabBar from "@/components/admin/shared/AdminTabBar";
 
 // ── Spinner compacto ──
 const _Spinner = () => (
   <div className="flex items-center justify-center py-12">
-    <div className="h-8 w-8 border-4 border-[#00B4A6] border-t-transparent rounded-full animate-spin" />
+    <div className="h-8 w-8 border-4 border-primary border-t-transparent rounded-full animate-spin" />
   </div>
 );
 
@@ -196,7 +197,7 @@ function PartnerModal({
                 value={form.name}
                 onChange={(e) => setForm((p) => ({ ...p, name: e.target.value }))}
                 placeholder="Juan Pérez"
-                className="w-full px-3 py-2.5 rounded-xl border border-gray-200 bg-white text-sm text-gray-900 outline-none focus:ring-2 focus:ring-[#00B4A6]/30 focus:border-[#00B4A6] transition-all"
+                className="w-full px-3 py-2.5 rounded-xl border border-gray-200 bg-white text-sm text-gray-900 outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all"
                 autoFocus
               />
             </div>
@@ -208,7 +209,7 @@ function PartnerModal({
                 value={form.phone}
                 onChange={(e) => setForm((p) => ({ ...p, phone: e.target.value }))}
                 placeholder="987654321"
-                className="w-full px-3 py-2.5 rounded-xl border border-gray-200 bg-white text-sm text-gray-900 outline-none focus:ring-2 focus:ring-[#00B4A6]/30 focus:border-[#00B4A6] transition-all"
+                className="w-full px-3 py-2.5 rounded-xl border border-gray-200 bg-white text-sm text-gray-900 outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all"
               />
             </div>
 
@@ -220,7 +221,7 @@ function PartnerModal({
                 step={0.5}
                 value={form.fee}
                 onChange={(e) => setForm((p) => ({ ...p, fee: parseFloat(e.target.value) || 0 }))}
-                className="w-full px-3 py-2.5 rounded-xl border border-gray-200 bg-white text-sm text-gray-900 outline-none focus:ring-2 focus:ring-[#00B4A6]/30 focus:border-[#00B4A6] transition-all"
+                className="w-full px-3 py-2.5 rounded-xl border border-gray-200 bg-white text-sm text-gray-900 outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all"
               />
             </div>
 
@@ -230,7 +231,7 @@ function PartnerModal({
                 <select
                   value={form.zone}
                   onChange={(e) => setForm((p) => ({ ...p, zone: e.target.value }))}
-                  className="w-full px-3 py-2.5 rounded-xl border border-gray-200 bg-white text-sm text-gray-900 outline-none focus:ring-2 focus:ring-[#00B4A6]/30 focus:border-[#00B4A6] appearance-none transition-all"
+                  className="w-full px-3 py-2.5 rounded-xl border border-gray-200 bg-white text-sm text-gray-900 outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary appearance-none transition-all"
                 >
                   {ZONAS.map((z) => <option key={z} value={z}>{z}</option>)}
                 </select>
@@ -244,7 +245,7 @@ function PartnerModal({
                 <select
                   value={form.vehicleType}
                   onChange={(e) => setForm((p) => ({ ...p, vehicleType: e.target.value }))}
-                  className="w-full px-3 py-2.5 rounded-xl border border-gray-200 bg-white text-sm text-gray-900 outline-none focus:ring-2 focus:ring-[#00B4A6]/30 focus:border-[#00B4A6] appearance-none transition-all"
+                  className="w-full px-3 py-2.5 rounded-xl border border-gray-200 bg-white text-sm text-gray-900 outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary appearance-none transition-all"
                 >
                   {VEHICLE_TYPES.map((v) => <option key={v} value={v}>{v}</option>)}
                 </select>
@@ -261,7 +262,7 @@ function PartnerModal({
               onClick={() => setForm((p) => ({ ...p, isActive: !p.isActive }))}
               className={cn(
                 "relative inline-flex h-6 w-11 items-center rounded-full transition-colors",
-                form.isActive ? "bg-[#00B4A6]" : "bg-gray-300"
+                form.isActive ? "bg-primary" : "bg-gray-300"
               )}
             >
               <span className={cn(
@@ -282,7 +283,7 @@ function PartnerModal({
             <button
               type="submit"
               disabled={saving}
-              className="flex-1 inline-flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-bold text-white bg-[#00B4A6] hover:bg-primary-dark transition-colors disabled:opacity-50"
+              className="flex-1 inline-flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-bold text-white bg-primary hover:bg-primary-dark transition-colors disabled:opacity-50"
             >
               {saving ? (
                 <div className="h-4 w-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
@@ -367,7 +368,7 @@ function RepartidoresTab() {
         <p className="text-sm font-semibold text-gray-600">{partners.length} repartidor{partners.length !== 1 ? "es" : ""}</p>
         <button
           onClick={() => setModal({ open: true, partner: null })}
-          className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-[#00B4A6] text-white text-sm font-bold hover:bg-primary-dark transition-colors"
+          className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-primary text-white text-sm font-bold hover:bg-primary-dark transition-colors"
         >
           <Plus className="h-4 w-4" />
           Nuevo repartidor
@@ -375,11 +376,7 @@ function RepartidoresTab() {
       </div>
 
       {partners.length === 0 && !error ? (
-        <div className="text-center py-16 text-gray-400">
-          <Truck className="h-10 w-10 mx-auto mb-3 opacity-40" />
-          <p className="text-sm font-semibold">Sin repartidores registrados</p>
-          <p className="text-xs mt-1">Agrega tu primer repartidor para empezar a gestionar entregas.</p>
-        </div>
+        <EmptyState icon={Truck} title="Sin repartidores registrados" description="Agrega tu primer repartidor para empezar a gestionar entregas." />
       ) : (
         <div className="bg-white border border-gray-200 rounded-2xl shadow-sm overflow-hidden">
           <div className="overflow-x-auto">
@@ -434,7 +431,7 @@ function RepartidoresTab() {
                       <div className="flex items-center justify-end gap-1.5">
                         <button
                           onClick={() => setModal({ open: true, partner: p })}
-                          className="p-2 rounded-lg text-gray-400 hover:text-[#00B4A6] hover:bg-[#00B4A6]/10 transition-colors"
+                          className="p-2 rounded-lg text-gray-400 hover:text-primary hover:bg-primary/10 transition-colors"
                           title="Editar"
                         >
                           <Edit2 className="h-4 w-4" />
@@ -572,7 +569,7 @@ function AsignacionesTab() {
         <p className="text-sm font-semibold text-gray-600">{assignments.length} asignación{assignments.length !== 1 ? "es" : ""}</p>
         <button
           onClick={() => setAssignModal({ open: true })}
-          className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-[#00B4A6] text-white text-sm font-bold hover:bg-primary-dark transition-colors"
+          className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-primary text-white text-sm font-bold hover:bg-primary-dark transition-colors"
         >
           <Plus className="h-4 w-4" />
           Asignar
@@ -580,11 +577,7 @@ function AsignacionesTab() {
       </div>
 
       {assignments.length === 0 && !error ? (
-        <div className="text-center py-16 text-gray-400">
-          <ClipboardList className="h-10 w-10 mx-auto mb-3 opacity-40" />
-          <p className="text-sm font-semibold">Sin asignaciones registradas</p>
-          <p className="text-xs mt-1">Asigna repartidores a órdenes pendientes.</p>
-        </div>
+        <EmptyState icon={ClipboardList} title="Sin asignaciones registradas" description="Asigna repartidores a ordenes pendientes." />
       ) : (
         <div className="bg-white border border-gray-200 rounded-2xl shadow-sm overflow-hidden">
           <div className="overflow-x-auto">
@@ -658,7 +651,7 @@ function AsignacionesTab() {
                 value={assignModal.orderId ?? ""}
                 onChange={(e) => setAssignModal((p) => ({ ...p, orderId: e.target.value }))}
                 placeholder="Ej: ORD-12345"
-                className="w-full px-3 py-2.5 rounded-xl border border-gray-200 bg-white text-sm text-gray-900 outline-none focus:ring-2 focus:ring-[#00B4A6]/30 focus:border-[#00B4A6] transition-all"
+                className="w-full px-3 py-2.5 rounded-xl border border-gray-200 bg-white text-sm text-gray-900 outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all"
               />
             </div>
 
@@ -668,7 +661,7 @@ function AsignacionesTab() {
                 <select
                   value={selectedPartner}
                   onChange={(e) => setSelectedPartner(e.target.value)}
-                  className="w-full px-3 py-2.5 rounded-xl border border-gray-200 bg-white text-sm text-gray-900 outline-none focus:ring-2 focus:ring-[#00B4A6]/30 focus:border-[#00B4A6] appearance-none transition-all"
+                  className="w-full px-3 py-2.5 rounded-xl border border-gray-200 bg-white text-sm text-gray-900 outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary appearance-none transition-all"
                 >
                   <option value="">Seleccionar repartidor...</option>
                   {partners.map((p) => (
@@ -691,7 +684,7 @@ function AsignacionesTab() {
               <button
                 onClick={handleAssign}
                 disabled={assigning || !selectedPartner}
-                className="flex-1 inline-flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-bold text-white bg-[#00B4A6] hover:bg-primary-dark transition-colors disabled:opacity-50"
+                className="flex-1 inline-flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-bold text-white bg-primary hover:bg-primary-dark transition-colors disabled:opacity-50"
               >
                 {assigning ? (
                   <div className="h-4 w-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
@@ -768,11 +761,7 @@ function PermisosTab() {
       )}
 
       {permissions.length === 0 && !error ? (
-        <div className="text-center py-16 text-gray-400">
-          <Shield className="h-10 w-10 mx-auto mb-3 opacity-40" />
-          <p className="text-sm font-semibold">Sin permisos configurados</p>
-          <p className="text-xs mt-1">Los permisos de acceso a la tienda aparecerán aquí.</p>
-        </div>
+        <EmptyState icon={Shield} title="Sin permisos configurados" description="Los permisos de acceso a la tienda apareceran aqui." />
       ) : (
         <div className="bg-white border border-gray-200 rounded-2xl shadow-sm overflow-hidden">
           <div className="overflow-x-auto">
@@ -808,8 +797,8 @@ function PermisosTab() {
                           className={cn(
                             "w-5 h-5 rounded border-2 flex items-center justify-center mx-auto transition-colors",
                             p.permissions.includes(perm)
-                              ? "bg-[#00B4A6] border-[#00B4A6]"
-                              : "bg-white border-gray-300 hover:border-[#00B4A6]",
+                              ? "bg-primary border-primary"
+                              : "bg-white border-gray-300 hover:border-primary",
                             savingId === p.id && "opacity-50 cursor-not-allowed"
                           )}
                           title={p.permissions.includes(perm) ? `Quitar permiso ${perm}` : `Otorgar permiso ${perm}`}
@@ -926,7 +915,7 @@ function RankingTab() {
             className={cn(
               "px-3 py-1.5 rounded-lg text-xs font-bold transition-colors",
               period === p.id
-                ? "bg-[#00B4A6] text-white"
+                ? "bg-primary text-white"
                 : "bg-gray-100 text-gray-600 hover:bg-gray-200"
             )}
           >
@@ -974,7 +963,7 @@ function RankingTab() {
                       <div
                         className={cn(
                           "h-8 w-8 rounded-full flex items-center justify-center text-xs font-bold text-white shrink-0",
-                          entry.isActive ? "bg-[#00B4A6]" : "bg-gray-300"
+                          entry.isActive ? "bg-primary" : "bg-gray-300"
                         )}
                       >
                         {entry.name.charAt(0).toUpperCase()}
@@ -1088,7 +1077,7 @@ function SolicitudesTab() {
           className={cn(
             "px-3 py-1.5 rounded-lg text-xs font-bold transition-colors",
             filter === "pending"
-              ? "bg-[#00B4A6] text-white"
+              ? "bg-primary text-white"
               : "bg-gray-100 text-gray-600 hover:bg-gray-200"
           )}
         >
@@ -1099,7 +1088,7 @@ function SolicitudesTab() {
           className={cn(
             "px-3 py-1.5 rounded-lg text-xs font-bold transition-colors",
             filter === "all"
-              ? "bg-[#00B4A6] text-white"
+              ? "bg-primary text-white"
               : "bg-gray-100 text-gray-600 hover:bg-gray-200"
           )}
         >
@@ -1107,7 +1096,7 @@ function SolicitudesTab() {
         </button>
         <button
           onClick={fetchApps}
-          className="ml-auto p-2 rounded-lg text-gray-400 hover:text-[#00B4A6] hover:bg-[#00B4A6]/10 transition-colors"
+          className="ml-auto p-2 rounded-lg text-gray-400 hover:text-primary hover:bg-primary/10 transition-colors"
         >
           <RefreshCw className={cn("h-4 w-4", loading && "animate-spin")} />
         </button>
@@ -1238,7 +1227,7 @@ export default function DeliveryPartnersModule() {
       >
         <button
           onClick={refreshKpis}
-          className="p-2 rounded-lg text-gray-400 hover:text-[#00B4A6] hover:bg-[#00B4A6]/10 transition-colors"
+          className="p-2 rounded-lg text-gray-400 hover:text-primary hover:bg-primary/10 transition-colors"
           title="Actualizar"
         >
           <RefreshCw className={cn("h-4 w-4", kpisLoading && "animate-spin")} />
@@ -1248,7 +1237,7 @@ export default function DeliveryPartnersModule() {
       {/* KPI strip */}
       <div className="grid grid-cols-3 gap-3">
         {[
-          { label: "Repartidores activos", value: kpis.activePartners,     color: "text-[#00B4A6]" },
+          { label: "Repartidores activos", value: kpis.activePartners,     color: "text-primary" },
           { label: "Entregas hoy",          value: kpis.deliveriesToday,    color: "text-blue-600" },
           { label: "Pendientes",            value: kpis.pendingDeliveries,  color: "text-amber-600" },
         ].map(({ label, value, color }) => (

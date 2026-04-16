@@ -194,11 +194,11 @@ export function VentasSubTab(props: VentasSubTabProps) {
               <p className="text-xs text-gray-300 dark:text-zinc-600 mt-1">Haz click en &quot;+ Agregar grafico&quot; arriba</p>
             </div>
           ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
               {activeCharts.map((chartId, index) => (
-                <div key={chartId} className="bg-white dark:bg-zinc-800 rounded-xl border border-gray-200 dark:border-zinc-700 p-4 shadow-sm">
+                <div key={chartId} className="bg-white dark:bg-zinc-800 rounded-xl border border-gray-200 dark:border-zinc-700 p-5 shadow-sm">
                   <div className="flex items-center justify-between mb-3">
-                    <span className="text-xs font-bold text-gray-700 dark:text-zinc-300 truncate">{chartLabel(chartId)}</span>
+                    <span className="text-sm font-medium text-gray-500 dark:text-zinc-400 uppercase tracking-wider truncate">{chartLabel(chartId)}</span>
                     <div className="flex items-center gap-1 shrink-0">
                       <button onClick={() => moveChart(index, "up")} disabled={index === 0} className="p-1 rounded hover:bg-gray-100 dark:hover:bg-zinc-700 disabled:opacity-30 transition-colors">
                         <ChevronUp className="w-3 h-3 text-gray-400" />
@@ -248,10 +248,10 @@ export function VentasSubTab(props: VentasSubTabProps) {
           .sort((a, b) => b.ventas - a.ventas)
           .slice(0, 3);
         return (
-          <div className="rounded-xl border border-gray-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 p-4 shadow-sm">
+          <div className="rounded-xl border border-gray-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 p-5 shadow-sm">
             <div className="flex items-center gap-2 mb-2">
               <Users className="w-4 h-4 text-gray-400" />
-              <span className="text-xs font-bold text-gray-600 dark:text-zinc-300">Rendimiento cajeros hoy</span>
+              <span className="text-sm font-medium text-gray-500 dark:text-zinc-400 uppercase tracking-wider">Rendimiento cajeros hoy</span>
             </div>
             <div className="flex flex-wrap gap-3">
               {ranking.map((c, i) => (
@@ -271,7 +271,7 @@ export function VentasSubTab(props: VentasSubTabProps) {
         try { const stored = localStorage.getItem("daily-goal"); if (stored) dailyGoal = Number(stored) || 800; } catch { /* ignore */ }
         const dailyGoalPct = dailyGoal > 0 ? (revenueToday / dailyGoal) * 100 : 0;
         return (
-          <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl p-4">
+          <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl p-5">
             <div className="flex items-center justify-between mb-2">
               <p className="text-sm font-bold text-gray-900 dark:text-white flex items-center gap-2">
                 <Target className="h-4 w-4 text-primary" /> Meta del dia
@@ -289,10 +289,10 @@ export function VentasSubTab(props: VentasSubTabProps) {
       {filteredSections.map((sectionId) => (
         <div key={sectionId}>
           {sectionId === "top-productos" && (
-            <div className="rounded-xl border border-gray-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 p-4 shadow-sm">
+            <div className="rounded-xl border border-gray-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 p-5 shadow-sm">
               <div className="flex items-center gap-2 mb-4">
                 <TrendingUp className="w-4 h-4" style={{ color: "var(--color-primary)" }} />
-                <span className="text-sm font-semibold text-gray-700 dark:text-zinc-300">Top 10 productos mas vendidos</span>
+                <span className="text-sm font-medium text-gray-500 dark:text-zinc-400 uppercase tracking-wider">Top 10 productos mas vendidos</span>
               </div>
               {loading ? (
                 <SkeletonBar rows={10} />
@@ -320,10 +320,10 @@ export function VentasSubTab(props: VentasSubTabProps) {
           )}
 
           {sectionId === "horario-pico" && (
-            <div className="rounded-xl border border-gray-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 p-4 shadow-sm">
+            <div className="rounded-xl border border-gray-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 p-5 shadow-sm">
               <div className="flex items-center gap-2 mb-4">
                 <TrendingUp className="w-4 h-4" style={{ color: "#f97316" }} />
-                <span className="text-sm font-semibold text-gray-700 dark:text-zinc-300">Ventas por hora (hoy)</span>
+                <span className="text-sm font-medium text-gray-500 dark:text-zinc-400 uppercase tracking-wider">Ventas por hora (hoy)</span>
               </div>
               {loading ? (
                 <SkeletonBar rows={4} />
@@ -351,7 +351,7 @@ export function VentasSubTab(props: VentasSubTabProps) {
           )}
 
           {sectionId === "kpis" && !loading && (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
               {/* Simplified KPIs for ventas - placeholder for future extension */}
             </div>
           )}

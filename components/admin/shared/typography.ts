@@ -28,7 +28,7 @@
  *     → text-sm font-semibold text-gray-900 (pequeño)
  *
  *   Accent — Color primario
- *     → text-[#00B4A6]  (teal, para valores positivos, CTAs)
+ *     → text-[#2563EB]  (teal, para valores positivos, CTAs)
  *
  *   Danger — Color de alerta
  *     → text-red-600    (para deudas, errores, métricas negativas)
@@ -57,14 +57,14 @@ export const typography = {
   valueSm: "text-sm font-semibold text-gray-900",
 
   // Colores semánticos
-  accent: "text-[#00B4A6]",
+  accent: "text-[#2563EB]",
   danger: "text-red-600",
   warning: "text-amber-600",
   success: "text-emerald-600",
   muted: "text-gray-400",
 
   // Badges
-  badgePrimary: "px-2 py-0.5 rounded-full bg-[#00B4A6]/10 text-[#00B4A6] text-xs font-bold",
+  badgePrimary: "px-2 py-0.5 rounded-full bg-[#2563EB]/10 text-[#2563EB] text-xs font-bold",
   badgeDanger: "px-2 py-0.5 rounded-full bg-red-50 text-red-600 text-xs font-bold",
   badgeWarning: "px-2 py-0.5 rounded-full bg-amber-50 text-amber-600 text-xs font-bold",
   badgeSuccess: "px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-600 text-xs font-bold",

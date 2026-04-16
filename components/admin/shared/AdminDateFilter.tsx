@@ -93,7 +93,7 @@ export default function AdminDateFilter({
               setCustomFrom(e.target.value);
               onChange("custom");
             }}
-            className="px-2 py-1 rounded-md border border-gray-200 text-xs text-gray-700 focus:outline-none focus:ring-1 focus:ring-[#00B4A6]"
+            className="px-2 py-1 rounded-md border border-gray-200 text-xs text-gray-700 focus:outline-none focus:ring-1 focus:ring-primary"
           />
           <span className="text-xs text-gray-400">—</span>
           <input
@@ -103,7 +103,7 @@ export default function AdminDateFilter({
               setCustomTo(e.target.value);
               onChange("custom");
             }}
-            className="px-2 py-1 rounded-md border border-gray-200 text-xs text-gray-700 focus:outline-none focus:ring-1 focus:ring-[#00B4A6]"
+            className="px-2 py-1 rounded-md border border-gray-200 text-xs text-gray-700 focus:outline-none focus:ring-1 focus:ring-primary"
           />
         </div>
       )}

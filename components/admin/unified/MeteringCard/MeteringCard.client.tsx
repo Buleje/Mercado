@@ -164,7 +164,7 @@ interface PlanBadgeProps {
 const PLAN_BADGE_STYLES: Record<MeteringSnapshot["plan"], string> = {
   free:       "bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-300",
   starter:    "bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300",
-  pro:        "bg-[#2d6a4f]/10 text-[#2d6a4f] dark:bg-emerald-900/40 dark:text-emerald-300",
+  pro:        "bg-primary-dark/10 text-primary-dark dark:bg-emerald-900/40 dark:text-emerald-300",
   enterprise: "bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-300",
 };
 
@@ -253,7 +253,7 @@ export function MeteringCardClient({ snapshot, onUpgrade }: MeteringCardClientPr
           {(snapshot.plan === "free" || snapshot.plan === "starter") && (
             <button
               onClick={onUpgrade}
-              className="min-h-[44px] min-w-[44px] px-4 py-2 rounded-lg bg-[#2d6a4f] hover:bg-[#245a42] text-white text-sm font-semibold transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#2d6a4f]"
+              className="min-h-[44px] min-w-[44px] px-4 py-2 rounded-lg bg-primary-dark hover:bg-[#245a42] text-white text-sm font-semibold transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary-dark"
               aria-label="Mejorar plan de facturación"
             >
               Mejorar plan
@@ -273,7 +273,7 @@ export function MeteringCardClient({ snapshot, onUpgrade }: MeteringCardClientPr
       {allEvents.length > PRIORITY_EVENTS.length && (
         <button
           onClick={() => setExpanded((v) => !v)}
-          className="min-h-[44px] text-sm text-[#2d6a4f] dark:text-emerald-400 hover:underline font-medium self-start focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#2d6a4f]"
+          className="min-h-[44px] text-sm text-primary-dark dark:text-emerald-400 hover:underline font-medium self-start focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary-dark"
           aria-expanded={expanded}
           aria-controls="metering-all-metrics"
         >

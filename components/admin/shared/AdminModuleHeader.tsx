@@ -7,15 +7,24 @@ import type { LucideIcon } from "lucide-react";
  *
  * Tipografía fija (NO cambiar sin actualizar todos los módulos):
  *   - Título (h1): text-xl / font-bold / text-gray-900
- *   - Descripción: text-xs / text-gray-500
- *   - Icono: 40×40 rounded-xl, fondo teal (#00B4A6)
+ *   - Subtítulo: text-sm / text-gray-500
+ *   - Icono: 44×44 rounded-xl, fondo tint por categoría
+ *
+ * Props de color (tint por categoría):
+ *   - bgTint: clase Tailwind del fondo del icono (e.g. "bg-emerald-50 dark:bg-emerald-900/20")
+ *   - iconColorClass: clase Tailwind del color del icono (e.g. "text-emerald-600 dark:text-emerald-400")
  * ═══════════════════════════════════════════════════════════════════════════ */
 
 interface AdminModuleHeaderProps {
   title: string;
   description?: string;
   icon: LucideIcon;
+  /** @deprecated — usar bgTint + iconColorClass en su lugar */
   iconColor?: string;
+  /** Clase Tailwind para el fondo del contenedor del icono */
+  bgTint?: string;
+  /** Clase Tailwind para el color del icono */
+  iconColorClass?: string;
   children?: React.ReactNode;
   className?: string;
 }
@@ -24,42 +33,43 @@ export default function AdminModuleHeader({
   title,
   description,
   icon: Icon,
-  iconColor = "#00B4A6",
+  iconColor,
+  bgTint,
+  iconColorClass,
   children,
   className,
 }: AdminModuleHeaderProps) {
+  // Si se pasan las nuevas props, usarlas; si no, fallback al estilo legacy
+  const useTint = !!(bgTint || iconColorClass);
+
   return (
-    <div
-      className={cn(
-        "sticky top-0 z-20 bg-white/95 backdrop-blur-sm pb-3 -mx-1 px-1",
-        className,
-      )}
-    >
-      <div className="flex items-center justify-between gap-3">
-        <div className="flex items-center gap-3 min-w-0">
-          <div
-            className="h-10 w-10 rounded-xl text-white flex items-center justify-center shadow-sm shrink-0"
-            style={{ backgroundColor: iconColor }}
-          >
-            <Icon className="h-5 w-5" />
-          </div>
-          <div className="min-w-0">
-            <h1 className="text-xl font-bold text-gray-900 truncate">
-              {title}
-            </h1>
-            {description && (
-              <p className="text-xs text-gray-500 truncate">
-                {description}
-              </p>
-            )}
-          </div>
-        </div>
-        {children && (
-          <div className="flex items-center gap-2 shrink-0">
-            {children}
-          </div>
+    <div className={cn("flex items-center gap-4 mb-6", className)}>
+      <div
+        className={cn(
+          "flex items-center justify-center w-11 h-11 rounded-xl shrink-0",
+          useTint
+            ? bgTint
+            : "text-white shadow-sm",
+        )}
+        style={useTint ? undefined : { backgroundColor: iconColor ?? "var(--color-primary)" }}
+      >
+        <Icon className={cn("w-5 h-5", useTint && iconColorClass)} />
+      </div>
+      <div className="flex-1 min-w-0">
+        <h1 className="text-xl font-bold text-gray-900 dark:text-white truncate">
+          {title}
+        </h1>
+        {description && (
+          <p className="text-sm text-gray-500 dark:text-zinc-400 mt-0.5 truncate">
+            {description}
+          </p>
         )}
       </div>
+      {children && (
+        <div className="flex items-center gap-2 shrink-0">
+          {children}
+        </div>
+      )}
     </div>
   );
 }

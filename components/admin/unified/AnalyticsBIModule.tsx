@@ -12,13 +12,9 @@ import { cn } from "@/lib/utils";
 import type { Sale, Customer } from "@/types/erp";
 import AdminModuleHeader from "@/components/admin/shared/AdminModuleHeader";
 import AdminTabBar from "@/components/admin/shared/AdminTabBar";
+import ChartManager, { type ChartDefinition } from "@/components/admin/shared/ChartManager";
 
-// ── Spinner ──────────────────────────────────────────────────────────────────
-const S = () => (
-  <div className="flex items-center justify-center py-12">
-    <div className="h-8 w-8 border-4 border-primary border-t-transparent rounded-full animate-spin" />
-  </div>
-);
+import { TabLoadingSkeleton as S } from "@/components/ui/skeletons";
 
 // ── Existing components (dynamic imports) ────────────────────────────────────
 const ABCAnalysisTab = dynamic(() => import("@/components/admin/ABCAnalysisTab"), { loading: S });
@@ -570,230 +566,209 @@ export default function AnalyticsBIModule() {
       // ────────────────────────────────────────────────────────────────────────
       // SECCION 1: RESUMEN
       // ────────────────────────────────────────────────────────────────────────
-      case "resumen":
-        return (
-          <div className="flex flex-col gap-6 max-w-7xl mx-auto" key={`resumen-${refreshKey}`}>
-            {/* KPIs compactos — embebidos en la sección, no como barra separada */}
-            <InlineKPIStrip />
-            {/* Tendencia de ventas — el gráfico principal a pantalla completa */}
-            <AnalyticsCard
-              title="Tendencia de Ventas"
-              subtitle="Ventas diarias con media movil y proyeccion"
-              icon={TrendingUp}
-            >
-              <div className="min-h-80">
-                <Suspense fallback={<S />}>
-                  <SalesTrendChart />
-                </Suspense>
-              </div>
-            </AnalyticsCard>
-            {/* Alertas + Estrella + Top Clientes — unificados en 2 columnas */}
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-              <TabbedCard
-                title="Alertas y Destacados"
-                subtitle="Lo más importante de un vistazo"
-                icon={AlertTriangle}
+      case "resumen": {
+        const resumenCharts: ChartDefinition[] = [
+          {
+            id: "kpis-strip",
+            label: "KPIs Resumen",
+            description: "Indicadores clave compactos",
+            component: <InlineKPIStrip />,
+          },
+          {
+            id: "sales-trend",
+            label: "Tendencia de Ventas",
+            description: "Ventas diarias con media movil y proyeccion",
+            component: (
+              <AnalyticsCard title="Tendencia de Ventas" subtitle="Ventas diarias con media movil y proyeccion" icon={TrendingUp}>
+                <div className="min-h-80">
+                  <Suspense fallback={<S />}><SalesTrendChart /></Suspense>
+                </div>
+              </AnalyticsCard>
+            ),
+          },
+          {
+            id: "alerts-highlights",
+            label: "Alertas y Destacados",
+            description: "Anomalias y producto estrella",
+            component: (
+              <TabbedCard title="Alertas y Destacados" subtitle="Lo más importante de un vistazo" icon={AlertTriangle}
                 tabs={[
-                  {
-                    id: "alertas",
-                    label: "Alertas",
-                    content: <AnomalyDetectorWrapper refreshKey={refreshKey} />,
-                  },
-                  {
-                    id: "estrella",
-                    label: "Producto Estrella",
-                    content: <StarProductCard refreshKey={refreshKey} />,
-                  },
+                  { id: "alertas", label: "Alertas", content: <AnomalyDetectorWrapper refreshKey={refreshKey} /> },
+                  { id: "estrella", label: "Producto Estrella", content: <StarProductCard refreshKey={refreshKey} /> },
                 ]}
               />
-              <AnalyticsCard
-                title="Top 10 Clientes"
-                subtitle="Ranking por gasto total acumulado"
-                icon={Trophy}
-              >
+            ),
+          },
+          {
+            id: "top-clients",
+            label: "Top 10 Clientes",
+            description: "Ranking por gasto total acumulado",
+            component: (
+              <AnalyticsCard title="Top 10 Clientes" subtitle="Ranking por gasto total acumulado" icon={Trophy}>
                 <Top10Clientes refreshKey={refreshKey} />
               </AnalyticsCard>
-            </div>
+            ),
+          },
+        ];
+        return (
+          <div className="max-w-7xl mx-auto" key={`resumen-${refreshKey}`}>
+            <ChartManager moduleId="analytics-resumen" charts={resumenCharts} />
           </div>
         );
+      }
 
       // ────────────────────────────────────────────────────────────────────────
       // SECCION 2: VENTAS
       // ────────────────────────────────────────────────────────────────────────
-      case "ventas":
+      case "ventas": {
+        const ventasCharts: ChartDefinition[] = [
+          {
+            id: "ventas-kpis",
+            label: "KPIs de Ventas",
+            description: "Métricas clave de ventas",
+            component: <SectionKPIStrip section="ventas" />,
+          },
+          {
+            id: "ventas-trend",
+            label: "Tendencia de Ventas",
+            description: "Ventas diarias con media movil y prediccion",
+            component: (
+              <AnalyticsCard title="Tendencia de Ventas" subtitle="Ventas diarias con media movil y prediccion" icon={TrendingUp}>
+                <div className="min-h-80">
+                  <Suspense fallback={<S />}><SalesTrendChart /></Suspense>
+                </div>
+              </AnalyticsCard>
+            ),
+          },
+          {
+            id: "ventas-patterns",
+            label: "Patrones de Venta",
+            description: "Mapa de calor y distribucion horaria",
+            component: (
+              <TabbedCard title="Patrones de Venta" subtitle="¿Cuándo compran tus clientes? Mapa de calor y distribución horaria" icon={Clock}
+                tabs={[
+                  { id: "heatmap", label: "Mapa de Calor", content: <div className="min-h-70"><Suspense fallback={<S />}><VentasHeatmap /></Suspense></div> },
+                  { id: "horario", label: "Por Hora", content: <div className="min-h-70"><PeakHoursTab period={period} /></div> },
+                ]}
+              />
+            ),
+          },
+        ];
         return (
-          <div className="flex flex-col gap-4 max-w-7xl mx-auto" key={`ventas-${refreshKey}`}>
-            <SectionKPIStrip section="ventas" />
-            {/* Sales Trend — chart principal */}
-            <AnalyticsCard
-              title="Tendencia de Ventas"
-              subtitle="Ventas diarias con media movil y prediccion"
-              icon={TrendingUp}
-            >
-              <div className="min-h-80">
-                <Suspense fallback={<S />}>
-                  <SalesTrendChart />
-                </Suspense>
-              </div>
-            </AnalyticsCard>
-            {/* Patrones de Venta — Heatmap + PeakHours unificados */}
-            <TabbedCard
-              title="Patrones de Venta"
-              subtitle="¿Cuándo compran tus clientes? Mapa de calor y distribución horaria"
-              icon={Clock}
-              tabs={[
-                {
-                  id: "heatmap",
-                  label: "Mapa de Calor",
-                  content: (
-                    <div className="min-h-70">
-                      <Suspense fallback={<S />}>
-                        <VentasHeatmap />
-                      </Suspense>
-                    </div>
-                  ),
-                },
-                {
-                  id: "horario",
-                  label: "Por Hora",
-                  content: (
-                    <div className="min-h-70">
-                      <PeakHoursTab period={period} />
-                    </div>
-                  ),
-                },
-              ]}
-            />
+          <div className="max-w-7xl mx-auto" key={`ventas-${refreshKey}`}>
+            <ChartManager moduleId="analytics-ventas" charts={ventasCharts} />
           </div>
         );
+      }
 
       // ────────────────────────────────────────────────────────────────────────
       // SECCION 3: PRODUCTOS
       // ────────────────────────────────────────────────────────────────────────
-      case "productos":
+      case "productos": {
+        const productosCharts: ChartDefinition[] = [
+          {
+            id: "productos-kpis",
+            label: "KPIs de Productos",
+            description: "Métricas clave de productos",
+            component: <SectionKPIStrip section="productos" />,
+          },
+          {
+            id: "product-classification",
+            label: "Clasificación de Productos",
+            description: "ABC y Matriz BCG",
+            component: (
+              <TabbedCard title="Clasificación de Productos" subtitle="ABC: cuáles generan más ingresos · BCG: en qué etapa de vida están" icon={Package}
+                tabs={[
+                  { id: "abc", label: "ABC (80/20)", content: <div className="min-h-87.5"><ABCAnalysisTab /></div> },
+                  { id: "bcg", label: "Matriz BCG", content: <div className="min-h-87.5"><BCGMatrixTab /></div> },
+                ]}
+              />
+            ),
+          },
+          {
+            id: "profitability",
+            label: "Rentabilidad y Comportamiento",
+            description: "Margenes por producto y cesta de compra",
+            component: (
+              <TabbedCard title="Rentabilidad y Comportamiento" subtitle="Márgenes por producto · Qué se compra junto" icon={DollarSign}
+                tabs={[
+                  { id: "margenes", label: "Márgenes", content: <div className="min-h-75"><Suspense fallback={<S />}><MarginWaterfallChart /></Suspense></div> },
+                  { id: "cesta", label: "Cesta de Compra", content: <BasketAnalysisTab /> },
+                ]}
+              />
+            ),
+          },
+        ];
         return (
-          <div className="flex flex-col gap-4 max-w-7xl mx-auto" key={`productos-${refreshKey}`}>
-            <SectionKPIStrip section="productos" />
-            {/* Clasificación de Productos — ABC + BCG unificados */}
-            <TabbedCard
-              title="Clasificación de Productos"
-              subtitle="ABC: cuáles generan más ingresos · BCG: en qué etapa de vida están"
-              icon={Package}
-              tabs={[
-                {
-                  id: "abc",
-                  label: "ABC (80/20)",
-                  content: (
-                    <div className="min-h-87.5">
-                      <ABCAnalysisTab />
-                    </div>
-                  ),
-                },
-                {
-                  id: "bcg",
-                  label: "Matriz BCG",
-                  content: (
-                    <div className="min-h-87.5">
-                      <BCGMatrixTab />
-                    </div>
-                  ),
-                },
-              ]}
-            />
-            {/* Rentabilidad — Márgenes + Cesta de compra unificados */}
-            <TabbedCard
-              title="Rentabilidad y Comportamiento"
-              subtitle="Márgenes por producto · Qué se compra junto"
-              icon={DollarSign}
-              tabs={[
-                {
-                  id: "margenes",
-                  label: "Márgenes",
-                  content: (
-                    <div className="min-h-75">
-                      <Suspense fallback={<S />}>
-                        <MarginWaterfallChart />
-                      </Suspense>
-                    </div>
-                  ),
-                },
-                {
-                  id: "cesta",
-                  label: "Cesta de Compra",
-                  content: <BasketAnalysisTab />,
-                },
-              ]}
-            />
+          <div className="max-w-7xl mx-auto" key={`productos-${refreshKey}`}>
+            <ChartManager moduleId="analytics-productos" charts={productosCharts} />
           </div>
         );
+      }
 
       // ────────────────────────────────────────────────────────────────────────
       // SECCION 4: CLIENTES
       // ────────────────────────────────────────────────────────────────────────
-      case "clientes":
+      case "clientes": {
+        const clientesCharts: ChartDefinition[] = [
+          {
+            id: "clientes-kpis",
+            label: "KPIs de Clientes",
+            description: "Métricas clave de clientes",
+            component: <SectionKPIStrip section="clientes" />,
+          },
+          {
+            id: "client-intelligence",
+            label: "Inteligencia de Clientes",
+            description: "Segmentacion RFM y ranking de mejores clientes",
+            component: (
+              <TabbedCard title="Inteligencia de Clientes" subtitle="Segmentación por comportamiento de compra · Ranking de los mejores" icon={Users}
+                tabs={[
+                  { id: "rfm", label: "Segmentación RFM", content: <RFMWrapper refreshKey={refreshKey} /> },
+                  { id: "top10", label: "Top 10 Ranking", content: <Top10Clientes refreshKey={refreshKey} /> },
+                ]}
+              />
+            ),
+          },
+          {
+            id: "fiados-analytics",
+            label: "Fiados — Deuda y Cobranza",
+            description: "Resumen de deudas y analisis de riesgo IA",
+            component: (
+              <TabbedCard title="Fiados — Deuda y Cobranza" subtitle="Cuánto te deben, quién paga y quién no · Análisis de riesgo IA" icon={CreditCard}
+                tabs={[
+                  { id: "resumen-fiados", label: "Resumen", content: <div className="min-h-75"><Suspense fallback={<S />}><FiadoAnalyticsPanel /></Suspense></div> },
+                  { id: "ia-fiados", label: "Riesgo IA", content: <div className="min-h-75"><Suspense fallback={<S />}><AIFiadoDashboard /></Suspense></div> },
+                ]}
+              />
+            ),
+          },
+        ];
         return (
-          <div className="flex flex-col gap-4 max-w-7xl mx-auto" key={`clientes-${refreshKey}`}>
-            <SectionKPIStrip section="clientes" />
-            {/* Inteligencia de Clientes — RFM + Top10 unificados */}
-            <TabbedCard
-              title="Inteligencia de Clientes"
-              subtitle="Segmentación por comportamiento de compra · Ranking de los mejores"
-              icon={Users}
-              tabs={[
-                {
-                  id: "rfm",
-                  label: "Segmentación RFM",
-                  content: <RFMWrapper refreshKey={refreshKey} />,
-                },
-                {
-                  id: "top10",
-                  label: "Top 10 Ranking",
-                  content: <Top10Clientes refreshKey={refreshKey} />,
-                },
-              ]}
-            />
-            {/* Fiados — Datos + IA unificados */}
-            <TabbedCard
-              title="Fiados — Deuda y Cobranza"
-              subtitle="Cuánto te deben, quién paga y quién no · Análisis de riesgo IA"
-              icon={CreditCard}
-              tabs={[
-                {
-                  id: "resumen-fiados",
-                  label: "Resumen",
-                  content: (
-                    <div className="min-h-75">
-                      <Suspense fallback={<S />}>
-                        <FiadoAnalyticsPanel />
-                      </Suspense>
-                    </div>
-                  ),
-                },
-                {
-                  id: "ia-fiados",
-                  label: "Riesgo IA",
-                  content: (
-                    <div className="min-h-75">
-                      <Suspense fallback={<S />}>
-                        <AIFiadoDashboard />
-                      </Suspense>
-                    </div>
-                  ),
-                },
-              ]}
-            />
+          <div className="max-w-7xl mx-auto" key={`clientes-${refreshKey}`}>
+            <ChartManager moduleId="analytics-clientes" charts={clientesCharts} />
           </div>
         );
+      }
 
       // ────────────────────────────────────────────────────────────────────────
       // SECCION 5: PREDICCIONES
       // ────────────────────────────────────────────────────────────────────────
-      case "predicciones":
+      case "predicciones": {
+        const predCharts: ChartDefinition[] = [
+          {
+            id: "predictive",
+            label: "Análisis Predictivo",
+            description: "Proyecciones y predicciones de ventas",
+            component: <PredictiveAnalyticsTab />,
+          },
+        ];
         return (
-          <div className="flex flex-col gap-4 max-w-5xl mx-auto" key={`pred-${refreshKey}`}>
-            <PredictiveAnalyticsTab />
+          <div className="max-w-5xl mx-auto" key={`pred-${refreshKey}`}>
+            <ChartManager moduleId="analytics-predicciones" charts={predCharts} />
           </div>
         );
+      }
 
       default:
         return null;

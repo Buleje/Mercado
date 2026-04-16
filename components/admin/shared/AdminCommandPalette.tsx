@@ -159,22 +159,8 @@ export default function AdminCommandPalette({ items }: AdminCommandPaletteProps)
 
   useEffect(() => { setSelectedIdx(0); }, [filtered]);
 
-  // ── Render: botón trigger ──────────────────────────────────────────────────
-  if (!open) {
-    return (
-      <button
-        onClick={() => setOpen(true)}
-        className="hidden sm:flex items-center gap-2 px-3 py-1.5 bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 rounded-xl text-xs text-gray-500 dark:text-gray-400 transition-colors min-h-[36px]"
-        aria-label="Búsqueda global (Ctrl+K)"
-      >
-        <Search className="h-3 w-3" />
-        <span>Buscar...</span>
-        <kbd className="ml-2 px-1.5 py-0.5 rounded bg-gray-200 dark:bg-gray-700 text-[9px] font-mono">
-          Ctrl+K
-        </kbd>
-      </button>
-    );
-  }
+  // No trigger button — the top header search bar triggers Ctrl+K
+  if (!open) return null;
 
   // ── Render: modal ─────────────────────────────────────────────────────────
   let globalIdx = 0;
@@ -233,7 +219,7 @@ export default function AdminCommandPalette({ items }: AdminCommandPaletteProps)
                       className={cn(
                         "w-full flex items-center gap-3 px-4 py-2 text-sm text-left transition-colors",
                         idx === selectedIdx
-                          ? "bg-[#00B4A6]/10 dark:bg-[#00B4A6]/20 text-[#00B4A6] dark:text-emerald-400"
+                          ? "bg-primary/10 dark:bg-primary/20 text-primary dark:text-emerald-400"
                           : "text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-white/5",
                       )}
                     >

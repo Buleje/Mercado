@@ -24,6 +24,7 @@ interface AdminTabBarProps {
   className?: string;
   vertical?: boolean;
   children?: ReactNode;
+  onTabHover?: (id: string) => void;
 }
 
 export default function AdminTabBar({
@@ -35,6 +36,7 @@ export default function AdminTabBar({
   className,
   vertical = false,
   children,
+  onTabHover,
 }: AdminTabBarProps) {
   const { registerSubTabs, registerOnChange, clearSubTabs } = useModuleTabs();
 
@@ -156,6 +158,7 @@ export default function AdminTabBar({
                 <button
                   key={tab.id}
                   onClick={() => !tab.disabled && onTabChange(tab.id)}
+                  onMouseEnter={() => onTabHover?.(tab.id)}
                   className={cn(
                     "flex w-full items-center gap-2 px-3 py-2 text-left text-[13px] transition-all duration-150",
                     "lg:rounded-none lg:rounded-r-lg",
@@ -196,8 +199,7 @@ export default function AdminTabBar({
 
   return (
     <>
-    {/* Hidden on desktop — sidebar renders these tabs instead */}
-    <div className={cn("relative sm:hidden", className)}>
+    <div className={cn("relative", className)}>
       {canScrollLeft && (
         <button
           onClick={() => scrollTabs("left")}
@@ -233,17 +235,18 @@ export default function AdminTabBar({
                 setDragOverTab(null);
               }}
               onClick={() => !tab.disabled && onTabChange(tab.id)}
+              onMouseEnter={() => onTabHover?.(tab.id)}
               disabled={tab.disabled}
               title={tab.label}
               className={cn(
                 "flex shrink-0 items-center gap-1.5 whitespace-nowrap border-b-[3px] px-2.5 py-2 text-xs transition-all duration-200 sm:px-4 sm:py-2.5 sm:text-sm",
                 draggable && "cursor-grab active:cursor-grabbing",
                 activeTab === tab.id
-                  ? "border-[#00B4A6] bg-[#00B4A6]/5 font-semibold text-[#00B4A6]"
+                  ? "border-primary bg-primary/5 font-semibold text-primary"
                   : "border-transparent font-normal text-gray-500 hover:bg-gray-50 hover:text-gray-700",
                 tab.disabled && "cursor-not-allowed opacity-40",
                 draggedTab === tab.id && "scale-95 opacity-40",
-                dragOverTab === tab.id && draggedTab !== tab.id && "rounded-t-lg ring-2 ring-[#00B4A6] ring-offset-1",
+                dragOverTab === tab.id && draggedTab !== tab.id && "rounded-t-lg ring-2 ring-primary ring-offset-1",
               )}
             >
               {draggable && <GripVertical className="h-3 w-3 shrink-0 opacity-30" />}
@@ -261,7 +264,7 @@ export default function AdminTabBar({
         {isReordered && (
           <button
             onClick={resetOrder}
-            className="ml-1 shrink-0 whitespace-nowrap px-2 py-1.5 text-[10px] text-gray-400 transition-colors hover:text-[#00B4A6]"
+            className="ml-1 shrink-0 whitespace-nowrap px-2 py-1.5 text-[10px] text-gray-400 transition-colors hover:text-primary"
             title="Restablecer orden de tabs"
           >
             Restablecer

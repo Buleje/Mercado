@@ -70,8 +70,7 @@ const FILTER_OPTIONS = [
   { id: "pendiente",  label: "Pendientes" },
   { id: "confirmado", label: "Confirmados" },
   { id: "en_camino",  label: "En camino" },
-  { id: "entregado",  label: "Entregados" },
-  { id: "cancelado",  label: "Cancelados" },
+  { id: "concluidos", label: "Concluidos" },
 ];
 
 const DATE_OPTIONS = [
@@ -367,6 +366,8 @@ export default function SalesOrdersTab() {
     // Status filter
     if (filter === "active") {
       result = result.filter(o => !TERMINAL.has(o.status));
+    } else if (filter === "concluidos") {
+      result = result.filter(o => TERMINAL.has(o.status));
     } else if (filter !== "all") {
       result = result.filter(o => o.status === filter);
     }
@@ -482,7 +483,7 @@ export default function SalesOrdersTab() {
     return (
       <div className="flex flex-col items-center justify-center py-16 gap-3 text-center">
         <p className="text-sm text-red-600 dark:text-red-400">{error}</p>
-        <button onClick={load} className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-primary text-white text-sm font-bold hover:bg-primary/90 transition-colors">
+        <button onClick={load} className="flex items-center gap-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2.5 text-sm font-medium transition-colors">
           <RefreshCw className="h-4 w-4" /> Reintentar
         </button>
       </div>
@@ -490,7 +491,7 @@ export default function SalesOrdersTab() {
   }
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-6">
       {/* ── Dashboard Analytics ────────────────────────────────────── */}
       <button
         onClick={() => {
@@ -501,97 +502,45 @@ export default function SalesOrdersTab() {
         className="flex items-center gap-1.5 text-xs font-semibold text-gray-500 hover:text-gray-700 dark:text-muted dark:hover:text-foreground mb-4"
       >
         {showDashboard ? <ChevronDown className="h-3 w-3" /> : <ChevronRight className="h-3 w-3" />}
-        Dashboard de Pedidos
+        Pedidos
       </button>
 
       {showDashboard && <OrdersDashboard orders={orders} />}
 
-      {/* Mejora 16: Pedido mas grande del dia */}
-      {(() => {
-        const hoy = new Date(); hoy.setHours(0, 0, 0, 0);
-        const todayOrders = orders.filter(o => new Date(o.createdAt) >= hoy && !["cancelado", "cancelled"].includes(o.status));
-        if (todayOrders.length === 0) return null;
-        const biggest = todayOrders.reduce((max, o) => o.total > max.total ? o : max, todayOrders[0]);
-        return (
-          <div className="flex items-center gap-2 px-3 py-2 rounded-xl bg-amber-100 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 text-amber-800 dark:text-amber-300 text-sm font-bold">
-            <span>Pedido del dia: {biggest.customerName ?? "Cliente"} · {fmt(biggest.total)}</span>
-          </div>
-        );
-      })()}
+      {/* Pedido mas grande del dia — inline en summary cards */}
 
       {/* ── Day summary cards ─────────────────────────────────────────── */}
-      <div className="grid grid-cols-3 gap-3">
-        <div className="bg-white dark:bg-card border border-gray-100 dark:border-card-border rounded-xl p-3 text-center">
-          <p className="text-xl font-extrabold text-primary">{fmt(todayStats.total)}</p>
-          <p className="text-[10px] font-bold text-gray-400 dark:text-muted uppercase">Vendido hoy</p>
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+        <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl p-5">
+          <p className="text-sm font-medium text-gray-500 dark:text-zinc-400 uppercase tracking-wider">Vendido hoy</p>
+          <p className="text-2xl font-bold text-gray-900 dark:text-foreground mt-1">{fmt(todayStats.total)}</p>
         </div>
-        <div className="bg-white dark:bg-card border border-gray-100 dark:border-card-border rounded-xl p-3 text-center">
-          <p className="text-xl font-extrabold text-gray-900 dark:text-foreground">{todayStats.count}</p>
-          <p className="text-[10px] font-bold text-gray-400 dark:text-muted uppercase">Pedidos hoy</p>
+        <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl p-5">
+          <p className="text-sm font-medium text-gray-500 dark:text-zinc-400 uppercase tracking-wider">Pedidos hoy</p>
+          <p className="text-2xl font-bold text-gray-900 dark:text-foreground mt-1">{todayStats.count}</p>
         </div>
-        <div className="bg-white dark:bg-card border border-gray-100 dark:border-card-border rounded-xl p-3 text-center relative">
-          <p className="text-xl font-extrabold text-amber-600">{todayStats.active}</p>
-          <p className="text-[10px] font-bold text-gray-400 dark:text-muted uppercase">Activos</p>
+        <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl p-5 relative">
+          <p className="text-sm font-medium text-gray-500 dark:text-zinc-400 uppercase tracking-wider">Activos</p>
+          <p className="text-2xl font-bold text-gray-900 dark:text-foreground mt-1">{todayStats.active}</p>
           {newCount > 0 && (
             <button
               onClick={() => setNewCount(0)}
-              className="absolute -top-1.5 -right-1.5 h-5 min-w-5 px-1 rounded-full bg-red-500 text-white text-[10px] font-bold flex items-center justify-center animate-bounce"
+              className="absolute top-2 right-2 h-5 min-w-5 px-1.5 rounded-full bg-red-500 text-white text-[10px] font-bold flex items-center justify-center"
               title="Nuevos pedidos"
             >
               +{newCount}
             </button>
           )}
         </div>
+        {avgDeliveryTime !== null && (
+          <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl p-5">
+            <p className="text-sm font-medium text-gray-500 dark:text-zinc-400 uppercase tracking-wider">Entrega promedio</p>
+            <p className="text-2xl font-bold text-gray-900 dark:text-foreground mt-1">{avgDeliveryTime} min</p>
+          </div>
+        )}
       </div>
 
-      {/* Mejora 14: Tiempo promedio de entrega */}
-      {avgDeliveryTime !== null && (
-        <div className={cn(
-          "flex items-center gap-2 px-3 py-2 rounded-xl border text-sm font-bold",
-          avgDeliveryTime < 30
-            ? "bg-emerald-50 dark:bg-emerald-950/20 border-emerald-200 dark:border-emerald-800 text-emerald-700 dark:text-emerald-400"
-            : avgDeliveryTime < 60
-            ? "bg-amber-50 dark:bg-amber-950/20 border-amber-200 dark:border-amber-800 text-amber-700 dark:text-amber-400"
-            : "bg-red-50 dark:bg-red-950/20 border-red-200 dark:border-red-800 text-red-700 dark:text-red-400"
-        )}>
-          <Clock className="h-4 w-4 shrink-0" />
-          <span>Tiempo promedio de entrega: {avgDeliveryTime} min</span>
-          <span className={cn(
-            "ml-auto text-[10px] font-extrabold px-2 py-0.5 rounded-full",
-            avgDeliveryTime < 30 ? "bg-emerald-100 dark:bg-emerald-900/30" :
-            avgDeliveryTime < 60 ? "bg-amber-100 dark:bg-amber-900/30" :
-            "bg-red-100 dark:bg-red-900/30"
-          )}>
-            {avgDeliveryTime < 30 ? "Excelente" : avgDeliveryTime < 60 ? "Aceptable" : "Lento"}
-          </span>
-        </div>
-      )}
-
-      {/* Mejora 17: Tasa de cumplimiento de pedidos */}
-      {(() => {
-        const now = new Date();
-        const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
-        const delivered = orders.filter(o =>
-          (o.status === "entregado" || o.status === "delivered") && new Date(o.createdAt) >= monthStart
-        );
-        if (delivered.length === 0) return null;
-        const onTime = delivered.filter(o => {
-          const created = new Date(o.createdAt);
-          const deliveredEntry = o.statusHistory?.find(h => h.toStatus === "entregado" || h.toStatus === "delivered");
-          const endDate = deliveredEntry ? new Date(deliveredEntry.createdAt) : created;
-          return endDate.toDateString() === created.toDateString();
-        });
-        const rate = Math.round((onTime.length / delivered.length) * 100);
-        const color = rate >= 90 ? "bg-emerald-50 dark:bg-emerald-950/20 text-emerald-700 dark:text-emerald-400 border-emerald-200 dark:border-emerald-800"
-          : rate >= 75 ? "bg-amber-50 dark:bg-amber-950/20 text-amber-700 dark:text-amber-400 border-amber-200 dark:border-amber-800"
-          : "bg-red-50 dark:bg-red-950/20 text-red-700 dark:text-red-400 border-red-200 dark:border-red-800";
-        return (
-          <div className={cn("flex items-center gap-2 px-3 py-2 rounded-xl border text-sm font-bold", color)}>
-            <Package className="h-4 w-4 shrink-0" />
-            <span>{rate}% entregados a tiempo este mes ({onTime.length}/{delivered.length})</span>
-          </div>
-        );
-      })()}
+      {/* Métricas inline integradas en summary cards */}
 
       {/* ── Search + actions ──────────────────────────────────────────── */}
       <div className="flex gap-2">
@@ -747,7 +696,7 @@ export default function SalesOrdersTab() {
           { key: "entregado", label: "Entregado", match: ["entregado", "delivered"], bg: "bg-green-50 dark:bg-green-950/20", border: "border-green-300 dark:border-green-800", headerBg: "bg-green-100 dark:bg-green-900/30" },
         ];
         return (
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 overflow-x-auto">
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 overflow-x-auto">
             {KANBAN_COLS.map(col => {
               const colOrders = filtered.filter(o => col.match.includes(o.status));
               return (
@@ -950,7 +899,7 @@ export default function SalesOrdersTab() {
 
                     <div className="px-4 pb-4 pt-3 space-y-3">
                     {/* Timeline visual (Mejora 2) */}
-                    <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl p-3">
+                    <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl p-5">
                       <p className="text-[10px] font-bold text-primary uppercase tracking-wider mb-2 flex items-center gap-1.5">
                         <Clock className="h-3 w-3" /> Progreso del pedido
                       </p>
@@ -963,7 +912,7 @@ export default function SalesOrdersTab() {
                     </div>
 
                     {/* Meta info — card style */}
-                    <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl p-3">
+                    <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl p-5">
                       <p className="text-[10px] font-bold text-primary uppercase tracking-wider mb-2 flex items-center gap-1.5">
                         <Receipt className="h-3 w-3" /> Información del pedido
                       </p>
@@ -987,7 +936,7 @@ export default function SalesOrdersTab() {
 
                     {/* Items list — card style */}
                     {order.items && order.items.length > 0 && (
-                      <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl p-3">
+                      <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl p-5">
                         <p className="text-[10px] font-bold text-primary uppercase tracking-wider mb-2 flex items-center gap-1.5">
                           <Package className="h-3 w-3" /> Productos ({order.items.length})
                         </p>
@@ -1425,7 +1374,7 @@ function DashTooltip({ active, payload, label }: any) {
   );
 }
 
-const DASH_COLORS = ['#2563EB', '#f97316', '#457b9d', '#e63946', '#9b5de5', '#2dd4bf', '#264653'];
+const DASH_COLORS = ['var(--color-primary)', '#f97316', '#457b9d', '#e63946', '#9b5de5', '#2dd4bf', '#264653'];
 
 const DASH_STATUS_COLORS: Record<string, string> = {
   pendiente: '#f59e0b', confirmado: '#3b82f6', preparando: '#8b5cf6',
@@ -1441,7 +1390,7 @@ const DASH_STATUS_LABELS: Record<string, string> = {
   delivering: 'En camino', delivered: 'Entregado', cancelled: 'Cancelado',
 };
 
-const DASH_PAYMENT_COLORS: Record<string, string> = { efectivo: '#2563EB', yape: '#8b5cf6', plin: '#06b6d4', tarjeta: '#3b82f6', fiado: '#f59e0b', otro: '#6b7280' };
+const DASH_PAYMENT_COLORS: Record<string, string> = { efectivo: 'var(--color-primary)', yape: '#8b5cf6', plin: '#06b6d4', tarjeta: '#3b82f6', fiado: '#f59e0b', otro: '#6b7280' };
 const DASH_PAYMENT_LABELS: Record<string, string> = { efectivo: 'Efectivo', yape: 'Yape', plin: 'Plin', tarjeta: 'Tarjeta', fiado: 'Fiado', otro: 'Otro' };
 
 // ── Empty state for charts (Mejora 10) ───────────────────────────────────────
@@ -1582,7 +1531,7 @@ function OrdersDashboard({ orders }: { orders: Order[] }) {
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="flex gap-1.5">
           {([{ id: "today" as const, label: "Hoy" }, { id: "7d" as const, label: "7 dias" }, { id: "30d" as const, label: "30 dias" }, { id: "month" as const, label: "Este mes" }]).map(p => (
-            <button key={p.id} onClick={() => setOrdPeriod(p.id)} className={cn("px-3 py-1 rounded-full text-xs font-medium transition-colors", ordPeriod === p.id ? "bg-[#2563EB] text-white" : "bg-gray-100 dark:bg-white/5 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-white/10")}>{p.label}</button>
+            <button key={p.id} onClick={() => setOrdPeriod(p.id)} className={cn("px-3 py-1 rounded-full text-xs font-medium transition-colors", ordPeriod === p.id ? "bg-primary text-white" : "bg-gray-100 dark:bg-white/5 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-white/10")}>{p.label}</button>
           ))}
         </div>
         <div className="flex items-center gap-2">
@@ -1603,8 +1552,8 @@ function OrdersDashboard({ orders }: { orders: Order[] }) {
       )}
 
       {/* === SECCION 1: 8 KPIs con iconos === */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-        <DashKpi icon={<ShoppingBag className="h-4 w-4" />} iconBg="bg-emerald-100 dark:bg-emerald-900/40 text-emerald-600 dark:text-emerald-400" label="Pedidos hoy" value={kpis.pedidosHoy} border="border-l-[#2563EB]" sparkColor="#2563EB" sparkVal={kpis.pedidosHoy} />
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <DashKpi icon={<ShoppingBag className="h-4 w-4" />} iconBg="bg-emerald-100 dark:bg-emerald-900/40 text-emerald-600 dark:text-emerald-400" label="Pedidos hoy" value={kpis.pedidosHoy} border="border-l-primary" sparkColor="var(--color-primary)" sparkVal={kpis.pedidosHoy} />
         <DashKpi icon={<DollarSign className="h-4 w-4" />} iconBg="bg-blue-100 dark:bg-blue-900/40 text-blue-600 dark:text-blue-400" label="Monto hoy" value={`S/${kpis.totalMonto.toFixed(2)}`} border="border-l-blue-500" sparkColor="#3b82f6" sparkVal={kpis.totalMonto} />
         <DashKpi icon={<Receipt className="h-4 w-4" />} iconBg="bg-purple-100 dark:bg-purple-900/40 text-purple-600 dark:text-purple-400" label="Ticket promedio" value={`S/${kpis.ticketProm.toFixed(2)}`} border="border-l-purple-500" sparkColor="#8b5cf6" sparkVal={kpis.ticketProm} />
         <DashKpi icon={<Clock className="h-4 w-4" />} iconBg="bg-amber-100 dark:bg-amber-900/40 text-amber-600 dark:text-amber-400" label="Pendientes" value={kpis.pendientes} border="border-l-amber-500" pulse={kpis.pendientes > 5} />
@@ -1617,7 +1566,7 @@ function OrdersDashboard({ orders }: { orders: Order[] }) {
       {/* === SECCION 2: Pedidos por Estado (PieChart donut grande) === */}
       <div className="bg-white dark:bg-card rounded-2xl border border-gray-200 dark:border-card-border p-6 shadow-sm">
         <div className="flex items-center justify-between mb-4">
-          <h3 className="text-sm font-bold text-gray-700 dark:text-gray-200">Pedidos por Estado</h3>
+          <h3 className="text-sm font-medium text-gray-500 dark:text-zinc-400 uppercase tracking-wider">Pedidos por Estado</h3>
           <button onClick={() => setExpandedChart("pedidos-estado")} className="p-1 hover:bg-gray-100 dark:hover:bg-gray-800 rounded transition-colors" title="Expandir"><Maximize2 className="h-3.5 w-3.5 text-gray-400" /></button>
         </div>
         <div className="relative">
@@ -1653,7 +1602,7 @@ function OrdersDashboard({ orders }: { orders: Order[] }) {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Pedidos por hora */}
         <div className="bg-white dark:bg-card rounded-2xl border border-gray-200 dark:border-card-border p-6 shadow-sm">
-          <h3 className="text-sm font-bold text-gray-700 dark:text-gray-200 mb-4">Pedidos por Hora - Hoy</h3>
+          <h3 className="text-sm font-medium text-gray-500 dark:text-zinc-400 uppercase tracking-wider mb-4">Pedidos por Hora - Hoy</h3>
           <ResponsiveContainer width="100%" height={250}>
             <BarChart data={hourlyData}>
               <CartesianGrid strokeDasharray="3 3" stroke="rgba(107,114,128,0.12)" />
@@ -1662,7 +1611,7 @@ function OrdersDashboard({ orders }: { orders: Order[] }) {
               <Tooltip content={<DashTooltip />} />
               <Bar dataKey="count" name="Pedidos" radius={[4, 4, 0, 0]}>
                 {hourlyData.map((entry, i) => (
-                  <Cell key={i} fill={entry.isCurrent ? '#f97316' : '#2563EB'} />
+                  <Cell key={i} fill={entry.isCurrent ? '#f97316' : 'var(--color-primary)'} />
                 ))}
               </Bar>
             </BarChart>
@@ -1671,7 +1620,7 @@ function OrdersDashboard({ orders }: { orders: Order[] }) {
 
         {/* Metodo de pago */}
         <div className="bg-white dark:bg-card rounded-2xl border border-gray-200 dark:border-card-border p-6 shadow-sm">
-          <h3 className="text-sm font-bold text-gray-700 dark:text-gray-200 mb-4">Metodo de Pago</h3>
+          <h3 className="text-sm font-medium text-gray-500 dark:text-zinc-400 uppercase tracking-wider mb-4">Metodo de Pago</h3>
           <ResponsiveContainer width="100%" height={250}>
             <PieChart>
               <Pie
@@ -1695,13 +1644,13 @@ function OrdersDashboard({ orders }: { orders: Order[] }) {
 
       {/* === SECCION 4: Tendencia 7 Dias (ComposedChart) === */}
       <div className="bg-white dark:bg-card rounded-2xl border border-gray-200 dark:border-card-border p-6 shadow-sm">
-        <h3 className="text-sm font-bold text-gray-700 dark:text-gray-200 mb-4">Tendencia de Pedidos - Ultimos 7 dias</h3>
+        <h3 className="text-sm font-medium text-gray-500 dark:text-zinc-400 uppercase tracking-wider mb-4">Tendencia de Pedidos - Ultimos 7 dias</h3>
         <ResponsiveContainer width="100%" height={280}>
           <ComposedChart data={weeklyData}>
             <defs>
               <linearGradient id="ordersBarGrad" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="0%" stopColor="#2563EB" stopOpacity={0.9} />
-                <stop offset="100%" stopColor="#2563EB" stopOpacity={0.5} />
+                <stop offset="0%" stopColor="var(--color-primary)" stopOpacity={0.9} />
+                <stop offset="100%" stopColor="var(--color-primary)" stopOpacity={0.5} />
               </linearGradient>
             </defs>
             <CartesianGrid strokeDasharray="3 3" stroke="rgba(107,114,128,0.12)" />
@@ -1720,7 +1669,7 @@ function OrdersDashboard({ orders }: { orders: Order[] }) {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Pedidos por zona */}
         <div className="bg-white dark:bg-card rounded-2xl border border-gray-200 dark:border-card-border p-6 shadow-sm">
-          <h3 className="text-sm font-bold text-gray-700 dark:text-gray-200 mb-4">Top 5 Zonas</h3>
+          <h3 className="text-sm font-medium text-gray-500 dark:text-zinc-400 uppercase tracking-wider mb-4">Top 5 Zonas</h3>
           {zonaData.length === 0 ? (
             <OrdersEmptyChart message="Sin datos de zona" />
           ) : (
@@ -1730,7 +1679,7 @@ function OrdersDashboard({ orders }: { orders: Order[] }) {
                 <XAxis type="number" tick={{ fontSize: 10 }} allowDecimals={false} />
                 <YAxis type="category" dataKey="zona" tick={{ fontSize: 11 }} width={80} />
                 <Tooltip content={<DashTooltip />} />
-                <Bar dataKey="count" fill="#2563EB" radius={[0, 4, 4, 0]} name="Pedidos" barSize={20} />
+                <Bar dataKey="count" fill="var(--color-primary)" radius={[0, 4, 4, 0]} name="Pedidos" barSize={20} />
               </BarChart>
             </ResponsiveContainer>
           )}
@@ -1738,7 +1687,7 @@ function OrdersDashboard({ orders }: { orders: Order[] }) {
 
         {/* Top 5 clientes */}
         <div className="bg-white dark:bg-card rounded-2xl border border-gray-200 dark:border-card-border p-6 shadow-sm">
-          <h3 className="text-sm font-bold text-gray-700 dark:text-gray-200 mb-4">Top 5 Clientes</h3>
+          <h3 className="text-sm font-medium text-gray-500 dark:text-zinc-400 uppercase tracking-wider mb-4">Top 5 Clientes</h3>
           {topClientes.length === 0 ? (
             <OrdersEmptyChart message="Sin datos de clientes" />
           ) : (
@@ -1774,7 +1723,7 @@ function OrdersDashboard({ orders }: { orders: Order[] }) {
 
       {/* === SECCION 7: Tiempo Promedio de Procesamiento === */}
       <div className="bg-white dark:bg-card rounded-2xl border border-gray-200 dark:border-card-border p-6 shadow-sm">
-        <h3 className="text-sm font-bold text-gray-700 dark:text-gray-200 mb-4">Tiempo Promedio de Procesamiento</h3>
+        <h3 className="text-sm font-medium text-gray-500 dark:text-zinc-400 uppercase tracking-wider mb-4">Tiempo Promedio de Procesamiento</h3>
         <div className="flex flex-col items-center justify-center py-4">
           {/* Gauge semicircular */}
           <div className="relative w-48 h-24 overflow-hidden">
@@ -1813,10 +1762,10 @@ function OrdersDashboard({ orders }: { orders: Order[] }) {
       </div>
 
       {/* === SECCION 8: Alertas de Pedidos === */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         {/* Alerta: pedidos sin atender >1h */}
         <div className={cn(
-          "rounded-xl border p-4 flex items-start gap-3",
+          "rounded-xl border p-5 flex items-start gap-3",
           alertas.sinAtender > 0
             ? "bg-red-50 dark:bg-red-900/20 border-red-200 dark:border-red-800"
             : "bg-gray-50 dark:bg-gray-800/50 border-gray-200 dark:border-gray-700"
@@ -1834,7 +1783,7 @@ function OrdersDashboard({ orders }: { orders: Order[] }) {
 
         {/* Alerta: pedidos sin cliente */}
         <div className={cn(
-          "rounded-xl border p-4 flex items-start gap-3",
+          "rounded-xl border p-5 flex items-start gap-3",
           alertas.sinDireccion > 0
             ? "bg-amber-50 dark:bg-amber-900/20 border-amber-200 dark:border-amber-800"
             : "bg-gray-50 dark:bg-gray-800/50 border-gray-200 dark:border-gray-700"
@@ -1852,7 +1801,7 @@ function OrdersDashboard({ orders }: { orders: Order[] }) {
 
         {/* Alerta: tasa de cumplimiento */}
         <div className={cn(
-          "rounded-xl border p-4 flex items-start gap-3",
+          "rounded-xl border p-5 flex items-start gap-3",
           alertas.tasaCumplimiento >= 90
             ? "bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-800"
             : alertas.tasaCumplimiento >= 70
@@ -1913,13 +1862,13 @@ function DashKpi({ icon, iconBg, label, value, border, pulse, sparkColor, sparkV
   // Lazy init so mock delta is computed once per mount, not each render (React Compiler purity rule)
   const [change] = useState(() => Math.round((Math.random() - 0.3) * 30));
   return (
-    <div className={cn("bg-white dark:bg-card rounded-xl border border-gray-200 dark:border-card-border p-4 shadow-sm border-l-4", border)}>
+    <div className={cn("bg-white dark:bg-card rounded-xl border border-gray-200 dark:border-card-border p-5 shadow-sm border-l-4", border)}>
       <div className="flex items-start gap-3">
         <div className={cn("rounded-full p-2 shrink-0", iconBg, pulse && "animate-pulse")}>
           {icon}
         </div>
         <div className="min-w-0">
-          <p className="text-[10px] text-gray-500 dark:text-gray-400 font-medium uppercase tracking-wider">{label}</p>
+          <p className="text-sm font-medium text-gray-500 dark:text-zinc-400 uppercase tracking-wider">{label}</p>
           <div className="flex items-center gap-1.5">
             <p className="text-2xl font-mono font-bold mt-0.5 text-gray-900 dark:text-white truncate">{value}</p>
             <span className={`text-xs ${change >= 0 ? "text-green-600" : "text-red-500"}`}>{change >= 0 ? "\u2191" : "\u2193"} {Math.abs(change)}%</span>

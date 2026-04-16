@@ -11,7 +11,7 @@ import AdminModuleHeader from "@/components/admin/shared/AdminModuleHeader";
 
 const Spinner = () => (
   <div className="flex items-center justify-center py-12">
-    <div className="h-8 w-8 border-4 border-[#00B4A6] border-t-transparent rounded-full animate-spin" />
+    <div className="h-8 w-8 border-4 border-primary border-t-transparent rounded-full animate-spin" />
   </div>
 );
 
@@ -193,11 +193,11 @@ function TabClientes() {
           value={search}
           onChange={(e) => handleSearchChange(e.target.value)}
           placeholder="Buscar cliente por nombre o teléfono..."
-          className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-gray-200 bg-white text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#00B4A6]/40"
+          className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-gray-200 bg-white text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary/40"
         />
         {loadingSearch && (
           <div className="absolute right-3 top-1/2 -translate-y-1/2">
-            <div className="h-4 w-4 border-2 border-[#00B4A6] border-t-transparent rounded-full animate-spin" />
+            <div className="h-4 w-4 border-2 border-primary border-t-transparent rounded-full animate-spin" />
           </div>
         )}
       </div>
@@ -209,7 +209,7 @@ function TabClientes() {
             <li key={String(c.id)}>
               <button
                 onClick={() => handleSelectCustomer(c)}
-                className="w-full flex items-center justify-between px-4 py-3 hover:bg-[#00B4A6]/5 transition-colors text-left min-h-[44px]"
+                className="w-full flex items-center justify-between px-4 py-3 hover:bg-primary/5 transition-colors text-left min-h-[44px]"
               >
                 <div>
                   <p className="text-sm font-semibold text-gray-900">{c.name}</p>
@@ -218,7 +218,7 @@ function TabClientes() {
                   )}
                 </div>
                 {c.totalSpent !== undefined && (
-                  <span className="text-xs font-bold text-[#00B4A6] shrink-0">
+                  <span className="text-xs font-bold text-primary shrink-0">
                     {fmtPrice(c.totalSpent)}
                   </span>
                 )}
@@ -233,7 +233,7 @@ function TabClientes() {
         <div className="space-y-3">
           <div className="flex items-center justify-between">
             <p className="text-sm font-bold text-gray-900">
-              Recomendado para <span className="text-[#00B4A6]">{selected.name}</span>
+              Recomendado para <span className="text-primary">{selected.name}</span>
             </p>
             {selected.phone && recs.length > 0 && (
               <button
@@ -268,7 +268,7 @@ function TabClientes() {
                   <p className="text-sm font-semibold text-gray-900 leading-tight">
                     {r.name}
                   </p>
-                  <p className="text-base font-black text-[#00B4A6]">
+                  <p className="text-base font-black text-primary">
                     {fmtPrice(r.price)}
                   </p>
                   {r.reason && (
@@ -382,7 +382,7 @@ function TabCrossSell() {
           </thead>
           <tbody className="divide-y divide-gray-100 bg-white">
             {pairs.map((pair, idx) => (
-              <tr key={idx} className="hover:bg-[#00B4A6]/5 transition-colors">
+              <tr key={idx} className="hover:bg-primary/5 transition-colors">
                 <td className="px-4 py-3 font-medium text-gray-900 max-w-[180px] truncate">
                   {pair.a}
                 </td>
@@ -397,7 +397,7 @@ function TabCrossSell() {
                     className={cn(
                       "text-xs font-bold px-2 py-0.5 rounded-full",
                       pair.confidence >= 20
-                        ? "bg-[#00B4A6]/10 text-[#00B4A6]"
+                        ? "bg-primary/10 text-primary"
                         : "bg-gray-100 text-gray-500",
                     )}
                   >
@@ -407,7 +407,7 @@ function TabCrossSell() {
                 <td className="px-4 py-3 text-right">
                   <button
                     onClick={() => handleCreateCombo(pair)}
-                    className="px-3 py-1.5 rounded-xl bg-[#00B4A6] text-white text-xs font-bold hover:bg-[#009690] transition-colors min-h-[32px] whitespace-nowrap"
+                    className="px-3 py-1.5 rounded-xl bg-primary text-white text-xs font-bold hover:bg-primary-dark transition-colors min-h-[32px] whitespace-nowrap"
                   >
                     Crear combo
                   </button>

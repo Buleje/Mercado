@@ -1,15 +1,25 @@
 "use client";
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useCallback } from "react";
 import dynamic from "next/dynamic";
 import {
   Lightbulb, ClipboardList, Users, PackageCheck,
   Truck, BarChart3,
   ShoppingCart, ShoppingBasket, Clock, DollarSign, Building2, AlertTriangle, CreditCard,
-  CheckCircle2, RefreshCw, FileDown, Maximize2, X as XIcon,
+  CheckCircle2, Maximize2, X as XIcon, RotateCcw,
 } from "lucide-react";
 import AdminTabBar from "@/components/admin/shared/AdminTabBar";
 import type { AdminTab } from "@/components/admin/shared/AdminTabBar";
 import AdminModuleHeader from "@/components/admin/shared/AdminModuleHeader";
+import FavStar from "@/components/admin/shared/FavStar";
+import EmptyState from "@/components/admin/shared/EmptyState";
+import ChartExpandModal from "@/components/admin/shared/ChartExpandModal";
+import DashboardSkeleton from "@/components/admin/shared/DashboardSkeleton";
+import KpiCard from "@/components/admin/shared/KPICard";
+import AutoRefreshControl from "@/components/admin/shared/AutoRefreshControl";
+import ExportButton from "@/components/admin/shared/ExportButton";
+import PeriodSelector from "@/components/admin/shared/PeriodSelector";
+import { useFavoriteCharts } from "@/hooks/use-favorite-charts";
+import { useAutoRefresh } from "@/hooks/use-auto-refresh";
 import { cn } from "@/lib/utils";
 import { ChartTooltip } from "@/lib/chart-tooltip";
 import {
@@ -53,16 +63,12 @@ interface ComprasData {
 }
 
 
-const S = () => (
-  <div className="flex items-center justify-center py-12">
-    <div className="h-8 w-8 border-4 border-primary border-t-transparent rounded-full animate-spin" />
-  </div>
-);
+import { TabLoadingSkeleton as S } from "@/components/ui/skeletons";
 
 export const TabError = () => (
   <div className="text-center py-12">
     <p className="text-sm text-red-500">Error al cargar el módulo</p>
-    <button onClick={() => window.location.reload()} className="mt-2 text-xs text-[#00B4A6] hover:underline">Recargar página</button>
+    <button onClick={() => window.location.reload()} className="mt-2 text-xs text-primary hover:underline">Recargar página</button>
   </div>
 );
 
@@ -72,39 +78,28 @@ const SuppliersTab = dynamic(() => import("@/components/admin/SuppliersTab"), { 
 const ReceivingTab = dynamic(() => import("@/components/admin/ReceivingTab"), { loading: S });
 const PuntoCompraView = dynamic(() => import("@/components/admin/pos/PuntoCompraView"), { loading: S });
 const SupplierComparator = dynamic(() => import("@/components/admin/SupplierComparator"), { ssr: false, loading: S });
+const DevolucionesProveedorModule = dynamic(() => import("@/components/admin/DevolucionesProveedorModule"), { loading: S });
 
 const MODULE_ID = "compras";
 
-const CHART_COLORS = ['#00B4A6', '#f97316', '#457b9d', '#e63946', '#9b5de5', '#2dd4bf', '#264653', '#6b705c'];
+const CHART_COLORS = ['var(--color-primary)', '#f97316', '#457b9d', '#e63946', '#9b5de5', '#2dd4bf', '#264653', '#6b705c'];
 
 const TABS: AdminTab[] = [
   { id: "punto-compra", label: "Punto de Compra", icon: ShoppingBasket },
-  { id: "dashboard", label: "Dashboard", icon: BarChart3 },
   { id: "sugerencias", label: "Sugerencias", icon: Lightbulb },
   { id: "ordenes-compra", label: "Ordenes", icon: ClipboardList },
   { id: "proveedores", label: "Proveedores", icon: Users },
   { id: "recepcion", label: "Recepcion", icon: PackageCheck },
   { id: "comparador", label: "Comparador", icon: BarChart3 },
+  { id: "devoluciones", label: "Devoluciones", icon: RotateCcw },
 ];
 
-// ── Dashboard de Compras ────────────────────────────────────────────────────
+function normalizeComprasTab(savedTab: string | null): string {
+  if (savedTab === "dashboard") return TABS[0].id;
+  return TABS.some((tab) => tab.id === savedTab) ? savedTab as string : TABS[0].id;
+}
 
-// Mejora 5: Favoritos Compras
-function useComprasFavCharts(key: string) {
-  const [favs, setFavs] = useState<string[]>(() => {
-    if (typeof window === "undefined") return [];
-    try { return JSON.parse(localStorage.getItem(`fav-charts-${key}`) || "[]"); } catch { return []; }
-  });
-  const toggle = (id: string) => setFavs(prev => {
-    const next = prev.includes(id) ? prev.filter(f => f !== id) : [...prev, id];
-    try { localStorage.setItem(`fav-charts-${key}`, JSON.stringify(next)); } catch { /* SSR or quota */ }
-    return next;
-  });
-  return { favs, toggle, isFav: (id: string) => favs.includes(id) };
-}
-function ComprasFavStar({ id, favs }: { id: string; favs: ReturnType<typeof useComprasFavCharts> }) {
-  return <button onClick={() => favs.toggle(id)} className="p-1 hover:bg-gray-100 rounded transition-colors text-sm">{favs.isFav(id) ? <span className="text-amber-400">&#9733;</span> : <span className="text-gray-300">&#9734;</span>}</button>;
-}
+// ── Dashboard de Compras ────────────────────────────────────────────────────
 
 function ComprasDashboard() {
   const [data, setData] = useState<ComprasData>({ purchases: [], suppliers: [], payables: [] });
@@ -116,14 +111,12 @@ function ComprasDashboard() {
   // Mejora 1: Period selector
   const [period, setPeriod] = useState<"today" | "7d" | "30d" | "month">("30d");
   // Mejora 3: Auto-refresh
-  const [lastRefresh, setLastRefresh] = useState(new Date());
-  const [minAgo, setMinAgo] = useState(0);
   // Snapshot "now" once per mount — React Compiler rejects Date.now() during render/useMemo
   const [nowTs] = useState(() => Date.now());
   // Mejora 5: Favoritos
-  const compFavs = useComprasFavCharts("compras");
+  const compFavs = useFavoriteCharts("compras");
 
-  useEffect(() => {
+  const fetchData = useCallback(() => {
     Promise.allSettled([
       fetch('/api/purchases').then(r => r.ok ? r.json() : []),
       fetch('/api/suppliers').then(r => r.ok ? r.json() : []),
@@ -135,14 +128,12 @@ function ComprasDashboard() {
         payables: paRes.status === 'fulfilled' ? (Array.isArray(paRes.value) ? paRes.value : paRes.value?.payables || paRes.value?.data || []) : [],
       });
       setLoading(false);
-      setLastRefresh(new Date());
     });
   }, []);
 
-  useEffect(() => {
-    const id = setInterval(() => setMinAgo(Math.floor((Date.now() - lastRefresh.getTime()) / 60000)), 60000);
-    return () => clearInterval(id);
-  }, [lastRefresh]);
+  useEffect(() => { fetchData(); }, [fetchData]);
+
+  const autoRefresh = useAutoRefresh({ intervalSeconds: 300, onRefresh: fetchData });
 
   /* ── KPIs ── */
   const kpis = useMemo(() => {
@@ -294,41 +285,15 @@ function ComprasDashboard() {
   }, [purchasesByMonth]);
 
   /* ── Skeleton loading ── */
-  if (loading) return (
-    <div className="space-y-6 animate-pulse">
-      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
-        {[...Array(6)].map((_, i) => (
-          <div key={i} className="h-24 bg-gray-200 rounded-2xl" />
-        ))}
-      </div>
-      <div className="h-72 bg-gray-200 rounded-2xl" />
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <div className="h-72 bg-gray-200 rounded-2xl" />
-        <div className="h-72 bg-gray-200 rounded-2xl" />
-      </div>
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <div className="h-64 bg-gray-200 rounded-2xl" />
-        <div className="h-64 bg-gray-200 rounded-2xl" />
-      </div>
-    </div>
-  );
+  if (loading) return <DashboardSkeleton />;
 
-  interface KpiCard {
-    label: string;
-    value: number | string;
-    icon: typeof ShoppingCart;
-    color: string;
-    borderColor: string;
-    change?: number;
-    bad?: boolean;
-  }
-  const kpiCards: KpiCard[] = [
-    { label: "OC totales", value: kpis.totalOC, icon: ShoppingCart, color: "#457b9d", borderColor: "border-l-[#457b9d]", change: kpiChanges.oc != null ? Math.round(kpiChanges.oc * 10) / 10 : undefined },
-    { label: "OC pendientes", value: kpis.ocPendientes, icon: Clock, color: "#f97316", borderColor: "border-l-[#f97316]" },
-    { label: "Total gastado", value: `S/ ${kpis.totalGastado.toLocaleString()}`, icon: DollarSign, color: "#00B4A6", borderColor: "border-l-[#00B4A6]", change: kpiChanges.gastado != null ? Math.round(kpiChanges.gastado * 10) / 10 : undefined },
-    { label: "Proveedores", value: kpis.totalProveedores, icon: Building2, color: "#9b5de5", borderColor: "border-l-[#9b5de5]" },
-    { label: "Deuda total", value: `S/ ${kpis.deudaTotal.toLocaleString()}`, icon: CreditCard, color: "#f97316", borderColor: "border-l-[#f97316]" },
-    { label: "Deuda vencida", value: `S/ ${kpis.deudaVencida.toLocaleString()}`, icon: AlertTriangle, color: "#e63946", borderColor: "border-l-[#e63946]", bad: kpis.deudaVencida > 0 },
+  const kpiCards = [
+    { label: "OC totales", value: kpis.totalOC, icon: ShoppingCart, color: "#457b9d", change: kpiChanges.oc != null ? Math.round(kpiChanges.oc * 10) / 10 : undefined },
+    { label: "OC pendientes", value: kpis.ocPendientes, icon: Clock, color: "#f97316" },
+    { label: "Total gastado", value: `S/ ${kpis.totalGastado.toLocaleString()}`, icon: DollarSign, color: "var(--color-primary)", change: kpiChanges.gastado != null ? Math.round(kpiChanges.gastado * 10) / 10 : undefined },
+    { label: "Proveedores", value: kpis.totalProveedores, icon: Building2, color: "#9b5de5" },
+    { label: "Deuda total", value: `S/ ${kpis.deudaTotal.toLocaleString()}`, icon: CreditCard, color: "#f97316" },
+    { label: "Deuda vencida", value: `S/ ${kpis.deudaVencida.toLocaleString()}`, icon: AlertTriangle, color: "#e63946", alert: kpis.deudaVencida > 0 },
   ];
 
   return (
@@ -336,17 +301,10 @@ function ComprasDashboard() {
 
       {/* === Controls: Period + Refresh + Export === */}
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <div className="flex gap-1.5">
-          {([{ id: "today" as const, label: "Hoy" }, { id: "7d" as const, label: "7 dias" }, { id: "30d" as const, label: "30 dias" }, { id: "month" as const, label: "Este mes" }]).map(p => (
-            <button key={p.id} onClick={() => setPeriod(p.id)} className={cn("px-3 py-1 rounded-full text-xs font-medium transition-colors", period === p.id ? "bg-[#00B4A6] text-white" : "bg-gray-100 text-gray-600 hover:bg-gray-200")}>{p.label}</button>
-          ))}
-        </div>
+        <PeriodSelector value={period} onChange={setPeriod} />
         <div className="flex items-center gap-2">
-          <div className="flex items-center gap-2 text-xs text-gray-400">
-            <span>Actualizado hace {minAgo} min</span>
-            <button onClick={() => { setLastRefresh(new Date()); setMinAgo(0); }} className="p-1 hover:bg-gray-100 rounded transition-colors"><RefreshCw className="h-3 w-3" /></button>
-          </div>
-          <button onClick={() => window.print()} className="flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-medium text-gray-500 hover:bg-gray-100 transition-colors"><FileDown className="h-3 w-3" /> Exportar</button>
+          <AutoRefreshControl secondsLeft={autoRefresh.secondsLeft} paused={autoRefresh.paused} isActive={autoRefresh.isActive} onTogglePause={autoRefresh.togglePause} onRefreshNow={autoRefresh.refreshNow} />
+          <ExportButton />
         </div>
       </div>
 
@@ -360,40 +318,20 @@ function ComprasDashboard() {
 
       {/* === KPIs (6 cards) === */}
       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
-        {kpiCards.map((k, i) => {
-          const Icon = k.icon;
-          return (
-            <div key={i} className={cn("bg-white rounded-2xl shadow-sm p-4 border-l-[3px] border border-gray-100", k.borderColor)}>
-              <div className="flex items-start justify-between">
-                <div>
-                  <p className="text-[10px] text-gray-500 font-medium uppercase tracking-wider">{k.label}</p>
-                  <div className="flex items-center gap-1">
-                    <p className={cn("text-2xl font-mono font-bold mt-1", k.bad ? "text-red-600" : "text-gray-900")}>{k.value}</p>
-                  </div>
-                  {k.change != null && (
-                    <p className={cn("text-[10px] font-medium mt-0.5", k.change >= 0 ? "text-emerald-600" : "text-red-500")}>
-                      {k.change >= 0 ? "+" : ""}{k.change}% vs mes ant.
-                    </p>
-                  )}
-                </div>
-                <div className="h-9 w-9 rounded-full flex items-center justify-center shrink-0" style={{ backgroundColor: `${k.color}15` }}>
-                  <Icon className="h-4.5 w-4.5" style={{ color: k.color }} />
-                </div>
-              </div>
-            </div>
-          );
-        })}
+        {kpiCards.map((k, i) => (
+          <KpiCard key={i} label={k.label} value={k.value} icon={k.icon} color={k.color} change={k.change} alert={k.alert} />
+        ))}
       </div>
 
       {/* === Compras por Mes (AreaChart) === */}
       <div className="bg-white rounded-2xl border border-gray-100 p-6 shadow-sm">
-        <div className="flex items-center gap-2 mb-4"><ComprasFavStar id="compras-mes" favs={compFavs} /><h3 className="text-sm font-bold text-gray-900">Compras por mes (ultimos 6 meses)</h3></div>
+        <div className="flex items-center gap-2 mb-4"><FavStar id="compras-mes" favs={compFavs} /><h3 className="text-sm font-bold text-gray-900">Compras por mes (ultimos 6 meses)</h3></div>
         <ResponsiveContainer width="100%" height={280}>
           <AreaChart data={purchasesByMonth}>
             <defs>
               <linearGradient id="areaGradient" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="5%" stopColor="#00B4A6" stopOpacity={0.3} />
-                <stop offset="95%" stopColor="#00B4A6" stopOpacity={0.02} />
+                <stop offset="5%" stopColor="var(--color-primary)" stopOpacity={0.3} />
+                <stop offset="95%" stopColor="var(--color-primary)" stopOpacity={0.02} />
               </linearGradient>
             </defs>
             <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="rgba(0,0,0,0.06)" />
@@ -413,7 +351,7 @@ function ComprasDashboard() {
                 </div>
               );
             }} />
-            <Area type="monotone" dataKey="total" stroke="#00B4A6" strokeWidth={2.5} fill="url(#areaGradient)" name="Total compras" />
+            <Area type="monotone" dataKey="total" stroke="var(--color-primary)" strokeWidth={2.5} fill="url(#areaGradient)" name="Total compras" />
           </AreaChart>
         </ResponsiveContainer>
       </div>
@@ -425,9 +363,9 @@ function ComprasDashboard() {
             <h3 className="text-sm font-bold text-gray-900">Gasto por proveedor</h3>
             <div className="flex items-center gap-2">
               {pieFilter && (
-                <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-[#00B4A6]/10 text-[#00B4A6] text-xs font-bold">
+                <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-primary/10 text-primary text-xs font-bold">
                   {pieFilter}
-                  <button onClick={() => setPieFilter(null)} className="hover:bg-[#00B4A6]/20 rounded-full p-0.5 transition-colors"><XIcon className="h-3 w-3" /></button>
+                  <button onClick={() => setPieFilter(null)} className="hover:bg-primary/20 rounded-full p-0.5 transition-colors"><XIcon className="h-3 w-3" /></button>
                 </span>
               )}
               <button onClick={() => setExpandedChart("proveedor")} className="p-1 hover:bg-gray-100 rounded transition-colors" title="Expandir"><Maximize2 className="h-3.5 w-3.5 text-gray-400" /></button>
@@ -451,9 +389,9 @@ function ComprasDashboard() {
 
         <div className="bg-white rounded-2xl border border-gray-100 p-6 shadow-sm">
           <h3 className="text-sm font-bold text-gray-900 mb-4">Ranking de proveedores</h3>
-          <div className="space-y-3 overflow-y-auto max-h-[280px]">
+          <div className="max-h-70 space-y-3 overflow-y-auto">
             {supplierSpend.length === 0 ? (
-              <p className="text-xs text-gray-400 text-center py-8">Sin datos de proveedores</p>
+              <EmptyState title="Sin datos de proveedores" className="py-8" />
             ) : (
               supplierSpend.map((s, i) => {
                 const pct = totalSpend > 0 ? (s.total / totalSpend) * 100 : 0;
@@ -493,7 +431,7 @@ function ComprasDashboard() {
             <Legend iconType="circle" formatter={(value) => <span className="text-xs text-gray-600">{value}</span>} />
             <Bar dataKey="Pendiente" stackId="a" fill="#f97316" radius={[0, 0, 0, 0]} />
             <Bar dataKey="En proceso" stackId="a" fill="#457b9d" />
-            <Bar dataKey="Recibido" stackId="a" fill="#00B4A6" />
+            <Bar dataKey="Recibido" stackId="a" fill="var(--color-primary)" />
             <Bar dataKey="Cancelado" stackId="a" fill="#e63946" radius={[4, 4, 0, 0]} />
           </BarChart>
         </ResponsiveContainer>
@@ -504,7 +442,7 @@ function ComprasDashboard() {
         <div className="bg-white rounded-2xl border border-gray-100 p-6 shadow-sm">
           <h3 className="text-sm font-bold text-gray-900 mb-4">Deuda por proveedor</h3>
           {debtBySupplier.length === 0 ? (
-            <p className="text-xs text-gray-400 text-center py-12">Sin deudas registradas</p>
+            <EmptyState title="Sin deudas registradas" description="No hay deudas pendientes con proveedores" />
           ) : (
             <ResponsiveContainer width="100%" height={260}>
               <BarChart data={debtBySupplier} layout="vertical">
@@ -514,7 +452,7 @@ function ComprasDashboard() {
                 <Tooltip content={<ChartTooltip />} />
                 <Bar dataKey="total" name="Deuda total" radius={[0, 6, 6, 0]} barSize={14}>
                   {debtBySupplier.map((d, i) => (
-                    <Cell key={i} fill={d.vencida > 0 ? "#e63946" : d.total > 500 ? "#f97316" : "#00B4A6"} />
+                    <Cell key={i} fill={d.vencida > 0 ? "#e63946" : d.total > 500 ? "#f97316" : "var(--color-primary)"} />
                   ))}
                 </Bar>
               </BarChart>
@@ -525,7 +463,7 @@ function ComprasDashboard() {
         <div className="bg-white rounded-2xl border border-gray-100 p-6 shadow-sm">
           <h3 className="text-sm font-bold text-gray-900 mb-4">Proximos pagos</h3>
           {nextPayments.length === 0 ? (
-            <p className="text-xs text-gray-400 text-center py-12">Sin pagos pendientes</p>
+            <EmptyState title="Sin pagos pendientes" description="No hay pagos próximos registrados" />
           ) : (
             <div className="space-y-3">
               {nextPayments.map((p, i) => {
@@ -549,7 +487,7 @@ function ComprasDashboard() {
                       <span className={cn("text-[10px] font-medium px-2 py-0.5 rounded-full", badgeColor)}>
                         {isOverdue ? `Vencido ${Math.abs(p.days)}d` : p.days === 0 ? "Hoy" : `En ${p.days}d`}
                       </span>
-                      <button className="text-[10px] font-semibold text-[#00B4A6] hover:underline flex items-center gap-1">
+                      <button className="text-[10px] font-semibold text-primary hover:underline flex items-center gap-1">
                         <CheckCircle2 className="h-3 w-3" /> Pagado
                       </button>
                     </div>
@@ -572,7 +510,7 @@ function ComprasDashboard() {
             <YAxis tick={{ fontSize: 11 }} tickFormatter={(v) => `S/${v.toLocaleString()}`} className="fill-gray-500" />
             <Tooltip content={<ChartTooltip />} />
             <Legend iconType="circle" formatter={(value) => <span className="text-xs text-gray-600">{value}</span>} />
-            <Bar dataKey="total" fill="#00B4A6" radius={[6, 6, 0, 0]} name="Gasto real" barSize={28} fillOpacity={0.85} />
+            <Bar dataKey="total" fill="var(--color-primary)" radius={[6, 6, 0, 0]} name="Gasto real" barSize={28} fillOpacity={0.85} />
             <Line type="monotone" dataKey="promedio" stroke="#f97316" strokeWidth={2.5} dot={{ r: 4, fill: "#f97316", strokeWidth: 0 }} name="Prom. movil 3m" />
           </ComposedChart>
         </ResponsiveContainer>
@@ -580,12 +518,7 @@ function ComprasDashboard() {
 
       {/* Mejora 13: Expand chart modal */}
       {expandedChart && (
-        <div className="fixed inset-0 z-50 bg-white p-8 overflow-auto">
-          <div className="flex items-center justify-between mb-6">
-            <h2 className="text-lg font-bold text-gray-900">Gasto por proveedor</h2>
-            <button onClick={() => setExpandedChart(null)} className="p-2 hover:bg-gray-100 rounded-xl transition-colors"><XIcon className="h-5 w-5 text-gray-500" /></button>
-          </div>
-          <div style={{ height: 500 }}>
+        <ChartExpandModal title="Gasto por proveedor" onClose={() => setExpandedChart(null)}>
             <ResponsiveContainer width="100%" height={500}>
               <PieChart>
                 <Pie data={supplierSpend} innerRadius={100} outerRadius={200} dataKey="total" paddingAngle={2} label>
@@ -595,19 +528,20 @@ function ComprasDashboard() {
                 <Legend />
               </PieChart>
             </ResponsiveContainer>
-          </div>
-        </div>
+        </ChartExpandModal>
       )}
     </div>
   );
 }
+
+void ComprasDashboard;
 
 // ── Componente principal ────────────────────────────────────────────────────
 
 export default function ComprasModule() {
   const [sub, setSub] = useState(() => {
     if (typeof window === "undefined") return TABS[0].id;
-    return localStorage.getItem(`admin-last-tab-${MODULE_ID}`) || TABS[0].id;
+    return normalizeComprasTab(localStorage.getItem(`admin-last-tab-${MODULE_ID}`));
   });
   useEffect(() => { localStorage.setItem(`admin-last-tab-${MODULE_ID}`, sub); }, [sub]);
 
@@ -640,12 +574,12 @@ export default function ComprasModule() {
         moduleId="compras"
       >
         {sub === "punto-compra" && <PuntoCompraView />}
-        {sub === "dashboard" && <ComprasDashboard />}
         {sub === "sugerencias" && <SugerenciasCompraTab />}
         {sub === "ordenes-compra" && <PurchaseOrdersTab />}
         {sub === "proveedores" && <SuppliersTab />}
         {sub === "recepcion" && <ReceivingTab />}
         {sub === "comparador" && <SupplierComparator />}
+        {sub === "devoluciones" && <DevolucionesProveedorModule />}
       </AdminTabBar>
     </div>
   );

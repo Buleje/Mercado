@@ -39,7 +39,7 @@ const CompetitivePricingTab = lazy(() => import("@/components/admin/CompetitiveP
 // ── Spinner compacto ──
 const Spinner = () => (
   <div className="flex items-center justify-center py-12">
-    <div className="h-8 w-8 border-4 border-[#00B4A6] border-t-transparent rounded-full animate-spin" />
+    <div className="h-8 w-8 border-4 border-primary border-t-transparent rounded-full animate-spin" />
   </div>
 );
 
@@ -126,7 +126,6 @@ const COMMISSION_STATUS_CONFIG: Record<string, { label: string; className: strin
 const MODULE_ID = "marketplace";
 
 const TABS = [
-  { id: "dashboard",    label: "Dashboard",    icon: BarChart3 },
   { id: "tienda",       label: "Mi Tienda Personal",    icon: Store },
   { id: "productos",    label: "Productos",    icon: Package },
   { id: "ordenes",      label: "Órdenes",      icon: ShoppingCart },
@@ -167,7 +166,7 @@ interface AdminOverviewData {
   recentOrders: { id: string; customerName: string; total: number; status: string; createdAt: string; storeName: string }[];
 }
 
-function AdminMarketplaceOverview() {
+export function AdminMarketplaceOverview() {
   const [data, setData] = useState<AdminOverviewData | null>(null);
 
   useEffect(() => {
@@ -184,15 +183,15 @@ function AdminMarketplaceOverview() {
   return (
     <div className="space-y-4 mb-6">
       <div className="flex items-center gap-2">
-        <BarChart3 className="h-5 w-5 text-[#00B4A6]" />
+        <BarChart3 className="h-5 w-5 text-primary" />
         <h3 className="text-sm font-bold text-gray-900">Resumen del Marketplace</h3>
-        <span className="text-[10px] px-2 py-0.5 rounded-full bg-[#00B4A6]/10 text-[#00B4A6] font-bold">Admin</span>
+        <span className="text-[10px] px-2 py-0.5 rounded-full bg-primary/10 text-primary font-bold">Admin</span>
       </div>
 
       {/* KPIs globales */}
       <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
         {[
-          { label: "Tiendas activas", value: `${data.stores.active}/${data.stores.total}`, sub: data.stores.pending > 0 ? `${data.stores.pending} por aprobar` : "Todas aprobadas", color: "text-[#00B4A6]" },
+          { label: "Tiendas activas", value: `${data.stores.active}/${data.stores.total}`, sub: data.stores.pending > 0 ? `${data.stores.pending} por aprobar` : "Todas aprobadas", color: "text-primary" },
           { label: "Pedidos hoy", value: String(data.today.orders), sub: fmtS(data.today.revenue), color: "text-blue-600" },
           { label: "Ventas del mes", value: fmtS(data.month.revenue), sub: data.month.revenueGrowth !== 0 ? `${data.month.revenueGrowth > 0 ? "+" : ""}${data.month.revenueGrowth}% vs anterior` : "—", color: "text-purple-600" },
           { label: "Comisiones del mes", value: fmtS(data.commissions.month), sub: `${data.month.orders} órdenes`, color: "text-amber-600" },
@@ -216,7 +215,7 @@ function AdminMarketplaceOverview() {
             <div className="space-y-2.5">
               {data.topStores.map((s, i) => (
                 <div key={s.slug || i} className="flex items-center gap-3">
-                  <span className="flex items-center justify-center h-6 w-6 rounded-full bg-[#00B4A6]/10 text-[#00B4A6] text-xs font-extrabold shrink-0">
+                  <span className="flex items-center justify-center h-6 w-6 rounded-full bg-primary/10 text-primary text-xs font-extrabold shrink-0">
                     {i + 1}
                   </span>
                   <div className="flex-1 min-w-0">
@@ -283,6 +282,8 @@ function DashboardTab() {
   const [loading, setLoading] = useState(true);
   const [confirmingId, setConfirmingId] = useState<string | null>(null);
 
+
+void DashboardTab;
   useEffect(() => {
     setLoading(true);
     fetch("/api/marketplace/analytics")
@@ -333,7 +334,7 @@ function DashboardTab() {
       {/* ── KPIs rápidos (Marketplace) ── */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
         {[
-          { label: "Hoy", value: fmtS(data.today.revenue), sub: `${data.today.orders} pedido(s)`, color: "text-[#00B4A6]" },
+          { label: "Hoy", value: fmtS(data.today.revenue), sub: `${data.today.orders} pedido(s)`, color: "text-primary" },
           { label: "Este mes", value: fmtS(data.month.revenue), sub: `${data.month.orders} pedido(s)`, color: "text-blue-600" },
           { label: "Ticket promedio", value: fmtS(data.month.avgTicket), sub: data.month.revenueGrowth !== 0 ? `${data.month.revenueGrowth > 0 ? "+" : ""}${data.month.revenueGrowth}% vs mes anterior` : "Sin comparación", color: "text-purple-600" },
           { label: "Reseñas", value: `★ ${data.store.rating.toFixed(1)}`, sub: `${data.store.reviewCount} opiniones`, color: "text-amber-500" },
@@ -348,14 +349,14 @@ function DashboardTab() {
 
       {/* ── Resumen todos los canales (Marketplace + Directa + POS) ── */}
       {data.allChannels && (data.allChannels.today.orders > data.today.orders || data.allChannels.month.orders > data.month.orders) && (
-        <div className="bg-linear-to-r from-[#00B4A6]/5 to-blue-50 border border-[#00B4A6]/20 rounded-2xl p-4 shadow-sm">
+        <div className="bg-linear-to-r from-primary/5 to-blue-50 border border-primary/20 rounded-2xl p-4 shadow-sm">
           <h3 className="text-xs font-bold text-gray-700 mb-2 flex items-center gap-1.5">
-            <Store className="h-3.5 w-3.5 text-[#00B4A6]" />
+            <Store className="h-3.5 w-3.5 text-primary" />
             Resumen total (todos los canales)
           </h3>
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
             <div>
-              <p className="text-lg font-extrabold text-[#00B4A6]">{fmtS(data.allChannels.today.revenue)}</p>
+              <p className="text-lg font-extrabold text-primary">{fmtS(data.allChannels.today.revenue)}</p>
               <p className="text-[10px] text-gray-500">Hoy (total)</p>
             </div>
             <div>
@@ -396,7 +397,7 @@ function DashboardTab() {
       {/* ── Acciones rápidas del vendedor ── */}
       <div className="bg-white border border-gray-200 rounded-2xl p-4 shadow-sm">
         <div className="flex items-center gap-2 mb-3">
-          <Zap className="h-4 w-4 text-[#00B4A6]" />
+          <Zap className="h-4 w-4 text-primary" />
           <h3 className="text-sm font-bold text-gray-800">Qué hacer ahora</h3>
         </div>
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
@@ -473,9 +474,9 @@ function DashboardTab() {
             href={data.store.slug ? `/marketplace/${data.store.slug}` : "/marketplace"}
             target="_blank"
             rel="noopener noreferrer"
-            className="flex items-center gap-3 p-3 rounded-xl border border-[#00B4A6]/20 bg-[#00B4A6]/5 text-left transition-all hover:shadow-md hover:bg-[#00B4A6]/10"
+            className="flex items-center gap-3 p-3 rounded-xl border border-primary/20 bg-primary/5 text-left transition-all hover:shadow-md hover:bg-primary/10"
           >
-            <div className="h-10 w-10 rounded-xl flex items-center justify-center shrink-0 bg-[#00B4A6]/20 text-[#00B4A6]">
+            <div className="h-10 w-10 rounded-xl flex items-center justify-center shrink-0 bg-primary/20 text-primary">
               <ExternalLink className="h-5 w-5" />
             </div>
             <div className="min-w-0">
@@ -517,7 +518,7 @@ function DashboardTab() {
               <div key={day.date} className="flex-1 flex flex-col items-center gap-1">
                 <div className="w-full relative" style={{ height: "96px" }}>
                   <div
-                    className="absolute bottom-0 w-full rounded-t-lg bg-[#00B4A6] transition-all duration-500"
+                    className="absolute bottom-0 w-full rounded-t-lg bg-primary transition-all duration-500"
                     style={{ height: `${Math.max(pct, 4)}%` }}
                     title={`${fmtS(day.revenue)} — ${day.orders} pedido(s)`}
                   />
@@ -539,7 +540,7 @@ function DashboardTab() {
             <div className="space-y-2.5">
               {data.topProducts.map((p, i) => (
                 <div key={p.name} className="flex items-center gap-3">
-                  <span className="flex items-center justify-center h-6 w-6 rounded-full bg-[#00B4A6]/10 text-[#00B4A6] text-xs font-extrabold shrink-0">
+                  <span className="flex items-center justify-center h-6 w-6 rounded-full bg-primary/10 text-primary text-xs font-extrabold shrink-0">
                     {i + 1}
                   </span>
                   <div className="flex-1 min-w-0">
@@ -574,7 +575,7 @@ function DashboardTab() {
                       <button
                         onClick={() => handleQuickConfirm(o.id)}
                         disabled={confirmingId === o.id}
-                        className="flex items-center gap-1 px-2 py-1 rounded-lg bg-[#00B4A6] text-white text-[10px] font-bold hover:bg-[#009B8D] transition-colors disabled:opacity-50 shrink-0"
+                        className="flex items-center gap-1 px-2 py-1 rounded-lg bg-primary text-white text-[10px] font-bold hover:bg-[#009B8D] transition-colors disabled:opacity-50 shrink-0"
                       >
                         <CheckCircle className="h-3 w-3" />
                         {confirmingId === o.id ? "..." : "Confirmar"}
@@ -596,7 +597,7 @@ function DashboardTab() {
       {/* ── Inventario rápido ── */}
       <div className="grid grid-cols-3 gap-3">
         <div className="bg-white border border-gray-200 rounded-2xl p-3 text-center shadow-sm">
-          <p className="text-xl font-extrabold text-[#00B4A6]">{data.products.published}</p>
+          <p className="text-xl font-extrabold text-primary">{data.products.published}</p>
           <p className="text-[10px] text-gray-500 mt-0.5">Publicados</p>
         </div>
         <div className="bg-white border border-gray-200 rounded-2xl p-3 text-center shadow-sm">
@@ -691,7 +692,7 @@ function TiendaTab() {
               value={store.slug}
               onChange={(e) => setStore((p) => ({ ...p, slug: e.target.value.toLowerCase().replace(/\s+/g, "-") }))}
               placeholder="mi-bodega"
-              className="w-full px-3 py-2.5 rounded-xl border border-gray-200 bg-white text-sm text-gray-900 outline-none focus:ring-2 focus:ring-[#00B4A6]/30 focus:border-[#00B4A6] transition-all"
+              className="w-full px-3 py-2.5 rounded-xl border border-gray-200 bg-white text-sm text-gray-900 outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all"
             />
             {store.slug && (
               <p className="text-[10px] text-gray-400">marketplace.com/{store.slug}</p>
@@ -706,7 +707,7 @@ function TiendaTab() {
               value={store.name}
               onChange={(e) => setStore((p) => ({ ...p, name: e.target.value }))}
               placeholder="Mi Bodega"
-              className="w-full px-3 py-2.5 rounded-xl border border-gray-200 bg-white text-sm text-gray-900 outline-none focus:ring-2 focus:ring-[#00B4A6]/30 focus:border-[#00B4A6] transition-all"
+              className="w-full px-3 py-2.5 rounded-xl border border-gray-200 bg-white text-sm text-gray-900 outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all"
             />
           </div>
 
@@ -717,7 +718,7 @@ function TiendaTab() {
               <select
                 value={store.category}
                 onChange={(e) => setStore((p) => ({ ...p, category: e.target.value }))}
-                className="w-full px-3 py-2.5 rounded-xl border border-gray-200 bg-white text-sm text-gray-900 outline-none focus:ring-2 focus:ring-[#00B4A6]/30 focus:border-[#00B4A6] appearance-none transition-all"
+                className="w-full px-3 py-2.5 rounded-xl border border-gray-200 bg-white text-sm text-gray-900 outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary appearance-none transition-all"
               >
                 {CATEGORIAS.map((c) => <option key={c} value={c}>{c}</option>)}
               </select>
@@ -732,7 +733,7 @@ function TiendaTab() {
               <select
                 value={store.zone}
                 onChange={(e) => setStore((p) => ({ ...p, zone: e.target.value }))}
-                className="w-full px-3 py-2.5 rounded-xl border border-gray-200 bg-white text-sm text-gray-900 outline-none focus:ring-2 focus:ring-[#00B4A6]/30 focus:border-[#00B4A6] appearance-none transition-all"
+                className="w-full px-3 py-2.5 rounded-xl border border-gray-200 bg-white text-sm text-gray-900 outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary appearance-none transition-all"
               >
                 {ZONAS.map((z) => <option key={z} value={z}>{z}</option>)}
               </select>
@@ -750,7 +751,7 @@ function TiendaTab() {
               step={0.5}
               value={store.commissionRate}
               onChange={(e) => setStore((p) => ({ ...p, commissionRate: parseFloat(e.target.value) || 0 }))}
-              className="w-full px-3 py-2.5 rounded-xl border border-gray-200 bg-white text-sm text-gray-900 outline-none focus:ring-2 focus:ring-[#00B4A6]/30 focus:border-[#00B4A6] transition-all"
+              className="w-full px-3 py-2.5 rounded-xl border border-gray-200 bg-white text-sm text-gray-900 outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all"
             />
           </div>
 
@@ -776,7 +777,7 @@ function TiendaTab() {
                   value={store.logoUrl}
                   onChange={(e) => setStore((p) => ({ ...p, logoUrl: e.target.value }))}
                   placeholder="https://... o sube una imagen"
-                  className="w-full px-3 py-2.5 rounded-xl border border-gray-200 bg-white text-sm text-gray-900 outline-none focus:ring-2 focus:ring-[#00B4A6]/30 focus:border-[#00B4A6] transition-all"
+                  className="w-full px-3 py-2.5 rounded-xl border border-gray-200 bg-white text-sm text-gray-900 outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all"
                 />
                 {store.logoUrl && (
                   <div className="flex items-center gap-2 text-xs text-green-600">
@@ -797,7 +798,7 @@ function TiendaTab() {
             value={store.description}
             onChange={(e) => setStore((p) => ({ ...p, description: e.target.value }))}
             placeholder="Describe tu bodega, horarios, especialidades..."
-            className="w-full px-3 py-2.5 rounded-xl border border-gray-200 bg-white text-sm text-gray-900 outline-none focus:ring-2 focus:ring-[#00B4A6]/30 focus:border-[#00B4A6] resize-none transition-all"
+            className="w-full px-3 py-2.5 rounded-xl border border-gray-200 bg-white text-sm text-gray-900 outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary resize-none transition-all"
           />
         </div>
 
@@ -811,7 +812,7 @@ function TiendaTab() {
             onClick={() => setStore((p) => ({ ...p, isActive: !p.isActive }))}
             className={cn(
               "relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none",
-              store.isActive ? "bg-[#00B4A6]" : "bg-gray-300"
+              store.isActive ? "bg-primary" : "bg-gray-300"
             )}
           >
             <span className={cn(
@@ -864,7 +865,7 @@ function TiendaTab() {
           <button
             onClick={handleSave}
             disabled={saving}
-            className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-[#00B4A6] text-white text-sm font-bold hover:bg-primary-dark transition-colors disabled:opacity-50"
+            className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-primary text-white text-sm font-bold hover:bg-primary-dark transition-colors disabled:opacity-50"
           >
             {saving ? (
               <div className="h-4 w-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
@@ -952,7 +953,7 @@ function ProductosTab() {
         <button
           onClick={handleSync}
           disabled={syncing}
-          className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-[#00B4A6] text-white text-sm font-bold hover:bg-primary-dark transition-colors disabled:opacity-50"
+          className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-primary text-white text-sm font-bold hover:bg-primary-dark transition-colors disabled:opacity-50"
         >
           <RefreshCw className={cn("h-4 w-4", syncing && "animate-spin")} />
           {syncing ? "Sincronizando..." : "Sincronizar inventario"}
@@ -1255,7 +1256,7 @@ function ComisionesTab() {
               className={cn(
                 "px-3 py-1.5 rounded-lg text-xs font-bold transition-colors",
                 filterStatus === f.value
-                  ? "bg-[#00B4A6] text-white"
+                  ? "bg-primary text-white"
                   : "bg-gray-100 text-gray-600 hover:bg-gray-200"
               )}
             >
@@ -1453,7 +1454,7 @@ function CuponesTab() {
         <p className="text-sm text-gray-500">{coupons.length} cupón(es)</p>
         <button
           onClick={() => setShowForm(!showForm)}
-          className="px-4 py-2 rounded-xl text-sm font-semibold bg-[#00B4A6] text-white hover:opacity-90 transition"
+          className="px-4 py-2 rounded-xl text-sm font-semibold bg-primary text-white hover:opacity-90 transition"
         >
           + Nuevo Cupón
         </button>
@@ -1469,7 +1470,7 @@ function CuponesTab() {
                 placeholder="BIENVENIDO10"
                 value={form.code}
                 onChange={(e) => setForm({ ...form, code: e.target.value })}
-                className="w-full px-3 py-2 rounded-xl border border-gray-300 text-sm focus:ring-2 focus:ring-[#00B4A6] focus:border-transparent"
+                className="w-full px-3 py-2 rounded-xl border border-gray-300 text-sm focus:ring-2 focus:ring-primary focus:border-transparent"
               />
             </div>
             <div>
@@ -1477,7 +1478,7 @@ function CuponesTab() {
               <select
                 value={form.discountType}
                 onChange={(e) => setForm({ ...form, discountType: e.target.value as "percent" | "fixed" })}
-                className="w-full px-3 py-2 rounded-xl border border-gray-300 text-sm focus:ring-2 focus:ring-[#00B4A6] focus:border-transparent"
+                className="w-full px-3 py-2 rounded-xl border border-gray-300 text-sm focus:ring-2 focus:ring-primary focus:border-transparent"
               >
                 <option value="percent">Porcentaje (%)</option>
                 <option value="fixed">Monto fijo (S/)</option>
@@ -1494,7 +1495,7 @@ function CuponesTab() {
                 placeholder="10"
                 value={form.discountValue}
                 onChange={(e) => setForm({ ...form, discountValue: e.target.value })}
-                className="w-full px-3 py-2 rounded-xl border border-gray-300 text-sm focus:ring-2 focus:ring-[#00B4A6] focus:border-transparent"
+                className="w-full px-3 py-2 rounded-xl border border-gray-300 text-sm focus:ring-2 focus:ring-primary focus:border-transparent"
               />
             </div>
             <div>
@@ -1504,7 +1505,7 @@ function CuponesTab() {
                 placeholder="Opcional"
                 value={form.minPurchase}
                 onChange={(e) => setForm({ ...form, minPurchase: e.target.value })}
-                className="w-full px-3 py-2 rounded-xl border border-gray-300 text-sm focus:ring-2 focus:ring-[#00B4A6] focus:border-transparent"
+                className="w-full px-3 py-2 rounded-xl border border-gray-300 text-sm focus:ring-2 focus:ring-primary focus:border-transparent"
               />
             </div>
             <div>
@@ -1514,7 +1515,7 @@ function CuponesTab() {
                 placeholder="Ilimitado"
                 value={form.maxUses}
                 onChange={(e) => setForm({ ...form, maxUses: e.target.value })}
-                className="w-full px-3 py-2 rounded-xl border border-gray-300 text-sm focus:ring-2 focus:ring-[#00B4A6] focus:border-transparent"
+                className="w-full px-3 py-2 rounded-xl border border-gray-300 text-sm focus:ring-2 focus:ring-primary focus:border-transparent"
               />
             </div>
           </div>
@@ -1526,7 +1527,7 @@ function CuponesTab() {
                 placeholder="Descuento de bienvenida"
                 value={form.description}
                 onChange={(e) => setForm({ ...form, description: e.target.value })}
-                className="w-full px-3 py-2 rounded-xl border border-gray-300 text-sm focus:ring-2 focus:ring-[#00B4A6] focus:border-transparent"
+                className="w-full px-3 py-2 rounded-xl border border-gray-300 text-sm focus:ring-2 focus:ring-primary focus:border-transparent"
               />
             </div>
             <div>
@@ -1535,7 +1536,7 @@ function CuponesTab() {
                 type="datetime-local"
                 value={form.expiresAt}
                 onChange={(e) => setForm({ ...form, expiresAt: e.target.value ? new Date(e.target.value).toISOString() : "" })}
-                className="w-full px-3 py-2 rounded-xl border border-gray-300 text-sm focus:ring-2 focus:ring-[#00B4A6] focus:border-transparent"
+                className="w-full px-3 py-2 rounded-xl border border-gray-300 text-sm focus:ring-2 focus:ring-primary focus:border-transparent"
               />
             </div>
           </div>
@@ -1549,7 +1550,7 @@ function CuponesTab() {
             <button
               onClick={handleCreate}
               disabled={saving || !form.code || !form.discountValue}
-              className="px-4 py-2 rounded-xl text-sm font-semibold bg-[#00B4A6] text-white hover:opacity-90 transition disabled:opacity-50"
+              className="px-4 py-2 rounded-xl text-sm font-semibold bg-primary text-white hover:opacity-90 transition disabled:opacity-50"
             >
               {saving ? "Guardando…" : "Crear Cupón"}
             </button>
@@ -1575,7 +1576,7 @@ function CuponesTab() {
             >
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2">
-                  <span className="font-mono font-bold text-sm text-[#00B4A6]">{c.code}</span>
+                  <span className="font-mono font-bold text-sm text-primary">{c.code}</span>
                   <span className={cn(
                     "text-[10px] font-semibold px-2 py-0.5 rounded-full",
                     c.active ? "bg-emerald-100 text-emerald-700" : "bg-gray-200 text-gray-500"
@@ -1697,12 +1698,12 @@ function FidelidadTab() {
           value={phone}
           onChange={(e) => setPhone(e.target.value)}
           onKeyDown={(e) => e.key === "Enter" && searchCustomer()}
-          className="flex-1 px-3 py-2 rounded-xl border border-gray-300 text-sm focus:ring-2 focus:ring-[#00B4A6] focus:border-transparent"
+          className="flex-1 px-3 py-2 rounded-xl border border-gray-300 text-sm focus:ring-2 focus:ring-primary focus:border-transparent"
         />
         <button
           onClick={searchCustomer}
           disabled={loading}
-          className="px-4 py-2 rounded-xl text-sm font-semibold bg-[#00B4A6] text-white hover:opacity-90 transition disabled:opacity-50"
+          className="px-4 py-2 rounded-xl text-sm font-semibold bg-primary text-white hover:opacity-90 transition disabled:opacity-50"
         >
           {loading ? "Buscando…" : "Buscar"}
         </button>
@@ -1717,7 +1718,7 @@ function FidelidadTab() {
               <p className="text-xs text-gray-500">{data.phone}</p>
             </div>
             <div className="text-right">
-              <p className="text-2xl font-extrabold text-[#00B4A6]">{data.points}</p>
+              <p className="text-2xl font-extrabold text-primary">{data.points}</p>
               <span className={cn("text-[10px] font-semibold px-2 py-0.5 rounded-full", TIER_CONFIG[data.tier]?.className ?? "bg-gray-100 text-gray-600")}>
                 {TIER_CONFIG[data.tier]?.label ?? data.tier}
               </span>
@@ -1735,7 +1736,7 @@ function FidelidadTab() {
                 placeholder="100"
                 value={earnPoints}
                 onChange={(e) => setEarnPoints(e.target.value)}
-                className="w-full px-3 py-2 rounded-xl border border-gray-300 text-sm focus:ring-2 focus:ring-[#00B4A6] focus:border-transparent"
+                className="w-full px-3 py-2 rounded-xl border border-gray-300 text-sm focus:ring-2 focus:ring-primary focus:border-transparent"
               />
             </div>
             <button
@@ -1865,7 +1866,7 @@ function ResenasTab() {
       {/* Summary strip */}
       <div className="grid grid-cols-3 gap-3">
         <div className="bg-white border border-gray-200 rounded-2xl p-3 text-center">
-          <p className="text-2xl font-extrabold text-[#00B4A6]">{reviews.length}</p>
+          <p className="text-2xl font-extrabold text-primary">{reviews.length}</p>
           <p className="text-[10px] text-gray-500 mt-0.5">Total reseñas</p>
         </div>
         <div className="bg-white border border-gray-200 rounded-2xl p-3 text-center">
@@ -1891,7 +1892,7 @@ function ResenasTab() {
             className={cn(
               "px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors",
               filter === f
-                ? "bg-[#00B4A6] text-white"
+                ? "bg-primary text-white"
                 : "bg-gray-100 text-gray-600 hover:bg-gray-200"
             )}
           >
@@ -1964,7 +1965,7 @@ function ResenasTab() {
                     onClick={() => { setReplyingTo(replyingTo === review.id ? null : review.id); setReplyText(review.adminReply ?? ""); }}
                     className={cn(
                       "p-1.5 rounded-lg transition-colors",
-                      replyingTo === review.id ? "bg-[#00B4A6]/20 text-[#00B4A6]" : "bg-gray-50 text-gray-400 hover:bg-gray-100"
+                      replyingTo === review.id ? "bg-primary/20 text-primary" : "bg-gray-50 text-gray-400 hover:bg-gray-100"
                     )}
                     title="Responder"
                   >
@@ -1978,8 +1979,8 @@ function ResenasTab() {
 
               {/* Existing admin reply */}
               {review.adminReply && replyingTo !== review.id && (
-                <div className="bg-[#00B4A6]/5 border border-[#00B4A6]/20 rounded-xl p-3">
-                  <p className="text-[10px] font-bold text-[#00B4A6] mb-1">Tu respuesta:</p>
+                <div className="bg-primary/5 border border-primary/20 rounded-xl p-3">
+                  <p className="text-[10px] font-bold text-primary mb-1">Tu respuesta:</p>
                   <p className="text-xs text-gray-700">{review.adminReply}</p>
                 </div>
               )}
@@ -1992,13 +1993,13 @@ function ResenasTab() {
                     onChange={(e) => setReplyText(e.target.value)}
                     placeholder="Escribe tu respuesta al cliente..."
                     rows={2}
-                    className="w-full rounded-xl border border-gray-200 px-3 py-2 text-sm focus:ring-2 focus:ring-[#00B4A6]/30 focus:border-[#00B4A6] resize-none"
+                    className="w-full rounded-xl border border-gray-200 px-3 py-2 text-sm focus:ring-2 focus:ring-primary/30 focus:border-primary resize-none"
                   />
                   <div className="flex gap-2">
                     <button
                       onClick={() => handleReply(review.id)}
                       disabled={saving === review.id || !replyText.trim()}
-                      className="px-3 py-1.5 rounded-lg bg-[#00B4A6] text-white text-xs font-bold hover:bg-primary-dark transition-colors disabled:opacity-50"
+                      className="px-3 py-1.5 rounded-lg bg-primary text-white text-xs font-bold hover:bg-primary-dark transition-colors disabled:opacity-50"
                     >
                       {saving === review.id ? "Guardando..." : "Enviar respuesta"}
                     </button>
@@ -2066,7 +2067,7 @@ export default function MarketplaceModule() {
       >
         <button
           onClick={refreshKpis}
-          className="p-2 rounded-lg text-gray-400 hover:text-[#00B4A6] hover:bg-[#00B4A6]/10 transition-colors"
+          className="p-2 rounded-lg text-gray-400 hover:text-primary hover:bg-primary/10 transition-colors"
           title="Actualizar"
         >
           <RefreshCw className={cn("h-4 w-4", kpisLoading && "animate-spin")} />
@@ -2076,7 +2077,7 @@ export default function MarketplaceModule() {
       {/* KPI strip */}
       <div className="grid grid-cols-3 gap-3">
         {[
-          { label: "Productos publicados", value: kpis.publishedProducts, color: "text-[#00B4A6]" },
+          { label: "Productos publicados", value: kpis.publishedProducts, color: "text-primary" },
           { label: "Órdenes del mes",      value: kpis.monthOrders,       color: "text-blue-600" },
           { label: "Comisiones pendientes",value: `S/${kpis.pendingCommissions.toFixed(2)}`, color: "text-amber-600" },
         ].map(({ label, value, color }) => (
@@ -2100,7 +2101,6 @@ export default function MarketplaceModule() {
         onTabChange={(id) => setTab(id)}
         moduleId={MODULE_ID}
       >
-        {tab === "dashboard"   && <DashboardTab />}
         {tab === "tienda"      && <TiendaTab />}
         {tab === "productos"   && <ProductosTab />}
         {tab === "ordenes"     && <OrdenesTab />}

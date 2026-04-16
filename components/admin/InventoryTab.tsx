@@ -666,11 +666,11 @@ export default function InventoryTab() {
   );
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-6">
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
-          <h2 className="text-xl font-extrabold text-gray-900 dark:text-foreground">Inventario</h2>
+          <h2 className="text-xl font-bold text-gray-900 dark:text-foreground">Inventario</h2>
           <p className="text-sm text-gray-500 dark:text-muted flex items-center flex-wrap gap-2">
             {totalProducts} productos · {activeProducts} activos
             {lowStockCount > 0 && (
@@ -699,14 +699,14 @@ export default function InventoryTab() {
           <button
             onClick={() => setShowScanner(true)}
             disabled={scanLoading}
-            className="flex items-center gap-1.5 text-sm font-bold text-primary border border-primary/30 hover:bg-primary/5 px-3 py-1.5 rounded-lg transition-colors"
+            className="flex items-center gap-1.5 text-sm font-medium rounded-xl border border-gray-200 dark:border-zinc-700 hover:bg-gray-50 dark:hover:bg-zinc-800 px-4 py-2.5 transition-colors"
           >
             {scanLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <ScanBarcode className="h-4 w-4" />}
             {scanLoading ? "Buscando…" : "Escanear"}
           </button>
           <button
             onClick={() => { setPickerSearch(""); setPickerCat("todos"); setShowPicker(true); }}
-            className="flex items-center gap-1.5 text-sm font-bold text-white bg-primary hover:bg-primary-dark px-3 py-1.5 rounded-lg transition-colors shadow-sm"
+            className="flex items-center gap-1.5 text-sm font-medium text-white rounded-xl bg-emerald-600 hover:bg-emerald-700 px-4 py-2.5 transition-colors"
           >
             <Plus className="h-4 w-4" /> Nuevo
           </button>
@@ -717,26 +717,26 @@ export default function InventoryTab() {
       </div>
 
       {/* Stats */}
-      <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
-        <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl p-3">
-          <p className="text-[10px] font-bold text-gray-400 dark:text-muted uppercase tracking-wider">Productos</p>
-          <p className="text-xl font-extrabold text-gray-900 dark:text-foreground mt-0.5">{totalProducts}</p>
+      <div className="grid grid-cols-2 sm:grid-cols-5 gap-4">
+        <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl p-5">
+          <p className="text-sm font-medium text-gray-500 dark:text-zinc-400 uppercase tracking-wider">Productos</p>
+          <p className="text-2xl font-bold text-gray-900 dark:text-foreground mt-1">{totalProducts}</p>
         </div>
-        <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl p-3">
-          <p className="text-[10px] font-bold text-gray-400 dark:text-muted uppercase tracking-wider">Activos</p>
-          <p className="text-xl font-extrabold text-emerald-600 mt-0.5">{activeProducts}</p>
+        <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl p-5">
+          <p className="text-sm font-medium text-gray-500 dark:text-zinc-400 uppercase tracking-wider">Activos</p>
+          <p className="text-2xl font-bold text-emerald-600 mt-1">{activeProducts}</p>
         </div>
-        <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl p-3">
-          <p className="text-[10px] font-bold text-gray-400 dark:text-muted uppercase tracking-wider">Bajo stock</p>
-          <p className={cn("text-xl font-extrabold mt-0.5", lowStockCount > 0 ? "text-amber-600" : "text-gray-900 dark:text-foreground")}>{lowStockCount}</p>
+        <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl p-5">
+          <p className="text-sm font-medium text-gray-500 dark:text-zinc-400 uppercase tracking-wider">Bajo stock</p>
+          <p className={cn("text-2xl font-bold mt-1", lowStockCount > 0 ? "text-amber-600" : "text-gray-900 dark:text-foreground")}>{lowStockCount}</p>
         </div>
-        <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl p-3">
-          <p className="text-[10px] font-bold text-gray-400 dark:text-muted uppercase tracking-wider">Próx. a vencer</p>
-          <p className={cn("text-xl font-extrabold mt-0.5", expiringSoonCount > 0 ? "text-orange-600" : "text-gray-900 dark:text-foreground")}>{expiringSoonCount}</p>
+        <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl p-5">
+          <p className="text-sm font-medium text-gray-500 dark:text-zinc-400 uppercase tracking-wider">Prox. a vencer</p>
+          <p className={cn("text-2xl font-bold mt-1", expiringSoonCount > 0 ? "text-orange-600" : "text-gray-900 dark:text-foreground")}>{expiringSoonCount}</p>
         </div>
-        <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl p-3">
-          <p className="text-[10px] font-bold text-gray-400 dark:text-muted uppercase tracking-wider">Valor total</p>
-          <p className="text-xl font-extrabold text-primary mt-0.5">{fmt(totalStockValue)}</p>
+        <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl p-5">
+          <p className="text-sm font-medium text-gray-500 dark:text-zinc-400 uppercase tracking-wider">Valor total</p>
+          <p className="text-2xl font-bold text-primary mt-1">{fmt(totalStockValue)}</p>
         </div>
       </div>
 
@@ -781,7 +781,7 @@ export default function InventoryTab() {
                   <AlertTriangle className="h-5 w-5 text-amber-600 dark:text-amber-400" />
                 </div>
                 <div>
-                  <h3 className="text-base font-extrabold text-gray-900 dark:text-foreground flex flex-wrap items-center gap-2">
+                  <h3 className="text-lg font-semibold text-gray-900 dark:text-foreground flex flex-wrap items-center gap-2">
                     Alertas de Orden de Compra
                     <span className="inline-flex items-center px-2 py-0.5 rounded-full bg-amber-200 dark:bg-amber-800 text-amber-900 dark:text-amber-100 text-xs font-bold">
                       {lowStockProducts.length}

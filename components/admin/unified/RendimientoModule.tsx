@@ -9,11 +9,7 @@ import AdminModuleHeader from "@/components/admin/shared/AdminModuleHeader";
 import AdminTabBar from "@/components/admin/shared/AdminTabBar";
 import { cn } from "@/lib/utils";
 
-const S = () => (
-  <div className="flex items-center justify-center py-12">
-    <div className="h-8 w-8 border-4 border-primary border-t-transparent rounded-full animate-spin" />
-  </div>
-);
+import { TabLoadingSkeleton as S } from "@/components/ui/skeletons";
 
 const WebVitalsWidget = dynamic(
   () => import("@/components/admin/WebVitalsWidget"),
@@ -133,9 +129,9 @@ function ConnectionQualityCard() {
   }
 
   const GRADE_STYLES = {
-    buena: { color: "text-emerald-600", bg: "bg-emerald-50", emoji: "🟢" },
-    regular: { color: "text-amber-600", bg: "bg-amber-50", emoji: "🟡" },
-    lenta: { color: "text-red-600", bg: "bg-red-50", emoji: "🔴" },
+    buena: { color: "text-emerald-600", bg: "bg-emerald-50", dot: "bg-emerald-500" },
+    regular: { color: "text-amber-600", bg: "bg-amber-50", dot: "bg-amber-500" },
+    lenta: { color: "text-red-600", bg: "bg-red-50", dot: "bg-red-500" },
   };
   const style = GRADE_STYLES[quality.grade];
 
@@ -148,7 +144,7 @@ function ConnectionQualityCard() {
           </div>
           <div>
             <p className={cn("text-sm font-bold", style.color)}>
-              {style.emoji} Conexión {quality.grade}
+              <span className={cn("inline-block w-2.5 h-2.5 rounded-full", style.dot)} /> Conexión {quality.grade}
             </p>
             <p className="text-xs text-gray-500">
               {quality.grade === "buena"
@@ -297,7 +293,7 @@ function PerformanceHistoryTab() {
               disabled={recording}
               className="px-3 py-1.5 bg-primary text-white text-xs font-bold rounded-lg hover:bg-primary/90 transition-colors disabled:opacity-50"
             >
-              {recording ? "Midiendo..." : "📊 Medir ahora"}
+              {recording ? "Midiendo..." : <><BarChart3 className="h-3.5 w-3.5 inline -mt-0.5" /> Medir ahora</>}
             </button>
           </div>
         </div>

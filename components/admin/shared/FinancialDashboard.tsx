@@ -278,9 +278,9 @@ function RevenueBarChart({ dias }: { dias: DayBucket[] }) {
               className={cn(
                 "w-full rounded-t-[3px] transition-all duration-150",
                 isActive
-                  ? "bg-[#00B4A6]"
+                  ? "bg-primary"
                   : day.revenue > 0
-                  ? "bg-[#00B4A6]/50 group-hover:bg-[#00B4A6]"
+                  ? "bg-primary/50 group-hover:bg-primary"
                   : "bg-gray-100 dark:bg-gray-800"
               )}
               style={{ height: `${heightPct}%` }}
@@ -299,7 +299,7 @@ function RevenueBarChart({ dias }: { dias: DayBucket[] }) {
           }}
         >
           <p className="font-semibold">{dias[tooltip.index].label}</p>
-          <p className="text-[#00B4A6] font-mono">{formatCurrency(dias[tooltip.index].revenue)}</p>
+          <p className="text-primary font-mono">{formatCurrency(dias[tooltip.index].revenue)}</p>
           <div
             className="absolute left-1/2 -translate-x-1/2 top-full w-0 h-0"
             style={{ borderLeft: "5px solid transparent", borderRight: "5px solid transparent", borderTop: "5px solid #111827" }}
@@ -351,7 +351,7 @@ function TopProductsTable({ productos }: { productos: TopProduct[] }) {
                 className="h-full rounded-full transition-all duration-500"
                 style={{
                   width: `${p.pct}%`,
-                  background: i === 0 ? "#00B4A6" : i === 1 ? "#f4a261" : `#00B4A6${Math.round(80 - i * 15).toString(16).padStart(2, "0")}`,
+                  background: i === 0 ? "var(--color-primary)" : i === 1 ? "#f4a261" : `var(--color-primary)${Math.round(80 - i * 15).toString(16).padStart(2, "0")}`,
                 }}
               />
             </div>
@@ -373,8 +373,8 @@ interface QuickStatProps {
 function QuickStat({ icon: Icon, label, value }: QuickStatProps) {
   return (
     <div className="flex items-center gap-2.5 bg-gray-50 dark:bg-gray-900/50 rounded-xl px-4 py-3 flex-1 min-w-0">
-      <div className="h-8 w-8 rounded-lg bg-[#00B4A6]/10 flex items-center justify-center shrink-0">
-        <Icon className="h-4 w-4 text-[#00B4A6]" />
+      <div className="h-8 w-8 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
+        <Icon className="h-4 w-4 text-primary" />
       </div>
       <div className="min-w-0">
         <p className="text-[10px] text-gray-400 dark:text-gray-500 uppercase tracking-wider font-medium truncate">
@@ -469,7 +469,7 @@ export default function FinancialDashboard() {
               .catch((e) => setError(e instanceof Error ? e.message : "Error"))
               .finally(() => setLoading(false));
           }}
-          className="mt-4 px-4 py-2 rounded-lg bg-[#00B4A6] text-white text-sm font-semibold hover:bg-[#009e92] transition-colors"
+          className="mt-4 px-4 py-2 rounded-lg bg-primary text-white text-sm font-semibold hover:bg-[#009e92] transition-colors"
         >
           Reintentar
         </button>
@@ -481,8 +481,8 @@ export default function FinancialDashboard() {
   if (!metrics || metrics.ventasBrutas === 0) {
     return (
       <div className="flex flex-col items-center justify-center py-16 text-center">
-        <div className="h-14 w-14 rounded-2xl bg-[#00B4A6]/10 flex items-center justify-center mb-4">
-          <DollarSign className="h-7 w-7 text-[#00B4A6]" />
+        <div className="h-14 w-14 rounded-2xl bg-primary/10 flex items-center justify-center mb-4">
+          <DollarSign className="h-7 w-7 text-primary" />
         </div>
         <p className="text-base font-semibold text-gray-800 dark:text-gray-200 mb-1">
           Aun no hay ventas registradas
@@ -522,9 +522,9 @@ export default function FinancialDashboard() {
           label="Ganancia bruta"
           value={formatCurrency(gananciaBruta)}
           icon={TrendingUp}
-          accent="bg-[#00B4A6]/10"
-          iconColor="text-[#00B4A6]"
-          borderColor="#00B4A6"
+          accent="bg-primary/10"
+          iconColor="text-primary"
+          borderColor="var(--color-primary)"
           badge={gananciaBruta > 0 ? "positivo" : "negativo"}
         />
         <PLCard
@@ -548,8 +548,8 @@ export default function FinancialDashboard() {
               Ultimos 30 dias — pasa el cursor sobre una barra para ver el detalle
             </p>
           </div>
-          <div className="h-8 w-8 rounded-xl bg-[#00B4A6]/10 flex items-center justify-center">
-            <BarChart3 className="h-4 w-4 text-[#00B4A6]" />
+          <div className="h-8 w-8 rounded-xl bg-primary/10 flex items-center justify-center">
+            <BarChart3 className="h-4 w-4 text-primary" />
           </div>
         </div>
 
