@@ -13,8 +13,8 @@ type Goal = {
 
 const SEED: Goal[] = [];
 
-const PRIORITY_COLORS = { alta: "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400", media: "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400", baja: "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400" };
-const STATUS_COLORS = { pendiente: "bg-gray-100 text-gray-600 dark:bg-gray-700/30 dark:text-gray-400", "en-progreso": "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400", completado: "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400", vencido: "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400" };
+const PRIORITY_COLORS = { alta: "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400", media: "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400", baja: "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400" };
+const STATUS_COLORS = { pendiente: "bg-gray-100 text-gray-600 dark:bg-gray-700/30 dark:text-gray-400", "en-progreso": "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400", completado: "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400", vencido: "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400" };
 
 function fmt(v: number, unit: string) { return unit === "S/" ? `S/ ${v.toLocaleString("es-PE")}` : `${v} ${unit}`; }
 function fmtDate(iso: string) { return new Date(iso).toLocaleDateString("es-PE", { day: "2-digit", month: "short", year: "numeric" }); }
@@ -36,7 +36,7 @@ export default function GoalTrackerTab() {
 
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
         {[
-          { label: "Metas totales", value: goals.length, color: "text-blue-500", icon: Target },
+          { label: "Metas totales", value: goals.length, color: "text-emerald-500", icon: Target },
           { label: "En progreso", value: inProgress, color: "text-amber-500", icon: Flame },
           { label: "Completadas", value: completed, color: "text-emerald-500", icon: Trophy },
           { label: "Tasa de éxito", value: `${goals.length > 0 ? Math.round((completed / goals.length) * 100) : 0}%`, color: "text-violet-500", icon: Star },

@@ -113,12 +113,12 @@ export default function MorningSummaryModal() {
                   </div>
                   <p className="text-lg font-black text-emerald-700 dark:text-emerald-300">{formatCurrency(data.ventasAyer)}</p>
                 </div>
-                <div className="bg-blue-50 dark:bg-blue-900/20 rounded-xl p-3">
+                <div className="bg-emerald-50 dark:bg-emerald-900/20 rounded-xl p-3">
                   <div className="flex items-center gap-2 mb-1">
-                    <ShoppingCart className="h-4 w-4 text-blue-600 dark:text-blue-400" />
-                    <span className="text-[10px] font-bold text-blue-600 dark:text-blue-400 uppercase">Pedidos pendientes</span>
+                    <ShoppingCart className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
+                    <span className="text-[10px] font-bold text-emerald-600 dark:text-emerald-400 uppercase">Pedidos pendientes</span>
                   </div>
-                  <p className="text-lg font-black text-blue-700 dark:text-blue-300">{data.pedidosPendientes}</p>
+                  <p className="text-lg font-black text-emerald-700 dark:text-emerald-300">{data.pedidosPendientes}</p>
                 </div>
                 <div className="bg-amber-50 dark:bg-amber-900/20 rounded-xl p-3">
                   <div className="flex items-center gap-2 mb-1">

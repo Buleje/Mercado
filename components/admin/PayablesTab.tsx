@@ -14,7 +14,7 @@ import TableSkeleton from "@/components/admin/shared/TableSkeleton";
 const PAY_STATUS_LABELS = { pendiente: "Pendiente", parcial: "Parcial", pagado: "Pagado" } as const;
 const PAY_STATUS_COLORS = {
   pendiente: "bg-amber-100 text-amber-700",
-  parcial: "bg-blue-100 text-blue-700",
+  parcial: "bg-emerald-100 text-emerald-700",
   pagado: "bg-emerald-100 text-emerald-700",
 } as const;
 const METHOD_LABELS: Record<PaymentMethod, string> = {
@@ -197,7 +197,7 @@ export default function PayablesTab() {
                     {/* Progress bar */}
                     <div className="w-full bg-gray-100 dark:bg-accent rounded-full h-1.5 mt-2">
                       <div
-                        className={cn("h-1.5 rounded-full transition-all", pct >= 100 ? "bg-emerald-500" : pct > 0 ? "bg-blue-500" : "bg-gray-200")}
+                        className={cn("h-1.5 rounded-full transition-all", pct >= 100 ? "bg-emerald-500" : pct > 0 ? "bg-emerald-500" : "bg-gray-200")}
                         style={{ width: `${Math.min(pct, 100)}%` }}
                       />
                     </div>

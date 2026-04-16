@@ -23,7 +23,7 @@ const CATEGORY_META: Record<GoalCategory, { label: string; color: string; bg: st
   ventas:    { label: "Ventas",    color: "text-emerald-600", bg: "bg-emerald-50",  icon: TrendingUp },
   pedidos:   { label: "Pedidos",   color: "text-amber-600",   bg: "bg-amber-50",    icon: BarChart3 },
   clientes:  { label: "Clientes",  color: "text-violet-600",  bg: "bg-violet-50",   icon: Target },
-  productos: { label: "Productos", color: "text-blue-600",    bg: "bg-blue-50",     icon: BarChart3 },
+  productos: { label: "Productos", color: "text-emerald-600",    bg: "bg-emerald-50",     icon: BarChart3 },
   caja:      { label: "Caja",      color: "text-pink-600",    bg: "bg-pink-50",     icon: TrendingUp },
 };
 
@@ -149,9 +149,9 @@ export default function GoalsTab() {
             <CheckCircle2 className="h-4 w-4 text-emerald-500" />
             <span className="text-sm font-bold text-emerald-700 dark:text-emerald-400">{achieved}/{total} logradas</span>
           </div>
-          <div className="flex flex-wrap items-center gap-2 px-2 sm:px-4 py-1.5 sm:py-2 rounded-xl bg-blue-50 dark:bg-blue-950/30 border border-blue-100 dark:border-blue-900/30">
-            <BarChart3 className="h-4 w-4 text-blue-500" />
-            <span className="text-sm font-bold text-blue-700 dark:text-blue-400">Promedio global {avgPct}%</span>
+          <div className="flex flex-wrap items-center gap-2 px-2 sm:px-4 py-1.5 sm:py-2 rounded-xl bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-100 dark:border-emerald-900/30">
+            <BarChart3 className="h-4 w-4 text-emerald-500" />
+            <span className="text-sm font-bold text-emerald-700 dark:text-emerald-400">Promedio global {avgPct}%</span>
           </div>
         </div>
       )}

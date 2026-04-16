@@ -21,7 +21,7 @@ const FIELDS = [
   { id: "puntos",              label: "Puntos de fidelidad" },
 ];
 const OPERATORS = ["<", ">", "=", ">=", "<="];
-const COLORS = ["bg-blue-500","bg-emerald-500","bg-amber-500","bg-red-500","bg-violet-500","bg-pink-500","bg-cyan-500"];
+const COLORS = ["bg-emerald-500","bg-emerald-500","bg-amber-500","bg-red-500","bg-violet-500","bg-pink-500","bg-cyan-500"];
 
 const DEFAULT_SEGMENTS: Omit<Segment, "customerCount" | "avgTicket" | "avgFrequency" | "matchedCustomers">[] = [
   { id: "sg-perdido",   name: "Clientes perdidos",    description: "Sin comprar en 60+ días",              rules: [{ field: "dias_sin_compra",    operator: ">",  value: "60"  }], lastUpdated: new Date().toISOString().split("T")[0], color: "bg-red-500",     active: true },
@@ -176,7 +176,7 @@ export default function AutoSegmentsTab() {
       {/* KPIs */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
         {[
-          { label: "Segmentos creados",    value: segments.length,      color: "text-blue-500" },
+          { label: "Segmentos creados",    value: segments.length,      color: "text-emerald-500" },
           { label: "Segmentos activos",    value: activeCount,          color: "text-emerald-500" },
           { label: "Clientes segmentados", value: totalSegmented,       color: "text-violet-500" },
           { label: "Total en base",        value: allCustomers.length,  color: "text-gray-500" },

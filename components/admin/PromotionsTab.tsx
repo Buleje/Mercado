@@ -498,7 +498,7 @@ export default function PromotionsTab() {
               const statusConfig = {
                 scheduled: { label: "Programada", color: "bg-gray-100 text-gray-700", icon: Clock },
                 active: { label: "Activa", color: "bg-green-100 text-green-700", icon: Play },
-                completed: { label: "Finalizada", color: "bg-blue-100 text-blue-700", icon: Check },
+                completed: { label: "Finalizada", color: "bg-emerald-100 text-emerald-700", icon: Check },
                 paused: { label: "Pausada", color: "bg-amber-100 text-amber-700", icon: Pause },
               };
               const config = statusConfig[c.status];
@@ -548,7 +548,7 @@ export default function PromotionsTab() {
                       )}
                       <button
                         onClick={() => openEditCampaign(c)}
-                        className="p-1.5 rounded-lg text-gray-400 dark:text-muted hover:text-blue-500 hover:bg-blue-50 transition-colors"
+                        className="p-1.5 rounded-lg text-gray-400 dark:text-muted hover:text-emerald-500 hover:bg-emerald-50 transition-colors"
                         title="Editar"
                       >
                         <ExternalLink className="h-4 w-4" />
@@ -639,7 +639,7 @@ export default function PromotionsTab() {
                             </span>
                           )}
                           <span className={cn("inline-flex px-2 py-0.5 rounded-full text-xs font-bold",
-                            p.targetType === "all" ? "bg-blue-100 text-blue-700" :
+                            p.targetType === "all" ? "bg-emerald-100 text-emerald-700" :
                             p.targetType === "group" ? "bg-purple-100 text-purple-700" : "bg-amber-100 text-amber-700"
                           )}>
                             {p.targetType === "all" ? "Todos" : p.targetType === "group" ? "Grupo" : "Individual"}
@@ -662,7 +662,7 @@ export default function PromotionsTab() {
                         </button>
                         <button
                           onClick={() => openEdit(p)}
-                          className="p-1.5 rounded-lg text-gray-400 dark:text-muted hover:text-blue-500 hover:bg-blue-50 transition-colors"
+                          className="p-1.5 rounded-lg text-gray-400 dark:text-muted hover:text-emerald-500 hover:bg-emerald-50 transition-colors"
                           title="Editar"
                         >
                           <ExternalLink className="h-4 w-4" />
@@ -839,7 +839,7 @@ export default function PromotionsTab() {
                   </span>
                 )}
                 <span className={cn("inline-flex px-2.5 py-1 rounded-full text-xs font-bold",
-                  detailPromo.targetType === "all" ? "bg-blue-100 text-blue-700" : detailPromo.targetType === "group" ? "bg-purple-100 text-purple-700" : "bg-amber-100 text-amber-700"
+                  detailPromo.targetType === "all" ? "bg-emerald-100 text-emerald-700" : detailPromo.targetType === "group" ? "bg-purple-100 text-purple-700" : "bg-amber-100 text-amber-700"
                 )}>{detailPromo.targetType === "all" ? "Todos los clientes" : detailPromo.targetType === "group" ? "Grupo seleccionado" : "Individual"}</span>
               </div>
               {detailPromo.description && (

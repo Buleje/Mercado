@@ -30,7 +30,6 @@ export function Sparkline({ data, color }: { data: number[]; color: string }) {
   // Infer color value from Tailwind class
   const colorMap: Record<string, string> = {
     "emerald-500": "#10b981",
-    "blue-500": "#3b82f6",
     "violet-500": "#8b5cf6",
     "indigo-500": "#00B4A6",
     "cyan-500": "#06b6d4",
@@ -136,7 +135,7 @@ export function Card({ title, icon: Icon, children, action }: { title: string; i
 export function DBadge({ children, color }: { children: React.ReactNode; color: "green"|"red"|"amber"|"blue"|"purple"|"gray" }) {
   const m: Record<string,string> = {
     green:"bg-emerald-50 text-emerald-600", red:"bg-red-50 text-red-600",
-    amber:"bg-amber-50 text-amber-600", blue:"bg-blue-50 text-blue-600",
+    amber:"bg-amber-50 text-amber-600", blue:"bg-emerald-50 text-emerald-600",
     purple:"bg-purple-50 text-purple-600", gray:"bg-gray-100 text-gray-500",
   };
   return <span className={cn("inline-flex px-1.5 py-0.5 rounded text-xs font-semibold",m[color])}>{children}</span>;

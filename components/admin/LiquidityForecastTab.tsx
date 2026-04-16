@@ -123,7 +123,7 @@ function buildForecast(
 }
 
 const SCENARIO_META: Record<Scenario, { label: string; color: string }> = {
-  base:      { label: "Base",      color: "text-blue-600"    },
+  base:      { label: "Base",      color: "text-emerald-600"    },
   optimista: { label: "Optimista", color: "text-emerald-600" },
   pesimista: { label: "Pesimista", color: "text-red-600"     },
 };
@@ -252,7 +252,7 @@ export default function LiquidityForecastTab() {
       {/* KPIs */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
         {[
-          { label: "Saldo inicial", value: fmt(openingBalance), color: "text-blue-600", bg: "bg-blue-50 dark:bg-blue-950/30", icon: Wallet },
+          { label: "Saldo inicial", value: fmt(openingBalance), color: "text-emerald-600", bg: "bg-emerald-50 dark:bg-emerald-950/30", icon: Wallet },
           { label: "Mínimo proyectado", value: fmt(stats.minCum), color: stats.minCum < 0 ? "text-red-600" : "text-emerald-600", bg: stats.minCum < 0 ? "bg-red-50 dark:bg-red-950/30" : "bg-emerald-50 dark:bg-emerald-950/30", icon: ArrowDown },
           { label: "Máximo proyectado", value: fmt(stats.maxCum), color: "text-emerald-600", bg: "bg-emerald-50 dark:bg-emerald-950/30", icon: ArrowUp },
           { label: "Semanas en déficit", value: String(stats.deficitWeeks), color: stats.deficitWeeks > 0 ? "text-red-600" : "text-emerald-600", bg: stats.deficitWeeks > 0 ? "bg-red-50 dark:bg-red-950/30" : "bg-emerald-50 dark:bg-emerald-950/30", icon: AlertTriangle },
@@ -417,7 +417,7 @@ export default function LiquidityForecastTab() {
                   <td
                     className={cn(
                       "px-4 py-3 font-extrabold",
-                      w.cumulative >= 0 ? "text-blue-600" : "text-red-600"
+                      w.cumulative >= 0 ? "text-emerald-600" : "text-red-600"
                     )}
                   >
                     {fmt(w.cumulative)}

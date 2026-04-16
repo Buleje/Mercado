@@ -262,7 +262,7 @@ function KPICard({ label, value, Icon, delta, accent }: {
   const isPositive = delta != null ? delta >= 0 : false;
   const colorMap = {
     emerald: { bg: "bg-emerald-50 dark:bg-emerald-950/30", icon: "text-emerald-500" },
-    blue: { bg: "bg-blue-50 dark:bg-blue-950/30", icon: "text-blue-500" },
+    blue: { bg: "bg-emerald-50 dark:bg-emerald-950/30", icon: "text-emerald-500" },
     violet: { bg: "bg-violet-50 dark:bg-violet-950/30", icon: "text-violet-500" },
     cyan: { bg: "bg-cyan-50 dark:bg-cyan-950/30", icon: "text-cyan-500" },
     amber: { bg: "bg-amber-50 dark:bg-amber-950/30", icon: "text-amber-500" },

@@ -264,10 +264,10 @@ export default function ShiftControlTab({ onNavigateToArqueo }: { onNavigateToAr
       {/* KPIs */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-4">
         {[
-          { label: "Ventas hoy", value: fmt(stats.totalSalesToday), icon: BarChart2, color: "text-blue-600", bg: "bg-blue-50 dark:bg-blue-950/30" },
+          { label: "Ventas hoy", value: fmt(stats.totalSalesToday), icon: BarChart2, color: "text-emerald-600", bg: "bg-emerald-50 dark:bg-emerald-950/30" },
           { label: "Pedidos hoy", value: String(stats.totalOrdersToday), icon: CheckCircle, color: "text-emerald-600", bg: "bg-emerald-50 dark:bg-emerald-950/30" },
           { label: "Turnos activos", value: String(stats.activeCount), icon: Timer, color: "text-amber-600", bg: "bg-amber-50 dark:bg-amber-950/30" },
-          { label: "Diferencia en caja", value: fmt(Math.abs(stats.totalDifference)), icon: stats.totalDifference === 0 ? CheckCircle : AlertTriangle, color: stats.totalDifference === 0 ? "text-emerald-600" : stats.totalDifference > 0 ? "text-blue-600" : "text-red-500", bg: stats.totalDifference === 0 ? "bg-emerald-50 dark:bg-emerald-950/30" : "bg-red-50 dark:bg-red-950/30" },
+          { label: "Diferencia en caja", value: fmt(Math.abs(stats.totalDifference)), icon: stats.totalDifference === 0 ? CheckCircle : AlertTriangle, color: stats.totalDifference === 0 ? "text-emerald-600" : stats.totalDifference > 0 ? "text-emerald-600" : "text-red-500", bg: stats.totalDifference === 0 ? "bg-emerald-50 dark:bg-emerald-950/30" : "bg-red-50 dark:bg-red-950/30" },
         ].map(({ label, value, icon: Icon, color, bg }) => (
           <div key={label} className={cn("rounded-2xl p-4", bg)}>
             <Icon className={cn("h-5 w-5 mb-2", color)} />
@@ -322,7 +322,7 @@ export default function ShiftControlTab({ onNavigateToArqueo }: { onNavigateToAr
               <div className="flex justify-between"><span className="text-gray-500 dark:text-muted">Turno abierto</span><span className="font-semibold text-gray-700 dark:text-foreground">{fmtDatetime(showCloseForm.openedAt)}</span></div>
               <div className="flex justify-between"><span className="text-gray-500 dark:text-muted">Duración</span><span className="font-semibold text-gray-700 dark:text-foreground">{duration(showCloseForm.openedAt)}</span></div>
               <div className="flex justify-between"><span className="text-gray-500 dark:text-muted">Ventas</span><span className="font-semibold text-gray-700 dark:text-foreground">{fmt(showCloseForm.totalSales)}</span></div>
-              <div className="flex justify-between"><span className="text-gray-500 dark:text-muted">Efectivo esperado</span><span className="font-extrabold text-blue-600">{fmt(showCloseForm.expectedCash)}</span></div>
+              <div className="flex justify-between"><span className="text-gray-500 dark:text-muted">Efectivo esperado</span><span className="font-extrabold text-emerald-600">{fmt(showCloseForm.expectedCash)}</span></div>
             </div>
             <div className="space-y-3">
               <div>
@@ -339,7 +339,7 @@ export default function ShiftControlTab({ onNavigateToArqueo }: { onNavigateToAr
                 />
               </div>
               {closeForm.closingCash && (
-                <div className={cn("flex items-center justify-between rounded-xl px-2 sm:px-4 py-2 sm:py-3 text-sm font-bold", parseFloat(closeForm.closingCash) === showCloseForm.expectedCash ? "bg-emerald-50 dark:bg-emerald-950/20 text-emerald-700 dark:text-emerald-400" : parseFloat(closeForm.closingCash) > showCloseForm.expectedCash ? "bg-blue-50 dark:bg-blue-950/20 text-blue-700 dark:text-blue-400" : "bg-red-50 dark:bg-red-950/20 text-red-600 dark:text-red-400")}>
+                <div className={cn("flex items-center justify-between rounded-xl px-2 sm:px-4 py-2 sm:py-3 text-sm font-bold", parseFloat(closeForm.closingCash) === showCloseForm.expectedCash ? "bg-emerald-50 dark:bg-emerald-950/20 text-emerald-700 dark:text-emerald-400" : parseFloat(closeForm.closingCash) > showCloseForm.expectedCash ? "bg-emerald-50 dark:bg-emerald-950/20 text-emerald-700 dark:text-emerald-400" : "bg-red-50 dark:bg-red-950/20 text-red-600 dark:text-red-400")}>
                   <span>Diferencia:</span>
                   <span>{parseFloat(closeForm.closingCash) >= showCloseForm.expectedCash ? "+" : ""}{fmt(parseFloat(closeForm.closingCash) - showCloseForm.expectedCash)}</span>
                 </div>
@@ -418,7 +418,7 @@ export default function ShiftControlTab({ onNavigateToArqueo }: { onNavigateToAr
                     </button>
                   )}
                   {!isOpen && (
-                    <button onClick={() => setPrintingShift(sh)} className="flex items-center gap-1 px-3 py-1.5 rounded-lg bg-blue-50 dark:bg-blue-950/20 text-blue-600 text-xs font-semibold hover:bg-blue-100 dark:hover:bg-blue-900/30 transition-colors">
+                    <button onClick={() => setPrintingShift(sh)} className="flex items-center gap-1 px-3 py-1.5 rounded-lg bg-emerald-50 dark:bg-emerald-950/20 text-emerald-600 text-xs font-semibold hover:bg-emerald-100 dark:hover:bg-emerald-900/30 transition-colors">
                       <Printer className="h-3.5 w-3.5" /> Recibo
                     </button>
                   )}
@@ -512,7 +512,7 @@ export default function ShiftControlTab({ onNavigateToArqueo }: { onNavigateToAr
 }
 
 function SCell({ label, value, accent }: { label: string; value: string; accent?: string }) {
-  const col = accent === "blue" ? "text-blue-600 dark:text-blue-400" : accent === "violet" ? "text-violet-600 dark:text-violet-400" : accent === "amber" ? "text-amber-600 dark:text-amber-400" : accent === "sky" ? "text-sky-600 dark:text-sky-400" : accent === "green" ? "text-emerald-600 dark:text-emerald-400" : accent === "red" ? "text-red-500 dark:text-red-400" : "text-gray-700 dark:text-foreground";
+  const col = accent === "blue" ? "text-emerald-600 dark:text-emerald-400" : accent === "violet" ? "text-violet-600 dark:text-violet-400" : accent === "amber" ? "text-amber-600 dark:text-amber-400" : accent === "sky" ? "text-sky-600 dark:text-sky-400" : accent === "green" ? "text-emerald-600 dark:text-emerald-400" : accent === "red" ? "text-red-500 dark:text-red-400" : "text-gray-700 dark:text-foreground";
   return (
     <div className="bg-gray-50 dark:bg-surface/50 rounded-xl px-3 py-2.5">
       <p className="text-xs text-gray-400 dark:text-muted mb-0.5">{label}</p>

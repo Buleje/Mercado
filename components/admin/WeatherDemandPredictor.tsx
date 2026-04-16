@@ -86,7 +86,7 @@ function getConditionLabel(c: WeatherCondition): string {
 
 function WeatherIcon({ condition, className }: { condition: WeatherCondition; className?: string }) {
   if (condition === "hot") return <Sun className={cn("text-[#f97316]", className)} />;
-  if (condition === "rainy") return <CloudRain className={cn("text-blue-400", className)} />;
+  if (condition === "rainy") return <CloudRain className={cn("text-emerald-400", className)} />;
   if (condition === "cold") return <Wind className={cn("text-cyan-400", className)} />;
   return <Sun className={cn("text-yellow-400", className)} />;
 }
@@ -158,7 +158,7 @@ export default function WeatherDemandPredictor() {
           weather?.condition === "hot"
             ? "bg-gradient-to-r from-orange-50 to-yellow-50 dark:from-orange-950/30 dark:to-yellow-950/30"
             : weather?.condition === "rainy"
-              ? "bg-gradient-to-r from-blue-50 to-cyan-50 dark:from-blue-950/30 dark:to-cyan-950/30"
+              ? "bg-gradient-to-r from-emerald-50 to-cyan-50 dark:from-emerald-950/30 dark:to-cyan-950/30"
               : weather?.condition === "cold"
                 ? "bg-gradient-to-r from-cyan-50 to-slate-50 dark:from-cyan-950/30 dark:to-slate-950/30"
                 : "bg-gradient-to-r from-green-50 to-emerald-50 dark:from-green-950/30 dark:to-emerald-950/30"

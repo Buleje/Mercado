@@ -5,7 +5,7 @@ import { cn } from "@/lib/utils";
 
 export const TAG_COLORS = {
   teal:    { bg: "bg-teal-100 dark:bg-teal-900/40",    text: "text-teal-700 dark:text-teal-300",    dot: "bg-teal-500" },
-  blue:    { bg: "bg-blue-100 dark:bg-blue-900/40",    text: "text-blue-700 dark:text-blue-300",    dot: "bg-blue-500" },
+  blue:    { bg: "bg-emerald-100 dark:bg-emerald-900/40",    text: "text-emerald-700 dark:text-emerald-300",    dot: "bg-emerald-500" },
   violet:  { bg: "bg-violet-100 dark:bg-violet-900/40",text: "text-violet-700 dark:text-violet-300",dot: "bg-violet-500" },
   amber:   { bg: "bg-amber-100 dark:bg-amber-900/40",  text: "text-amber-700 dark:text-amber-300",  dot: "bg-amber-500" },
   rose:    { bg: "bg-rose-100 dark:bg-rose-900/40",    text: "text-rose-700 dark:text-rose-300",    dot: "bg-rose-500" },

@@ -792,7 +792,7 @@ export default function InventarioAlmacenesModule() {
           <div className="flex flex-wrap gap-2">
             <button
               onClick={() => setShowConteoModal(true)}
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold border border-blue-200 dark:border-blue-800/50 text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-950/20 transition-colors"
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold border border-emerald-200 dark:border-emerald-800/50 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-950/20 transition-colors"
             >
               <ListChecks className="h-3.5 w-3.5" /> Conteo físico
             </button>

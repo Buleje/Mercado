@@ -153,7 +153,7 @@ export default function RolePermissionsTab() {
               "flex items-center gap-2 px-2 sm:px-4 py-1.5 sm:py-2 rounded-lg text-sm font-medium transition disabled:opacity-50",
               saved
                 ? "bg-green-600 text-white"
-                : "bg-blue-600 hover:bg-blue-700 text-white"
+                : "bg-emerald-600 hover:bg-emerald-700 text-white"
             )}
           >
             {saved ? <CheckCircle className="w-4 h-4" /> : <Save className="w-4 h-4" />}
@@ -240,7 +240,7 @@ export default function RolePermissionsTab() {
               <div key={role} className="flex items-center gap-1">
                 <button
                   onClick={() => { selectAll(role); setHasChanges(true); }}
-                  className="text-[10px] px-2 py-1 bg-blue-500/10 text-blue-300 rounded hover:bg-blue-500/20 transition"
+                  className="text-[10px] px-2 py-1 bg-emerald-500/10 text-emerald-300 rounded hover:bg-emerald-500/20 transition"
                 >
                   Todo ({role})
                 </button>

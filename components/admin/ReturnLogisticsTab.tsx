@@ -27,7 +27,7 @@ type Return = {
 
 const STATUS_CONFIG: Record<ReturnStatus, { label: string; color: string; step: number }> = {
   solicitada:  { label: "Solicitada",  color: "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400",    step: 0 },
-  aprobada:    { label: "Aprobada",    color: "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400",          step: 1 },
+  aprobada:    { label: "Aprobada",    color: "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400",          step: 1 },
   recogida:    { label: "En recojo",   color: "bg-violet-100 text-violet-700 dark:bg-violet-900/30 dark:text-violet-400",  step: 2 },
   inspeccion:  { label: "Inspección",  color: "bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400",  step: 3 },
   completada:  { label: "Completada",  color: "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400", step: 4 },
@@ -131,7 +131,7 @@ export default function ReturnLogisticsTab() {
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
         {[
           { label: "Devoluciones activas", value: kpis.active,             color: "text-amber-500",   icon: RotateCcw },
-          { label: "Total registradas",    value: returns.length,           color: "text-blue-500",    icon: BarChart3 },
+          { label: "Total registradas",    value: returns.length,           color: "text-emerald-500",    icon: BarChart3 },
           { label: "Reembolsado (mes)",    value: fmt(kpis.totalRefund),    color: "text-red-500",     icon: XCircle },
           { label: "Tasa de rechazo",      value: `${kpis.rejectedPct}%`,   color: "text-violet-500",  icon: AlertTriangle },
         ].map(({ label, value, color, icon: Icon }) => (
@@ -262,7 +262,7 @@ export default function ReturnLogisticsTab() {
 
                     {/* Notes */}
                     {r.notes && (
-                      <div className="flex items-start gap-2 text-xs bg-blue-50 dark:bg-blue-950/10 text-blue-700 dark:text-blue-400 px-3 py-2 rounded-xl">
+                      <div className="flex items-start gap-2 text-xs bg-emerald-50 dark:bg-emerald-950/10 text-emerald-700 dark:text-emerald-400 px-3 py-2 rounded-xl">
                         <AlertTriangle className="h-3.5 w-3.5 shrink-0 mt-0.5" />
                         {r.notes}
                       </div>

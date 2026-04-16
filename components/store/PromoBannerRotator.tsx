@@ -61,7 +61,7 @@ const DEFAULT_BANNERS: PromoBanner[] = [
     subtitle: "Sin intereses en 2 cuotas",
     ctaText: "Saber mas",
     ctaLink: "/mi-credito",
-    bgColor: "bg-gradient-to-r from-blue-600 to-indigo-600",
+    bgColor: "bg-gradient-to-r from-emerald-600 to-indigo-600",
     emoji: "💳",
   },
 ];

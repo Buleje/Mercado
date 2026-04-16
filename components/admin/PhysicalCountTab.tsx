@@ -285,7 +285,7 @@ export default function PhysicalCountTab() {
   const diffColor = (d: number) => {
     if (d === 0) return "text-emerald-600 dark:text-emerald-400";
     return d > 0
-      ? "text-blue-600 dark:text-blue-400"
+      ? "text-emerald-600 dark:text-emerald-400"
       : "text-red-600 dark:text-red-400";
   };
 

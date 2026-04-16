@@ -39,9 +39,9 @@ const STEPS: WizardStep[] = [
     Icon: Store,
     href: "/admin#config",
     hrefLabel: "Ir a Configuración",
-    color: "text-blue-600 dark:text-blue-400",
-    bgLight: "bg-blue-50",
-    bgDark: "dark:bg-blue-900/20",
+    color: "text-emerald-600 dark:text-emerald-400",
+    bgLight: "bg-emerald-50",
+    bgDark: "dark:bg-emerald-900/20",
   },
   {
     id: "productsDone",
@@ -50,9 +50,9 @@ const STEPS: WizardStep[] = [
     Icon: Package,
     href: "/admin#productos",
     hrefLabel: "Ir a Productos",
-    color: "text-blue-600 dark:text-blue-400",
-    bgLight: "bg-blue-50",
-    bgDark: "dark:bg-blue-900/20",
+    color: "text-emerald-600 dark:text-emerald-400",
+    bgLight: "bg-emerald-50",
+    bgDark: "dark:bg-emerald-900/20",
   },
   {
     id: "paymentDone",
@@ -134,7 +134,7 @@ function ProgressBar({ completed, total }: { completed: number; total: number })
       </div>
       <div className="h-2 bg-gray-100 dark:bg-gray-800 rounded-full overflow-hidden">
         <div
-          className="h-full bg-gradient-to-r from-[#2563EB] to-blue-400 rounded-full transition-all duration-700 ease-out"
+          className="h-full bg-gradient-to-r from-[#2563EB] to-emerald-400 rounded-full transition-all duration-700 ease-out"
           style={{ width: `${pct}%` }}
         />
       </div>
@@ -162,8 +162,8 @@ function StepRow({
       className={cn(
         "flex items-center gap-3 p-3 rounded-2xl border transition-all duration-200",
         done
-          ? "bg-blue-50 dark:bg-blue-900/15 border-blue-100 dark:border-blue-800/40"
-          : "bg-white dark:bg-gray-800/60 border-gray-100 dark:border-gray-700/60 hover:border-blue-200 dark:hover:border-blue-700"
+          ? "bg-emerald-50 dark:bg-emerald-900/15 border-emerald-100 dark:border-emerald-800/40"
+          : "bg-white dark:bg-gray-800/60 border-gray-100 dark:border-gray-700/60 hover:border-emerald-200 dark:hover:border-emerald-700"
       )}
     >
       {/* Step number / check */}
@@ -171,7 +171,7 @@ function StepRow({
         className={cn(
           "flex-shrink-0 w-9 h-9 rounded-xl flex items-center justify-center font-bold text-sm transition-colors",
           done
-            ? "bg-blue-500 text-white"
+            ? "bg-emerald-500 text-white"
             : cn(step.bgLight, step.bgDark, step.color)
         )}
       >
@@ -189,14 +189,14 @@ function StepRow({
             className={cn(
               "text-sm font-semibold",
               done
-                ? "text-blue-700 dark:text-blue-400 line-through opacity-70"
+                ? "text-emerald-700 dark:text-emerald-400 line-through opacity-70"
                 : "text-gray-900 dark:text-gray-100"
             )}
           >
             {index + 1}. {step.title}
           </p>
           {done && (
-            <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-400 flex-shrink-0">
+            <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-emerald-100 dark:bg-emerald-900/40 text-emerald-700 dark:text-emerald-400 flex-shrink-0">
               Completado
             </span>
           )}
@@ -211,7 +211,7 @@ function StepRow({
         <button
           type="button"
           onClick={() => onNavigate(step.href)}
-          className="flex-shrink-0 flex items-center gap-1 text-xs font-semibold text-[#2563EB] dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 transition-colors min-h-[44px] px-2"
+          className="flex-shrink-0 flex items-center gap-1 text-xs font-semibold text-[#2563EB] dark:text-emerald-400 hover:text-emerald-800 dark:hover:text-emerald-300 transition-colors min-h-[44px] px-2"
         >
           <span className="hidden sm:inline whitespace-nowrap">Ir</span>
           <ChevronRight className="h-4 w-4" />
@@ -322,7 +322,7 @@ export default function OnboardingWizard({ tenantSlug, onClose }: OnboardingWiza
         {allDone && <ConfettiOverlay />}
 
         {/* Header */}
-        <div className="relative px-6 pt-6 pb-4 bg-gradient-to-br from-blue-50 to-white dark:from-blue-900/20 dark:to-gray-900 border-b border-gray-100 dark:border-gray-800">
+        <div className="relative px-6 pt-6 pb-4 bg-gradient-to-br from-emerald-50 to-white dark:from-emerald-900/20 dark:to-gray-900 border-b border-gray-100 dark:border-gray-800">
           <div className="flex items-start gap-3">
             <div className="flex-shrink-0 w-10 h-10 rounded-2xl bg-[#2563EB] flex items-center justify-center shadow-md">
               <Sparkles className="h-5 w-5 text-white" />

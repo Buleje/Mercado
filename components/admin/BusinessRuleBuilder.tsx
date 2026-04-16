@@ -60,7 +60,7 @@ const ACTION_SUMMARY: Record<ActionType, (v: string) => string> = {
 const ACTION_COLOR: Record<ActionType, string> = {
   create_alert:   "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400",
   send_whatsapp:  "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400",
-  create_order:   "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400",
+  create_order:   "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400",
   apply_discount: "bg-violet-100 text-violet-700 dark:bg-violet-900/30 dark:text-violet-400",
 };
 

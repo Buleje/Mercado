@@ -36,7 +36,7 @@ type Order = {
 // ── Config ─────────────────────────────────────────────────────────
 const STATUS_CFG = {
   pendiente:  { label: "Pendiente",  cls: "bg-amber-50 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300",       dot: "bg-amber-400",   Icon: Clock },
-  confirmado: { label: "Confirmado", cls: "bg-blue-50 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300",           dot: "bg-blue-400",    Icon: CheckCircle2 },
+  confirmado: { label: "Confirmado", cls: "bg-emerald-50 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300",           dot: "bg-emerald-400",    Icon: CheckCircle2 },
   en_camino:  { label: "En camino",  cls: "bg-indigo-50 text-indigo-700 dark:bg-indigo-900/30 dark:text-indigo-300",   dot: "bg-indigo-400",  Icon: Truck },
   entregado:  { label: "Entregado",  cls: "bg-emerald-50 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300", dot: "bg-emerald-400", Icon: CheckCircle2 },
   cancelado:  { label: "Cancelado",  cls: "bg-red-50 text-red-700 dark:bg-red-900/30 dark:text-red-300",               dot: "bg-red-400",     Icon: XCircle },
@@ -136,14 +136,14 @@ function OrderCard({ order: o, onReorder, onCancel }: { order: Order; onReorder?
           o.status === "en_camino"  ? "bg-indigo-50 dark:bg-indigo-900/20" :
           o.status === "entregado"  ? "bg-emerald-50 dark:bg-emerald-900/20" :
           o.status === "cancelado"  ? "bg-red-50 dark:bg-red-900/20" :
-          o.status === "confirmado" ? "bg-blue-50 dark:bg-blue-900/20" :
+          o.status === "confirmado" ? "bg-emerald-50 dark:bg-emerald-900/20" :
                                       "bg-amber-50 dark:bg-amber-900/20"
         )}>
           <StIcon className={cn("h-5 w-5",
             o.status === "en_camino"  ? "text-indigo-500" :
             o.status === "entregado"  ? "text-emerald-500" :
             o.status === "cancelado"  ? "text-red-500" :
-            o.status === "confirmado" ? "text-blue-500" :
+            o.status === "confirmado" ? "text-emerald-500" :
                                         "text-amber-500"
           )} />
         </div>

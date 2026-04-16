@@ -43,7 +43,7 @@ const CAUSE_META: Record<ShrinkageCause, { label: string; color: string; bg: str
   rotura: { label: "Rotura", color: "text-red-600", bg: "bg-red-100 dark:bg-red-900/30" },
   robo: { label: "Robo/perdida", color: "text-violet-600", bg: "bg-violet-100 dark:bg-violet-900/30" },
   deterioro: { label: "Deterioro", color: "text-orange-600", bg: "bg-orange-100 dark:bg-orange-900/30" },
-  "error-inventario": { label: "Error inventario", color: "text-blue-600", bg: "bg-blue-100 dark:bg-blue-900/30" },
+  "error-inventario": { label: "Error inventario", color: "text-emerald-600", bg: "bg-emerald-100 dark:bg-emerald-900/30" },
   "daño-transporte": { label: "Daño transporte", color: "text-gray-600", bg: "bg-gray-100 dark:bg-gray-800/30" },
 };
 

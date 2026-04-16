@@ -31,7 +31,7 @@ function Sparkline({ history, trend }: { history: KpiTrendPoint[]; trend: Custom
 const EMPTY_FORM = { name: "", desc: "", formula: "", target: "", unit: "S/", category: "Ventas", color: "bg-emerald-500" };
 const COLOR_OPTIONS = [
   { label: "Verde", value: "bg-emerald-500" },
-  { label: "Azul", value: "bg-blue-500" },
+  { label: "Azul", value: "bg-emerald-500" },
   { label: "Violeta", value: "bg-violet-500" },
   { label: "Ámbar", value: "bg-amber-500" },
   { label: "Rojo", value: "bg-red-500" },

@@ -109,7 +109,7 @@ export default function MultiBranchDashboard() {
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
         {[
           { label: "Ventas Total", value: fmt(totals.sales), icon: DollarSign, color: "text-emerald-600" },
-          { label: "Pedidos", value: String(totals.orders), icon: Package, color: "text-blue-600" },
+          { label: "Pedidos", value: String(totals.orders), icon: Package, color: "text-emerald-600" },
           { label: "Productos", value: String(totals.products), icon: Package, color: "text-purple-600" },
           { label: "Clientes", value: String(totals.customers), icon: Users, color: "text-amber-600" },
         ].map(kpi => (

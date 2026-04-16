@@ -236,7 +236,7 @@ export default function RecetarioAdminTab() {
           <BookOpen className="h-3.5 w-3.5" />
           Recetas publicadas: {activas}
         </div>
-        <div className="flex items-center gap-1.5 bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-400 px-3 py-1.5 rounded-lg font-bold">
+        <div className="flex items-center gap-1.5 bg-emerald-50 dark:bg-emerald-900/20 text-emerald-700 dark:text-emerald-400 px-3 py-1.5 rounded-lg font-bold">
           <BarChart3 className="h-3.5 w-3.5" />
           Ingredientes promedio: {avgIng}
         </div>
@@ -516,7 +516,7 @@ export default function RecetarioAdminTab() {
                                       <button
                                         key={p.id}
                                         onClick={() => selectProduct(idx, p)}
-                                        className="text-[10px] bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 px-2 py-0.5 rounded-md hover:bg-blue-100 transition-colors"
+                                        className="text-[10px] bg-emerald-50 dark:bg-emerald-900/20 text-emerald-600 dark:text-emerald-400 px-2 py-0.5 rounded-md hover:bg-emerald-100 transition-colors"
                                       >
                                         {p.name} — S/{p.price.toFixed(2)}
                                       </button>

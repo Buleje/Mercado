@@ -168,7 +168,7 @@ export function OrdersList({
                     const km = haversineKm(storeLat, storeLon, gps.lat, gps.lon);
                     const label = km < 1 ? `${Math.round(km * 1000)} m` : `${km.toFixed(1)} km`;
                     return (
-                      <span className="inline-flex items-center gap-1 text-xs text-blue-500 font-semibold">
+                      <span className="inline-flex items-center gap-1 text-xs text-emerald-500 font-semibold">
                         <MapPin className="h-3 w-3 shrink-0" />{label}
                       </span>
                     );
@@ -204,7 +204,7 @@ export function OrdersList({
                   {o.paymentMethod === "efectivo" && o.deuda && (
                     <button
                       onClick={() => onMarkDeudaPaid(o.id)}
-                      className="inline-flex items-center gap-1 px-3 py-2 rounded-lg text-xs font-bold text-blue-700 bg-blue-50 hover:bg-blue-100 transition-colors border border-blue-200"
+                      className="inline-flex items-center gap-1 px-3 py-2 rounded-lg text-xs font-bold text-emerald-700 bg-emerald-50 hover:bg-emerald-100 transition-colors border border-emerald-200"
                       title="Marcar deuda como cobrada"
                     >
                       <Check className="h-4 w-4" /> Cobrado
@@ -214,7 +214,7 @@ export function OrdersList({
                     href={googleMapsUrl(o.customer.location)}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="p-2 rounded-lg text-gray-400 dark:text-muted hover:text-blue-500 hover:bg-blue-50 transition-colors"
+                    className="p-2 rounded-lg text-gray-400 dark:text-muted hover:text-emerald-500 hover:bg-emerald-50 transition-colors"
                     title="Ver en Google Maps"
                   >
                     <MapPin className="h-4 w-4" />

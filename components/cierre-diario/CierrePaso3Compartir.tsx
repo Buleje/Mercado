@@ -155,10 +155,10 @@ export default function CierrePaso3Compartir({
           whileHover={{ scale: 1.01 }}
           whileTap={{ scale: 0.98 }}
           onClick={handlePrint}
-          className="w-full flex items-center gap-4 p-4 rounded-2xl border-2 border-gray-200 dark:border-card-border bg-white dark:bg-card hover:border-blue-400 transition-all"
+          className="w-full flex items-center gap-4 p-4 rounded-2xl border-2 border-gray-200 dark:border-card-border bg-white dark:bg-card hover:border-emerald-400 transition-all"
         >
-          <div className="h-10 w-10 rounded-xl bg-blue-50 dark:bg-blue-950/30 flex items-center justify-center">
-            <Printer className="h-5 w-5 text-blue-600 dark:text-blue-400" />
+          <div className="h-10 w-10 rounded-xl bg-emerald-50 dark:bg-emerald-950/30 flex items-center justify-center">
+            <Printer className="h-5 w-5 text-emerald-600 dark:text-emerald-400" />
           </div>
           <div className="text-left flex-1">
             <p className="font-bold text-gray-900 dark:text-foreground text-sm">Imprimir</p>

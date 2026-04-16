@@ -60,7 +60,7 @@ const GROUP_ICONS: Record<ModuleGroup, LucideIcon> = {
 };
 
 const GROUP_COLORS: Record<ModuleGroup, { icon: string; bg: string; border: string }> = {
-  operaciones: { icon: "text-blue-500", bg: "bg-blue-50 dark:bg-blue-900/20", border: "border-blue-200 dark:border-blue-800/40" },
+  operaciones: { icon: "text-emerald-500", bg: "bg-emerald-50 dark:bg-emerald-900/20", border: "border-emerald-200 dark:border-emerald-800/40" },
   gestion:     { icon: "text-amber-500", bg: "bg-amber-50 dark:bg-amber-900/20", border: "border-amber-200 dark:border-amber-800/40" },
   finanzas:    { icon: "text-emerald-500", bg: "bg-emerald-50 dark:bg-emerald-900/20", border: "border-emerald-200 dark:border-emerald-800/40" },
   documentos:  { icon: "text-purple-500", bg: "bg-purple-50 dark:bg-purple-900/20", border: "border-purple-200 dark:border-purple-800/40" },
@@ -381,7 +381,7 @@ function ModuleItem({
                 module.id === "pedidos" ? "bg-red-500 text-white" :
                 module.id === "inventario" ? "bg-amber-500 text-white" :
                 module.id === "fiados" ? "bg-orange-500 text-white" :
-                module.id === "compras" ? "bg-blue-500 text-white" :
+                module.id === "compras" ? "bg-emerald-500 text-white" :
                 "bg-gray-500 text-white"
               )}>
                 {badgeCount > 99 ? "99+" : badgeCount}

@@ -66,7 +66,7 @@ export default function StorePageAdminPage() {
           href={`/t/${slug}`}
           target="_blank"
           rel="noopener"
-          className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-semibold text-sm transition-colors"
+          className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-semibold text-sm transition-colors"
         >
           Ver página pública
           <ExternalLink className="w-4 h-4" />
@@ -85,7 +85,7 @@ export default function StorePageAdminPage() {
                 onClick={() => setTab(t.id)}
                 className={`flex items-center gap-2 px-4 py-3 border-b-2 font-semibold text-sm transition-colors ${
                   active
-                    ? "border-blue-600 text-blue-600 dark:text-blue-400"
+                    ? "border-emerald-600 text-emerald-600 dark:text-emerald-400"
                     : "border-transparent text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
                 }`}
               >

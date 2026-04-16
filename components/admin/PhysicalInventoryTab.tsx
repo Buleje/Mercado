@@ -292,7 +292,7 @@ export default function PhysicalInventoryTab() {
                   </td>
                   <td className="px-5 py-3 text-right">
                     {item.difference !== null ? (
-                      <span className={cn("font-extrabold", item.difference === 0 ? "text-emerald-600" : item.difference > 0 ? "text-blue-600" : "text-red-600")}>
+                      <span className={cn("font-extrabold", item.difference === 0 ? "text-emerald-600" : item.difference > 0 ? "text-emerald-600" : "text-red-600")}>
                         {item.difference === 0 ? <Check className="inline h-4 w-4" /> : item.difference > 0 ? `+${item.difference}` : item.difference}
                       </span>
                     ) : "-"}

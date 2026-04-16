@@ -53,7 +53,7 @@ const STATUS_META: Record<PolicyStatus, { label: string; color: string; bg: stri
 };
 
 const CLAIM_STATUS: Record<ClaimStatus, { label: string; color: string; bg: string }> = {
-  abierto:     { label: "Abierto",     color: "text-blue-600",    bg: "bg-blue-100 dark:bg-blue-900/30" },
+  abierto:     { label: "Abierto",     color: "text-emerald-600",    bg: "bg-emerald-100 dark:bg-emerald-900/30" },
   "en-revision": { label: "En Revisión", color: "text-amber-600",   bg: "bg-amber-100 dark:bg-amber-900/30" },
   aprobado:    { label: "Aprobado",    color: "text-emerald-600", bg: "bg-emerald-100 dark:bg-emerald-900/30" },
   rechazado:   { label: "Rechazado",   color: "text-red-500",     bg: "bg-red-100 dark:bg-red-900/30" },
@@ -110,7 +110,7 @@ export default function InsuranceTab() {
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
         {[
           { label: "Pólizas vigentes", value: String(stats.vigentes), color: "text-emerald-600", bg: "bg-emerald-50 dark:bg-emerald-950/30" },
-          { label: "Prima mensual total", value: fmt(stats.monthlyTotal), color: "text-blue-600", bg: "bg-blue-50 dark:bg-blue-950/30" },
+          { label: "Prima mensual total", value: fmt(stats.monthlyTotal), color: "text-emerald-600", bg: "bg-emerald-50 dark:bg-emerald-950/30" },
           { label: "Siniestros abiertos", value: String(stats.claimsOpen), color: "text-amber-600", bg: "bg-amber-50 dark:bg-amber-950/30" },
           { label: "Monto total siniestros", value: fmt(stats.claimsTotal), color: "text-violet-600", bg: "bg-violet-50 dark:bg-violet-950/30" },
         ].map(({ label, value, color, bg }) => (
@@ -178,7 +178,7 @@ export default function InsuranceTab() {
                         <td className="px-2 sm:px-4 py-2 sm:py-3 text-xs text-gray-500 font-mono">{p.policyNumber}</td>
                         <td className="px-2 sm:px-4 py-2 sm:py-3 text-right text-xs font-bold text-gray-700 dark:text-foreground">{fmt(p.monthlyPremium)}</td>
                         <td className="px-2 sm:px-4 py-2 sm:py-3 text-xs text-gray-500">{p.endDate}</td>
-                        <td className="px-2 sm:px-4 py-2 sm:py-3"><button onClick={() => setDetail(p)} className="p-1.5 rounded-lg text-gray-400 hover:text-blue-500 hover:bg-blue-50 dark:hover:bg-blue-950/20"><Eye className="h-3.5 w-3.5" /></button></td>
+                        <td className="px-2 sm:px-4 py-2 sm:py-3"><button onClick={() => setDetail(p)} className="p-1.5 rounded-lg text-gray-400 hover:text-emerald-500 hover:bg-emerald-50 dark:hover:bg-emerald-950/20"><Eye className="h-3.5 w-3.5" /></button></td>
                       </tr>
                     );
                   })}
@@ -214,7 +214,7 @@ export default function InsuranceTab() {
                       <td className="px-2 sm:px-4 py-2 sm:py-3 text-xs font-mono text-gray-500">{pol?.policyNumber ?? "—"}</td>
                       <td className="px-2 sm:px-4 py-2 sm:py-3 text-xs text-gray-700 dark:text-foreground">{c.type}</td>
                       <td className="px-2 sm:px-4 py-2 sm:py-3 text-right text-xs font-bold text-gray-700 dark:text-foreground">{fmt(c.amount)}</td>
-                      <td className="px-2 sm:px-4 py-2 sm:py-3"><button onClick={() => setClaimDetail(c)} className="p-1.5 rounded-lg text-gray-400 hover:text-blue-500 hover:bg-blue-50 dark:hover:bg-blue-950/20"><Eye className="h-3.5 w-3.5" /></button></td>
+                      <td className="px-2 sm:px-4 py-2 sm:py-3"><button onClick={() => setClaimDetail(c)} className="p-1.5 rounded-lg text-gray-400 hover:text-emerald-500 hover:bg-emerald-50 dark:hover:bg-emerald-950/20"><Eye className="h-3.5 w-3.5" /></button></td>
                     </tr>
                   );
                 })}

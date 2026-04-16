@@ -167,7 +167,7 @@ export default function StoreRegistrationForm() {
           {[
             { icon: Zap, label: "Listo en 24h", color: "text-amber-500" },
             { icon: DollarSign, label: "Sin costo fijo", color: "text-emerald-500" },
-            { icon: ShieldCheck, label: "Pagos seguros", color: "text-blue-500" },
+            { icon: ShieldCheck, label: "Pagos seguros", color: "text-emerald-500" },
           ].map(({ icon: Icon, label, color }) => (
             <div key={label} className="text-center p-3 rounded-xl bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800">
               <Icon className={cn("h-5 w-5 mx-auto mb-1", color)} />

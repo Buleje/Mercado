@@ -85,13 +85,13 @@ export default function ScoreDashboard({ scores }: ScoreDashboardProps) {
                   <span className="text-xs text-gray-600 dark:text-gray-400">
                     Score perfecto (solo ✅)
                   </span>
-                  <span className="text-xs font-bold text-blue-600 dark:text-blue-400">
+                  <span className="text-xs font-bold text-emerald-600 dark:text-emerald-400">
                     {c.perfectPct}%
                   </span>
                 </div>
                 <div className="w-full h-1.5 bg-gray-100 dark:bg-gray-800 rounded-full overflow-hidden">
                   <div
-                    className="h-full bg-gradient-to-r from-blue-500 to-indigo-500"
+                    className="h-full bg-gradient-to-r from-emerald-500 to-indigo-500"
                     style={{ width: `${c.perfectPct}%` }}
                   />
                 </div>

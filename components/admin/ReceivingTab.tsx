@@ -35,7 +35,7 @@ type Reception = {
 };
 
 const STATUS_MAP: Record<ReceptionStatus, { label: string; color: string; bg: string }> = {
-  programada:   { label: "Programada",  color: "text-blue-600",    bg: "bg-blue-100 dark:bg-blue-900/30" },
+  programada:   { label: "Programada",  color: "text-emerald-600",    bg: "bg-emerald-100 dark:bg-emerald-900/30" },
   "en-proceso": { label: "En proceso",  color: "text-amber-600",   bg: "bg-amber-100 dark:bg-amber-900/30" },
   aceptada:     { label: "Aceptada",    color: "text-emerald-600", bg: "bg-emerald-100 dark:bg-emerald-900/30" },
   parcial:      { label: "Parcial",     color: "text-orange-600",  bg: "bg-orange-100 dark:bg-orange-900/30" },
@@ -167,7 +167,7 @@ export default function ReceivingTab() {
       {/* KPIs */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
         {[
-          { label: "Programadas",       value: stats.scheduled,   color: "text-blue-600",    bg: "bg-blue-50 dark:bg-blue-950/30",    icon: ClipboardList },
+          { label: "Programadas",       value: stats.scheduled,   color: "text-emerald-600",    bg: "bg-emerald-50 dark:bg-emerald-950/30",    icon: ClipboardList },
           { label: "En proceso",        value: stats.inProgress,  color: "text-amber-600",   bg: "bg-amber-50 dark:bg-amber-950/30",  icon: ScanLine },
           { label: "Aceptadas",         value: stats.accepted,    color: "text-emerald-600", bg: "bg-emerald-50 dark:bg-emerald-950/30", icon: CheckCircle2 },
           { label: "No conformidades",  value: stats.totalNonConf,color: "text-red-600",     bg: "bg-red-50 dark:bg-red-950/30",      icon: AlertTriangle },

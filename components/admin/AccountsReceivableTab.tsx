@@ -38,7 +38,7 @@ type PaymentRecord = {
 const STATUS_LABEL: Record<ARStatus, string> = { pendiente: "Pendiente", parcial: "Parcial", pagado: "Pagado", vencido: "Vencido" };
 const STATUS_COLOR: Record<ARStatus, string> = {
   pendiente: "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400",
-  parcial:   "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400",
+  parcial:   "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400",
   pagado:    "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400",
   vencido:   "bg-red-100 text-red-600 dark:bg-red-900/30 dark:text-red-400",
 };
@@ -284,7 +284,7 @@ export default function AccountsReceivableTab() {
       {/* KPI Row */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-4">
         {[
-          { label: "Total por cobrar", value: fmt(totalPending), icon: CreditCard, color: "text-blue-600", bg: "bg-blue-50 dark:bg-blue-950/30" },
+          { label: "Total por cobrar", value: fmt(totalPending), icon: CreditCard, color: "text-emerald-600", bg: "bg-emerald-50 dark:bg-emerald-950/30" },
           { label: "Cuentas vencidas", value: fmt(totalOverdue), icon: AlertTriangle, color: "text-red-500", bg: "bg-red-50 dark:bg-red-950/30" },
           { label: "Clientes en mora", value: String(countOverdue), icon: Clock, color: "text-amber-600", bg: "bg-amber-50 dark:bg-amber-950/30" },
           { label: "Cuentas pagadas", value: String(records.filter(r => r.status === "pagado").length), icon: CheckCircle, color: "text-emerald-600", bg: "bg-emerald-50 dark:bg-emerald-950/30" },

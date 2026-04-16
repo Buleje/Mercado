@@ -15,7 +15,7 @@ interface ActivityEntry {
 
 const ICON_MAP: Record<string, { icon: typeof ShoppingCart; color: string; bg: string }> = {
   sale:     { icon: ShoppingCart,   color: "text-emerald-600", bg: "bg-emerald-50 dark:bg-emerald-900/20" },
-  order:    { icon: ShoppingCart,   color: "text-blue-600",    bg: "bg-blue-50 dark:bg-blue-900/20" },
+  order:    { icon: ShoppingCart,   color: "text-emerald-600",    bg: "bg-emerald-50 dark:bg-emerald-900/20" },
   product:  { icon: Package,        color: "text-violet-600",  bg: "bg-violet-50 dark:bg-violet-900/20" },
   payment:  { icon: DollarSign,     color: "text-amber-600",   bg: "bg-amber-50 dark:bg-amber-900/20" },
   customer: { icon: UserPlus,       color: "text-primary",     bg: "bg-primary/10" },

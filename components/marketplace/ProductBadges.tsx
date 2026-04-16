@@ -16,7 +16,7 @@ const BADGE_MAP: Record<string, { label: string; icon: string; colorClass: strin
   new: {
     label: "Nuevo",
     icon: "✨",
-    colorClass: "bg-blue-500 text-white",
+    colorClass: "bg-emerald-500 text-white",
   },
   "low-stock": {
     label: "Solo {count}",

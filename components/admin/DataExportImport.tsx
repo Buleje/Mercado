@@ -165,8 +165,8 @@ export default function DataExportImport() {
       {/* ── Sección Importar ── */}
       <div className="rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 p-6">
         <div className="flex items-start gap-4 mb-4">
-          <div className="flex-shrink-0 w-10 h-10 rounded-lg bg-blue-50 dark:bg-blue-900/20 flex items-center justify-center">
-            <Upload className="w-5 h-5 text-blue-600 dark:text-blue-400" />
+          <div className="flex-shrink-0 w-10 h-10 rounded-lg bg-emerald-50 dark:bg-emerald-900/20 flex items-center justify-center">
+            <Upload className="w-5 h-5 text-emerald-600 dark:text-emerald-400" />
           </div>
           <div>
             <h3 className="font-semibold text-gray-900 dark:text-white">Importar datos</h3>
@@ -186,8 +186,8 @@ export default function DataExportImport() {
             className={cn(
               "border-2 border-dashed rounded-xl p-8 text-center cursor-pointer transition-colors",
               dragOver
-                ? "border-blue-400 bg-blue-50 dark:bg-blue-900/10"
-                : "border-gray-300 dark:border-gray-600 hover:border-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/10",
+                ? "border-emerald-400 bg-emerald-50 dark:bg-emerald-900/10"
+                : "border-gray-300 dark:border-gray-600 hover:border-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-900/10",
             )}
           >
             <FileJson className="w-8 h-8 mx-auto mb-2 text-gray-400" />
@@ -210,7 +210,7 @@ export default function DataExportImport() {
           <div className="space-y-3">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-300">
-                <FileJson className="w-4 h-4 text-blue-500" />
+                <FileJson className="w-4 h-4 text-emerald-500" />
                 <span className="font-medium">{previewFile}</span>
               </div>
               <button onClick={handleClearPreview} className="text-xs text-gray-400 hover:text-red-500 transition-colors">
@@ -228,7 +228,7 @@ export default function DataExportImport() {
               )}
               {(preview.customers?.length ?? 0) > 0 && (
                 <div className="flex items-center gap-2 text-sm">
-                  <span className="w-2 h-2 rounded-full bg-blue-500" />
+                  <span className="w-2 h-2 rounded-full bg-emerald-500" />
                   <span className="text-gray-700 dark:text-gray-300">
                     <strong>{preview.customers?.length}</strong> cliente(s) para importar
                   </span>
@@ -246,7 +246,7 @@ export default function DataExportImport() {
               disabled={importing || ((preview.products?.length ?? 0) === 0 && (preview.customers?.length ?? 0) === 0)}
               className={cn(
                 "w-full flex items-center justify-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors",
-                "bg-blue-600 hover:bg-blue-700 text-white",
+                "bg-emerald-600 hover:bg-emerald-700 text-white",
                 "disabled:opacity-50 disabled:cursor-not-allowed",
               )}
             >

@@ -44,7 +44,7 @@ function getUrgency(daysToStockout: number): Urgency {
 const URGENCY_META: Record<Urgency, { label: string; color: string; bg: string }> = {
   urgente: { label: "Urgente",  color: "text-red-600",     bg: "bg-red-100 dark:bg-red-900/30" },
   pronto:  { label: "Pronto",   color: "text-amber-600",   bg: "bg-amber-100 dark:bg-amber-900/30" },
-  normal:  { label: "Normal",   color: "text-blue-600",    bg: "bg-blue-100 dark:bg-blue-900/30" },
+  normal:  { label: "Normal",   color: "text-emerald-600",    bg: "bg-emerald-100 dark:bg-emerald-900/30" },
   ok:      { label: "OK",       color: "text-emerald-600", bg: "bg-emerald-100 dark:bg-emerald-900/30" },
 };
 
@@ -102,7 +102,7 @@ export default function PurchasePlanningTab() {
       {/* KPIs */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
         {[
-          { label: "Productos", value: String(stats.total), color: "text-blue-600", bg: "bg-blue-50 dark:bg-blue-950/30", icon: BarChart3 },
+          { label: "Productos", value: String(stats.total), color: "text-emerald-600", bg: "bg-emerald-50 dark:bg-emerald-950/30", icon: BarChart3 },
           { label: "Necesitan reorden", value: String(stats.needReorder), color: "text-amber-600", bg: "bg-amber-50 dark:bg-amber-950/30", icon: ShoppingCart },
           { label: "Urgentes", value: String(stats.urgent), color: "text-red-500", bg: "bg-red-50 dark:bg-red-950/30", icon: AlertTriangle },
           { label: "Inversión sugerida", value: fmt(stats.totalCost), color: "text-emerald-600", bg: "bg-emerald-50 dark:bg-emerald-950/30", icon: TrendingUp },
@@ -183,11 +183,11 @@ export default function PurchasePlanningTab() {
       </div>
 
       {/* Algorithm note */}
-      <div className="bg-blue-50 dark:bg-blue-950/20 border border-blue-200 dark:border-blue-800 rounded-2xl p-4 text-xs text-blue-700 dark:text-blue-300">
+      <div className="bg-emerald-50 dark:bg-emerald-950/20 border border-emerald-200 dark:border-emerald-800 rounded-2xl p-4 text-xs text-emerald-700 dark:text-emerald-300">
         <p className="font-bold mb-1">Algoritmo de sugerencia</p>
         <p>Punto de reorden = demanda_diaria × plazo_entrega × (1 + factor_seguridad)</p>
         <p>Cantidad sugerida = máx(0, punto_reorden − stock_actual)</p>
-        <p className="mt-1 text-blue-500 dark:text-blue-400">El factor de seguridad varía por producto (20-30%) según variabilidad de demanda.</p>
+        <p className="mt-1 text-emerald-500 dark:text-emerald-400">El factor de seguridad varía por producto (20-30%) según variabilidad de demanda.</p>
       </div>
     </div>
   );

@@ -883,8 +883,8 @@ export default function FiadosModule() {
     <div className="space-y-6">
       {/* ── Header estandar ──────────────────────────────────────── */}
       <div className="flex items-center gap-4">
-        <div className="flex items-center justify-center w-11 h-11 rounded-xl bg-blue-50 dark:bg-blue-900/20 shrink-0">
-          <HandCoins className="w-5 h-5 text-blue-600 dark:text-blue-400" />
+        <div className="flex items-center justify-center w-11 h-11 rounded-xl bg-emerald-50 dark:bg-emerald-900/20 shrink-0">
+          <HandCoins className="w-5 h-5 text-emerald-600 dark:text-emerald-400" />
         </div>
         <div className="flex-1 min-w-0">
           <h1 className="text-xl font-bold text-gray-900 dark:text-white truncate">
@@ -909,9 +909,9 @@ export default function FiadosModule() {
         <div className="flex items-center gap-2 shrink-0 flex-wrap">
           <button
             onClick={() => setShowDebtorsMap(true)}
-            className="p-2 rounded-xl bg-blue-50 dark:bg-blue-950/30 hover:bg-blue-100 dark:hover:bg-blue-900/30 transition-colors" title="Mapa deudores"
+            className="p-2 rounded-xl bg-emerald-50 dark:bg-emerald-950/30 hover:bg-emerald-100 dark:hover:bg-emerald-900/30 transition-colors" title="Mapa deudores"
           >
-            <MapPin className="h-4 w-4 text-blue-600" />
+            <MapPin className="h-4 w-4 text-emerald-600" />
           </button>
           <button
             onClick={() => {
@@ -1029,7 +1029,7 @@ export default function FiadosModule() {
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder="Buscar fiado o cliente..."
-            className="w-full pl-10 pr-4 py-2.5 text-sm rounded-xl border border-gray-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 outline-none transition-all"
+            className="w-full pl-10 pr-4 py-2.5 text-sm rounded-xl border border-gray-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 outline-none transition-all"
           />
         </div>
 
@@ -1046,7 +1046,7 @@ export default function FiadosModule() {
             className={cn(
               "inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-sm font-medium border transition-all",
               statusFilter === f.key
-                ? "bg-blue-50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-800 text-blue-700 dark:text-blue-400"
+                ? "bg-emerald-50 dark:bg-emerald-900/20 border-emerald-200 dark:border-emerald-800 text-emerald-700 dark:text-emerald-400"
                 : "border-gray-200 dark:border-zinc-700 text-gray-600 dark:text-zinc-400 bg-white dark:bg-zinc-900 hover:bg-gray-50 dark:hover:bg-zinc-800"
             )}
           >
@@ -1334,8 +1334,8 @@ export default function FiadosModule() {
           </div>
         ) : fiados.length === 0 ? (
           <EmptyState
-            icon={CreditCard}
-            title="Sin fiados"
+            illustration="generic"
+            title="Sin fiados registrados"
             description="Los créditos a clientes aparecerán aquí."
             action={{ label: "Crear primer fiado", onClick: () => { setShowNew(true); setCreateError(null); } }}
           />

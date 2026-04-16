@@ -6,9 +6,9 @@ import { useInView } from "@/hooks/use-in-view";
 
 const CATEGORIES = [
   { emoji: "🥫", name: "Abarrotes",        id: "abarrotes",       count: 80,  gradient: "from-emerald-500/10 to-teal-500/5",  border: "border-emerald-200/60 dark:border-emerald-800/40", hoverBg: "hover:bg-emerald-50 dark:hover:bg-emerald-950/30" },
-  { emoji: "🥤", name: "Bebidas",           id: "bebidas",          count: 45,  gradient: "from-sky-500/10 to-blue-500/5",       border: "border-sky-200/60 dark:border-sky-800/40",     hoverBg: "hover:bg-sky-50 dark:hover:bg-sky-950/30" },
+  { emoji: "🥤", name: "Bebidas",           id: "bebidas",          count: 45,  gradient: "from-sky-500/10 to-emerald-500/5",       border: "border-sky-200/60 dark:border-sky-800/40",     hoverBg: "hover:bg-sky-50 dark:hover:bg-sky-950/30" },
   { emoji: "🧹", name: "Limpieza",          id: "limpieza",         count: 30,  gradient: "from-violet-500/10 to-purple-500/5",  border: "border-violet-200/60 dark:border-violet-800/40", hoverBg: "hover:bg-violet-50 dark:hover:bg-violet-950/30" },
-  { emoji: "🥛", name: "Lácteos",           id: "lacteos",          count: 25,  gradient: "from-blue-500/10 to-indigo-500/5",    border: "border-blue-200/60 dark:border-blue-800/40",   hoverBg: "hover:bg-blue-50 dark:hover:bg-blue-950/30" },
+  { emoji: "🥛", name: "Lácteos",           id: "lacteos",          count: 25,  gradient: "from-emerald-500/10 to-indigo-500/5",    border: "border-emerald-200/60 dark:border-emerald-800/40",   hoverBg: "hover:bg-emerald-50 dark:hover:bg-emerald-950/30" },
   { emoji: "🥩", name: "Carnes",            id: "carnes",           count: 20,  gradient: "from-rose-500/10 to-red-500/5",       border: "border-rose-200/60 dark:border-rose-800/40",   hoverBg: "hover:bg-rose-50 dark:hover:bg-rose-950/30" },
   { emoji: "🥬", name: "Frutas y Verduras", id: "frutas-verduras",  count: 35,  gradient: "from-lime-500/10 to-green-500/5",     border: "border-lime-200/60 dark:border-lime-800/40",   hoverBg: "hover:bg-lime-50 dark:hover:bg-lime-950/30" },
 ];

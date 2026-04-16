@@ -30,7 +30,7 @@ interface RFMSegmentationPanelProps {
 // ── Segment Config ─────────────────────────────────────────────────────────────
 const SEGMENT_STYLE: Record<RFMSegment, { bg: string; text: string; border: string; icon: typeof Crown; color: string }> = {
   Champions:  { bg: "bg-emerald-100 dark:bg-emerald-900/30", text: "text-emerald-800 dark:text-emerald-300", border: "border-emerald-500 dark:border-emerald-600", icon: Crown, color: "#059669" },
-  Loyal:      { bg: "bg-blue-100 dark:bg-blue-900/30",   text: "text-blue-800 dark:text-blue-300",   border: "border-blue-500 dark:border-blue-600", icon: Heart, color: "#2563eb" },
+  Loyal:      { bg: "bg-emerald-100 dark:bg-emerald-900/30",   text: "text-emerald-800 dark:text-emerald-300",   border: "border-emerald-500 dark:border-emerald-600", icon: Heart, color: "#2563eb" },
   "At Risk":  { bg: "bg-orange-100 dark:bg-orange-900/30", text: "text-orange-800 dark:text-orange-300", border: "border-orange-500 dark:border-orange-600", icon: AlertTriangle, color: "#ea580c" },
   Lost:       { bg: "bg-red-100 dark:bg-red-900/30",     text: "text-red-800 dark:text-red-300",     border: "border-red-500 dark:border-red-600", icon: XCircle, color: "#dc2626" },
   New:        { bg: "bg-purple-100 dark:bg-purple-900/30", text: "text-purple-800 dark:text-purple-300", border: "border-purple-500 dark:border-purple-600", icon: Sparkles, color: "#7c3aed" },

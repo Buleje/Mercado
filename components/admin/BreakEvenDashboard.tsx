@@ -266,7 +266,7 @@ export default function BreakEvenDashboard() {
               "rounded-xl border p-4 flex items-center gap-3",
               stats.reached
                 ? "border-emerald-200 dark:border-emerald-800 bg-emerald-50 dark:bg-emerald-900/10"
-                : "border-blue-200 dark:border-blue-800 bg-blue-50 dark:bg-blue-900/10"
+                : "border-emerald-200 dark:border-emerald-800 bg-emerald-50 dark:bg-emerald-900/10"
             )}
           >
             <Clock
@@ -274,7 +274,7 @@ export default function BreakEvenDashboard() {
                 "w-5 h-5 shrink-0",
                 stats.reached
                   ? "text-emerald-600 dark:text-emerald-400"
-                  : "text-blue-600 dark:text-blue-400"
+                  : "text-emerald-600 dark:text-emerald-400"
               )}
             />
             <div>
@@ -283,7 +283,7 @@ export default function BreakEvenDashboard() {
                   Ya cubriste los costos fijos del dia. Cada sol adicional es ganancia.
                 </p>
               ) : stats.estimatedHour ? (
-                <p className="text-sm font-medium text-blue-800 dark:text-blue-300">
+                <p className="text-sm font-medium text-emerald-800 dark:text-emerald-300">
                   Si sigues vendiendo a este ritmo ({fmt(stats.salesPerHour)}/hora), cubres costos
                   a las{" "}
                   <span className="font-bold text-[#00B4A6] dark:text-[#2dd4bf]">
@@ -292,7 +292,7 @@ export default function BreakEvenDashboard() {
                   .
                 </p>
               ) : (
-                <p className="text-sm text-blue-700 dark:text-blue-400">
+                <p className="text-sm text-emerald-700 dark:text-emerald-400">
                   Registra ventas para estimar la hora de equilibrio.
                 </p>
               )}

@@ -127,11 +127,11 @@ const URGENCY_CONFIG: Record<
     order: 1,
   },
   info: {
-    border: "border-l-blue-500",
-    bg: "bg-blue-50 dark:bg-blue-950/20",
-    icon: "text-blue-600 dark:text-blue-400",
-    badge: "bg-blue-100 dark:bg-blue-900/40",
-    badgeText: "text-blue-700 dark:text-blue-300",
+    border: "border-l-emerald-500",
+    bg: "bg-emerald-50 dark:bg-emerald-950/20",
+    icon: "text-emerald-600 dark:text-emerald-400",
+    badge: "bg-emerald-100 dark:bg-emerald-900/40",
+    badgeText: "text-emerald-700 dark:text-emerald-300",
     order: 2,
   },
 };
@@ -478,8 +478,8 @@ export default function AlertsCenterTab({ tenantId: _tenantId, onNavigate }: Pro
           </span>
         )}
         {infoCount > 0 && (
-          <span className="px-3 py-1.5 bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-300 rounded-full text-xs font-bold inline-flex items-center gap-1.5">
-            <span className="w-2 h-2 rounded-full bg-blue-500" />
+          <span className="px-3 py-1.5 bg-emerald-100 dark:bg-emerald-900/40 text-emerald-700 dark:text-emerald-300 rounded-full text-xs font-bold inline-flex items-center gap-1.5">
+            <span className="w-2 h-2 rounded-full bg-emerald-500" />
             {infoCount} Info
           </span>
         )}

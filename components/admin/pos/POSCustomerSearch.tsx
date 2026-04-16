@@ -397,9 +397,9 @@ export default function POSCustomerSearch({
           </div>
         )}
         {lastPurchase === null && !loadingLastPurchase && paymentHistory.length === 0 && (
-          <div className="flex items-center gap-1.5 px-2 py-1 bg-blue-50 dark:bg-blue-950/20 rounded-lg">
-            <ShoppingBag className="h-3 w-3 text-blue-500 shrink-0" />
-            <span className="text-[10px] text-blue-600 dark:text-blue-400 font-medium">Primera compra de este cliente</span>
+          <div className="flex items-center gap-1.5 px-2 py-1 bg-emerald-50 dark:bg-emerald-950/20 rounded-lg">
+            <ShoppingBag className="h-3 w-3 text-emerald-500 shrink-0" />
+            <span className="text-[10px] text-emerald-600 dark:text-emerald-400 font-medium">Primera compra de este cliente</span>
           </div>
         )}
         {/* Mejora 2: Payment history */}

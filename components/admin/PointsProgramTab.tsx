@@ -124,7 +124,7 @@ export default function PointsProgramTab() {
       {/* KPIs */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
         {[
-          { label: "Miembros totales",        value: totalMembers.toLocaleString(),        color: "text-blue-500" },
+          { label: "Miembros totales",        value: totalMembers.toLocaleString(),        color: "text-emerald-500" },
           { label: "Puntos acumulados",        value: totalPointsEmitidos.toLocaleString(), color: "text-emerald-500" },
           { label: "Puntos canjeados (historial)", value: pointsRedeemed.toLocaleString(), color: "text-amber-500" },
           { label: "Puntos emitidos (historial)",  value: pointsEarned.toLocaleString(),   color: "text-violet-500" },

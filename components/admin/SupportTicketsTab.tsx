@@ -38,11 +38,11 @@ const PRIORITY_META: Record<TicketPriority, { label: string; color: string; bg: 
   critica: { label: "Crítica",  color: "text-red-600",     bg: "bg-red-100 dark:bg-red-900/30" },
   alta:    { label: "Alta",     color: "text-orange-600",  bg: "bg-orange-100 dark:bg-orange-900/30" },
   media:   { label: "Media",    color: "text-amber-600",   bg: "bg-amber-100 dark:bg-amber-900/30" },
-  baja:    { label: "Baja",     color: "text-blue-600",    bg: "bg-blue-100 dark:bg-blue-900/30" },
+  baja:    { label: "Baja",     color: "text-emerald-600",    bg: "bg-emerald-100 dark:bg-emerald-900/30" },
 };
 
 const STATUS_META: Record<TicketStatus, { label: string; color: string }> = {
-  abierto:       { label: "Abierto",     color: "text-blue-600" },
+  abierto:       { label: "Abierto",     color: "text-emerald-600" },
   "en-progreso": { label: "En progreso", color: "text-amber-600" },
   resuelto:      { label: "Resuelto",    color: "text-emerald-600" },
   cerrado:       { label: "Cerrado",     color: "text-gray-500" },
@@ -111,7 +111,7 @@ export default function SupportTicketsTab() {
       {/* Stats */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
         {[
-          { label: "Tickets abiertos", value: String(stats.open), color: "text-blue-600", bg: "bg-blue-50 dark:bg-blue-950/30" },
+          { label: "Tickets abiertos", value: String(stats.open), color: "text-emerald-600", bg: "bg-emerald-50 dark:bg-emerald-950/30" },
           { label: "SLA incumplido", value: String(stats.breached), color: "text-red-600", bg: "bg-red-50 dark:bg-red-950/30" },
           { label: "Satisfacción prom.", value: `${stats.avgSatisfaction.toFixed(1)}/5`, color: "text-amber-600", bg: "bg-amber-50 dark:bg-amber-950/30" },
           { label: "Tiempo resolución prom.", value: `${stats.avgResolutionTime.toFixed(1)}h`, color: "text-emerald-600", bg: "bg-emerald-50 dark:bg-emerald-950/30" },

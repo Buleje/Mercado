@@ -39,7 +39,7 @@ const fmt = (n: number) => "S/ " + n.toLocaleString("es-PE", { minimumFractionDi
 const REASON_META: Record<ReturnReason, { label: string; color: string; bg: string; variant: BadgeVariant }> = {
   defectuoso:        { label: "Defectuoso",         color: "text-red-600",     bg: "bg-red-100 dark:bg-red-900/30",     variant: "error" },
   vencido:           { label: "Vencido",             color: "text-amber-600",   bg: "bg-amber-100 dark:bg-amber-900/30", variant: "warning" },
-  equivocado:        { label: "Producto equivocado", color: "text-blue-600",    bg: "bg-blue-100 dark:bg-blue-900/30",   variant: "info" },
+  equivocado:        { label: "Producto equivocado", color: "text-emerald-600",    bg: "bg-emerald-100 dark:bg-emerald-900/30",   variant: "info" },
   insatisfecho:      { label: "Insatisfecho",        color: "text-violet-600",  bg: "bg-violet-100 dark:bg-violet-900/30", variant: "pending" },
   "dañado-transporte": { label: "Dañado en transporte", color: "text-orange-600", bg: "bg-orange-100 dark:bg-orange-900/30", variant: "warning" },
   duplicado:         { label: "Pedido duplicado",    color: "text-gray-600",    bg: "bg-gray-100 dark:bg-gray-800/30",   variant: "neutral" },
@@ -47,7 +47,7 @@ const REASON_META: Record<ReturnReason, { label: string; color: string; bg: stri
 
 const DECISION_META: Record<ReturnDecision, { label: string; color: string }> = {
   reembolso: { label: "Reembolso",   color: "text-emerald-600" },
-  reemplazo: { label: "Reemplazo",   color: "text-blue-600" },
+  reemplazo: { label: "Reemplazo",   color: "text-emerald-600" },
   credito:   { label: "Crédito",     color: "text-violet-600" },
   rechazado: { label: "Rechazado",   color: "text-red-600" },
   pendiente: { label: "Pendiente",   color: "text-amber-600" },
@@ -114,7 +114,7 @@ export default function AdvancedReturnsTab() {
           { label: "Valor en devoluciones", value: fmt(stats.totalValue), color: "text-red-600", bg: "bg-red-50 dark:bg-red-950/30" },
           { label: "Reembolsado", value: fmt(stats.refunded), color: "text-amber-600", bg: "bg-amber-50 dark:bg-amber-950/30" },
           { label: "Restockeados", value: String(stats.restocked), color: "text-emerald-600", bg: "bg-emerald-50 dark:bg-emerald-950/30" },
-          { label: "Pendientes", value: String(stats.pending), color: "text-blue-600", bg: "bg-blue-50 dark:bg-blue-950/30" },
+          { label: "Pendientes", value: String(stats.pending), color: "text-emerald-600", bg: "bg-emerald-50 dark:bg-emerald-950/30" },
         ].map(({ label, value, color, bg }) => (
           <div key={label} className={cn("rounded-2xl p-4", bg)}>
             <p className="text-xs font-semibold text-gray-500 dark:text-muted mb-1">{label}</p>

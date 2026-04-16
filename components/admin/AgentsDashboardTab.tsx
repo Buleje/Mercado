@@ -82,7 +82,7 @@ const DOMAIN_ACTIONS: Record<string, string[]> = {
 
 const STATUS_META: Record<TaskStatus, { label: string; color: string; bg: string }> = {
   pending:   { label: "Pendiente",  color: "text-amber-600",   bg: "bg-amber-100 dark:bg-amber-900/30" },
-  running:   { label: "Ejecutando", color: "text-blue-600",    bg: "bg-blue-100 dark:bg-blue-900/30" },
+  running:   { label: "Ejecutando", color: "text-emerald-600",    bg: "bg-emerald-100 dark:bg-emerald-900/30" },
   completed: { label: "Completado", color: "text-emerald-600", bg: "bg-emerald-100 dark:bg-emerald-900/30" },
   failed:    { label: "Fallido",    color: "text-red-600",     bg: "bg-red-100 dark:bg-red-900/30" },
   cancelled: { label: "Cancelado",  color: "text-gray-500",    bg: "bg-gray-100 dark:bg-gray-900/30" },
@@ -365,9 +365,9 @@ export default function AgentsDashboardTab() {
                   </span>
                 </div>
               </div>
-              <div className="rounded-2xl p-4 bg-blue-50 dark:bg-blue-950/30">
+              <div className="rounded-2xl p-4 bg-emerald-50 dark:bg-emerald-950/30">
                 <p className="text-xs font-semibold text-gray-500 dark:text-muted mb-1">Agentes</p>
-                <p className="text-xl font-extrabold text-blue-600">{health.agents.length}</p>
+                <p className="text-xl font-extrabold text-emerald-600">{health.agents.length}</p>
               </div>
               <div className="rounded-2xl p-4 bg-violet-50 dark:bg-violet-950/30">
                 <p className="text-xs font-semibold text-gray-500 dark:text-muted mb-1">Tareas Activas</p>
@@ -562,7 +562,7 @@ export default function AgentsDashboardTab() {
             Tareas Recientes
           </h2>
           {recentTasks.some((t) => t.status === "running" || t.status === "pending") && (
-            <span className="inline-flex items-center gap-1 text-[10px] font-semibold text-blue-600 dark:text-blue-400">
+            <span className="inline-flex items-center gap-1 text-[10px] font-semibold text-emerald-600 dark:text-emerald-400">
               <RefreshCw className="h-3 w-3 animate-spin" />
               Auto-actualizando
             </span>

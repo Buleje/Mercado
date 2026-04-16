@@ -342,9 +342,9 @@ export default function HomepageEditorTab() {
       </div>
 
       {/* Info banner */}
-      <div className="flex flex-wrap items-start gap-3 bg-blue-50 dark:bg-blue-900/20 border border-blue-100 dark:border-blue-700/30 rounded-2xl px-2 sm:px-4 py-2 sm:py-3">
-        <Sparkles className="h-4 w-4 text-blue-500 mt-0.5 shrink-0" />
-        <p className="text-xs text-blue-700 dark:text-blue-300 leading-relaxed">
+      <div className="flex flex-wrap items-start gap-3 bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-100 dark:border-emerald-700/30 rounded-2xl px-2 sm:px-4 py-2 sm:py-3">
+        <Sparkles className="h-4 w-4 text-emerald-500 mt-0.5 shrink-0" />
+        <p className="text-xs text-emerald-700 dark:text-emerald-300 leading-relaxed">
           Los cambios se guardan en la configuración del sistema. Haz clic en <strong>Guardar cambios</strong> y luego refresca la página de inicio para ver los cambios aplicados.
         </p>
       </div>

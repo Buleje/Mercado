@@ -18,7 +18,7 @@ interface ConversationMessage {
 const STRATEGIC_PROMPTS = [
   { icon: TrendingUp, text: "¿Qué combos debo crear esta semana?", color: "text-primary" },
   { icon: Users, text: "¿Cómo recupero clientes que no vuelven?", color: "text-violet-500" },
-  { icon: ShoppingBag, text: "¿Qué productos me conviene agregar?", color: "text-blue-500" },
+  { icon: ShoppingBag, text: "¿Qué productos me conviene agregar?", color: "text-emerald-500" },
   { icon: Calendar, text: "Dame un plan de ventas para esta semana", color: "text-amber-500" },
   { icon: Zap, text: "¿Qué precio debería subir o bajar?", color: "text-red-500" },
   { icon: Brain, text: "Analiza mi negocio y dame 5 mejoras urgentes", color: "text-emerald-500" },
@@ -215,7 +215,7 @@ export default function AIStrategicAdvisor({ data }: { data: BusinessData }) {
             </div>
             <div className="text-center">
               <div className="flex items-center justify-center gap-1 mb-0.5">
-                <ShoppingBag className="w-3 h-3 text-blue-500" />
+                <ShoppingBag className="w-3 h-3 text-emerald-500" />
                 <span className="text-xs font-bold text-gray-900 dark:text-white">{metrics.transacciones}</span>
               </div>
               <p className="text-[9px] text-gray-500">Pedidos</p>

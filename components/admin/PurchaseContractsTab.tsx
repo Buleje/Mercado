@@ -40,7 +40,7 @@ const STATUS_META: Record<ContractStatus, { label: string; color: string; bg: st
   "por-vencer":     { label: "Por vencer",       color: "text-amber-700 dark:text-amber-400",    bg: "bg-amber-100 dark:bg-amber-900/30",    icon: Clock         },
   vencido:          { label: "Vencido",          color: "text-red-700 dark:text-red-400",         bg: "bg-red-100 dark:bg-red-900/30",        icon: AlertTriangle },
   cancelado:        { label: "Cancelado",        color: "text-gray-600 dark:text-muted",          bg: "bg-gray-100 dark:bg-surface",          icon: X             },
-  "en-negociacion": { label: "En negociación",   color: "text-blue-700 dark:text-blue-400",       bg: "bg-blue-100 dark:bg-blue-900/30",      icon: RefreshCw     },
+  "en-negociacion": { label: "En negociación",   color: "text-emerald-700 dark:text-emerald-400",       bg: "bg-emerald-100 dark:bg-emerald-900/30",      icon: RefreshCw     },
 };
 
 type Contract = {
@@ -241,7 +241,7 @@ export default function PurchaseContractsTab() {
                       <div className="flex items-center gap-2 flex-wrap mb-0.5">
                         <span className="text-xs font-mono font-bold text-gray-400">{c.code}</span>
                         <span className={cn("inline-flex items-center gap-1 text-xs font-bold px-2 py-0.5 rounded-full", meta.bg, meta.color)}><Icon className="h-3 w-3" />{meta.label}</span>
-                        {c.autoRenew && <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400">Auto-renovación</span>}
+                        {c.autoRenew && <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400">Auto-renovación</span>}
                       </div>
                       <p className="font-extrabold text-gray-900 dark:text-foreground">{c.supplierName}</p>
                       <p className="text-xs text-gray-500 dark:text-muted">{c.category} · {c.description}</p>
@@ -271,7 +271,7 @@ export default function PurchaseContractsTab() {
                     {dLeft < 0 ? `${Math.abs(dLeft)}d vencido` : dLeft === 0 ? "Vence hoy" : `${dLeft}d restantes`}
                   </div>
                   <div className="flex flex-wrap gap-2">
-                    <button onClick={() => setDetail(c)} className="p-2 rounded-xl border border-gray-200 dark:border-card-border text-gray-500 hover:text-blue-500 hover:bg-blue-50 dark:hover:bg-blue-950/20 transition-colors">
+                    <button onClick={() => setDetail(c)} className="p-2 rounded-xl border border-gray-200 dark:border-card-border text-gray-500 hover:text-emerald-500 hover:bg-emerald-50 dark:hover:bg-emerald-950/20 transition-colors">
                       <Eye className="h-3.5 w-3.5" />
                     </button>
                     {(c.computedStatus === "vencido" || c.computedStatus === "por-vencer") && (

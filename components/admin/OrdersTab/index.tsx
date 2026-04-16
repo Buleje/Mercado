@@ -190,13 +190,13 @@ export default function OrdersTab() {
 
       {/* Delivery driver filter */}
       {filterByDelivery && (
-        <div className="bg-blue-50 dark:bg-blue-950/20 border border-blue-200 dark:border-blue-900/30 rounded-xl p-4">
+        <div className="bg-emerald-50 dark:bg-emerald-950/20 border border-emerald-200 dark:border-emerald-900/30 rounded-xl p-4">
           <div className="flex items-center gap-3 flex-wrap">
-            <p className="text-sm font-semibold text-blue-700 dark:text-blue-400">Filtrar por delivery:</p>
+            <p className="text-sm font-semibold text-emerald-700 dark:text-emerald-400">Filtrar por delivery:</p>
             <select
               value={selectedDriverFilter}
               onChange={e => setSelectedDriverFilter(e.target.value)}
-              className="px-3 py-1.5 rounded-lg border border-blue-300 dark:border-blue-700 text-sm font-semibold text-blue-700 dark:text-blue-300 bg-white dark:bg-card outline-none focus:border-primary"
+              className="px-3 py-1.5 rounded-lg border border-emerald-300 dark:border-emerald-700 text-sm font-semibold text-emerald-700 dark:text-emerald-300 bg-white dark:bg-card outline-none focus:border-primary"
             >
               <option value="">Todos los deliverys</option>
               {Array.from(new Set(
@@ -210,14 +210,14 @@ export default function OrdersTab() {
             {selectedDriverFilter && (
               <button
                 onClick={() => setSelectedDriverFilter("")}
-                className="text-xs font-semibold text-blue-600 hover:text-blue-800 underline"
+                className="text-xs font-semibold text-emerald-600 hover:text-emerald-800 underline"
               >
                 Limpiar
               </button>
             )}
           </div>
           {selectedDriverFilter && (
-            <p className="text-xs text-blue-600 dark:text-blue-400 mt-2">
+            <p className="text-xs text-emerald-600 dark:text-emerald-400 mt-2">
               Mostrando {activeOrders.length} pedido{activeOrders.length !== 1 ? "s" : ""} de {selectedDriverFilter}
             </p>
           )}

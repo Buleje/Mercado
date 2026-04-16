@@ -57,7 +57,7 @@ const CONFETTI_PIECES = Array.from({ length: 12 }, (_, i) => {
     "bg-[#00B4A6]",
     "bg-[#f97316]",
     "bg-yellow-400",
-    "bg-blue-400",
+    "bg-emerald-400",
     "bg-pink-400",
   ][i % 5];
   return { angle, distance, color };

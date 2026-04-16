@@ -43,7 +43,7 @@ const TYPE_LABEL: Record<InvoiceType, string> = { factura: "Factura", boleta: "B
 const STATUS_LABEL: Record<InvoiceStatus, string> = { borrador: "Borrador", emitida: "Emitida", anulada: "Anulada", pagada: "Pagada" };
 const STATUS_COLOR: Record<InvoiceStatus, string> = {
   borrador: "bg-gray-100 text-gray-600 dark:bg-surface dark:text-muted",
-  emitida:  "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400",
+  emitida:  "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400",
   anulada:  "bg-red-100 text-red-600 dark:bg-red-900/30 dark:text-red-400",
   pagada:   "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400",
 };
@@ -204,7 +204,7 @@ export default function InvoicingTab() {
       {/* KPIs */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-4">
         {[
-          { label: "Total facturado", value: fmt(totalEmitted), icon: FileText, color: "text-blue-600", bg: "bg-blue-50 dark:bg-blue-950/30" },
+          { label: "Total facturado", value: fmt(totalEmitted), icon: FileText, color: "text-emerald-600", bg: "bg-emerald-50 dark:bg-emerald-950/30" },
           { label: "IGV generado", value: fmt(totalIGV), icon: AlertTriangle, color: "text-amber-600", bg: "bg-amber-50 dark:bg-amber-950/30" },
           { label: "En borrador", value: String(countDraft), icon: Clock, color: "text-gray-600", bg: "bg-gray-50 dark:bg-surface" },
           { label: "Comprobantes emitidos", value: String(invoices.filter(i => i.status === "emitida" || i.status === "pagada").length), icon: CheckCircle, color: "text-emerald-600", bg: "bg-emerald-50 dark:bg-emerald-950/30" },
@@ -387,7 +387,7 @@ export default function InvoicingTab() {
                 <td className="px-2 sm:px-4 py-2 sm:py-3 text-center hidden sm:table-cell" onClick={e => e.stopPropagation()}>
                   <div className="flex items-center justify-center gap-1">
                     {inv.status === "borrador" && (
-                      <button onClick={() => handleChangeStatus(inv.id, "emitida")} className="p-1.5 rounded-lg bg-blue-50 dark:bg-blue-950/30 text-blue-600 hover:bg-blue-100 dark:hover:bg-blue-900/50 transition-colors" title="Emitir"><Send className="h-3.5 w-3.5" /></button>
+                      <button onClick={() => handleChangeStatus(inv.id, "emitida")} className="p-1.5 rounded-lg bg-emerald-50 dark:bg-emerald-950/30 text-emerald-600 hover:bg-emerald-100 dark:hover:bg-emerald-900/50 transition-colors" title="Emitir"><Send className="h-3.5 w-3.5" /></button>
                     )}
                     {inv.status === "emitida" && (
                       <button onClick={() => handleChangeStatus(inv.id, "pagada")} className="p-1.5 rounded-lg bg-emerald-50 dark:bg-emerald-950/30 text-emerald-600 hover:bg-emerald-100 dark:hover:bg-emerald-900/50 transition-colors" title="Marcar pagado"><CheckCircle className="h-3.5 w-3.5" /></button>

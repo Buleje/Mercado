@@ -147,7 +147,7 @@ export default function ShippingCostsTab() {
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
         {[
           { label: "Ingreso delivery (mes)", value: fmt(kpis.totalRevenue), color: "text-emerald-600", icon: TrendingUp },
-          { label: "Pedidos con envío",       value: kpis.totalOrders,       color: "text-blue-500",    icon: BarChart3 },
+          { label: "Pedidos con envío",       value: kpis.totalOrders,       color: "text-emerald-500",    icon: BarChart3 },
           { label: "Envíos gratis",            value: kpis.totalFree,         color: "text-violet-500",  icon: TrendingDown },
           { label: "Costo prom. pagado",       value: fmt(kpis.avgCost),      color: "text-amber-500",   icon: DollarSign },
         ].map(({ label, value, color, icon: Icon }) => (

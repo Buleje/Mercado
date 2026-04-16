@@ -122,7 +122,7 @@ function WidgetContent({ id }: { id: WidgetId }) {
     case "clientes-nuevos":
       return (
         <div className="space-y-1">
-          <p className="text-3xl font-bold text-blue-600 dark:text-blue-400">0</p>
+          <p className="text-3xl font-bold text-emerald-600 dark:text-emerald-400">0</p>
           <p className="text-xs text-gray-500 dark:text-gray-400">esta semana</p>
         </div>
       );

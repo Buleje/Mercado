@@ -199,12 +199,12 @@ export default function DailyReportExport({ className }: DailyReportExportProps)
             <p className="text-lg font-extrabold text-emerald-600">{fmt(stats.totalSales)}</p>
             <p className="text-[10px] text-gray-400">{stats.orderCount} pedido{stats.orderCount !== 1 ? "s" : ""}</p>
           </div>
-          <div className="bg-blue-50 dark:bg-blue-900/20 rounded-2xl p-4">
+          <div className="bg-emerald-50 dark:bg-emerald-900/20 rounded-2xl p-4">
             <div className="flex items-center gap-1.5 mb-1">
-              <Package className="h-4 w-4 text-blue-600" />
+              <Package className="h-4 w-4 text-emerald-600" />
               <p className="text-[10px] font-semibold text-gray-500 dark:text-muted uppercase">Top producto</p>
             </div>
-            <p className="text-sm font-bold text-blue-600 truncate">
+            <p className="text-sm font-bold text-emerald-600 truncate">
               {stats.topProducts[0]?.name ?? "—"}
             </p>
             <p className="text-[10px] text-gray-400">

@@ -88,7 +88,7 @@ export default function MarginDashboardTab() {
       {/* KPI Row */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-4">
         <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl p-4">
-          <div className="w-9 h-9 rounded-xl bg-blue-500 flex items-center justify-center mb-3">
+          <div className="w-9 h-9 rounded-xl bg-emerald-500 flex items-center justify-center mb-3">
             <DollarSign className="h-4 w-4 text-white" />
           </div>
           <p className="text-xl sm:text-2xl font-extrabold text-gray-900 dark:text-foreground">

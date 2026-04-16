@@ -41,7 +41,7 @@ function Card({ title, icon: Icon, children, action }: { title: string; icon: Re
 }
 function Empty({ text = "Sin datos en este periodo" }: { text?: string }) { return <div className="py-8 text-center text-xs text-gray-300 dark:text-muted">{text}</div>; }
 function _DBadge({ children, color }: { children: React.ReactNode; color: "green"|"red"|"amber"|"blue"|"purple"|"gray" }) {
-  const m: Record<string,string> = { green:"bg-emerald-50 text-emerald-600", red:"bg-red-50 text-red-600", amber:"bg-amber-50 text-amber-600", blue:"bg-blue-50 text-blue-600", purple:"bg-purple-50 text-purple-600", gray:"bg-gray-100 text-gray-500" };
+  const m: Record<string,string> = { green:"bg-emerald-50 text-emerald-600", red:"bg-red-50 text-red-600", amber:"bg-amber-50 text-amber-600", blue:"bg-emerald-50 text-emerald-600", purple:"bg-purple-50 text-purple-600", gray:"bg-gray-100 text-gray-500" };
   return <span className={cn("inline-flex px-1.5 py-0.5 rounded text-xs font-semibold",m[color])}>{children}</span>;
 }
 
@@ -212,9 +212,9 @@ export default function DashboardClientesSection({ st, expandAll, orders, custom
                       <div className="text-[10px] font-semibold text-emerald-600 dark:text-emerald-400 mb-0.5">Día 1</div>
                       <div className="text-lg font-bold text-emerald-700 dark:text-emerald-300">{st.retentionMetrics.day1}%</div>
                     </div>
-                    <div className="bg-linear-to-br from-blue-50 to-blue-100 dark:from-blue-950/30 dark:to-blue-900/20 rounded-lg p-3 text-center">
-                      <div className="text-[10px] font-semibold text-blue-600 dark:text-blue-400 mb-0.5">Día 7</div>
-                      <div className="text-lg font-bold text-blue-700 dark:text-blue-300">{st.retentionMetrics.day7}%</div>
+                    <div className="bg-linear-to-br from-emerald-50 to-emerald-100 dark:from-emerald-950/30 dark:to-emerald-900/20 rounded-lg p-3 text-center">
+                      <div className="text-[10px] font-semibold text-emerald-600 dark:text-emerald-400 mb-0.5">Día 7</div>
+                      <div className="text-lg font-bold text-emerald-700 dark:text-emerald-300">{st.retentionMetrics.day7}%</div>
                     </div>
                     <div className="bg-linear-to-br from-violet-50 to-violet-100 dark:from-violet-950/30 dark:to-violet-900/20 rounded-lg p-3 text-center">
                       <div className="text-[10px] font-semibold text-violet-600 dark:text-violet-400 mb-0.5">Día 30</div>
@@ -257,9 +257,9 @@ export default function DashboardClientesSection({ st, expandAll, orders, custom
                     </table>
                   </div>
 
-                  <div className="bg-blue-50 dark:bg-blue-950/30 rounded-lg p-3 text-xs">
-                    <div className="font-semibold text-blue-700 dark:text-blue-400 mb-1">Interpretación</div>
-                    <p className="text-blue-600 dark:text-blue-300 text-[10px]">
+                  <div className="bg-emerald-50 dark:bg-emerald-950/30 rounded-lg p-3 text-xs">
+                    <div className="font-semibold text-emerald-700 dark:text-emerald-400 mb-1">Interpretación</div>
+                    <p className="text-emerald-600 dark:text-emerald-300 text-[10px]">
                       Verde (≥50%): Excelente retención. Naranja (30-49%): Retención aceptable. Rojo (&lt;30%): Requiere acción inmediata. 
                       Los primeros 30 días son críticos para fidelizar clientes.
                     </p>
@@ -340,9 +340,9 @@ export default function DashboardClientesSection({ st, expandAll, orders, custom
                     </div>
                   </div>
                 )}
-                <div className="bg-blue-50 dark:bg-blue-950/30 rounded-lg p-3 text-xs">
-                  <div className="font-semibold text-blue-700 dark:text-blue-400 mb-1">Retención proactiva</div>
-                  <p className="text-blue-600 dark:text-blue-300 text-[10px]">
+                <div className="bg-emerald-50 dark:bg-emerald-950/30 rounded-lg p-3 text-xs">
+                  <div className="font-semibold text-emerald-700 dark:text-emerald-400 mb-1">Retención proactiva</div>
+                  <p className="text-emerald-600 dark:text-emerald-300 text-[10px]">
                     Los clientes VIP (top 20% en gasto) que no compran en 3+ semanas tienen alto riesgo de irse. Un mensaje personalizado recupera hasta 30% de clientes inactivos.
                   </p>
                 </div>

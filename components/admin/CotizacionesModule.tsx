@@ -45,7 +45,7 @@ type Cotizacion = {
 
 const STATUS_META: Record<CotizacionStatus, { label: string; color: string; bg: string }> = {
   BORRADOR:   { label: "Borrador",   color: "text-gray-700 dark:text-gray-400",      bg: "bg-gray-100 dark:bg-gray-800/50" },
-  ENVIADA:    { label: "Enviada",    color: "text-blue-700 dark:text-blue-400",      bg: "bg-blue-100 dark:bg-blue-900/30" },
+  ENVIADA:    { label: "Enviada",    color: "text-emerald-700 dark:text-emerald-400",      bg: "bg-emerald-100 dark:bg-emerald-900/30" },
   ACEPTADA:   { label: "Aceptada",   color: "text-emerald-700 dark:text-emerald-400", bg: "bg-emerald-100 dark:bg-emerald-900/30" },
   RECHAZADA:  { label: "Rechazada",  color: "text-red-700 dark:text-red-400",        bg: "bg-red-100 dark:bg-red-900/30" },
   VENCIDA:    { label: "Vencida",    color: "text-red-700 dark:text-red-400",        bg: "bg-red-100 dark:bg-red-900/30" },
@@ -159,7 +159,7 @@ function CotizacionesDashboard({ cotizaciones, loading: parentLoading }: { cotiz
   // Funnel
   const stages = [
     { id: "BORRADOR", label: "Borrador", count: cotizaciones.filter(c => c.status === "BORRADOR").length, bg: "bg-gray-300 dark:bg-gray-600", text: "text-gray-700 dark:text-gray-300" },
-    { id: "ENVIADA", label: "Enviada", count: cotizaciones.filter(c => c.status === "ENVIADA").length, bg: "bg-blue-300 dark:bg-blue-800", text: "text-blue-800 dark:text-blue-200" },
+    { id: "ENVIADA", label: "Enviada", count: cotizaciones.filter(c => c.status === "ENVIADA").length, bg: "bg-emerald-300 dark:bg-emerald-800", text: "text-emerald-800 dark:text-emerald-200" },
     { id: "ACEPTADA", label: "Aceptada", count: cotizaciones.filter(c => c.status === "ACEPTADA").length, bg: "bg-emerald-300 dark:bg-emerald-800", text: "text-emerald-800 dark:text-emerald-200" },
     { id: "CONVERTIDA", label: "Convertida", count: cotizaciones.filter(c => c.status === "CONVERTIDA").length, bg: "bg-amber-300 dark:bg-amber-800", text: "text-amber-800 dark:text-amber-200" },
   ];
@@ -202,7 +202,7 @@ function CotizacionesDashboard({ cotizaciones, loading: parentLoading }: { cotiz
       <m.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0 * 0.1 }}>
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
         {[
-          { label: "Emitidas mes", value: String(emitidasMes), border: "border-b-4 border-blue-500" },
+          { label: "Emitidas mes", value: String(emitidasMes), border: "border-b-4 border-emerald-500" },
           { label: "Convertidas", value: String(convertidas), border: "border-b-4 border-purple-500" },
           { label: "Tasa conversion", value: `${tasaConversion.toFixed(1)}%`, border: tasaConversion > 30 ? "border-b-4 border-emerald-500" : "border-b-4 border-amber-500" },
           { label: "Monto cotizado", value: formatCurrency(montoCotizado), border: "border-b-4 border-[#00B4A6]" },
@@ -589,7 +589,7 @@ export default function CotizacionesModule() {
               {!loading && cotizaciones.length > 0 && (() => {
                 const pendientes = cotizaciones.filter(c => c.status === "BORRADOR" || c.status === "ENVIADA").length;
                 return pendientes > 0 ? (
-                  <span className="ml-2 text-xs font-bold bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400 px-2 py-0.5 rounded-full align-middle">{pendientes} pendientes</span>
+                  <span className="ml-2 text-xs font-bold bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400 px-2 py-0.5 rounded-full align-middle">{pendientes} pendientes</span>
                 ) : null;
               })()}
             </h1>
@@ -687,7 +687,7 @@ export default function CotizacionesModule() {
           {!loading && cotizaciones.length > 0 && (() => {
             const stages = [
               { id: "BORRADOR", label: "Borrador", count: cotizaciones.filter(c => c.status === "BORRADOR").length, bg: "bg-gray-200 dark:bg-gray-700", text: "text-gray-700 dark:text-gray-300" },
-              { id: "ENVIADA", label: "Enviada", count: cotizaciones.filter(c => c.status === "ENVIADA").length, bg: "bg-blue-200 dark:bg-blue-900/40", text: "text-blue-700 dark:text-blue-300" },
+              { id: "ENVIADA", label: "Enviada", count: cotizaciones.filter(c => c.status === "ENVIADA").length, bg: "bg-emerald-200 dark:bg-emerald-900/40", text: "text-emerald-700 dark:text-emerald-300" },
               { id: "ACEPTADA", label: "Aceptada", count: cotizaciones.filter(c => c.status === "ACEPTADA").length, bg: "bg-emerald-200 dark:bg-emerald-900/40", text: "text-emerald-700 dark:text-emerald-300" },
               { id: "CONVERTIDA", label: "Convertida", count: cotizaciones.filter(c => c.status === "CONVERTIDA").length, bg: "bg-amber-200 dark:bg-amber-900/40", text: "text-amber-700 dark:text-amber-300" },
             ];
@@ -803,7 +803,7 @@ export default function CotizacionesModule() {
                           } catch { /* ignore */ } finally { setMarkingVencidas(false); }
                         }}
                         disabled={markingVencidas}
-                        className="px-3 py-1.5 rounded-lg text-xs font-bold text-white bg-blue-600 hover:bg-blue-700 transition-colors disabled:opacity-50"
+                        className="px-3 py-1.5 rounded-lg text-xs font-bold text-white bg-emerald-600 hover:bg-emerald-700 transition-colors disabled:opacity-50"
                       >
                         {markingVencidas ? "Procesando..." : "Renovar todas"}
                       </button>
@@ -859,7 +859,7 @@ export default function CotizacionesModule() {
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 px-4 py-2">
                     {paginated.map(c => {
                       const meta = STATUS_META[c.status];
-                      const headerColor = c.status === "BORRADOR" ? "bg-gray-100 dark:bg-gray-800" : c.status === "ENVIADA" ? "bg-blue-50 dark:bg-blue-950/30" : c.status === "ACEPTADA" || c.status === "CONVERTIDA" ? "bg-emerald-50 dark:bg-emerald-950/30" : "bg-red-50 dark:bg-red-950/30";
+                      const headerColor = c.status === "BORRADOR" ? "bg-gray-100 dark:bg-gray-800" : c.status === "ENVIADA" ? "bg-emerald-50 dark:bg-emerald-950/30" : c.status === "ACEPTADA" || c.status === "CONVERTIDA" ? "bg-emerald-50 dark:bg-emerald-950/30" : "bg-red-50 dark:bg-red-950/30";
                       const diasValidez = Math.max(0, Math.ceil((new Date(c.validoHasta).getTime() - Date.now()) / 86400000));
                       return (
                         <div key={c.id} onClick={() => openDetail(c)} className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl overflow-hidden shadow-sm hover:shadow-lg cursor-pointer transition-all group">
@@ -1344,7 +1344,7 @@ export default function CotizacionesModule() {
                   {selected.status === "BORRADOR" && (
                     <>
                       <button onClick={() => updateStatus("ENVIADA")} disabled={actionLoading}
-                        className="flex items-center gap-1.5 px-4 py-2 rounded-xl text-sm font-bold text-white bg-blue-600 hover:bg-blue-700 disabled:opacity-50 transition-colors">
+                        className="flex items-center gap-1.5 px-4 py-2 rounded-xl text-sm font-bold text-white bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 transition-colors">
                         <Send className="h-4 w-4" /> Enviar
                       </button>
                     </>

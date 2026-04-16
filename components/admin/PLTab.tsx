@@ -223,7 +223,7 @@ export default function PLTab() {
           {/* KPI Cards */}
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-4">
             {[
-              { label: "Ingresos Brutos", value: summary.revenue, delta: revDelta, icon: TrendingUp, color: "text-blue-600", bg: "bg-blue-50 dark:bg-blue-950/30" },
+              { label: "Ingresos Brutos", value: summary.revenue, delta: revDelta, icon: TrendingUp, color: "text-emerald-600", bg: "bg-emerald-50 dark:bg-emerald-950/30" },
               { label: "Utilidad Bruta", value: summary.grossProfit, sub: `Margen ${summary.grossMargin.toFixed(1)}%`, icon: BarChart2, color: "text-violet-600", bg: "bg-violet-50 dark:bg-violet-950/30" },
               { label: "Gastos Operativos", value: summary.totalExpenses, icon: TrendingDown, color: "text-amber-600", bg: "bg-amber-50 dark:bg-amber-950/30" },
               { label: "Utilidad Neta", value: summary.netProfit, delta: profitDelta, sub: `Margen ${summary.netMargin.toFixed(1)}%`, icon: DollarSign, color: summary.netProfit >= 0 ? "text-emerald-600" : "text-red-600", bg: summary.netProfit >= 0 ? "bg-emerald-50 dark:bg-emerald-950/30" : "bg-red-50 dark:bg-red-950/30" },
@@ -306,7 +306,7 @@ export default function PLTab() {
                   <div className="w-full flex flex-col gap-0.5 justify-end" style={{ height: "120px" }}>
                     {/* Revenue bar */}
                     <div
-                      className="w-full rounded-t-md bg-blue-400/60 dark:bg-blue-500/40 transition-all"
+                      className="w-full rounded-t-md bg-emerald-400/60 dark:bg-emerald-500/40 transition-all"
                       style={{ height: `${(m.revenue / maxRevenue) * 100}px` }}
                       title={`Ingresos: ${fmt(m.revenue)}`}
                     />
@@ -322,7 +322,7 @@ export default function PLTab() {
               ))}
             </div>
             <div className="flex flex-wrap items-center gap-2 sm:gap-4 mt-3">
-              <span className="flex items-center gap-1.5 text-xs text-gray-500 dark:text-muted"><span className="w-3 h-3 rounded bg-blue-400/60" /> Ingresos</span>
+              <span className="flex items-center gap-1.5 text-xs text-gray-500 dark:text-muted"><span className="w-3 h-3 rounded bg-emerald-400/60" /> Ingresos</span>
               <span className="flex items-center gap-1.5 text-xs text-gray-500 dark:text-muted"><span className="w-3 h-3 rounded bg-emerald-500" /> Utilidad neta</span>
             </div>
           </div>
@@ -351,7 +351,7 @@ function PLRow({
   large?: boolean;
 }) {
   const valueColor =
-    highlight === "blue" ? "text-blue-600 dark:text-blue-400" :
+    highlight === "blue" ? "text-emerald-600 dark:text-emerald-400" :
     highlight === "green" ? "text-emerald-600 dark:text-emerald-400" :
     highlight === "red" ? "text-red-500 dark:text-red-400" :
     value < 0 ? "text-red-500 dark:text-red-400" : "text-gray-800 dark:text-foreground";

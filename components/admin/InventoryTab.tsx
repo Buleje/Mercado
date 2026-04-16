@@ -907,7 +907,7 @@ export default function InventoryTab() {
           <p className="text-xs text-gray-500 dark:text-zinc-400 font-medium">Valor total</p>
           <p className="text-2xl font-mono font-bold text-primary mt-1">{fmt(totalStockValue)}</p>
           <p className="text-[10px] text-gray-400 dark:text-zinc-500 mt-1">En inventario</p>
-          <div className="h-1 rounded-full mt-2 bg-blue-500" />
+          <div className="h-1 rounded-full mt-2 bg-emerald-500" />
         </div>
       </div>
 
@@ -1034,7 +1034,7 @@ export default function InventoryTab() {
                 onClick={() => { const next = !showExtendedCols; setShowExtendedCols(next); try { localStorage.setItem("inv-extended-cols", String(next)); } catch {} }}
                 className={cn(
                   "flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-bold border transition-colors",
-                  showExtendedCols ? "border-blue-300 bg-blue-50 text-blue-700 dark:border-blue-700 dark:bg-blue-950/20 dark:text-blue-400" : "border-gray-200 dark:border-card-border text-gray-500 dark:text-muted hover:bg-white dark:hover:bg-card"
+                  showExtendedCols ? "border-emerald-300 bg-emerald-50 text-emerald-700 dark:border-emerald-700 dark:bg-emerald-950/20 dark:text-emerald-400" : "border-gray-200 dark:border-card-border text-gray-500 dark:text-muted hover:bg-white dark:hover:bg-card"
                 )}
               >
                 <Layers className="h-3.5 w-3.5" /> {showExtendedCols ? "Menos columnas" : "Mas columnas"}
@@ -1200,7 +1200,7 @@ export default function InventoryTab() {
                       <button onClick={() => deleteProduct(p.id)} className="p-2 rounded-xl bg-gray-50 dark:bg-surface text-gray-500 dark:text-muted hover:bg-red-50 hover:text-red-500 transition-colors border border-gray-100 dark:border-card-border" title="Eliminar">
                         <Trash2 className="h-4 w-4" />
                       </button>
-                      <button onClick={() => setKardexProduct({ id: p.id, name: p.name })} className="p-2 rounded-xl bg-gray-50 dark:bg-surface text-gray-500 dark:text-muted hover:bg-blue-50 hover:text-blue-600 transition-colors border border-gray-100 dark:border-card-border" title="Ver Kardex">
+                      <button onClick={() => setKardexProduct({ id: p.id, name: p.name })} className="p-2 rounded-xl bg-gray-50 dark:bg-surface text-gray-500 dark:text-muted hover:bg-emerald-50 hover:text-emerald-600 transition-colors border border-gray-100 dark:border-card-border" title="Ver Kardex">
                         <BookOpen className="h-4 w-4" />
                       </button>
                     </div>
@@ -1219,7 +1219,7 @@ export default function InventoryTab() {
                     {p.stock !== undefined ? (
                       <div className={cn(
                         "inline-flex items-center gap-1 px-3 py-1.5 rounded-full text-xs font-bold",
-                        lowStock ? "bg-amber-100 text-amber-700" : "bg-blue-50 text-blue-600"
+                        lowStock ? "bg-amber-100 text-amber-700" : "bg-emerald-50 text-emerald-600"
                       )}>
                         {lowStock && <AlertTriangle className="h-3 w-3" />}
                         Stock: {p.stock}
@@ -1331,7 +1331,7 @@ export default function InventoryTab() {
                               <span className={cn("h-2.5 w-2.5 rounded-full shrink-0",
                                 (p.stock ?? 0) === 0 ? "bg-red-500" :
                                 lowStock ? "bg-amber-500" :
-                                (p.stock ?? 0) > (p.stockMax ?? 999) ? "bg-blue-500" :
+                                (p.stock ?? 0) > (p.stockMax ?? 999) ? "bg-emerald-500" :
                                 "bg-emerald-500"
                               )} />
                               <span className={cn("inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-bold",
@@ -1415,7 +1415,7 @@ export default function InventoryTab() {
                                 });
                                 setShowAdd(true);
                               }}
-                              className="p-1.5 rounded-lg text-gray-400 dark:text-muted hover:text-blue-500 hover:bg-blue-50 transition-colors"
+                              className="p-1.5 rounded-lg text-gray-400 dark:text-muted hover:text-emerald-500 hover:bg-emerald-50 transition-colors"
                               title="Duplicar"
                             >
                               <ClipboardList className="h-4 w-4" />
@@ -1473,7 +1473,7 @@ export default function InventoryTab() {
             { key: "agotado", label: "Agotado", color: "border-red-400 bg-red-50 dark:bg-red-950/20", badgeColor: "bg-red-500", filter: (p: DbProduct) => (p.stock ?? 0) === 0 },
             { key: "bajo", label: "Pocas Existencias", color: "border-amber-400 bg-amber-50 dark:bg-amber-950/20", badgeColor: "bg-amber-500", filter: (p: DbProduct) => (p.stock ?? 0) > 0 && (p.stock ?? 0) <= (p.stockMin ?? 5) },
             { key: "normal", label: "Normal", color: "border-emerald-400 bg-emerald-50 dark:bg-emerald-950/20", badgeColor: "bg-emerald-500", filter: (p: DbProduct) => (p.stock ?? 0) > (p.stockMin ?? 5) && (p.stock ?? 0) <= (p.stockMax ?? 999) },
-            { key: "exceso", label: "Exceso", color: "border-blue-400 bg-blue-50 dark:bg-blue-950/20", badgeColor: "bg-blue-500", filter: (p: DbProduct) => (p.stock ?? 0) > (p.stockMax ?? 999) },
+            { key: "exceso", label: "Exceso", color: "border-emerald-400 bg-emerald-50 dark:bg-emerald-950/20", badgeColor: "bg-emerald-500", filter: (p: DbProduct) => (p.stock ?? 0) > (p.stockMax ?? 999) },
           ];
           return (
             <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-2 sm:gap-4">
@@ -1620,8 +1620,8 @@ export default function InventoryTab() {
             </div>
             <form onSubmit={addProduct} className="p-5 space-y-5">
               {/* National product DB search */}
-              <div className="bg-blue-50 border border-blue-100 rounded-xl p-4 space-y-3">
-                <p className="text-xs font-bold text-blue-700 uppercase tracking-wide flex items-center gap-1.5">
+              <div className="bg-emerald-50 border border-emerald-100 rounded-xl p-4 space-y-3">
+                <p className="text-xs font-bold text-emerald-700 uppercase tracking-wide flex items-center gap-1.5">
                   <Search className="h-3.5 w-3.5" /> Buscar en base nacional de productos
                 </p>
                 <div className="flex flex-wrap gap-2">
@@ -1630,25 +1630,25 @@ export default function InventoryTab() {
                     onChange={(e) => setDbQuery(e.target.value)}
                     onKeyDown={(e) => e.key === "Enter" && (e.preventDefault(), handleDbSearch())}
                     placeholder="Ej: arroz costeño, aceite vegetal…"
-                    className="flex-1 px-3 py-2 rounded-lg border border-blue-200 bg-white dark:bg-card text-gray-900 dark:text-foreground focus:border-blue-400 outline-none text-sm"
+                    className="flex-1 px-3 py-2 rounded-lg border border-emerald-200 bg-white dark:bg-card text-gray-900 dark:text-foreground focus:border-emerald-400 outline-none text-sm"
                   />
                   <button
                     type="button"
                     onClick={handleDbSearch}
                     disabled={dbSearching || !dbQuery.trim()}
-                    className="px-3 py-2 rounded-lg bg-blue-600 text-white hover:bg-blue-700 transition-colors disabled:opacity-50 flex items-center gap-1 text-sm font-bold"
+                    className="px-3 py-2 rounded-lg bg-emerald-600 text-white hover:bg-emerald-700 transition-colors disabled:opacity-50 flex items-center gap-1 text-sm font-bold"
                   >
                     {dbSearching ? <Loader2 className="h-4 w-4 animate-spin" /> : <Search className="h-4 w-4" />}
                   </button>
                 </div>
                 {dbResults.length > 0 && (
-                  <div className="space-y-1 max-h-52 overflow-y-auto rounded-xl border border-blue-100 bg-white dark:bg-card">
+                  <div className="space-y-1 max-h-52 overflow-y-auto rounded-xl border border-emerald-100 bg-white dark:bg-card">
                     {dbResults.map((r, i) => (
                       <button
                         key={i}
                         type="button"
                         onClick={() => applyDbResult(r)}
-                        className="w-full text-left px-3 py-2.5 hover:bg-blue-50 flex flex-wrap items-center gap-3 transition-colors border-b border-gray-50 last:border-0"
+                        className="w-full text-left px-3 py-2.5 hover:bg-emerald-50 flex flex-wrap items-center gap-3 transition-colors border-b border-gray-50 last:border-0"
                       >
                         {r.image && (
                           <Image src={r.image} alt={r.name} width={40} height={40} className="rounded-lg object-cover border border-gray-100 dark:border-card-border shrink-0 bg-gray-50 dark:bg-surface" />

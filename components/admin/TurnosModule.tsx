@@ -694,7 +694,7 @@ export default function TurnosModule() {
             </div>
             <div className="rounded-xl border border-gray-200 dark:border-card-border bg-white dark:bg-card shadow-sm hover:shadow-md transition-shadow p-3">
               <div className="flex items-center gap-2 mb-1">
-                <Timer className="h-4 w-4 text-blue-500" />
+                <Timer className="h-4 w-4 text-emerald-500" />
                 <p className="text-[10px] uppercase font-bold text-gray-400">Horas trabajadas</p>
               </div>
               <p className="text-2xl font-extrabold font-mono text-gray-900 dark:text-white">{horasTrabajadas.toFixed(1)}h</p>
@@ -1278,15 +1278,15 @@ export default function TurnosModule() {
 
                 {/* Card 2: Métodos de pago */}
                 {resumen.metodosPago.length > 0 && (
-                  <div className="bg-blue-50 dark:bg-blue-900/20 rounded-xl p-4">
-                    <h4 className="text-xs font-bold text-blue-800 dark:text-blue-300 uppercase tracking-wide mb-3 flex items-center gap-1.5">
+                  <div className="bg-emerald-50 dark:bg-emerald-900/20 rounded-xl p-4">
+                    <h4 className="text-xs font-bold text-emerald-800 dark:text-emerald-300 uppercase tracking-wide mb-3 flex items-center gap-1.5">
                       <CreditCard className="h-3.5 w-3.5" /> Metodos de pago
                     </h4>
                     <div className="space-y-1.5">
                       {resumen.metodosPago.map(m => (
                         <div key={m.metodo} className="flex justify-between text-sm">
-                          <span className="text-blue-700 dark:text-blue-300">{m.metodo}</span>
-                          <span className="font-bold text-blue-800 dark:text-blue-200">{formatCurrency(m.total)}</span>
+                          <span className="text-emerald-700 dark:text-emerald-300">{m.metodo}</span>
+                          <span className="font-bold text-emerald-800 dark:text-emerald-200">{formatCurrency(m.total)}</span>
                         </div>
                       ))}
                     </div>

@@ -814,7 +814,7 @@ function BigCard({
   items: string[];
 }) {
   const colorMap = {
-    blue:    "from-blue-50 to-blue-100 dark:from-blue-950/30 dark:to-blue-900/20 border-blue-200 dark:border-blue-900/40 text-blue-700 dark:text-blue-300",
+    blue:    "from-emerald-50 to-emerald-100 dark:from-emerald-950/30 dark:to-emerald-900/20 border-emerald-200 dark:border-emerald-900/40 text-emerald-700 dark:text-emerald-300",
     emerald: "from-emerald-50 to-emerald-100 dark:from-emerald-950/30 dark:to-emerald-900/20 border-emerald-200 dark:border-emerald-900/40 text-emerald-700 dark:text-emerald-300",
     purple:  "from-purple-50 to-purple-100 dark:from-purple-950/30 dark:to-purple-900/20 border-purple-200 dark:border-purple-900/40 text-purple-700 dark:text-purple-300",
     amber:   "from-amber-50 to-amber-100 dark:from-amber-950/30 dark:to-amber-900/20 border-amber-200 dark:border-amber-900/40 text-amber-700 dark:text-amber-300",
@@ -921,7 +921,7 @@ function HowTab() {
 function AITab() {
   const statusCfg: Record<SimpleAI["status"], { label: string; cls: string }> = {
     activo:       { label: "Funcionando",   cls: "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300" },
-    listo:        { label: "Listo para usar", cls: "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300" },
+    listo:        { label: "Listo para usar", cls: "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300" },
     "falta-key":  { label: "Falta tu API key", cls: "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300" },
   };
   return (
@@ -1182,7 +1182,7 @@ function BigScoreCard({
       </div>
       <div className="space-y-3">
         <ScoreBar label="Avance sólido (cuenta parciales como medio punto)" pct={score.solidPct} gradient={bar} />
-        <ScoreBar label="Avance perfecto (solo las totalmente listas)"        pct={score.perfectPct} gradient="from-blue-500 to-indigo-500" />
+        <ScoreBar label="Avance perfecto (solo las totalmente listas)"        pct={score.perfectPct} gradient="from-emerald-500 to-indigo-500" />
       </div>
     </div>
   );
@@ -1333,9 +1333,9 @@ function SellTab() {
       badgeLabel: "⭐ Más vendido",
     },
     premium: {
-      bg: "bg-gradient-to-br from-blue-50 to-cyan-50 dark:from-blue-950/30 dark:to-cyan-950/30",
-      border: "border-blue-300 dark:border-blue-800",
-      badge: "bg-blue-500 text-white",
+      bg: "bg-gradient-to-br from-emerald-50 to-cyan-50 dark:from-emerald-950/30 dark:to-cyan-950/30",
+      border: "border-emerald-300 dark:border-emerald-800",
+      badge: "bg-emerald-500 text-white",
       badgeLabel: "Turnkey",
     },
     enterprise: {

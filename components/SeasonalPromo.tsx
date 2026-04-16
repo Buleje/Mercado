@@ -51,7 +51,7 @@ const ALL_PROMOS: Promo[] = [
     cta: "Ver Lácteos",
     category: "lacteos",
     gradient: "linear-gradient(to right, #2563EB, #3B82F6)",
-    accent: "bg-blue-600",
+    accent: "bg-emerald-600",
   },
   {
     emoji: "🏪",
@@ -69,7 +69,7 @@ const ALL_PROMOS: Promo[] = [
     cta: "Ver Bebidas",
     category: "bebidas",
     gradient: "linear-gradient(to right, #3b82f6, #6366f1)",
-    accent: "bg-blue-600",
+    accent: "bg-emerald-600",
   },
 ];
 

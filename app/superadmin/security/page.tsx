@@ -36,7 +36,7 @@ const ACTION_CONFIG: Record<string, { label: string; icon: typeof Shield; color:
   login_failed: { label: "Login fallido", icon: ShieldAlert, color: "text-red-400", bg: "bg-red-500/10" },
   login_locked: { label: "IP bloqueada", icon: Ban, color: "text-red-500", bg: "bg-red-600/10" },
   "2fa_failed": { label: "2FA fallido", icon: Lock, color: "text-orange-400", bg: "bg-orange-500/10" },
-  "2fa_challenge": { label: "2FA enviado", icon: Unlock, color: "text-blue-400", bg: "bg-blue-500/10" },
+  "2fa_challenge": { label: "2FA enviado", icon: Unlock, color: "text-emerald-400", bg: "bg-emerald-500/10" },
   logout: { label: "Cerrar sesión", icon: Clock, color: "text-gray-400", bg: "bg-gray-500/10" },
 };
 
@@ -130,8 +130,8 @@ export default function SecurityDashboardPage() {
               icon={Globe}
               label="IPs únicas"
               value={data.uniqueIPs}
-              color="text-blue-400"
-              bg="bg-blue-500/10"
+              color="text-emerald-400"
+              bg="bg-emerald-500/10"
             />
             <SummaryCard
               icon={Lock}

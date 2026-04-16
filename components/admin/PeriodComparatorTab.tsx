@@ -144,7 +144,7 @@ export default function PeriodComparatorTab() {
         </div>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 text-center text-xs font-bold text-gray-500 dark:text-muted mb-3">
           <span>Métrica</span>
-          <span className="text-blue-600">{current.aLabel}</span>
+          <span className="text-emerald-600">{current.aLabel}</span>
           <span className="text-violet-600">{current.bLabel}</span>
         </div>
       </div>
@@ -178,11 +178,11 @@ export default function PeriodComparatorTab() {
               <div className="space-y-2">
                 <div>
                   <div className="flex justify-between text-xs mb-1">
-                    <span className="text-blue-600 font-semibold">{current.aLabel}</span>
+                    <span className="text-emerald-600 font-semibold">{current.aLabel}</span>
                     <span className="font-bold text-gray-900 dark:text-foreground">{fmtNum(m.periodA, m.format)}</span>
                   </div>
                   <div className="w-full h-2 bg-gray-100 dark:bg-surface rounded-full overflow-hidden">
-                    <div className="h-full bg-blue-500 rounded-full transition-all" style={{ width: `${(m.periodA / maxVal) * 100}%` }} />
+                    <div className="h-full bg-emerald-500 rounded-full transition-all" style={{ width: `${(m.periodA / maxVal) * 100}%` }} />
                   </div>
                 </div>
                 <div>

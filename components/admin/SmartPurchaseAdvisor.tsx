@@ -74,7 +74,7 @@ function getUrgencyLabel(u: AdvisedItem["urgency"]): string {
 const URGENCY_COLORS: Record<AdvisedItem["urgency"], string> = {
   critical: "text-red-600 bg-red-50 dark:bg-red-950/30 dark:text-red-400",
   high: "text-[#f97316] bg-[#f97316]/10",
-  medium: "text-blue-600 bg-blue-50 dark:bg-blue-950/30 dark:text-blue-400",
+  medium: "text-emerald-600 bg-emerald-50 dark:bg-emerald-950/30 dark:text-emerald-400",
 };
 
 // ── Mock data ─────────────────────────────────────────────────────────────────
@@ -342,7 +342,7 @@ export default function SmartPurchaseAdvisor() {
                       ? "border-l-red-500"
                       : item.urgency === "high"
                         ? "border-l-[#f97316]"
-                        : "border-l-blue-400"
+                        : "border-l-emerald-400"
                   )}
                 >
                   <div className="flex-1 min-w-0">

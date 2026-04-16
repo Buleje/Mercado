@@ -273,8 +273,8 @@ export default function ExpiryDashboardTab() {
         />
         <KPICard
           icon={<DollarSign className="h-5 w-5" />}
-          iconBg="bg-blue-100 dark:bg-blue-900/40"
-          iconColor="text-blue-600 dark:text-blue-400"
+          iconBg="bg-emerald-100 dark:bg-emerald-900/40"
+          iconColor="text-emerald-600 dark:text-emerald-400"
           label="Valor en riesgo"
           value={formatCurrency(summary.valorTotalRiesgo)}
         />

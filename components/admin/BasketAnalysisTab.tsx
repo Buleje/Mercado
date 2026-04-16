@@ -83,7 +83,7 @@ export default function BasketAnalysisTab() {
       {/* KPIs */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
         {[
-          { label: "Asociaciones detectadas", value: associations.length, color: "text-blue-500" },
+          { label: "Asociaciones detectadas", value: associations.length, color: "text-emerald-500" },
           { label: "Tamaño prom. cesta", value: `${avgBasketSize.toFixed(1)} items`, color: "text-emerald-500" },
           { label: "Valor prom. cesta", value: `S/ ${avgBasketValue.toFixed(2)}`, color: "text-violet-500" },
           { label: "Sugerencias cross-sell", value: crossSell.length, color: "text-amber-500" },
@@ -216,7 +216,7 @@ export default function BasketAnalysisTab() {
                     <td className="px-4 py-2.5">
                       <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-gray-100 dark:bg-surface text-gray-600 dark:text-muted">{a.category}</span>
                     </td>
-                    <td className="px-4 py-2.5 text-right"><span className="text-xs font-bold text-blue-500">{(a.support * 100).toFixed(0)}%</span></td>
+                    <td className="px-4 py-2.5 text-right"><span className="text-xs font-bold text-emerald-500">{(a.support * 100).toFixed(0)}%</span></td>
                     <td className="px-4 py-2.5 text-right">
                       <div className="flex items-center justify-end gap-1.5">
                         <div className="w-12 h-1.5 bg-gray-100 dark:bg-surface rounded-full overflow-hidden">

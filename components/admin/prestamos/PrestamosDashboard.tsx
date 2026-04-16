@@ -311,7 +311,7 @@ export function PrestamosDashboard({ prestamos, resumen }: Props) {
 
           <div className="bg-white dark:bg-card rounded-2xl border border-gray-200 dark:border-card-border p-6 shadow-sm">
             <h3 className="text-sm font-bold text-gray-700 dark:text-foreground mb-4 flex items-center gap-2">
-              <Scale className="h-4 w-4 text-blue-500" /> Dado vs Recibido
+              <Scale className="h-4 w-4 text-emerald-500" /> Dado vs Recibido
             </h3>
             <div className="space-y-4">
               <div>

@@ -379,7 +379,7 @@ export function ResumenSubTab(props: ResumenSubTabProps) {
                 "border-l-4 p-3 rounded-r-xl text-sm",
                 insight.type === "positive" && "bg-emerald-50 dark:bg-emerald-950/20 border-emerald-500 text-emerald-800 dark:text-emerald-300",
                 insight.type === "negative" && "bg-red-50 dark:bg-red-950/20 border-red-500 text-red-800 dark:text-red-300",
-                insight.type === "neutral" && "bg-blue-50 dark:bg-blue-950/20 border-blue-500 text-blue-800 dark:text-blue-300",
+                insight.type === "neutral" && "bg-emerald-50 dark:bg-emerald-950/20 border-emerald-500 text-emerald-800 dark:text-emerald-300",
               )}
             >
               <span className="font-medium">{insight.text}</span>
@@ -490,8 +490,8 @@ export function ResumenSubTab(props: ResumenSubTabProps) {
           <StaggerItem>
             <div className="rounded-xl border border-gray-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 p-5 shadow-sm h-full">
               <div className="flex items-center gap-2 mb-3">
-                <span className="flex items-center justify-center w-7 h-7 rounded-lg bg-blue-50 dark:bg-blue-900/20">
-                  <Users className="w-3.5 h-3.5 text-blue-500" />
+                <span className="flex items-center justify-center w-7 h-7 rounded-lg bg-emerald-50 dark:bg-emerald-900/20">
+                  <Users className="w-3.5 h-3.5 text-emerald-500" />
                 </span>
                 <span className="text-sm font-medium text-gray-500 dark:text-zinc-400 uppercase tracking-wider">Clientes hoy</span>
               </div>

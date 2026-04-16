@@ -331,7 +331,7 @@ export default function MultiStoreDashboard() {
       <th
         className={cn(
           "cursor-pointer select-none whitespace-nowrap px-3 py-2.5 text-right text-xs font-bold text-gray-500 hover:text-primary dark:text-gray-400",
-          active && "text-primary dark:text-blue-400",
+          active && "text-primary dark:text-emerald-400",
           cx
         )}
         onClick={() => handleSort(sortK)}
@@ -404,7 +404,7 @@ export default function MultiStoreDashboard() {
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
         {[
           { label: "Ventas totales", value: formatSoles(totalSales), icon: DollarSign, color: "text-primary" },
-          { label: "Pedidos totales", value: totalOrders, icon: ShoppingCart, color: "text-blue-600 dark:text-blue-400" },
+          { label: "Pedidos totales", value: totalOrders, icon: ShoppingCart, color: "text-emerald-600 dark:text-emerald-400" },
           { label: "Comisiones", value: formatSoles(totalCommissions), icon: TrendingUp, color: "text-amber-600 dark:text-amber-400" },
           { label: "Rating promedio", value: avgRating.toFixed(1), icon: Star, color: "text-amber-500" },
         ].map(({ label, value, icon: Icon, color }) => (

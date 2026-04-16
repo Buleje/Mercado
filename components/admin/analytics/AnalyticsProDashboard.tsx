@@ -292,7 +292,7 @@ export default function AnalyticsProDashboard() {
             </div>
           )}
           {data.alerts.pendingOrders > 0 && (
-            <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 text-blue-700 dark:text-blue-400 text-sm">
+            <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-200 dark:border-emerald-800 text-emerald-700 dark:text-emerald-400 text-sm">
               <span className="font-medium">{data.alerts.pendingOrders}</span> pedidos pendientes
             </div>
           )}

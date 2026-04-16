@@ -125,8 +125,8 @@ export default function DailySummaryPanel() {
           icon={ShoppingCart}
           label="Pedidos"
           value={String(data.totalOrders)}
-          color="text-blue-500"
-          bg="bg-blue-50 dark:bg-blue-500/10"
+          color="text-emerald-500"
+          bg="bg-emerald-50 dark:bg-emerald-500/10"
         />
         <KpiCard
           icon={TrendingUp}

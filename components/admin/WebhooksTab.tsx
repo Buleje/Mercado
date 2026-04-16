@@ -60,7 +60,7 @@ export default function WebhooksTab() {
 
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
         {[
-          { label: "Webhooks totales", value: webhooks.length, color: "text-blue-500" },
+          { label: "Webhooks totales", value: webhooks.length, color: "text-emerald-500" },
           { label: "Activos", value: activeCount, color: "text-emerald-500" },
           { label: "Total llamadas", value: totalCalls.toLocaleString(), color: "text-violet-500" },
           { label: "Eventos disponibles", value: EVENTS.length, color: "text-amber-500" },
@@ -108,7 +108,7 @@ export default function WebhooksTab() {
                 <div className="flex flex-wrap gap-2">
                   <button onClick={() => setWebhooks(prev => prev.map(w => w.id === wh.id ? { ...w, active: !w.active } : w))} className={cn("px-3 py-1.5 rounded-lg text-xs font-bold", wh.active ? "bg-amber-100 text-amber-700 hover:bg-amber-200" : "bg-emerald-100 text-emerald-700 hover:bg-emerald-200")}>{wh.active ? "Pausar" : "Activar"}</button>
                   <button onClick={() => openEdit(wh)} className="px-3 py-1.5 rounded-lg text-xs font-bold bg-gray-100 dark:bg-surface text-gray-600 dark:text-muted hover:bg-gray-200"><Pencil className="h-3 w-3 inline mr-1" />Editar</button>
-                  <button className="px-3 py-1.5 rounded-lg text-xs font-bold bg-blue-100 text-blue-700 hover:bg-blue-200"><Send className="h-3 w-3 inline mr-1" />Test</button>
+                  <button className="px-3 py-1.5 rounded-lg text-xs font-bold bg-emerald-100 text-emerald-700 hover:bg-emerald-200"><Send className="h-3 w-3 inline mr-1" />Test</button>
                   <button onClick={() => setWebhooks(prev => prev.filter(w => w.id !== wh.id))} className="px-3 py-1.5 rounded-lg text-xs font-bold bg-red-100 text-red-700 hover:bg-red-200"><Trash2 className="h-3 w-3 inline mr-1" />Eliminar</button>
                 </div>
               </div>

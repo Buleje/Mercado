@@ -22,14 +22,14 @@ interface Task {
 
 const PRIORITY_META: Record<Priority, { label: string; color: string; bg: string }> = {
   baja:     { label: "Baja",    color: "text-gray-500",   bg: "bg-gray-100" },
-  media:    { label: "Media",   color: "text-blue-600",   bg: "bg-blue-50" },
+  media:    { label: "Media",   color: "text-emerald-600",   bg: "bg-emerald-50" },
   alta:     { label: "Alta",    color: "text-amber-600",  bg: "bg-amber-50" },
   urgente:  { label: "Urgente", color: "text-red-600",    bg: "bg-red-50" },
 };
 
 const STATUS_META: Record<TaskStatus, { label: string; color: string; icon: React.ElementType }> = {
   pendiente:    { label: "Pendiente",    color: "text-gray-500",   icon: Clock },
-  en_progreso:  { label: "En progreso",  color: "text-blue-500",   icon: AlertCircle },
+  en_progreso:  { label: "En progreso",  color: "text-emerald-500",   icon: AlertCircle },
   completada:   { label: "Completada",   color: "text-emerald-500",icon: CheckCircle2 },
   cancelada:    { label: "Cancelada",    color: "text-red-400",    icon: X },
 };
@@ -181,7 +181,7 @@ export default function TasksTab() {
                           <User className="h-3 w-3" />{t.assignedTo}
                         </span>
                       )}
-                      {t.module && <span className="text-[10px] bg-blue-50 dark:bg-blue-950/30 text-blue-600 px-2 py-0.5 rounded-full font-semibold">{t.module}</span>}
+                      {t.module && <span className="text-[10px] bg-emerald-50 dark:bg-emerald-950/30 text-emerald-600 px-2 py-0.5 rounded-full font-semibold">{t.module}</span>}
                       {t.dueDate && (
                         <span className={cn("flex items-center gap-1 text-[10px]", new Date(t.dueDate) < new Date() && t.status !== "completada" ? "text-red-500 font-bold" : "text-gray-400 dark:text-muted")}>
                           <Clock className="h-3 w-3" />{new Date(t.dueDate).toLocaleDateString("es-PE")}

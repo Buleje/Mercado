@@ -65,8 +65,8 @@ const BADGE_DEFINITIONS: BadgeDefinition[] = [
     progressLabel: "dias con primera venta temprana",
     maxProgress: 1,
     iconSymbol: "M",
-    colorUnlocked: "text-blue-600 dark:text-blue-400",
-    colorBg: "bg-blue-50 dark:bg-blue-900/30 border-blue-300 dark:border-blue-700",
+    colorUnlocked: "text-emerald-600 dark:text-emerald-400",
+    colorBg: "bg-emerald-50 dark:bg-emerald-900/30 border-emerald-300 dark:border-emerald-700",
   },
   {
     id: "cliente-feliz",

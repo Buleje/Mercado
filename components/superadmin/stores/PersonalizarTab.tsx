@@ -306,7 +306,7 @@ export function PersonalizarTab({ stores, onRefresh }: PersonalizarTabProps) {
           </div>
           <div className="rounded-xl border border-gray-100 dark:border-gray-800 p-4 bg-gray-50/50 dark:bg-gray-800/30">
             <div className="flex items-center gap-2 mb-2">
-              <Percent className="w-4 h-4 text-blue-500" />
+              <Percent className="w-4 h-4 text-emerald-500" />
               <span className="text-xs font-semibold text-gray-600 dark:text-gray-400">Comisiones</span>
             </div>
             <p className="text-xs text-gray-400">

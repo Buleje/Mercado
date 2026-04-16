@@ -12,7 +12,7 @@ function Sparkline({ data, color }: { data: number[]; color: string }) {
   if (data.length === 0) return null;
   const max = Math.max(...data, 1); const min = Math.min(...data, 0); const range = max - min || 1;
   const points = data.map((val, i) => { const x = (i / (data.length - 1)) * 80; const y = 24 - ((val - min) / range) * 20; return `${x},${y}`; }).join(" ");
-  const colorMap: Record<string, string> = { "emerald-500":"#10b981","blue-500":"#3b82f6","violet-500":"#8b5cf6","red-500":"#ef4444","amber-500":"#f59e0b" };
+  const colorMap: Record<string, string> = { "emerald-500":"#10b981","violet-500":"#8b5cf6","red-500":"#ef4444","amber-500":"#f59e0b" };
   return <svg width="80" height="24" className="opacity-60"><polyline points={points} fill="none" stroke={colorMap[color]||"#00B4A6"} strokeWidth="1.5" strokeLinejoin="round" strokeLinecap="round" /></svg>;
 }
 function Kpi({ label, value, icon: Icon, accent, delta, sparklineData, invertTrend }: { label: string; value: string; icon: React.ComponentType<{className?:string}>; accent: string; delta?: number|null; sparklineData?: number[]; invertTrend?: boolean }) {
@@ -49,7 +49,7 @@ export default function DashboardProductosSection({ st, expandAll, _products }: 
             </div>
           )}
           <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5">
-            <Kpi label="Prods. Activos" value={String(st.activeProducts)} icon={Package} accent="text-blue-500" />
+            <Kpi label="Prods. Activos" value={String(st.activeProducts)} icon={Package} accent="text-emerald-500" />
             <Kpi label="Uds. Vendidas" value={String(st.uds)} icon={ShoppingCart} accent="text-emerald-500" />
             <Kpi label="Sin Movimiento" value={String(st.sinMov.length)} icon={Timer} accent={st.sinMov.length>5?"text-amber-500":"text-emerald-500"} />
           </div>
@@ -102,10 +102,10 @@ export default function DashboardProductosSection({ st, expandAll, _products }: 
                   <div className="text-lg font-bold text-emerald-700 dark:text-emerald-300">{st.classA.length}</div>
                   <div className="text-[10px] text-emerald-600/70 dark:text-emerald-400/70">~80% ventas</div>
                 </div>
-                <div className="bg-blue-50 dark:bg-blue-950/30 rounded-lg p-3">
-                  <div className="text-xs font-semibold text-blue-600 dark:text-blue-400 mb-1">Clase B</div>
-                  <div className="text-lg font-bold text-blue-700 dark:text-blue-300">{st.classB.length}</div>
-                  <div className="text-[10px] text-blue-600/70 dark:text-blue-400/70">~15% ventas</div>
+                <div className="bg-emerald-50 dark:bg-emerald-950/30 rounded-lg p-3">
+                  <div className="text-xs font-semibold text-emerald-600 dark:text-emerald-400 mb-1">Clase B</div>
+                  <div className="text-lg font-bold text-emerald-700 dark:text-emerald-300">{st.classB.length}</div>
+                  <div className="text-[10px] text-emerald-600/70 dark:text-emerald-400/70">~15% ventas</div>
                 </div>
                 <div className="bg-gray-100 dark:bg-gray-800 rounded-lg p-3">
                   <div className="text-xs font-semibold text-gray-600 dark:text-gray-400 mb-1">Clase C</div>
@@ -138,7 +138,7 @@ export default function DashboardProductosSection({ st, expandAll, _products }: 
                       <div key={p.id} className="flex-1 flex flex-col items-center group relative">
                         <div
                           className={cn("w-full rounded-t transition-all", 
-                            p.abcClass === "A" ? "bg-emerald-500" : p.abcClass === "B" ? "bg-blue-500" : "bg-gray-400"
+                            p.abcClass === "A" ? "bg-emerald-500" : p.abcClass === "B" ? "bg-emerald-500" : "bg-gray-400"
                           )}
                           style={{ height: `${(p.revenue / st.paretoChartData[0].revenue) * 100}%` }}
                         />
@@ -147,7 +147,7 @@ export default function DashboardProductosSection({ st, expandAll, _products }: 
                           <div className="font-semibold">{p.name}</div>
                           <div>Rev: {fmt(p.revenue)} ({p.revenuePct.toFixed(1)}%)</div>
                           <div>Acum: {p.cumulativePct.toFixed(1)}%</div>
-                          <div className={cn("font-bold", p.abcClass === "A" ? "text-emerald-400" : p.abcClass === "B" ? "text-blue-400" : "text-gray-400")}>Clase {p.abcClass}</div>
+                          <div className={cn("font-bold", p.abcClass === "A" ? "text-emerald-400" : p.abcClass === "B" ? "text-emerald-400" : "text-gray-400")}>Clase {p.abcClass}</div>
                         </div>
                       </div>
                     ))}
@@ -159,7 +159,7 @@ export default function DashboardProductosSection({ st, expandAll, _products }: 
                       <span className="text-gray-600 dark:text-gray-400">A (críticos)</span>
                     </div>
                     <div className="flex items-center gap-1.5 text-xs">
-                      <div className="w-3 h-3 bg-blue-500 rounded"></div>
+                      <div className="w-3 h-3 bg-emerald-500 rounded"></div>
                       <span className="text-gray-600 dark:text-gray-400">B (importantes)</span>
                     </div>
                     <div className="flex items-center gap-1.5 text-xs">
@@ -175,9 +175,9 @@ export default function DashboardProductosSection({ st, expandAll, _products }: 
               )}
 
               {/* Action insights */}
-              <div className="bg-blue-50 dark:bg-blue-950/30 rounded-lg p-3 text-xs">
-                <div className="font-semibold text-blue-700 dark:text-blue-400 mb-1">Recomendaciones</div>
-                <ul className="space-y-0.5 text-blue-600 dark:text-blue-300 text-[10px]">
+              <div className="bg-emerald-50 dark:bg-emerald-950/30 rounded-lg p-3 text-xs">
+                <div className="font-semibold text-emerald-700 dark:text-emerald-400 mb-1">Recomendaciones</div>
+                <ul className="space-y-0.5 text-emerald-600 dark:text-emerald-300 text-[10px]">
                   <li>• <strong>Clase A:</strong> Nunca dejar agotar. Prioridad en inventario y proveedores.</li>
                   <li>• <strong>Clase B:</strong> Mantener stock moderado. Revisar rotación mensual.</li>
                   <li>• <strong>Clase C:</strong> Stock mínimo. Considerar eliminar si no rotan.</li>

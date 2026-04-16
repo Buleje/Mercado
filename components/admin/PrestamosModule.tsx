@@ -95,10 +95,10 @@ const STATUS_META: Record<PrestamoStatus, { label: string; color: string; bg: st
 };
 
 const TIPO_META: Record<PrestamoTipo, { label: string; color: string; bg: string; icon: typeof Landmark }> = {
-  PERSONAL:  { label: "Personal",  color: "text-blue-700 dark:text-blue-400",     bg: "bg-blue-100 dark:bg-blue-900/30",     icon: User },
+  PERSONAL:  { label: "Personal",  color: "text-emerald-700 dark:text-emerald-400",     bg: "bg-emerald-100 dark:bg-emerald-900/30",     icon: User },
   BANCARIO:  { label: "Bancario",  color: "text-purple-700 dark:text-purple-400", bg: "bg-purple-100 dark:bg-purple-900/30", icon: Building2 },
   TERCERO:   { label: "Tercero",   color: "text-orange-700 dark:text-orange-400", bg: "bg-orange-100 dark:bg-orange-900/30", icon: ArrowUpDown },
-  PROVEEDOR: { label: "Proveedor", color: "text-blue-700 dark:text-blue-400",     bg: "bg-blue-100 dark:bg-blue-900/30",     icon: Coins },
+  PROVEEDOR: { label: "Proveedor", color: "text-emerald-700 dark:text-emerald-400",     bg: "bg-emerald-100 dark:bg-emerald-900/30",     icon: Coins },
 };
 
 const DIRECCION_META: Record<PrestamoDireccion, { label: string; shortLabel: string; color: string; bg: string; icon: typeof ArrowDownToLine }> = {
@@ -418,7 +418,7 @@ function PrestamosDashboard({ prestamos, resumen }: { prestamos: Prestamo[]; res
           {/* Mejora 6: Resumen por dirección con barras comparativas */}
           <div className="bg-white dark:bg-card rounded-2xl border border-gray-200 dark:border-card-border p-6 shadow-sm">
             <h3 className="text-sm font-bold text-gray-700 dark:text-foreground mb-4 flex items-center gap-2">
-              <Scale className="h-4 w-4 text-blue-500" /> Dado vs Recibido
+              <Scale className="h-4 w-4 text-emerald-500" /> Dado vs Recibido
             </h3>
             <div className="space-y-4">
               <div>
@@ -1237,7 +1237,7 @@ export default function PrestamosModule() {
                       const riskDot = tieneVenc ? "bg-red-500" : venceSemana ? "bg-amber-400" : "bg-emerald-400";
                       // Mejora 12: Badge de sistema de amortización
                       const sisBadge = p.sistemaAmortizacion === "FRANCES" ? "F" : p.sistemaAmortizacion === "ALEMAN" ? "A" : "AM";
-                      const sisBg = p.sistemaAmortizacion === "FRANCES" ? "bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400" : p.sistemaAmortizacion === "ALEMAN" ? "bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-400" : "bg-orange-100 dark:bg-orange-900/30 text-orange-700 dark:text-orange-400";
+                      const sisBg = p.sistemaAmortizacion === "FRANCES" ? "bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400" : p.sistemaAmortizacion === "ALEMAN" ? "bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-400" : "bg-orange-100 dark:bg-orange-900/30 text-orange-700 dark:text-orange-400";
                       return (
                         <tr key={p.id} className={cn("border-b border-gray-50 dark:border-white/5 hover:bg-gray-50 dark:hover:bg-white/5 transition-colors", selectedIds.has(p.id) && "bg-[#2563EB]/5 dark:bg-[#2563EB]/10")}>
                           <td className="px-3 py-3 w-8" onClick={e => e.stopPropagation()}>
@@ -1414,7 +1414,7 @@ export default function PrestamosModule() {
                                 "text-[10px] font-bold px-1.5 py-0.5 rounded-full whitespace-nowrap",
                                 isUrgent
                                   ? "bg-orange-100 dark:bg-orange-900/30 text-orange-700 dark:text-orange-400"
-                                  : "bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400"
+                                  : "bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400"
                               )}>
                                 {c.diasRestantes}d restantes
                               </span>
@@ -1503,7 +1503,7 @@ export default function PrestamosModule() {
                   <button onClick={() => { setShowCreate(true); setCreateError(null); }} className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-bold text-white bg-[#2563EB] hover:bg-[#1D4ED8] shadow-sm transition-colors">
                     <Plus className="h-4 w-4" /> Crear Préstamo con estos datos
                   </button>
-                  <button onClick={() => setShowComparador(c => !c)} className={cn("inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-bold shadow-sm transition-colors border", showComparador ? "bg-blue-600 text-white border-blue-600" : "border-gray-200 dark:border-white/10 text-gray-600 dark:text-gray-400 hover:border-blue-500 hover:text-blue-600")}>
+                  <button onClick={() => setShowComparador(c => !c)} className={cn("inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-bold shadow-sm transition-colors border", showComparador ? "bg-emerald-600 text-white border-emerald-600" : "border-gray-200 dark:border-white/10 text-gray-600 dark:text-gray-400 hover:border-emerald-500 hover:text-emerald-600")}>
                     <Scale className="h-4 w-4" /> Comparar sistemas
                   </button>
                 </>
@@ -1595,7 +1595,7 @@ export default function PrestamosModule() {
             return (
               <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl p-4 sm:p-6 shadow-sm space-y-4">
                 <h3 className="text-sm font-bold text-gray-900 dark:text-white flex items-center gap-2">
-                  <Scale className="h-4 w-4 text-blue-500" /> Comparador — mismo monto, tasa y plazo
+                  <Scale className="h-4 w-4 text-emerald-500" /> Comparador — mismo monto, tasa y plazo
                 </h3>
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                   {sistemas.map(([sis, tabla]) => {
@@ -1832,7 +1832,7 @@ export default function PrestamosModule() {
                                     <td className="py-1.5 px-1 text-right font-mono text-gray-700 dark:text-gray-300">{formatCurrency(c.capital)}</td>
                                     <td className="py-1.5 px-1 text-right font-mono text-red-500/70">{formatCurrency(c.interes)}</td>
                                     <td className="py-1.5 px-1 text-right font-mono font-bold text-gray-900 dark:text-white">{formatCurrency(c.monto)}</td>
-                                    <td className="py-1.5 px-1 text-right font-mono text-blue-600 dark:text-blue-400">{formatCurrency(c.saldo)}</td>
+                                    <td className="py-1.5 px-1 text-right font-mono text-emerald-600 dark:text-emerald-400">{formatCurrency(c.saldo)}</td>
                                     <td className="py-1.5 px-1 text-center">
                                       {c.pagadoEn ? (
                                         <span className="text-[9px] font-bold text-emerald-600 bg-emerald-100 dark:bg-emerald-900/30 px-1.5 py-0.5 rounded">PAGADA</span>
@@ -1870,33 +1870,33 @@ export default function PrestamosModule() {
                         const pagoAnticipado = capitalPendiente + (pendientes[0]?.interes || 0);
                         const ahorro = totalPendiente - pagoAnticipado;
                         return (
-                          <div className="mt-3 bg-blue-50 dark:bg-blue-900/20 rounded-xl p-3 border border-blue-200 dark:border-blue-800">
+                          <div className="mt-3 bg-emerald-50 dark:bg-emerald-900/20 rounded-xl p-3 border border-emerald-200 dark:border-emerald-800">
                             <button
                               onClick={() => setShowPagoAnticipado(!showPagoAnticipado)}
                               className="w-full flex items-center justify-between"
                             >
-                              <span className="text-xs font-bold text-blue-700 dark:text-blue-300 flex items-center gap-1.5">
+                              <span className="text-xs font-bold text-emerald-700 dark:text-emerald-300 flex items-center gap-1.5">
                                 <Calculator className="h-3.5 w-3.5" /> Pago anticipado total
                               </span>
-                              {showPagoAnticipado ? <ChevronUp className="h-3.5 w-3.5 text-blue-500" /> : <ChevronDown className="h-3.5 w-3.5 text-blue-500" />}
+                              {showPagoAnticipado ? <ChevronUp className="h-3.5 w-3.5 text-emerald-500" /> : <ChevronDown className="h-3.5 w-3.5 text-emerald-500" />}
                             </button>
                             {showPagoAnticipado && (
-                              <div className="mt-2 pt-2 border-t border-blue-200 dark:border-blue-700 space-y-1.5">
+                              <div className="mt-2 pt-2 border-t border-emerald-200 dark:border-emerald-700 space-y-1.5">
                                 <div className="flex justify-between text-[11px]">
-                                  <span className="text-blue-600 dark:text-blue-400">Capital pendiente:</span>
+                                  <span className="text-emerald-600 dark:text-emerald-400">Capital pendiente:</span>
                                   <span className="font-bold font-mono text-gray-900 dark:text-white">{formatCurrency(capitalPendiente)}</span>
                                 </div>
                                 <div className="flex justify-between text-[11px]">
-                                  <span className="text-blue-600 dark:text-blue-400">Intereses pendientes:</span>
+                                  <span className="text-emerald-600 dark:text-emerald-400">Intereses pendientes:</span>
                                   <span className="font-mono text-red-500">{formatCurrency(interesPendiente)}</span>
                                 </div>
                                 <div className="flex justify-between text-[11px]">
-                                  <span className="text-blue-600 dark:text-blue-400">Interés mes actual:</span>
+                                  <span className="text-emerald-600 dark:text-emerald-400">Interés mes actual:</span>
                                   <span className="font-mono text-gray-600 dark:text-gray-400">{formatCurrency(pendientes[0]?.interes || 0)}</span>
                                 </div>
-                                <div className="flex justify-between text-xs pt-1 border-t border-blue-200 dark:border-blue-700">
-                                  <span className="font-bold text-blue-700 dark:text-blue-300">Liquidación hoy:</span>
-                                  <span className="font-extrabold font-mono text-blue-700 dark:text-blue-300">{formatCurrency(pagoAnticipado)}</span>
+                                <div className="flex justify-between text-xs pt-1 border-t border-emerald-200 dark:border-emerald-700">
+                                  <span className="font-bold text-emerald-700 dark:text-emerald-300">Liquidación hoy:</span>
+                                  <span className="font-extrabold font-mono text-emerald-700 dark:text-emerald-300">{formatCurrency(pagoAnticipado)}</span>
                                 </div>
                                 {ahorro > 0 && (
                                   <p className="text-[10px] text-emerald-600 dark:text-emerald-400 font-bold bg-emerald-50 dark:bg-emerald-900/20 rounded-lg px-2 py-1 text-center">
@@ -2127,7 +2127,7 @@ ${cuotas.map(c => { const row = `<tr>
                             </button>
                           </div>
                           <div className="flex gap-2">
-                            <button onClick={() => { setRefMonto(String(selected.monto)); setRefTasa(String(selected.tasaInteres)); setRefCuotas(String(selected.numeroCuotas)); setRefSistema(selected.sistemaAmortizacion); setRefinanciarError(null); setShowRefinanciar(true); }} className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/20 hover:bg-blue-100 dark:hover:bg-blue-900/30 border border-blue-200 dark:border-blue-800">
+                            <button onClick={() => { setRefMonto(String(selected.monto)); setRefTasa(String(selected.tasaInteres)); setRefCuotas(String(selected.numeroCuotas)); setRefSistema(selected.sistemaAmortizacion); setRefinanciarError(null); setShowRefinanciar(true); }} className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-900/20 hover:bg-emerald-100 dark:hover:bg-emerald-900/30 border border-emerald-200 dark:border-emerald-800">
                               <RotateCcw className="h-3.5 w-3.5" /> Refinanciar
                             </button>
                             <button onClick={() => setShowCancelConfirm(true)} className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-900/20 hover:bg-red-100 dark:hover:bg-red-900/30 border border-red-200 dark:border-red-800">
@@ -2140,14 +2140,14 @@ ${cuotas.map(c => { const row = `<tr>
                       {/* Mejora 17: Documentos adjuntos */}
                       <div>
                         <h4 className="text-sm font-bold text-gray-900 dark:text-white mb-2 flex items-center gap-2">
-                          <Paperclip className="h-4 w-4 text-blue-500" /> Documentos
+                          <Paperclip className="h-4 w-4 text-emerald-500" /> Documentos
                           <span className="text-xs text-gray-400 font-normal">({selected.documentos?.length ?? 0})</span>
                         </h4>
                         {selected.documentos && selected.documentos.length > 0 ? (
                           <div className="space-y-1.5">
                             {selected.documentos.map(doc => (
                               <a key={doc.id} href={doc.url} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 p-2 rounded-xl border border-gray-100 dark:border-white/10 hover:bg-gray-50 dark:hover:bg-white/5 transition-colors">
-                                <FileText className="h-4 w-4 text-blue-500 shrink-0" />
+                                <FileText className="h-4 w-4 text-emerald-500 shrink-0" />
                                 <span className="text-xs text-gray-700 dark:text-gray-300 flex-1 truncate">{doc.nombre}</span>
                                 <span className="text-[9px] text-gray-400 shrink-0">{formatDate(doc.createdAt)}</span>
                               </a>
@@ -2207,19 +2207,19 @@ ${cuotas.map(c => { const row = `<tr>
             <m.div key="ref-modal" initial={{ opacity: 0, scale: 0.95, y: 10 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.95, y: 10 }} className="fixed inset-0 z-[60] flex items-center justify-center p-4" onClick={e => e.target === e.currentTarget && setShowRefinanciar(false)}>
               <div className="w-full max-w-sm bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl shadow-2xl p-5 space-y-4">
                 <div className="flex items-center justify-between">
-                  <h3 className="text-lg font-bold text-gray-900 dark:text-white flex items-center gap-2"><RotateCcw className="h-5 w-5 text-blue-500" /> Refinanciar Préstamo</h3>
+                  <h3 className="text-lg font-bold text-gray-900 dark:text-white flex items-center gap-2"><RotateCcw className="h-5 w-5 text-emerald-500" /> Refinanciar Préstamo</h3>
                   <button onClick={() => setShowRefinanciar(false)}><X className="h-4 w-4 text-gray-500" /></button>
                 </div>
                 <div className="grid grid-cols-2 gap-3">
-                  <div><label className="block text-xs font-bold text-gray-600 dark:text-gray-400 mb-1">Nuevo monto (S/)</label><input type="number" step="0.01" min="0.01" value={refMonto} onChange={e => setRefMonto(e.target.value)} className="w-full px-3 py-2 rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 text-sm text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500/30" /></div>
-                  <div><label className="block text-xs font-bold text-gray-600 dark:text-gray-400 mb-1">Nueva tasa (%)</label><input type="number" step="0.1" min="0" value={refTasa} onChange={e => setRefTasa(e.target.value)} className="w-full px-3 py-2 rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 text-sm text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500/30" /></div>
-                  <div><label className="block text-xs font-bold text-gray-600 dark:text-gray-400 mb-1">N° cuotas</label><input type="number" min="1" value={refCuotas} onChange={e => setRefCuotas(e.target.value)} className="w-full px-3 py-2 rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 text-sm text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500/30" /></div>
+                  <div><label className="block text-xs font-bold text-gray-600 dark:text-gray-400 mb-1">Nuevo monto (S/)</label><input type="number" step="0.01" min="0.01" value={refMonto} onChange={e => setRefMonto(e.target.value)} className="w-full px-3 py-2 rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 text-sm text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-emerald-500/30" /></div>
+                  <div><label className="block text-xs font-bold text-gray-600 dark:text-gray-400 mb-1">Nueva tasa (%)</label><input type="number" step="0.1" min="0" value={refTasa} onChange={e => setRefTasa(e.target.value)} className="w-full px-3 py-2 rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 text-sm text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-emerald-500/30" /></div>
+                  <div><label className="block text-xs font-bold text-gray-600 dark:text-gray-400 mb-1">N° cuotas</label><input type="number" min="1" value={refCuotas} onChange={e => setRefCuotas(e.target.value)} className="w-full px-3 py-2 rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 text-sm text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-emerald-500/30" /></div>
                   <div><label className="block text-xs font-bold text-gray-600 dark:text-gray-400 mb-1">Sistema</label><select value={refSistema} onChange={e => setRefSistema(e.target.value as SistemaAmortizacion)} className="w-full px-3 py-2 rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 text-sm text-gray-900 dark:text-white focus:outline-none">{Object.entries(SISTEMA_LABELS).map(([k, v]) => <option key={k} value={k}>{v}</option>)}</select></div>
                 </div>
                 {refinanciarError && <p className="text-xs text-red-600 dark:text-red-400 font-semibold">{refinanciarError}</p>}
                 <div className="flex gap-2">
                   <button onClick={() => setShowRefinanciar(false)} className="flex-1 px-4 py-2.5 rounded-xl text-sm font-bold text-gray-600 dark:text-gray-400 bg-gray-100 dark:bg-white/5 hover:bg-gray-200 dark:hover:bg-white/10">Cancelar</button>
-                  <button onClick={handleRefinanciar} disabled={refinancing} className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-sm font-bold text-white bg-blue-600 hover:bg-blue-700 disabled:opacity-50">
+                  <button onClick={handleRefinanciar} disabled={refinancing} className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-sm font-bold text-white bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50">
                     {refinancing ? <Loader2 className="h-4 w-4 animate-spin" /> : <RotateCcw className="h-4 w-4" />} Refinanciar
                   </button>
                 </div>

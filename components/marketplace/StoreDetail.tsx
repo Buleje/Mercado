@@ -198,7 +198,7 @@ function ProductCard({
             onError={() => setImgError(true)}
           />
         ) : (
-          <div className="h-full w-full flex flex-col items-center justify-center bg-linear-to-br from-slate-100 via-blue-50 to-indigo-100 dark:from-gray-800 dark:via-gray-800 dark:to-gray-900 text-gray-300 gap-2">
+          <div className="h-full w-full flex flex-col items-center justify-center bg-linear-to-br from-slate-100 via-emerald-50 to-indigo-100 dark:from-gray-800 dark:via-gray-800 dark:to-gray-900 text-gray-300 gap-2">
             <div className="h-16 w-16 rounded-2xl bg-white/80 dark:bg-gray-900/40 ring-1 ring-white/70 dark:ring-gray-700/70 flex items-center justify-center shadow-sm">
               <svg aria-hidden="true" className="h-8 w-8 text-gray-400 dark:text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
@@ -405,7 +405,7 @@ function ReviewPhotoGallery({ storeSlug }: { storeSlug: string }) {
   return (
     <section className="mt-8">
       <h3 className="mb-3 text-base font-bold text-gray-900 dark:text-white flex items-center gap-2">
-        <svg aria-hidden="true" className="h-5 w-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <svg aria-hidden="true" className="h-5 w-5 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
         </svg>
         Fotos de clientes
@@ -607,10 +607,10 @@ function StoreReviews({ storeSlug, storeName }: { storeSlug: string; storeName: 
             <div className="flex items-center gap-2 mb-2">
               <label className="text-sm text-gray-600 dark:text-gray-400">Fotos (opcional, máx 3):</label>
               {uploadingPhoto && (
-                <span className="text-xs text-blue-600 animate-pulse">Subiendo...</span>
+                <span className="text-xs text-emerald-600 animate-pulse">Subiendo...</span>
               )}
               {formPhotos.length < 3 && !uploadingPhoto && (
-                <label className="cursor-pointer text-xs font-semibold text-blue-600 hover:text-blue-800 transition-colors">
+                <label className="cursor-pointer text-xs font-semibold text-emerald-600 hover:text-emerald-800 transition-colors">
                   + Agregar foto
                   <input
                     type="file"
@@ -1256,7 +1256,7 @@ export default function StoreDetail({ slug }: { slug: string }) {
           <p className="text-gray-500 dark:text-gray-400">Tienda no encontrada</p>
           <Link
             href="/marketplace"
-            className="mt-3 inline-block text-sm text-blue-600 underline hover:no-underline"
+            className="mt-3 inline-block text-sm text-emerald-600 underline hover:no-underline"
           >
             Volver al marketplace
           </Link>

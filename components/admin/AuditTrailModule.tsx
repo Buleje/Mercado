@@ -50,7 +50,7 @@ export default function AuditTrailModule() {
 
   const actionColor = (action: string) => {
     if (action === "CREATE") return "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400";
-    if (action === "UPDATE") return "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400";
+    if (action === "UPDATE") return "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400";
     if (action === "DELETE") return "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400";
     return "bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-400";
   };

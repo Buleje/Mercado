@@ -39,7 +39,7 @@ const fmt = (n: number) => "S/ " + n.toLocaleString("es-PE", { minimumFractionDi
 
 const STATUS_META: Record<ReferralStatus, { label: string; color: string; bg: string }> = {
   activo:    { label: "Activo",    color: "text-emerald-600", bg: "bg-emerald-100 dark:bg-emerald-900/30" },
-  canjeado:  { label: "Canjeado",  color: "text-blue-600",    bg: "bg-blue-100 dark:bg-blue-900/30" },
+  canjeado:  { label: "Canjeado",  color: "text-emerald-600",    bg: "bg-emerald-100 dark:bg-emerald-900/30" },
   expirado:  { label: "Expirado",  color: "text-gray-500",    bg: "bg-gray-100 dark:bg-gray-800/30" },
   pendiente: { label: "Pendiente", color: "text-amber-600",   bg: "bg-amber-100 dark:bg-amber-900/30" },
 };
@@ -103,7 +103,7 @@ export default function ReferralTab() {
         {[
           { label: "Total referidos", value: String(stats.totalReferred), color: "text-pink-600", bg: "bg-pink-50 dark:bg-pink-950/30" },
           { label: "Convertidos", value: `${stats.converted} (${stats.conversionRate.toFixed(0)}%)`, color: "text-emerald-600", bg: "bg-emerald-50 dark:bg-emerald-950/30" },
-          { label: "Ingresos generados", value: fmt(stats.totalRevenue), color: "text-blue-600", bg: "bg-blue-50 dark:bg-blue-950/30" },
+          { label: "Ingresos generados", value: fmt(stats.totalRevenue), color: "text-emerald-600", bg: "bg-emerald-50 dark:bg-emerald-950/30" },
           { label: "Referidores activos", value: String(stats.activeReferrers), color: "text-violet-600", bg: "bg-violet-50 dark:bg-violet-950/30" },
         ].map(({ label, value, color, bg }) => (
           <div key={label} className={cn("rounded-2xl p-4", bg)}>

@@ -28,7 +28,7 @@ const STATUS_LABELS: Record<PurchaseStatus, string> = {
 const STATUS_COLORS: Record<PurchaseStatus, string> = {
   pendiente: "bg-amber-100 text-amber-700",
   recibido: "bg-emerald-100 text-emerald-700",
-  parcial: "bg-blue-100 text-blue-700",
+  parcial: "bg-emerald-100 text-emerald-700",
   cancelado: "bg-red-100 text-red-500",
   auto_generated: "bg-purple-100 text-purple-700",
 };
@@ -579,8 +579,8 @@ export default function PurchaseOrdersTab() {
                   
                   {/* Stats Grid */}
                   <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-3">
-                    <div className="bg-blue-50 dark:bg-blue-950/20 rounded-xl p-3 border border-blue-100 dark:border-blue-900/30">
-                      <p className="text-[10px] font-bold text-blue-600 dark:text-blue-400 uppercase mb-1">Órdenes</p>
+                    <div className="bg-emerald-50 dark:bg-emerald-950/20 rounded-xl p-3 border border-emerald-100 dark:border-emerald-900/30">
+                      <p className="text-[10px] font-bold text-emerald-600 dark:text-emerald-400 uppercase mb-1">Órdenes</p>
                       <p className="text-lg font-extrabold text-gray-900 dark:text-foreground">{stats.count}</p>
                     </div>
                     <div className="bg-emerald-50 dark:bg-emerald-950/20 rounded-xl p-3 border border-emerald-100 dark:border-emerald-900/30">
@@ -858,7 +858,7 @@ export default function PurchaseOrdersTab() {
                   {/* Mejora 19: Duplicar OC */}
                   <button
                     onClick={() => duplicateOrder(o)}
-                    className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-blue-50 dark:bg-blue-950/30 text-blue-600 dark:text-blue-400 hover:bg-blue-100 dark:hover:bg-blue-900/30 text-xs font-bold transition-colors"
+                    className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-emerald-50 dark:bg-emerald-950/30 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-100 dark:hover:bg-emerald-900/30 text-xs font-bold transition-colors"
                     title="Duplicar orden"
                   >
                     <Copy className="h-3.5 w-3.5" /> Duplicar

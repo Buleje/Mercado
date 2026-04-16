@@ -325,11 +325,11 @@ export default function VentasHeatmap() {
         const bestIsQuincena = bestSlot.dow === 1 || bestSlot.dow === 3; // Lun o Mie (quincenas tipicas)
 
         return (
-          <div className="mt-4 bg-blue-50 dark:bg-blue-900/20 border-l-4 border-blue-500 p-4 rounded-r-lg space-y-3">
+          <div className="mt-4 bg-emerald-50 dark:bg-emerald-900/20 border-l-4 border-emerald-500 p-4 rounded-r-lg space-y-3">
             <div className="flex items-center gap-2">
-              <span className="text-sm font-bold text-blue-800 dark:text-blue-300">Analisis de Horario</span>
+              <span className="text-sm font-bold text-emerald-800 dark:text-emerald-300">Analisis de Horario</span>
             </div>
-            <div className="space-y-2 text-xs text-blue-800 dark:text-blue-300">
+            <div className="space-y-2 text-xs text-emerald-800 dark:text-emerald-300">
               {bestSlot.avg > 0 && (
                 <p>
                   <span className="font-bold">Tu mejor horario:</span> {DOW_LABELS[bestSlot.dow]} a las {formatHour(bestSlot.hour)} — promedio S/ {bestSlot.avg.toFixed(0)} ({bestSlot.count} ventas)
@@ -341,12 +341,12 @@ export default function VentasHeatmap() {
                 </p>
               )}
               {worstSlot.avg > 0 && isBusinessHour(worstSlot.hour) && (
-                <p className="bg-blue-100 dark:bg-blue-800/30 rounded-lg p-2">
+                <p className="bg-emerald-100 dark:bg-emerald-800/30 rounded-lg p-2">
                   <span className="font-bold">Sugerencia:</span> Considera una promocion especial los {DOW_LABELS[worstSlot.dow]} a las {formatHour(worstSlot.hour)} para impulsar ventas
                 </p>
               )}
               {bestIsQuincena && bestSlot.avg > 0 && (
-                <p className="bg-blue-100 dark:bg-blue-800/30 rounded-lg p-2">
+                <p className="bg-emerald-100 dark:bg-emerald-800/30 rounded-lg p-2">
                   <span className="font-bold">Tus picos coinciden con inicio de semana — prepara stock extra esos dias</span>
                 </p>
               )}

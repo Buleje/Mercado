@@ -56,14 +56,14 @@ function today(): string { return new Date().toISOString().slice(0, 10); }
 const STATUS_EMP: Record<EmployeeStatus, { label: string; color: string; bg: string }> = {
   activo:     { label: "Activo",      color: "text-emerald-700 dark:text-emerald-400", bg: "bg-emerald-100 dark:bg-emerald-900/30" },
   inactivo:   { label: "Inactivo",    color: "text-gray-600 dark:text-muted",          bg: "bg-gray-100 dark:bg-surface" },
-  vacaciones: { label: "Vacaciones",  color: "text-blue-700 dark:text-blue-400",       bg: "bg-blue-100 dark:bg-blue-900/30" },
+  vacaciones: { label: "Vacaciones",  color: "text-emerald-700 dark:text-emerald-400",       bg: "bg-emerald-100 dark:bg-emerald-900/30" },
   licencia:   { label: "Licencia",    color: "text-amber-700 dark:text-amber-400",     bg: "bg-amber-100 dark:bg-amber-900/30" },
 };
 const STATUS_ATT: Record<AttendanceStatus, { label: string; color: string; bg: string; icon: typeof CheckCircle }> = {
   presente: { label: "Presente", color: "text-emerald-700 dark:text-emerald-400", bg: "bg-emerald-100 dark:bg-emerald-900/30", icon: CheckCircle },
   tarde:    { label: "Tarde",    color: "text-amber-700 dark:text-amber-400",      bg: "bg-amber-100 dark:bg-amber-900/30",    icon: Clock },
   ausente:  { label: "Ausente",  color: "text-red-700 dark:text-red-400",          bg: "bg-red-100 dark:bg-red-900/30",        icon: AlertTriangle },
-  permiso:  { label: "Permiso",  color: "text-blue-700 dark:text-blue-400",        bg: "bg-blue-100 dark:bg-blue-900/30",      icon: UserCheck },
+  permiso:  { label: "Permiso",  color: "text-emerald-700 dark:text-emerald-400",        bg: "bg-emerald-100 dark:bg-emerald-900/30",      icon: UserCheck },
   vacacion: { label: "Vacación", color: "text-violet-700 dark:text-violet-400",    bg: "bg-violet-100 dark:bg-violet-900/30", icon: Calendar },
 };
 
@@ -191,7 +191,7 @@ export default function HRTab() {
         {[
           { label: "Total", value: stats.total, color: "text-gray-700 dark:text-foreground", bg: "bg-gray-50 dark:bg-surface/50" },
           { label: "Activos", value: stats.activo, color: "text-emerald-600", bg: "bg-emerald-50 dark:bg-emerald-950/30" },
-          { label: "Vacaciones", value: stats.vacaciones, color: "text-blue-600", bg: "bg-blue-50 dark:bg-blue-950/30" },
+          { label: "Vacaciones", value: stats.vacaciones, color: "text-emerald-600", bg: "bg-emerald-50 dark:bg-emerald-950/30" },
           { label: "Presentes hoy", value: stats.presente, color: "text-emerald-600", bg: "bg-emerald-50 dark:bg-emerald-950/30" },
           { label: "Con retraso", value: stats.tarde, color: "text-amber-600", bg: "bg-amber-50 dark:bg-amber-950/30" },
           { label: "Ausentes hoy", value: stats.ausente, color: "text-red-500", bg: "bg-red-50 dark:bg-red-950/30" },

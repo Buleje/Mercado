@@ -30,8 +30,8 @@ const TEMPLATES: WorkflowTemplate[] = [
     name: "Recibir Mercadería",
     description: "Proceso completo de ingreso de productos con proveedor",
     icon: Package,
-    color: "text-blue-600",
-    bg: "bg-blue-100 dark:bg-blue-900/30",
+    color: "text-emerald-600",
+    bg: "bg-emerald-100 dark:bg-emerald-900/30",
     estimatedTime: "20 min",
     steps: [
       { id: "s1", title: "Revisar orden de compra", description: "Verificar que el pedido coincide con lo acordado con el proveedor", module: "Proveedores" },

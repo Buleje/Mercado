@@ -39,7 +39,7 @@ type RFQ = {
 const fmt = (n: number) => "S/ " + n.toLocaleString("es-PE", { minimumFractionDigits: 2 });
 
 const STATUS_MAP: Record<RFQStatus, { label: string; color: string; bg: string }> = {
-  abierta:     { label: "Abierta",     color: "text-blue-600",    bg: "bg-blue-100 dark:bg-blue-900/30" },
+  abierta:     { label: "Abierta",     color: "text-emerald-600",    bg: "bg-emerald-100 dark:bg-emerald-900/30" },
   evaluando:   { label: "Evaluando",   color: "text-amber-600",   bg: "bg-amber-100 dark:bg-amber-900/30" },
   adjudicada:  { label: "Adjudicada",  color: "text-emerald-600", bg: "bg-emerald-100 dark:bg-emerald-900/30" },
   cerrada:     { label: "Cerrada",     color: "text-gray-600",    bg: "bg-gray-100 dark:bg-gray-800/30" },
@@ -104,7 +104,7 @@ export default function RFQTab() {
       {/* Stats */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
         {[
-          { label: "Abiertas", value: String(stats.open), color: "text-blue-600", bg: "bg-blue-50 dark:bg-blue-950/30", icon: Send },
+          { label: "Abiertas", value: String(stats.open), color: "text-emerald-600", bg: "bg-emerald-50 dark:bg-emerald-950/30", icon: Send },
           { label: "Evaluando", value: String(stats.evaluating), color: "text-amber-600", bg: "bg-amber-50 dark:bg-amber-950/30", icon: Clock },
           { label: "Adjudicadas/Cerradas", value: String(stats.awarded), color: "text-emerald-600", bg: "bg-emerald-50 dark:bg-emerald-950/30", icon: Trophy },
           { label: "Promedio cotizaciones", value: stats.avgQuotes, color: "text-violet-600", bg: "bg-violet-50 dark:bg-violet-950/30", icon: ArrowUpDown },

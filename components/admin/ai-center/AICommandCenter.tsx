@@ -228,9 +228,9 @@ function BusinessCalculators() {
             <input type="number" value={roiGanancia} onChange={e => setRoiGanancia(e.target.value)} placeholder="Ej: 800" className={inputCls} />
           </div>
           {roiPct && mesesRecuperar && (
-            <div className="bg-blue-50 dark:bg-blue-900/20 rounded-lg p-2 text-center">
+            <div className="bg-emerald-50 dark:bg-emerald-900/20 rounded-lg p-2 text-center">
               <p className="text-[10px] text-gray-500">ROI mensual</p>
-              <p className="text-lg font-bold text-blue-600">{roiPct}%</p>
+              <p className="text-lg font-bold text-emerald-600">{roiPct}%</p>
               <p className="text-[10px] text-gray-400">Recuperas en {mesesRecuperar} mes{mesesRecuperar !== 1 ? "es" : ""}</p>
             </div>
           )}

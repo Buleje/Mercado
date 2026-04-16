@@ -37,12 +37,12 @@ const TOAST_COLORS = {
     button: "text-amber-700 dark:text-amber-300 hover:text-amber-900 dark:hover:text-amber-100",
   },
   info: {
-    bg: "bg-blue-50 dark:bg-blue-900/20",
-    border: "border-blue-200 dark:border-blue-800",
-    icon: "text-blue-600 dark:text-blue-400",
-    title: "text-blue-900 dark:text-blue-100",
-    message: "text-blue-800 dark:text-blue-200",
-    button: "text-blue-700 dark:text-blue-300 hover:text-blue-900 dark:hover:text-blue-100",
+    bg: "bg-emerald-50 dark:bg-emerald-900/20",
+    border: "border-emerald-200 dark:border-emerald-800",
+    icon: "text-emerald-600 dark:text-emerald-400",
+    title: "text-emerald-900 dark:text-emerald-100",
+    message: "text-emerald-800 dark:text-emerald-200",
+    button: "text-emerald-700 dark:text-emerald-300 hover:text-emerald-900 dark:hover:text-emerald-100",
   },
 } as const;
 

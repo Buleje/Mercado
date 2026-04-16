@@ -57,7 +57,7 @@ export default function CMSDashboard() {
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
           <Link
             href="/admin/cms/pages/new"
-            className="p-6 bg-linear-to-br from-blue-500 to-blue-600 text-white rounded-lg hover:shadow-lg transition-shadow"
+            className="p-6 bg-linear-to-br from-emerald-500 to-emerald-600 text-white rounded-lg hover:shadow-lg transition-shadow"
           >
             <FileText className="w-8 h-8 mb-2" />
             <h3 className="font-bold">Páginas</h3>
@@ -98,7 +98,7 @@ export default function CMSDashboard() {
             <h2 className="text-xl font-bold">Páginas recientes</h2>
             <Link
               href="/admin/cms/pages/new"
-              className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 flex items-center gap-2"
+              className="px-4 py-2 bg-emerald-500 text-white rounded-lg hover:bg-emerald-600 flex items-center gap-2"
             >
               <Plus className="w-4 h-4" />
               Nueva página
@@ -150,7 +150,7 @@ export default function CMSDashboard() {
             <div className="p-4 text-center border-t">
               <Link
                 href="/admin/cms/pages"
-                className="text-blue-500 hover:underline"
+                className="text-emerald-500 hover:underline"
               >
                 Ver todas las páginas →
               </Link>

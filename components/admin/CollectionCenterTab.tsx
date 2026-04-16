@@ -211,7 +211,7 @@ export default function CollectionCenterTab() {
       {/* KPIs */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
         {[
-          { label: "Cartera total", value: fmt(stats.totalDebt), color: "text-blue-600", bg: "bg-blue-50 dark:bg-blue-950/30", icon: DollarSign },
+          { label: "Cartera total", value: fmt(stats.totalDebt), color: "text-emerald-600", bg: "bg-emerald-50 dark:bg-emerald-950/30", icon: DollarSign },
           { label: "Vencido (+30d)", value: fmt(stats.overdue), color: "text-red-600", bg: "bg-red-50 dark:bg-red-950/30", icon: Clock },
           { label: "Cobrado hoy", value: fmt(stats.collectedToday), color: "text-emerald-600", bg: "bg-emerald-50 dark:bg-emerald-950/30", icon: CheckCircle },
           { label: "Crítico (+90d)", value: String(stats.critical), color: stats.critical > 0 ? "text-red-600" : "text-emerald-600", bg: stats.critical > 0 ? "bg-red-50 dark:bg-red-950/30" : "bg-emerald-50 dark:bg-emerald-950/30", icon: ShieldAlert },

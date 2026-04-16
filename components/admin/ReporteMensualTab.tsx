@@ -63,7 +63,7 @@ function KpiCard({
   const colors = {
     green: "bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-400 border-green-200 dark:border-green-800",
     red:   "bg-red-50   dark:bg-red-900/20   text-red-700   dark:text-red-400   border-red-200   dark:border-red-800",
-    blue:  "bg-blue-50  dark:bg-blue-900/20  text-blue-700  dark:text-blue-400  border-blue-200  dark:border-blue-800",
+    blue:  "bg-emerald-50  dark:bg-emerald-900/20  text-emerald-700  dark:text-emerald-400  border-emerald-200  dark:border-emerald-800",
   };
   return (
     <div className={cn("rounded-xl border p-4 flex items-center gap-3", colors[color])}>
@@ -268,7 +268,7 @@ export default function ReporteMensualTab() {
           </div>
 
           {/* Info PDF */}
-          <div className="flex items-center gap-3 p-3 rounded-lg bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 text-xs text-blue-700 dark:text-blue-400">
+          <div className="flex items-center gap-3 p-3 rounded-lg bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-200 dark:border-emerald-800 text-xs text-emerald-700 dark:text-emerald-400">
             <FileText className="h-4 w-4 shrink-0" />
             <span>
               PDF generado ({(result.pdfSize / 1024).toFixed(1)} KB) con top 10 productos,

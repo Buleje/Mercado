@@ -34,7 +34,7 @@ const TIPO_LABELS: Record<PromoType, string> = {
 
 const TIPO_BADGE: Record<PromoType, string> = {
   porcentaje: "bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400",
-  "2x1": "bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400",
+  "2x1": "bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400",
   "3x2": "bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400",
   combo: "bg-orange-100 dark:bg-orange-900/30 text-orange-700 dark:text-orange-400",
   monto_fijo: "bg-teal-100 dark:bg-teal-900/30 text-teal-700 dark:text-teal-400",

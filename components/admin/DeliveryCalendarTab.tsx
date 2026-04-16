@@ -55,7 +55,7 @@ const SLOT_CONFIG: Record<SlotKey, { label: string; range: string; icon: typeof 
 
 const STATUS_SLOT_CONFIG: Record<string, { label: string; dot: string }> = {
   pendiente:  { label: "Pendiente",   dot: "bg-amber-400" },
-  "en-camino":{ label: "En camino",   dot: "bg-blue-500" },
+  "en-camino":{ label: "En camino",   dot: "bg-emerald-500" },
   entregado:  { label: "Entregado",   dot: "bg-emerald-500" },
   fallido:    { label: "Fallido",     dot: "bg-red-500" },
 };
@@ -197,7 +197,7 @@ export default function DeliveryCalendarTab() {
         {[
           { label: "Total",       value: dayKpis.total,      color: "text-gray-700 dark:text-foreground" },
           { label: "Entregados",  value: dayKpis.entregados, color: "text-emerald-600" },
-          { label: "En camino",   value: dayKpis.enCamino,   color: "text-blue-500" },
+          { label: "En camino",   value: dayKpis.enCamino,   color: "text-emerald-500" },
           { label: "Fallidos",    value: dayKpis.fallidos,   color: "text-red-500" },
         ].map(k => (
           <div key={k.label} className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl p-3 text-center">

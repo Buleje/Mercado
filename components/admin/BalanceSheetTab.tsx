@@ -137,7 +137,7 @@ export default function BalanceSheetTab() {
       {/* Ratios KPIs */}
       <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
         {[
-          { label: "Liquidez corriente", value: totals.liquidezCorriente.toFixed(2), color: "text-blue-600", bg: "bg-blue-50 dark:bg-blue-950/30" },
+          { label: "Liquidez corriente", value: totals.liquidezCorriente.toFixed(2), color: "text-emerald-600", bg: "bg-emerald-50 dark:bg-emerald-950/30" },
           { label: "Prueba ácida", value: totals.pruebaAcida.toFixed(2), color: "text-cyan-600", bg: "bg-cyan-50 dark:bg-cyan-950/30" },
           { label: "Endeudamiento", value: pct(totals.endeudamiento), color: totals.endeudamiento > 60 ? "text-red-500" : "text-emerald-600", bg: totals.endeudamiento > 60 ? "bg-red-50 dark:bg-red-950/30" : "bg-emerald-50 dark:bg-emerald-950/30" },
           { label: "Capital de trabajo", value: fmt(totals.capitalTrabajo), color: totals.capitalTrabajo >= 0 ? "text-emerald-600" : "text-red-500", bg: "bg-violet-50 dark:bg-violet-950/30" },
@@ -154,8 +154,8 @@ export default function BalanceSheetTab() {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-2 sm:gap-4">
         {/* ACTIVOS */}
         <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl overflow-hidden">
-          <div className="px-2 sm:px-4 py-2 sm:py-3 bg-blue-50 dark:bg-blue-950/20 border-b border-gray-200 dark:border-card-border">
-            <h3 className="font-extrabold text-blue-700 dark:text-blue-400 text-sm">ACTIVOS</h3>
+          <div className="px-2 sm:px-4 py-2 sm:py-3 bg-emerald-50 dark:bg-emerald-950/20 border-b border-gray-200 dark:border-card-border">
+            <h3 className="font-extrabold text-emerald-700 dark:text-emerald-400 text-sm">ACTIVOS</h3>
             <div className="flex flex-wrap gap-6 text-xs mt-1">
               <span className="font-semibold text-gray-500">Período actual</span>
               <span className="text-gray-400">Período anterior</span>
@@ -164,11 +164,11 @@ export default function BalanceSheetTab() {
           </div>
           {renderSection("activo-corriente", grouped["activo-corriente"])}
           {renderSection("activo-no-corriente", grouped["activo-no-corriente"])}
-          <div className="flex items-center px-2 sm:px-4 py-2 sm:py-3 bg-blue-50 dark:bg-blue-950/20 text-sm font-extrabold">
-            <span className="flex-1 text-blue-700 dark:text-blue-400">TOTAL ACTIVOS</span>
-            <span className="w-28 text-right text-blue-700 dark:text-blue-400">{fmt(totals.totalActivos.current)}</span>
-            <span className="w-28 text-right text-blue-400/60">{fmt(totals.totalActivos.previous)}</span>
-            <span className="w-20 text-right text-xs text-blue-600">{pct(variation(totals.totalActivos.current, totals.totalActivos.previous))}</span>
+          <div className="flex items-center px-2 sm:px-4 py-2 sm:py-3 bg-emerald-50 dark:bg-emerald-950/20 text-sm font-extrabold">
+            <span className="flex-1 text-emerald-700 dark:text-emerald-400">TOTAL ACTIVOS</span>
+            <span className="w-28 text-right text-emerald-700 dark:text-emerald-400">{fmt(totals.totalActivos.current)}</span>
+            <span className="w-28 text-right text-emerald-400/60">{fmt(totals.totalActivos.previous)}</span>
+            <span className="w-20 text-right text-xs text-emerald-600">{pct(variation(totals.totalActivos.current, totals.totalActivos.previous))}</span>
           </div>
         </div>
 
@@ -214,7 +214,7 @@ export default function BalanceSheetTab() {
               <div key={type} className="flex flex-wrap items-center gap-3">
                 <span className="text-xs font-semibold text-gray-600 dark:text-muted w-32 truncate">{TYPE_LABELS[type]}</span>
                 <div className="flex-1 bg-gray-100 dark:bg-surface rounded-full h-5 overflow-hidden">
-                  <div className={cn("h-full rounded-full transition-all", isAsset ? "bg-blue-500" : type === "patrimonio" ? "bg-emerald-500" : "bg-orange-500")} style={{ width: `${Math.min(100, pctFill)}%` }} />
+                  <div className={cn("h-full rounded-full transition-all", isAsset ? "bg-emerald-500" : type === "patrimonio" ? "bg-emerald-500" : "bg-orange-500")} style={{ width: `${Math.min(100, pctFill)}%` }} />
                 </div>
                 <span className="text-xs font-bold text-gray-700 dark:text-foreground w-24 text-right">{fmt(total)}</span>
               </div>

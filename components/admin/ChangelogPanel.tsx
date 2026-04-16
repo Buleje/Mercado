@@ -47,9 +47,9 @@ const ACTION_STYLE: Record<ActionType, { dot: string; icon: string; bg: string }
     bg: "bg-emerald-50 dark:bg-emerald-900/20",
   },
   update: {
-    dot: "bg-blue-500",
-    icon: "text-blue-600 dark:text-blue-400",
-    bg: "bg-blue-50 dark:bg-blue-900/20",
+    dot: "bg-emerald-500",
+    icon: "text-emerald-600 dark:text-emerald-400",
+    bg: "bg-emerald-50 dark:bg-emerald-900/20",
   },
   delete: {
     dot: "bg-red-500",

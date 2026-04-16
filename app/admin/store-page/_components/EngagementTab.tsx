@@ -127,7 +127,7 @@ export default function EngagementTab() {
       </div>
 
       {/* Coming soon callout */}
-      <div className="rounded-xl bg-gradient-to-br from-violet-50 to-blue-50 dark:from-violet-950/30 dark:to-blue-950/30 border border-violet-200 dark:border-violet-800 p-5">
+      <div className="rounded-xl bg-gradient-to-br from-violet-50 to-emerald-50 dark:from-violet-950/30 dark:to-emerald-950/30 border border-violet-200 dark:border-violet-800 p-5">
         <div className="flex items-center gap-3 mb-2">
           <Gamepad2 className="h-5 w-5 text-violet-600" />
           <h3 className="font-semibold text-violet-900 dark:text-violet-300">Mas mecanicas proximamente</h3>

@@ -110,7 +110,7 @@ export default function ABTestsTab() {
               </div>
               <div className="flex flex-wrap gap-1">
                 <button onClick={() => loadResults(t.id)} className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-surface transition" title="Ver resultados">
-                  <BarChart3 className="w-4 h-4 text-blue-500" />
+                  <BarChart3 className="w-4 h-4 text-emerald-500" />
                 </button>
                 <button onClick={() => toggle(t.id)} className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-surface transition" title={t.active ? "Desactivar" : "Activar"}>
                   {t.active ? <ToggleRight className="w-4 h-4 text-green-500" /> : <ToggleLeft className="w-4 h-4 text-gray-400" />}
@@ -136,7 +136,7 @@ export default function ABTestsTab() {
                           <p className="font-semibold text-sm">{variant?.label || r.variantId}</p>
                           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2 mt-2 text-center">
                             <div>
-                              <p className="text-lg font-bold text-blue-600">{r.impressions}</p>
+                              <p className="text-lg font-bold text-emerald-600">{r.impressions}</p>
                               <p className="text-[10px] text-gray-400">Impresiones</p>
                             </div>
                             <div>

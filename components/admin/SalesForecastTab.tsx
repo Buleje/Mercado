@@ -77,7 +77,7 @@ export default function SalesForecastTab() {
       {/* KPIs */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-4">
         {[
-          { label: "Venta Proyectada", value: fmt(totalPredicted), sub: `${period === "7d" ? "7" : period === "30d" ? "30" : "90"} días`, color: "text-blue-600 dark:text-blue-400" },
+          { label: "Venta Proyectada", value: fmt(totalPredicted), sub: `${period === "7d" ? "7" : period === "30d" ? "30" : "90"} días`, color: "text-emerald-600 dark:text-emerald-400" },
           { label: "Promedio Diario", value: fmt(avgDaily), sub: "por día estimado", color: "text-emerald-600 dark:text-emerald-400" },
           { label: "Crecimiento", value: `${Number(growthPct) > 0 ? "+" : ""}${growthPct}%`, sub: "vs periodo anterior", color: Number(growthPct) >= 0 ? "text-emerald-600 dark:text-emerald-400" : "text-red-600 dark:text-red-400" },
           { label: "Rango Confianza", value: `${fmt(totalLower)} — ${fmt(totalUpper)}`, sub: "intervalo 95%", color: "text-purple-600 dark:text-purple-400" },
@@ -107,7 +107,7 @@ export default function SalesForecastTab() {
                     <div
                       className={cn(
                         "w-full rounded-t transition-all",
-                        isToday ? "bg-yellow-400" : isActual ? "bg-blue-400 dark:bg-blue-500" : "bg-emerald-400 dark:bg-emerald-500 opacity-70"
+                        isToday ? "bg-yellow-400" : isActual ? "bg-emerald-400 dark:bg-emerald-500" : "bg-emerald-400 dark:bg-emerald-500 opacity-70"
                       )}
                       style={{ height: `${h}%` }}
                     />
@@ -121,7 +121,7 @@ export default function SalesForecastTab() {
               <span>Proyección →</span>
             </div>
             <div className="flex flex-wrap items-center gap-2 sm:gap-4 mt-3 text-xs">
-              <span className="flex items-center gap-1"><span className="w-3 h-3 rounded bg-blue-400" /> Ventas reales</span>
+              <span className="flex items-center gap-1"><span className="w-3 h-3 rounded bg-emerald-400" /> Ventas reales</span>
               <span className="flex items-center gap-1"><span className="w-3 h-3 rounded bg-emerald-400 opacity-70" /> Proyección</span>
               <span className="flex items-center gap-1"><span className="w-3 h-3 rounded bg-yellow-400" /> Hoy</span>
             </div>
@@ -198,7 +198,7 @@ export default function SalesForecastTab() {
                     <tr key={i} className={cn("border-t border-gray-50 dark:border-card-border", p.daysLeft < 14 && "bg-amber-50/50 dark:bg-amber-950/10")}>
                       <td className="px-3 sm:px-6 py-3 font-semibold text-gray-900 dark:text-foreground">{p.name}</td>
                       <td className="px-3 sm:px-6 py-3 text-right text-gray-700 dark:text-foreground">{p.current} ud</td>
-                      <td className="px-3 sm:px-6 py-3 text-right font-bold text-blue-600 dark:text-blue-400">{p.predicted7d} ud</td>
+                      <td className="px-3 sm:px-6 py-3 text-right font-bold text-emerald-600 dark:text-emerald-400">{p.predicted7d} ud</td>
                       <td className="px-3 sm:px-6 py-3 text-right font-bold text-purple-600 dark:text-purple-400">{p.predicted30d} ud</td>
                       <td className="px-3 sm:px-6 py-3 text-center">
                         <span className={cn("inline-flex items-center gap-1 text-xs font-bold px-2 py-1 rounded-full", p.trend >= 0 ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400" : "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400")}>

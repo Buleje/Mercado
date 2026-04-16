@@ -228,7 +228,7 @@ export default function FiadoStats({ fiados, loading, totalSaldo, tendenciaMoros
         // Agrupar por prefijo del nombre (zona aproximada)
         const TAG_MAP: Record<string, { emoji: string; color: string; bg: string }> = {
           restaurante: { emoji: "\uD83C\uDF7D\uFE0F", color: "text-orange-700 dark:text-orange-400", bg: "bg-orange-100 dark:bg-orange-900/30" },
-          vecino: { emoji: "\uD83C\uDFE0", color: "text-blue-700 dark:text-blue-400", bg: "bg-blue-100 dark:bg-blue-900/30" },
+          vecino: { emoji: "\uD83C\uDFE0", color: "text-emerald-700 dark:text-emerald-400", bg: "bg-emerald-100 dark:bg-emerald-900/30" },
           mayorista: { emoji: "\uD83D\uDCE6", color: "text-purple-700 dark:text-purple-400", bg: "bg-purple-100 dark:bg-purple-900/30" },
           otro: { emoji: "\uD83D\uDC64", color: "text-gray-700 dark:text-gray-400", bg: "bg-gray-100 dark:bg-zinc-700" },
         };
@@ -498,13 +498,13 @@ export default function FiadoStats({ fiados, loading, totalSaldo, tendenciaMoros
               onClick={() => fiadosDia.length > 0 && setCalDiaSeleccionado(calDiaSeleccionado === diaKey ? null : diaKey)}
               className={cn(
                 "p-1 min-h-[50px] rounded-lg text-center transition-colors relative",
-                esHoy ? "ring-2 ring-blue-500" : "",
+                esHoy ? "ring-2 ring-emerald-500" : "",
                 tieneVencidos ? "bg-red-50 dark:bg-red-950/20" : "",
                 fiadosDia.length > 0 ? "cursor-pointer hover:bg-gray-100 dark:hover:bg-white/5" : "",
                 calDiaSeleccionado === diaKey ? "bg-[#00B4A6]/10 dark:bg-[#00B4A6]/20" : ""
               )}
             >
-              <span className={cn("text-xs font-bold", esHoy ? "text-blue-600" : "text-gray-700 dark:text-gray-300")}>{d}</span>
+              <span className={cn("text-xs font-bold", esHoy ? "text-emerald-600" : "text-gray-700 dark:text-gray-300")}>{d}</span>
               {fiadosDia.length > 0 && (
                 <div className="flex items-center justify-center gap-0.5 mt-0.5">
                   <span className={cn("w-2 h-2 rounded-full", tieneVencidos ? "bg-red-500" : "bg-amber-500")} />

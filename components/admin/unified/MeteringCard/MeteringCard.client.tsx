@@ -163,7 +163,7 @@ interface PlanBadgeProps {
 
 const PLAN_BADGE_STYLES: Record<MeteringSnapshot["plan"], string> = {
   free:       "bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-300",
-  starter:    "bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300",
+  starter:    "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300",
   pro:        "bg-primary-dark/10 text-primary-dark dark:bg-emerald-900/40 dark:text-emerald-300",
   enterprise: "bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-300",
 };

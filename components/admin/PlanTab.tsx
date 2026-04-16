@@ -56,14 +56,14 @@ function formatLimit(max: number) {
 
 const PLAN_COLORS: Record<string, string> = {
   free: "bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-200",
-  pro: "bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-300",
+  pro: "bg-emerald-100 dark:bg-emerald-900/40 text-emerald-700 dark:text-emerald-300",
   business: "bg-violet-100 dark:bg-violet-900/40 text-violet-700 dark:text-violet-300",
   enterprise: "bg-amber-100 dark:bg-amber-900/40 text-amber-700 dark:text-amber-300",
 };
 
 const PLAN_BAR_COLOR: Record<string, string> = {
   free: "bg-gray-400",
-  pro: "bg-blue-500",
+  pro: "bg-emerald-500",
   business: "bg-violet-500",
   enterprise: "bg-amber-500",
 };

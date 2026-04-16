@@ -12,7 +12,7 @@ type Product = Omit<BaseProduct, "id"> & { id: number; quadrant: Quadrant; reven
 const Q_CONFIG: Record<Quadrant, { label: string; emoji: string; color: string; bg: string; desc: string }> = {
   estrella: { label: "Estrellas", emoji: "⭐", color: "text-amber-600 dark:text-amber-400", bg: "bg-amber-50 dark:bg-amber-950/20 border-amber-200 dark:border-amber-800", desc: "Alto crecimiento + alta participación. Invertir y potenciar." },
   vaca: { label: "Vacas Lecheras", emoji: "🐄", color: "text-emerald-600 dark:text-emerald-400", bg: "bg-emerald-50 dark:bg-emerald-950/20 border-emerald-200 dark:border-emerald-800", desc: "Bajo crecimiento + alta participación. Máximo beneficio, mínima inversión." },
-  interrogante: { label: "Interrogantes", emoji: "❓", color: "text-blue-600 dark:text-blue-400", bg: "bg-blue-50 dark:bg-blue-950/20 border-blue-200 dark:border-blue-800", desc: "Alto crecimiento + baja participación. Evaluar si invertir o descartar." },
+  interrogante: { label: "Interrogantes", emoji: "❓", color: "text-emerald-600 dark:text-emerald-400", bg: "bg-emerald-50 dark:bg-emerald-950/20 border-emerald-200 dark:border-emerald-800", desc: "Alto crecimiento + baja participación. Evaluar si invertir o descartar." },
   perro: { label: "Perros", emoji: "🐕", color: "text-gray-600 dark:text-gray-400", bg: "bg-gray-50 dark:bg-gray-950/20 border-gray-200 dark:border-gray-800", desc: "Bajo crecimiento + baja participación. Considerar eliminar." },
 };
 
@@ -84,8 +84,8 @@ export default function BCGMatrixTab() {
             <div className="border-b-2 border-r-2 border-gray-200 dark:border-card-border bg-green-50/50 dark:bg-green-950/10 flex items-center justify-center p-2">
               <span className="text-sm font-semibold text-green-600/40 dark:text-green-400/40">Estrellas</span>
             </div>
-            <div className="border-b-2 border-gray-200 dark:border-card-border bg-blue-50/50 dark:bg-blue-950/10 flex items-center justify-center p-2">
-              <span className="text-sm font-semibold text-blue-600/40 dark:text-blue-400/40">Interrogantes</span>
+            <div className="border-b-2 border-gray-200 dark:border-card-border bg-emerald-50/50 dark:bg-emerald-950/10 flex items-center justify-center p-2">
+              <span className="text-sm font-semibold text-emerald-600/40 dark:text-emerald-400/40">Interrogantes</span>
             </div>
             <div className="border-r-2 border-gray-200 dark:border-card-border bg-amber-50/50 dark:bg-amber-950/10 flex items-center justify-center p-2">
               <span className="text-sm font-semibold text-amber-600/40 dark:text-amber-400/40">Vacas Lecheras</span>
@@ -104,7 +104,7 @@ export default function BCGMatrixTab() {
             const y = pos.y;
             const size = Math.max(24, Math.min(48, (p.revenue / totalRevenue) * 400));
             return (
-              <button key={p.id} onClick={() => setDetail(p)} title={p.name} className={cn("absolute rounded-full border-2 border-white dark:border-card flex items-center justify-center text-[9px] font-bold shadow-lg hover:scale-125 transition-transform z-10", p.quadrant === "estrella" ? "bg-green-500 text-white" : p.quadrant === "vaca" ? "bg-amber-500 text-white" : p.quadrant === "interrogante" ? "bg-blue-500 text-white" : "bg-gray-400 text-white")} style={{ left: `${x}%`, top: `${y}%`, width: size, height: size }}>
+              <button key={p.id} onClick={() => setDetail(p)} title={p.name} className={cn("absolute rounded-full border-2 border-white dark:border-card flex items-center justify-center text-[9px] font-bold shadow-lg hover:scale-125 transition-transform z-10", p.quadrant === "estrella" ? "bg-green-500 text-white" : p.quadrant === "vaca" ? "bg-amber-500 text-white" : p.quadrant === "interrogante" ? "bg-emerald-500 text-white" : "bg-gray-400 text-white")} style={{ left: `${x}%`, top: `${y}%`, width: size, height: size }}>
                 {p.name.slice(0, 2)}
               </button>
             );
@@ -178,7 +178,7 @@ export default function BCGMatrixTab() {
               <div className="bg-gray-50 dark:bg-surface rounded-xl p-3"><span className="text-xs text-gray-400">Participación</span><p className="font-bold">{detail.marketShare}%</p></div>
               <div className="bg-gray-50 dark:bg-surface rounded-xl p-3"><span className="text-xs text-gray-400">Unidades/mes</span><p className="font-bold">{detail.units}</p></div>
               <div className="col-span-2 bg-gray-50 dark:bg-surface rounded-xl p-3"><span className="text-xs text-gray-400">Cuadrante</span><p className="font-bold">{Q_CONFIG[detail.quadrant].emoji} {Q_CONFIG[detail.quadrant].label}</p></div>
-              <div className="col-span-2 bg-blue-50 dark:bg-blue-950/20 rounded-xl p-3"><span className="text-xs font-bold text-blue-800 dark:text-blue-300">Recomendación</span><p className="text-xs text-blue-600 dark:text-blue-400 mt-1">{Q_CONFIG[detail.quadrant].desc}</p></div>
+              <div className="col-span-2 bg-emerald-50 dark:bg-emerald-950/20 rounded-xl p-3"><span className="text-xs font-bold text-emerald-800 dark:text-emerald-300">Recomendación</span><p className="text-xs text-emerald-600 dark:text-emerald-400 mt-1">{Q_CONFIG[detail.quadrant].desc}</p></div>
             </div>
           </div>
         </div>

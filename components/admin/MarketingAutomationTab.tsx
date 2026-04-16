@@ -37,7 +37,7 @@ const fmt = (n: number) => "S/ " + n.toLocaleString("es-PE", { minimumFractionDi
 const pct = (n: number) => n.toFixed(1) + "%";
 
 const TYPE_META: Record<CampaignType, { label: string; icon: typeof Mail; color: string }> = {
-  email: { label: "Email", icon: Mail, color: "text-blue-600" },
+  email: { label: "Email", icon: Mail, color: "text-emerald-600" },
   sms:   { label: "SMS",   icon: Smartphone, color: "text-emerald-600" },
   push:  { label: "Push",  icon: Megaphone, color: "text-violet-600" },
   mixto: { label: "Mixto", icon: Users, color: "text-amber-600" },
@@ -47,7 +47,7 @@ const STATUS_META: Record<CampaignStatus, { label: string; color: string; bg: st
   borrador:   { label: "Borrador",   color: "text-gray-500",    bg: "bg-gray-100 dark:bg-gray-800/30" },
   activa:     { label: "Activa",     color: "text-emerald-600", bg: "bg-emerald-100 dark:bg-emerald-900/30" },
   pausada:    { label: "Pausada",    color: "text-amber-600",   bg: "bg-amber-100 dark:bg-amber-900/30" },
-  completada: { label: "Completada", color: "text-blue-600",    bg: "bg-blue-100 dark:bg-blue-900/30" },
+  completada: { label: "Completada", color: "text-emerald-600",    bg: "bg-emerald-100 dark:bg-emerald-900/30" },
   cancelada:  { label: "Cancelada",  color: "text-red-500",     bg: "bg-red-100 dark:bg-red-900/30" },
 };
 
@@ -106,7 +106,7 @@ export default function MarketingAutomationTab() {
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
         {[
           { label: "Campañas activas", value: String(stats.active), color: "text-emerald-600", bg: "bg-emerald-50 dark:bg-emerald-950/30" },
-          { label: "Revenue total", value: fmt(stats.totalRevenue), color: "text-blue-600", bg: "bg-blue-50 dark:bg-blue-950/30" },
+          { label: "Revenue total", value: fmt(stats.totalRevenue), color: "text-emerald-600", bg: "bg-emerald-50 dark:bg-emerald-950/30" },
           { label: "Conversiones", value: stats.totalConversions.toLocaleString("es-PE"), color: "text-violet-600", bg: "bg-violet-50 dark:bg-violet-950/30" },
           { label: "ROI campañas", value: pct(stats.roi), color: "text-amber-600", bg: "bg-amber-50 dark:bg-amber-950/30" },
         ].map(({ label, value, color, bg }) => (
@@ -169,7 +169,7 @@ export default function MarketingAutomationTab() {
                     <td className="px-2 sm:px-4 py-2 sm:py-3 text-right text-xs text-gray-500">{pct(c.clickRate)}</td>
                     <td className="px-2 sm:px-4 py-2 sm:py-3 text-right text-xs font-bold text-emerald-600">{c.conversions}</td>
                     <td className="px-2 sm:px-4 py-2 sm:py-3 text-right text-xs font-bold text-gray-700 dark:text-foreground">{fmt(c.revenue)}</td>
-                    <td className="px-2 sm:px-4 py-2 sm:py-3"><button onClick={() => setDetail(c)} className="p-1.5 rounded-lg text-gray-400 hover:text-blue-500 hover:bg-blue-50 dark:hover:bg-blue-950/20"><Eye className="h-3.5 w-3.5" /></button></td>
+                    <td className="px-2 sm:px-4 py-2 sm:py-3"><button onClick={() => setDetail(c)} className="p-1.5 rounded-lg text-gray-400 hover:text-emerald-500 hover:bg-emerald-50 dark:hover:bg-emerald-950/20"><Eye className="h-3.5 w-3.5" /></button></td>
                   </tr>
                 );
               })}
@@ -188,7 +188,7 @@ export default function MarketingAutomationTab() {
           const totalClicked = active.reduce((s, c) => s + Math.round(c.sentCount * c.clickRate / 100), 0);
           const totalConv = active.reduce((s, c) => s + c.conversions, 0);
           const steps = [
-            { label: "Enviados", value: totalSent, color: "bg-blue-500" },
+            { label: "Enviados", value: totalSent, color: "bg-emerald-500" },
             { label: "Abiertos", value: totalOpened, color: "bg-violet-500" },
             { label: "Clicks", value: totalClicked, color: "bg-amber-500" },
             { label: "Conversiones", value: totalConv, color: "bg-emerald-500" },

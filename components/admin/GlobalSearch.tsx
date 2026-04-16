@@ -426,7 +426,7 @@ interface Props {
 
 const GROUP_META: Record<keyof GroupedResults, { label: string; icon: React.ElementType; color: string }> = {
   modulos:   { label: "Módulos",         icon: LayoutDashboard, color: "text-primary" },
-  productos: { label: "Productos",       icon: Package,         color: "text-blue-500" },
+  productos: { label: "Productos",       icon: Package,         color: "text-emerald-500" },
   clientes:  { label: "Clientes",        icon: Users,           color: "text-violet-500" },
   pedidos:   { label: "Pedidos",         icon: ShoppingCart,    color: "text-amber-500" },
   acciones:  { label: "Acciones rápidas",icon: Zap,             color: "text-emerald-500" },
@@ -438,7 +438,7 @@ const GROUP_ORDER: (keyof GroupedResults)[] = ["modulos", "productos", "clientes
 
 const QUICK_ACCESS = [
   { label: "Nuevo pedido",    tab: "pedidos",              icon: ShoppingCart,   color: "text-amber-500 bg-amber-50 dark:bg-amber-900/20" },
-  { label: "Mi stock",        tab: "inventario-almacenes", icon: Boxes,          color: "text-blue-500 bg-blue-50 dark:bg-blue-900/20" },
+  { label: "Mi stock",        tab: "inventario-almacenes", icon: Boxes,          color: "text-emerald-500 bg-emerald-50 dark:bg-emerald-900/20" },
   { label: "Mis clientes",    tab: "crm-clientes",         icon: Users,          color: "text-violet-500 bg-violet-50 dark:bg-violet-900/20" },
   { label: "Caja",            tab: "pos-caja",             icon: Monitor,        color: "text-emerald-500 bg-emerald-50 dark:bg-emerald-900/20" },
   { label: "Reportes",        tab: "reportes-documentos",  icon: FileText,       color: "text-gray-500 bg-gray-50 dark:bg-surface" },

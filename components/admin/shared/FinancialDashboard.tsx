@@ -531,8 +531,8 @@ export default function FinancialDashboard() {
           label="Margen %"
           value={`${margenPct.toFixed(1)}%`}
           icon={Percent}
-          accent="bg-blue-50 dark:bg-blue-950/30"
-          iconColor="text-blue-500 dark:text-blue-400"
+          accent="bg-emerald-50 dark:bg-emerald-950/30"
+          iconColor="text-emerald-500 dark:text-emerald-400"
           borderColor="#3b82f6"
         />
       </div>

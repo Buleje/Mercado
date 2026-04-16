@@ -101,7 +101,7 @@ function PhoneMockup({ stats }: { stats: DailyStats }) {
 
         {/* App grid placeholder */}
         <div className="mt-4 grid grid-cols-4 gap-2">
-          {["bg-green-500", "bg-blue-500", "bg-red-500", "bg-yellow-500",
+          {["bg-green-500", "bg-emerald-500", "bg-red-500", "bg-yellow-500",
             "bg-purple-500", "bg-pink-500", "bg-indigo-500", "bg-teal-500"].map((color, i) => (
             <div
               key={i}
@@ -327,13 +327,13 @@ export default function SalesWidgetPreview() {
           </div>
 
           {/* Info box */}
-          <div className="flex items-start gap-3 rounded-xl border border-blue-200 bg-blue-50 p-4 dark:border-blue-800 dark:bg-blue-900/20">
-            <Info className="mt-0.5 h-4 w-4 shrink-0 text-blue-600 dark:text-blue-400" />
+          <div className="flex items-start gap-3 rounded-xl border border-emerald-200 bg-emerald-50 p-4 dark:border-emerald-800 dark:bg-emerald-900/20">
+            <Info className="mt-0.5 h-4 w-4 shrink-0 text-emerald-600 dark:text-emerald-400" />
             <div>
-              <p className="text-xs font-semibold text-blue-700 dark:text-blue-300">
+              <p className="text-xs font-semibold text-emerald-700 dark:text-emerald-300">
                 Sin descargar nada
               </p>
-              <p className="mt-0.5 text-xs text-blue-600 dark:text-blue-400">
+              <p className="mt-0.5 text-xs text-emerald-600 dark:text-emerald-400">
                 Como PWA, la bodega funciona sin Play Store ni App Store. Se instala directo
                 desde el navegador y puede funcionar sin conexion con datos guardados localmente.
               </p>

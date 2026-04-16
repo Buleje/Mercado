@@ -265,7 +265,7 @@ export function AdminSidebar({
               className="h-9 w-9 rounded-xl object-cover ring-2 ring-gray-100 dark:ring-card-border shrink-0"
             />
           ) : (
-            <div className="h-9 w-9 rounded-xl bg-gradient-to-br from-blue-500 to-blue-700 text-white flex items-center justify-center shrink-0 shadow-sm">
+            <div className="h-9 w-9 rounded-xl bg-gradient-to-br from-emerald-500 to-emerald-700 text-white flex items-center justify-center shrink-0 shadow-sm">
               <ShoppingBasket className="h-4.5 w-4.5" />
             </div>
           )}
@@ -277,7 +277,7 @@ export function AdminSidebar({
               <p className="text-[11px] text-gray-400 dark:text-muted leading-tight mt-0.5">
                 <span className="capitalize">{userName}</span>
                 {" · "}
-                <span className="uppercase text-[10px] font-semibold text-blue-500">{userRole}</span>
+                <span className="uppercase text-[10px] font-semibold text-emerald-500">{userRole}</span>
               </p>
             </div>
           )}
@@ -539,7 +539,7 @@ export function AdminSidebar({
             >
               <div className={cn(
                 "relative h-5 w-9 rounded-full transition-colors shrink-0",
-                isEasyMode ? "bg-primary" : "bg-blue-500"
+                isEasyMode ? "bg-primary" : "bg-emerald-500"
               )}>
                 <div className={cn(
                   "absolute top-0.5 h-4 w-4 rounded-full bg-white shadow-sm transition-transform",
@@ -559,7 +559,7 @@ export function AdminSidebar({
             >
               <div className={cn(
                 "h-5 w-9 rounded-full transition-colors",
-                isEasyMode ? "bg-primary" : "bg-blue-500"
+                isEasyMode ? "bg-primary" : "bg-emerald-500"
               )}>
                 <div className={cn(
                   "absolute top-1/2 -translate-y-1/2 h-4 w-4 rounded-full bg-white shadow-sm transition-transform",
@@ -573,7 +573,7 @@ export function AdminSidebar({
             target="_blank"
             title={effectiveCompact ? "Marketplace" : undefined}
             className={cn(
-              "flex items-center rounded-lg text-[13px] font-medium text-gray-500 dark:text-gray-400 hover:text-blue-600 hover:bg-blue-50/50 dark:hover:bg-blue-950/20 transition-all",
+              "flex items-center rounded-lg text-[13px] font-medium text-gray-500 dark:text-gray-400 hover:text-emerald-600 hover:bg-emerald-50/50 dark:hover:bg-emerald-950/20 transition-all",
               effectiveCompact ? "justify-center px-0 py-2.5" : "gap-3 px-3 py-2.5"
             )}
           >
@@ -585,7 +585,7 @@ export function AdminSidebar({
             rel="noopener noreferrer"
             title={effectiveCompact ? "Mi Tienda" : undefined}
             className={cn(
-              "flex items-center rounded-lg text-[13px] font-medium text-gray-500 dark:text-gray-400 hover:text-blue-600 hover:bg-blue-50/50 dark:hover:bg-blue-950/20 transition-all",
+              "flex items-center rounded-lg text-[13px] font-medium text-gray-500 dark:text-gray-400 hover:text-emerald-600 hover:bg-emerald-50/50 dark:hover:bg-emerald-950/20 transition-all",
               effectiveCompact ? "justify-center px-0 py-2.5" : "gap-3 px-3 py-2.5"
             )}
           >

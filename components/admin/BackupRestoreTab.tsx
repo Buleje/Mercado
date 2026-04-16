@@ -7,7 +7,7 @@ import type { BackupEntry } from "@/app/api/backups/route";
 
 const STATUS_CONFIG: Record<string, { icon: React.ElementType; color: string; label: string }> = {
   completado:    { icon: CheckCircle,  color: "text-emerald-500", label: "Completado" },
-  "en-progreso": { icon: RefreshCw,    color: "text-blue-500 animate-spin", label: "En progreso" },
+  "en-progreso": { icon: RefreshCw,    color: "text-emerald-500 animate-spin", label: "En progreso" },
   fallido:       { icon: AlertTriangle,color: "text-red-500",     label: "Fallido" },
 };
 
@@ -127,7 +127,7 @@ export default function BackupRestoreTab() {
       {/* KPIs */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
         {[
-          { label: "Backups totales",   value: backups.length,              color: "text-blue-500",    icon: Database },
+          { label: "Backups totales",   value: backups.length,              color: "text-emerald-500",    icon: Database },
           { label: "Almacenamiento",    value: fmtBytes(totalSizeBytes),    color: "text-violet-500",  icon: HardDrive },
           { label: "Último exitoso",    value: lastSuccessful ? fmtDate(lastSuccessful.createdAt) : "—", color: "text-emerald-500", icon: CheckCircle },
           { label: "Fallidos",          value: failedCount,                 color: failedCount > 0 ? "text-red-500" : "text-gray-400", icon: AlertTriangle },
@@ -185,7 +185,7 @@ export default function BackupRestoreTab() {
                           <div className="flex items-center gap-2 flex-wrap">
                             <h4 className="font-bold text-sm text-gray-900 dark:text-foreground">{b.name}</h4>
                             <span className={cn("text-[10px] font-bold px-2 py-0.5 rounded-full",
-                              b.type === "auto" ? "bg-blue-100 text-blue-600 dark:bg-blue-900/30 dark:text-blue-400" : "bg-amber-100 text-amber-600 dark:bg-amber-900/30 dark:text-amber-400")}>
+                              b.type === "auto" ? "bg-emerald-100 text-emerald-600 dark:bg-emerald-900/30 dark:text-emerald-400" : "bg-amber-100 text-amber-600 dark:bg-amber-900/30 dark:text-amber-400")}>
                               {b.type === "auto" ? "Automático" : "Manual"}
                             </span>
                             <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-gray-100 dark:bg-surface text-gray-500 dark:text-muted">{S.label}</span>
@@ -202,7 +202,7 @@ export default function BackupRestoreTab() {
                         {b.status === "completado" && (
                           <>
                             <a href="/api/backup" download={`bodega-backup-${b.createdAt.slice(0, 10)}.json`}
-                              className="p-1.5 rounded-lg hover:bg-blue-50 dark:hover:bg-blue-950/20 text-blue-500" title="Descargar">
+                              className="p-1.5 rounded-lg hover:bg-emerald-50 dark:hover:bg-emerald-950/20 text-emerald-500" title="Descargar">
                               <Download className="h-4 w-4" />
                             </a>
                             <button className="p-1.5 rounded-lg hover:bg-amber-50 dark:hover:bg-amber-950/20 text-amber-500" title="Restaurar (próximamente)">
@@ -254,9 +254,9 @@ export default function BackupRestoreTab() {
             <p className="text-[10px] text-gray-400 mt-1">Backups más antiguos se eliminarán automáticamente</p>
           </div>
 
-          <div className="bg-blue-50 dark:bg-blue-900/10 border border-blue-100 dark:border-blue-900/20 rounded-xl p-3">
-            <p className="text-xs font-bold text-blue-700 dark:text-blue-400 mb-1">Almacenamiento del backup</p>
-            <p className="text-xs text-blue-600 dark:text-blue-500">Los backups se descargan como archivos JSON encriptados. Para almacenamiento en nube, configura un webhook en Configuración → Integraciones.</p>
+          <div className="bg-emerald-50 dark:bg-emerald-900/10 border border-emerald-100 dark:border-emerald-900/20 rounded-xl p-3">
+            <p className="text-xs font-bold text-emerald-700 dark:text-emerald-400 mb-1">Almacenamiento del backup</p>
+            <p className="text-xs text-emerald-600 dark:text-emerald-500">Los backups se descargan como archivos JSON encriptados. Para almacenamiento en nube, configura un webhook en Configuración → Integraciones.</p>
           </div>
         </div>
       )}

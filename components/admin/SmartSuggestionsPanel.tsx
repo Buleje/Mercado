@@ -19,7 +19,7 @@ const TYPE_META: Record<SuggestionType, { icon: React.ElementType; color: string
   alerta:      { icon: AlertTriangle, color: "text-red-500",    bg: "bg-red-50 dark:bg-red-950/30",     border: "border-red-200 dark:border-red-900/40",   label: "Alerta" },
   oportunidad: { icon: TrendingUp,    color: "text-emerald-600",bg: "bg-emerald-50 dark:bg-emerald-950/30",border:"border-emerald-200 dark:border-emerald-900/40",label:"Oportunidad"},
   optimizacion:{ icon: Lightbulb,     color: "text-amber-500",  bg: "bg-amber-50 dark:bg-amber-950/20",  border: "border-amber-200 dark:border-amber-900/30",label: "Mejora" },
-  accion:      { icon: ShoppingCart,  color: "text-blue-500",   bg: "bg-blue-50 dark:bg-blue-950/30",    border: "border-blue-200 dark:border-blue-900/40", label: "Acción" },
+  accion:      { icon: ShoppingCart,  color: "text-emerald-500",   bg: "bg-emerald-50 dark:bg-emerald-950/30",    border: "border-emerald-200 dark:border-emerald-900/40", label: "Acción" },
 };
 
 interface Props {

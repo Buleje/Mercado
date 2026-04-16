@@ -770,7 +770,7 @@ export default function AIWhatIfSimulator({ data }: Props) {
           <span className="text-[10px] px-2 py-0.5 rounded-full font-medium bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400">
             Dificultad: {diffCfg.label} {"●".repeat(diffCfg.dots)}{"○".repeat(3 - diffCfg.dots)}
           </span>
-          <span className="text-[10px] px-2 py-0.5 rounded-full font-medium bg-blue-50 dark:bg-blue-950/30 text-blue-700 dark:text-blue-400">
+          <span className="text-[10px] px-2 py-0.5 rounded-full font-medium bg-emerald-50 dark:bg-emerald-950/30 text-emerald-700 dark:text-emerald-400">
             Resultados: {scenario.timeToResults}
           </span>
           {confidence > 0 && (

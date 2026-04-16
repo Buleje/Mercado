@@ -103,11 +103,11 @@ export default function BienvenidaRepartidorPage() {
               <p className="text-xs text-amber-700">Entregas cerca de ti</p>
             </div>
           </div>
-          <div className="flex items-center gap-3 rounded-xl bg-blue-50 p-4">
-            <Shield className="h-6 w-6 shrink-0 text-blue-600" />
+          <div className="flex items-center gap-3 rounded-xl bg-emerald-50 p-4">
+            <Shield className="h-6 w-6 shrink-0 text-emerald-600" />
             <div>
-              <p className="text-sm font-medium text-blue-900">Soporte 24/7</p>
-              <p className="text-xs text-blue-700">Siempre te ayudamos</p>
+              <p className="text-sm font-medium text-emerald-900">Soporte 24/7</p>
+              <p className="text-xs text-emerald-700">Siempre te ayudamos</p>
             </div>
           </div>
         </div>

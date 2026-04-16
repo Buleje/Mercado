@@ -134,10 +134,10 @@ export default function CxPCalendar() {
               S/ {data.resumen.venceEstaSemana.toFixed(2)}
             </p>
           </div>
-          <div className="bg-blue-50 dark:bg-blue-950/20 border border-blue-200 dark:border-blue-800/30 rounded-xl p-3">
+          <div className="bg-emerald-50 dark:bg-emerald-950/20 border border-emerald-200 dark:border-emerald-800/30 rounded-xl p-3">
             <div className="flex items-center gap-2 mb-1">
-              <Calendar className="h-4 w-4 text-blue-600 dark:text-blue-400" />
-              <p className="text-[10px] font-bold text-blue-600 dark:text-blue-400 uppercase">Vence este mes</p>
+              <Calendar className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
+              <p className="text-[10px] font-bold text-emerald-600 dark:text-emerald-400 uppercase">Vence este mes</p>
             </div>
             <p className="text-lg font-extrabold text-gray-900 dark:text-foreground">
               S/ {data.resumen.venceEsteMes.toFixed(2)}
@@ -204,7 +204,7 @@ export default function CxPCalendar() {
                 onClick={() => setSelectedDay(isSelected ? null : cell.dateStr)}
                 className={cn(
                   "h-16 border-t border-r border-gray-100 dark:border-card-border/30 p-1 text-left transition-colors relative",
-                  isToday && "ring-2 ring-inset ring-blue-400",
+                  isToday && "ring-2 ring-inset ring-emerald-400",
                   isSelected && "bg-primary/5 dark:bg-primary/10",
                   hasOverdue && !isSelected && "bg-red-50/60 dark:bg-red-950/10",
                   !hasEntries && "hover:bg-gray-50 dark:hover:bg-accent/30",
@@ -213,7 +213,7 @@ export default function CxPCalendar() {
               >
                 <span className={cn(
                   "text-xs font-semibold",
-                  isToday ? "text-blue-600 dark:text-blue-400 font-extrabold" : "text-gray-600 dark:text-muted",
+                  isToday ? "text-emerald-600 dark:text-emerald-400 font-extrabold" : "text-gray-600 dark:text-muted",
                 )}>
                   {cell.day}
                 </span>

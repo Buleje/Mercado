@@ -14,8 +14,9 @@ import {
   Calendar, Timer, Layers, Mail, Key, Wifi, WifiOff,
   BarChart3, Crown, ChevronRight, ChevronDown, Save,
   Plus, Trash2, Copy, Send, Activity,
-  HardDrive, ClipboardList, Monitor
+  HardDrive, ClipboardList, Monitor, SlidersHorizontal,
 } from "lucide-react";
+import AdminModuleHeader from "@/components/admin/shared/AdminModuleHeader";
 
 const LeafletMap = dynamic(() => import("@/components/LeafletMap"), { ssr: false });
 const StorefrontEditor = dynamic(() => import("@/components/admin/StorefrontEditor"), { ssr: false });
@@ -44,7 +45,7 @@ const SECTION_META: { id: SectionId; icon: React.ReactNode; title: string; desc:
   { id: "business", icon: <Store className="h-5 w-5" />, title: "Datos del Negocio", desc: "Nombre, RUC, contacto, redes", color: "text-orange-500 bg-orange-50 dark:bg-orange-950/30" },
   { id: "security", icon: <Lock className="h-5 w-5" />, title: "Usuarios y Seguridad", desc: "Contraseña, sesiones, acceso", color: "text-red-500 bg-red-50 dark:bg-red-950/30" },
   { id: "system", icon: <Settings className="h-5 w-5" />, title: "Configuración del Sistema", desc: "Formato, moneda, impuestos", color: "text-slate-500 bg-slate-50 dark:bg-slate-950/30" },
-  { id: "sales", icon: <FileText className="h-5 w-5" />, title: "Ventas y Comprobantes", desc: "Series, SUNAT, descuentos", color: "text-blue-500 bg-blue-50 dark:bg-blue-950/30" },
+  { id: "sales", icon: <FileText className="h-5 w-5" />, title: "Ventas y Comprobantes", desc: "Series, SUNAT, descuentos", color: "text-emerald-500 bg-emerald-50 dark:bg-emerald-950/30" },
   { id: "inventory", icon: <Package className="h-5 w-5" />, title: "Inventario", desc: "Stock, alertas, unidades", color: "text-emerald-500 bg-emerald-50 dark:bg-emerald-950/30" },
   { id: "cash", icon: <DollarSign className="h-5 w-5" />, title: "Caja y Pagos", desc: "Apertura, métodos, devoluciones", color: "text-green-500 bg-green-50 dark:bg-green-950/30" },
   { id: "delivery", icon: <Truck className="h-5 w-5" />, title: "Delivery y Envíos", desc: "Zonas, tarifas, repartidores", color: "text-cyan-500 bg-cyan-50 dark:bg-cyan-950/30" },
@@ -738,7 +739,7 @@ export default function SettingsModule({ storeMode, onModeChange }: { storeMode:
             <FieldLabel icon={<MapPin className="h-3.5 w-3.5" />}>Dirección</FieldLabel>
             <div className="flex gap-2">
               <div className="flex-1"><TextInput value={businessAddress} onChange={setBusinessAddress} /></div>
-              <button onClick={() => setShowMapPicker(true)} className="px-3 py-2 rounded-xl text-xs font-bold text-blue-600 bg-blue-50 hover:bg-blue-100 border border-blue-200 transition-colors shrink-0">
+              <button onClick={() => setShowMapPicker(true)} className="px-3 py-2 rounded-xl text-xs font-bold text-emerald-600 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 transition-colors shrink-0">
                 <MapPin className="h-4 w-4" />
               </button>
               <button
@@ -907,7 +908,7 @@ export default function SettingsModule({ storeMode, onModeChange }: { storeMode:
               <div className="flex gap-1">
                 {[1, 2, 3, 4].map(i => {
                   const strength = (newPw.length >= 4 ? 1 : 0) + (newPw.length >= 8 ? 1 : 0) + (/[A-Z]/.test(newPw) ? 1 : 0) + (/[0-9]/.test(newPw) ? 1 : 0);
-                  return <div key={i} className={cn("h-1.5 flex-1 rounded-full", i <= strength ? (strength <= 1 ? "bg-red-400" : strength <= 2 ? "bg-amber-400" : strength <= 3 ? "bg-blue-400" : "bg-emerald-400") : "bg-gray-200 dark:bg-surface")} />;
+                  return <div key={i} className={cn("h-1.5 flex-1 rounded-full", i <= strength ? (strength <= 1 ? "bg-red-400" : strength <= 2 ? "bg-amber-400" : strength <= 3 ? "bg-emerald-400" : "bg-emerald-400") : "bg-gray-200 dark:bg-surface")} />;
                 })}
               </div>
               <p className="text-[10px] text-gray-400">{newPw.length < 4 ? "Muy corta" : newPw.length < 8 ? "Aceptable" : "Fuerte"}</p>
@@ -1181,15 +1182,15 @@ export default function SettingsModule({ storeMode, onModeChange }: { storeMode:
           )}
           <Toggle enabled={plinEnabled} onChange={setPlinEnabled} label="Plin" desc="Pago con Plin" />
           {plinEnabled && (
-            <div className="pl-4 border-l-2 border-blue-200 space-y-3">
+            <div className="pl-4 border-l-2 border-emerald-200 space-y-3">
               <div className="grid grid-cols-2 gap-3">
                 <div><FieldLabel>Titular</FieldLabel><TextInput value={plinName} onChange={setPlinName} /></div>
                 <div><FieldLabel>Número</FieldLabel><TextInput value={plinPhone} onChange={setPlinPhone} mono /></div>
               </div>
               <div>
-                <button onClick={() => plinImgRef.current?.click()} className="w-full py-3 rounded-xl border-2 border-dashed border-blue-300 hover:border-blue-500 text-sm font-semibold text-blue-600 bg-blue-50 transition-colors"><Upload className="h-4 w-4 inline mr-1.5" />Subir QR Plin</button>
+                <button onClick={() => plinImgRef.current?.click()} className="w-full py-3 rounded-xl border-2 border-dashed border-emerald-300 hover:border-emerald-500 text-sm font-semibold text-emerald-600 bg-emerald-50 transition-colors"><Upload className="h-4 w-4 inline mr-1.5" />Subir QR Plin</button>
                 <input ref={plinImgRef} type="file" accept="image/*" className="hidden" onChange={handleFileUpload(setPlinImage)} />
-                {plinImage && <div className="mt-2 flex items-center gap-3 p-2 bg-blue-50 rounded-xl"><Image src={plinImage} alt="QR" width={64} height={64} className="rounded-lg object-contain border" unoptimized /><button onClick={() => setPlinImage("")} className="text-xs text-red-400">Quitar</button></div>}
+                {plinImage && <div className="mt-2 flex items-center gap-3 p-2 bg-emerald-50 rounded-xl"><Image src={plinImage} alt="QR" width={64} height={64} className="rounded-lg object-contain border" unoptimized /><button onClick={() => setPlinImage("")} className="text-xs text-red-400">Quitar</button></div>}
               </div>
             </div>
           )}
@@ -1671,49 +1672,39 @@ export default function SettingsModule({ storeMode, onModeChange }: { storeMode:
 
   return (
     <div className="space-y-5">
-      {/* ── Professional Header ── */}
-      <div className="relative overflow-hidden rounded-2xl bg-linear-to-br from-primary/10 via-white to-secondary/5 dark:from-primary/20 dark:via-card dark:to-secondary/10 border border-primary/10 dark:border-primary/20 px-5 py-5">
-        <div className="relative z-10 flex flex-col sm:flex-row sm:items-center gap-4">
-          <div className="flex items-center gap-3 flex-1 min-w-0">
-            <div className="w-12 h-12 rounded-2xl bg-primary flex items-center justify-center shadow-lg shadow-primary/20 shrink-0">
-              <Settings className="h-6 w-6 text-white" />
-            </div>
-            <div>
-              <h2 className="text-xl font-extrabold text-gray-900 dark:text-foreground flex items-center gap-2">
-                Configuración
-                <span className={cn(
-                  "text-xs font-bold px-2 py-0.5 rounded-full",
-                  overallCompletion === 100
-                    ? "bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400"
-                    : "bg-primary/10 text-primary"
-                )}>
-                  {overallCompletion}% completo
-                </span>
-              </h2>
-              <p className="text-sm text-gray-500 dark:text-muted">Personaliza tu tienda, pagos, inventario y más</p>
-            </div>
-          </div>
-          {/* Search bar */}
-          <div className="relative w-full sm:w-72">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
-            <input
-              type="text"
-              value={searchQuery}
-              onChange={e => { setSearchQuery(e.target.value); if (e.target.value) setShowOverview(true); }}
-              placeholder="Buscar configuración..."
-              className="w-full pl-9 pr-4 py-2.5 rounded-xl border border-gray-200 dark:border-card-border bg-white dark:bg-surface text-sm text-gray-900 dark:text-foreground placeholder:text-gray-400 outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-colors"
-            />
-            {searchQuery && (
-              <button onClick={() => setSearchQuery("")} className="absolute right-3 top-1/2 -translate-y-1/2 p-0.5 rounded text-gray-400 hover:text-gray-600">
-                <X className="h-3.5 w-3.5" />
-              </button>
-            )}
-          </div>
+      <AdminModuleHeader
+        title="Configuración"
+        description="Personaliza tu tienda, pagos, inventario y más"
+        icon={SlidersHorizontal}
+        bgTint="bg-slate-50 dark:bg-slate-900/20"
+        iconColorClass="text-slate-600 dark:text-slate-400"
+      >
+        {/* Completion badge */}
+        <span className={cn(
+          "text-xs font-bold px-2 py-0.5 rounded-full",
+          overallCompletion === 100
+            ? "bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400"
+            : "bg-primary/10 text-primary"
+        )}>
+          {overallCompletion}% completo
+        </span>
+        {/* Search bar */}
+        <div className="relative w-full sm:w-72">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+          <input
+            type="text"
+            value={searchQuery}
+            onChange={e => { setSearchQuery(e.target.value); if (e.target.value) setShowOverview(true); }}
+            placeholder="Buscar configuración..."
+            className="w-full pl-9 pr-4 py-2.5 rounded-xl border border-gray-200 dark:border-card-border bg-white dark:bg-surface text-sm text-gray-900 dark:text-foreground placeholder:text-gray-400 outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-colors"
+          />
+          {searchQuery && (
+            <button onClick={() => setSearchQuery("")} className="absolute right-3 top-1/2 -translate-y-1/2 p-0.5 rounded text-gray-400 hover:text-gray-600">
+              <X className="h-3.5 w-3.5" />
+            </button>
+          )}
         </div>
-        {/* Subtle decorative circles */}
-        <div className="absolute top-0 right-0 w-40 h-40 bg-primary/5 rounded-full -mr-10 -mt-10 blur-2xl" />
-        <div className="absolute bottom-0 left-1/2 w-32 h-32 bg-secondary/5 rounded-full -mb-10 blur-2xl" />
-      </div>
+      </AdminModuleHeader>
 
       {/* ── Breadcrumb ── */}
       {!showOverview && (
@@ -1887,7 +1878,7 @@ export default function SettingsModule({ storeMode, onModeChange }: { storeMode:
               <button onClick={() => setShowMapPicker(false)} className="p-1.5 rounded-lg text-gray-400 hover:bg-gray-100"><X className="h-5 w-5" /></button>
             </div>
             <div className="p-4 flex flex-col gap-3">
-              <button onClick={() => { if (!navigator.geolocation) return; navigator.geolocation.getCurrentPosition(pos => { setPickerLat(pos.coords.latitude); setPickerLon(pos.coords.longitude); setBusinessLat(pos.coords.latitude); setBusinessLon(pos.coords.longitude); }); }} className="self-start inline-flex items-center gap-2 px-3 py-2 rounded-xl text-sm font-semibold text-blue-700 bg-blue-50 hover:bg-blue-100 border border-blue-200">
+              <button onClick={() => { if (!navigator.geolocation) return; navigator.geolocation.getCurrentPosition(pos => { setPickerLat(pos.coords.latitude); setPickerLon(pos.coords.longitude); setBusinessLat(pos.coords.latitude); setBusinessLon(pos.coords.longitude); }); }} className="self-start inline-flex items-center gap-2 px-3 py-2 rounded-xl text-sm font-semibold text-emerald-700 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200">
                 <MapPin className="h-4 w-4" /> Usar ubicación actual
               </button>
               <LeafletMap lat={pickerLat} lon={pickerLon} zoom={15} height={340} onPick={(lat: number, lon: number, address: string) => { setPickerLat(lat); setPickerLon(lon); setBusinessLat(lat); setBusinessLon(lon); setBusinessAddress(address); }} />

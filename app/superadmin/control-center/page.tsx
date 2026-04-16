@@ -53,8 +53,8 @@ const SECTIONS: Section[] = [
   },
   {
     title: "Tienda (Storefront)",
-    color: "text-blue-600 dark:text-blue-400",
-    bgColor: "bg-blue-50 dark:bg-blue-950/30",
+    color: "text-emerald-600 dark:text-emerald-400",
+    bgColor: "bg-emerald-50 dark:bg-emerald-950/30",
     links: [
       { label: "Inicio", href: "/", icon: <Store className="w-4 h-4" />, desc: "Página principal de la tienda" },
       { label: "Catálogo", href: "/tienda", icon: <Package className="w-4 h-4" />, desc: "Todos los productos" },
@@ -97,7 +97,7 @@ const CREDENTIALS: Credential[] = [
   { label: "SuperAdmin", username: "platform", password: "Buleje2026", url: "/superadmin/login", badge: "Platform", badgeColor: "bg-teal-100 text-teal-700 dark:bg-teal-900/30 dark:text-teal-400" },
   { label: "Admin", username: "admin", password: "Admin2026", url: "/admin/login", badge: "Admin", badgeColor: "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400" },
   { label: "Cajero", username: "cajero", password: "Cajero2026", url: "/admin/login", badge: "Cajero", badgeColor: "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400" },
-  { label: "Almacenero", username: "almacen", password: "Almacen2026", url: "/admin/login", badge: "Almacén", badgeColor: "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400" },
+  { label: "Almacenero", username: "almacen", password: "Almacen2026", url: "/admin/login", badge: "Almacén", badgeColor: "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400" },
   { label: "Demo Admin", username: "demo", password: "demo1234", url: "/t/demo/admin", badge: "Demo", badgeColor: "bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400" },
 ];
 
@@ -200,7 +200,7 @@ function SavedTenantCredentials() {
     return (
       <div className="bg-white dark:bg-gray-950 border border-gray-200 dark:border-gray-800 rounded-2xl p-6">
         <h3 className="text-sm font-semibold text-gray-900 dark:text-white uppercase tracking-wider mb-3 flex items-center gap-2">
-          <KeyRound className="w-4 h-4 text-blue-600" />
+          <KeyRound className="w-4 h-4 text-emerald-600" />
           Credenciales de Tiendas
         </h3>
         <p className="text-sm text-gray-400">No hay credenciales guardadas. Guarda credenciales desde el módulo Tiendas → Detalle de cada tienda.</p>
@@ -212,7 +212,7 @@ function SavedTenantCredentials() {
     <div className="bg-white dark:bg-gray-950 border border-gray-200 dark:border-gray-800 rounded-2xl p-6">
       <div className="flex items-center justify-between mb-4">
         <h3 className="text-sm font-semibold text-gray-900 dark:text-white uppercase tracking-wider flex items-center gap-2">
-          <KeyRound className="w-4 h-4 text-blue-600" />
+          <KeyRound className="w-4 h-4 text-emerald-600" />
           Credenciales de Tiendas ({credentials.length})
         </h3>
         <button
@@ -257,7 +257,7 @@ function SavedTenantCredentials() {
                     <button
                       type="button"
                       onClick={() => handleLogin(c.slug)}
-                      className="p-1.5 rounded-lg text-blue-500 hover:bg-blue-50 dark:hover:bg-blue-950/30 transition-colors"
+                      className="p-1.5 rounded-lg text-emerald-500 hover:bg-emerald-50 dark:hover:bg-emerald-950/30 transition-colors"
                       title="Iniciar sesión como esta tienda"
                     >
                       <LogIn className="w-4 h-4" />

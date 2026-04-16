@@ -250,7 +250,7 @@ export default function POSSearchBar({
                   "shrink-0 px-2 py-1 rounded-lg text-[11px] font-medium transition-all whitespace-nowrap flex items-center gap-1",
                   outOfStock
                     ? "bg-gray-100 dark:bg-surface text-gray-400 cursor-not-allowed"
-                    : "bg-blue-50 dark:bg-blue-950/20 text-blue-700 dark:text-blue-300 hover:bg-blue-100 dark:hover:bg-blue-900/30 border border-blue-200 dark:border-blue-800/30"
+                    : "bg-emerald-50 dark:bg-emerald-950/20 text-emerald-700 dark:text-emerald-300 hover:bg-emerald-100 dark:hover:bg-emerald-900/30 border border-emerald-200 dark:border-emerald-800/30"
                 )}
               >
                 <span className="truncate max-w-20">{p.name}</span>

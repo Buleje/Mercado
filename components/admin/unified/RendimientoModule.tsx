@@ -504,7 +504,7 @@ function StorageTab() {
           label="Datos guardados"
           value={formatBytes(storage.localStorage)}
           description="Configuración, preferencias y datos temporales"
-          color="text-blue-500"
+          color="text-emerald-500"
         />
         <StorageCard
           icon={MemoryStick}

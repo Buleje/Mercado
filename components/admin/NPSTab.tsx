@@ -185,7 +185,7 @@ export default function NPSTab() {
           {/* Score promedio */}
           <div className="flex flex-col items-center shrink-0 bg-gray-50 dark:bg-surface rounded-2xl p-4 min-w-[80px]">
             <p className="text-xs font-bold text-gray-500 dark:text-muted">Promedio</p>
-            <p className="text-3xl font-extrabold text-blue-500">{avgScore}</p>
+            <p className="text-3xl font-extrabold text-emerald-500">{avgScore}</p>
             <p className="text-[10px] text-gray-400">/10</p>
           </div>
         </div>

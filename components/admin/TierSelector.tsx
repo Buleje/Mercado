@@ -25,9 +25,9 @@ const TIER_COLORS: Record<ModuleTier, { bg: string; active: string; ring: string
     ring: "ring-amber-200 dark:ring-amber-800",
   },
   avanzado: {
-    bg: "bg-blue-50 dark:bg-blue-900/20",
-    active: "bg-blue-500 text-white shadow-sm",
-    ring: "ring-blue-200 dark:ring-blue-800",
+    bg: "bg-emerald-50 dark:bg-emerald-900/20",
+    active: "bg-emerald-500 text-white shadow-sm",
+    ring: "ring-emerald-200 dark:ring-emerald-800",
   },
 };
 

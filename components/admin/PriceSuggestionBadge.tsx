@@ -74,7 +74,7 @@ export default function PriceSuggestionBadge({
   const _Icon = suggestion.action === "subir" ? TrendingUp : TrendingDown;
   const colors = suggestion.action === "subir"
     ? "bg-amber-50 dark:bg-amber-950/20 border-amber-200 dark:border-amber-800/30 text-amber-700 dark:text-amber-400"
-    : "bg-blue-50 dark:bg-blue-950/20 border-blue-200 dark:border-blue-800/30 text-blue-700 dark:text-blue-400";
+    : "bg-emerald-50 dark:bg-emerald-950/20 border-emerald-200 dark:border-emerald-800/30 text-emerald-700 dark:text-emerald-400";
 
   return (
     <div className={cn("inline-flex items-center gap-1.5 px-2 py-1 rounded-lg border text-[10px] font-bold", colors, className)}>

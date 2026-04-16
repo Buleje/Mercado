@@ -308,7 +308,7 @@ function SalesDashboard({ cachedData, onDataLoaded, onNavigate }: { cachedData?:
     <div key="kpis" className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
       {[
         { label: "Ventas periodo", value: `S/ ${ventasPeriodo.toFixed(0)}`, color: "border-b-4 border-primary", spark: true, strokeColor: "var(--color-primary)", sparkVal: ventasPeriodo },
-        { label: "Transacciones", value: String(transacciones), color: "border-b-4 border-blue-500", spark: true, strokeColor: "#3b82f6", sparkVal: transacciones },
+        { label: "Transacciones", value: String(transacciones), color: "border-b-4 border-emerald-500", spark: true, strokeColor: "#3b82f6", sparkVal: transacciones },
         { label: "Ticket promedio", value: `S/ ${ticketPromedio.toFixed(0)}`, color: "border-b-4 border-purple-500", spark: true, strokeColor: "#8b5cf6", sparkVal: ticketPromedio },
         { label: "Pedidos pend.", value: String(pedidosPendientes), color: "border-b-4 border-amber-500", spark: false, strokeColor: "", sparkVal: 0 },
         { label: "Fiados", value: `S/ ${fiadoTotal.toFixed(0)}`, color: "border-b-4 border-orange-500", spark: false, strokeColor: "", sparkVal: 0, onClick: onNavigate ? () => onNavigate("cuentas-cobrar") : undefined },
@@ -860,20 +860,20 @@ function ShiftCloseModal({
                     <p className="text-base sm:text-lg font-black text-purple-700">{fmt(summary.yape)}</p>
                   </div>
 
-                  <div className="bg-blue-50 border border-blue-100 rounded-2xl p-3 sm:p-4">
+                  <div className="bg-emerald-50 border border-emerald-100 rounded-2xl p-3 sm:p-4">
                     <div className="flex items-center gap-2 mb-2">
-                      <div className="h-2 w-2 rounded-full bg-blue-500" />
-                      <p className="text-xs font-bold text-blue-700/80">Plin</p>
+                      <div className="h-2 w-2 rounded-full bg-emerald-500" />
+                      <p className="text-xs font-bold text-emerald-700/80">Plin</p>
                     </div>
-                    <p className="text-base sm:text-lg font-black text-blue-700">{fmt(summary.plin)}</p>
+                    <p className="text-base sm:text-lg font-black text-emerald-700">{fmt(summary.plin)}</p>
                   </div>
 
-                  <div className="bg-blue-50 border border-blue-100 rounded-2xl p-3 sm:p-4">
+                  <div className="bg-emerald-50 border border-emerald-100 rounded-2xl p-3 sm:p-4">
                     <div className="flex items-center gap-2 mb-2">
-                      <CreditCard className="h-3 w-3 text-blue-500" />
-                      <p className="text-xs font-bold text-blue-700/80">Tarjeta / POS</p>
+                      <CreditCard className="h-3 w-3 text-emerald-500" />
+                      <p className="text-xs font-bold text-emerald-700/80">Tarjeta / POS</p>
                     </div>
-                    <p className="text-base sm:text-lg font-black text-blue-700">{fmt(summary.tarjeta)}</p>
+                    <p className="text-base sm:text-lg font-black text-emerald-700">{fmt(summary.tarjeta)}</p>
                   </div>
 
                   <div className="bg-amber-50 border border-amber-100 rounded-2xl p-3 sm:p-4">

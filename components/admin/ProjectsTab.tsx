@@ -37,13 +37,13 @@ const pct = (n: number) => n.toFixed(1) + "%";
 
 const TYPE_META: Record<ProjectType, { label: string; icon: typeof Wrench; color: string }> = {
   remodelacion: { label: "Remodelación", icon: Wrench,          color: "text-orange-600" },
-  equipo:       { label: "Equipo",       icon: MoreHorizontal, color: "text-blue-600" },
+  equipo:       { label: "Equipo",       icon: MoreHorizontal, color: "text-emerald-600" },
   expansion:    { label: "Expansión",    icon: Expand,          color: "text-emerald-600" },
   otro:         { label: "Otro",         icon: MoreHorizontal, color: "text-gray-500" },
 };
 
 const STATUS_META: Record<ProjectStatus, { label: string; icon: typeof Pause; color: string; bg: string }> = {
-  planificacion: { label: "Planificación", icon: Calendar,    color: "text-blue-600",    bg: "bg-blue-100 dark:bg-blue-900/30" },
+  planificacion: { label: "Planificación", icon: Calendar,    color: "text-emerald-600",    bg: "bg-emerald-100 dark:bg-emerald-900/30" },
   "en-curso":    { label: "En Curso",      icon: TrendingUp,  color: "text-amber-600",   bg: "bg-amber-100 dark:bg-amber-900/30" },
   completado:    { label: "Completado",    icon: CheckCircle2, color: "text-emerald-600", bg: "bg-emerald-100 dark:bg-emerald-900/30" },
   cancelado:     { label: "Cancelado",     icon: Ban,          color: "text-red-500",     bg: "bg-red-100 dark:bg-red-900/30" },
@@ -101,7 +101,7 @@ export default function ProjectsTab() {
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
         {[
           { label: "En Curso", value: String(stats.activeCount), color: "text-amber-600", bg: "bg-amber-50 dark:bg-amber-950/30" },
-          { label: "Presupuesto Total", value: fmt(stats.totalBudget), color: "text-blue-600", bg: "bg-blue-50 dark:bg-blue-950/30" },
+          { label: "Presupuesto Total", value: fmt(stats.totalBudget), color: "text-emerald-600", bg: "bg-emerald-50 dark:bg-emerald-950/30" },
           { label: "Ejecutado Total", value: fmt(stats.totalSpent), color: "text-emerald-600", bg: "bg-emerald-50 dark:bg-emerald-950/30" },
           { label: "ROI Prom. Real", value: pct(stats.avgRoi), color: "text-violet-600", bg: "bg-violet-50 dark:bg-violet-950/30" },
         ].map(({ label, value, color, bg }) => (

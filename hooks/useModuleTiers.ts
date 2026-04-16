@@ -23,7 +23,7 @@ export const TIER_LABELS: Record<ModuleTier, { label: string; description: strin
     label: "Avanzado",
     description: "Todo lo disponible — para expertos",
     emoji: "🔵",
-    color: "text-blue-600 dark:text-blue-400",
+    color: "text-emerald-600 dark:text-emerald-400",
   },
 };
 

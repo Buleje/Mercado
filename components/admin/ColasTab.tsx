@@ -109,7 +109,7 @@ function QueueCard({ queue }: { queue: QueueStats }) {
         <StatBadge
           label="Activos"
           value={queue.active}
-          colorClasses="bg-blue-50 text-blue-700 dark:bg-blue-900/20 dark:text-blue-400"
+          colorClasses="bg-emerald-50 text-emerald-700 dark:bg-emerald-900/20 dark:text-emerald-400"
           icon={<Loader2 className="h-4 w-4" />}
         />
         <StatBadge
@@ -312,13 +312,13 @@ export default function ColasTab() {
             <p className="text-xs text-amber-600 dark:text-amber-400">En espera (total)</p>
           </div>
         </div>
-        <div className="flex items-center gap-3 rounded-xl border bg-blue-50 p-4 dark:border-blue-800 dark:bg-blue-900/10">
-          <Activity className="h-8 w-8 text-blue-600 dark:text-blue-400" />
+        <div className="flex items-center gap-3 rounded-xl border bg-emerald-50 p-4 dark:border-emerald-800 dark:bg-emerald-900/10">
+          <Activity className="h-8 w-8 text-emerald-600 dark:text-emerald-400" />
           <div>
-            <p className="text-2xl font-bold text-blue-700 dark:text-blue-300">
+            <p className="text-2xl font-bold text-emerald-700 dark:text-emerald-300">
               {totalActive.toLocaleString("es-PE")}
             </p>
-            <p className="text-xs text-blue-600 dark:text-blue-400">Activos (total)</p>
+            <p className="text-xs text-emerald-600 dark:text-emerald-400">Activos (total)</p>
           </div>
         </div>
         <div className="flex items-center gap-3 rounded-xl border bg-red-50 p-4 dark:border-red-800 dark:bg-red-900/10">

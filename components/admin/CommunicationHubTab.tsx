@@ -12,7 +12,7 @@ type Message = {
 
 const CHANNEL_CONFIG: Record<string, { label: string; icon: React.ElementType; color: string }> = {
   whatsapp: { label: "WhatsApp", icon: MessageSquare, color: "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400" },
-  sms: { label: "SMS", icon: Phone, color: "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400" },
+  sms: { label: "SMS", icon: Phone, color: "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400" },
   email: { label: "Email", icon: Mail, color: "bg-violet-100 text-violet-700 dark:bg-violet-900/30 dark:text-violet-400" },
   llamada: { label: "Llamada", icon: Phone, color: "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400" },
 };
@@ -58,7 +58,7 @@ export default function CommunicationHubTab() {
 
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
         {[
-          { label: "Mensajes hoy", value: todayCount, color: "text-blue-500" },
+          { label: "Mensajes hoy", value: todayCount, color: "text-emerald-500" },
           { label: "Pendientes", value: pendingCount, color: "text-red-500" },
           { label: "Entrantes", value: inbound, color: "text-emerald-500" },
           { label: "Salientes", value: outbound, color: "text-violet-500" },
@@ -102,7 +102,7 @@ export default function CommunicationHubTab() {
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2 mb-0.5 flex-wrap">
                     <span className="font-bold text-sm text-gray-900 dark:text-foreground">{m.customer}</span>
-                    <span className={cn("text-[10px] font-bold px-1.5 py-0.5 rounded", m.direction === "in" ? "bg-blue-100 text-blue-600 dark:bg-blue-900/30 dark:text-blue-400" : "bg-gray-100 text-gray-500 dark:bg-surface dark:text-muted")}>{m.direction === "in" ? "← Entrante" : "→ Saliente"}</span>
+                    <span className={cn("text-[10px] font-bold px-1.5 py-0.5 rounded", m.direction === "in" ? "bg-emerald-100 text-emerald-600 dark:bg-emerald-900/30 dark:text-emerald-400" : "bg-gray-100 text-gray-500 dark:bg-surface dark:text-muted")}>{m.direction === "in" ? "← Entrante" : "→ Saliente"}</span>
                     <span className="text-[10px] text-gray-400 bg-gray-50 dark:bg-surface px-1.5 py-0.5 rounded">{m.category}</span>
                     {m.status === "pendiente" && <span className="text-[10px] font-bold bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400 px-1.5 py-0.5 rounded-full flex items-center gap-0.5"><AlertTriangle className="h-2.5 w-2.5" /> Pendiente</span>}
                     <span className="text-[10px] text-gray-400 ml-auto flex items-center gap-0.5"><Clock className="h-2.5 w-2.5" />{fmtDate(m.timestamp)}</span>

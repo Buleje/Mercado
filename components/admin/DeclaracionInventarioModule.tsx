@@ -221,9 +221,9 @@ export default function DeclaracionInventarioModule() {
 
       {/* Card informativa */}
       {!infoDismissed ? (
-        <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-xl p-5">
-          <h3 className="text-sm font-bold text-blue-800 dark:text-blue-300 mb-2">Para que sirve la Declaracion de Inventario?</h3>
-          <div className="space-y-2 text-sm text-blue-700 dark:text-blue-400">
+        <div className="bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-200 dark:border-emerald-800 rounded-xl p-5">
+          <h3 className="text-sm font-bold text-emerald-800 dark:text-emerald-300 mb-2">Para que sirve la Declaracion de Inventario?</h3>
+          <div className="space-y-2 text-sm text-emerald-700 dark:text-emerald-400">
             <p><strong>Que es:</strong> Es un documento oficial que muestra todos tus productos, cuantos tienes y cuanto valen. Es como una &quot;foto&quot; de tu almacen en un momento especifico.</p>
             <p><strong>Cuando hacerla:</strong></p>
             <ul className="list-disc pl-5 space-y-0.5 text-xs">
@@ -242,7 +242,7 @@ export default function DeclaracionInventarioModule() {
           </div>
           <button
             onClick={handleDismissInfo}
-            className="mt-3 px-4 py-1.5 rounded-lg text-xs font-bold text-blue-700 dark:text-blue-300 bg-blue-100 dark:bg-blue-800/40 hover:bg-blue-200 dark:hover:bg-blue-800/60 transition-colors"
+            className="mt-3 px-4 py-1.5 rounded-lg text-xs font-bold text-emerald-700 dark:text-emerald-300 bg-emerald-100 dark:bg-emerald-800/40 hover:bg-emerald-200 dark:hover:bg-emerald-800/60 transition-colors"
           >
             Entendido, no mostrar de nuevo
           </button>
@@ -251,7 +251,7 @@ export default function DeclaracionInventarioModule() {
         <div className="flex justify-end">
           <button
             onClick={handleShowInfo}
-            className="p-1.5 rounded-lg hover:bg-blue-50 dark:hover:bg-blue-900/20 text-blue-400 hover:text-blue-600 transition-colors"
+            className="p-1.5 rounded-lg hover:bg-emerald-50 dark:hover:bg-emerald-900/20 text-emerald-400 hover:text-emerald-600 transition-colors"
             title="Que es la Declaracion de Inventario?"
           >
             <HelpCircle className="h-4 w-4" />
@@ -341,7 +341,7 @@ export default function DeclaracionInventarioModule() {
           {/* Summary cards */}
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
             {[
-              { label: "Total Productos", value: (data.totalProductos ?? 0).toLocaleString(), icon: Package, color: "text-blue-600 dark:text-blue-400", bg: "bg-blue-100 dark:bg-blue-900/30" },
+              { label: "Total Productos", value: (data.totalProductos ?? 0).toLocaleString(), icon: Package, color: "text-emerald-600 dark:text-emerald-400", bg: "bg-emerald-100 dark:bg-emerald-900/30" },
               { label: "Total Unidades", value: (data.totalUnidades ?? 0).toLocaleString(), icon: Layers, color: "text-amber-600 dark:text-amber-400", bg: "bg-amber-100 dark:bg-amber-900/30" },
               { label: "Valor a Costo", value: formatCurrency(data.valorCosto ?? 0), icon: DollarSign, color: "text-emerald-600 dark:text-emerald-400", bg: "bg-emerald-100 dark:bg-emerald-900/30" },
               { label: "Valor a Precio Venta", value: formatCurrency(data.valorPrecio ?? 0), icon: DollarSign, color: "text-purple-600 dark:text-purple-400", bg: "bg-purple-100 dark:bg-purple-900/30" },
@@ -392,8 +392,8 @@ export default function DeclaracionInventarioModule() {
 
             return (
               <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl overflow-hidden shadow-sm">
-                <div className="px-4 py-3 bg-blue-50 dark:bg-blue-900/20 border-b border-blue-200 dark:border-blue-800">
-                  <p className="text-sm font-bold text-blue-800 dark:text-blue-300">
+                <div className="px-4 py-3 bg-emerald-50 dark:bg-emerald-900/20 border-b border-emerald-200 dark:border-emerald-800">
+                  <p className="text-sm font-bold text-emerald-800 dark:text-emerald-300">
                     Comparativa con declaracion anterior ({formatDate(prevDecl.fecha + "T00:00:00")})
                   </p>
                 </div>
@@ -547,7 +547,7 @@ export default function DeclaracionInventarioModule() {
                       const prev = realIdx > 0 ? historial[realIdx - 1] : null;
                       const diff = prev ? h.valorCosto - prev.valorCosto : 0;
                       return (
-                        <tr key={i} className={cn("border-b border-gray-50 dark:border-white/5", comparingIdx === realIdx && "bg-blue-50 dark:bg-blue-900/10")}>
+                        <tr key={i} className={cn("border-b border-gray-50 dark:border-white/5", comparingIdx === realIdx && "bg-emerald-50 dark:bg-emerald-900/10")}>
                           <td className="px-4 py-2 text-gray-700 dark:text-gray-300">{formatDate(h.fecha + "T00:00:00")}</td>
                           <td className="px-4 py-2 text-right text-gray-900 dark:text-white font-medium">{h.totalProductos}</td>
                           <td className="px-4 py-2 text-right text-gray-900 dark:text-white hidden sm:table-cell">{h.totalUnidades}</td>

@@ -36,7 +36,7 @@ const QUICK_QUESTIONS = [
   { icon: Truck, text: "¿Cuánto cuesta el delivery?", color: "text-primary" },
   { icon: Clock, text: "¿Cuáles son los horarios?", color: "text-amber-500" },
   { icon: CreditCard, text: "¿Tienen pago con Yape?", color: "text-violet-500" },
-  { icon: Package, text: "¿Cuándo llega mi pedido?", color: "text-blue-500" },
+  { icon: Package, text: "¿Cuándo llega mi pedido?", color: "text-emerald-500" },
   { icon: ShoppingBag, text: "Quiero hacer un pedido", color: "text-emerald-500" },
   { icon: HelpCircle, text: "¿Tienen descuentos hoy?", color: "text-pink-500" },
 ];

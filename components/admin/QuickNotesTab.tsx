@@ -20,14 +20,14 @@ type NoteColor = "yellow" | "green" | "blue" | "pink" | "purple" | "orange";
 const COLOR_MAP: Record<NoteColor, { bg: string; border: string; darkBg: string; darkBorder: string }> = {
   yellow: { bg: "bg-yellow-50", border: "border-yellow-200", darkBg: "dark:bg-yellow-950/20", darkBorder: "dark:border-yellow-800" },
   green:  { bg: "bg-emerald-50", border: "border-emerald-200", darkBg: "dark:bg-emerald-950/20", darkBorder: "dark:border-emerald-800" },
-  blue:   { bg: "bg-blue-50", border: "border-blue-200", darkBg: "dark:bg-blue-950/20", darkBorder: "dark:border-blue-800" },
+  blue:   { bg: "bg-emerald-50", border: "border-emerald-200", darkBg: "dark:bg-emerald-950/20", darkBorder: "dark:border-emerald-800" },
   pink:   { bg: "bg-pink-50", border: "border-pink-200", darkBg: "dark:bg-pink-950/20", darkBorder: "dark:border-pink-800" },
   purple: { bg: "bg-purple-50", border: "border-purple-200", darkBg: "dark:bg-purple-950/20", darkBorder: "dark:border-purple-800" },
   orange: { bg: "bg-orange-50", border: "border-orange-200", darkBg: "dark:bg-orange-950/20", darkBorder: "dark:border-orange-800" },
 };
 
 const COLOR_DOTS: Record<NoteColor, string> = {
-  yellow: "bg-yellow-400", green: "bg-emerald-400", blue: "bg-blue-400",
+  yellow: "bg-yellow-400", green: "bg-emerald-400", blue: "bg-emerald-400",
   pink: "bg-pink-400", purple: "bg-purple-400", orange: "bg-orange-400",
 };
 

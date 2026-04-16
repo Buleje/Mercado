@@ -85,7 +85,7 @@ const STATUS_META: Record<NCStatus, { label: string; color: string; bg: string; 
 };
 
 const DOC_STYLE: Record<string, { bg: string; border: string; icon: string; badge: string; label: string; accent: string }> = {
-  factura: { bg: "bg-blue-50 dark:bg-blue-950/30", border: "border-blue-200 dark:border-blue-800/50", icon: "\u{1F4CB}", badge: "bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-400", label: "Factura", accent: "text-blue-600" },
+  factura: { bg: "bg-emerald-50 dark:bg-emerald-950/30", border: "border-emerald-200 dark:border-emerald-800/50", icon: "\u{1F4CB}", badge: "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-400", label: "Factura", accent: "text-emerald-600" },
   boleta:  { bg: "bg-emerald-50 dark:bg-emerald-950/30", border: "border-emerald-200 dark:border-emerald-800/50", icon: "\u{1F4C4}", badge: "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-400", label: "Boleta", accent: "text-emerald-600" },
   ticket:  { bg: "bg-amber-50 dark:bg-amber-950/30", border: "border-amber-200 dark:border-amber-800/50", icon: "\u{1F3AB}", badge: "bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-400", label: "Ticket", accent: "text-amber-600" },
 };
@@ -205,7 +205,7 @@ function NCCard({ nc, onSelect, selected, onToggle }: { nc: NotaCredito; onSelec
           <p className="text-xs text-gray-600 dark:text-gray-400 truncate mb-1">[{nc.codigoMotivo}] {nc.descripcionMotivo}</p>
           {nc.clienteNombre && <p className="text-[10px] text-gray-400 mb-1">{nc.clienteNombre}</p>}
           {nc.orderNumero && (
-            <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[9px] font-bold bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 mb-2">
+            <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[9px] font-bold bg-emerald-50 dark:bg-emerald-900/20 text-emerald-600 dark:text-emerald-400 mb-2">
               {"\u{1F517}"} {nc.orderNumero}
             </span>
           )}
@@ -280,7 +280,7 @@ function SaleDocCard({ doc, isSelected, onSelect }: { doc: SaleDoc; isSelected: 
       )}>
       {/* Color accent strip */}
       <div className={cn("absolute top-0 left-0 w-1.5 h-full rounded-l-2xl", isSelected ? "bg-[#00B4A6]" :
-        doc.comprobanteTipo === "factura" ? "bg-blue-500" : doc.comprobanteTipo === "boleta" ? "bg-emerald-500" : "bg-amber-500"
+        doc.comprobanteTipo === "factura" ? "bg-emerald-500" : doc.comprobanteTipo === "boleta" ? "bg-emerald-500" : "bg-amber-500"
       )} />
       <div className="flex items-start gap-3 pl-2">
         <div className={cn("w-12 h-12 rounded-xl flex items-center justify-center text-2xl shrink-0 shadow-sm",
@@ -1214,7 +1214,7 @@ export default function NotasCreditoModule() {
                         </td>
                         <td className="px-3 py-3 hidden sm:table-cell">
                           {nc.orderNumero ? (
-                            <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-bold bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400">
+                            <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-bold bg-emerald-50 dark:bg-emerald-900/20 text-emerald-600 dark:text-emerald-400">
                               {"\u{1F517}"} {nc.orderNumero}
                             </span>
                           ) : <span className="text-gray-300">{"\u2014"}</span>}
@@ -1296,7 +1296,7 @@ export default function NotasCreditoModule() {
                     {STATUS_META[selected.status].label}
                   </span>
                   {selected.orderNumero && (
-                    <span className="inline-flex items-center gap-1 px-2 py-1 rounded-lg text-[10px] font-bold bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400">
+                    <span className="inline-flex items-center gap-1 px-2 py-1 rounded-lg text-[10px] font-bold bg-emerald-50 dark:bg-emerald-900/20 text-emerald-600 dark:text-emerald-400">
                       {"\u{1F517}"} Vinculada a {selected.orderNumero}
                     </span>
                   )}
@@ -1317,7 +1317,7 @@ export default function NotasCreditoModule() {
                   <button onClick={() => sendWhatsApp(selected)} className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-400 hover:bg-green-100 transition-colors" title="Enviar por WhatsApp">
                     <MessageCircle className="h-3.5 w-3.5" />WhatsApp
                   </button>
-                  <button onClick={() => exportPDF(selected)} className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-400 hover:bg-blue-100 transition-colors" title="Descargar PDF">
+                  <button onClick={() => exportPDF(selected)} className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold bg-emerald-50 dark:bg-emerald-900/20 text-emerald-700 dark:text-emerald-400 hover:bg-emerald-100 transition-colors" title="Descargar PDF">
                     <FileDown className="h-3.5 w-3.5" />PDF
                   </button>
                 </div>
@@ -1545,11 +1545,11 @@ export default function NotasCreditoModule() {
                     <div className="space-y-4">
                       {/* ── Templates guardados ─────────────────────────── */}
                       {templates.length > 0 && (
-                        <div className="bg-blue-50 dark:bg-blue-900/10 border border-blue-200 dark:border-blue-800/30 rounded-xl p-3">
-                          <button onClick={() => setShowTemplates(s => !s)} className="flex items-center gap-2 w-full text-xs font-bold text-blue-700 dark:text-blue-400">
+                        <div className="bg-emerald-50 dark:bg-emerald-900/10 border border-emerald-200 dark:border-emerald-800/30 rounded-xl p-3">
+                          <button onClick={() => setShowTemplates(s => !s)} className="flex items-center gap-2 w-full text-xs font-bold text-emerald-700 dark:text-emerald-400">
                             <Bookmark className="h-3.5 w-3.5" />
                             Mis templates guardados ({templates.length})
-                            <span className="ml-auto text-[10px] text-blue-400">{showTemplates ? "Ocultar" : "Ver"}</span>
+                            <span className="ml-auto text-[10px] text-emerald-400">{showTemplates ? "Ocultar" : "Ver"}</span>
                           </button>
                           <AnimatePresence>
                             {showTemplates && (
@@ -1560,7 +1560,7 @@ export default function NotasCreditoModule() {
                                       <span className="flex-1 text-xs text-gray-700 dark:text-gray-300">
                                         <strong>{t.name}</strong> — [{t.codigoMotivo}] {t.descripcionMotivo}
                                       </span>
-                                      <button onClick={() => loadTemplate(t)} className="text-[10px] font-bold text-blue-600 hover:underline shrink-0">Usar</button>
+                                      <button onClick={() => loadTemplate(t)} className="text-[10px] font-bold text-emerald-600 hover:underline shrink-0">Usar</button>
                                       <button onClick={() => deleteTemplate(t.id)} className="text-[10px] text-red-400 hover:text-red-600 shrink-0">x</button>
                                     </div>
                                   ))}
@@ -1576,7 +1576,7 @@ export default function NotasCreditoModule() {
                         <div className="flex items-center justify-between mb-2">
                           <label className="block text-xs font-bold text-gray-600 dark:text-gray-400">Motivo SUNAT {"\u2014"} {"\u00bfPor qu\u00e9"} se emite la NC?</label>
                           {form.codigoMotivo && (
-                            <button onClick={saveTemplate} className="flex items-center gap-1 text-[10px] font-bold text-blue-600 hover:underline">
+                            <button onClick={saveTemplate} className="flex items-center gap-1 text-[10px] font-bold text-emerald-600 hover:underline">
                               <BookmarkPlus className="h-3 w-3" />Guardar template
                             </button>
                           )}

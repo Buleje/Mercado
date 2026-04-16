@@ -20,7 +20,7 @@ const DEFAULT_COLS = 6;
 
 const CATEGORIES = [
   { name: "Abarrotes", color: "bg-amber-200 text-amber-800 dark:bg-amber-800 dark:text-amber-100" },
-  { name: "Bebidas", color: "bg-blue-200 text-blue-800 dark:bg-blue-800 dark:text-blue-100" },
+  { name: "Bebidas", color: "bg-emerald-200 text-emerald-800 dark:bg-emerald-800 dark:text-emerald-100" },
   { name: "Lacteos", color: "bg-yellow-200 text-yellow-800 dark:bg-yellow-800 dark:text-yellow-100" },
   { name: "Limpieza", color: "bg-cyan-200 text-cyan-800 dark:bg-cyan-800 dark:text-cyan-100" },
   { name: "Snacks", color: "bg-orange-200 text-orange-800 dark:bg-orange-800 dark:text-orange-100" },

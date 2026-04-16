@@ -7,7 +7,7 @@ import type { ComplianceItem } from "@/app/api/compliance/route";
 
 const STATUS_CONFIG = {
   "vigente":     { label: "Vigente",           icon: CheckCircle,    color: "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400", border: "border-gray-200 dark:border-card-border" },
-  "por-vencer":  { label: "Por vencer",         icon: Calendar,       color: "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400",             border: "border-blue-200 dark:border-blue-900/30" },
+  "por-vencer":  { label: "Por vencer",         icon: Calendar,       color: "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400",             border: "border-emerald-200 dark:border-emerald-900/30" },
   "vencido":     { label: "Vencido",            icon: AlertTriangle,  color: "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400",                 border: "border-red-200 dark:border-red-900/30" },
   "pendiente":   { label: "Pendiente",          icon: Clock,          color: "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400",          border: "border-amber-200 dark:border-amber-900/30" },
 };
@@ -113,7 +113,7 @@ export default function ComplianceTab() {
       {/* KPIs */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
         {[
-          { label: "Total obligaciones", value: items.length, color: "text-blue-500" },
+          { label: "Total obligaciones", value: items.length, color: "text-emerald-500" },
           { label: "Vigentes",           value: vigente,       color: "text-emerald-500" },
           { label: "Pendientes / próx.", value: porVencer,     color: "text-amber-500" },
           { label: "Vencidos",           value: vencidos,      color: vencidos > 0 ? "text-red-500" : "text-gray-400" },

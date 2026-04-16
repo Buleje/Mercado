@@ -65,10 +65,10 @@ const TYPE_CONFIG: Record<
   order_status_changed: {
     label: "Estado de pedido",
     Icon: Package,
-    dot: "bg-blue-500",
-    bg: "bg-blue-50 dark:bg-blue-900/20",
-    text: "text-blue-700 dark:text-blue-400",
-    border: "border-blue-200 dark:border-blue-800",
+    dot: "bg-emerald-500",
+    bg: "bg-emerald-50 dark:bg-emerald-900/20",
+    text: "text-emerald-700 dark:text-emerald-400",
+    border: "border-emerald-200 dark:border-emerald-800",
   },
   low_stock: {
     label: "Stock bajo",

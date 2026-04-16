@@ -31,7 +31,7 @@ const QUADRANT_META: Record<BCGQuadrant, {
 }> = {
   star:     { label: "Estrellas",    icon: "↑↑", color: "#00B4A6", bg: "bg-green-100 dark:bg-green-900/30", text: "text-green-800 dark:text-green-300", recommendation: "Invertir para crecer — alta prioridad" },
   cow:      { label: "Vacas",        icon: "→↑", color: "#f97316", bg: "bg-amber-100 dark:bg-amber-900/30", text: "text-amber-800 dark:text-amber-300", recommendation: "Mantener y cosechar — generan caja" },
-  question: { label: "Interrogantes",icon: "↑↓", color: "#3b82f6", bg: "bg-blue-100 dark:bg-blue-900/30",  text: "text-blue-800 dark:text-blue-300",  recommendation: "Evaluar potencial — requieren inversion" },
+  question: { label: "Interrogantes",icon: "↑↓", color: "#3b82f6", bg: "bg-emerald-100 dark:bg-emerald-900/30",  text: "text-emerald-800 dark:text-emerald-300",  recommendation: "Evaluar potencial — requieren inversion" },
   dog:      { label: "Perros",       icon: "↓↓", color: "#ef4444", bg: "bg-red-100 dark:bg-red-900/30",    text: "text-red-800 dark:text-red-300",    recommendation: "Reducir o descontinuar" },
 };
 
@@ -208,14 +208,14 @@ export default function ProductPerformanceMatrix({ products, sales }: ProductPer
 
         {/* Quadrant backgrounds */}
         <div className="absolute inset-0 grid grid-cols-2 grid-rows-2">
-          <div className="bg-blue-50/30 dark:bg-blue-900/10 border-r border-b border-dashed border-gray-300 dark:border-gray-600" />
+          <div className="bg-emerald-50/30 dark:bg-emerald-900/10 border-r border-b border-dashed border-gray-300 dark:border-gray-600" />
           <div className="bg-green-50/30 dark:bg-green-900/10 border-b border-dashed border-gray-300 dark:border-gray-600" />
           <div className="bg-red-50/30 dark:bg-red-900/10 border-r border-dashed border-gray-300 dark:border-gray-600" />
           <div className="bg-amber-50/30 dark:bg-amber-900/10" />
         </div>
 
         {/* Quadrant labels in corners */}
-        <div className="absolute top-1 left-2 text-[9px] text-blue-400 dark:text-blue-500 font-medium">
+        <div className="absolute top-1 left-2 text-[9px] text-emerald-400 dark:text-emerald-500 font-medium">
           Interrogantes
         </div>
         <div className="absolute top-1 right-8 text-[9px] text-green-600 dark:text-green-400 font-medium">

@@ -16,7 +16,7 @@ export default function SaasSavingsCalculator() {
   const salesIncrease = Math.round(salesPerDay * 15 * 30 * 0.15); // 15% mas ventas con tienda online
 
   const results = [
-    { label: "Horas ahorradas/mes", value: `${hoursSaved}h`, icon: <Clock className="h-5 w-5" />, color: "text-blue-600 bg-blue-50 dark:bg-blue-950/30" },
+    { label: "Horas ahorradas/mes", value: `${hoursSaved}h`, icon: <Clock className="h-5 w-5" />, color: "text-emerald-600 bg-emerald-50 dark:bg-emerald-950/30" },
     { label: "Ahorro en merma/mes", value: `S/ ${wasteSaved.toLocaleString()}`, icon: <DollarSign className="h-5 w-5" />, color: "text-emerald-600 bg-emerald-50 dark:bg-emerald-950/30" },
     { label: "Ventas extra con delivery", value: `+S/ ${salesIncrease.toLocaleString()}`, icon: <TrendingUp className="h-5 w-5" />, color: "text-violet-600 bg-violet-50 dark:bg-violet-950/30" },
   ];

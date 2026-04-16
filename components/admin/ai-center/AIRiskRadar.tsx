@@ -358,9 +358,9 @@ const SEV_CONFIG: Record<Severity, { label: string; dot: string; badge: string; 
   },
   medium: {
     label: "Medio",
-    dot: "bg-blue-500",
-    badge: "bg-blue-100 dark:bg-blue-950/40 text-blue-700 dark:text-blue-400",
-    border: "border-blue-200 dark:border-blue-800/50",
+    dot: "bg-emerald-500",
+    badge: "bg-emerald-100 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-400",
+    border: "border-emerald-200 dark:border-emerald-800/50",
   },
   low: {
     label: "Bajo",
@@ -431,7 +431,7 @@ export default function AIRiskRadar({ data, compact = false }: Props) {
 
   const scoreColor = riskScore >= 70 ? "text-red-600 dark:text-red-400" :
     riskScore >= 40 ? "text-amber-600 dark:text-amber-400" :
-    riskScore >= 15 ? "text-blue-600 dark:text-blue-400" :
+    riskScore >= 15 ? "text-emerald-600 dark:text-emerald-400" :
     "text-emerald-600 dark:text-emerald-400";
 
   const scoreLabel = riskScore >= 70 ? "Critico" :
@@ -440,7 +440,7 @@ export default function AIRiskRadar({ data, compact = false }: Props) {
 
   const scoreBg = riskScore >= 70 ? "bg-red-500" :
     riskScore >= 40 ? "bg-amber-500" :
-    riskScore >= 15 ? "bg-blue-500" :
+    riskScore >= 15 ? "bg-emerald-500" :
     "bg-emerald-500";
 
   const dismissedCount = allRisks.length - risks.length;
@@ -466,7 +466,7 @@ export default function AIRiskRadar({ data, compact = false }: Props) {
             </span>
           )}
           {medium > 0 && (
-            <span className="px-1.5 py-0.5 rounded text-xs font-bold bg-blue-100 dark:bg-blue-950/40 text-blue-700 dark:text-blue-400">
+            <span className="px-1.5 py-0.5 rounded text-xs font-bold bg-emerald-100 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-400">
               {medium} medio{medium > 1 ? "s" : ""}
             </span>
           )}
@@ -485,7 +485,7 @@ export default function AIRiskRadar({ data, compact = false }: Props) {
               <span className={cn("text-xs px-2 py-0.5 rounded-full font-semibold",
                 riskScore >= 70 ? "bg-red-100 dark:bg-red-950/40 text-red-700 dark:text-red-400" :
                 riskScore >= 40 ? "bg-amber-100 dark:bg-amber-950/40 text-amber-700 dark:text-amber-400" :
-                riskScore >= 15 ? "bg-blue-100 dark:bg-blue-950/40 text-blue-700 dark:text-blue-400" :
+                riskScore >= 15 ? "bg-emerald-100 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-400" :
                 "bg-emerald-100 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-400"
               )}>{scoreLabel}</span>
             </div>

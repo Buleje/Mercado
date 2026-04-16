@@ -44,14 +44,14 @@ type EmitForm = {
 const fmt = (n: number) => "S/ " + n.toLocaleString("es-PE", { minimumFractionDigits: 2 });
 
 const TYPE_META: Record<DocType, { label: string; color: string; bg: string }> = {
-  boleta:         { label: "Boleta",          color: "text-blue-600",     bg: "bg-blue-100 dark:bg-blue-900/30" },
+  boleta:         { label: "Boleta",          color: "text-emerald-600",     bg: "bg-emerald-100 dark:bg-emerald-900/30" },
   factura:        { label: "Factura",         color: "text-emerald-600",  bg: "bg-emerald-100 dark:bg-emerald-900/30" },
   "nota-credito": { label: "Nota de crédito", color: "text-amber-600",   bg: "bg-amber-100 dark:bg-amber-900/30" },
   "nota-debito":  { label: "Nota de débito",  color: "text-violet-600",  bg: "bg-violet-100 dark:bg-violet-900/30" },
 };
 
 const STATUS_META: Record<DocStatus, { label: string; color: string; icon: typeof CheckCircle2 }> = {
-  emitido:   { label: "Emitido",   color: "text-blue-600",    icon: Send },
+  emitido:   { label: "Emitido",   color: "text-emerald-600",    icon: Send },
   aceptado:  { label: "Aceptado",  color: "text-emerald-600", icon: CheckCircle2 },
   rechazado: { label: "Rechazado", color: "text-red-600",     icon: XCircle },
   anulado:   { label: "Anulado",   color: "text-gray-500",    icon: XCircle },
@@ -268,7 +268,7 @@ export default function EInvoiceTab() {
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
         {[
           { label: "Total emitido", value: fmt(stats.totalEmitted), color: "text-emerald-600", bg: "bg-emerald-50 dark:bg-emerald-950/30" },
-          { label: "IGV acumulado", value: fmt(stats.totalIGV), color: "text-blue-600", bg: "bg-blue-50 dark:bg-blue-950/30" },
+          { label: "IGV acumulado", value: fmt(stats.totalIGV), color: "text-emerald-600", bg: "bg-emerald-50 dark:bg-emerald-950/30" },
           { label: "Pendientes SUNAT", value: String(stats.pending), color: "text-amber-600", bg: "bg-amber-50 dark:bg-amber-950/30" },
           { label: "Rechazados", value: String(stats.rejected), color: "text-red-600", bg: "bg-red-50 dark:bg-red-950/30" },
         ].map(({ label, value, color, bg }) => (

@@ -48,8 +48,8 @@ const STEPS: Step[] = [
     label: "Confirmado",
     desc: "Estamos preparando tu pedido",
     icon: CheckCircle2,
-    color: "text-blue-600",
-    bg: "bg-blue-100",
+    color: "text-emerald-600",
+    bg: "bg-emerald-100",
   },
   {
     id: "en_camino",
@@ -246,7 +246,7 @@ export default function PedidoPage() {
           </p>
           {/* P2 — ETA estimado */}
           {order.status === "confirmado" && (
-            <p className="text-sm font-semibold text-blue-700 mt-2">
+            <p className="text-sm font-semibold text-emerald-700 mt-2">
               🕐 Entrega estimada: ~30-45 min
             </p>
           )}
@@ -430,8 +430,8 @@ export default function PedidoPage() {
           </div>
           {(order.couponDiscount ?? 0) > 0 && (
             <div className="flex items-center justify-between">
-              <span className="text-sm text-blue-600">🎟️ Descuento cupón</span>
-              <span className="text-sm font-bold text-blue-600">-S/{(order.couponDiscount ?? 0).toFixed(2)}</span>
+              <span className="text-sm text-emerald-600">🎟️ Descuento cupón</span>
+              <span className="text-sm font-bold text-emerald-600">-S/{(order.couponDiscount ?? 0).toFixed(2)}</span>
             </div>
           )}
           {(order.discountAmount ?? 0) > 0 && (

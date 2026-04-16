@@ -92,7 +92,7 @@ function fmtDateShort(iso: string) {
 }
 
 const TIPO_META: Record<CuentaTipo, { label: string; shortLabel: string; icon: typeof Landmark; color: string; bg: string }> = {
-  BANCO_AHORRO:    { label: "Banco Ahorro",      shortLabel: "Ahorro",   icon: PiggyBank,  color: "text-blue-700 dark:text-blue-400",   bg: "bg-blue-100 dark:bg-blue-900/30" },
+  BANCO_AHORRO:    { label: "Banco Ahorro",      shortLabel: "Ahorro",   icon: PiggyBank,  color: "text-emerald-700 dark:text-emerald-400",   bg: "bg-emerald-100 dark:bg-emerald-900/30" },
   BANCO_CORRIENTE: { label: "Banco Corriente",    shortLabel: "Corriente", icon: Building2,  color: "text-purple-700 dark:text-purple-400", bg: "bg-purple-100 dark:bg-purple-900/30" },
   CAJA_FISICA:     { label: "Caja Física",        shortLabel: "Caja",     icon: Banknote,   color: "text-emerald-700 dark:text-emerald-400", bg: "bg-emerald-100 dark:bg-emerald-900/30" },
   MONEDERO_DIGITAL:{ label: "Monedero Digital",   shortLabel: "Digital",  icon: Smartphone, color: "text-orange-700 dark:text-orange-400", bg: "bg-orange-100 dark:bg-orange-900/30" },
@@ -101,7 +101,7 @@ const TIPO_META: Record<CuentaTipo, { label: string; shortLabel: string; icon: t
 const MOV_META: Record<MovimientoTipo, { label: string; color: string; icon: typeof ArrowUpFromLine }> = {
   INGRESO:          { label: "Ingreso",           color: "text-emerald-600 dark:text-emerald-400", icon: ArrowDownToLine },
   EGRESO:           { label: "Egreso",            color: "text-red-600 dark:text-red-400",         icon: ArrowUpFromLine },
-  TRANSFERENCIA_IN: { label: "Transferencia ←",   color: "text-blue-600 dark:text-blue-400",       icon: ArrowLeftRight },
+  TRANSFERENCIA_IN: { label: "Transferencia ←",   color: "text-emerald-600 dark:text-emerald-400",       icon: ArrowLeftRight },
   TRANSFERENCIA_OUT:{ label: "Transferencia →",   color: "text-amber-600 dark:text-amber-400",     icon: ArrowLeftRight },
 };
 
@@ -1080,11 +1080,11 @@ export default function TesoreriaModule() {
               <div className={cn(
                 "border rounded-xl p-3 text-center",
                 movTotals.neto >= 0
-                  ? "bg-blue-50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-800"
+                  ? "bg-emerald-50 dark:bg-emerald-900/20 border-emerald-200 dark:border-emerald-800"
                   : "bg-orange-50 dark:bg-orange-900/20 border-orange-200 dark:border-orange-800"
               )}>
-                <p className={cn("text-[10px] uppercase font-bold mb-0.5", movTotals.neto >= 0 ? "text-blue-600 dark:text-blue-400" : "text-orange-600 dark:text-orange-400")}>Neto</p>
-                <p className={cn("text-lg font-extrabold font-mono", movTotals.neto >= 0 ? "text-blue-700 dark:text-blue-300" : "text-orange-700 dark:text-orange-300")}>
+                <p className={cn("text-[10px] uppercase font-bold mb-0.5", movTotals.neto >= 0 ? "text-emerald-600 dark:text-emerald-400" : "text-orange-600 dark:text-orange-400")}>Neto</p>
+                <p className={cn("text-lg font-extrabold font-mono", movTotals.neto >= 0 ? "text-emerald-700 dark:text-emerald-300" : "text-orange-700 dark:text-orange-300")}>
                   {movTotals.neto >= 0 ? "+" : ""}{fmtCurrency(movTotals.neto)}
                 </p>
               </div>
@@ -1229,10 +1229,10 @@ export default function TesoreriaModule() {
 
                     {/* Arrow */}
                     <div className="flex flex-col items-center gap-1 shrink-0">
-                      <div className="h-8 w-8 rounded-full bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center">
-                        <ArrowLeftRight className="h-4 w-4 text-blue-600 dark:text-blue-400" />
+                      <div className="h-8 w-8 rounded-full bg-emerald-100 dark:bg-emerald-900/30 flex items-center justify-center">
+                        <ArrowLeftRight className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
                       </div>
-                      <p className="text-lg font-extrabold font-mono text-blue-600 dark:text-blue-400">{fmtCurrency(t.monto)}</p>
+                      <p className="text-lg font-extrabold font-mono text-emerald-600 dark:text-emerald-400">{fmtCurrency(t.monto)}</p>
                       <p className="text-[10px] text-gray-400">{fmtDate(t.createdAt)}</p>
                     </div>
 
@@ -1609,8 +1609,8 @@ export default function TesoreriaModule() {
                   </div>
 
                   <div className="flex justify-center">
-                    <div className="h-8 w-8 rounded-full bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center">
-                      <ArrowDownToLine className="h-4 w-4 text-blue-600 dark:text-blue-400" />
+                    <div className="h-8 w-8 rounded-full bg-emerald-100 dark:bg-emerald-900/30 flex items-center justify-center">
+                      <ArrowDownToLine className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
                     </div>
                   </div>
 
@@ -1686,7 +1686,7 @@ export default function TesoreriaModule() {
                   <button
                     onClick={handleCreateTransfer}
                     disabled={transSubmitting}
-                    className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-sm font-bold text-white bg-blue-600 hover:bg-blue-700 disabled:opacity-50 transition-colors"
+                    className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-sm font-bold text-white bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 transition-colors"
                   >
                     {transSubmitting && <Loader2 className="h-4 w-4 animate-spin" />}
                     Transferir

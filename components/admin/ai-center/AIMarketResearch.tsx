@@ -23,7 +23,7 @@ interface AIInsight {
 const CATEGORY_CONFIG: Record<string, { icon: React.ElementType; color: string; label: string }> = {
   combo: { icon: Package, label: "Combo sugerido", color: "text-primary bg-primary/10 border-primary/20" },
   pricing: { icon: DollarSign, label: "Precio", color: "text-amber-600 bg-amber-50 border-amber-200 dark:bg-amber-950/30 dark:border-amber-800/40 dark:text-amber-400" },
-  product: { icon: ShoppingCart, label: "Producto", color: "text-blue-600 bg-blue-50 border-blue-200 dark:bg-blue-950/30 dark:border-blue-800/40 dark:text-blue-400" },
+  product: { icon: ShoppingCart, label: "Producto", color: "text-emerald-600 bg-emerald-50 border-emerald-200 dark:bg-emerald-950/30 dark:border-emerald-800/40 dark:text-emerald-400" },
   strategy: { icon: Target, label: "Estrategia", color: "text-violet-600 bg-violet-50 border-violet-200 dark:bg-violet-950/30 dark:border-violet-800/40 dark:text-violet-400" },
   alert: { icon: AlertTriangle, label: "Atención", color: "text-red-600 bg-red-50 border-red-200 dark:bg-red-950/30 dark:border-red-800/40 dark:text-red-400" },
 };

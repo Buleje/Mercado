@@ -49,7 +49,7 @@ type SavedReport = {
 
 const GRADE_CONFIG: Record<SectionGrade, { label: string; color: string; bg: string }> = {
   excelente: { label: "Excelente", color: "text-emerald-700 dark:text-emerald-400", bg: "bg-emerald-50 dark:bg-emerald-950/30" },
-  bien: { label: "Bien", color: "text-blue-700 dark:text-blue-400", bg: "bg-blue-50 dark:bg-blue-950/30" },
+  bien: { label: "Bien", color: "text-emerald-700 dark:text-emerald-400", bg: "bg-emerald-50 dark:bg-emerald-950/30" },
   regular: { label: "Regular", color: "text-amber-700 dark:text-amber-400", bg: "bg-amber-50 dark:bg-amber-950/30" },
   alerta: { label: "Alerta", color: "text-orange-700 dark:text-orange-400", bg: "bg-orange-50 dark:bg-orange-950/30" },
   critico: { label: "Cr\u00edtico", color: "text-red-700 dark:text-red-400", bg: "bg-red-50 dark:bg-red-950/30" },

@@ -40,7 +40,7 @@ const fmt = (n: number) => "S/ " + n.toLocaleString("es-PE", { minimumFractionDi
 
 const STATUS_MAP: Record<ApprovalStatus, { label: string; color: string; icon: typeof CheckCircle }> = {
   pendiente:    { label: "Pendiente",   color: "text-amber-600",   icon: Clock },
-  "en-revision":{ label: "En revisión", color: "text-blue-600",    icon: Eye },
+  "en-revision":{ label: "En revisión", color: "text-emerald-600",    icon: Eye },
   aprobado:     { label: "Aprobado",    color: "text-emerald-600", icon: CheckCircle },
   rechazado:    { label: "Rechazado",   color: "text-red-600",     icon: XCircle },
 };
@@ -112,7 +112,7 @@ export default function PurchaseApprovalTab() {
           { label: "En espera", value: String(stats.pending), color: "text-amber-600", bg: "bg-amber-50 dark:bg-amber-950/30", icon: Clock },
           { label: "Aprobadas", value: String(stats.approved), color: "text-emerald-600", bg: "bg-emerald-50 dark:bg-emerald-950/30", icon: CheckCircle },
           { label: "Rechazadas", value: String(stats.rejected), color: "text-red-600", bg: "bg-red-50 dark:bg-red-950/30", icon: XCircle },
-          { label: "Valor aprobable", value: fmt(stats.totalValue), color: "text-blue-600", bg: "bg-blue-50 dark:bg-blue-950/30", icon: Send },
+          { label: "Valor aprobable", value: fmt(stats.totalValue), color: "text-emerald-600", bg: "bg-emerald-50 dark:bg-emerald-950/30", icon: Send },
         ].map(({ label, value, color, bg, icon: Icon }) => (
           <div key={label} className={cn("rounded-2xl p-4 flex items-start gap-3", bg)}>
             <Icon className={cn("h-5 w-5 mt-0.5", color)} />

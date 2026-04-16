@@ -300,8 +300,8 @@ export default function OCRecepcionModal({ ocId, items, onComplete, onClose }: O
                   <p className="text-[10px] font-bold text-amber-600 dark:text-amber-400 uppercase">Con diferencia</p>
                   <p className="text-lg font-extrabold text-gray-900 dark:text-foreground">{itemsConDiferencia.length}</p>
                 </div>
-                <div className="bg-blue-50 dark:bg-blue-950/20 rounded-xl p-3 text-center border border-blue-200 dark:border-blue-800/30">
-                  <p className="text-[10px] font-bold text-blue-600 dark:text-blue-400 uppercase">Total factura</p>
+                <div className="bg-emerald-50 dark:bg-emerald-950/20 rounded-xl p-3 text-center border border-emerald-200 dark:border-emerald-800/30">
+                  <p className="text-[10px] font-bold text-emerald-600 dark:text-emerald-400 uppercase">Total factura</p>
                   <p className="text-lg font-extrabold text-gray-900 dark:text-foreground">S/ {totalFactura.toFixed(2)}</p>
                 </div>
               </div>

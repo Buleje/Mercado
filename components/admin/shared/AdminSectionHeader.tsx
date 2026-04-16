@@ -21,7 +21,7 @@ interface AdminSectionHeaderProps {
 
 const iconBgMap: Record<string, string> = {
   emerald: "bg-emerald-50 dark:bg-emerald-900/20",
-  blue: "bg-blue-50 dark:bg-blue-900/20",
+  blue: "bg-emerald-50 dark:bg-emerald-900/20",
   amber: "bg-amber-50 dark:bg-amber-900/20",
   red: "bg-red-50 dark:bg-red-900/20",
   violet: "bg-violet-50 dark:bg-violet-900/20",

@@ -80,7 +80,7 @@ const DIFICULTAD_BADGE: Record<string, string> = {
 };
 
 const inputCls =
-  "w-full bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 text-gray-900 dark:text-white rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/40 transition-shadow";
+  "w-full bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 text-gray-900 dark:text-white rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500/40 transition-shadow";
 const selectCls = `${inputCls} appearance-none cursor-pointer`;
 const labelCls = "block text-xs font-semibold text-gray-600 dark:text-gray-400 mb-1";
 
@@ -310,7 +310,7 @@ export default function SuperAdminRecetarioPage() {
       <div className="flex items-start justify-between gap-4 flex-wrap">
         <div>
           <h1 className="text-2xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
-            <ChefHat className="w-6 h-6 text-blue-600 dark:text-blue-400" />
+            <ChefHat className="w-6 h-6 text-emerald-600 dark:text-emerald-400" />
             Recetario Global
           </h1>
           <p className="text-gray-500 dark:text-gray-400 text-sm mt-1">
@@ -330,7 +330,7 @@ export default function SuperAdminRecetarioPage() {
           <button
             type="button"
             onClick={openCreate}
-            className="flex items-center gap-2 px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold transition-colors shadow-sm shadow-blue-600/25"
+            className="flex items-center gap-2 px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-semibold transition-colors shadow-sm shadow-emerald-600/25"
           >
             <Plus className="w-4 h-4" />
             Nueva Receta
@@ -435,7 +435,7 @@ export default function SuperAdminRecetarioPage() {
                     {/* Meta badges */}
                     <div className="flex items-center flex-wrap gap-1.5 mt-2">
                       {r.categoria && (
-                        <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400">
+                        <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400">
                           {r.categoria}
                         </span>
                       )}
@@ -498,8 +498,8 @@ export default function SuperAdminRecetarioPage() {
             </div>
           ) : (
             <div className="flex flex-col items-center justify-center py-20 text-center">
-              <div className="w-16 h-16 rounded-2xl bg-blue-50 dark:bg-blue-900/20 flex items-center justify-center mb-4">
-                <ChefHat className="w-8 h-8 text-blue-400" />
+              <div className="w-16 h-16 rounded-2xl bg-emerald-50 dark:bg-emerald-900/20 flex items-center justify-center mb-4">
+                <ChefHat className="w-8 h-8 text-emerald-400" />
               </div>
               <h3 className="font-semibold text-gray-900 dark:text-white mb-1">
                 {search ? "Sin resultados" : "Sin recetas aun"}
@@ -513,7 +513,7 @@ export default function SuperAdminRecetarioPage() {
                 <button
                   type="button"
                   onClick={() => setSearch("")}
-                  className="mt-4 text-sm text-blue-600 dark:text-blue-400 underline hover:no-underline"
+                  className="mt-4 text-sm text-emerald-600 dark:text-emerald-400 underline hover:no-underline"
                 >
                   Limpiar busqueda
                 </button>
@@ -530,7 +530,7 @@ export default function SuperAdminRecetarioPage() {
             {/* Header */}
             <div className="flex items-center justify-between p-5 border-b border-gray-100 dark:border-gray-800">
               <h2 className="text-lg font-bold text-gray-900 dark:text-white flex items-center gap-2">
-                <ChefHat className="w-5 h-5 text-blue-600 dark:text-blue-400" />
+                <ChefHat className="w-5 h-5 text-emerald-600 dark:text-emerald-400" />
                 {editingId ? "Editar Receta" : "Nueva Receta"}
               </h2>
               <button
@@ -733,7 +733,7 @@ export default function SuperAdminRecetarioPage() {
                 type="button"
                 onClick={() => void handleSave()}
                 disabled={saving}
-                className="flex items-center gap-2 px-5 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold transition-colors shadow-sm disabled:opacity-50"
+                className="flex items-center gap-2 px-5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-semibold transition-colors shadow-sm disabled:opacity-50"
               >
                 {saving && <Loader2 className="w-4 h-4 animate-spin" />}
                 {editingId ? "Guardar cambios" : "Crear receta"}
@@ -784,7 +784,7 @@ export default function SuperAdminRecetarioPage() {
       {toast && (
         <div
           className={`fixed bottom-6 right-6 z-50 flex items-center gap-3 px-5 py-3 rounded-2xl shadow-xl text-sm font-semibold text-white transition-all ${
-            toast.ok ? "bg-blue-600" : "bg-red-600"
+            toast.ok ? "bg-emerald-600" : "bg-red-600"
           }`}
         >
           {toast.ok ? (

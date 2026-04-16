@@ -254,7 +254,7 @@ export default function ExecutiveDashboardTab() {
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
           {[
             { label: "Ingresos",      value: fmtShort(kpis.revenue),  delta: kpis.revDelta,  icon: DollarSign,  color: "text-emerald-500", bgColor: "bg-emerald-50 dark:bg-emerald-900/20",  spark: kpis.revSpark,    sparkColor: "#10b981" },
-            { label: "Transacciones", value: String(kpis.tickets),    delta: kpis.tickDelta, icon: ShoppingCart,color: "text-blue-500",    bgColor: "bg-blue-50 dark:bg-blue-900/20",        spark: kpis.tickSpark,   sparkColor: "#3b82f6" },
+            { label: "Transacciones", value: String(kpis.tickets),    delta: kpis.tickDelta, icon: ShoppingCart,color: "text-emerald-500",    bgColor: "bg-emerald-50 dark:bg-emerald-900/20",        spark: kpis.tickSpark,   sparkColor: "#3b82f6" },
             { label: "Clientes",      value: String(kpis.clients),    delta: kpis.cliDelta,  icon: Users,       color: "text-violet-500", bgColor: "bg-violet-50 dark:bg-violet-900/20",    spark: kpis.clientSpark, sparkColor: "#8b5cf6" },
             { label: "Utilidad",      value: fmtShort(kpis.utilidad), delta: kpis.utilDelta, icon: TrendingUp,  color: "text-amber-500",  bgColor: "bg-amber-50 dark:bg-amber-900/20",      spark: kpis.utilSpark,   sparkColor: "#f59e0b" },
           ].map(kpi => (

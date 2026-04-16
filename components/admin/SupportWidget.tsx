@@ -292,7 +292,7 @@ export default function SupportWidget() {
                       {t.status === "open" ? (
                         <Circle className="w-3 h-3 text-amber-500" />
                       ) : t.status === "replied" ? (
-                        <CheckCircle className="w-3 h-3 text-blue-500" />
+                        <CheckCircle className="w-3 h-3 text-emerald-500" />
                       ) : (
                         <CheckCircle className="w-3 h-3 text-gray-400" />
                       )}
@@ -303,8 +303,8 @@ export default function SupportWidget() {
                       </span>
                     </div>
                     {t.reply && (
-                      <div className="mt-1 text-xs text-gray-600 dark:text-gray-300 bg-blue-50 dark:bg-blue-900/20 rounded p-2 border-l-2 border-blue-400">
-                        <span className="font-medium text-blue-600 dark:text-blue-400">Respuesta: </span>
+                      <div className="mt-1 text-xs text-gray-600 dark:text-gray-300 bg-emerald-50 dark:bg-emerald-900/20 rounded p-2 border-l-2 border-emerald-400">
+                        <span className="font-medium text-emerald-600 dark:text-emerald-400">Respuesta: </span>
                         {t.reply}
                       </div>
                     )}

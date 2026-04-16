@@ -564,7 +564,7 @@ export default function AIDailyBriefing({ data }: Props) {
 
       {/* ── Period-aware hint ─────────────────────────────────────────────── */}
       {period === "morning" && analysis.todayRevenue === 0 && (
-        <div className="mb-3 flex items-center gap-2 px-3 py-2 rounded-lg bg-blue-50 dark:bg-blue-950/20 border border-blue-200 dark:border-blue-800/30 text-xs text-blue-700 dark:text-blue-300">
+        <div className="mb-3 flex items-center gap-2 px-3 py-2 rounded-lg bg-emerald-50 dark:bg-emerald-950/20 border border-emerald-200 dark:border-emerald-800/30 text-xs text-emerald-700 dark:text-emerald-300">
           <Sun className="w-3.5 h-3.5 shrink-0" /><span>Checklist de apertura: verifica caja, revisa stock critico, y atiende pedidos pendientes.</span>
         </div>
       )}
@@ -819,32 +819,32 @@ export default function AIDailyBriefing({ data }: Props) {
         collapsed={collapsedSections["contexto"] ?? false}
         onToggle={toggleSection}
       >
-        <div className="rounded-lg border bg-blue-50 dark:bg-blue-950/20 border-blue-200 dark:border-blue-800/40 p-3">
+        <div className="rounded-lg border bg-emerald-50 dark:bg-emerald-950/20 border-emerald-200 dark:border-emerald-800/40 p-3">
           <div className="flex items-center gap-2 mb-2">
-            <Calendar className="w-4 h-4 text-blue-600 dark:text-blue-400" />
+            <Calendar className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
             <span className="text-sm font-semibold text-gray-800 dark:text-gray-200">
               {new Date().toLocaleDateString("es-PE", { weekday: "long", day: "numeric", month: "long", year: "numeric" })}
             </span>
           </div>
           <div className="flex flex-col gap-1.5">
             <div className="flex items-center gap-2">
-              <DayContextIcon className="w-4 h-4 text-blue-600 dark:text-blue-400" />
-              <span className="inline-flex items-center rounded-full bg-blue-100 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-blue-700 dark:bg-blue-900/40 dark:text-blue-300">
+              <DayContextIcon className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
+              <span className="inline-flex items-center rounded-full bg-emerald-100 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300">
                 {dayContextLabel}
               </span>
               <span className="text-sm text-gray-700 dark:text-gray-300">{calendar.dayTip}</span>
             </div>
             <div className="flex items-center gap-2">
-              <SeasonStatusIcon className="h-4 w-4 text-blue-500 dark:text-blue-300" />
-              <span className="inline-flex items-center rounded-full bg-white/70 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-blue-700 dark:bg-blue-900/30 dark:text-blue-300">
+              <SeasonStatusIcon className="h-4 w-4 text-emerald-500 dark:text-emerald-300" />
+              <span className="inline-flex items-center rounded-full bg-white/70 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300">
                 {seasonBadge}
               </span>
               <span className="text-xs text-gray-600 dark:text-gray-400">{calendar.seasonLabel}</span>
             </div>
             {(calendarApi?.proximoFeriado ?? calendar.nearHoliday) && (
               <div className="flex items-center gap-2 mt-0.5">
-                <Calendar className="h-4 w-4 text-blue-600 dark:text-blue-400" />
-                <span className="text-xs font-medium text-blue-700 dark:text-blue-300">
+                <Calendar className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
+                <span className="text-xs font-medium text-emerald-700 dark:text-emerald-300">
                   {calendarApi?.proximoFeriado
                     ? <>Feriado proximo: {calendarApi.proximoFeriado.nombre} (en {calendarApi.proximoFeriado.diasHasta} dia{calendarApi.proximoFeriado.diasHasta !== 1 ? "s" : ""}){calendarApi.proximoFeriado.impactoNegocio ? ` — ${calendarApi.proximoFeriado.impactoNegocio}` : " — prepara stock extra"}</>
                     : <>Feriado proximo: {calendar.nearHoliday!.name} ({calendar.nearHoliday!.date}) — prepara stock extra</>
@@ -853,15 +853,15 @@ export default function AIDailyBriefing({ data }: Props) {
               </div>
             )}
             {calendarApi?.eventos && calendarApi.eventos.length > 0 && (
-              <div className="flex flex-col gap-1 mt-1 pt-1.5 border-t border-blue-200/50 dark:border-blue-800/30">
-                <span className="text-[10px] uppercase tracking-wider text-blue-500 dark:text-blue-400 font-semibold">Proximos eventos</span>
+              <div className="flex flex-col gap-1 mt-1 pt-1.5 border-t border-emerald-200/50 dark:border-emerald-800/30">
+                <span className="text-[10px] uppercase tracking-wider text-emerald-500 dark:text-emerald-400 font-semibold">Proximos eventos</span>
                 {calendarApi.eventos.slice(0, 3).map((ev, i) => (
                   <div key={i} className="flex items-center gap-2 text-xs text-gray-600 dark:text-gray-400">
-                    <span className="text-[10px] font-medium bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-300 px-1.5 py-0.5 rounded">
+                    <span className="text-[10px] font-medium bg-emerald-100 dark:bg-emerald-900/40 text-emerald-700 dark:text-emerald-300 px-1.5 py-0.5 rounded">
                       {ev.diasHasta === 0 ? "Hoy" : `${ev.diasHasta}d`}
                     </span>
                     <span>{ev.nombre}</span>
-                    {ev.impactoNegocio && <span className="text-blue-500 dark:text-blue-400 text-[10px]">({ev.impactoNegocio})</span>}
+                    {ev.impactoNegocio && <span className="text-emerald-500 dark:text-emerald-400 text-[10px]">({ev.impactoNegocio})</span>}
                   </div>
                 ))}
               </div>
@@ -872,15 +872,15 @@ export default function AIDailyBriefing({ data }: Props) {
 
       {/* P9: Prediccion de hoy */}
       <Section label="Prediccion de hoy">
-        <div className="rounded-lg bg-blue-50 dark:bg-blue-900/20 p-3 text-sm text-gray-700 dark:text-gray-300 leading-relaxed">
+        <div className="rounded-lg bg-emerald-50 dark:bg-emerald-900/20 p-3 text-sm text-gray-700 dark:text-gray-300 leading-relaxed">
           <p>
             Hoy es <strong>{analysis.dayName}</strong>.{" "}
             {analysis.dayMultiplier >= 1.1 ? (
               <>Normalmente vendes <strong className="text-emerald-600 dark:text-emerald-400">{((analysis.dayMultiplier) * 100).toFixed(0)}%</strong> del promedio diario.{" "}
-              <span className="block mt-1 text-xs text-blue-600 dark:text-blue-400">Dia fuerte — asegura stock y personal</span></>
+              <span className="block mt-1 text-xs text-emerald-600 dark:text-emerald-400">Dia fuerte — asegura stock y personal</span></>
             ) : analysis.dayMultiplier < 0.9 ? (
               <>Las ventas suelen ser mas bajas (aprox. <strong>{(analysis.dayMultiplier * 100).toFixed(0)}%</strong> del promedio).{" "}
-              <span className="block mt-1 text-xs text-blue-600 dark:text-blue-400">Dia tranquilo — buen momento para inventario o limpieza</span></>
+              <span className="block mt-1 text-xs text-emerald-600 dark:text-emerald-400">Dia tranquilo — buen momento para inventario o limpieza</span></>
             ) : (
               <>Ventas esperadas al ritmo promedio.{" "}</>
             )}
@@ -920,14 +920,14 @@ export default function AIDailyBriefing({ data }: Props) {
               <div className="space-y-1.5 text-xs text-gray-700">
                 {isLluvias && (
                   <>
-                    <p><span className="font-bold text-blue-700">Productos que suben:</span> sopas, chocolate, paraguas, botas, enlatados</p>
+                    <p><span className="font-bold text-emerald-700">Productos que suben:</span> sopas, chocolate, paraguas, botas, enlatados</p>
                     <p><span className="font-bold text-red-600">Productos que bajan:</span> helados, bebidas frias, refrescos</p>
                   </>
                 )}
                 {isSeca && (
                   <>
                     <p><span className="font-bold text-amber-700">Productos que suben:</span> bebidas frias, helados, bloqueador, cervezas, jugos</p>
-                    <p><span className="font-bold text-blue-600">Productos que bajan:</span> sopas, chocolate caliente</p>
+                    <p><span className="font-bold text-emerald-600">Productos que bajan:</span> sopas, chocolate caliente</p>
                   </>
                 )}
                 {!isLluvias && !isSeca && (

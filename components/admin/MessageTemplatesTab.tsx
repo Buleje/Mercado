@@ -24,7 +24,7 @@ type MessageTemplate = {
 /* ── config ─────────────────────────────────────────────────── */
 const CHANNEL_CONFIG: Record<TemplateChannel, { label: string; color: string; bg: string }> = {
   whatsapp: { label: "WhatsApp", color: "text-green-600",  bg: "bg-green-100 dark:bg-green-900/30" },
-  email:    { label: "Email",    color: "text-blue-600",   bg: "bg-blue-100 dark:bg-blue-900/30" },
+  email:    { label: "Email",    color: "text-emerald-600",   bg: "bg-emerald-100 dark:bg-emerald-900/30" },
   sms:      { label: "SMS",      color: "text-purple-600", bg: "bg-purple-100 dark:bg-purple-900/30" },
 };
 

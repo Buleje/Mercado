@@ -20,7 +20,7 @@ interface PageHeroBannerProps {
   children?: React.ReactNode;
 }
 
-const DEFAULT_FROM = "#1e40af"; // blue-800
+const DEFAULT_FROM = "#1e40af"; // emerald-800
 const DEFAULT_TO = "#312e81"; // indigo-900
 
 export default function PageHeroBanner({

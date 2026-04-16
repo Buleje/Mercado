@@ -76,9 +76,9 @@ export default function POSOfflineBar({
 
       {/* Syncing state */}
       {isSyncing && (
-        <div className="flex items-center gap-2 p-2.5 rounded-lg bg-blue-50 dark:bg-blue-950/20 border border-blue-200 dark:border-blue-800/30">
-          <Loader2 className="h-4 w-4 text-blue-500 animate-spin shrink-0" />
-          <p className="text-xs font-semibold text-blue-700 dark:text-blue-300">
+        <div className="flex items-center gap-2 p-2.5 rounded-lg bg-emerald-50 dark:bg-emerald-950/20 border border-emerald-200 dark:border-emerald-800/30">
+          <Loader2 className="h-4 w-4 text-emerald-500 animate-spin shrink-0" />
+          <p className="text-xs font-semibold text-emerald-700 dark:text-emerald-300">
             Sincronizando {pendingCount} {pendingCount === 1 ? "venta" : "ventas"}...
           </p>
         </div>
@@ -111,15 +111,15 @@ export default function POSOfflineBar({
 
       {/* Online but still has pending */}
       {isOnline && pendingCount > 0 && !isSyncing && !showSyncSuccess && (
-        <div className="flex flex-wrap items-center gap-2 p-2.5 rounded-lg bg-blue-50 dark:bg-blue-950/20 border border-blue-200 dark:border-blue-800/30">
-          <Loader2 className="h-4 w-4 text-blue-500 animate-spin shrink-0" />
-          <p className="text-xs text-blue-700 dark:text-blue-300 flex-1">
+        <div className="flex flex-wrap items-center gap-2 p-2.5 rounded-lg bg-emerald-50 dark:bg-emerald-950/20 border border-emerald-200 dark:border-emerald-800/30">
+          <Loader2 className="h-4 w-4 text-emerald-500 animate-spin shrink-0" />
+          <p className="text-xs text-emerald-700 dark:text-emerald-300 flex-1">
             {pendingCount} {pendingCount === 1 ? "venta" : "ventas"} pendientes de sincronizar
           </p>
           {onSyncRun && (
             <button
               onClick={onSyncRun}
-              className="flex items-center gap-1.5 px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-xs font-bold transition-colors shrink-0 shadow-sm"
+              className="flex items-center gap-1.5 px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-xs font-bold transition-colors shrink-0 shadow-sm"
             >
               <RefreshCw className="h-3.5 w-3.5" />
               Sincronizar ahora

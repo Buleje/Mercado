@@ -44,7 +44,7 @@ interface Order {
 const STATUS_CONFIG: Record<OrderStatus, { label: string; color: string; bg: string }> = {
   pendiente:  { label: "Pendiente",   color: "text-gray-600 dark:text-gray-300",    bg: "bg-gray-100 dark:bg-gray-800" },
   confirmado: { label: "Confirmado",  color: "text-amber-700 dark:text-amber-400",  bg: "bg-amber-100 dark:bg-amber-900/30" },
-  en_camino:  { label: "En camino",   color: "text-blue-700 dark:text-blue-400",    bg: "bg-blue-100 dark:bg-blue-900/30" },
+  en_camino:  { label: "En camino",   color: "text-emerald-700 dark:text-emerald-400",    bg: "bg-emerald-100 dark:bg-emerald-900/30" },
   entregado:  { label: "Entregado",   color: "text-emerald-700 dark:text-emerald-400", bg: "bg-emerald-100 dark:bg-emerald-900/30" },
   cancelado:  { label: "Cancelado",   color: "text-red-700 dark:text-red-400",      bg: "bg-red-100 dark:bg-red-900/30" },
 };
@@ -469,7 +469,7 @@ export default function ShipmentTrackingTab() {
       {/* KPIs */}
       <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
         {[
-          { label: "En camino",      value: kpis.enCurso,          color: "text-blue-500",    icon: Truck },
+          { label: "En camino",      value: kpis.enCurso,          color: "text-emerald-500",    icon: Truck },
           { label: "Por preparar",   value: kpis.confirmados,       color: "text-amber-500",   icon: Package },
           { label: "Entregados hoy", value: kpis.entregadosHoy,    color: "text-emerald-500", icon: CheckCircle },
           { label: "Cancelados",     value: kpis.cancelados,        color: "text-red-500",     icon: AlertCircle },

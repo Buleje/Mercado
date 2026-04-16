@@ -26,7 +26,7 @@ const DEVICE_ICONS: Record<string, React.ReactNode> = {
 
 const DEVICE_COLORS: Record<string, string> = {
   celular: "bg-emerald-50 text-emerald-700 dark:bg-emerald-900/20 dark:text-emerald-400",
-  tablet: "bg-blue-50 text-blue-700 dark:bg-blue-900/20 dark:text-blue-400",
+  tablet: "bg-emerald-50 text-emerald-700 dark:bg-emerald-900/20 dark:text-emerald-400",
   computadora: "bg-purple-50 text-purple-700 dark:bg-purple-900/20 dark:text-purple-400",
 };
 

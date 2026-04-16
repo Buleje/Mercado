@@ -236,7 +236,7 @@ export default function SavedFiltersTab() {
                 <button onClick={() => handleToggleDefault(f.id)} className={cn("p-1.5 rounded-lg transition-colors", f.isDefault ? "text-primary hover:bg-primary/10" : "text-gray-400 hover:bg-gray-100 dark:hover:bg-accent")} title={f.isDefault ? "Quitar default" : "Marcar default"}>
                   <Play className="h-3.5 w-3.5" />
                 </button>
-                <button onClick={() => handleCopy(f)} className="p-1.5 rounded-lg text-gray-400 hover:text-blue-500 hover:bg-blue-50 dark:hover:bg-blue-950/30 transition-colors">
+                <button onClick={() => handleCopy(f)} className="p-1.5 rounded-lg text-gray-400 hover:text-emerald-500 hover:bg-emerald-50 dark:hover:bg-emerald-950/30 transition-colors">
                   {copiedId === f.id ? <Check className="h-3.5 w-3.5 text-emerald-500" /> : <Copy className="h-3.5 w-3.5" />}
                 </button>
                 <button onClick={() => handleDelete(f.id)} className="p-1.5 rounded-lg text-gray-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-950/30 transition-colors">

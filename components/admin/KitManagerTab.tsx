@@ -75,7 +75,7 @@ export default function KitManagerTab() {
         </div>
         <div className="bg-white dark:bg-card rounded-2xl border border-gray-200 dark:border-card-border p-3 sm:p-5">
           <p className="text-xs font-semibold text-gray-500 dark:text-muted uppercase">Total Pedidos Kits</p>
-          <p className="text-xl sm:text-2xl font-extrabold text-blue-600 dark:text-blue-400 mt-1">{kits.reduce((s, k) => s + k.timesOrdered, 0)}</p>
+          <p className="text-xl sm:text-2xl font-extrabold text-emerald-600 dark:text-emerald-400 mt-1">{kits.reduce((s, k) => s + k.timesOrdered, 0)}</p>
         </div>
       </div>
 

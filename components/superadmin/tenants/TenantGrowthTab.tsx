@@ -37,7 +37,7 @@ export function TenantGrowthTab({ growthData, loading }: TenantGrowthTabProps) {
         {[
           { label: "Tiendas activas", value: growthData.length, color: "text-teal-600", bg: "bg-teal-50 dark:bg-teal-950/30" },
           { label: "Ingresos totales/mes", value: `S/${totalRevenue.toFixed(0)}`, color: "text-green-600", bg: "bg-green-50 dark:bg-green-950/30" },
-          { label: "Pedidos totales/mes", value: totalOrders, color: "text-blue-600", bg: "bg-blue-50 dark:bg-blue-950/30" },
+          { label: "Pedidos totales/mes", value: totalOrders, color: "text-emerald-600", bg: "bg-emerald-50 dark:bg-emerald-950/30" },
           { label: "Crecimiento promedio", value: `${avgGrowth.toFixed(0)}%`, color: "text-purple-600", bg: "bg-purple-50 dark:bg-purple-950/30" },
         ].map(({ label, value, color, bg }) => (
           <div key={label} className={`${bg} rounded-2xl p-4 text-center`}>

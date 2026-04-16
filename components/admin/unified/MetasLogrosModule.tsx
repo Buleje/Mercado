@@ -451,7 +451,7 @@ export default function MetasLogrosModule({ tenantId: _tenantId }: Props) {
     { label: "Metas activas",   value: String(kpis.active),   icon: Target,      color: "text-primary", bg: "bg-primary/10" },
     { label: "Logradas",        value: String(kpis.achieved), icon: Trophy,       color: "text-amber-600",   bg: "bg-amber-50"        },
     { label: "Racha (días)",    value: String(kpis.streak),   icon: Flame,        color: "text-orange-600", bg: "bg-orange-50"      },
-    { label: "Tasa de éxito",   value: `${kpis.rate}%`,       icon: TrendingUp,   color: "text-blue-600",     bg: "bg-blue-50"          },
+    { label: "Tasa de éxito",   value: `${kpis.rate}%`,       icon: TrendingUp,   color: "text-emerald-600",     bg: "bg-emerald-50"          },
   ] as const;
 
   return (

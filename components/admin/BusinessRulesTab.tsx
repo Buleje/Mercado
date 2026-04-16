@@ -18,7 +18,7 @@ type Rule = {
 };
 
 const CATEGORIES: Record<Rule["category"], { label: string; color: string }> = {
-  inventario: { label: "Inventario", color: "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400" },
+  inventario: { label: "Inventario", color: "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400" },
   ventas: { label: "Ventas", color: "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400" },
   crm: { label: "CRM", color: "bg-violet-100 text-violet-700 dark:bg-violet-900/30 dark:text-violet-400" },
   finanzas: { label: "Finanzas", color: "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400" },
@@ -99,7 +99,7 @@ export default function BusinessRulesTab() {
 
                 {/* Rule flow visualization */}
                 <div className="flex items-center gap-2 flex-wrap text-xs">
-                  <span className="bg-blue-50 dark:bg-blue-950/20 text-blue-700 dark:text-blue-400 px-2.5 py-1.5 rounded-lg font-semibold">{r.trigger}</span>
+                  <span className="bg-emerald-50 dark:bg-emerald-950/20 text-emerald-700 dark:text-emerald-400 px-2.5 py-1.5 rounded-lg font-semibold">{r.trigger}</span>
                   <ArrowRight className="h-3.5 w-3.5 text-gray-400" />
                   <span className="bg-amber-50 dark:bg-amber-950/20 text-amber-700 dark:text-amber-400 px-2.5 py-1.5 rounded-lg font-semibold">{r.condition}</span>
                   <ArrowRight className="h-3.5 w-3.5 text-gray-400" />

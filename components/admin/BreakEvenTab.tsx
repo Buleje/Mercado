@@ -582,7 +582,7 @@ export default function BreakEvenTab() {
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-4">
             <div className="bg-white dark:bg-card rounded-2xl border border-gray-200 dark:border-card-border p-5">
               <p className="text-xs font-semibold text-gray-500 dark:text-muted uppercase">Contribución/Unidad</p>
-              <p className="text-xl sm:text-2xl font-extrabold text-blue-600 dark:text-blue-400 mt-1">
+              <p className="text-xl sm:text-2xl font-extrabold text-emerald-600 dark:text-emerald-400 mt-1">
                 {fmt(productAnalysis.contrib)}
               </p>
               <p className="text-xs text-gray-400 mt-1">por cada unidad vendida</p>

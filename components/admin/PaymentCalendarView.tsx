@@ -329,7 +329,7 @@ export default function PaymentCalendarView() {
                         <span className="inline-block h-2 w-2 rounded-full bg-orange-400" title="Préstamos por cobrar" />
                       )}
                       {hasPayables && (
-                        <span className="inline-block h-2 w-2 rounded-full bg-blue-500" title="Cuentas por pagar" />
+                        <span className="inline-block h-2 w-2 rounded-full bg-emerald-500" title="Cuentas por pagar" />
                       )}
                     </div>
                   )}
@@ -347,7 +347,7 @@ export default function PaymentCalendarView() {
               <span className="h-2 w-2 rounded-full bg-orange-400 inline-block" /> Préstamos
             </span>
             <span className="flex items-center gap-1.5 text-[10px] text-gray-500 dark:text-muted">
-              <span className="h-2 w-2 rounded-full bg-blue-500 inline-block" /> Por pagar
+              <span className="h-2 w-2 rounded-full bg-emerald-500 inline-block" /> Por pagar
             </span>
           </div>
         </div>
@@ -404,15 +404,15 @@ export default function PaymentCalendarView() {
               {/* Payables */}
               {selectedEvents.payables.length > 0 && (
                 <div>
-                  <p className="text-[10px] font-bold uppercase text-blue-500 mb-2 flex items-center gap-1">
+                  <p className="text-[10px] font-bold uppercase text-emerald-500 mb-2 flex items-center gap-1">
                     <Building2 className="h-3 w-3" /> Por pagar ({selectedEvents.payables.length})
                   </p>
                   <div className="space-y-1.5">
                     {selectedEvents.payables.map(p => (
-                      <div key={p.id} className="bg-blue-50 dark:bg-blue-900/20 border border-blue-100 dark:border-blue-900/30 rounded-lg px-3 py-2">
+                      <div key={p.id} className="bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-100 dark:border-emerald-900/30 rounded-lg px-3 py-2">
                         <p className="text-xs font-bold text-gray-900 dark:text-white truncate">{p.supplierName}</p>
                         {p.description && <p className="text-[10px] text-gray-500 dark:text-muted truncate">{p.description}</p>}
-                        <p className="text-[11px] font-mono font-bold text-blue-600 dark:text-blue-400 mt-0.5">{fmt(p.amount)}</p>
+                        <p className="text-[11px] font-mono font-bold text-emerald-600 dark:text-emerald-400 mt-0.5">{fmt(p.amount)}</p>
                       </div>
                     ))}
                   </div>

@@ -54,7 +54,7 @@ const LEVEL_CONFIG: Record<AlertLevel, { label: string; color: string; bg: strin
 
 const HISTORY_STATUS: Record<string, { label: string; color: string }> = {
   pendiente: { label: "Pendiente", color: "text-amber-600 bg-amber-50 dark:bg-amber-900/20" },
-  enviada:   { label: "Enviada",   color: "text-blue-600 bg-blue-50 dark:bg-blue-900/20" },
+  enviada:   { label: "Enviada",   color: "text-emerald-600 bg-emerald-50 dark:bg-emerald-900/20" },
   recibida:  { label: "Recibida",  color: "text-emerald-600 bg-emerald-50 dark:bg-emerald-900/20" },
 };
 

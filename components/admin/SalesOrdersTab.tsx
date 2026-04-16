@@ -53,12 +53,12 @@ interface Order {
 
 const STATUS_CONFIG: Record<string, { label: string; variant: BadgeVariant; badgeIcon: React.ComponentType<{ className?: string }>; color: string; icon: React.ReactNode; next?: string }> = {
   pendiente:   { label: "Pendiente",   variant: "warning", badgeIcon: Clock,       color: "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400",         icon: <Clock className="h-3 w-3" />,        next: "confirmado" },
-  confirmado:  { label: "Confirmado",  variant: "info",    badgeIcon: CheckCircle, color: "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400",             icon: <CheckCircle className="h-3 w-3" />,   next: "en_camino" },
+  confirmado:  { label: "Confirmado",  variant: "info",    badgeIcon: CheckCircle, color: "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400",             icon: <CheckCircle className="h-3 w-3" />,   next: "en_camino" },
   en_camino:   { label: "En camino",   variant: "info",    badgeIcon: Truck,       color: "bg-cyan-100 text-cyan-700 dark:bg-cyan-900/30 dark:text-cyan-400",             icon: <Truck className="h-3 w-3" />,         next: "entregado" },
   entregado:   { label: "Entregado",   variant: "success", badgeIcon: CheckCircle, color: "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400", icon: <CheckCircle className="h-3 w-3" /> },
   cancelado:   { label: "Cancelado",   variant: "error",   badgeIcon: XCircle,     color: "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400",                 icon: <XCircle className="h-3 w-3" /> },
   pending:     { label: "Pendiente",   variant: "warning", badgeIcon: Clock,       color: "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400",         icon: <Clock className="h-3 w-3" />,        next: "confirmado" },
-  confirmed:   { label: "Confirmado",  variant: "info",    badgeIcon: CheckCircle, color: "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400",             icon: <CheckCircle className="h-3 w-3" />,   next: "en_camino" },
+  confirmed:   { label: "Confirmado",  variant: "info",    badgeIcon: CheckCircle, color: "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400",             icon: <CheckCircle className="h-3 w-3" />,   next: "en_camino" },
   preparing:   { label: "Preparando",  variant: "pending", badgeIcon: Package,     color: "bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400",     icon: <Package className="h-3 w-3" />,       next: "en_camino" },
   delivering:  { label: "En camino",   variant: "info",    badgeIcon: Truck,       color: "bg-cyan-100 text-cyan-700 dark:bg-cyan-900/30 dark:text-cyan-400",             icon: <Truck className="h-3 w-3" />,         next: "entregado" },
   delivered:   { label: "Entregado",   variant: "success", badgeIcon: CheckCircle, color: "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400", icon: <CheckCircle className="h-3 w-3" /> },
@@ -708,7 +708,7 @@ export default function SalesOrdersTab() {
       {viewMode === "kanban" && (() => {
         const KANBAN_COLS = [
           { key: "pendiente", label: "Pendiente", match: ["pendiente", "pending"], bg: "bg-yellow-50 dark:bg-yellow-950/20", border: "border-yellow-300 dark:border-yellow-800", headerBg: "bg-yellow-100 dark:bg-yellow-900/30" },
-          { key: "preparando", label: "Preparando", match: ["confirmado", "confirmed", "preparing", "preparando"], bg: "bg-blue-50 dark:bg-blue-950/20", border: "border-blue-300 dark:border-blue-800", headerBg: "bg-blue-100 dark:bg-blue-900/30" },
+          { key: "preparando", label: "Preparando", match: ["confirmado", "confirmed", "preparing", "preparando"], bg: "bg-emerald-50 dark:bg-emerald-950/20", border: "border-emerald-300 dark:border-emerald-800", headerBg: "bg-emerald-100 dark:bg-emerald-900/30" },
           { key: "en_camino", label: "En camino", match: ["en_camino", "delivering"], bg: "bg-purple-50 dark:bg-purple-950/20", border: "border-purple-300 dark:border-purple-800", headerBg: "bg-purple-100 dark:bg-purple-900/30" },
           { key: "entregado", label: "Entregado", match: ["entregado", "delivered"], bg: "bg-green-50 dark:bg-green-950/20", border: "border-green-300 dark:border-green-800", headerBg: "bg-green-100 dark:bg-green-900/30" },
         ];
@@ -973,23 +973,23 @@ export default function SalesOrdersTab() {
                       const checkedCount = checkedItems.filter(id => order.items!.some((_, idx) => id === `${order.id}-${idx}`)).length;
                       const allChecked = checkedCount >= totalItems;
                       return (
-                        <div className="bg-blue-50 dark:bg-blue-950/20 border border-blue-200 dark:border-blue-800 rounded-lg p-2.5">
+                        <div className="bg-emerald-50 dark:bg-emerald-950/20 border border-emerald-200 dark:border-emerald-800 rounded-lg p-2.5">
                           <div className="flex items-center justify-between mb-2">
-                            <span className="text-[10px] font-bold text-blue-700 dark:text-blue-400 uppercase flex items-center gap-1">
+                            <span className="text-[10px] font-bold text-emerald-700 dark:text-emerald-400 uppercase flex items-center gap-1">
                               <CheckSquare className="h-3 w-3" /> Checklist de preparacion
                             </span>
-                            <span className="text-[10px] font-bold text-blue-600 dark:text-blue-400">{checkedCount} de {totalItems} listos</span>
+                            <span className="text-[10px] font-bold text-emerald-600 dark:text-emerald-400">{checkedCount} de {totalItems} listos</span>
                           </div>
                           {/* Progress bar */}
-                          <div className="w-full bg-blue-200 dark:bg-blue-800 rounded-full h-1.5 mb-2">
-                            <div className="h-1.5 rounded-full bg-blue-600 transition-all" style={{ width: `${totalItems > 0 ? (checkedCount / totalItems) * 100 : 0}%` }} />
+                          <div className="w-full bg-emerald-200 dark:bg-emerald-800 rounded-full h-1.5 mb-2">
+                            <div className="h-1.5 rounded-full bg-emerald-600 transition-all" style={{ width: `${totalItems > 0 ? (checkedCount / totalItems) * 100 : 0}%` }} />
                           </div>
                           <div className="space-y-1">
                             {order.items!.map((item, idx) => {
                               const itemId = `${order.id}-${idx}`;
                               const isChecked = checkedItems.includes(itemId);
                               return (
-                                <label key={idx} className={cn("flex items-center gap-2 text-xs cursor-pointer p-1 rounded-lg hover:bg-blue-100 dark:hover:bg-blue-900/30 transition-colors", isChecked && "line-through text-gray-400")}>
+                                <label key={idx} className={cn("flex items-center gap-2 text-xs cursor-pointer p-1 rounded-lg hover:bg-emerald-100 dark:hover:bg-emerald-900/30 transition-colors", isChecked && "line-through text-gray-400")}>
                                   <input
                                     type="checkbox"
                                     checked={isChecked}
@@ -1001,7 +1001,7 @@ export default function SalesOrdersTab() {
                                         return { ...prev, [order.id]: next };
                                       });
                                     }}
-                                    className="h-3.5 w-3.5 rounded border-blue-300 text-blue-600 focus:ring-blue-500"
+                                    className="h-3.5 w-3.5 rounded border-emerald-300 text-emerald-600 focus:ring-emerald-500"
                                   />
                                   <span className={cn("text-gray-700 dark:text-foreground", isChecked && "text-gray-400 dark:text-muted")}>{item.name} x {item.qty}</span>
                                 </label>
@@ -1562,7 +1562,7 @@ function OrdersDashboard({ orders }: { orders: Order[] }) {
       {/* === SECCION 1: 8 KPIs con iconos === */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         <DashKpi icon={<ShoppingBag className="h-4 w-4" />} iconBg="bg-emerald-100 dark:bg-emerald-900/40 text-emerald-600 dark:text-emerald-400" label="Pedidos hoy" value={kpis.pedidosHoy} border="border-l-primary" sparkColor="var(--color-primary)" sparkVal={kpis.pedidosHoy} />
-        <DashKpi icon={<DollarSign className="h-4 w-4" />} iconBg="bg-blue-100 dark:bg-blue-900/40 text-blue-600 dark:text-blue-400" label="Monto hoy" value={`S/${kpis.totalMonto.toFixed(2)}`} border="border-l-blue-500" sparkColor="#3b82f6" sparkVal={kpis.totalMonto} />
+        <DashKpi icon={<DollarSign className="h-4 w-4" />} iconBg="bg-emerald-100 dark:bg-emerald-900/40 text-emerald-600 dark:text-emerald-400" label="Monto hoy" value={`S/${kpis.totalMonto.toFixed(2)}`} border="border-l-emerald-500" sparkColor="#3b82f6" sparkVal={kpis.totalMonto} />
         <DashKpi icon={<Receipt className="h-4 w-4" />} iconBg="bg-purple-100 dark:bg-purple-900/40 text-purple-600 dark:text-purple-400" label="Ticket promedio" value={`S/${kpis.ticketProm.toFixed(2)}`} border="border-l-purple-500" sparkColor="#8b5cf6" sparkVal={kpis.ticketProm} />
         <DashKpi icon={<Clock className="h-4 w-4" />} iconBg="bg-amber-100 dark:bg-amber-900/40 text-amber-600 dark:text-amber-400" label="Pendientes" value={kpis.pendientes} border="border-l-amber-500" pulse={kpis.pendientes > 5} />
         <DashKpi icon={<Truck className="h-4 w-4" />} iconBg="bg-cyan-100 dark:bg-cyan-900/40 text-cyan-600 dark:text-cyan-400" label="En camino" value={kpis.enCamino} border="border-l-cyan-500" />

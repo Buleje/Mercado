@@ -296,7 +296,7 @@ export default function ComisionesTab() {
       {/* KPIs */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
         {[
-          { label: "Ingresos totales", value: fmt(totals.revenue), icon: TrendingUp, color: "text-blue-600 dark:text-blue-400" },
+          { label: "Ingresos totales", value: fmt(totals.revenue), icon: TrendingUp, color: "text-emerald-600 dark:text-emerald-400" },
           { label: "Ganancia neta", value: fmt(totals.profit), icon: BarChart3, color: "text-emerald-600 dark:text-emerald-400" },
           { label: "Comisiones totales", value: fmt(totals.commission), icon: DollarSign, color: "text-violet-600 dark:text-violet-400" },
           { label: "Por pagar", value: fmt(totals.pending), icon: Wallet, color: "text-amber-600 dark:text-amber-400" },
@@ -426,7 +426,7 @@ export default function ComisionesTab() {
                       <td className="px-2 sm:px-4 py-2 sm:py-3 font-bold text-gray-900 dark:text-foreground">{s.cashierName}</td>
                       <td className="px-2 sm:px-4 py-2 sm:py-3 text-gray-500 dark:text-muted">{ROLE_LABEL[s.role] ?? s.role}</td>
                       <td className="px-2 sm:px-4 py-2 sm:py-3 text-gray-700 dark:text-foreground">{s.sales}</td>
-                      <td className="px-2 sm:px-4 py-2 sm:py-3 font-bold text-blue-600 dark:text-blue-400">{fmtCompact(s.revenue)}</td>
+                      <td className="px-2 sm:px-4 py-2 sm:py-3 font-bold text-emerald-600 dark:text-emerald-400">{fmtCompact(s.revenue)}</td>
                       <td className="px-2 sm:px-4 py-2 sm:py-3 font-bold text-emerald-600 dark:text-emerald-400">{fmtCompact(s.profit)}</td>
                       <td className="px-2 sm:px-4 py-2 sm:py-3 text-gray-500 dark:text-muted">
                         {s.rate}%{s.tierLabel && <span className="ml-1 text-xs text-primary font-normal">({s.tierLabel})</span>}
@@ -443,7 +443,7 @@ export default function ComisionesTab() {
                 <tfoot className="bg-gray-50 dark:bg-surface border-t border-gray-200 dark:border-card-border">
                   <tr>
                     <td colSpan={3} className="px-2 sm:px-4 py-2 sm:py-3 font-extrabold text-gray-900 dark:text-foreground text-xs uppercase">TOTAL</td>
-                    <td className="px-2 sm:px-4 py-2 sm:py-3 font-extrabold text-blue-600 dark:text-blue-400">{fmt(totals.revenue)}</td>
+                    <td className="px-2 sm:px-4 py-2 sm:py-3 font-extrabold text-emerald-600 dark:text-emerald-400">{fmt(totals.revenue)}</td>
                     <td className="px-2 sm:px-4 py-2 sm:py-3 font-extrabold text-emerald-600 dark:text-emerald-400">{fmt(totals.profit)}</td>
                     <td className="px-2 sm:px-4 py-2 sm:py-3" />
                     <td className="px-2 sm:px-4 py-2 sm:py-3 font-extrabold text-violet-600 dark:text-violet-400">{fmt(totals.commission)}</td>
@@ -469,7 +469,7 @@ export default function ComisionesTab() {
                     </button>
                   </div>
                   <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2 text-xs">
-                    <div><p className="text-gray-500 dark:text-muted font-bold">Ingresos</p><p className="font-extrabold text-blue-600 dark:text-blue-400">{fmtCompact(s.revenue)}</p></div>
+                    <div><p className="text-gray-500 dark:text-muted font-bold">Ingresos</p><p className="font-extrabold text-emerald-600 dark:text-emerald-400">{fmtCompact(s.revenue)}</p></div>
                     <div><p className="text-gray-500 dark:text-muted font-bold">Ganancia</p><p className="font-extrabold text-emerald-600 dark:text-emerald-400">{fmtCompact(s.profit)}</p></div>
                     <div><p className="text-gray-500 dark:text-muted font-bold">Comisión ({s.rate}%{s.tierLabel ? ` · ${s.tierLabel}` : ""})</p><p className="font-extrabold text-violet-600 dark:text-violet-400">{fmt(s.commission)}</p></div>
                   </div>
@@ -481,8 +481,8 @@ export default function ComisionesTab() {
       </div>
 
       {/* Info note */}
-      <div className="bg-blue-50 dark:bg-blue-900/10 border border-blue-200 dark:border-blue-900/30 rounded-xl p-4">
-        <p className="text-xs text-blue-700 dark:text-blue-400">
+      <div className="bg-emerald-50 dark:bg-emerald-900/10 border border-emerald-200 dark:border-emerald-900/30 rounded-xl p-4">
+        <p className="text-xs text-emerald-700 dark:text-emerald-400">
           <strong>ℹ️ Nota:</strong> Las comisiones se calculan sobre los ingresos brutos de cada cajero en el POS. Los datos se cargan desde <code className="font-mono">/api/commissions</code>. Para que aparezcan ventas reales, cada venta del POS debe registrar el <code className="font-mono">cashierId</code> del cajero activo.
         </p>
       </div>

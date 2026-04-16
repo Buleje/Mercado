@@ -231,7 +231,7 @@ export default function PredictiveAnalyticsTab() {
       </PredCard>
 
       {/* Card 3: Mejor día para comprar */}
-      <PredCard icon={Calendar} title="Mejor dia para ir al proveedor" iconBg="bg-blue-500">
+      <PredCard icon={Calendar} title="Mejor dia para ir al proveedor" iconBg="bg-emerald-500">
         <div>
           <p className="text-3xl font-extrabold text-gray-900 dark:text-white">{data.bestPurchaseDay.day}</p>
           <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">{data.bestPurchaseDay.reason}</p>

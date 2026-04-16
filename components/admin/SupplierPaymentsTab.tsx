@@ -32,7 +32,7 @@ const fmt = (n: number) => "S/ " + n.toLocaleString("es-PE", { minimumFractionDi
 
 const STATUS_MAP: Record<PaymentStatus, { label: string; color: string; bg: string }> = {
   pendiente:  { label: "Pendiente",  color: "text-amber-600",   bg: "bg-amber-100 dark:bg-amber-900/30" },
-  programado: { label: "Programado", color: "text-blue-600",    bg: "bg-blue-100 dark:bg-blue-900/30" },
+  programado: { label: "Programado", color: "text-emerald-600",    bg: "bg-emerald-100 dark:bg-emerald-900/30" },
   pagado:     { label: "Pagado",     color: "text-emerald-600", bg: "bg-emerald-100 dark:bg-emerald-900/30" },
   vencido:    { label: "Vencido",    color: "text-red-600",     bg: "bg-red-100 dark:bg-red-900/30" },
   parcial:    { label: "Parcial",    color: "text-orange-600",  bg: "bg-orange-100 dark:bg-orange-900/30" },

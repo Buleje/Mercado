@@ -43,7 +43,7 @@ const scoreBg = (s: number) =>
   s >= 80 ? "bg-emerald-100 dark:bg-emerald-900/30" : s >= 60 ? "bg-amber-100 dark:bg-amber-900/30" : "bg-red-100 dark:bg-red-900/30";
 
 const severityColor: Record<string, string> = {
-  baja: "text-blue-600 bg-blue-100 dark:bg-blue-900/30",
+  baja: "text-emerald-600 bg-emerald-100 dark:bg-emerald-900/30",
   media: "text-amber-600 bg-amber-100 dark:bg-amber-900/30",
   alta: "text-orange-600 bg-orange-100 dark:bg-orange-900/30",
   "crítica": "text-red-600 bg-red-100 dark:bg-red-900/30",

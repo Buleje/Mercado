@@ -149,7 +149,7 @@ export default function AutoAlertEngineTab() {
       {/* KPIs */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
         {[
-          { label: "Reglas activas", value: rules.filter(r => r.enabled).length, total: rules.length, color: "text-blue-500" },
+          { label: "Reglas activas", value: rules.filter(r => r.enabled).length, total: rules.length, color: "text-emerald-500" },
           { label: "Alertas hoy", value: logs.filter(l => l.timestamp.startsWith(new Date().toISOString().slice(0, 10))).length, color: "text-amber-500" },
           { label: "Sin reconocer", value: logs.filter(l => !l.acknowledged).length, color: "text-red-500" },
           { label: "Total disparos", value: rules.reduce((s, r) => s + r.triggered, 0), color: "text-emerald-500" },
@@ -178,7 +178,7 @@ export default function AutoAlertEngineTab() {
                   <tr key={r.id} className="border-t border-gray-100 dark:border-card-border hover:bg-gray-50 dark:hover:bg-surface/50">
                     <td className="px-2 sm:px-4 py-2 sm:py-3">
                       <div className="flex flex-wrap items-center gap-2">
-                        <span className={cn("h-2 w-2 rounded-full", r.severity === "critical" ? "bg-red-500" : r.severity === "warning" ? "bg-amber-500" : "bg-blue-500")} />
+                        <span className={cn("h-2 w-2 rounded-full", r.severity === "critical" ? "bg-red-500" : r.severity === "warning" ? "bg-amber-500" : "bg-emerald-500")} />
                         <span className="font-semibold text-gray-900 dark:text-foreground">{r.name}</span>
                       </div>
                     </td>
@@ -223,7 +223,7 @@ export default function AutoAlertEngineTab() {
               </div>
             ) : filteredLogs.map(l => (
               <div key={l.id} className={cn("bg-white dark:bg-card rounded-xl border p-4 flex items-start gap-3", l.severity === "critical" ? "border-red-200 dark:border-red-900/30" : l.severity === "warning" ? "border-amber-200 dark:border-amber-900/30" : "border-gray-200 dark:border-card-border")}>
-                <AlertTriangle className={cn("h-4 w-4 shrink-0 mt-0.5", l.severity === "critical" ? "text-red-500" : l.severity === "warning" ? "text-amber-500" : "text-blue-500")} />
+                <AlertTriangle className={cn("h-4 w-4 shrink-0 mt-0.5", l.severity === "critical" ? "text-red-500" : l.severity === "warning" ? "text-amber-500" : "text-emerald-500")} />
                 <div className="flex-1 min-w-0">
                   <p className="text-sm font-bold text-gray-900 dark:text-foreground">{l.ruleName}</p>
                   <p className="text-xs text-gray-500 dark:text-muted mt-0.5">{l.message}</p>

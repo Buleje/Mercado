@@ -209,14 +209,14 @@ function GeoLocationButton({ onLocated }: GeoButtonProps) {
 }
 
 const FALLBACK_ZONES: Zone[] = [
-  { id: "z-1", name: "Zona Centro", color: "bg-blue-500", deliveryFee: 3, estimatedMin: 20, neighborhoods: ["Jr. Progreso", "Jr. Inmaculada", "Plaza de Armas", "Mercado Central"] },
+  { id: "z-1", name: "Zona Centro", color: "bg-emerald-500", deliveryFee: 3, estimatedMin: 20, neighborhoods: ["Jr. Progreso", "Jr. Inmaculada", "Plaza de Armas", "Mercado Central"] },
   { id: "z-2", name: "Zona Norte", color: "bg-emerald-500", deliveryFee: 5, estimatedMin: 35, neighborhoods: ["Yarinacocha", "San Juan", "Manantay", "Nueva Requena"] },
   { id: "z-3", name: "Zona Sur", color: "bg-amber-500", deliveryFee: 4, estimatedMin: 30, neighborhoods: ["Campo Verde", "Puírto Callao", "Masisea", "Iparia"] },
   { id: "z-4", name: "Zona Este", color: "bg-violet-500", deliveryFee: 6, estimatedMin: 45, neighborhoods: ["Contamana", "Padre Abad", "Von Humboldt"] },
 ];
 
 const STATUS_LABELS: Record<string, string> = { "en-ruta": "En Ruta", completada: "Completada", pendiente: "Pendiente", cancelada: "Cancelada" };
-const STATUS_COLORS: Record<string, string> = { "en-ruta": "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400", completada: "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400", pendiente: "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400", cancelada: "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400" };
+const STATUS_COLORS: Record<string, string> = { "en-ruta": "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400", completada: "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400", pendiente: "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400", cancelada: "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400" };
 
 function fmtDate(iso: string) { return new Date(iso).toLocaleTimeString("es-PE", { hour: "2-digit", minute: "2-digit" }); }
 function fmt(n: number) { return `S/ ${n.toFixed(2)}`; }
@@ -371,7 +371,7 @@ export default function DeliveryRoutesTab() {
               </span>
             ))}
             <span className="flex items-center gap-1">
-              <span className="inline-block w-2.5 h-2.5 rounded-full border border-gray-400 bg-blue-500" />
+              <span className="inline-block w-2.5 h-2.5 rounded-full border border-gray-400 bg-emerald-500" />
               En camino
             </span>
             <span className="flex items-center gap-1">
@@ -431,7 +431,7 @@ export default function DeliveryRoutesTab() {
       {/* KPIs */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
         {[
-          { label: "Rutas activas", value: activeRoutes, color: "text-blue-500" },
+          { label: "Rutas activas", value: activeRoutes, color: "text-emerald-500" },
           { label: "Completadas hoy", value: completedToday, color: "text-emerald-500" },
           { label: "Paradas totales", value: totalStops, color: "text-violet-500" },
           { label: "% Entregadas", value: `${routes.length ? Math.round(completedToday / routes.length * 100) : 0}%`, color: "text-emerald-600" },
@@ -532,7 +532,7 @@ export default function DeliveryRoutesTab() {
                 {r.status === "en-ruta" && (
                   <div className="mt-3 pt-3 border-t border-gray-100 dark:border-card-border">
                     <div className="w-full h-2 bg-gray-100 dark:bg-surface rounded-full overflow-hidden">
-                      <div className="h-full bg-blue-500 rounded-full animate-pulse" style={{ width: "60%" }} />
+                      <div className="h-full bg-emerald-500 rounded-full animate-pulse" style={{ width: "60%" }} />
                     </div>
                     <p className="text-[10px] text-gray-400 mt-1">Estimado: ~{r.estimatedTime - 15} min restantes</p>
                   </div>
@@ -549,7 +549,7 @@ export default function DeliveryRoutesTab() {
                 {r.status !== "completada" && r.status !== "cancelada" && (
                   <div className="mt-3 pt-3 border-t border-gray-100 dark:border-card-border flex items-center gap-2 flex-wrap">
                     {r.status === "pendiente" && (
-                      <button onClick={() => updateRouteStatus(r.id, "en-ruta")} className="px-3 py-1.5 rounded-lg text-xs font-bold bg-blue-500 text-white hover:bg-blue-600 transition-colors">Enviar a ruta</button>
+                      <button onClick={() => updateRouteStatus(r.id, "en-ruta")} className="px-3 py-1.5 rounded-lg text-xs font-bold bg-emerald-500 text-white hover:bg-emerald-600 transition-colors">Enviar a ruta</button>
                     )}
                     {r.status === "en-ruta" && (
                       <button onClick={() => updateRouteStatus(r.id, "completada")} className="px-3 py-1.5 rounded-lg text-xs font-bold bg-emerald-500 text-white hover:bg-emerald-600 transition-colors">Marcar entregado</button>

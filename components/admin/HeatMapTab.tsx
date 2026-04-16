@@ -93,7 +93,7 @@ export default function HeatMapTab() {
       {/* KPIs */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
         {[
-          { label: "Transacciones totales", value: totalTx.toLocaleString(), color: "text-blue-500" },
+          { label: "Transacciones totales", value: totalTx.toLocaleString(), color: "text-emerald-500" },
           { label: "Hora pico", value: `${peakHour.hour}:00`, color: "text-emerald-500" },
           { label: "Día más activo", value: peakDay.day, color: "text-violet-500" },
           { label: "Monto total", value: `S/ ${totalAmount.toFixed(0)}`, color: "text-amber-500" },

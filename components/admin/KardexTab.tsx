@@ -57,7 +57,7 @@ type KardexLine = {
 
 const TYPE_META: Record<string, { label: string; color: string; bg: string; dir: "in" | "out" }> = {
   compra: { label: "Compra", color: "text-emerald-700 dark:text-emerald-400", bg: "bg-emerald-100 dark:bg-emerald-900/30", dir: "in" },
-  devolucion: { label: "Devolucion", color: "text-blue-700 dark:text-blue-400", bg: "bg-blue-100 dark:bg-blue-900/30", dir: "in" },
+  devolucion: { label: "Devolucion", color: "text-emerald-700 dark:text-emerald-400", bg: "bg-emerald-100 dark:bg-emerald-900/30", dir: "in" },
   ajuste_positivo: { label: "Ajuste (+)", color: "text-sky-700 dark:text-sky-400", bg: "bg-sky-100 dark:bg-sky-900/30", dir: "in" },
   venta: { label: "Venta POS", color: "text-amber-700 dark:text-amber-400", bg: "bg-amber-100 dark:bg-amber-900/30", dir: "out" },
   venta_online: { label: "Venta Online", color: "text-orange-700 dark:text-orange-400", bg: "bg-orange-100 dark:bg-orange-900/30", dir: "out" },
@@ -374,7 +374,7 @@ export default function KardexTab() {
       </div>
 
       <div className="grid grid-cols-2 gap-2 sm:gap-4 sm:grid-cols-4">
-        <KCard label="Saldo actual" value={`${stats.lastBalance} ${product.unit}`} sub={fmt(stats.lastBalance * (product.costPrice ?? 0))} icon={RefreshCw} color="text-blue-600" bg="bg-blue-50 dark:bg-blue-950/30" />
+        <KCard label="Saldo actual" value={`${stats.lastBalance} ${product.unit}`} sub={fmt(stats.lastBalance * (product.costPrice ?? 0))} icon={RefreshCw} color="text-emerald-600" bg="bg-emerald-50 dark:bg-emerald-950/30" />
         <KCard label="Total entradas" value={`+${stats.inTotal} ${product.unit}`} sub="del periodo" icon={ArrowUpCircle} color="text-emerald-600" bg="bg-emerald-50 dark:bg-emerald-950/30" />
         <KCard label="Total salidas" value={`-${stats.outTotal} ${product.unit}`} sub="del periodo" icon={ArrowDownCircle} color="text-amber-600" bg="bg-amber-50 dark:bg-amber-950/30" />
         <KCard label="Costo compras" value={fmt(stats.costTotal)} sub="periodo actual" icon={TrendingUp} color="text-violet-600" bg="bg-violet-50 dark:bg-violet-950/30" />

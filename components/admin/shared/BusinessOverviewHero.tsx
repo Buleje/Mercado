@@ -42,7 +42,7 @@ function getToneClasses(tone: HeroTone): string {
   if (tone === "warning") {
     return "border-amber-200 dark:border-amber-800/40 bg-amber-50/70 dark:bg-amber-950/10";
   }
-  return "border-blue-200 dark:border-blue-800/40 bg-blue-50/70 dark:bg-blue-950/10";
+  return "border-emerald-200 dark:border-emerald-800/40 bg-emerald-50/70 dark:bg-emerald-950/10";
 }
 
 function getEmphasisClasses(emphasis: HeroEmphasis): string {

@@ -117,14 +117,14 @@ function getPasswordStrength(password: string): PasswordStrength {
 // ─── Plan colors ──────────────────────────────────────────────
 const PLAN_BORDER: Record<PlanId, string> = {
   free:       "border-gray-300 dark:border-gray-600",
-  pro:        "border-blue-400",
+  pro:        "border-emerald-400",
   business:   "border-violet-400",
   enterprise: "border-amber-400",
 };
 
 const PLAN_ACTIVE: Record<PlanId, string> = {
   free:       "border-gray-500 bg-gray-50 dark:bg-gray-900/40 ring-2 ring-gray-400",
-  pro:        "border-blue-500 bg-blue-50 dark:bg-blue-950/30 ring-2 ring-blue-500",
+  pro:        "border-emerald-500 bg-emerald-50 dark:bg-emerald-950/30 ring-2 ring-emerald-500",
   business:   "border-violet-500 bg-violet-50 dark:bg-violet-950/30 ring-2 ring-violet-500",
   enterprise: "border-amber-500 bg-amber-50 dark:bg-amber-950/30 ring-2 ring-amber-500",
 };

@@ -69,7 +69,7 @@ export default function OnboardingWizard({ onNavigate, onDismiss }: OnboardingWi
       title: "Personaliza tu tienda",
       description: "Logo, colores y datos de contacto",
       icon: Palette,
-      color: "text-blue-600 bg-blue-50 dark:bg-blue-950/30",
+      color: "text-emerald-600 bg-emerald-50 dark:bg-emerald-950/30",
       tab: "store-customizer",
       completed: completedIds.has("store"),
     },
@@ -115,7 +115,7 @@ export default function OnboardingWizard({ onNavigate, onDismiss }: OnboardingWi
   };
 
   return (
-    <div className="mb-6 rounded-2xl border border-blue-200 dark:border-blue-900/50 bg-gradient-to-r from-blue-50 to-emerald-50 dark:from-blue-950/20 dark:to-emerald-950/20 p-5 relative overflow-hidden">
+    <div className="mb-6 rounded-2xl border border-emerald-200 dark:border-emerald-900/50 bg-gradient-to-r from-emerald-50 to-emerald-50 dark:from-emerald-950/20 dark:to-emerald-950/20 p-5 relative overflow-hidden">
       {/* Dismiss button */}
       <button
         onClick={handleDismiss}
@@ -126,7 +126,7 @@ export default function OnboardingWizard({ onNavigate, onDismiss }: OnboardingWi
 
       {/* Header */}
       <div className="flex items-center gap-3 mb-4">
-        <div className="h-10 w-10 rounded-xl bg-blue-600 flex items-center justify-center">
+        <div className="h-10 w-10 rounded-xl bg-emerald-600 flex items-center justify-center">
           <Rocket className="h-5 w-5 text-white" />
         </div>
         <div>
@@ -136,7 +136,7 @@ export default function OnboardingWizard({ onNavigate, onDismiss }: OnboardingWi
         {/* Progress bar */}
         <div className="ml-auto w-24 h-2 rounded-full bg-gray-200 dark:bg-gray-700 overflow-hidden">
           <div
-            className="h-full bg-blue-500 rounded-full transition-all duration-500"
+            className="h-full bg-emerald-500 rounded-full transition-all duration-500"
             style={{ width: `${progress}%` }}
           />
         </div>

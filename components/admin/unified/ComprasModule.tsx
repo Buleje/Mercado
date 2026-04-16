@@ -3,7 +3,7 @@ import { useState, useEffect, useMemo, useCallback } from "react";
 import dynamic from "next/dynamic";
 import {
   Lightbulb, ClipboardList, Users, PackageCheck,
-  Truck, BarChart3,
+  Truck, BarChart3, PackagePlus,
   ShoppingCart, ShoppingBasket, Clock, DollarSign, Building2, AlertTriangle, CreditCard,
   CheckCircle2, Maximize2, X as XIcon, RotateCcw,
 } from "lucide-react";
@@ -562,7 +562,9 @@ export default function ComprasModule() {
       <AdminModuleHeader
         title="Compras"
         description="Pedidos a proveedores, recepción y cuentas por pagar"
-        icon={Truck}
+        icon={PackagePlus}
+        bgTint="bg-amber-50 dark:bg-amber-900/20"
+        iconColorClass="text-amber-600 dark:text-amber-400"
       />
 
 

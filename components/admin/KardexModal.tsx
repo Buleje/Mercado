@@ -38,7 +38,7 @@ type Props = {
 
 const TYPE_LABELS: Record<string, { label: string; color: string; dir: "in" | "out" }> = {
   compra:           { label: "Compra",       color: "text-emerald-700 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/30", dir: "in" },
-  devolucion:       { label: "Devolución",   color: "text-blue-700 dark:text-blue-400 bg-blue-50 dark:bg-blue-950/30",           dir: "in" },
+  devolucion:       { label: "Devolución",   color: "text-emerald-700 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/30",           dir: "in" },
   ajuste_positivo:  { label: "Ajuste (+)",   color: "text-sky-700 dark:text-sky-400 bg-sky-50 dark:bg-sky-950/30",               dir: "in" },
   venta:            { label: "Venta POS",    color: "text-amber-700 dark:text-amber-400 bg-amber-50 dark:bg-amber-950/30",       dir: "out" },
   venta_online:     { label: "Venta Online", color: "text-orange-700 dark:text-orange-400 bg-orange-50 dark:bg-orange-950/30",   dir: "out" },
@@ -178,9 +178,9 @@ export default function KardexModal({ productId, productName, onClose }: Props) 
                   <p className="text-lg font-extrabold text-red-700 dark:text-red-400">{data.resumen.totalSalidas}</p>
                   <p className="text-[10px] font-bold text-red-600/70 uppercase">Total salidas</p>
                 </div>
-                <div className="bg-blue-50 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-800 rounded-xl p-3 text-center">
-                  <p className="text-lg font-extrabold text-blue-700 dark:text-blue-400">{data.resumen.saldoFinal}</p>
-                  <p className="text-[10px] font-bold text-blue-600/70 uppercase">Saldo final</p>
+                <div className="bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-800 rounded-xl p-3 text-center">
+                  <p className="text-lg font-extrabold text-emerald-700 dark:text-emerald-400">{data.resumen.saldoFinal}</p>
+                  <p className="text-[10px] font-bold text-emerald-600/70 uppercase">Saldo final</p>
                 </div>
               </div>
 

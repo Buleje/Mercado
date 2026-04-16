@@ -6,7 +6,7 @@ import { cn, exportToCSV } from "@/lib/utils";
 import type { SecurityLogEntry } from "@/app/api/security-logs/route";
 
 const CATEGORY_CONFIG: Record<string, { label: string; icon: React.ElementType; color: string }> = {
-  auth:     { label: "Autenticación", icon: LogIn,    color: "bg-blue-100 text-blue-600 dark:bg-blue-900/30 dark:text-blue-400" },
+  auth:     { label: "Autenticación", icon: LogIn,    color: "bg-emerald-100 text-emerald-600 dark:bg-emerald-900/30 dark:text-emerald-400" },
   data:     { label: "Datos",         icon: Eye,      color: "bg-violet-100 text-violet-600 dark:bg-violet-900/30 dark:text-violet-400" },
   config:   { label: "Configuración", icon: Settings, color: "bg-amber-100 text-amber-600 dark:bg-amber-900/30 dark:text-amber-400" },
   security: { label: "Seguridad",     icon: Shield,   color: "bg-red-100 text-red-600 dark:bg-red-900/30 dark:text-red-400" },
@@ -107,7 +107,7 @@ export default function SecurityLogsTab() {
       {/* KPIs */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
         {[
-          { label: "Eventos hoy",           value: todayCount,    color: "text-blue-500" },
+          { label: "Eventos hoy",           value: todayCount,    color: "text-emerald-500" },
           { label: "Alertas críticas",       value: criticalCount, color: criticalCount > 0 ? "text-red-500" : "text-gray-400" },
           { label: "Intentos fallidos auth", value: failedAuth,   color: failedAuth > 0 ? "text-amber-500" : "text-gray-400" },
           { label: "Cambios de config",      value: roleChanges,  color: "text-violet-500" },

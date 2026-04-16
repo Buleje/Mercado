@@ -132,7 +132,7 @@ function getAvatarColor(name: string): string {
 function CustomerSegmentBadge({ totalSpent, orderCount }: { totalSpent: number; orderCount: number }) {
   if (orderCount === 0) return <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-300">Nuevo</span>;
   if (totalSpent > 1000) return <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-yellow-50 text-yellow-700 border border-yellow-300">VIP</span>;
-  if (totalSpent > 500) return <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-blue-50 text-blue-700 border border-blue-300">Premium</span>;
+  if (totalSpent > 500) return <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-300">Premium</span>;
   return <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-gray-100 text-gray-600 border border-gray-300">Regular</span>;
 }
 
@@ -232,7 +232,7 @@ function FavoriteProductsSection({ phone }: { phone: string }) {
 
 const SEGMENT_CONFIG: Record<Segment, { label: string; color: string; bg: string; border: string }> = {
   frecuente: { label: "Frecuente",  color: "text-emerald-700 dark:text-emerald-400", bg: "bg-emerald-50 dark:bg-emerald-950/30", border: "border-emerald-300 dark:border-emerald-700" },
-  ocasional: { label: "Ocasional",  color: "text-blue-700 dark:text-blue-400",     bg: "bg-blue-50 dark:bg-blue-950/30",     border: "border-blue-300 dark:border-blue-700" },
+  ocasional: { label: "Ocasional",  color: "text-emerald-700 dark:text-emerald-400",     bg: "bg-emerald-50 dark:bg-emerald-950/30",     border: "border-emerald-300 dark:border-emerald-700" },
   nuevo:     { label: "Nuevo",      color: "text-violet-700 dark:text-violet-400", bg: "bg-violet-50 dark:bg-violet-950/30", border: "border-violet-300 dark:border-violet-700" },
   perdido:   { label: "Perdido",    color: "text-red-700 dark:text-red-400",       bg: "bg-red-50 dark:bg-red-950/30",       border: "border-red-300 dark:border-red-700" },
 };
@@ -246,7 +246,7 @@ const HEALTH_CONFIG: Record<HealthScore | "desconocido", { label: string; color:
 
 const STATUS_CONFIG: Record<string, { label: string; color: string; bg: string; Icon: React.ElementType }> = {
   pendiente:  { label: "Pendiente",  color: "text-amber-700 dark:text-amber-400",   bg: "bg-amber-50 dark:bg-amber-950/30",   Icon: Clock },
-  confirmado: { label: "Confirmado", color: "text-blue-700 dark:text-blue-400",     bg: "bg-blue-50 dark:bg-blue-950/30",     Icon: CheckCircle },
+  confirmado: { label: "Confirmado", color: "text-emerald-700 dark:text-emerald-400",     bg: "bg-emerald-50 dark:bg-emerald-950/30",     Icon: CheckCircle },
   en_camino:  { label: "En camino",  color: "text-violet-700 dark:text-violet-400", bg: "bg-violet-50 dark:bg-violet-950/30", Icon: Truck },
   entregado:  { label: "Entregado",  color: "text-emerald-700 dark:text-emerald-400", bg: "bg-emerald-50 dark:bg-emerald-950/30", Icon: CheckCircle },
   cancelado:  { label: "Cancelado",  color: "text-red-700 dark:text-red-400",       bg: "bg-red-50 dark:bg-red-950/30",       Icon: XCircle },
@@ -431,7 +431,7 @@ function FamilyAccountSection({ phone, customer }: { phone: string; customer: Cu
     <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl p-4 sm:p-5">
       <div className="flex items-center justify-between mb-3">
         <h3 className="font-bold text-sm text-gray-900 dark:text-foreground flex items-center gap-2">
-          <Users className="h-4 w-4 text-blue-500" /> Cuenta Familiar
+          <Users className="h-4 w-4 text-emerald-500" /> Cuenta Familiar
           {savingFamily && <Loader2 className="h-3 w-3 animate-spin text-gray-400" />}
         </h3>
         <span className="text-[10px] text-gray-400 dark:text-muted">{familyMembers.length} miembros</span>
@@ -465,8 +465,8 @@ function FamilyAccountSection({ phone, customer }: { phone: string; customer: Cu
       ))}
 
       {addingMember ? (
-        <div className="mt-2 bg-blue-50 dark:bg-blue-950/20 rounded-lg p-3 space-y-2">
-          <p className="text-xs font-bold text-blue-700 dark:text-blue-400">Nuevo miembro familiar</p>
+        <div className="mt-2 bg-emerald-50 dark:bg-emerald-950/20 rounded-lg p-3 space-y-2">
+          <p className="text-xs font-bold text-emerald-700 dark:text-emerald-400">Nuevo miembro familiar</p>
           <div className="grid grid-cols-2 gap-2">
             <input type="text" placeholder="Nombre" value={newMember.nombre} onChange={e => setNewMember({...newMember, nombre: e.target.value})} className="text-xs border border-gray-200 dark:border-card-border rounded-lg px-2 py-1.5 bg-white dark:bg-card text-gray-900 dark:text-foreground" />
             <input type="tel" placeholder="Telefono" value={newMember.telefono} onChange={e => setNewMember({...newMember, telefono: e.target.value})} className="text-xs border border-gray-200 dark:border-card-border rounded-lg px-2 py-1.5 bg-white dark:bg-card text-gray-900 dark:text-foreground" />
@@ -909,7 +909,7 @@ export default function Customer360Tab({ phone, onClose }: Props) {
           {/* Badges */}
           <div className="flex flex-wrap gap-1.5 mt-3">
             {customer.categoria && (
-              <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-blue-50 dark:bg-blue-950/30 text-blue-700 dark:text-blue-400 border border-blue-300 dark:border-blue-700 capitalize">{customer.categoria}</span>
+              <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-50 dark:bg-emerald-950/30 text-emerald-700 dark:text-emerald-400 border border-emerald-300 dark:border-emerald-700 capitalize">{customer.categoria}</span>
             )}
             {customer.canal && (
               <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-violet-50 dark:bg-violet-950/30 text-violet-700 dark:text-violet-400 border border-violet-300 dark:border-violet-700 capitalize">{customer.canal}</span>
@@ -1017,7 +1017,7 @@ export default function Customer360Tab({ phone, onClose }: Props) {
               // Auto-color by hash
               const hash = tag.split("").reduce((acc, c) => acc + c.charCodeAt(0), 0);
               const colors = [
-                "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400",
+                "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400",
                 "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400",
                 "bg-violet-100 text-violet-700 dark:bg-violet-900/30 dark:text-violet-400",
                 "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400",
@@ -1071,7 +1071,7 @@ export default function Customer360Tab({ phone, onClose }: Props) {
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
         {[
           { label: "Total gastado",  value: fmt(totalSpent),        icon: CreditCard,   color: "text-emerald-500" },
-          { label: "Pedidos",        value: String(orders.length),  icon: ShoppingCart, color: "text-blue-500" },
+          { label: "Pedidos",        value: String(orders.length),  icon: ShoppingCart, color: "text-emerald-500" },
           { label: "Ticket prom.",   value: fmt(avgTicket),         icon: TrendingUp,   color: "text-violet-500" },
           { label: "Primera compra", value: firstOrder ? fmtDate(firstOrder.createdAt) : "—", icon: Calendar, color: "text-amber-500" },
         ].map(k => (

@@ -211,18 +211,18 @@ export default function CashFlowTab() {
       </div>
 
       {/* Opening balance */}
-      <div className="flex flex-wrap items-center gap-3 bg-blue-50 dark:bg-blue-950/20 border border-blue-200 dark:border-blue-900/40 rounded-xl px-2 sm:px-4 py-2 sm:py-3">
-        <Calendar className="h-5 w-5 text-blue-600 shrink-0" />
-        <span className="text-sm font-semibold text-blue-700 dark:text-blue-300">Saldo inicial del período:</span>
+      <div className="flex flex-wrap items-center gap-3 bg-emerald-50 dark:bg-emerald-950/20 border border-emerald-200 dark:border-emerald-900/40 rounded-xl px-2 sm:px-4 py-2 sm:py-3">
+        <Calendar className="h-5 w-5 text-emerald-600 shrink-0" />
+        <span className="text-sm font-semibold text-emerald-700 dark:text-emerald-300">Saldo inicial del período:</span>
         <input
           type="number"
           value={openingBalance}
           onChange={e => setOpeningBalance(parseFloat(e.target.value) || 0)}
-          className="w-32 text-sm font-bold text-blue-700 dark:text-blue-300 bg-transparent border-b-2 border-blue-300 dark:border-blue-700 focus:outline-none text-right px-1"
+          className="w-32 text-sm font-bold text-emerald-700 dark:text-emerald-300 bg-transparent border-b-2 border-emerald-300 dark:border-emerald-700 focus:outline-none text-right px-1"
           min="0"
           step="100"
         />
-        <span className="text-sm text-blue-600 dark:text-blue-400">soles</span>
+        <span className="text-sm text-emerald-600 dark:text-emerald-400">soles</span>
       </div>
 
       {/* Quick form */}
@@ -271,7 +271,7 @@ export default function CashFlowTab() {
               { label: "Ingresos totales", value: totalInflow, icon: TrendingUp, color: "text-emerald-600", bg: "bg-emerald-50 dark:bg-emerald-950/30" },
               { label: "Egresos totales", value: totalOutflow, icon: TrendingDown, color: "text-red-500", bg: "bg-red-50 dark:bg-red-950/30" },
               { label: "Flujo neto", value: netFlow, icon: netFlow >= 0 ? ArrowUpRight : ArrowDownRight, color: netFlow >= 0 ? "text-emerald-600" : "text-red-500", bg: netFlow >= 0 ? "bg-emerald-50 dark:bg-emerald-950/30" : "bg-red-50 dark:bg-red-950/30" },
-              { label: "Saldo proyectado", value: closingBalance, icon: closingBalance > 1000 ? CheckCircle : AlertTriangle, color: closingBalance > 1000 ? "text-blue-600" : "text-amber-600", bg: closingBalance > 1000 ? "bg-blue-50 dark:bg-blue-950/30" : "bg-amber-50 dark:bg-amber-950/30" },
+              { label: "Saldo proyectado", value: closingBalance, icon: closingBalance > 1000 ? CheckCircle : AlertTriangle, color: closingBalance > 1000 ? "text-emerald-600" : "text-amber-600", bg: closingBalance > 1000 ? "bg-emerald-50 dark:bg-emerald-950/30" : "bg-amber-50 dark:bg-amber-950/30" },
             ].map(({ label, value, icon: Icon, color, bg }) => (
               <div key={label} className={cn("rounded-2xl p-4", bg)}>
                 <Icon className={cn("h-5 w-5 mb-2", color)} />
@@ -355,7 +355,7 @@ export default function CashFlowTab() {
                       <td className="px-2 sm:px-4 py-2 sm:py-3 text-gray-800 dark:text-foreground">{e.description}</td>
                       <td className="px-2 sm:px-4 py-2 sm:py-3">
                         <span className="text-xs px-2 py-1 rounded-full bg-gray-100 dark:bg-surface capitalize text-gray-600 dark:text-muted">{e.category}</span>
-                        {e.projected && <span className="ml-1 text-xs px-2 py-0.5 rounded-full bg-blue-100 dark:bg-blue-950/30 text-blue-600 dark:text-blue-400">Proyectado</span>}
+                        {e.projected && <span className="ml-1 text-xs px-2 py-0.5 rounded-full bg-emerald-100 dark:bg-emerald-950/30 text-emerald-600 dark:text-emerald-400">Proyectado</span>}
                       </td>
                       <td className={cn("px-3 sm:px-6 py-3 text-right font-bold", e.type === "ingreso" ? "text-emerald-600" : "text-red-500")}>
                         {e.type === "ingreso" ? "+" : "−"}{fmt(e.amount)}

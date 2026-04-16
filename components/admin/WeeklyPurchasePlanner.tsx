@@ -68,7 +68,7 @@ const URGENCY_STYLES: Record<PlanItem["urgency"], { badge: string; row: string; 
     label: "Urgente",
   },
   medium: {
-    badge: "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400",
+    badge: "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400",
     row: "border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900",
     label: "Esta semana",
   },
@@ -277,7 +277,7 @@ export default function WeeklyPurchasePlanner() {
                     : item.urgency === "high"
                       ? "border-l-[#f97316]"
                       : item.urgency === "medium"
-                        ? "border-l-blue-400"
+                        ? "border-l-emerald-400"
                         : "border-l-gray-200 dark:border-l-gray-700"
                 )}
               >

@@ -19,7 +19,7 @@ const TYPE_META = {
   pedido:  { icon: ShoppingCart, color: "text-amber-500",  bg: "bg-amber-50 dark:bg-amber-950/30"  },
   stock:   { icon: AlertTriangle,color: "text-red-500",    bg: "bg-red-50 dark:bg-red-950/30"      },
   venta:   { icon: TrendingUp,   color: "text-emerald-500",bg: "bg-emerald-50 dark:bg-emerald-950/30"},
-  tarea:   { icon: Package,      color: "text-blue-500",   bg: "bg-blue-50 dark:bg-blue-950/30"    },
+  tarea:   { icon: Package,      color: "text-emerald-500",   bg: "bg-emerald-50 dark:bg-emerald-950/30"    },
   sistema: { icon: Bell,         color: "text-violet-500", bg: "bg-violet-50 dark:bg-violet-950/30"},
   tiempo:  { icon: Clock,        color: "text-orange-500", bg: "bg-orange-50 dark:bg-orange-950/30"},
 };

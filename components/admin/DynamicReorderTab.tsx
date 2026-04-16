@@ -31,7 +31,7 @@ const STATUS_CONFIG = {
   urgente:    { label: "Urgente",     color: "bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400",           dot: "bg-red-500" },
   pronto:     { label: "Pronto",      color: "bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400",   dot: "bg-amber-500" },
   ok:         { label: "OK",          color: "bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400", dot: "bg-emerald-500" },
-  sobrestock: { label: "Sobrestock",  color: "bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400",       dot: "bg-blue-500" },
+  sobrestock: { label: "Sobrestock",  color: "bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400",       dot: "bg-emerald-500" },
 };
 
 /* ── component ──────────────────────────────────────────────── */
@@ -92,10 +92,10 @@ export default function DynamicReorderTab() {
           <p className="text-xl sm:text-2xl font-extrabold text-emerald-700 dark:text-emerald-400 mt-1">{PRODUCTS.filter(p => p.status === "ok").length}</p>
           <p className="text-xs text-emerald-500">nivel adecuado</p>
         </div>
-        <div className="bg-blue-50 dark:bg-blue-950/20 rounded-2xl border border-blue-200 dark:border-blue-800 p-4 shadow-sm">
-          <p className="text-xs text-blue-600 dark:text-blue-400 font-semibold">Sobrestock</p>
-          <p className="text-xl sm:text-2xl font-extrabold text-blue-700 dark:text-blue-400 mt-1">{overstockCount}</p>
-          <p className="text-xs text-blue-500">capital inmovilizado</p>
+        <div className="bg-emerald-50 dark:bg-emerald-950/20 rounded-2xl border border-emerald-200 dark:border-emerald-800 p-4 shadow-sm">
+          <p className="text-xs text-emerald-600 dark:text-emerald-400 font-semibold">Sobrestock</p>
+          <p className="text-xl sm:text-2xl font-extrabold text-emerald-700 dark:text-emerald-400 mt-1">{overstockCount}</p>
+          <p className="text-xs text-emerald-500">capital inmovilizado</p>
         </div>
       </div>
 
@@ -216,11 +216,11 @@ export default function DynamicReorderTab() {
                 </div>
               </div>
 
-              <div className={cn("rounded-xl p-4 text-center", detail.status === "urgente" ? "bg-red-50 dark:bg-red-950/20" : detail.status === "pronto" ? "bg-amber-50 dark:bg-amber-950/20" : detail.status === "sobrestock" ? "bg-blue-50 dark:bg-blue-950/20" : "bg-emerald-50 dark:bg-emerald-950/20")}>
+              <div className={cn("rounded-xl p-4 text-center", detail.status === "urgente" ? "bg-red-50 dark:bg-red-950/20" : detail.status === "pronto" ? "bg-amber-50 dark:bg-amber-950/20" : detail.status === "sobrestock" ? "bg-emerald-50 dark:bg-emerald-950/20" : "bg-emerald-50 dark:bg-emerald-950/20")}>
                 <p className="text-xl sm:text-3xl font-extrabold">{detail.daysUntilStockout}</p>
                 <p className="text-sm text-gray-500 dark:text-muted">días hasta agotamiento</p>
                 {detail.status === "urgente" && <p className="text-xs text-red-600 font-bold mt-2">¡Realizar pedido de {detail.eoq} unidades HOY!</p>}
-                {detail.status === "sobrestock" && <p className="text-xs text-blue-600 font-bold mt-2">Considere reducir siguiente pedido o liquidar excedente</p>}
+                {detail.status === "sobrestock" && <p className="text-xs text-emerald-600 font-bold mt-2">Considere reducir siguiente pedido o liquidar excedente</p>}
               </div>
             </div>
           </div>

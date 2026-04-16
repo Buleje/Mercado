@@ -48,7 +48,7 @@ const TIPO_FILTERS: { id: TipoFiltro; label: string }[] = [
 ];
 
 const TIPO_BADGES: Record<string, { bg: string; text: string; label: string }> = {
-  boleta: { bg: "bg-blue-100 dark:bg-blue-900/30", text: "text-blue-700 dark:text-blue-400", label: "Boleta" },
+  boleta: { bg: "bg-emerald-100 dark:bg-emerald-900/30", text: "text-emerald-700 dark:text-emerald-400", label: "Boleta" },
   factura: { bg: "bg-purple-100 dark:bg-purple-900/30", text: "text-purple-700 dark:text-purple-400", label: "Factura" },
   cotizacion: { bg: "bg-amber-100 dark:bg-amber-900/30", text: "text-amber-700 dark:text-amber-400", label: "Cotizacion" },
   proforma: { bg: "bg-cyan-100 dark:bg-cyan-900/30", text: "text-cyan-700 dark:text-cyan-400", label: "Proforma" },
@@ -163,7 +163,7 @@ export default function DocumentosEmitidosTab() {
       <div className="grid grid-cols-2 lg:grid-cols-5 gap-3">
         <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl p-3">
           <p className="text-[10px] font-bold text-gray-400 dark:text-muted uppercase tracking-wider">Boletas del mes</p>
-          <p className="text-xl font-extrabold text-blue-600 dark:text-blue-400">{kpis.boletasMes}</p>
+          <p className="text-xl font-extrabold text-emerald-600 dark:text-emerald-400">{kpis.boletasMes}</p>
         </div>
         <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl p-3">
           <p className="text-[10px] font-bold text-gray-400 dark:text-muted uppercase tracking-wider">Facturas del mes</p>
@@ -343,7 +343,7 @@ export default function DocumentosEmitidosTab() {
                             <MessageCircle className="h-3.5 w-3.5" />
                           </button>
                           <button
-                            className="p-1.5 rounded-lg hover:bg-blue-50 dark:hover:bg-blue-900/20 text-blue-600 dark:text-blue-400 transition-colors"
+                            className="p-1.5 rounded-lg hover:bg-emerald-50 dark:hover:bg-emerald-900/20 text-emerald-600 dark:text-emerald-400 transition-colors"
                             title="Ver detalle"
                           >
                             <Eye className="h-3.5 w-3.5" />

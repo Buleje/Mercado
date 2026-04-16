@@ -80,7 +80,7 @@ const SECTION_DEFAULTS: Omit<StorefrontSection, "enabled">[] = [
     label: "Hero principal",
     description: "Banner grande con foto y llamada a la acción",
     icon: <Layout className="h-4 w-4" />,
-    iconBg: "bg-blue-100 text-blue-600 dark:bg-blue-900/40 dark:text-blue-400",
+    iconBg: "bg-emerald-100 text-emerald-600 dark:bg-emerald-900/40 dark:text-emerald-400",
   },
   {
     key: "categories",
@@ -205,7 +205,7 @@ const TIENDA_SECTION_DEFAULTS: Omit<TiendaSection, "enabled">[] = [
     label: "Productos Destacados",
     description: "Carrusel de productos que quieres resaltar",
     icon: <ShoppingBag className="h-4 w-4" />,
-    iconBg: "bg-blue-100 text-blue-600 dark:bg-blue-900/40 dark:text-blue-400",
+    iconBg: "bg-emerald-100 text-emerald-600 dark:bg-emerald-900/40 dark:text-emerald-400",
     defaultEnabled: true,
   },
   {

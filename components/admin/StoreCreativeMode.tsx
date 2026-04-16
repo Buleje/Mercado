@@ -72,7 +72,7 @@ interface StoreCreativeModeProps {
 }
 
 const INPUT_CLASS =
-  "rounded-lg bg-gray-800 border border-gray-700 text-white text-sm px-3 py-2.5 w-full focus:outline-none focus:border-blue-500 transition-colors placeholder:text-gray-600";
+  "rounded-lg bg-gray-800 border border-gray-700 text-white text-sm px-3 py-2.5 w-full focus:outline-none focus:border-emerald-500 transition-colors placeholder:text-gray-600";
 const LABEL_CLASS =
   "block text-[11px] font-semibold text-gray-400 uppercase tracking-wider mb-1";
 
@@ -198,7 +198,7 @@ function Toggle({ checked, onChange }: { checked: boolean; onChange: (v: boolean
     <button
       type="button"
       onClick={() => onChange(!checked)}
-      className={cn("relative h-6 w-11 rounded-full transition-colors", checked ? "bg-blue-600" : "bg-gray-700")}
+      className={cn("relative h-6 w-11 rounded-full transition-colors", checked ? "bg-emerald-600" : "bg-gray-700")}
     >
       <span className={cn("absolute top-0.5 h-5 w-5 rounded-full bg-white transition-transform", checked ? "left-5" : "left-0.5")} />
     </button>
@@ -223,7 +223,7 @@ function PreviewCard({ title, price, primaryColor, borderRadius, styleVariant }:
 
   return (
     <div className={cn("p-3 bg-white", cardClass)} style={{ borderRadius }}>
-      <div className="aspect-square rounded-xl bg-gradient-to-br from-slate-100 via-blue-50 to-indigo-100 flex items-center justify-center">
+      <div className="aspect-square rounded-xl bg-gradient-to-br from-slate-100 via-emerald-50 to-indigo-100 flex items-center justify-center">
         <div className="h-12 w-12 rounded-xl bg-white/80 flex items-center justify-center ring-1 ring-white">
           <Store className="h-6 w-6 text-gray-400" />
         </div>
@@ -452,7 +452,7 @@ export default function StoreCreativeMode({ tenantSlug, initialTheme, onClose, o
             Salir
           </button>
           <div className="h-4 w-px bg-gray-700" />
-          <span className="text-xs font-bold text-blue-400">Modo Creativo · {draft.storeName || tenantSlug}</span>
+          <span className="text-xs font-bold text-emerald-400">Modo Creativo · {draft.storeName || tenantSlug}</span>
         </div>
 
         <div className="flex items-center gap-1 bg-gray-800 rounded-lg p-0.5">
@@ -461,7 +461,7 @@ export default function StoreCreativeMode({ tenantSlug, initialTheme, onClose, o
               key={vp.id}
               onClick={() => setViewport(vp.id)}
               title={vp.label}
-              className={cn("p-1.5 rounded-md transition-colors", viewport === vp.id ? "bg-blue-600 text-white" : "text-gray-400 hover:text-white hover:bg-gray-700")}
+              className={cn("p-1.5 rounded-md transition-colors", viewport === vp.id ? "bg-emerald-600 text-white" : "text-gray-400 hover:text-white hover:bg-gray-700")}
             >
               <vp.icon className="h-4 w-4" />
             </button>
@@ -522,7 +522,7 @@ export default function StoreCreativeMode({ tenantSlug, initialTheme, onClose, o
           <button
             onClick={handleApply}
             disabled={saving}
-            className="flex items-center gap-1.5 px-4 py-1.5 rounded-lg bg-blue-600 text-white text-xs font-bold hover:bg-blue-500 transition-colors disabled:opacity-50"
+            className="flex items-center gap-1.5 px-4 py-1.5 rounded-lg bg-emerald-600 text-white text-xs font-bold hover:bg-emerald-500 transition-colors disabled:opacity-50"
           >
             {saving ? <Sparkles className="h-3.5 w-3.5 animate-pulse" /> : <Save className="h-3.5 w-3.5" />}
             {saving ? "Aplicando..." : "Aplicar y guardar"}
@@ -539,7 +539,7 @@ export default function StoreCreativeMode({ tenantSlug, initialTheme, onClose, o
                 onClick={() => setPanel(item.id)}
                 className={cn(
                   "w-full flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-xs font-medium transition-all text-left",
-                  panel === item.id ? "bg-blue-600/20 text-blue-400 font-semibold" : "text-gray-400 hover:text-gray-200 hover:bg-gray-800",
+                  panel === item.id ? "bg-emerald-600/20 text-emerald-400 font-semibold" : "text-gray-400 hover:text-gray-200 hover:bg-gray-800",
                 )}
               >
                 <item.icon className="h-4 w-4 shrink-0" />
@@ -557,7 +557,7 @@ export default function StoreCreativeMode({ tenantSlug, initialTheme, onClose, o
                     key={tpl.id}
                     type="button"
                     onClick={() => applyTemplate(tpl)}
-                    className="w-full text-left p-2.5 rounded-lg bg-gray-800/70 border border-gray-700 hover:border-blue-500 transition-colors"
+                    className="w-full text-left p-2.5 rounded-lg bg-gray-800/70 border border-gray-700 hover:border-emerald-500 transition-colors"
                   >
                     <p className="text-xs font-bold text-white">{tpl.name}</p>
                     <div className="mt-2 flex gap-1">
@@ -698,9 +698,9 @@ export default function StoreCreativeMode({ tenantSlug, initialTheme, onClose, o
                 <div>
                   <div className="flex items-center justify-between mb-1">
                     <label className={LABEL_CLASS}>Redondez</label>
-                    <span className="text-[10px] text-blue-400 font-bold">{draft.borderRadius}px</span>
+                    <span className="text-[10px] text-emerald-400 font-bold">{draft.borderRadius}px</span>
                   </div>
-                  <input type="range" min={0} max={24} value={draft.borderRadius} onChange={(e) => patch("borderRadius", Number(e.target.value))} className="w-full accent-blue-500" />
+                  <input type="range" min={0} max={24} value={draft.borderRadius} onChange={(e) => patch("borderRadius", Number(e.target.value))} className="w-full accent-emerald-500" />
                 </div>
                 <div>
                   <label className={LABEL_CLASS}>Espaciado general</label>
@@ -871,7 +871,7 @@ export default function StoreCreativeMode({ tenantSlug, initialTheme, onClose, o
                         <button
                           type="button"
                           onClick={() => pushChange(snap.theme)}
-                          className="text-[10px] font-bold text-blue-400 hover:text-blue-300 transition-colors"
+                          className="text-[10px] font-bold text-emerald-400 hover:text-emerald-300 transition-colors"
                         >
                           Restaurar
                         </button>
@@ -915,7 +915,7 @@ export default function StoreCreativeMode({ tenantSlug, initialTheme, onClose, o
                 </div>
               )}
               <div className={cn("flex flex-col items-center gap-1", splitPreview && "shrink-0")}>
-                {splitPreview && <span className="text-[10px] font-bold text-blue-400 uppercase">Borrador</span>}
+                {splitPreview && <span className="text-[10px] font-bold text-emerald-400 uppercase">Borrador</span>}
                 <div
                   className="bg-white rounded-lg shadow-2xl overflow-hidden transition-all duration-300"
                   style={{
@@ -1034,7 +1034,7 @@ export default function StoreCreativeMode({ tenantSlug, initialTheme, onClose, o
                 <div className="rounded-xl p-3 border" style={{ borderColor: draft.darkModeDefault ? "#374151" : "#e5e7eb" }}>
                   <p className="text-xs font-bold mb-2">Herramientas activas</p>
                   <div className="flex flex-wrap gap-1.5">
-                    <span className="text-[10px] px-2 py-1 rounded-full bg-blue-100 text-blue-700">{draft.cartStyle}</span>
+                    <span className="text-[10px] px-2 py-1 rounded-full bg-emerald-100 text-emerald-700">{draft.cartStyle}</span>
                     <span className="text-[10px] px-2 py-1 rounded-full bg-emerald-100 text-emerald-700">{draft.buttonStyle}</span>
                     <span className="text-[10px] px-2 py-1 rounded-full bg-purple-100 text-purple-700">{draft.animations}</span>
                     <span className="text-[10px] px-2 py-1 rounded-full bg-amber-100 text-amber-700">{draft.backgroundPattern}</span>

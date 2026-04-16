@@ -91,9 +91,9 @@ const EVENT_CONFIG: Record<
   },
   credit: {
     icon: CreditCard,
-    color: "text-blue-600 dark:text-blue-400",
-    bg: "bg-blue-50 dark:bg-blue-900/20",
-    dot: "bg-blue-400",
+    color: "text-emerald-600 dark:text-emerald-400",
+    bg: "bg-emerald-50 dark:bg-emerald-900/20",
+    dot: "bg-emerald-400",
   },
   points: {
     icon: Gift,

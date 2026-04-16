@@ -121,7 +121,7 @@ export default function CostCenterTab() {
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
         {[
           { label: "Centros activos", value: String(globalStats.centerCount), color: "text-gray-700 dark:text-foreground", bg: "bg-gray-50 dark:bg-surface/50" },
-          { label: "Presupuesto total", value: fmt(globalStats.totalBudget), color: "text-blue-600", bg: "bg-blue-50 dark:bg-blue-950/30" },
+          { label: "Presupuesto total", value: fmt(globalStats.totalBudget), color: "text-emerald-600", bg: "bg-emerald-50 dark:bg-emerald-950/30" },
           { label: "Total asignado", value: fmt(globalStats.totalAllocated), color: "text-violet-600", bg: "bg-violet-50 dark:bg-violet-950/30" },
           { label: "Disponible", value: fmt(globalStats.totalBudget - globalStats.totalAllocated), color: globalStats.totalBudget >= globalStats.totalAllocated ? "text-emerald-600" : "text-red-500", bg: globalStats.totalBudget >= globalStats.totalAllocated ? "bg-emerald-50 dark:bg-emerald-950/30" : "bg-red-50 dark:bg-red-950/30" },
         ].map(({ label, value, color, bg }) => (

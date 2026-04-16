@@ -10,7 +10,7 @@ const BILLS: Bill[] = [
   { value: 100, label: "S/100", color: "bg-green-100 text-green-700 border-green-300" },
   { value: 50, label: "S/50", color: "bg-orange-100 text-orange-700 border-orange-300" },
   { value: 20, label: "S/20", color: "bg-yellow-100 text-yellow-700 border-yellow-300" },
-  { value: 10, label: "S/10", color: "bg-blue-100 text-blue-700 border-blue-300" },
+  { value: 10, label: "S/10", color: "bg-emerald-100 text-emerald-700 border-emerald-300" },
   { value: 5, label: "S/5", color: "bg-purple-100 text-purple-700 border-purple-300" },
   { value: 2, label: "S/2", color: "bg-gray-100 text-gray-700 border-gray-300" },
   { value: 1, label: "S/1", color: "bg-gray-100 text-gray-700 border-gray-300" },
@@ -34,15 +34,15 @@ export function ChangeCalculator({ change }: Props) {
     <div className="mt-2">
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className="flex items-center gap-2 text-sm text-blue-600 hover:text-blue-700 transition"
+        className="flex items-center gap-2 text-sm text-emerald-600 hover:text-emerald-700 transition"
       >
         <Calculator className="w-4 h-4" />
         {isOpen ? "Ocultar" : "Ver"} desglose de vuelto
       </button>
 
       {isOpen && (
-        <div className="mt-3 p-3 bg-blue-50 dark:bg-blue-900/10 border border-blue-200 dark:border-blue-800 rounded-lg">
-          <p className="text-xs font-semibold text-blue-700 dark:text-blue-300 mb-2 flex items-center gap-1">
+        <div className="mt-3 p-3 bg-emerald-50 dark:bg-emerald-900/10 border border-emerald-200 dark:border-emerald-800 rounded-lg">
+          <p className="text-xs font-semibold text-emerald-700 dark:text-emerald-300 mb-2 flex items-center gap-1">
             <Coins className="w-3 h-3" />
             Sugerencia para dar vuelto:
           </p>

@@ -625,7 +625,7 @@ const ESTADO_STYLES: Record<ContratoEstado, string> = {
   POR_VENCER: "bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400",
   VENCIDO: "bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400",
   ANULADO: "bg-gray-200 dark:bg-gray-800 text-gray-500 dark:text-gray-400",
-  BORRADOR: "bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400",
+  BORRADOR: "bg-emerald-100 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400",
 };
 
 const TIPO_LABELS: Record<string, string> = {
@@ -653,7 +653,7 @@ function LegalTooltip({ term, explanation, example }: { term: string; explanatio
   const [open, setOpen] = useState(false);
   return (
     <span className="relative inline-flex items-center">
-      <button onClick={() => setOpen(!open)} className="ml-1 w-5 h-5 rounded-full bg-blue-100 dark:bg-blue-900/40 text-blue-600 dark:text-blue-400 text-xs flex items-center justify-center hover:bg-blue-200 transition-colors" title="¿Qué significa esto?">?</button>
+      <button onClick={() => setOpen(!open)} className="ml-1 w-5 h-5 rounded-full bg-emerald-100 dark:bg-emerald-900/40 text-emerald-600 dark:text-emerald-400 text-xs flex items-center justify-center hover:bg-emerald-200 transition-colors" title="¿Qué significa esto?">?</button>
       {open && (
         <div className="absolute bottom-7 left-0 z-50 w-72 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl shadow-xl p-3 text-xs">
           <p className="font-bold text-gray-800 dark:text-gray-200 mb-1">{term}</p>
@@ -1329,7 +1329,7 @@ ${content.split("\n\n").map(p => `<p>${p}</p>`).join("")}
                 {/* KPI Cards */}
                 <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
                   {[
-                    { label: "Total Contratos", value: stats.total, icon: FileText, color: "bg-blue-500" },
+                    { label: "Total Contratos", value: stats.total, icon: FileText, color: "bg-emerald-500" },
                     { label: "Vigentes", value: stats.vigentes, icon: CheckCircle, color: "bg-emerald-500" },
                     { label: "Por Vencer", value: stats.porVencer, icon: Clock, color: "bg-amber-500" },
                     { label: "Vencidos", value: stats.vencidos, icon: AlertCircle, color: "bg-red-500" },
@@ -1518,7 +1518,7 @@ ${content.split("\n\n").map(p => `<p>${p}</p>`).join("")}
                               <p className="text-sm font-bold text-[#00B4A6]">{formatCurrency(c.montoTotal || 0)}</p>
                               <div className="flex gap-1">
                                 <button onClick={e => { e.stopPropagation(); downloadPDF(c); }} className="p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-white/5 text-gray-400 hover:text-[#00B4A6] transition-colors" title="PDF"><Printer className="h-3.5 w-3.5" /></button>
-                                <button onClick={e => { e.stopPropagation(); downloadWord(c); }} className="p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-white/5 text-gray-400 hover:text-blue-600 transition-colors" title="Word"><Download className="h-3.5 w-3.5" /></button>
+                                <button onClick={e => { e.stopPropagation(); downloadWord(c); }} className="p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-white/5 text-gray-400 hover:text-emerald-600 transition-colors" title="Word"><Download className="h-3.5 w-3.5" /></button>
                               </div>
                             </div>
                           </div>
@@ -1711,7 +1711,7 @@ ${content.split("\n\n").map(p => `<p>${p}</p>`).join("")}
                                       type="button"
                                       onClick={detectLocation}
                                       disabled={geoLoading}
-                                      className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold text-white bg-blue-600 hover:bg-blue-700 disabled:opacity-50 transition-colors shrink-0"
+                                      className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold text-white bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 transition-colors shrink-0"
                                     >
                                       {geoLoading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <MapPin className="h-3.5 w-3.5" />}
                                       Detectar
@@ -1719,7 +1719,7 @@ ${content.split("\n\n").map(p => `<p>${p}</p>`).join("")}
                                   </div>
                                 )}
                                 {isCiudadField && geoResult && (
-                                  <p className="text-[10px] text-blue-600 dark:text-blue-400 flex items-center gap-1 mt-0.5 mb-1">
+                                  <p className="text-[10px] text-emerald-600 dark:text-emerald-400 flex items-center gap-1 mt-0.5 mb-1">
                                     <MapPin className="h-3 w-3" /> Ubicacion detectada: {geoResult}
                                   </p>
                                 )}
@@ -2194,7 +2194,7 @@ ${content.split("\n\n").map(p => `<p>${p}</p>`).join("")}
                     <button onClick={() => downloadPDF(selected)} className="flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-sm font-bold text-white bg-[#00B4A6] hover:bg-[#009690] shadow-sm transition-colors">
                       <Printer className="h-4 w-4" /> PDF
                     </button>
-                    <button onClick={() => downloadWord(selected)} className="flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-sm font-bold text-blue-700 bg-blue-100 dark:bg-blue-900/30 dark:text-blue-400 hover:bg-blue-200 transition-colors">
+                    <button onClick={() => downloadWord(selected)} className="flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-sm font-bold text-emerald-700 bg-emerald-100 dark:bg-emerald-900/30 dark:text-emerald-400 hover:bg-emerald-200 transition-colors">
                       <Download className="h-4 w-4" /> Word
                     </button>
                   </div>

@@ -176,7 +176,7 @@ function BadgesSection({ orderCount, totalSpent, hasCouponSavings }: {
       description: "Un pedido mayor a S/ 100",
       earned: totalSpent > 0,  // API retorna si tuvo pedido > 100
       icon: ShoppingBag,
-      color: "bg-blue-500",
+      color: "bg-emerald-500",
     },
     {
       id: "ahorro_cupones",

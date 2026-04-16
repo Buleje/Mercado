@@ -208,7 +208,7 @@ function CategoryChart({
               <span className="text-[10px] text-gray-400 w-14 shrink-0">Presup.</span>
               <div className="flex-1 h-3 bg-gray-100 dark:bg-surface rounded-full overflow-hidden">
                 <div
-                  className="h-full rounded-full bg-blue-300 dark:bg-blue-700"
+                  className="h-full rounded-full bg-emerald-300 dark:bg-emerald-700"
                   style={{ width: `${(c.budgeted / max) * 100}%` }}
                 />
               </div>
@@ -230,7 +230,7 @@ function CategoryChart({
         );
       })}
       <div className="flex flex-wrap items-center gap-3 mt-2 text-xs text-gray-400">
-        <span className="flex items-center gap-1"><span className="w-3 h-2 rounded bg-blue-300 dark:bg-blue-700" /> Presupuestado</span>
+        <span className="flex items-center gap-1"><span className="w-3 h-2 rounded bg-emerald-300 dark:bg-emerald-700" /> Presupuestado</span>
         <span className="flex items-center gap-1"><span className="w-3 h-2 rounded bg-[#00B4A6]" /> Real (OK)</span>
         <span className="flex items-center gap-1"><span className="w-3 h-2 rounded bg-red-500" /> Real (exceso)</span>
         <span className="flex items-center gap-1"><span className="w-3 h-2 rounded bg-emerald-500" /> Real (ahorro)</span>
@@ -730,7 +730,7 @@ export default function BudgetVsRealTab() {
                         <div
                           className={cn(
                             "h-full rounded-full transition-all",
-                            status === "over" ? "bg-red-500" : status === "under" ? "bg-emerald-500" : "bg-blue-500"
+                            status === "over" ? "bg-red-500" : status === "under" ? "bg-emerald-500" : "bg-emerald-500"
                           )}
                           style={{ width: `${Math.min(pctUsed, 100)}%` }}
                         />
@@ -748,7 +748,7 @@ export default function BudgetVsRealTab() {
                         </span>
                       )}
                       {status === "under" && (
-                        <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400 text-xs font-bold">
+                        <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400 text-xs font-bold">
                           <TrendingDown className="h-3 w-3" /> Ahorro
                         </span>
                       )}

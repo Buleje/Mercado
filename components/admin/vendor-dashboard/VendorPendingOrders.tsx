@@ -26,7 +26,7 @@ function statusLabel(status: string): string {
 
 function statusColor(status: string): string {
   if (status === "pendiente") return "bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-300";
-  if (status === "confirmado") return "bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300";
+  if (status === "confirmado") return "bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-300";
   return "bg-gray-100 text-gray-700";
 }
 

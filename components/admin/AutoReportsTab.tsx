@@ -54,7 +54,7 @@ export default function AutoReportsTab() {
 
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
         {[
-          { label: "Reportes configurados", value: reports.length, color: "text-blue-500" },
+          { label: "Reportes configurados", value: reports.length, color: "text-emerald-500" },
           { label: "Activos", value: activeCount, color: "text-emerald-500" },
           { label: "Total generados", value: reports.reduce((s, r) => s + r.runCount, 0), color: "text-violet-500" },
           { label: "Destinatarios únicos", value: new Set(reports.flatMap(r => r.recipients)).size, color: "text-amber-500" },
@@ -73,7 +73,7 @@ export default function AutoReportsTab() {
               <div className="flex-1">
                 <div className="flex items-center gap-2 flex-wrap mb-1">
                   <h3 className="font-bold text-gray-900 dark:text-foreground">{r.name}</h3>
-                  <span className={cn("text-[10px] font-bold px-2 py-0.5 rounded-full", r.format === "PDF" ? "bg-red-100 text-red-600 dark:bg-red-900/30 dark:text-red-400" : r.format === "Excel" ? "bg-emerald-100 text-emerald-600 dark:bg-emerald-900/30 dark:text-emerald-400" : "bg-blue-100 text-blue-600 dark:bg-blue-900/30 dark:text-blue-400")}>{r.format}</span>
+                  <span className={cn("text-[10px] font-bold px-2 py-0.5 rounded-full", r.format === "PDF" ? "bg-red-100 text-red-600 dark:bg-red-900/30 dark:text-red-400" : r.format === "Excel" ? "bg-emerald-100 text-emerald-600 dark:bg-emerald-900/30 dark:text-emerald-400" : "bg-emerald-100 text-emerald-600 dark:bg-emerald-900/30 dark:text-emerald-400")}>{r.format}</span>
                   <span className="text-[10px] font-bold bg-gray-100 dark:bg-surface text-gray-500 dark:text-muted px-2 py-0.5 rounded-full">{SCHEDULE_LABELS[r.schedule]}</span>
                 </div>
                 <p className="text-xs text-gray-500 dark:text-muted mb-2">{r.description}</p>

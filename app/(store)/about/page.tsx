@@ -44,8 +44,8 @@ const porQueElegirnos = [
     icon: Truck,
     title: "Delivery rápido",
     desc: "Entregamos en menos de 30 minutos en toda nuestra zona de cobertura.",
-    color: "text-blue-600 dark:text-blue-400",
-    bg: "bg-blue-50 dark:bg-blue-900/20",
+    color: "text-emerald-600 dark:text-emerald-400",
+    bg: "bg-emerald-50 dark:bg-emerald-900/20",
   },
   {
     icon: DollarSign,
@@ -298,12 +298,12 @@ export default async function AboutPage() {
                   href={`mailto:${email}`}
                   className="rounded-2xl border border-gray-200 dark:border-card-border bg-white dark:bg-card p-6 hover:shadow-md transition-shadow text-center group"
                 >
-                  <div className="inline-flex items-center justify-center w-12 h-12 rounded-xl bg-blue-50 dark:bg-blue-900/20 mb-4">
-                    <Mail className="h-6 w-6 text-blue-600" />
+                  <div className="inline-flex items-center justify-center w-12 h-12 rounded-xl bg-emerald-50 dark:bg-emerald-900/20 mb-4">
+                    <Mail className="h-6 w-6 text-emerald-600" />
                   </div>
                   <h3 className="font-bold text-foreground mb-1">Email</h3>
                   <p className="text-sm text-muted leading-relaxed">{email}</p>
-                  <p className="text-xs text-blue-600 font-semibold mt-2">Enviar correo</p>
+                  <p className="text-xs text-emerald-600 font-semibold mt-2">Enviar correo</p>
                 </a>
               )}
             </div>

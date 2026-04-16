@@ -807,7 +807,7 @@ export default function ProductCatalog({ initialProducts = [] }: { initialProduc
               </span>
             )}
             {(priceRange[0] > 0 || priceRange[1] < maxPrice) && (
-              <span className="flex items-center gap-1 text-xs font-semibold bg-blue-50 dark:bg-blue-950/30 text-blue-600 dark:text-blue-400 px-2.5 py-1 rounded-full">
+              <span className="flex items-center gap-1 text-xs font-semibold bg-emerald-50 dark:bg-emerald-950/30 text-emerald-600 dark:text-emerald-400 px-2.5 py-1 rounded-full">
                 S/{priceRange[0]}–S/{priceRange[1]}
                 <button onClick={() => setPriceRange([0, maxPrice])} className="ml-0.5"><X className="h-3 w-3" /></button>
               </span>

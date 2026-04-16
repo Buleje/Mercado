@@ -269,7 +269,7 @@ export default function PaymentCalendar() {
       <div className="grid grid-cols-3 gap-3">
         {[
           { label: "Esta semana", amount: thisWeekTotal, color: "text-[#00B4A6] dark:text-emerald-400" },
-          { label: "Proxima semana", amount: nextWeekTotal, color: "text-blue-600 dark:text-blue-400" },
+          { label: "Proxima semana", amount: nextWeekTotal, color: "text-emerald-600 dark:text-emerald-400" },
           { label: "Vencido", amount: overdueTotal, color: overdueTotal > 0 ? "text-red-500" : "text-gray-400 dark:text-gray-500" },
         ].map(({ label, amount, color }) => (
           <div

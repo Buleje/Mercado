@@ -761,7 +761,7 @@ export default function FiadoModals({
                                           <a
                                             href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(f.descripcion! + " Pucallpa")}`}
                                             target="_blank" rel="noopener noreferrer"
-                                            className="p-1.5 rounded-lg bg-blue-100 dark:bg-blue-900/30 text-blue-600 hover:bg-blue-200 transition-colors"
+                                            className="p-1.5 rounded-lg bg-emerald-100 dark:bg-emerald-900/30 text-emerald-600 hover:bg-emerald-200 transition-colors"
                                             title="Google Maps"
                                           >
                                             <Navigation className="h-3 w-3" />

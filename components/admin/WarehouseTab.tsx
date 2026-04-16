@@ -398,10 +398,10 @@ export default function WarehouseTab() {
 
       {/* KPIs row */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-4">
-        <div className="rounded-2xl bg-blue-50 dark:bg-blue-950/30 p-4">
-          <Warehouse className="h-5 w-5 mb-2 text-blue-600" />
+        <div className="rounded-2xl bg-emerald-50 dark:bg-emerald-950/30 p-4">
+          <Warehouse className="h-5 w-5 mb-2 text-emerald-600" />
           <p className="text-xs font-semibold text-gray-500 dark:text-muted mb-1">Almacenes activos</p>
-          <p className="text-xl sm:text-2xl font-extrabold text-blue-600">{warehouses.filter(w => w.active).length}</p>
+          <p className="text-xl sm:text-2xl font-extrabold text-emerald-600">{warehouses.filter(w => w.active).length}</p>
         </div>
         <div className="rounded-2xl bg-violet-50 dark:bg-violet-950/30 p-4">
           <Package className="h-5 w-5 mb-2 text-violet-600" />
@@ -615,7 +615,7 @@ export default function WarehouseTab() {
                   <div>
                     <div className="flex flex-wrap items-center gap-2 mb-1">
                       <span className="text-xs font-bold text-gray-400 font-mono">{w.code}</span>
-                      <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400">{TYPE_LABELS[w.type]}</span>
+                      <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400">{TYPE_LABELS[w.type]}</span>
                     </div>
                     <h3 className="font-extrabold text-gray-900 dark:text-foreground">{w.name}</h3>
                     <p className="text-xs text-gray-500 dark:text-muted mt-0.5">{w.location}</p>

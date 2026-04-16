@@ -133,7 +133,7 @@ export default function BudgetTab() {
       <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
         {[
           { label: "Total planificado", value: fmt(stats.totalPlanned), color: "text-gray-700 dark:text-foreground", bg: "bg-gray-50 dark:bg-surface/50" },
-          { label: "Ejecutado", value: fmt(stats.totalExecuted), color: "text-blue-600", bg: "bg-blue-50 dark:bg-blue-950/30" },
+          { label: "Ejecutado", value: fmt(stats.totalExecuted), color: "text-emerald-600", bg: "bg-emerald-50 dark:bg-emerald-950/30" },
           { label: "Comprometido", value: fmt(stats.totalCommitted), color: "text-amber-600", bg: "bg-amber-50 dark:bg-amber-950/30" },
           { label: "Disponible", value: fmt(stats.available), color: stats.available >= 0 ? "text-emerald-600" : "text-red-500", bg: stats.available >= 0 ? "bg-emerald-50 dark:bg-emerald-950/30" : "bg-red-50 dark:bg-red-950/30" },
           { label: "% Ejecución", value: fmtPct(stats.executionPct), color: "text-violet-600", bg: "bg-violet-50 dark:bg-violet-950/30" },
@@ -247,7 +247,7 @@ export default function BudgetTab() {
                     <td className="px-2 sm:px-4 py-2 sm:py-3 text-xs text-gray-600 dark:text-muted">{l.category}</td>
                     <td className="px-2 sm:px-4 py-2 sm:py-3 text-center text-xs font-mono text-gray-500">{monthLabel(l.period)} {l.period.slice(0, 4)}</td>
                     <td className="px-2 sm:px-4 py-2 sm:py-3 text-right font-semibold text-gray-700 dark:text-foreground">{fmt(l.planned)}</td>
-                    <td className="px-2 sm:px-4 py-2 sm:py-3 text-right font-semibold text-blue-600">{fmt(l.executed)}</td>
+                    <td className="px-2 sm:px-4 py-2 sm:py-3 text-right font-semibold text-emerald-600">{fmt(l.executed)}</td>
                     <td className="px-2 sm:px-4 py-2 sm:py-3 text-right text-xs text-amber-600">{l.committed > 0 ? fmt(l.committed) : "—"}</td>
                     <td className={cn("px-2 sm:px-4 py-2 sm:py-3 text-right font-bold", l.available >= 0 ? "text-emerald-600" : "text-red-500")}>{fmt(l.available)}</td>
                     <td className="px-2 sm:px-4 py-2 sm:py-3 text-center">
@@ -259,7 +259,7 @@ export default function BudgetTab() {
                       </div>
                     </td>
                     <td className="px-2 sm:px-4 py-2 sm:py-3">
-                      <button onClick={() => setDetail(l)} className="p-1.5 rounded-lg text-gray-400 hover:text-blue-500 hover:bg-blue-50 dark:hover:bg-blue-950/20">
+                      <button onClick={() => setDetail(l)} className="p-1.5 rounded-lg text-gray-400 hover:text-emerald-500 hover:bg-emerald-50 dark:hover:bg-emerald-950/20">
                         <Eye className="h-3.5 w-3.5" />
                       </button>
                     </td>
@@ -272,7 +272,7 @@ export default function BudgetTab() {
                 <tr>
                   <td colSpan={4} className="px-2 sm:px-4 py-2 sm:py-3 text-xs font-extrabold text-gray-600 dark:text-muted uppercase">Totales</td>
                   <td className="px-2 sm:px-4 py-2 sm:py-3 text-right font-extrabold text-gray-800 dark:text-foreground">{fmt(stats.totalPlanned)}</td>
-                  <td className="px-2 sm:px-4 py-2 sm:py-3 text-right font-extrabold text-blue-600">{fmt(stats.totalExecuted)}</td>
+                  <td className="px-2 sm:px-4 py-2 sm:py-3 text-right font-extrabold text-emerald-600">{fmt(stats.totalExecuted)}</td>
                   <td className="px-2 sm:px-4 py-2 sm:py-3 text-right font-extrabold text-amber-600">{fmt(stats.totalCommitted)}</td>
                   <td className={cn("px-2 sm:px-4 py-2 sm:py-3 text-right font-extrabold", stats.available >= 0 ? "text-emerald-600" : "text-red-500")}>{fmt(stats.available)}</td>
                   <td className="px-2 sm:px-4 py-2 sm:py-3 text-center text-xs font-extrabold text-gray-600">{fmtPct(stats.executionPct)}</td>

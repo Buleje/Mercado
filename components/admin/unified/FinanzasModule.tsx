@@ -10,7 +10,7 @@ import {
 import {
   TrendingUp, TrendingDown, PieChart as PieChartIcon, Target,
   FileBarChart, Waves, Calculator,
-  DollarSign,
+  DollarSign, Wallet,
   BarChart3, Percent, Truck, CreditCard, RefreshCw, AlertTriangle, Maximize2, X as XIcon,
   Sparkles, Landmark,
 } from "lucide-react";
@@ -740,12 +740,12 @@ type KpiDef = { key: string; label: string; icon: typeof TrendingUp; color: stri
 const KPI_DEFS: KpiDef[] = [
   { key: "ingresos", label: "Ingresos del mes", icon: TrendingUp, color: "#22c55e", bg: "bg-emerald-50" },
   { key: "gastos", label: "Gastos del mes", icon: TrendingDown, color: "#ef4444", bg: "bg-red-50" },
-  { key: "utilidad", label: "Utilidad neta", icon: DollarSign, color: "#3b82f6", bg: "bg-blue-50" },
+  { key: "utilidad", label: "Utilidad neta", icon: DollarSign, color: "#3b82f6", bg: "bg-emerald-50" },
   { key: "margen", label: "Margen %", icon: Percent, color: "#8b5cf6", bg: "bg-purple-50" },
   { key: "deuda", label: "Deuda proveedores", icon: Truck, color: "#f97316", bg: "bg-orange-50" },
   { key: "fiados", label: "Fiados pendientes", icon: CreditCard, color: "#f59e0b", bg: "bg-amber-50" },
   { key: "igv", label: "IGV a pagar", icon: Calculator, color: "#e63946", bg: "bg-rose-50" },
-  { key: "puntoEq", label: "Punto equilibrio", icon: Target, color: "var(--color-primary)", bg: "bg-blue-50" },
+  { key: "puntoEq", label: "Punto equilibrio", icon: Target, color: "var(--color-primary)", bg: "bg-emerald-50" },
 ];
 
 /* Semicircular gauge built from PieChart */
@@ -1819,11 +1819,13 @@ export default function FinanzasModule() {
   });
 
   return (
-    <div className="space-y-3 sm:space-y-6">
+    <div className="space-y-4">
       <AdminModuleHeader
-        title="Finanzas"
+        title="Mi Plata"
         description="Pérdidas y ganancias, gastos, flujo de caja y reportes financieros"
-        icon={DollarSign}
+        icon={Wallet}
+        bgTint="bg-emerald-50 dark:bg-emerald-900/20"
+        iconColorClass="text-emerald-600 dark:text-emerald-400"
       />
       <div className="flex items-center justify-end gap-2 flex-wrap">
         {sub === "dashboard" && (

@@ -86,7 +86,7 @@ const DENOM_VISUAL: Record<number, { color: string; shape: "rect" | "circle"; la
   200: { color: "bg-emerald-800 text-white", shape: "rect", label: "S/200" },
   100: { color: "bg-emerald-600 text-white", shape: "rect", label: "S/100" },
   50:  { color: "bg-[#f97316] text-white", shape: "rect", label: "S/50" },
-  20:  { color: "bg-blue-500 text-white", shape: "rect", label: "S/20" },
+  20:  { color: "bg-emerald-500 text-white", shape: "rect", label: "S/20" },
   10:  { color: "bg-amber-800 text-white", shape: "rect", label: "S/10" },
   5:   { color: "bg-yellow-400 text-yellow-900", shape: "circle", label: "S/5" },
   2:   { color: "bg-gray-300 text-gray-700", shape: "circle", label: "S/2" },
@@ -241,7 +241,7 @@ function CustomerListPanel({ onSelect, onClose }: { onSelect: (phone: string, na
                 </div>
                 <div className="flex items-center gap-1.5 shrink-0">
                   {c.categoria && (
-                    <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-blue-50 dark:bg-blue-950/20 text-blue-500">
+                    <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-emerald-50 dark:bg-emerald-950/20 text-emerald-500">
                       {c.categoria}
                     </span>
                   )}

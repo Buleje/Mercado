@@ -38,7 +38,7 @@ function fmtDate(iso: string) {
 
 const ACTION_META: Record<AuditAction, { label: string; icon: typeof Plus; color: string }> = {
   crear:    { label: "Crear",    icon: Plus,     color: "text-emerald-600" },
-  editar:   { label: "Editar",   icon: Pencil,   color: "text-blue-600" },
+  editar:   { label: "Editar",   icon: Pencil,   color: "text-emerald-600" },
   eliminar: { label: "Eliminar", icon: Trash2,   color: "text-red-500" },
   login:    { label: "Login",    icon: UserCog,  color: "text-violet-600" },
   config:   { label: "Config",   icon: Settings, color: "text-amber-600" },
@@ -48,7 +48,7 @@ const ACTION_META: Record<AuditAction, { label: string; icon: typeof Plus; color
 };
 
 const SEVERITY_META: Record<AuditSeverity, { label: string; color: string; bg: string }> = {
-  info:        { label: "Info",        color: "text-blue-600",    bg: "bg-blue-100 dark:bg-blue-900/30" },
+  info:        { label: "Info",        color: "text-emerald-600",    bg: "bg-emerald-100 dark:bg-emerald-900/30" },
   advertencia: { label: "Advertencia", color: "text-amber-600",   bg: "bg-amber-100 dark:bg-amber-900/30" },
   critica:     { label: "Crítica",     color: "text-red-600",     bg: "bg-red-100 dark:bg-red-900/30" },
 };
@@ -271,7 +271,7 @@ export default function AuditLogTab() {
       {/* KPIs */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
         {[
-          { label: "Total eventos", value: String(stats.total), color: "text-blue-600", bg: "bg-blue-50 dark:bg-blue-950/30" },
+          { label: "Total eventos", value: String(stats.total), color: "text-emerald-600", bg: "bg-emerald-50 dark:bg-emerald-950/30" },
           { label: "Hoy", value: String(stats.hoy), color: "text-violet-600", bg: "bg-violet-50 dark:bg-violet-950/30" },
           { label: "Advertencias", value: String(stats.advertencias), color: "text-amber-600", bg: "bg-amber-50 dark:bg-amber-950/30" },
           { label: "Críticas", value: String(stats.criticas), color: "text-red-500", bg: "bg-red-50 dark:bg-red-950/30" },

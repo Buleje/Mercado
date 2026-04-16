@@ -112,7 +112,7 @@ function topProducts(orders: Order[], sales: Sale[], limit = 5): { name: string;
 
 function paymentBreakdown(orders: Order[], sales: Sale[]) {
   const map = new Map<string, number>();
-  const colorMap: Record<string, string> = { efectivo: "bg-gray-400 dark:bg-gray-500", yape: "bg-purple-500", plin: "bg-emerald-500", tarjeta: "bg-blue-500" };
+  const colorMap: Record<string, string> = { efectivo: "bg-gray-400 dark:bg-gray-500", yape: "bg-purple-500", plin: "bg-emerald-500", tarjeta: "bg-emerald-500" };
   for (const o of orders) { if (o.status === "cancelado") continue; const m = (o.paymentMethod ?? "efectivo").toLowerCase(); map.set(m, (map.get(m) ?? 0) + (o.total ?? 0)); }
   for (const s of sales) { const m = (s.payment ?? "efectivo").toLowerCase(); map.set(m, (map.get(m) ?? 0) + (s.total ?? 0)); }
   const total = Array.from(map.values()).reduce((a, b) => a + b, 0);
@@ -398,8 +398,8 @@ export default function DashboardIATab({ tenantId: _tenantId }: Props) {
     });
   }
 
-  const actionBorderColor = { red: "border-l-red-500", orange: "border-l-orange-500", blue: "border-l-blue-500" };
-  const actionDotColor = { red: "bg-red-500", orange: "bg-orange-500", blue: "bg-blue-500" };
+  const actionBorderColor = { red: "border-l-red-500", orange: "border-l-orange-500", blue: "border-l-emerald-500" };
+  const actionDotColor = { red: "bg-red-500", orange: "bg-orange-500", blue: "bg-emerald-500" };
 
   return (
     <div className="space-y-5">

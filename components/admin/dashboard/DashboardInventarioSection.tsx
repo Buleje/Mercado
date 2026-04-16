@@ -28,7 +28,7 @@ function Card({ title, icon: Icon, children, action }: { title: string; icon: Re
 }
 function Empty({ text = "Sin datos en este periodo" }: { text?: string }) { return <div className="py-8 text-center text-xs text-gray-300 dark:text-muted">{text}</div>; }
 function DBadge({ children, color }: { children: React.ReactNode; color: "green"|"red"|"amber"|"blue"|"purple"|"gray" }) {
-  const m: Record<string,string> = { green:"bg-emerald-50 text-emerald-600", red:"bg-red-50 text-red-600", amber:"bg-amber-50 text-amber-600", blue:"bg-blue-50 text-blue-600", purple:"bg-purple-50 text-purple-600", gray:"bg-gray-100 text-gray-500" };
+  const m: Record<string,string> = { green:"bg-emerald-50 text-emerald-600", red:"bg-red-50 text-red-600", amber:"bg-amber-50 text-amber-600", blue:"bg-emerald-50 text-emerald-600", purple:"bg-purple-50 text-purple-600", gray:"bg-gray-100 text-gray-500" };
   return <span className={cn("inline-flex px-1.5 py-0.5 rounded text-xs font-semibold",m[color])}>{children}</span>;
 }
 
@@ -87,7 +87,7 @@ export default function DashboardInventarioSection({ st, expandAll, products }: 
                       )}
                       {/* J2 — Suggested price (30% margin target) */}
                       {p.costPrice != null && p.costPrice > 0 && (
-                        <span className="text-[9px] font-mono text-blue-500" title="Precio sugerido (30% margen)">
+                        <span className="text-[9px] font-mono text-emerald-500" title="Precio sugerido (30% margen)">
                           →S/{(p.costPrice / 0.7).toFixed(2)}
                         </span>
                       )}
@@ -181,9 +181,9 @@ export default function DashboardInventarioSection({ st, expandAll, products }: 
                                   </div>
                                 );
                               })}
-                              <div className="bg-blue-50 dark:bg-blue-950/30 rounded-lg p-2.5 text-xs mt-3">
-                                <div className="font-semibold text-blue-700 dark:text-blue-400 mb-1">Sugerencia</div>
-                                <p className="text-blue-600 dark:text-blue-300 text-[10px]">
+                              <div className="bg-emerald-50 dark:bg-emerald-950/30 rounded-lg p-2.5 text-xs mt-3">
+                                <div className="font-semibold text-emerald-700 dark:text-emerald-400 mb-1">Sugerencia</div>
+                                <p className="text-emerald-600 dark:text-emerald-300 text-[10px]">
                                   Crea un combo especial con estos productos o sugiérelos activamente cuando vendes {product.name}.
                                 </p>
                               </div>
@@ -310,9 +310,9 @@ export default function DashboardInventarioSection({ st, expandAll, products }: 
                 )}
 
                 {/* Info box */}
-                <div className="bg-blue-50 dark:bg-blue-950/30 rounded-lg p-3 text-xs">
-                  <div className="font-semibold text-blue-700 dark:text-blue-400 mb-1">Proyección inteligente</div>
-                  <p className="text-blue-600 dark:text-blue-300 text-[10px]">
+                <div className="bg-emerald-50 dark:bg-emerald-950/30 rounded-lg p-3 text-xs">
+                  <div className="font-semibold text-emerald-700 dark:text-emerald-400 mb-1">Proyección inteligente</div>
+                  <p className="text-emerald-600 dark:text-emerald-300 text-[10px]">
                     Basado en ventas de los últimos 30 días. Las cantidades sugeridas cubren 30 días de demanda proyectada.
                   </p>
                 </div>

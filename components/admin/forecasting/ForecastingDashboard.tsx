@@ -879,7 +879,7 @@ function PriceCard({ suggestion: s, isApplied, isApplying, onAplicar, esBaja }: 
     },
     slow_mover: {
       label: "Stock excesivo",
-      cls: "bg-blue-100 text-blue-700 dark:bg-blue-950/50 dark:text-blue-400",
+      cls: "bg-emerald-100 text-emerald-700 dark:bg-emerald-950/50 dark:text-emerald-400",
     },
     fefo_urgent: {
       label: "Vence pronto",

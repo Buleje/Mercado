@@ -111,7 +111,7 @@ function generatePriceSuggestions(data: BusinessData): PriceSuggestion[] {
 
 const DIRECTION_CONFIG = {
   up: { icon: TrendingUp, label: "Subir precio", color: "text-emerald-600 bg-emerald-50 border-emerald-200 dark:bg-emerald-950/30 dark:border-emerald-800/40 dark:text-emerald-400" },
-  down: { icon: TrendingDown, label: "Bajar precio", color: "text-blue-600 bg-blue-50 border-blue-200 dark:bg-blue-950/30 dark:border-blue-800/40 dark:text-blue-400" },
+  down: { icon: TrendingDown, label: "Bajar precio", color: "text-emerald-600 bg-emerald-50 border-emerald-200 dark:bg-emerald-950/30 dark:border-emerald-800/40 dark:text-emerald-400" },
   keep: { icon: Check, label: "Precio óptimo", color: "text-gray-500 bg-gray-50 border-gray-200 dark:bg-gray-800/30 dark:border-gray-700/40 dark:text-gray-400" },
 };
 
@@ -205,10 +205,10 @@ Responde en español, directo, sin rodeos.`,
           <p className="text-lg font-bold text-emerald-700 dark:text-emerald-400">{upCount}</p>
           <p className="text-[10px] text-emerald-600 dark:text-emerald-500">Subir precio</p>
         </div>
-        <div className="rounded-xl border border-blue-200 dark:border-blue-800/40 bg-blue-50 dark:bg-blue-950/20 p-3 text-center">
-          <TrendingDown className="w-5 h-5 text-blue-600 dark:text-blue-400 mx-auto mb-1" />
-          <p className="text-lg font-bold text-blue-700 dark:text-blue-400">{downCount}</p>
-          <p className="text-[10px] text-blue-600 dark:text-blue-500">Bajar precio</p>
+        <div className="rounded-xl border border-emerald-200 dark:border-emerald-800/40 bg-emerald-50 dark:bg-emerald-950/20 p-3 text-center">
+          <TrendingDown className="w-5 h-5 text-emerald-600 dark:text-emerald-400 mx-auto mb-1" />
+          <p className="text-lg font-bold text-emerald-700 dark:text-emerald-400">{downCount}</p>
+          <p className="text-[10px] text-emerald-600 dark:text-emerald-500">Bajar precio</p>
         </div>
         <div className="rounded-xl border border-amber-200 dark:border-amber-800/40 bg-amber-50 dark:bg-amber-950/20 p-3 text-center">
           <ArrowUpRight className="w-5 h-5 text-amber-600 dark:text-amber-400 mx-auto mb-1" />
@@ -254,7 +254,7 @@ Responde en español, directo, sin rodeos.`,
                     <span className="text-gray-500">Costo: S/{s.costPrice.toFixed(2)}</span>
                     <span className="font-medium text-gray-900 dark:text-white">Actual: S/{s.currentPrice.toFixed(2)}</span>
                     {s.direction !== "keep" && (
-                      <span className={cn("font-bold", s.direction === "up" ? "text-emerald-600" : "text-blue-600")}>
+                      <span className={cn("font-bold", s.direction === "up" ? "text-emerald-600" : "text-emerald-600")}>
                         → S/{s.suggestedPrice.toFixed(2)} ({priceDiff > 0 ? "+" : ""}{priceDiff.toFixed(2)})
                       </span>
                     )}

@@ -177,7 +177,7 @@ export default function CouponsTab() {
     "first-purchase": { label: "Primera compra", icon: UserPlus, color: "from-emerald-500 to-teal-600", desc: "Bienvenida para nuevos clientes" },
     inactive: { label: "Cliente inactivo", icon: Zap, color: "from-amber-500 to-orange-600", desc: "Reactivar clientes sin compras recientes" },
     "min-spend": { label: "Gasto mínimo", icon: Gift, color: "from-purple-500 to-indigo-600", desc: "Recompensa por alcanzar monto acumulado" },
-    referral: { label: "Referidos", icon: Sparkles, color: "from-blue-500 to-cyan-600", desc: "Cupón para referidor y referido" },
+    referral: { label: "Referidos", icon: Sparkles, color: "from-emerald-500 to-cyan-600", desc: "Cupón para referidor y referido" },
   };
 
   return (
@@ -233,7 +233,7 @@ export default function CouponsTab() {
                   <div className="flex flex-wrap items-center gap-2 shrink-0">
                     <button
                       onClick={() => openRuleConfig(rule)}
-                      className="p-1.5 rounded-lg text-gray-400 dark:text-muted hover:text-blue-500 hover:bg-blue-50 transition-colors"
+                      className="p-1.5 rounded-lg text-gray-400 dark:text-muted hover:text-emerald-500 hover:bg-emerald-50 transition-colors"
                       title="Configurar"
                     >
                       <Settings className="h-4 w-4" />
@@ -268,7 +268,7 @@ export default function CouponsTab() {
                 </div>
                 <span className={cn("inline-flex px-2 py-1 rounded-full text-xs font-bold",
                   log.status === "sent" ? "bg-green-100 text-green-700" :
-                  log.status === "used" ? "bg-blue-100 text-blue-700" : "bg-amber-100 text-amber-700"
+                  log.status === "used" ? "bg-emerald-100 text-emerald-700" : "bg-amber-100 text-amber-700"
                 )}>
                   {log.status === "sent" ? "Enviado" : log.status === "used" ? "Usado" : "Pendiente"}
                 </span>

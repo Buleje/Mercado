@@ -66,7 +66,7 @@ export default function DiscountsTab() {
       {/* Discount types info */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
         {[
-          { type: "percentage", icon: Percent, label: "Porcentaje", desc: "Ej: 15% de descuento", color: "bg-blue-50 text-blue-600 border-blue-200" },
+          { type: "percentage", icon: Percent, label: "Porcentaje", desc: "Ej: 15% de descuento", color: "bg-emerald-50 text-emerald-600 border-emerald-200" },
           { type: "fixed", icon: Tag, label: "Monto fijo", desc: "Ej: S/5 menos", color: "bg-emerald-50 text-emerald-600 border-emerald-200" },
           { type: "buy_x_get_y", icon: Plus, label: "Lleva X paga Y", desc: "Ej: 3x2, 2x1", color: "bg-violet-50 text-violet-600 border-violet-200" },
         ].map((t) => (

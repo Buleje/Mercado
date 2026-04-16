@@ -114,7 +114,7 @@ const PRIORITY_COLORS: Record<RoadmapPriority, string> = {
   P0: "bg-red-500/20 text-red-700 dark:text-red-400 border-red-500/40",
   P1: "bg-orange-500/20 text-orange-700 dark:text-orange-400 border-orange-500/40",
   P2: "bg-yellow-500/20 text-yellow-700 dark:text-yellow-500 border-yellow-500/40",
-  P3: "bg-blue-500/20 text-blue-700 dark:text-blue-400 border-blue-500/40",
+  P3: "bg-emerald-500/20 text-emerald-700 dark:text-emerald-400 border-emerald-500/40",
 };
 
 const EFFORT_COLORS: Record<RoadmapEffort, string> = {
@@ -169,7 +169,7 @@ const STATUS_META: Record<
   in_progress: {
     label: "En progreso",
     emoji: "🔄",
-    color: "bg-blue-500/10 text-blue-700 dark:text-blue-400 border-blue-500/40",
+    color: "bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border-emerald-500/40",
     icon: Loader2,
   },
   done: {
@@ -475,7 +475,7 @@ export default function RoadmapPage() {
         <StatBlock
           label="En progreso"
           value={data.stats.in_progress}
-          accent="from-blue-500 to-indigo-600"
+          accent="from-emerald-500 to-indigo-600"
           icon={<Loader2 className="w-4 h-4" />}
         />
         <StatBlock
@@ -633,7 +633,7 @@ export default function RoadmapPage() {
                 ? "bg-emerald-50/95 dark:bg-emerald-950/90 text-emerald-800 dark:text-emerald-200 border-emerald-200 dark:border-emerald-900"
                 : t.kind === "error"
                   ? "bg-red-50/95 dark:bg-red-950/90 text-red-800 dark:text-red-200 border-red-200 dark:border-red-900"
-                  : "bg-blue-50/95 dark:bg-blue-950/90 text-blue-800 dark:text-blue-200 border-blue-200 dark:border-blue-900",
+                  : "bg-emerald-50/95 dark:bg-emerald-950/90 text-emerald-800 dark:text-emerald-200 border-emerald-200 dark:border-emerald-900",
             ].join(" ")}
           >
             {t.message}
@@ -790,7 +790,7 @@ function CriticalBugsHero({
                       type="button"
                       disabled={isUpdating}
                       onClick={() => onMarkInProgress(bug.id)}
-                      className="flex-1 px-2.5 py-1.5 rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold transition-colors disabled:opacity-50 flex items-center justify-center gap-1"
+                      className="flex-1 px-2.5 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold transition-colors disabled:opacity-50 flex items-center justify-center gap-1"
                     >
                       {isUpdating ? (
                         <Loader2 className="w-3 h-3 animate-spin" />
@@ -1141,7 +1141,7 @@ function ItemCard({
           </div>
           <div className="h-1.5 bg-gray-100 dark:bg-gray-800 rounded-full overflow-hidden">
             <div
-              className="h-full bg-gradient-to-r from-blue-500 to-indigo-500 transition-all duration-500"
+              className="h-full bg-gradient-to-r from-emerald-500 to-indigo-500 transition-all duration-500"
               style={{ width: `${item.state.progress}%` }}
             />
           </div>

@@ -87,8 +87,8 @@ export function OrdersDetailPanel({
 
         <div className="overflow-y-auto px-5 py-4 space-y-4 flex-1">
           {/* Visual Timeline */}
-          <div className="bg-linear-to-br from-blue-50 to-indigo-50 dark:from-blue-950/20 dark:to-indigo-950/20 rounded-xl p-4 border border-blue-100 dark:border-blue-900/30">
-            <p className="text-xs font-bold text-blue-700 dark:text-blue-400 uppercase tracking-wide mb-3">Estado del Pedido</p>
+          <div className="bg-linear-to-br from-emerald-50 to-indigo-50 dark:from-emerald-950/20 dark:to-indigo-950/20 rounded-xl p-4 border border-emerald-100 dark:border-emerald-900/30">
+            <p className="text-xs font-bold text-emerald-700 dark:text-emerald-400 uppercase tracking-wide mb-3">Estado del Pedido</p>
             <div className="flex items-center justify-between gap-2 relative">
               <div className="absolute top-5 left-0 right-0 h-0.5 bg-gray-200 dark:bg-gray-700" style={{ zIndex: 0 }} />
               {getOrderTimeline(order).map((step) => {
@@ -102,7 +102,7 @@ export function OrdersDetailPanel({
                         step.completed
                           ? "bg-emerald-500 border-emerald-500 text-white"
                           : step.current && !isCanceled
-                          ? "bg-blue-500 border-blue-500 text-white animate-pulse"
+                          ? "bg-emerald-500 border-emerald-500 text-white animate-pulse"
                           : step.current && isCanceled
                           ? "bg-red-500 border-red-500 text-white"
                           : "bg-white dark:bg-card border-gray-300 dark:border-gray-600 text-gray-400 dark:text-gray-500"
@@ -117,7 +117,7 @@ export function OrdersDetailPanel({
                           step.completed
                             ? "text-emerald-700 dark:text-emerald-400"
                             : step.current && !isCanceled
-                            ? "text-blue-700 dark:text-blue-400"
+                            ? "text-emerald-700 dark:text-emerald-400"
                             : step.current && isCanceled
                             ? "text-red-700 dark:text-red-400"
                             : "text-gray-500 dark:text-gray-500"
@@ -204,7 +204,7 @@ export function OrdersDetailPanel({
                 href={googleMapsUrl(order.customer.location)}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="shrink-0 p-1 rounded-lg text-blue-500 hover:bg-blue-50 transition-colors"
+                className="shrink-0 p-1 rounded-lg text-emerald-500 hover:bg-emerald-50 transition-colors"
                 title="Abrir en Google Maps"
               >
                 <ExternalLink className="h-4 w-4" />
@@ -259,7 +259,7 @@ export function OrdersDetailPanel({
               {order.paymentMethod === "efectivo" && order.deuda && (
                 <button
                   onClick={() => onMarkDeudaPaid(order.id)}
-                  className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-bold text-blue-700 bg-blue-50 hover:bg-blue-100 transition-colors border border-blue-200 mt-1"
+                  className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-bold text-emerald-700 bg-emerald-50 hover:bg-emerald-100 transition-colors border border-emerald-200 mt-1"
                 >
                   <Check className="h-4 w-4" /> Marcar como cobrado
                 </button>

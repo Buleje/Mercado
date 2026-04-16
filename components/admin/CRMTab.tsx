@@ -71,7 +71,7 @@ function inferSegment(c: Customer): Segment {
 
 const SEGMENT_CONFIG: Record<Segment, { label: string; color: string; bg: string; border: string; Icon: React.ElementType; variant: BadgeVariant }> = {
   frecuente: { label: "Frecuente", color: "text-emerald-700 dark:text-emerald-400", bg: "bg-emerald-50 dark:bg-emerald-950/30", border: "border-emerald-300 dark:border-emerald-700", Icon: Crown,    variant: "success" },
-  ocasional: { label: "Ocasional", color: "text-blue-700 dark:text-blue-400",     bg: "bg-blue-50 dark:bg-blue-950/30",     border: "border-blue-300 dark:border-blue-700",     Icon: Star,     variant: "info" },
+  ocasional: { label: "Ocasional", color: "text-emerald-700 dark:text-emerald-400",     bg: "bg-emerald-50 dark:bg-emerald-950/30",     border: "border-emerald-300 dark:border-emerald-700",     Icon: Star,     variant: "info" },
   nuevo:     { label: "Nuevo",     color: "text-violet-700 dark:text-violet-400", bg: "bg-violet-50 dark:bg-violet-950/30", border: "border-violet-300 dark:border-violet-700", Icon: UserPlus, variant: "pending" },
   perdido:   { label: "Perdido",   color: "text-red-700 dark:text-red-400",       bg: "bg-red-50 dark:bg-red-950/30",       border: "border-red-300 dark:border-red-700",       Icon: Moon,     variant: "error" },
 };
@@ -335,7 +335,7 @@ export default function CRMTab() {
   if (customers.length === 0) {
     return (
       <EmptyState
-        icon={Users}
+        illustration="customers"
         title="Sin clientes"
         description="Tus clientes aparecerán aquí cuando hagan su primera compra."
       />
@@ -426,7 +426,7 @@ export default function CRMTab() {
       {/* ── KPIs estandar ─────────────────────────────────────────── */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         {[
-          { label: "Total clientes",   value: String(stats.total),   icon: Users,       color: "text-blue-500",    bg: "bg-blue-50 dark:bg-blue-950/30" },
+          { label: "Total clientes",   value: String(stats.total),   icon: Users,       color: "text-emerald-500",    bg: "bg-emerald-50 dark:bg-emerald-950/30" },
           { label: "Activos (30d)",    value: String(stats.activos), icon: UserCheck,   color: "text-emerald-500", bg: "bg-emerald-50 dark:bg-emerald-950/30" },
           { label: "Nuevos",           value: String(stats.nuevos),  icon: UserPlus,    color: "text-violet-500",  bg: "bg-violet-50 dark:bg-violet-950/30" },
           { label: "CLV promedio",     value: fmt(stats.clvProm),    icon: TrendingUp,  color: "text-amber-500",   bg: "bg-amber-50 dark:bg-amber-950/30" },
@@ -646,7 +646,7 @@ export default function CRMTab() {
       {topCustomer && customers.length >= 3 && (
         <div className="flex items-center justify-between bg-gray-50 dark:bg-gray-800/50 rounded-xl px-4 py-2.5 mb-1 text-xs flex-wrap gap-2">
           <span className="flex items-center gap-1.5">&#127942; Top: <strong>{topCustomer.name}</strong> &middot; {fmt(topCustomer.totalSpent ?? 0)}</span>
-          <span className="flex items-center gap-1.5"><Users className="h-3.5 w-3.5 text-blue-500" /> {customers.length} clientes</span>
+          <span className="flex items-center gap-1.5"><Users className="h-3.5 w-3.5 text-emerald-500" /> {customers.length} clientes</span>
           <span className="flex items-center gap-1.5"><TrendingUp className="h-3.5 w-3.5 text-emerald-500" /> Prom: {fmt(avgSpent)}</span>
           <span className="flex items-center gap-1.5"><UserCheck className="h-3.5 w-3.5 text-violet-500" /> Activos 30d: {stats.activos}</span>
         </div>

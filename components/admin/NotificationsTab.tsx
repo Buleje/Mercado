@@ -114,7 +114,7 @@ export default function NotificationsTab() {
                   <span className={cn("px-2 py-0.5 rounded-full text-[10px] font-extrabold uppercase",
                     o.status === "entregado" ? "bg-emerald-100 text-emerald-700" :
                     o.status === "cancelado" ? "bg-red-100 text-red-700" :
-                    o.status === "en_camino" ? "bg-blue-100 text-blue-700" :
+                    o.status === "en_camino" ? "bg-emerald-100 text-emerald-700" :
                     "bg-yellow-100 text-yellow-700"
                   )}>{o.status}</span>
                   <span className="font-bold text-sm text-gray-600">S/{o.total?.toFixed(2)}</span>

@@ -159,8 +159,8 @@ export default function BusinessIntelligenceTab() {
         <h3 className="font-extrabold text-sm text-gray-900 dark:text-foreground flex flex-wrap items-center gap-2 mb-4"><AlertTriangle className="h-4 w-4 text-amber-500" /> Alertas de anomalías</h3>
         <div className="space-y-2">
           {ANOMALIES.map(a => {
-            const sevMeta = { alta: "bg-red-50 dark:bg-red-950/30 border-red-200 dark:border-red-900/50", media: "bg-amber-50 dark:bg-amber-950/30 border-amber-200 dark:border-amber-900/50", baja: "bg-blue-50 dark:bg-blue-950/30 border-blue-200 dark:border-blue-900/50" };
-            const sevColor = { alta: "text-red-600", media: "text-amber-600", baja: "text-blue-600" };
+            const sevMeta = { alta: "bg-red-50 dark:bg-red-950/30 border-red-200 dark:border-red-900/50", media: "bg-amber-50 dark:bg-amber-950/30 border-amber-200 dark:border-amber-900/50", baja: "bg-emerald-50 dark:bg-emerald-950/30 border-emerald-200 dark:border-emerald-900/50" };
+            const sevColor = { alta: "text-red-600", media: "text-amber-600", baja: "text-emerald-600" };
             return (
               <div key={a.id} className={cn("rounded-xl p-3 border", sevMeta[a.severity])}>
                 <div className="flex flex-wrap items-start justify-between gap-2">

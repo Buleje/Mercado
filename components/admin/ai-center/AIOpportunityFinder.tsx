@@ -348,7 +348,7 @@ function findOpportunities(data: BusinessData | null): Opportunity[] {
 const CAT_CONFIG: Record<OpportunityCategory, { label: string; icon: React.ElementType; color: string }> = {
   trending: { label: "Tendencia", icon: TrendingUp, color: "text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/30" },
   crosssell: { label: "Venta cruzada", icon: Repeat2, color: "text-purple-600 dark:text-purple-400 bg-purple-50 dark:bg-purple-950/30" },
-  horario: { label: "Horario", icon: Clock, color: "text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-950/30" },
+  horario: { label: "Horario", icon: Clock, color: "text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/30" },
   clientes: { label: "Clientes", icon: Users, color: "text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-950/30" },
   inventario: { label: "Inventario", icon: Package, color: "text-rose-600 dark:text-rose-400 bg-rose-50 dark:bg-rose-950/30" },
   margen: { label: "Margen", icon: DollarSign, color: "text-teal-600 dark:text-teal-400 bg-teal-50 dark:bg-teal-950/30" },

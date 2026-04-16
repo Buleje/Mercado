@@ -63,9 +63,9 @@ export default function PushNotificationPrompt() {
     <div className="bg-white border border-gray-200 rounded-xl p-4 mx-4 mt-3">
       <div className="flex items-start gap-3">
         {/* Bell icon */}
-        <div className="w-10 h-10 rounded-full bg-blue-50 flex items-center justify-center shrink-0 mt-0.5">
+        <div className="w-10 h-10 rounded-full bg-emerald-50 flex items-center justify-center shrink-0 mt-0.5">
           <svg
-            className="w-5 h-5 text-blue-600"
+            className="w-5 h-5 text-emerald-600"
             fill="none"
             viewBox="0 0 24 24"
             stroke="currentColor"
@@ -99,7 +99,7 @@ export default function PushNotificationPrompt() {
               type="button"
               onClick={handleActivate}
               disabled={isLoading}
-              className="inline-flex items-center gap-1.5 px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              className="inline-flex items-center gap-1.5 px-4 py-2 bg-emerald-600 text-white text-sm font-medium rounded-lg hover:bg-emerald-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {isLoading ? (
                 <>

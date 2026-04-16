@@ -48,8 +48,8 @@ const COL_CONFIG: Record<Column, { label: string; color: string; bg: string }> =
   },
   doing: {
     label: "En proceso",
-    color: "text-blue-700 dark:text-blue-400",
-    bg: "bg-blue-50 dark:bg-blue-900/10",
+    color: "text-emerald-700 dark:text-emerald-400",
+    bg: "bg-emerald-50 dark:bg-emerald-900/10",
   },
   done: {
     label: "Listo",
@@ -353,7 +353,7 @@ export default function TaskKanban() {
                             <div className="flex-1" />
                             <button
                               onClick={() => startEdit(task)}
-                              className="p-1 rounded hover:bg-blue-50 dark:hover:bg-blue-900/20 text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
+                              className="p-1 rounded hover:bg-emerald-50 dark:hover:bg-emerald-900/20 text-gray-400 hover:text-emerald-600 dark:hover:text-emerald-400 transition-colors"
                             >
                               <Pencil className="w-3.5 h-3.5" />
                             </button>

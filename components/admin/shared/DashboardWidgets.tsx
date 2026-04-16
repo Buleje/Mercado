@@ -91,7 +91,7 @@ export default function DashboardWidgets({ onNavigate }: DashboardWidgetsProps) 
       label: "Clientes nuevos",
       value: String(data.clientesNuevos),
       icon: Users,
-      color: "text-blue-600 bg-blue-50 dark:bg-blue-950/30",
+      color: "text-emerald-600 bg-emerald-50 dark:bg-emerald-950/30",
       tab: "clientes",
     },
   ];

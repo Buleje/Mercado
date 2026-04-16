@@ -311,9 +311,9 @@ export default function PWAShortcuts() {
               </div>
             </div>
           ) : (
-            <div className="rounded-xl border border-blue-200 dark:border-blue-800 bg-blue-50 dark:bg-blue-900/10 p-4 flex items-start gap-3">
-              <Info className="w-5 h-5 text-blue-600 dark:text-blue-400 shrink-0 mt-0.5" />
-              <p className="text-sm text-blue-700 dark:text-blue-300">
+            <div className="rounded-xl border border-emerald-200 dark:border-emerald-800 bg-emerald-50 dark:bg-emerald-900/10 p-4 flex items-start gap-3">
+              <Info className="w-5 h-5 text-emerald-600 dark:text-emerald-400 shrink-0 mt-0.5" />
+              <p className="text-sm text-emerald-700 dark:text-emerald-300">
                 Esta app aun no esta instalada en este dispositivo. Sigue los pasos para instalarla.
               </p>
             </div>

@@ -40,7 +40,7 @@ const fmt = (n: number) => "S/ " + n.toLocaleString("es-PE", { minimumFractionDi
 const STATUS_MAP: Record<AuditStatus, { label: string; color: string; bg: string; icon: typeof CheckCircle2 }> = {
   pendiente: { label: "Pendiente", color: "text-amber-600",   bg: "bg-amber-100 dark:bg-amber-900/30", icon: AlertTriangle },
   conforme:  { label: "Conforme",  color: "text-emerald-600", bg: "bg-emerald-100 dark:bg-emerald-900/30", icon: CheckCircle2 },
-  sobrante:  { label: "Sobrante",  color: "text-blue-600",    bg: "bg-blue-100 dark:bg-blue-900/30", icon: TrendingUp },
+  sobrante:  { label: "Sobrante",  color: "text-emerald-600",    bg: "bg-emerald-100 dark:bg-emerald-900/30", icon: TrendingUp },
   faltante:  { label: "Faltante",  color: "text-red-600",     bg: "bg-red-100 dark:bg-red-900/30", icon: TrendingDown },
 };
 
@@ -269,7 +269,7 @@ function CashCounter({ expectedAmount }: { expectedAmount: number }) {
               "rounded-xl p-3 text-center",
               !hasCount ? "bg-gray-50 dark:bg-surface" :
               difference === 0 ? "bg-emerald-50 dark:bg-emerald-900/20" :
-              difference > 0 ? "bg-blue-50 dark:bg-blue-900/20" :
+              difference > 0 ? "bg-emerald-50 dark:bg-emerald-900/20" :
               "bg-red-50 dark:bg-red-900/20"
             )}>
               <p className="text-[10px] font-semibold uppercase text-gray-400 dark:text-muted">Diferencia</p>
@@ -277,7 +277,7 @@ function CashCounter({ expectedAmount }: { expectedAmount: number }) {
                 "font-extrabold text-sm",
                 !hasCount ? "text-gray-400" :
                 difference === 0 ? "text-emerald-600" :
-                difference > 0 ? "text-blue-600" :
+                difference > 0 ? "text-emerald-600" :
                 "text-red-600"
               )}>
                 {hasCount
@@ -362,10 +362,10 @@ export default function CashAuditTab({ onNavigateToTurnos }: Props) {
 
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
         {[
-          { label: "Cuadres totales", value: String(stats.totalAudits), color: "text-blue-600", bg: "bg-blue-50 dark:bg-blue-950/30", icon: Calculator },
+          { label: "Cuadres totales", value: String(stats.totalAudits), color: "text-emerald-600", bg: "bg-emerald-50 dark:bg-emerald-950/30", icon: Calculator },
           { label: "Conformes", value: String(stats.conformes), color: "text-emerald-600", bg: "bg-emerald-50 dark:bg-emerald-950/30", icon: CheckCircle2 },
           { label: "Total faltantes", value: fmt(stats.totalShortage), color: "text-red-600", bg: "bg-red-50 dark:bg-red-950/30", icon: TrendingDown },
-          { label: "Total sobrantes", value: fmt(stats.totalSurplus), color: "text-blue-600", bg: "bg-blue-50 dark:bg-blue-950/30", icon: TrendingUp },
+          { label: "Total sobrantes", value: fmt(stats.totalSurplus), color: "text-emerald-600", bg: "bg-emerald-50 dark:bg-emerald-950/30", icon: TrendingUp },
         ].map(({ label, value, color, bg, icon: Icon }) => (
           <div key={label} className={cn("rounded-2xl p-4 flex items-start gap-3", bg)}>
             <Icon className={cn("h-5 w-5 mt-0.5", color)} />
@@ -406,7 +406,7 @@ export default function CashAuditTab({ onNavigateToTurnos }: Props) {
                       <td className="px-2 sm:px-4 py-2 sm:py-3 font-bold text-gray-800 dark:text-foreground">{a.cashier}</td>
                       <td className="px-2 sm:px-4 py-2 sm:py-3 text-gray-600 dark:text-muted">{fmt(a.expectedAmount)}</td>
                       <td className="px-2 sm:px-4 py-2 sm:py-3 font-bold text-gray-800 dark:text-foreground">{a.status !== "pendiente" ? fmt(a.countedAmount) : "—"}</td>
-                      <td className={cn("px-2 sm:px-4 py-2 sm:py-3 font-extrabold", a.difference === 0 ? "text-gray-400" : a.difference > 0 ? "text-blue-600" : "text-red-600")}>{a.status !== "pendiente" ? (a.difference > 0 ? "+" : "") + fmt(a.difference) : "—"}</td>
+                      <td className={cn("px-2 sm:px-4 py-2 sm:py-3 font-extrabold", a.difference === 0 ? "text-gray-400" : a.difference > 0 ? "text-emerald-600" : "text-red-600")}>{a.status !== "pendiente" ? (a.difference > 0 ? "+" : "") + fmt(a.difference) : "—"}</td>
                       <td className="px-2 sm:px-4 py-2 sm:py-3"><span className={cn("flex items-center gap-1 text-xs font-bold", STATUS_MAP[a.status].color)}><SIcon className="h-3.5 w-3.5" />{STATUS_MAP[a.status].label}</span></td>
                       <td className="px-2 sm:px-4 py-2 sm:py-3"><button onClick={() => setDetail(a)} className="text-primary hover:underline text-xs font-bold"><Eye className="h-3.5 w-3.5" /></button></td>
                     </tr>

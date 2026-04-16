@@ -677,7 +677,7 @@ export default function StoreCustomizer() {
       {/* ── Header mejorado ───────────────────────────────────────── */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-5 shrink-0">
         <div className="flex items-center gap-3">
-          <div className="h-11 w-11 rounded-2xl bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center shadow-md">
+          <div className="h-11 w-11 rounded-2xl bg-gradient-to-br from-emerald-500 to-emerald-600 flex items-center justify-center shadow-md">
             <Palette className="h-5 w-5 text-white" />
           </div>
           <div>
@@ -713,7 +713,7 @@ export default function StoreCustomizer() {
           <button
             type="button"
             onClick={() => setShowCreativeMode(true)}
-            className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-gradient-to-r from-violet-600 to-blue-600 text-white text-xs font-bold hover:from-violet-500 hover:to-blue-500 transition-all min-h-[44px] shadow-md"
+            className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-gradient-to-r from-violet-600 to-emerald-600 text-white text-xs font-bold hover:from-violet-500 hover:to-emerald-500 transition-all min-h-[44px] shadow-md"
           >
             <Paintbrush className="h-4 w-4" />
             Modo Creativo
@@ -736,7 +736,7 @@ export default function StoreCustomizer() {
                 className={cn(
                   "flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold whitespace-nowrap transition-all min-h-[44px] shrink-0",
                   activeTab === t.id
-                    ? "bg-blue-600 text-white shadow-sm"
+                    ? "bg-emerald-600 text-white shadow-sm"
                     : "bg-gray-100 dark:bg-surface text-muted hover:text-foreground hover:bg-gray-200 dark:hover:bg-accent"
                 )}
               >
@@ -763,7 +763,7 @@ export default function StoreCustomizer() {
                     className={cn(
                       "w-full flex items-center gap-2.5 px-2.5 py-2 rounded-xl text-xs font-semibold transition-all text-left min-h-[40px]",
                       activeTab === t.id
-                        ? "bg-blue-600 text-white shadow-sm"
+                        ? "bg-emerald-600 text-white shadow-sm"
                         : "text-muted hover:text-foreground hover:bg-gray-100 dark:hover:bg-accent"
                     )}
                   >
@@ -781,7 +781,7 @@ export default function StoreCustomizer() {
 
           {/* Tab header with active tab info */}
           <div className="flex items-center gap-2.5 px-5 py-3.5 border-b border-gray-100 dark:border-card-border bg-gray-50/50 dark:bg-surface/30 shrink-0">
-            <span className="text-blue-600 dark:text-blue-400">{activeTabMeta?.icon}</span>
+            <span className="text-emerald-600 dark:text-emerald-400">{activeTabMeta?.icon}</span>
             <p className="text-sm font-bold text-foreground">{activeTabMeta?.label}</p>
           </div>
 
@@ -923,7 +923,7 @@ export default function StoreCustomizer() {
                 <div className="flex items-center justify-between p-3.5 rounded-xl border border-gray-200 dark:border-card-border bg-white dark:bg-surface">
                   <div className="flex items-center gap-2.5">
                     {theme.darkModeDefault ? (
-                      <Moon className="h-4 w-4 text-blue-500" />
+                      <Moon className="h-4 w-4 text-emerald-500" />
                     ) : (
                       <Sun className="h-4 w-4 text-amber-500" />
                     )}
@@ -939,7 +939,7 @@ export default function StoreCustomizer() {
                     aria-label="Toggle modo oscuro"
                   >
                     {theme.darkModeDefault ? (
-                      <ToggleRight className="h-7 w-7 text-blue-600" />
+                      <ToggleRight className="h-7 w-7 text-emerald-600" />
                     ) : (
                       <ToggleLeft className="h-7 w-7 text-gray-400" />
                     )}
@@ -1077,7 +1077,7 @@ export default function StoreCustomizer() {
                               [key]: { ...theme.schedules[key], open: e.target.value },
                             })
                           }
-                          className="flex-1 px-2 py-2 rounded-lg border border-gray-200 dark:border-card-border bg-white dark:bg-surface text-xs text-foreground focus:outline-none focus:ring-2 focus:ring-blue-500/40 min-h-[44px]"
+                          className="flex-1 px-2 py-2 rounded-lg border border-gray-200 dark:border-card-border bg-white dark:bg-surface text-xs text-foreground focus:outline-none focus:ring-2 focus:ring-emerald-500/40 min-h-[44px]"
                         />
                         <span className="text-xs text-muted">a</span>
                         <input
@@ -1089,7 +1089,7 @@ export default function StoreCustomizer() {
                               [key]: { ...theme.schedules[key], close: e.target.value },
                             })
                           }
-                          className="flex-1 px-2 py-2 rounded-lg border border-gray-200 dark:border-card-border bg-white dark:bg-surface text-xs text-foreground focus:outline-none focus:ring-2 focus:ring-blue-500/40 min-h-[44px]"
+                          className="flex-1 px-2 py-2 rounded-lg border border-gray-200 dark:border-card-border bg-white dark:bg-surface text-xs text-foreground focus:outline-none focus:ring-2 focus:ring-emerald-500/40 min-h-[44px]"
                         />
                       </div>
                     ))}
@@ -1218,7 +1218,7 @@ export default function StoreCustomizer() {
                     </div>
                     <button type="button" onClick={() => update("welcomePopupEnabled", !theme.welcomePopupEnabled)}
                       className="shrink-0 min-h-[44px] min-w-[44px] flex items-center justify-center">
-                      {theme.welcomePopupEnabled ? <ToggleRight className="h-6 w-6 text-blue-600" /> : <ToggleLeft className="h-6 w-6 text-gray-400" />}
+                      {theme.welcomePopupEnabled ? <ToggleRight className="h-6 w-6 text-emerald-600" /> : <ToggleLeft className="h-6 w-6 text-gray-400" />}
                     </button>
                   </div>
                   {theme.welcomePopupEnabled && (
@@ -1320,8 +1320,8 @@ export default function StoreCustomizer() {
                         className={cn(
                           "flex-1 py-2.5 rounded-xl text-xs font-bold border transition-all min-h-[44px]",
                           theme.spacing === s
-                            ? "bg-blue-600 text-white border-blue-600"
-                            : "border-gray-200 dark:border-card-border text-muted hover:border-blue-500 hover:text-foreground"
+                            ? "bg-emerald-600 text-white border-emerald-600"
+                            : "border-gray-200 dark:border-card-border text-muted hover:border-emerald-500 hover:text-foreground"
                         )}
                       >
                         {s === "compact" ? "Compacto" : s === "normal" ? "Normal" : "Espacioso"}
@@ -1397,7 +1397,7 @@ export default function StoreCustomizer() {
                 "w-full flex items-center justify-center gap-2 py-3 rounded-xl text-sm font-bold transition-all min-h-[48px] relative",
                 saved
                   ? "bg-emerald-600 text-white"
-                  : "bg-blue-600 hover:bg-blue-700 text-white shadow-md hover:shadow-lg active:scale-[0.98]",
+                  : "bg-emerald-600 hover:bg-emerald-700 text-white shadow-md hover:shadow-lg active:scale-[0.98]",
                 saving && "opacity-60 cursor-not-allowed"
               )}
             >
@@ -1441,7 +1441,7 @@ export default function StoreCustomizer() {
               </div>
             </div>
             <div className="flex items-center gap-3">
-              <button type="button" onClick={() => setPreviewKey((k) => k + 1)} className="text-xs text-blue-400 font-semibold hover:text-blue-300">
+              <button type="button" onClick={() => setPreviewKey((k) => k + 1)} className="text-xs text-emerald-400 font-semibold hover:text-emerald-300">
                 Recargar
               </button>
               <a href={`/t/${activeTenantSlug}?preview=true`} target="_blank" rel="noopener noreferrer" className="text-xs text-gray-400 hover:text-white">

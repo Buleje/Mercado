@@ -56,7 +56,7 @@ const STATUS_CONFIG: Record<
   { label: string; color: string; icon: React.ElementType }
 > = {
   pending: { label: "Pendiente", color: "text-amber-600 dark:text-amber-400", icon: Clock },
-  syncing: { label: "Sincronizando...", color: "text-blue-600 dark:text-blue-400", icon: Loader2 },
+  syncing: { label: "Sincronizando...", color: "text-emerald-600 dark:text-emerald-400", icon: Loader2 },
   synced: { label: "Sincronizado", color: "text-green-600 dark:text-green-400", icon: CheckCircle },
   error: { label: "Error", color: "text-red-600 dark:text-red-400", icon: AlertCircle },
 };

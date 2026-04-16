@@ -415,7 +415,7 @@ export default function CategoriesEditorTab() {
                       <div className="text-xs text-emerald-700 dark:text-emerald-400">
                         buleje.pe › categoria › {cat.seo?.slug || cat.id}
                       </div>
-                      <div className="text-lg text-blue-600 dark:text-blue-400 font-medium leading-snug">
+                      <div className="text-lg text-emerald-600 dark:text-emerald-400 font-medium leading-snug">
                         {cat.seo?.metaTitle || `${cat.label} - Buleje`}
                       </div>
                       <div className="text-sm text-gray-600 dark:text-gray-400 leading-relaxed">

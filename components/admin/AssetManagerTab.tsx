@@ -150,7 +150,7 @@ export default function AssetManagerTab() {
       {/* KPIs */}
       <div className="grid grid-cols-2 sm:grid-cols-6 gap-3">
         {[
-          { label: "Total activos", value: String(stats.total), color: "text-blue-600", bg: "bg-blue-50 dark:bg-blue-950/30" },
+          { label: "Total activos", value: String(stats.total), color: "text-emerald-600", bg: "bg-emerald-50 dark:bg-emerald-950/30" },
           { label: "Activos operativos", value: String(stats.activos), color: "text-emerald-600", bg: "bg-emerald-50 dark:bg-emerald-950/30" },
           { label: "Costo adquisición", value: fmt(stats.totalCost), color: "text-violet-600", bg: "bg-violet-50 dark:bg-violet-950/30" },
           { label: "Depreciación acum.", value: fmt(stats.totalDep), color: "text-orange-600", bg: "bg-orange-50 dark:bg-orange-950/30" },
@@ -253,7 +253,7 @@ export default function AssetManagerTab() {
                     </td>
                     <td className="px-2 sm:px-4 py-2 sm:py-3 text-xs text-gray-500 dark:text-muted">{a.location}</td>
                     <td className="px-2 sm:px-4 py-2 sm:py-3">
-                      <button onClick={() => setDetail(a)} className="p-1.5 rounded-lg text-gray-400 hover:text-blue-500 hover:bg-blue-50 dark:hover:bg-blue-950/20"><Eye className="h-3.5 w-3.5" /></button>
+                      <button onClick={() => setDetail(a)} className="p-1.5 rounded-lg text-gray-400 hover:text-emerald-500 hover:bg-emerald-50 dark:hover:bg-emerald-950/20"><Eye className="h-3.5 w-3.5" /></button>
                     </td>
                   </tr>
                 );

@@ -52,7 +52,7 @@ const categoryMenuItems = [
   { id: "bebidas", label: "Bebidas", emoji: "🥤", icon: GlassWater,
     desc: "Agua, gaseosas, jugos",
     subs: ["Gaseosas", "Agua", "Jugos", "Cervezas"],
-    iconBg: "bg-blue-100 dark:bg-blue-900/40", iconColor: "text-blue-600 dark:text-blue-400" },
+    iconBg: "bg-emerald-100 dark:bg-emerald-900/40", iconColor: "text-emerald-600 dark:text-emerald-400" },
   { id: "limpieza", label: "Limpieza", emoji: "🧹", icon: Sparkles,
     desc: "Todo para tu hogar limpio",
     subs: ["Detergente", "Jabón", "Lejía", "Desinfectante"],

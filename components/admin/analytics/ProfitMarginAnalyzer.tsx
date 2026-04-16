@@ -34,7 +34,7 @@ function fmtPct(n: number) {
 const QUADRANT_META = {
   star:     { label: "Alto volumen + Alto margen",  color: "#00B4A6", bg: "bg-green-100 dark:bg-green-900/30",  text: "text-green-800 dark:text-green-300" },
   cash:     { label: "Alto volumen + Bajo margen",  color: "#f97316", bg: "bg-amber-100 dark:bg-amber-900/30",  text: "text-amber-800 dark:text-amber-300" },
-  question: { label: "Bajo volumen + Alto margen",  color: "#3b82f6", bg: "bg-blue-100 dark:bg-blue-900/30",    text: "text-blue-800 dark:text-blue-300" },
+  question: { label: "Bajo volumen + Alto margen",  color: "#3b82f6", bg: "bg-emerald-100 dark:bg-emerald-900/30",    text: "text-emerald-800 dark:text-emerald-300" },
   dog:      { label: "Bajo volumen + Bajo margen",  color: "#ef4444", bg: "bg-red-100 dark:bg-red-900/30",      text: "text-red-800 dark:text-red-300" },
 };
 

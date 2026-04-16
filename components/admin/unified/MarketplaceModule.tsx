@@ -111,7 +111,7 @@ interface CommissionSummary {
 // ── Status badge helpers ──
 const ORDER_STATUS_CONFIG: Record<string, { label: string; className: string }> = {
   pendiente:   { label: "Pendiente",  className: "bg-amber-100 text-amber-700" },
-  confirmado:  { label: "Confirmado", className: "bg-blue-100 text-blue-700" },
+  confirmado:  { label: "Confirmado", className: "bg-emerald-100 text-emerald-700" },
   en_camino:   { label: "En camino",  className: "bg-purple-100 text-purple-700" },
   entregado:   { label: "Entregado",  className: "bg-emerald-100 text-emerald-700" },
   cancelado:   { label: "Cancelado",  className: "bg-red-100 text-red-600" },
@@ -119,7 +119,7 @@ const ORDER_STATUS_CONFIG: Record<string, { label: string; className: string }> 
 
 const COMMISSION_STATUS_CONFIG: Record<string, { label: string; className: string; icon: React.ElementType }> = {
   pendiente:  { label: "Pendiente",  className: "bg-amber-100 text-amber-700",     icon: Clock },
-  liquidado:  { label: "Liquidado",  className: "bg-blue-100 text-blue-700",         icon: CheckCircle },
+  liquidado:  { label: "Liquidado",  className: "bg-emerald-100 text-emerald-700",         icon: CheckCircle },
   pagado:     { label: "Pagado",     className: "bg-emerald-100 text-emerald-700", icon: CheckCircle },
 };
 
@@ -192,7 +192,7 @@ export function AdminMarketplaceOverview() {
       <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
         {[
           { label: "Tiendas activas", value: `${data.stores.active}/${data.stores.total}`, sub: data.stores.pending > 0 ? `${data.stores.pending} por aprobar` : "Todas aprobadas", color: "text-primary" },
-          { label: "Pedidos hoy", value: String(data.today.orders), sub: fmtS(data.today.revenue), color: "text-blue-600" },
+          { label: "Pedidos hoy", value: String(data.today.orders), sub: fmtS(data.today.revenue), color: "text-emerald-600" },
           { label: "Ventas del mes", value: fmtS(data.month.revenue), sub: data.month.revenueGrowth !== 0 ? `${data.month.revenueGrowth > 0 ? "+" : ""}${data.month.revenueGrowth}% vs anterior` : "—", color: "text-purple-600" },
           { label: "Comisiones del mes", value: fmtS(data.commissions.month), sub: `${data.month.orders} órdenes`, color: "text-amber-600" },
           { label: "Pedidos pendientes", value: String(data.pendingOrders), sub: data.pendingOrders > 0 ? "¡Requieren atención!" : "Todo al día", color: data.pendingOrders > 0 ? "text-red-600" : "text-emerald-600" },
@@ -335,7 +335,7 @@ void DashboardTab;
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
         {[
           { label: "Hoy", value: fmtS(data.today.revenue), sub: `${data.today.orders} pedido(s)`, color: "text-primary" },
-          { label: "Este mes", value: fmtS(data.month.revenue), sub: `${data.month.orders} pedido(s)`, color: "text-blue-600" },
+          { label: "Este mes", value: fmtS(data.month.revenue), sub: `${data.month.orders} pedido(s)`, color: "text-emerald-600" },
           { label: "Ticket promedio", value: fmtS(data.month.avgTicket), sub: data.month.revenueGrowth !== 0 ? `${data.month.revenueGrowth > 0 ? "+" : ""}${data.month.revenueGrowth}% vs mes anterior` : "Sin comparación", color: "text-purple-600" },
           { label: "Reseñas", value: `★ ${data.store.rating.toFixed(1)}`, sub: `${data.store.reviewCount} opiniones`, color: "text-amber-500" },
         ].map(({ label, value, sub, color }) => (
@@ -349,7 +349,7 @@ void DashboardTab;
 
       {/* ── Resumen todos los canales (Marketplace + Directa + POS) ── */}
       {data.allChannels && (data.allChannels.today.orders > data.today.orders || data.allChannels.month.orders > data.month.orders) && (
-        <div className="bg-linear-to-r from-primary/5 to-blue-50 border border-primary/20 rounded-2xl p-4 shadow-sm">
+        <div className="bg-linear-to-r from-primary/5 to-emerald-50 border border-primary/20 rounded-2xl p-4 shadow-sm">
           <h3 className="text-xs font-bold text-gray-700 mb-2 flex items-center gap-1.5">
             <Store className="h-3.5 w-3.5 text-primary" />
             Resumen total (todos los canales)
@@ -360,7 +360,7 @@ void DashboardTab;
               <p className="text-[10px] text-gray-500">Hoy (total)</p>
             </div>
             <div>
-              <p className="text-lg font-extrabold text-blue-600">{data.allChannels.today.orders}</p>
+              <p className="text-lg font-extrabold text-emerald-600">{data.allChannels.today.orders}</p>
               <p className="text-[10px] text-gray-500">Pedidos hoy (total)</p>
             </div>
             <div>
@@ -386,7 +386,7 @@ void DashboardTab;
             </div>
           )}
           {data.pendingReviews > 0 && (
-            <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-blue-50 text-blue-700 text-xs font-semibold">
+            <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-emerald-50 text-emerald-700 text-xs font-semibold">
               <MessageSquare className="h-3.5 w-3.5" />
               {data.pendingReviews} reseña(s) por moderar
             </div>
@@ -1228,7 +1228,7 @@ function ComisionesTab() {
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
         {[
           { key: "pendiente", label: "Por pagar", color: "text-amber-600", bg: "bg-amber-50" },
-          { key: "liquidado", label: "Liquidado",  color: "text-blue-600",  bg: "bg-blue-50" },
+          { key: "liquidado", label: "Liquidado",  color: "text-emerald-600",  bg: "bg-emerald-50" },
           { key: "pagado",    label: "Pagado",     color: "text-emerald-600", bg: "bg-emerald-50" },
         ].map(({ key, label, color, bg }) => (
           <div key={key} className={cn("rounded-2xl p-4 border border-gray-200 shadow-sm", bg)}>
@@ -2078,7 +2078,7 @@ export default function MarketplaceModule() {
       <div className="grid grid-cols-3 gap-3">
         {[
           { label: "Productos publicados", value: kpis.publishedProducts, color: "text-primary" },
-          { label: "Órdenes del mes",      value: kpis.monthOrders,       color: "text-blue-600" },
+          { label: "Órdenes del mes",      value: kpis.monthOrders,       color: "text-emerald-600" },
           { label: "Comisiones pendientes",value: `S/${kpis.pendingCommissions.toFixed(2)}`, color: "text-amber-600" },
         ].map(({ label, value, color }) => (
           <div

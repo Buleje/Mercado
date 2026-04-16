@@ -106,7 +106,7 @@ export default function BankReconciliationTab() {
           { label: "Conciliados", value: String(stats.conciliados), color: "text-emerald-600", bg: "bg-emerald-50 dark:bg-emerald-950/30" },
           { label: "Pendientes", value: String(stats.pendientes), color: "text-amber-600", bg: "bg-amber-50 dark:bg-amber-950/30" },
           { label: "Discrepancias", value: String(stats.discrepancias), color: "text-red-500", bg: "bg-red-50 dark:bg-red-950/30" },
-          { label: "Total ingresos", value: fmt(stats.ingresos), color: "text-blue-600", bg: "bg-blue-50 dark:bg-blue-950/30" },
+          { label: "Total ingresos", value: fmt(stats.ingresos), color: "text-emerald-600", bg: "bg-emerald-50 dark:bg-emerald-950/30" },
           { label: "Total egresos", value: fmt(stats.egresos), color: "text-orange-600", bg: "bg-orange-50 dark:bg-orange-950/30" },
           { label: "% Conciliado", value: `${stats.pctConciliado.toFixed(0)}%`, color: "text-violet-600", bg: "bg-violet-50 dark:bg-violet-950/30" },
         ].map(({ label, value, color, bg }) => (
@@ -195,7 +195,7 @@ export default function BankReconciliationTab() {
                             <Link2 className="h-3.5 w-3.5" />
                           </button>
                         )}
-                        <button onClick={() => setDetail(m)} className="p-1.5 rounded-lg text-gray-400 hover:text-blue-500 hover:bg-blue-50 dark:hover:bg-blue-950/20">
+                        <button onClick={() => setDetail(m)} className="p-1.5 rounded-lg text-gray-400 hover:text-emerald-500 hover:bg-emerald-50 dark:hover:bg-emerald-950/20">
                           <Eye className="h-3.5 w-3.5" />
                         </button>
                       </div>

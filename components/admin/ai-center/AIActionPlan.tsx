@@ -64,9 +64,9 @@ const PRIORITY_CONFIG: Record<Priority, { label: string; icon: typeof AlertTrian
   recomendado: {
     label: "Recomendado",
     icon: Target,
-    color: "text-blue-700 dark:text-blue-400",
-    bg: "bg-blue-50 dark:bg-blue-950/30",
-    border: "border-blue-200 dark:border-blue-800/40",
+    color: "text-emerald-700 dark:text-emerald-400",
+    bg: "bg-emerald-50 dark:bg-emerald-950/30",
+    border: "border-emerald-200 dark:border-emerald-800/40",
   },
 };
 

@@ -120,7 +120,7 @@ export default function POSMetricsStrip() {
       icon: Clock,
       label: "Turno",
       value: formatMinutes(data.turnoMinutos ?? 0),
-      color: "text-blue-600 dark:text-blue-400",
+      color: "text-emerald-600 dark:text-emerald-400",
     },
     {
       icon: DollarSign,

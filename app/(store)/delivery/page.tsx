@@ -226,7 +226,7 @@ export default function DeliveryPage() {
                     <span className={`text-[10px] font-extrabold px-2.5 py-1 rounded-full uppercase ${
                       order.status === "en_camino" || order.status === "delivering"
                         ? "bg-cyan-100 text-cyan-700"
-                        : "bg-blue-100 text-blue-700"
+                        : "bg-emerald-100 text-emerald-700"
                     }`}>
                       {order.status === "en_camino" || order.status === "delivering"
                         ? "En camino"

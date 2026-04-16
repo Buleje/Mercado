@@ -44,7 +44,7 @@ const MOTIVOS = [
 
 const ESTADO_STYLES: Record<DevolucionEstado, string> = {
   PENDIENTE: "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400",
-  ENVIADA:   "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400",
+  ENVIADA:   "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400",
   RESUELTA:  "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400",
 };
 
@@ -597,7 +597,7 @@ export default function DevolucionesProveedorModule() {
               {[
                 { label: "Total", value: devoluciones.length, color: "text-gray-700 dark:text-gray-300" },
                 { label: "Pendientes", value: devoluciones.filter(d => d.estado === "PENDIENTE").length, color: "text-amber-600 dark:text-amber-400" },
-                { label: "Enviadas", value: devoluciones.filter(d => d.estado === "ENVIADA").length, color: "text-blue-600 dark:text-blue-400" },
+                { label: "Enviadas", value: devoluciones.filter(d => d.estado === "ENVIADA").length, color: "text-emerald-600 dark:text-emerald-400" },
                 { label: "Resueltas", value: devoluciones.filter(d => d.estado === "RESUELTA").length, color: "text-emerald-600 dark:text-emerald-400" },
               ].map(({ label, value, color }) => (
                 <div key={label} className="bg-white dark:bg-gray-900 border border-gray-100 dark:border-card-border rounded-xl p-3 text-center">

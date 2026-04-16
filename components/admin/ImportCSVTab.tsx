@@ -312,9 +312,9 @@ export default function ImportCSVTab() {
 
       {/* Help box */}
       {phase === "idle" && (
-        <div className="bg-blue-50 dark:bg-blue-950/20 rounded-xl p-3 border border-blue-200 dark:border-blue-900/30">
-          <p className="text-xs font-bold text-blue-700 dark:text-blue-400 mb-1">Formato esperado del CSV</p>
-          <code className="text-[10px] text-blue-600 dark:text-blue-500 block bg-blue-100/50 dark:bg-blue-900/20 rounded-lg p-2">
+        <div className="bg-emerald-50 dark:bg-emerald-950/20 rounded-xl p-3 border border-emerald-200 dark:border-emerald-900/30">
+          <p className="text-xs font-bold text-emerald-700 dark:text-emerald-400 mb-1">Formato esperado del CSV</p>
+          <code className="text-[10px] text-emerald-600 dark:text-emerald-500 block bg-emerald-100/50 dark:bg-emerald-900/20 rounded-lg p-2">
             sku,nombre,precio,stock,costo<br />
             PRD001,Arroz Extra 5kg,25.50,100,18.00<br />
             PRD002,Aceite Vegetal 1L,12.90,50,9.50

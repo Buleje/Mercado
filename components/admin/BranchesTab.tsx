@@ -47,7 +47,7 @@ const TRANSFERS: Transfer[] = [];
 
 const TRANSFER_STATUS: Record<Transfer["status"], { label: string; color: string; bg: string }> = {
   pendiente:     { label: "Pendiente",    color: "text-amber-600",   bg: "bg-amber-100 dark:bg-amber-900/30" },
-  "en-transito": { label: "En Tránsito", color: "text-blue-600",    bg: "bg-blue-100 dark:bg-blue-900/30" },
+  "en-transito": { label: "En Tránsito", color: "text-emerald-600",    bg: "bg-emerald-100 dark:bg-emerald-900/30" },
   completada:    { label: "Completada",   color: "text-emerald-600", bg: "bg-emerald-100 dark:bg-emerald-900/30" },
 };
 
@@ -93,7 +93,7 @@ export default function BranchesTab() {
       {/* KPIs */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
         {[
-          { label: "Sucursales activas", value: String(stats.active), color: "text-blue-600", bg: "bg-blue-50 dark:bg-blue-950/30" },
+          { label: "Sucursales activas", value: String(stats.active), color: "text-emerald-600", bg: "bg-emerald-50 dark:bg-emerald-950/30" },
           { label: "Venta mensual total", value: fmt(stats.totalRevenue), color: "text-emerald-600", bg: "bg-emerald-50 dark:bg-emerald-950/30" },
           { label: "Stock consolidado", value: stats.totalStock.toLocaleString("es-PE") + " uds", color: "text-violet-600", bg: "bg-violet-50 dark:bg-violet-950/30" },
           { label: "Transferencias activas", value: String(stats.pendingTransfers), color: "text-amber-600", bg: "bg-amber-50 dark:bg-amber-950/30" },

@@ -95,7 +95,7 @@ const ZONAS = [
 ];
 const ASSIGNMENT_STATUS_CONFIG: Record<string, { label: string; className: string }> = {
   pendiente:  { label: "Pendiente",  className: "bg-amber-100 text-amber-700" },
-  en_camino:  { label: "En camino",  className: "bg-blue-100 text-blue-700" },
+  en_camino:  { label: "En camino",  className: "bg-emerald-100 text-emerald-700" },
   entregado:  { label: "Entregado",  className: "bg-emerald-100 text-emerald-700" },
   cancelado:  { label: "Cancelado",  className: "bg-red-100 text-red-600" },
 };
@@ -785,7 +785,7 @@ function PermisosTab() {
                       <p className="text-xs text-gray-400">{p.userEmail}</p>
                     </td>
                     <td className="px-4 py-3 hidden sm:table-cell">
-                      <span className="inline-flex px-2 py-0.5 rounded-full text-xs font-bold bg-blue-100 text-blue-700">
+                      <span className="inline-flex px-2 py-0.5 rounded-full text-xs font-bold bg-emerald-100 text-emerald-700">
                         {p.permissionType}
                       </span>
                     </td>
@@ -1238,7 +1238,7 @@ export default function DeliveryPartnersModule() {
       <div className="grid grid-cols-3 gap-3">
         {[
           { label: "Repartidores activos", value: kpis.activePartners,     color: "text-primary" },
-          { label: "Entregas hoy",          value: kpis.deliveriesToday,    color: "text-blue-600" },
+          { label: "Entregas hoy",          value: kpis.deliveriesToday,    color: "text-emerald-600" },
           { label: "Pendientes",            value: kpis.pendingDeliveries,  color: "text-amber-600" },
         ].map(({ label, value, color }) => (
           <div

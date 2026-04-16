@@ -101,7 +101,7 @@ export const MODULE_INFO: Partial<
   },
   plata: {
     icon: Wallet,
-    iconColor: "text-blue-600 dark:text-blue-400",
+    iconColor: "text-emerald-600 dark:text-emerald-400",
     priority: "high",
     desc: "Ingresos, egresos, gastos, ganancias, reportes y exportación.",
     tip: "Visión financiera completa del negocio en un solo módulo.",
@@ -136,7 +136,7 @@ export const MODULE_INFO: Partial<
   },
   fiados: {
     icon: HandCoins,
-    iconColor: "text-blue-500 dark:text-blue-400",
+    iconColor: "text-emerald-500 dark:text-emerald-400",
     priority: "high",
     desc: "Control de créditos informales: registro, pagos y saldos pendientes.",
     tip: "Lleva la cuenta de lo que te deben tus clientes de confianza.",
@@ -150,7 +150,7 @@ export const MODULE_INFO: Partial<
   },
   prestamos: {
     icon: Banknote,
-    iconColor: "text-blue-500 dark:text-blue-400",
+    iconColor: "text-emerald-500 dark:text-emerald-400",
     priority: "medium",
     desc: "Préstamos a clientes con cuotas, interés y tabla de amortización.",
     tip: "Gestiona préstamos con calculadora integrada y seguimiento de pagos.",

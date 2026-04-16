@@ -60,9 +60,9 @@ function ModuleTooltip() {
             <p><span className="font-bold text-gray-800 dark:text-foreground">Historial:</span> <span className="text-gray-500 dark:text-muted">listado de todas las sesiones cerradas con su diferencia.</span></p>
             <p><span className="font-bold text-gray-800 dark:text-foreground">Ingreso / Egreso:</span> <span className="text-gray-500 dark:text-muted">ejemplo: registrar S/50 de egreso por compra de bolsas.</span></p>
           </div>
-          <div className="mt-3 bg-blue-50 dark:bg-blue-950/20 rounded-xl p-2">
-            <p className="text-blue-700 dark:text-blue-400 font-semibold">Ejemplo</p>
-            <p className="text-blue-600 dark:text-blue-300">Valentina abre caja con S/200, vende durante el turno y al cerrar el sistema le dice si hay faltante o sobrante.</p>
+          <div className="mt-3 bg-emerald-50 dark:bg-emerald-950/20 rounded-xl p-2">
+            <p className="text-emerald-700 dark:text-emerald-400 font-semibold">Ejemplo</p>
+            <p className="text-emerald-600 dark:text-emerald-300">Valentina abre caja con S/200, vende durante el turno y al cerrar el sistema le dice si hay faltante o sobrante.</p>
           </div>
         </div>
       )}
@@ -80,7 +80,7 @@ function fmtDateShort(iso: string) {
 
 const MOVEMENT_COLORS: Record<string, string> = {
   venta: "text-emerald-600 bg-emerald-50",
-  ingreso: "text-blue-600 bg-blue-50",
+  ingreso: "text-emerald-600 bg-emerald-50",
   egreso: "text-red-600 bg-red-50",
   apertura: "text-indigo-600 bg-indigo-50",
   cierre: "text-gray-600 dark:text-muted bg-gray-100 dark:bg-accent",
@@ -617,7 +617,7 @@ export default function CashRegisterTab() {
 
                 <div className="bg-white dark:bg-card rounded-xl border border-gray-100 dark:border-card-border p-3">
                   <div className="flex flex-wrap items-center gap-2 mb-1">
-                    <div className="h-7 w-7 rounded-lg flex items-center justify-center bg-blue-50 text-blue-600">
+                    <div className="h-7 w-7 rounded-lg flex items-center justify-center bg-emerald-50 text-emerald-600">
                       <Calculator className="h-3.5 w-3.5" />
                     </div>
                     <span className="text-[10px] font-bold text-gray-400 dark:text-muted uppercase">Esperado caja</span>
@@ -642,7 +642,7 @@ export default function CashRegisterTab() {
                 </button>
                 <button
                   onClick={() => { setArqueoAmount(""); setArqueoDenoms({}); setShowArqueo(true); }}
-                  className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-blue-50 text-blue-600 font-bold text-xs hover:bg-blue-100 transition-colors"
+                  className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-emerald-50 text-emerald-600 font-bold text-xs hover:bg-emerald-100 transition-colors"
                   title="Conteo físico del efectivo para verificar que cuadra con las ventas"
                 >
                   <Scan className="h-3.5 w-3.5" /> Arqueo Express
@@ -751,7 +751,7 @@ export default function CashRegisterTab() {
                   efectivo: { icon: Banknote, bg: "bg-green-50 dark:bg-green-950/20", color: "text-green-700 dark:text-green-400" },
                   yape: { icon: Smartphone, bg: "bg-purple-50 dark:bg-purple-950/20", color: "text-purple-700 dark:text-purple-400" },
                   plin: { icon: Smartphone, bg: "bg-cyan-50 dark:bg-cyan-950/20", color: "text-cyan-700 dark:text-cyan-400" },
-                  tarjeta: { icon: CreditCard, bg: "bg-blue-50 dark:bg-blue-950/20", color: "text-blue-700 dark:text-blue-400" },
+                  tarjeta: { icon: CreditCard, bg: "bg-emerald-50 dark:bg-emerald-950/20", color: "text-emerald-700 dark:text-emerald-400" },
                 };
                 return (
                   <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
@@ -797,7 +797,7 @@ export default function CashRegisterTab() {
                       const badgeColor = item.type === "apertura" ? "bg-indigo-100 text-indigo-700" :
                         item.type === "venta" ? "bg-emerald-100 text-emerald-700" :
                         item.type === "egreso" ? "bg-red-100 text-red-700" :
-                        item.type === "ingreso" ? "bg-blue-100 text-blue-700" :
+                        item.type === "ingreso" ? "bg-emerald-100 text-emerald-700" :
                         "bg-gray-100 text-gray-700";
                       const isExpanded = expandedMovIdx === idx;
                       return (
@@ -1327,7 +1327,7 @@ export default function CashRegisterTab() {
                 </div>
                 <div>
                   <p className="text-gray-500 dark:text-muted">Ingresos manuales</p>
-                  <p className="font-bold text-blue-600">{fmt(ingresosManual)}</p>
+                  <p className="font-bold text-emerald-600">{fmt(ingresosManual)}</p>
                 </div>
                 <div>
                   <p className="text-gray-500 dark:text-muted">Egresos manuales</p>
@@ -1340,11 +1340,11 @@ export default function CashRegisterTab() {
               </div>
             </div>
             
-            <div className="bg-blue-50 dark:bg-blue-950/20 rounded-xl p-3 mb-4 border border-blue-100 dark:border-blue-900/30">
-              <p className="text-xs text-blue-700 dark:text-blue-400">
+            <div className="bg-emerald-50 dark:bg-emerald-950/20 rounded-xl p-3 mb-4 border border-emerald-100 dark:border-emerald-900/30">
+              <p className="text-xs text-emerald-700 dark:text-emerald-400">
                 <strong>Esperado en caja:</strong> {fmt(stats?.expectedCash ?? 0)}
               </p>
-              <p className="text-[10px] text-blue-600 dark:text-blue-500 mt-0.5">
+              <p className="text-[10px] text-emerald-600 dark:text-emerald-500 mt-0.5">
                 Apertura ({fmt(currentRegister.openingAmount)}) + Ventas efectivo ({fmt(stats?.salesEfectivo ?? 0)}) + Ingresos ({fmt(stats?.totalIn ?? 0)}) − Egresos ({fmt(stats?.totalOut ?? 0)})
               </p>
             </div>
@@ -1543,25 +1543,25 @@ export default function CashRegisterTab() {
           <div className="fixed inset-0 z-50 bg-black/40 flex items-center justify-center p-4" onClick={() => setShowArqueo(false)}>
             <div className="bg-white dark:bg-card rounded-2xl shadow-xl max-w-md w-full max-h-[90vh] overflow-y-auto p-3 sm:p-6" onClick={e => e.stopPropagation()}>
               <h3 className="text-sm font-extrabold text-gray-900 dark:text-foreground mb-3 flex flex-wrap items-center gap-2">
-                <Scan className="h-4 w-4 text-blue-600" /> Arqueo Express
+                <Scan className="h-4 w-4 text-emerald-600" /> Arqueo Express
               </h3>
               
-              <div className="bg-linear-to-br from-blue-50 to-indigo-50 dark:from-blue-950/20 dark:to-indigo-950/20 rounded-xl p-4 mb-4 border border-blue-100 dark:border-blue-900/30">
+              <div className="bg-linear-to-br from-emerald-50 to-indigo-50 dark:from-emerald-950/20 dark:to-indigo-950/20 rounded-xl p-4 mb-4 border border-emerald-100 dark:border-emerald-900/30">
                 <h4 className="text-xs font-extrabold text-gray-900 dark:text-foreground mb-2 flex items-center gap-1">
-                  <Calculator className="h-3.5 w-3.5 text-blue-600" />
+                  <Calculator className="h-3.5 w-3.5 text-emerald-600" />
                   Verificación rápida de caja
                 </h4>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
                   <div>
                     <p className="text-gray-500 dark:text-muted">Esperado en caja</p>
-                    <p className="font-bold text-blue-600">{fmt(expectedCash)}</p>
+                    <p className="font-bold text-emerald-600">{fmt(expectedCash)}</p>
                   </div>
                   <div>
                     <p className="text-gray-500 dark:text-muted">Contado</p>
                     <p className="font-bold text-gray-900 dark:text-foreground">{fmt(countedCash)}</p>
                   </div>
                 </div>
-                <p className="text-[10px] text-blue-600 dark:text-blue-500 mt-2">
+                <p className="text-[10px] text-emerald-600 dark:text-emerald-500 mt-2">
                   Apertura ({fmt(currentRegister.openingAmount)}) + Ventas efectivo ({fmt(stats?.salesEfectivo ?? 0)}) + Ingresos ({fmt(stats?.totalIn ?? 0)}) − Egresos ({fmt(stats?.totalOut ?? 0)})
                 </p>
               </div>
@@ -1673,7 +1673,7 @@ export default function CashRegisterTab() {
                   <button
                     onClick={handleArqueoExpress}
                     disabled={addingArqueo || !arqueoAmount}
-                    className="flex-1 py-2.5 rounded-xl bg-blue-600 text-white text-sm font-bold hover:bg-blue-700 disabled:opacity-50 flex items-center justify-center gap-1"
+                    className="flex-1 py-2.5 rounded-xl bg-emerald-600 text-white text-sm font-bold hover:bg-emerald-700 disabled:opacity-50 flex items-center justify-center gap-1"
                   >
                     {addingArqueo ? <Loader2 className="h-4 w-4 animate-spin" /> : <Check className="h-4 w-4" />}
                     Registrar arqueo
@@ -1812,11 +1812,11 @@ export default function CashRegisterTab() {
               )}
               {arqueoTab === "tarjeta" && (
                 <div>
-                  <label className="text-xs font-bold text-blue-600 mb-1 block">Total en vouchers tarjeta</label>
+                  <label className="text-xs font-bold text-emerald-600 mb-1 block">Total en vouchers tarjeta</label>
                   <div className="relative">
                     <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-xs font-bold">S/</span>
                     <input type="number" min="0" step="0.10" value={arqueoTarjeta} onChange={e => setArqueoTarjeta(e.target.value)} placeholder="0.00"
-                      className="w-full pl-8 pr-3 py-2 rounded-lg border border-gray-200 dark:border-card-border text-sm text-gray-900 dark:text-foreground outline-none focus:border-blue-500" />
+                      className="w-full pl-8 pr-3 py-2 rounded-lg border border-gray-200 dark:border-card-border text-sm text-gray-900 dark:text-foreground outline-none focus:border-emerald-500" />
                   </div>
                   <p className="text-[10px] text-gray-400 mt-1">Suma los vouchers de tarjeta del dia</p>
                 </div>

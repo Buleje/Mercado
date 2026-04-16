@@ -26,7 +26,7 @@ type Transfer = {
 
 const STATUS_CONFIG: Record<TransferStatus, { label: string; color: string }> = {
   pendiente: { label: "Pendiente", color: "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400" },
-  "en-transito": { label: "En Transito", color: "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400" },
+  "en-transito": { label: "En Transito", color: "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400" },
   recibido: { label: "Recibido", color: "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400" },
   cancelado: { label: "Cancelado", color: "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400" },
 };
@@ -143,7 +143,7 @@ export default function WarehouseTransferTab() {
       <div className="flex flex-col gap-2 sm:gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h2 className="flex flex-wrap items-center gap-2 text-xl font-extrabold text-gray-900 dark:text-foreground">
-            <Truck className="h-6 w-6 text-blue-500" /> Transferencias entre Almacenes <ModuleTooltip />
+            <Truck className="h-6 w-6 text-emerald-500" /> Transferencias entre Almacenes <ModuleTooltip />
           </h2>
           <p className="mt-1 text-sm text-gray-500 dark:text-muted">Gestiona movimientos de stock entre ubicaciones con persistencia real</p>
         </div>

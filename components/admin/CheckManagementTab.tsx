@@ -43,7 +43,7 @@ type PayableRecord = {
 const fmt = (n: number) => "S/ " + n.toLocaleString("es-PE", { minimumFractionDigits: 2 });
 
 const STATUS_MAP: Record<CheckStatus, { label: string; color: string; bg: string }> = {
-  "en-cartera":    { label: "En cartera",    color: "text-blue-600",    bg: "bg-blue-100 dark:bg-blue-900/30"    },
+  "en-cartera":    { label: "En cartera",    color: "text-emerald-600",    bg: "bg-emerald-100 dark:bg-emerald-900/30"    },
   "por-depositar": { label: "Por depositar", color: "text-amber-600",   bg: "bg-amber-100 dark:bg-amber-900/30"  },
   depositado:      { label: "Depositado",    color: "text-violet-600",  bg: "bg-violet-100 dark:bg-violet-900/30"},
   cobrado:         { label: "Cobrado",       color: "text-emerald-600", bg: "bg-emerald-100 dark:bg-emerald-900/30"},
@@ -210,8 +210,8 @@ export default function CheckManagementTab() {
           {
             label: "Por depositar",
             value: String(stats.toDeposit),
-            color: "text-blue-600",
-            bg: "bg-blue-50 dark:bg-blue-950/30",
+            color: "text-emerald-600",
+            bg: "bg-emerald-50 dark:bg-emerald-950/30",
             icon: Calendar,
           },
           {
@@ -348,7 +348,7 @@ export default function CheckManagementTab() {
                           "text-xs font-bold px-2 py-0.5 rounded-full",
                           c.type === "recibido"
                             ? "bg-emerald-100 dark:bg-emerald-900/30 text-emerald-600"
-                            : "bg-blue-100 dark:bg-blue-900/30 text-blue-600"
+                            : "bg-emerald-100 dark:bg-emerald-900/30 text-emerald-600"
                         )}
                       >
                         {c.type === "recibido" ? "Recibido" : "Emitido"}

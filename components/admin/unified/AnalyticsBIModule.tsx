@@ -157,7 +157,7 @@ function InlineKPIStrip() {
 
   const items = [
     { label: "Ventas hoy", value: `S/ ${kpis.ventasHoy.toFixed(0)}`, color: "text-emerald-600" },
-    { label: "Ticket prom", value: `S/ ${kpis.ticketPromedio.toFixed(0)}`, color: "text-blue-600" },
+    { label: "Ticket prom", value: `S/ ${kpis.ticketPromedio.toFixed(0)}`, color: "text-emerald-600" },
     { label: "Margen", value: `${kpis.margen.toFixed(1)}%`, color: kpis.margen >= 20 ? "text-emerald-600" : "text-amber-600" },
     { label: "Clientes hoy", value: String(kpis.clientesHoy), color: "text-purple-600" },
     { label: "Fiado pend.", value: `S/ ${kpis.fiadoPendiente.toFixed(0)}`, color: kpis.fiadoPendiente > 0 ? "text-red-500" : "text-gray-500" },
@@ -191,21 +191,21 @@ function SectionKPIStrip({ section }: { section: "ventas" | "productos" | "clien
       if (section === "ventas") {
           setItems([
             { label: "Ventas hoy", value: `S/ ${(Number(d.ingresosHoy ?? d.ventasHoy ?? 0) || 0).toFixed(0)}`, color: "text-emerald-600" },
-            { label: "Ticket prom", value: `S/ ${(Number(d.ticketPromedio ?? d.avgTicket ?? 0) || 0).toFixed(0)}`, color: "text-blue-600" },
+            { label: "Ticket prom", value: `S/ ${(Number(d.ticketPromedio ?? d.avgTicket ?? 0) || 0).toFixed(0)}`, color: "text-emerald-600" },
             { label: "Operaciones", value: String(Number(d.ordersToday ?? d.totalVentas ?? 0) || 0), color: "text-purple-600" },
             { label: "Pico (hora)", value: d.peakHour ? `${d.peakHour}h` : "--", color: "text-amber-600" },
           ]);
         } else if (section === "productos") {
           setItems([
             { label: "SKUs activos", value: String(Number(d.skuCount ?? d.totalProducts ?? 0) || 0), color: "text-emerald-600" },
-            { label: "Margen prom", value: `${(Number(d.margenOperativo ?? d.marginPct ?? 0) || 0).toFixed(1)}%`, color: "text-blue-600" },
+            { label: "Margen prom", value: `${(Number(d.margenOperativo ?? d.marginPct ?? 0) || 0).toFixed(1)}%`, color: "text-emerald-600" },
             { label: "Stock bajo", value: String(Number(d.lowStockCount ?? d.stockBajo ?? 0) || 0), color: "text-red-500" },
             { label: "Rotación", value: `${(Number(d.rotacionInventario ?? d.inventoryTurnover ?? 0) || 0).toFixed(1)}x`, color: "text-cyan-600" },
           ]);
         } else if (section === "clientes") {
           setItems([
             { label: "Total clientes", value: String(Number(d.totalClientes ?? d.totalCustomers ?? 0) || 0), color: "text-emerald-600" },
-            { label: "Nuevos (mes)", value: String(Number(d.newCustomersMonth ?? d.clientesNuevos ?? 0) || 0), color: "text-blue-600" },
+            { label: "Nuevos (mes)", value: String(Number(d.newCustomersMonth ?? d.clientesNuevos ?? 0) || 0), color: "text-emerald-600" },
             { label: "Fiado pend.", value: `S/ ${(Number(d.fiadoPendiente ?? d.fiadoTotal ?? 0) || 0).toFixed(0)}`, color: "text-red-500" },
             { label: "Retención", value: `${(Number(d.retentionRate ?? d.retencion ?? 0) || 0).toFixed(0)}%`, color: "text-purple-600" },
           ]);

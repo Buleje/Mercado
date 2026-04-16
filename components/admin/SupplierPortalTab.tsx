@@ -48,7 +48,7 @@ const fmt = (n: number) => "S/ " + n.toLocaleString("es-PE", { minimumFractionDi
 
 const ORDER_STATUS: Record<OrderStatus, { label: string; color: string; bg: string }> = {
   pendiente:    { label: "Pendiente",   color: "text-amber-600",    bg: "bg-amber-100 dark:bg-amber-900/30" },
-  procesando:   { label: "Procesando",  color: "text-blue-600",     bg: "bg-blue-100 dark:bg-blue-900/30" },
+  procesando:   { label: "Procesando",  color: "text-emerald-600",     bg: "bg-emerald-100 dark:bg-emerald-900/30" },
   "en-transito":{ label: "En tránsito", color: "text-violet-600",   bg: "bg-violet-100 dark:bg-violet-900/30" },
   entregado:    { label: "Entregado",   color: "text-emerald-600",  bg: "bg-emerald-100 dark:bg-emerald-900/30" },
   parcial:      { label: "Entrega parcial", color: "text-orange-600", bg: "bg-orange-100 dark:bg-orange-900/30" },
@@ -117,7 +117,7 @@ export default function SupplierPortalTab() {
 
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
         {[
-          { label: "Pedidos activos", value: String(stats.activeOrders), color: "text-blue-600", bg: "bg-blue-50 dark:bg-blue-950/30" },
+          { label: "Pedidos activos", value: String(stats.activeOrders), color: "text-emerald-600", bg: "bg-emerald-50 dark:bg-emerald-950/30" },
           { label: "Facturas por pagar", value: fmt(stats.pendingInvoices), color: "text-amber-600", bg: "bg-amber-50 dark:bg-amber-950/30" },
           { label: "Facturas vencidas", value: String(stats.overdueInvoices), color: "text-red-600", bg: "bg-red-50 dark:bg-red-950/30" },
           { label: "Mensajes sin leer", value: String(stats.unreadMessages), color: "text-violet-600", bg: "bg-violet-50 dark:bg-violet-950/30" },

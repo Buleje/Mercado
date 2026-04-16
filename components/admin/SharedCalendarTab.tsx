@@ -11,7 +11,7 @@ type CalEvent = {
 };
 
 const TYPE_CONFIG: Record<EventType, { label: string; color: string }> = {
-  tarea: { label: "Tarea", color: "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400 border-blue-300 dark:border-blue-700" },
+  tarea: { label: "Tarea", color: "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400 border-emerald-300 dark:border-emerald-700" },
   entrega: { label: "Entrega", color: "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400 border-emerald-300 dark:border-emerald-700" },
   pago: { label: "Pago", color: "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400 border-amber-300 dark:border-amber-700" },
   reunion: { label: "Reunión", color: "bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400 border-purple-300 dark:border-purple-700" },

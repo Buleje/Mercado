@@ -88,7 +88,7 @@ const STATUS_LABEL: Record<CampaignStatus, string> = {
 };
 const STATUS_COLOR: Record<CampaignStatus, string> = {
   borrador: "bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-400",
-  programada: "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400",
+  programada: "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400",
   activa: "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400",
   completada: "bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400",
   cancelada: "bg-red-100 text-red-600 dark:bg-red-900/30 dark:text-red-400",
@@ -535,7 +535,7 @@ export default function CampañasTab() {
                     {c.revenue > 0 && <span className="text-emerald-600 dark:text-emerald-400 font-bold">{fmt(c.revenue)}</span>}
                   </>}
                   {c.scheduledAt && c.status === "programada" && (
-                    <span className="flex items-center gap-1"><Clock className="h-3 w-3 text-blue-500" />Prog. {fmtDate(c.scheduledAt)}</span>
+                    <span className="flex items-center gap-1"><Clock className="h-3 w-3 text-emerald-500" />Prog. {fmtDate(c.scheduledAt)}</span>
                   )}
                   <span>{fmtDate(c.createdAt)}</span>
                 </div>

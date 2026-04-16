@@ -92,7 +92,7 @@ export default function PushNotificationBanner() {
               ? "border-emerald-200 dark:border-emerald-800/50 bg-emerald-50 dark:bg-emerald-950/20"
               : state === "error"
               ? "border-red-200 dark:border-red-800/50 bg-red-50 dark:bg-red-950/20"
-              : "border-blue-200 dark:border-blue-800/50 bg-blue-50 dark:bg-blue-950/20"
+              : "border-emerald-200 dark:border-emerald-800/50 bg-emerald-50 dark:bg-emerald-950/20"
           )}
         >
           {/* Icono */}
@@ -103,7 +103,7 @@ export default function PushNotificationBanner() {
                 ? "bg-emerald-100 dark:bg-emerald-900/40"
                 : state === "error"
                 ? "bg-red-100 dark:bg-red-900/40"
-                : "bg-blue-100 dark:bg-blue-900/40"
+                : "bg-emerald-100 dark:bg-emerald-900/40"
             )}
           >
             {state === "success" ? (
@@ -111,7 +111,7 @@ export default function PushNotificationBanner() {
             ) : state === "error" ? (
               <BellOff className="h-4 w-4 text-red-500 dark:text-red-400" />
             ) : (
-              <Bell className="h-4 w-4 text-blue-600 dark:text-blue-400" />
+              <Bell className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
             )}
           </div>
 
@@ -133,7 +133,7 @@ export default function PushNotificationBanner() {
               </>
             )}
             {(state === "unsubscribed" || state === "loading") && (
-              <p className="text-xs font-semibold text-blue-700 dark:text-blue-300">
+              <p className="text-xs font-semibold text-emerald-700 dark:text-emerald-300">
                 Activa notificaciones para recibir alertas de vencimiento
               </p>
             )}
@@ -149,7 +149,7 @@ export default function PushNotificationBanner() {
                 "min-h-[44px] min-w-[44px] flex items-center gap-1.5 px-3 rounded-lg text-xs font-semibold transition-colors shrink-0",
                 state === "error"
                   ? "bg-red-100 dark:bg-red-900/40 text-red-600 dark:text-red-400 hover:bg-red-200 dark:hover:bg-red-900/60 border border-red-200 dark:border-red-800/50"
-                  : "bg-blue-600 dark:bg-blue-700 text-white hover:bg-blue-700 dark:hover:bg-blue-800 disabled:opacity-50 disabled:cursor-not-allowed"
+                  : "bg-emerald-600 dark:bg-emerald-700 text-white hover:bg-emerald-700 dark:hover:bg-emerald-800 disabled:opacity-50 disabled:cursor-not-allowed"
               )}
             >
               {state === "loading" ? (

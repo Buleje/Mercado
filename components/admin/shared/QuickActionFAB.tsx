@@ -48,7 +48,7 @@ export default function QuickActionFAB({ onNavigate }: QuickActionFABProps) {
       id: "ver-pedidos",
       label: "Ver pedidos",
       icon: ClipboardCheck,
-      iconColor: "text-blue-600",
+      iconColor: "text-emerald-600",
       onClick: () => { onNavigate("pedidos"); setOpen(false); },
     },
     {

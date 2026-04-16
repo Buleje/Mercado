@@ -53,7 +53,7 @@ function getStatus(schedule: PriceSchedule): ScheduleStatus {
 }
 
 const STATUS_UI: Record<ScheduleStatus, { label: string; color: string; dot: string }> = {
-  programado: { label: "Programado", color: "text-blue-600 dark:text-blue-400",    dot: "bg-blue-500" },
+  programado: { label: "Programado", color: "text-emerald-600 dark:text-emerald-400",    dot: "bg-emerald-500" },
   activo:     { label: "Activo",     color: "text-emerald-600 dark:text-emerald-400", dot: "bg-emerald-500" },
   expirado:   { label: "Expirado",   color: "text-gray-400 dark:text-gray-600",    dot: "bg-gray-400" },
 };

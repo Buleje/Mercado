@@ -46,7 +46,7 @@ interface KanbanColumn {
 // -- Columnas --
 
 const COLUMNS: KanbanColumn[] = [
-  { stage: "trial", label: "Trial", icon: Clock, color: "text-blue-600 dark:text-blue-400", bgColor: "bg-blue-50 dark:bg-blue-900/20", borderColor: "border-blue-200 dark:border-blue-700" },
+  { stage: "trial", label: "Trial", icon: Clock, color: "text-emerald-600 dark:text-emerald-400", bgColor: "bg-emerald-50 dark:bg-emerald-900/20", borderColor: "border-emerald-200 dark:border-emerald-700" },
   { stage: "onboarded", label: "Onboarded", icon: CheckCircle, color: "text-emerald-600 dark:text-emerald-400", bgColor: "bg-emerald-50 dark:bg-emerald-900/20", borderColor: "border-emerald-200 dark:border-emerald-700" },
   { stage: "active", label: "Activo", icon: Users, color: "text-green-600 dark:text-green-400", bgColor: "bg-green-50 dark:bg-green-900/20", borderColor: "border-green-200 dark:border-green-700" },
   { stage: "at_risk", label: "En Riesgo", icon: AlertTriangle, color: "text-amber-600 dark:text-amber-400", bgColor: "bg-amber-50 dark:bg-amber-900/20", borderColor: "border-amber-200 dark:border-amber-700" },
@@ -81,7 +81,7 @@ function TenantCardUI({ tenant, onAction }: { tenant: TenantCard; onAction: (act
       )}
 
       {tenant.trialEndsAt && tenant.stage === "trial" && (
-        <p className="text-[10px] text-blue-500 mt-1">
+        <p className="text-[10px] text-emerald-500 mt-1">
           Trial hasta: {new Date(tenant.trialEndsAt).toLocaleDateString("es-PE")}
         </p>
       )}
@@ -99,7 +99,7 @@ function TenantCardUI({ tenant, onAction }: { tenant: TenantCard; onAction: (act
         {tenant.ownerEmail && (
           <button
             onClick={() => onAction("email", tenant)}
-            className="p-1.5 rounded-md hover:bg-blue-50 dark:hover:bg-blue-900/20 text-blue-600 transition-colors"
+            className="p-1.5 rounded-md hover:bg-emerald-50 dark:hover:bg-emerald-900/20 text-emerald-600 transition-colors"
             title="Email"
           >
             <Mail className="h-3.5 w-3.5" />

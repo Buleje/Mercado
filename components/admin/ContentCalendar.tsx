@@ -34,8 +34,8 @@ const ENTRY_TYPES: { value: EntryType; label: string; color: string; dot: string
   {
     value: "receta",
     label: "Receta",
-    color: "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400",
-    dot: "bg-blue-400",
+    color: "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400",
+    dot: "bg-emerald-400",
   },
   {
     value: "post",

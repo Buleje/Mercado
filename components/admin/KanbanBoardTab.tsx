@@ -13,13 +13,13 @@ type Task = {
 
 const PRIORITY_CONFIG: Record<Priority, { label: string; color: string }> = {
   baja: { label: "Baja", color: "bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-400" },
-  media: { label: "Media", color: "bg-blue-100 text-blue-600 dark:bg-blue-900/30 dark:text-blue-400" },
+  media: { label: "Media", color: "bg-emerald-100 text-emerald-600 dark:bg-emerald-900/30 dark:text-emerald-400" },
   alta: { label: "Alta", color: "bg-orange-100 text-orange-600 dark:bg-orange-900/30 dark:text-orange-400" },
   urgente: { label: "Urgente", color: "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400" },
 };
 const COL_CONFIG: Record<Column, { label: string; color: string; bg: string; icon: typeof Clock }> = {
   pendiente: { label: "Pendiente", color: "text-amber-600 dark:text-amber-400", bg: "bg-amber-50 dark:bg-amber-950/10", icon: Clock },
-  "en-progreso": { label: "En Progreso", color: "text-blue-600 dark:text-blue-400", bg: "bg-blue-50 dark:bg-blue-950/10", icon: ListChecks },
+  "en-progreso": { label: "En Progreso", color: "text-emerald-600 dark:text-emerald-400", bg: "bg-emerald-50 dark:bg-emerald-950/10", icon: ListChecks },
   completado: { label: "Completado", color: "text-emerald-600 dark:text-emerald-400", bg: "bg-emerald-50 dark:bg-emerald-950/10", icon: CheckCircle },
 };
 
@@ -66,7 +66,7 @@ export default function KanbanBoardTab() {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 sm:gap-4">
         <div>
           <h2 className="text-xl font-extrabold text-gray-900 dark:text-foreground flex flex-wrap items-center gap-2">
-            <ListChecks className="h-6 w-6 text-blue-500" /> Kanban de Tareas
+            <ListChecks className="h-6 w-6 text-emerald-500" /> Kanban de Tareas
           </h2>
           <p className="text-sm text-gray-500 dark:text-muted mt-1">Organiza tareas del equipo en columnas de estado</p>
         </div>

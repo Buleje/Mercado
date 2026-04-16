@@ -353,13 +353,13 @@ export function AuthModal({ open, onClose }: AuthModalProps) {
         ].join(" ")}
       >
         {/* ── Gradient header decoration ── */}
-        <div className="absolute inset-x-0 top-0 h-32 bg-linear-to-br from-blue-600 via-blue-500 to-indigo-600 opacity-[0.07] dark:opacity-[0.15] pointer-events-none" />
+        <div className="absolute inset-x-0 top-0 h-32 bg-linear-to-br from-emerald-600 via-emerald-500 to-indigo-600 opacity-[0.07] dark:opacity-[0.15] pointer-events-none" />
 
         {/* Toast */}
         {toast && (
           <div
             role="alert"
-            className="absolute inset-x-4 top-4 z-10 rounded-2xl bg-linear-to-r from-blue-600 to-indigo-600 px-4 py-3 text-center text-sm font-medium text-white shadow-lg shadow-blue-500/25 animate-[fadeIn_0.3s_ease-out]"
+            className="absolute inset-x-4 top-4 z-10 rounded-2xl bg-linear-to-r from-emerald-600 to-indigo-600 px-4 py-3 text-center text-sm font-medium text-white shadow-lg shadow-emerald-500/25 animate-[fadeIn_0.3s_ease-out]"
           >
             {toast}
           </div>
@@ -370,7 +370,7 @@ export function AuthModal({ open, onClose }: AuthModalProps) {
           ref={closeButtonRef}
           onClick={onClose}
           aria-label="Cerrar modal"
-          className="absolute right-4 top-4 z-10 flex h-9 w-9 items-center justify-center rounded-full bg-gray-100/80 dark:bg-gray-800/80 text-gray-500 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700 hover:text-gray-700 transition-all focus-visible:outline-2 focus-visible:outline-blue-500"
+          className="absolute right-4 top-4 z-10 flex h-9 w-9 items-center justify-center rounded-full bg-gray-100/80 dark:bg-gray-800/80 text-gray-500 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700 hover:text-gray-700 transition-all focus-visible:outline-2 focus-visible:outline-emerald-500"
         >
           <X className="h-4 w-4" />
         </button>
@@ -378,7 +378,7 @@ export function AuthModal({ open, onClose }: AuthModalProps) {
         <div className="relative px-6 pb-8 pt-8 sm:px-8">
           {/* ── Logo + título ── */}
           <div className="mb-7 flex flex-col items-center gap-3">
-            <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-linear-to-br from-blue-500 to-indigo-600 text-white text-2xl font-black shadow-xl shadow-blue-500/30 ring-4 ring-white dark:ring-gray-900">
+            <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-linear-to-br from-emerald-500 to-indigo-600 text-white text-2xl font-black shadow-xl shadow-emerald-500/30 ring-4 ring-white dark:ring-gray-900">
               B
             </div>
             <div className="text-center">
@@ -406,7 +406,7 @@ export function AuthModal({ open, onClose }: AuthModalProps) {
                 <button
                   ref={firstFocusableRef}
                   onClick={handleGoogle}
-                  className="group flex w-full min-h-12 items-center justify-center gap-3 rounded-2xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 px-4 py-3 text-sm font-semibold text-gray-700 dark:text-gray-200 shadow-sm transition-all hover:border-gray-300 dark:hover:border-gray-600 hover:shadow-md hover:scale-[1.01] active:scale-[0.98] focus-visible:outline-2 focus-visible:outline-blue-500"
+                  className="group flex w-full min-h-12 items-center justify-center gap-3 rounded-2xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 px-4 py-3 text-sm font-semibold text-gray-700 dark:text-gray-200 shadow-sm transition-all hover:border-gray-300 dark:hover:border-gray-600 hover:shadow-md hover:scale-[1.01] active:scale-[0.98] focus-visible:outline-2 focus-visible:outline-emerald-500"
                 >
                   <GoogleIcon />
                   Continuar con Google
@@ -414,7 +414,7 @@ export function AuthModal({ open, onClose }: AuthModalProps) {
 
                 <button
                   onClick={handleFacebook}
-                  className="group flex w-full min-h-12 items-center justify-center gap-3 rounded-2xl bg-[#1877F2] px-4 py-3 text-sm font-semibold text-white shadow-sm transition-all hover:bg-[#166FE5] hover:shadow-md hover:shadow-blue-500/20 hover:scale-[1.01] active:scale-[0.98] focus-visible:outline-2 focus-visible:outline-blue-500"
+                  className="group flex w-full min-h-12 items-center justify-center gap-3 rounded-2xl bg-[#1877F2] px-4 py-3 text-sm font-semibold text-white shadow-sm transition-all hover:bg-[#166FE5] hover:shadow-md hover:shadow-emerald-500/20 hover:scale-[1.01] active:scale-[0.98] focus-visible:outline-2 focus-visible:outline-emerald-500"
                 >
                   <FacebookIcon />
                   Continuar con Facebook
@@ -437,7 +437,7 @@ export function AuthModal({ open, onClose }: AuthModalProps) {
                   className={[
                     "flex-1 rounded-xl py-2.5 text-sm font-semibold transition-all min-h-11",
                     tab === "login"
-                      ? "bg-white dark:bg-gray-700 text-blue-600 dark:text-blue-400 shadow-sm"
+                      ? "bg-white dark:bg-gray-700 text-emerald-600 dark:text-emerald-400 shadow-sm"
                       : "text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300",
                   ].join(" ")}
                 >
@@ -448,7 +448,7 @@ export function AuthModal({ open, onClose }: AuthModalProps) {
                   className={[
                     "flex-1 rounded-xl py-2.5 text-sm font-semibold transition-all min-h-11",
                     tab === "register"
-                      ? "bg-white dark:bg-gray-700 text-blue-600 dark:text-blue-400 shadow-sm"
+                      ? "bg-white dark:bg-gray-700 text-emerald-600 dark:text-emerald-400 shadow-sm"
                       : "text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300",
                   ].join(" ")}
                 >
@@ -489,12 +489,12 @@ export function AuthModal({ open, onClose }: AuthModalProps) {
                           ? "border-green-400 dark:border-green-500 ring-2 ring-green-400/20"
                           : dniError
                             ? "border-red-400 dark:border-red-500 ring-2 ring-red-400/20"
-                            : "border-gray-200 dark:border-gray-700 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20",
+                            : "border-gray-200 dark:border-gray-700 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20",
                       ].join(" ")}
                     />
                     <div className="absolute right-3 top-1/2 -translate-y-1/2">
                       {dniLoading ? (
-                        <Loader2 className="h-5 w-5 animate-spin text-blue-500" />
+                        <Loader2 className="h-5 w-5 animate-spin text-emerald-500" />
                       ) : dniVerified ? (
                         <div className="flex h-6 w-6 items-center justify-center rounded-full bg-green-500 text-white">
                           <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
@@ -542,7 +542,7 @@ export function AuthModal({ open, onClose }: AuthModalProps) {
                       "w-full rounded-2xl border bg-gray-50 dark:bg-gray-800 px-4 py-3 text-sm text-gray-900 dark:text-white placeholder-gray-400 outline-none transition-all",
                       dniVerified
                         ? "border-green-400/50 dark:border-green-500/30 bg-green-50 dark:bg-green-900/20 cursor-default"
-                        : "border-gray-200 dark:border-gray-700 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20",
+                        : "border-gray-200 dark:border-gray-700 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20",
                     ].join(" ")}
                   />
                 </div>
@@ -570,7 +570,7 @@ export function AuthModal({ open, onClose }: AuthModalProps) {
                     placeholder="987 654 321"
                     autoComplete="tel-national"
                     inputMode="numeric"
-                    className="flex-1 rounded-2xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 px-4 py-3 text-sm text-gray-900 dark:text-white placeholder-gray-400 outline-none transition-all focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20"
+                    className="flex-1 rounded-2xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 px-4 py-3 text-sm text-gray-900 dark:text-white placeholder-gray-400 outline-none transition-all focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20"
                   />
                 </div>
               </div>
@@ -581,7 +581,7 @@ export function AuthModal({ open, onClose }: AuthModalProps) {
                   void handleSendOtp();
                 }}
                 disabled={loading}
-                className="w-full min-h-12 rounded-2xl bg-linear-to-r from-blue-600 to-indigo-600 px-4 py-3.5 text-sm font-bold text-white shadow-lg shadow-blue-500/25 transition-all hover:shadow-xl hover:shadow-blue-500/30 hover:scale-[1.01] active:scale-[0.98] focus-visible:outline-2 focus-visible:outline-blue-500 disabled:opacity-60 disabled:cursor-not-allowed disabled:hover:scale-100"
+                className="w-full min-h-12 rounded-2xl bg-linear-to-r from-emerald-600 to-indigo-600 px-4 py-3.5 text-sm font-bold text-white shadow-lg shadow-emerald-500/25 transition-all hover:shadow-xl hover:shadow-emerald-500/30 hover:scale-[1.01] active:scale-[0.98] focus-visible:outline-2 focus-visible:outline-emerald-500 disabled:opacity-60 disabled:cursor-not-allowed disabled:hover:scale-100"
               >
                 {loading ? (
                   <span className="flex items-center justify-center gap-2">
@@ -602,7 +602,7 @@ export function AuthModal({ open, onClose }: AuthModalProps) {
             <div className="space-y-5">
               {/* Ilustración OTP */}
               <div className="flex flex-col items-center gap-3">
-                <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400">
+                <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-emerald-50 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400">
                   <Shield className="h-8 w-8" />
                 </div>
                 <p className="text-sm text-gray-600 dark:text-gray-400 text-center">
@@ -632,7 +632,7 @@ export function AuthModal({ open, onClose }: AuthModalProps) {
                   inputMode="numeric"
                   autoComplete="one-time-code"
                   maxLength={6}
-                  className="w-full rounded-2xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 px-4 py-4 text-center text-2xl font-bold tracking-[0.5em] text-gray-900 dark:text-white placeholder-gray-300 dark:placeholder-gray-600 outline-none transition-all focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20"
+                  className="w-full rounded-2xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 px-4 py-4 text-center text-2xl font-bold tracking-[0.5em] text-gray-900 dark:text-white placeholder-gray-300 dark:placeholder-gray-600 outline-none transition-all focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20"
                 />
               </div>
 
@@ -642,7 +642,7 @@ export function AuthModal({ open, onClose }: AuthModalProps) {
                   void handleVerifyOtp();
                 }}
                 disabled={loading || otpCode.length !== 6}
-                className="w-full min-h-12 rounded-2xl bg-linear-to-r from-blue-600 to-indigo-600 px-4 py-3.5 text-sm font-bold text-white shadow-lg shadow-blue-500/25 transition-all hover:shadow-xl hover:shadow-blue-500/30 hover:scale-[1.01] active:scale-[0.98] focus-visible:outline-2 focus-visible:outline-blue-500 disabled:opacity-60 disabled:cursor-not-allowed disabled:hover:scale-100"
+                className="w-full min-h-12 rounded-2xl bg-linear-to-r from-emerald-600 to-indigo-600 px-4 py-3.5 text-sm font-bold text-white shadow-lg shadow-emerald-500/25 transition-all hover:shadow-xl hover:shadow-emerald-500/30 hover:scale-[1.01] active:scale-[0.98] focus-visible:outline-2 focus-visible:outline-emerald-500 disabled:opacity-60 disabled:cursor-not-allowed disabled:hover:scale-100"
               >
                 {loading ? (
                   <span className="flex items-center justify-center gap-2">
@@ -659,7 +659,7 @@ export function AuthModal({ open, onClose }: AuthModalProps) {
                 ref={lastFocusableRef}
                 onClick={handleResendOtp}
                 disabled={loading}
-                className="w-full text-sm font-medium text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 transition-colors disabled:opacity-50 min-h-11"
+                className="w-full text-sm font-medium text-emerald-600 dark:text-emerald-400 hover:text-emerald-700 dark:hover:text-emerald-300 transition-colors disabled:opacity-50 min-h-11"
               >
                 ← Volver y solicitar nuevo código
               </button>
@@ -671,14 +671,14 @@ export function AuthModal({ open, onClose }: AuthModalProps) {
             Al continuar aceptas los{" "}
             <a
               href="/terminos"
-              className="underline decoration-gray-300 dark:decoration-gray-600 hover:text-blue-500 transition-colors"
+              className="underline decoration-gray-300 dark:decoration-gray-600 hover:text-emerald-500 transition-colors"
             >
               Términos
             </a>{" "}
             y la{" "}
             <a
               href="/privacidad"
-              className="underline decoration-gray-300 dark:decoration-gray-600 hover:text-blue-500 transition-colors"
+              className="underline decoration-gray-300 dark:decoration-gray-600 hover:text-emerald-500 transition-colors"
             >
               Política de Privacidad
             </a>

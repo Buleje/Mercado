@@ -38,7 +38,7 @@ const SEASON_ICONS = {
 const SEASON_COLORS = {
   verano: "text-amber-500",
   otoño: "text-orange-500",
-  invierno: "text-blue-500",
+  invierno: "text-emerald-500",
   primavera: "text-green-500",
 };
 

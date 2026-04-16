@@ -219,7 +219,7 @@ export default function SystemHealthTab() {
               <div key={inc.id} className="flex flex-wrap items-center gap-3 py-2 border-b border-gray-100 dark:border-card-border last:border-0">
                 <div className={cn(
                   "h-2.5 w-2.5 rounded-full shrink-0",
-                  inc.severity === "critical" ? "bg-red-500" : inc.severity === "warning" ? "bg-amber-500" : "bg-blue-500"
+                  inc.severity === "critical" ? "bg-red-500" : inc.severity === "warning" ? "bg-amber-500" : "bg-emerald-500"
                 )} />
                 <div className="flex-1 min-w-0">
                   <p className="text-sm font-semibold text-gray-900 dark:text-foreground">{inc.title}</p>

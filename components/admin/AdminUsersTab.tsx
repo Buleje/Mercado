@@ -20,7 +20,7 @@ type AdminUserRow = {
 
 const ROLE_CONFIG: Record<string, { label: string; color: string; variant: BadgeVariant; icon: React.ElementType }> = {
   admin: { label: "Administrador", color: "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400", variant: "error", icon: ShieldCheck },
-  cajero: { label: "Cajero", color: "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400", variant: "info", icon: ShieldAlert },
+  cajero: { label: "Cajero", color: "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400", variant: "info", icon: ShieldAlert },
   almacenero: { label: "Almacenero", color: "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400", variant: "warning", icon: ShieldOff },
 };
 
@@ -277,7 +277,7 @@ export default function AdminUsersTab() {
                         <button
                           onClick={() => openResetPw(u)}
                           title="Cambiar contraseña"
-                          className="p-2 rounded-lg text-gray-400 dark:text-muted hover:bg-blue-50 dark:hover:bg-blue-950/30 hover:text-blue-600 transition-colors"
+                          className="p-2 rounded-lg text-gray-400 dark:text-muted hover:bg-emerald-50 dark:hover:bg-emerald-950/30 hover:text-emerald-600 transition-colors"
                         >
                           <KeyRound className="h-4 w-4" />
                         </button>

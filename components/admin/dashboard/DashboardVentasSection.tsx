@@ -19,7 +19,7 @@ function Sparkline({ data, color }: { data: number[]; color: string }) {
   if (data.length === 0) return null;
   const max = Math.max(...data, 1); const min = Math.min(...data, 0); const range = max - min || 1;
   const points = data.map((val, i) => { const x = (i / (data.length - 1)) * 80; const y = 24 - ((val - min) / range) * 20; return `${x},${y}`; }).join(" ");
-  const colorMap: Record<string, string> = { "emerald-500":"#10b981","blue-500":"#3b82f6","violet-500":"#8b5cf6","red-500":"#ef4444" };
+  const colorMap: Record<string, string> = { "emerald-500":"#10b981","violet-500":"#8b5cf6","red-500":"#ef4444" };
   return <svg width="80" height="24" className="opacity-60"><polyline points={points} fill="none" stroke={colorMap[color]||"#00B4A6"} strokeWidth="1.5" strokeLinejoin="round" strokeLinecap="round" /></svg>;
 }
 function Kpi({ label, value, icon: Icon, accent, delta, sparklineData, invertTrend }: { label: string; value: string; icon: React.ComponentType<{className?:string}>; accent: string; delta?: number|null; sparklineData?: number[]; invertTrend?: boolean }) {
@@ -58,7 +58,7 @@ function ElapsedTimer({ createdAt }: { createdAt: string }) {
   return <div className={cn("text-[10px] font-bold mt-0.5", color)}>\u23F1 {h > 0 ? `${h}h ${m}m` : `${m}m`}</div>;
 }
 function DBadge({ children, color }: { children: React.ReactNode; color: "green"|"red"|"amber"|"blue"|"purple"|"gray" }) {
-  const m: Record<string,string> = { green:"bg-emerald-50 text-emerald-600", red:"bg-red-50 text-red-600", amber:"bg-amber-50 text-amber-600", blue:"bg-blue-50 text-blue-600", purple:"bg-purple-50 text-purple-600", gray:"bg-gray-100 text-gray-500" };
+  const m: Record<string,string> = { green:"bg-emerald-50 text-emerald-600", red:"bg-red-50 text-red-600", amber:"bg-amber-50 text-amber-600", blue:"bg-emerald-50 text-emerald-600", purple:"bg-purple-50 text-purple-600", gray:"bg-gray-100 text-gray-500" };
   return <span className={cn("inline-flex px-1.5 py-0.5 rounded text-xs font-semibold",m[color])}>{children}</span>;
 }
 
@@ -94,7 +94,7 @@ export default function DashboardVentasSection({ st, expandAll, orders, sales, p
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 flex-1">
               <Kpi label="Ventas Netas" value={fmt(st.ventas)} icon={DollarSign} accent="text-emerald-500" delta={st.dVentas} sparklineData={st.sparklineRevenue} />
-              <Kpi label="Utilidad" value={fmt(st.utilidad)} icon={TrendingUp} accent="text-blue-500" delta={st.dUtilidad} sparklineData={st.sparklineProfit} />
+              <Kpi label="Utilidad" value={fmt(st.utilidad)} icon={TrendingUp} accent="text-emerald-500" delta={st.dUtilidad} sparklineData={st.sparklineProfit} />
               <Kpi label="Tickets" value={String(st.tickets)} icon={Receipt} accent="text-violet-500" delta={st.dTickets} sparklineData={st.sparklineOrders} />
               <Kpi label="Cancelados" value={String(st.cancelados)} icon={AlertTriangle} accent="text-red-500" delta={st.dCancelados} invertTrend />
             </div>
@@ -384,15 +384,15 @@ export default function DashboardVentasSection({ st, expandAll, orders, sales, p
 
                 {/* Metrics Cards */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 pt-4 border-t border-gray-100 dark:border-gray-700">
-                  <div className="bg-linear-to-br from-blue-50 to-blue-50/50 dark:from-blue-950/30 dark:to-blue-950/10 rounded-xl p-3">
+                  <div className="bg-linear-to-br from-emerald-50 to-emerald-50/50 dark:from-emerald-950/30 dark:to-emerald-950/10 rounded-xl p-3">
                     <div className="flex flex-wrap items-center gap-2 mb-1">
-                      <Target className="h-4 w-4 text-blue-600 dark:text-blue-400" />
-                      <span className="text-[10px] font-semibold text-blue-700 dark:text-blue-400 uppercase tracking-wide">Conversión Total</span>
+                      <Target className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
+                      <span className="text-[10px] font-semibold text-emerald-700 dark:text-emerald-400 uppercase tracking-wide">Conversión Total</span>
                     </div>
-                    <div className="text-xl sm:text-2xl font-extrabold text-blue-700 dark:text-blue-300">
+                    <div className="text-xl sm:text-2xl font-extrabold text-emerald-700 dark:text-emerald-300">
                       {st.overallConversionRate.toFixed(1)}%
                     </div>
-                    <div className="text-[10px] text-blue-600/70 dark:text-blue-400/70 mt-0.5">
+                    <div className="text-[10px] text-emerald-600/70 dark:text-emerald-400/70 mt-0.5">
                       Pedidos / Visitas
                     </div>
                   </div>
@@ -425,12 +425,12 @@ export default function DashboardVentasSection({ st, expandAll, orders, sales, p
                 </div>
 
                 {/* Insights */}
-                <div className="bg-blue-50/50 dark:bg-blue-950/20 rounded-lg p-3 text-xs border border-blue-100 dark:border-blue-900/30">
-                  <div className="font-semibold text-blue-700 dark:text-blue-400 mb-1.5 flex items-center gap-1.5">
+                <div className="bg-emerald-50/50 dark:bg-emerald-950/20 rounded-lg p-3 text-xs border border-emerald-100 dark:border-emerald-900/30">
+                  <div className="font-semibold text-emerald-700 dark:text-emerald-400 mb-1.5 flex items-center gap-1.5">
                     <Lightbulb className="h-3.5 w-3.5" />
                     Insights de conversión
                   </div>
-                  <div className="space-y-1 text-blue-600 dark:text-blue-300 text-[10px]">
+                  <div className="space-y-1 text-emerald-600 dark:text-emerald-300 text-[10px]">
                     {st.basketAbandonmentRate > 40 && (
                       <div>• <strong>Alta tasa de abandono de carrito ({st.basketAbandonmentRate.toFixed(0)}%)</strong> - Considera revisar el proceso de checkout y ofrecer descuentos o envío gratis.</div>
                     )}
@@ -443,7 +443,7 @@ export default function DashboardVentasSection({ st, expandAll, orders, sales, p
                     {st.overallConversionRate < 10 && st.overallConversionRate > 0 && (
                       <div>• <strong>Conversión baja ({st.overallConversionRate.toFixed(1)}%)</strong> - Optimiza landing pages, mejora fotos de productos y clarifica propuesta de valor.</div>
                     )}
-                    <div className="pt-1 mt-1 border-t border-blue-200/50 dark:border-blue-800/50 text-blue-500 dark:text-blue-400\">
+                    <div className="pt-1 mt-1 border-t border-emerald-200/50 dark:border-emerald-800/50 text-emerald-500 dark:text-emerald-400\">
                       Nota: Datos del funnel son estimaciones basadas en pedidos completados. Implementa analytics real para métricas precisas.
                     </div>
                   </div>

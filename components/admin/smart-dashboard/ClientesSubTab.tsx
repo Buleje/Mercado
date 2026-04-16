@@ -144,8 +144,8 @@ export function ClientesSubTab(props: ClientesSubTabProps) {
           {/* Clientes del dia */}
           <AdminCard padding="sm">
             <div className="flex items-center gap-2 mb-3">
-              <span className="flex items-center justify-center w-7 h-7 rounded-lg bg-blue-50 dark:bg-blue-900/20">
-                <Users className="w-3.5 h-3.5 text-blue-500" />
+              <span className="flex items-center justify-center w-7 h-7 rounded-lg bg-emerald-50 dark:bg-emerald-900/20">
+                <Users className="w-3.5 h-3.5 text-emerald-500" />
               </span>
               <span className="text-xs font-bold text-gray-600 dark:text-zinc-300">Clientes hoy</span>
             </div>

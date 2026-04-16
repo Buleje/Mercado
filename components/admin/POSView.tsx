@@ -272,7 +272,7 @@ function SaleHistoryItem({ sale }: { sale: SaleRecord }) {
             sale.payment === "efectivo" ? "bg-emerald-50 text-emerald-600" :
             sale.payment === "yape" ? "bg-purple-50 text-purple-600" :
             sale.payment === "plin" ? "bg-teal-50 text-teal-600" :
-            sale.payment === "tarjeta" ? "bg-blue-50 text-blue-600" :
+            sale.payment === "tarjeta" ? "bg-emerald-50 text-emerald-600" :
             sale.payment === "fiado" ? "bg-amber-50 text-amber-600" :
             "bg-gray-50 text-gray-600"
           )}>
@@ -519,7 +519,7 @@ function SaleCompleteModal({
             efectivo: { emoji: "\uD83D\uDCB5", bg: "bg-emerald-50 dark:bg-emerald-950/30" },
             yape: { emoji: "\uD83D\uDCF1", bg: "bg-purple-50 dark:bg-purple-950/30" },
             plin: { emoji: "\uD83D\uDCF2", bg: "bg-teal-50 dark:bg-teal-950/30" },
-            tarjeta: { emoji: "\uD83D\uDCB3", bg: "bg-blue-50 dark:bg-blue-950/30" },
+            tarjeta: { emoji: "\uD83D\uDCB3", bg: "bg-emerald-50 dark:bg-emerald-950/30" },
             mixto: { emoji: "\uD83D\uDD00", bg: "bg-gradient-to-br from-emerald-50 to-purple-50 dark:from-emerald-950/30 dark:to-purple-950/30" },
           };
           const info = map[method] || map["efectivo"];
@@ -1899,7 +1899,7 @@ export default function POSView() {
                   {recentProducts.length > 0 && (
                     <div>
                       <div className="flex items-center gap-1.5 mb-1.5">
-                        <Clock className="h-3.5 w-3.5 text-blue-500" />
+                        <Clock className="h-3.5 w-3.5 text-emerald-500" />
                         <span className="text-xs font-bold text-gray-600 dark:text-muted">Recientes</span>
                       </div>
                       <div className="flex flex-wrap gap-1.5 overflow-x-auto pb-0.5 scrollbar-hide">
@@ -1916,7 +1916,7 @@ export default function POSView() {
                                 "shrink-0 px-2 py-1.5 rounded-lg text-xs font-medium transition-all whitespace-nowrap flex items-center gap-1.5",
                                 outOfStock
                                   ? "bg-gray-100 dark:bg-surface text-gray-400 dark:text-muted cursor-not-allowed"
-                                  : "bg-white dark:bg-card border border-gray-200 dark:border-card-border text-gray-700 dark:text-foreground hover:border-blue-400 hover:bg-blue-50/50 dark:hover:bg-blue-500/10"
+                                  : "bg-white dark:bg-card border border-gray-200 dark:border-card-border text-gray-700 dark:text-foreground hover:border-emerald-400 hover:bg-emerald-50/50 dark:hover:bg-emerald-500/10"
                               )}
                             >
                               <span className="truncate max-w-24">{p.name}</span>
@@ -2025,7 +2025,7 @@ export default function POSView() {
                 <button
                   onClick={enqueueClient}
                   disabled={clientQueues.length >= 5}
-                  className="text-xs font-bold text-blue-600 hover:text-blue-700 transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
+                  className="text-xs font-bold text-emerald-600 hover:text-emerald-700 transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
                   title="Guardar carrito y atender siguiente cliente"
                 >
                   +Siguiente

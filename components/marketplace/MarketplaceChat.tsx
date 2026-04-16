@@ -213,7 +213,7 @@ export default function MarketplaceChat({
               exit={{ opacity: 0, y: 10, scale: 0.9 }}
               className="max-w-[220px] rounded-2xl rounded-br-sm bg-white px-4 py-2.5 text-sm shadow-xl dark:bg-gray-800"
             >
-              <p className="font-semibold text-blue-700 dark:text-blue-400">{storeName}</p>
+              <p className="font-semibold text-emerald-700 dark:text-emerald-400">{storeName}</p>
               <p className="text-gray-700 dark:text-gray-300 line-clamp-2">
                 {messages[messages.length - 1]?.message}
               </p>
@@ -355,7 +355,7 @@ export default function MarketplaceChat({
                     <div
                       className={`max-w-[75%] rounded-2xl px-3.5 py-2 text-sm ${
                         isCustomer
-                          ? "rounded-br-sm bg-blue-700 text-white"
+                          ? "rounded-br-sm bg-emerald-700 text-white"
                           : "rounded-bl-sm bg-gray-100 text-gray-900 dark:bg-gray-800 dark:text-white"
                       }`}
                     >
@@ -391,7 +391,7 @@ export default function MarketplaceChat({
                   onClick={handleSend}
                   disabled={!input.trim() || isSending}
                   aria-label="Enviar mensaje"
-                  className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-xl bg-blue-700 text-white transition-all hover:bg-blue-800 focus-visible:outline focus-visible:outline-2 focus-visible:outline-teal-600 disabled:cursor-not-allowed disabled:opacity-40"
+                  className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-xl bg-emerald-700 text-white transition-all hover:bg-emerald-800 focus-visible:outline focus-visible:outline-2 focus-visible:outline-teal-600 disabled:cursor-not-allowed disabled:opacity-40"
                 >
                   {isSending ? (
                     <svg aria-hidden="true" className="h-4 w-4 animate-spin" fill="none" viewBox="0 0 24 24">

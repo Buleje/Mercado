@@ -147,7 +147,7 @@ export function TenantDetailModal({ tenant, onClose }: TenantDetailModalProps) {
           {[
             { value: t._count.AdminUser, label: "Usuarios", color: "text-gray-900 dark:text-white" },
             { value: t.usage?.products ?? 0, label: "Productos", color: "text-gray-900 dark:text-white" },
-            { value: t.monthOrders ?? t.usage?.ordersThisMonth ?? 0, label: "Pedidos/mes", color: "text-blue-600" },
+            { value: t.monthOrders ?? t.usage?.ordersThisMonth ?? 0, label: "Pedidos/mes", color: "text-emerald-600" },
             { value: fmtMoney(t.monthRevenue ?? 0), label: "Ventas/mes", color: "text-green-600" },
             { value: fmtMoney(t.monthProfit ?? 0), label: "Ganancia", color: (t.monthProfit ?? 0) >= 0 ? "text-teal-600" : "text-red-500" },
           ].map(({ value, label, color }) => (
@@ -211,7 +211,7 @@ export function TenantDetailModal({ tenant, onClose }: TenantDetailModalProps) {
               </button>
             </div>
             <div className="flex flex-col sm:flex-row gap-2">
-              <button type="button" onClick={handleSaveCredentials} className="flex-1 flex items-center justify-center gap-2 py-2 rounded-lg bg-blue-50 dark:bg-blue-900/40 border border-blue-200 dark:border-blue-700/40 text-blue-700 dark:text-blue-300 text-xs font-semibold hover:bg-blue-100 dark:hover:bg-blue-900/60">
+              <button type="button" onClick={handleSaveCredentials} className="flex-1 flex items-center justify-center gap-2 py-2 rounded-lg bg-emerald-50 dark:bg-emerald-900/40 border border-emerald-200 dark:border-emerald-700/40 text-emerald-700 dark:text-emerald-300 text-xs font-semibold hover:bg-emerald-100 dark:hover:bg-emerald-900/60">
                 <KeyRound className="w-3.5 h-3.5" /> Guardar credenciales
               </button>
               {savedCredentials && (

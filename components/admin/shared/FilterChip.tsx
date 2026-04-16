@@ -24,8 +24,8 @@ const COLOR_MAP: Record<ChipColor, { chip: string; badge: string }> = {
     badge: "bg-violet-600 text-white",
   },
   blue: {
-    chip: "bg-blue-50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-800 text-blue-700 dark:text-blue-400",
-    badge: "bg-blue-600 text-white",
+    chip: "bg-emerald-50 dark:bg-emerald-900/20 border-emerald-200 dark:border-emerald-800 text-emerald-700 dark:text-emerald-400",
+    badge: "bg-emerald-600 text-white",
   },
   amber: {
     chip: "bg-amber-50 dark:bg-amber-900/20 border-amber-200 dark:border-amber-800 text-amber-700 dark:text-amber-400",

@@ -1523,7 +1523,7 @@ ${o.notes ? `<hr><p style="font-size:11px">${o.notes}</p>` : ""}
           <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-1.5 lg:gap-2 shrink-0">
             {([
               { label: "Ventas Netas", value: fmt(st.ventas), accent: "text-emerald-600 dark:text-emerald-400", bg: "bg-emerald-50 dark:bg-emerald-950/30", delta: st.dVentas },
-              { label: "Utilidad", value: fmt(st.utilidad), accent: "text-blue-600 dark:text-blue-400", bg: "bg-blue-50 dark:bg-blue-950/30", delta: st.dUtilidad },
+              { label: "Utilidad", value: fmt(st.utilidad), accent: "text-emerald-600 dark:text-emerald-400", bg: "bg-emerald-50 dark:bg-emerald-950/30", delta: st.dUtilidad },
               { label: "Margen", value: `${st.margen.toFixed(1)}%`, accent: st.margen >= 25 ? "text-emerald-600 dark:text-emerald-400" : "text-amber-600 dark:text-amber-400", bg: "bg-gray-50 dark:bg-surface", delta: st.dMargen },
               { label: "Tickets", value: String(st.tickets), accent: "text-violet-600 dark:text-violet-400", bg: "bg-violet-50 dark:bg-violet-950/30", delta: st.dTickets },
               { label: "Clientes", value: String(st.clientesAtendidos), accent: "text-indigo-600 dark:text-indigo-400", bg: "bg-indigo-50 dark:bg-indigo-950/30", delta: st.dClientes },
@@ -1569,7 +1569,7 @@ ${o.notes ? `<hr><p style="font-size:11px">${o.notes}</p>` : ""}
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                   {[
                     { label: "Ventas Netas", value: fmt(st.ventas), accent: "text-emerald-600 dark:text-emerald-400" },
-                    { label: "Ticket Prom.", value: fmt(st.ticketProm), accent: "text-blue-600 dark:text-blue-400" },
+                    { label: "Ticket Prom.", value: fmt(st.ticketProm), accent: "text-emerald-600 dark:text-emerald-400" },
                     { label: "Uds. Vendidas", value: String(st.uds), accent: "text-violet-600 dark:text-violet-400" },
                     { label: "Cancelados", value: String(st.cancelados), accent: "text-red-500 dark:text-red-400" },
                   ].map(k => (
@@ -1589,7 +1589,7 @@ ${o.notes ? `<hr><p style="font-size:11px">${o.notes}</p>` : ""}
                   {[
                     { label: "Ingresos", value: fmt(st.ventas), accent: "text-emerald-600 dark:text-emerald-400" },
                     { label: "Egresos", value: fmt(st.totalPurch), accent: "text-red-500 dark:text-red-400" },
-                    { label: "Utilidad Bruta", value: fmt(st.utilidad), accent: "text-blue-600 dark:text-blue-400" },
+                    { label: "Utilidad Bruta", value: fmt(st.utilidad), accent: "text-emerald-600 dark:text-emerald-400" },
                     { label: "Margen", value: `${st.margen.toFixed(1)}%`, accent: st.margen >= 25 ? "text-emerald-600 dark:text-emerald-400" : "text-amber-600 dark:text-amber-400" },
                   ].map(k => (
                     <div key={k.label} className="bg-gray-50 dark:bg-surface rounded-lg px-2.5 py-2">
@@ -1615,7 +1615,7 @@ ${o.notes ? `<hr><p style="font-size:11px">${o.notes}</p>` : ""}
             <div className="flex flex-col gap-3 overflow-y-auto min-h-0" style={{scrollbarWidth:"thin" as React.CSSProperties["scrollbarWidth"]}}>
               <div className="bg-white dark:bg-card border border-gray-100 dark:border-card-border rounded-xl p-3 shrink-0">
                 <div className="flex items-center gap-1.5 mb-2 pb-1.5 border-b border-gray-100 dark:border-card-border">
-                  <TrendingUp className="h-3.5 w-3.5 text-blue-500" />
+                  <TrendingUp className="h-3.5 w-3.5 text-emerald-500" />
                   <span className="text-xs font-bold text-gray-700 dark:text-foreground uppercase tracking-wide">Productos (Top ingresos)</span>
                 </div>
                 {st.topRev.length === 0 ? (
@@ -1740,13 +1740,13 @@ ${o.notes ? `<hr><p style="font-size:11px">${o.notes}</p>` : ""}
               </div>
               <div className="bg-white dark:bg-card border border-gray-100 dark:border-card-border rounded-xl p-3 shrink-0">
                 <div className="flex items-center gap-1.5 mb-2 pb-1.5 border-b border-gray-100 dark:border-card-border">
-                  <Truck className="h-3.5 w-3.5 text-blue-500" />
+                  <Truck className="h-3.5 w-3.5 text-emerald-500" />
                   <span className="text-xs font-bold text-gray-700 dark:text-foreground uppercase tracking-wide">Compras</span>
                 </div>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mb-2.5">
                   <div className="bg-gray-50 dark:bg-surface rounded-lg px-2.5 py-2">
                     <div className="text-[10px] text-gray-400 dark:text-muted">Total compras</div>
-                    <div className="text-sm font-bold text-blue-600 dark:text-blue-400 tabular-nums truncate">{fmt(st.totalPurch)}</div>
+                    <div className="text-sm font-bold text-emerald-600 dark:text-emerald-400 tabular-nums truncate">{fmt(st.totalPurch)}</div>
                   </div>
                   <div className="bg-gray-50 dark:bg-surface rounded-lg px-2.5 py-2">
                     <div className="text-[10px] text-gray-400 dark:text-muted">Deuda pend.</div>
@@ -1906,7 +1906,7 @@ ${o.notes ? `<hr><p style="font-size:11px">${o.notes}</p>` : ""}
                   </span>
                 )}
                 {enCaminoCount > 0 && (
-                  <span className="flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400">
+                  <span className="flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400">
                     <Truck className="h-3 w-3" /> {enCaminoCount} en camino
                   </span>
                 )}
@@ -1993,8 +1993,8 @@ ${o.notes ? `<hr><p style="font-size:11px">${o.notes}</p>` : ""}
       {/* ═══════════════════════════════════════════════════════════════════ */}
       {expandAll && (
         <div className="flex flex-wrap items-center gap-2 mb-4">
-          <div className="w-7 h-7 rounded-lg bg-blue-50 dark:bg-blue-900/30 flex items-center justify-center">
-            <BarChart3 className="h-3.5 w-3.5 text-blue-600 dark:text-blue-400" />
+          <div className="w-7 h-7 rounded-lg bg-emerald-50 dark:bg-emerald-900/30 flex items-center justify-center">
+            <BarChart3 className="h-3.5 w-3.5 text-emerald-600 dark:text-emerald-400" />
           </div>
           <h3 className="text-sm font-bold text-gray-800 dark:text-foreground">Resumen</h3>
         </div>
@@ -2052,14 +2052,14 @@ ${o.notes ? `<hr><p style="font-size:11px">${o.notes}</p>` : ""}
                             <div className={cn(
                               "w-8 h-8 rounded-lg flex items-center justify-center",
                               metric.color === "emerald" && "bg-emerald-100 dark:bg-emerald-900/30",
-                              metric.color === "blue" && "bg-blue-100 dark:bg-blue-900/30",
+                              metric.color === "blue" && "bg-emerald-100 dark:bg-emerald-900/30",
                               metric.color === "violet" && "bg-violet-100 dark:bg-violet-900/30",
                               metric.color === "amber" && "bg-amber-100 dark:bg-amber-900/30"
                             )}>
                               <metric.icon className={cn(
                                 "h-4 w-4",
                                 metric.color === "emerald" && "text-emerald-600 dark:text-emerald-400",
-                                metric.color === "blue" && "text-blue-600 dark:text-blue-400",
+                                metric.color === "blue" && "text-emerald-600 dark:text-emerald-400",
                                 metric.color === "violet" && "text-violet-600 dark:text-violet-400",
                                 metric.color === "amber" && "text-amber-600 dark:text-amber-400"
                               )} />
@@ -2077,7 +2077,7 @@ ${o.notes ? `<hr><p style="font-size:11px">${o.notes}</p>` : ""}
                             <span className={cn(
                               "font-bold",
                               status === "complete" && "text-emerald-600 dark:text-emerald-400",
-                              status === "good" && "text-blue-600 dark:text-blue-400",
+                              status === "good" && "text-emerald-600 dark:text-emerald-400",
                               status === "warning" && "text-amber-600 dark:text-amber-400",
                               status === "danger" && "text-red-600 dark:text-red-400"
                             )}>
@@ -2089,7 +2089,7 @@ ${o.notes ? `<hr><p style="font-size:11px">${o.notes}</p>` : ""}
                               className={cn(
                                 "h-full rounded-full transition-all duration-500",
                                 status === "complete" && "bg-linear-to-r from-emerald-500 to-emerald-600",
-                                status === "good" && "bg-linear-to-r from-blue-500 to-blue-600",
+                                status === "good" && "bg-linear-to-r from-emerald-500 to-emerald-600",
                                 status === "warning" && "bg-linear-to-r from-amber-500 to-amber-600",
                                 status === "danger" && "bg-linear-to-r from-red-500 to-red-600"
                               )}
@@ -2202,8 +2202,8 @@ ${o.notes ? `<hr><p style="font-size:11px">${o.notes}</p>` : ""}
                       />
                     </div>
                   </div>
-                  <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-100 dark:border-blue-800 rounded-xl p-3">
-                    <p className="text-xs text-blue-700 dark:text-blue-400"><strong>Consejo:</strong> Establece metas realistas basadas en tu histórico y +10-15% de crecimiento.</p>
+                  <div className="bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-100 dark:border-emerald-800 rounded-xl p-3">
+                    <p className="text-xs text-emerald-700 dark:text-emerald-400"><strong>Consejo:</strong> Establece metas realistas basadas en tu histórico y +10-15% de crecimiento.</p>
                   </div>
                 </div>
                 <div className="flex flex-wrap justify-end gap-3 px-3 sm:px-6 py-4 border-t border-gray-100 dark:border-card-border">
@@ -2290,9 +2290,9 @@ ${o.notes ? `<hr><p style="font-size:11px">${o.notes}</p>` : ""}
           
           {/* Period comparison badge */}
           {period !== "todo" && (
-            <div className="flex items-center justify-between px-2 sm:px-4 py-1.5 sm:py-2 bg-linear-to-r from-blue-50 to-violet-50 dark:from-blue-950/30 dark:to-violet-950/30 rounded-xl border border-blue-100 dark:border-blue-900/30">
+            <div className="flex items-center justify-between px-2 sm:px-4 py-1.5 sm:py-2 bg-linear-to-r from-emerald-50 to-violet-50 dark:from-emerald-950/30 dark:to-violet-950/30 rounded-xl border border-emerald-100 dark:border-emerald-900/30">
               <div className="flex flex-wrap items-center gap-2">
-                <CalendarDays className="h-4 w-4 text-blue-600 dark:text-blue-400" />
+                <CalendarDays className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
                 <span className="text-sm font-semibold text-gray-700 dark:text-foreground">
                   Comparado con{" "}
                   {period === "hoy" ? "ayer" : period === "semana" ? "semana anterior" : period === "mes" ? "mes anterior" : "período anterior"}
@@ -2366,7 +2366,7 @@ ${o.notes ? `<hr><p style="font-size:11px">${o.notes}</p>` : ""}
 
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
             <Kpi label="Ventas Netas" value={fmt(st.ventas)} icon={DollarSign} accent="text-emerald-500" delta={st.dVentas} sparklineData={st.sparklineRevenue} />
-            <Kpi label="Utilidad" value={fmt(st.utilidad)} icon={TrendingUp} accent="text-blue-500" delta={st.dUtilidad} sparklineData={st.sparklineProfit} />
+            <Kpi label="Utilidad" value={fmt(st.utilidad)} icon={TrendingUp} accent="text-emerald-500" delta={st.dUtilidad} sparklineData={st.sparklineProfit} />
             <Kpi label="Margen" value={`${st.margen.toFixed(1)}%`} icon={Percent} accent={st.margen>=25?"text-emerald-500":st.margen>=15?"text-amber-500":"text-red-500"} delta={st.dMargen} />
             <Kpi label="Tickets" value={String(st.tickets)} icon={Receipt} accent="text-violet-500" delta={st.dTickets} sparklineData={st.sparklineOrders} />
           </div>
@@ -2413,7 +2413,7 @@ ${o.notes ? `<hr><p style="font-size:11px">${o.notes}</p>` : ""}
                       "flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-medium",
                       a.type === "danger" ? "bg-red-100 dark:bg-red-950/30 text-red-700 dark:text-red-400" :
                       a.type === "warning" ? "bg-amber-100 dark:bg-amber-950/30 text-amber-700 dark:text-amber-400" :
-                      "bg-blue-100 dark:bg-blue-950/30 text-blue-700 dark:text-blue-400"
+                      "bg-emerald-100 dark:bg-emerald-950/30 text-emerald-700 dark:text-emerald-400"
                     )}>
                       {a.msg}
                     </div>
@@ -2759,8 +2759,8 @@ ${o.notes ? `<hr><p style="font-size:11px">${o.notes}</p>` : ""}
                         className="w-full px-3 py-2.5 rounded-lg border border-gray-200 dark:border-card-border text-gray-900 dark:text-foreground focus:border-violet-500 outline-none text-sm" />
                     </div>
                   </div>
-                  <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-100 dark:border-blue-800 rounded-xl p-3">
-                    <p className="text-xs text-blue-700 dark:text-blue-400"><strong>Recomendación:</strong> Ejecuta pruebas por al menos 7-14 días y 100+ visitantes por variante para resultados confiables.</p>
+                  <div className="bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-100 dark:border-emerald-800 rounded-xl p-3">
+                    <p className="text-xs text-emerald-700 dark:text-emerald-400"><strong>Recomendación:</strong> Ejecuta pruebas por al menos 7-14 días y 100+ visitantes por variante para resultados confiables.</p>
                   </div>
                 </div>
                 <div className="flex flex-wrap justify-end gap-3 px-3 sm:px-6 py-4 border-t border-gray-100 dark:border-card-border">
@@ -2844,7 +2844,6 @@ function Sparkline({ data, color }: { data: number[]; color: string }) {
   // Infer color value from Tailwind class
   const colorMap: Record<string, string> = {
     "emerald-500": "#10b981",
-    "blue-500": "#3b82f6",
     "violet-500": "#8b5cf6",
     "indigo-500": "#00B4A6",
     "cyan-500": "#06b6d4",
@@ -2956,7 +2955,7 @@ function Card({ title, icon: Icon, children, action }: { title: string; icon: Re
 function DBadge({ children, color }: { children: React.ReactNode; color: "green"|"red"|"amber"|"blue"|"purple"|"gray" }) {
   const m: Record<string,string> = {
     green:"bg-emerald-50 text-emerald-600", red:"bg-red-50 text-red-600",
-    amber:"bg-amber-50 text-amber-600", blue:"bg-blue-50 text-blue-600",
+    amber:"bg-amber-50 text-amber-600", blue:"bg-emerald-50 text-emerald-600",
     purple:"bg-purple-50 text-purple-600", gray:"bg-gray-100 text-gray-500",
   };
   return <span className={cn("inline-flex px-1.5 py-0.5 rounded text-xs font-semibold",m[color])}>{children}</span>;

@@ -106,7 +106,7 @@ function RecetasDashboard() {
           { label: "Recetas activas", value: String(recetasActivas), border: "border-b-4 border-[#2563EB]" },
           { label: "Lotes del mes", value: String(lotesMes), border: "border-b-4 border-[#f97316]" },
           { label: "Costo promedio", value: `S/${costoPromedio.toFixed(2)}`, border: "border-b-4 border-purple-500" },
-          { label: "Ingredientes totales", value: String(ingredientesTotales), border: "border-b-4 border-blue-500" },
+          { label: "Ingredientes totales", value: String(ingredientesTotales), border: "border-b-4 border-emerald-500" },
         ].map(k => (
           <div key={k.label} className={cn("bg-white dark:bg-card rounded-xl border border-gray-200 dark:border-card-border p-4 shadow-sm", k.border)}>
             <p className="text-[10px] text-gray-500 font-medium uppercase tracking-wider">{k.label}</p>
@@ -894,8 +894,8 @@ export default function RecetasModule() {
                               const costoLinea = costoUnit * ing.cantidad;
                               return (
                                 <div key={ing.id} className="flex items-center gap-3 p-3 bg-gray-50 dark:bg-white/5 rounded-xl">
-                                  <div className="h-8 w-8 rounded-lg bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center shrink-0">
-                                    <Package className="h-4 w-4 text-blue-600 dark:text-blue-400" />
+                                  <div className="h-8 w-8 rounded-lg bg-emerald-100 dark:bg-emerald-900/30 flex items-center justify-center shrink-0">
+                                    <Package className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
                                   </div>
                                   <div className="flex-1 min-w-0">
                                     <p className="text-sm font-medium text-gray-900 dark:text-white truncate">

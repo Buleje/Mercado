@@ -28,7 +28,7 @@ const CATEGORIES: DecisionCategory[] = ["Precios", "Inventario", "Personal", "Ma
 const STORAGE_KEY = "ai-decision-log";
 
 const categoryColors: Record<DecisionCategory, string> = {
-  Precios: "bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-300",
+  Precios: "bg-emerald-100 dark:bg-emerald-900/40 text-emerald-700 dark:text-emerald-300",
   Inventario: "bg-purple-100 dark:bg-purple-900/40 text-purple-700 dark:text-purple-300",
   Personal: "bg-orange-100 dark:bg-orange-900/40 text-orange-700 dark:text-orange-300",
   Marketing: "bg-pink-100 dark:bg-pink-900/40 text-pink-700 dark:text-pink-300",

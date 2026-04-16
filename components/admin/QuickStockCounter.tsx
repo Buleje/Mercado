@@ -289,7 +289,7 @@ export default function QuickStockCounter() {
                     Number(physicalStock) === foundProduct.stock
                       ? "text-gray-500"
                       : Number(physicalStock) > foundProduct.stock
-                      ? "text-blue-600 dark:text-blue-400"
+                      ? "text-emerald-600 dark:text-emerald-400"
                       : "text-red-600 dark:text-red-400"
                   )}
                 >
@@ -346,7 +346,7 @@ export default function QuickStockCounter() {
                       <span
                         className={cn(
                           "flex items-center gap-1 text-xs font-semibold",
-                          diff < 0 ? "text-red-600 dark:text-red-400" : "text-blue-600 dark:text-blue-400"
+                          diff < 0 ? "text-red-600 dark:text-red-400" : "text-emerald-600 dark:text-emerald-400"
                         )}
                       >
                         <AlertTriangle className="h-3.5 w-3.5" />
@@ -395,7 +395,7 @@ export default function QuickStockCounter() {
                     summary.totalDiffValue < 0
                       ? "text-red-600 dark:text-red-400"
                       : summary.totalDiffValue > 0
-                      ? "text-blue-600 dark:text-blue-400"
+                      ? "text-emerald-600 dark:text-emerald-400"
                       : "text-gray-800 dark:text-gray-100"
                   )}
                 >

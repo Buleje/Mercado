@@ -57,7 +57,7 @@ function daysUntil(iso: string) {
 }
 
 const CATEGORY_META: Record<DocCategory, { label: string; color: string }> = {
-  factura:     { label: "Factura",     color: "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400" },
+  factura:     { label: "Factura",     color: "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400" },
   contrato:    { label: "Contrato",    color: "bg-violet-100 text-violet-700 dark:bg-violet-900/30 dark:text-violet-400" },
   comprobante: { label: "Comprobante", color: "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400" },
   recibo:      { label: "Recibo",      color: "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400" },
@@ -236,7 +236,7 @@ export default function DocumentManagerTab() {
       {/* KPIs */}
       <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
         {[
-          { label: "Total docs", value: String(stats.total), color: "text-blue-600", bg: "bg-blue-50 dark:bg-blue-950/30" },
+          { label: "Total docs", value: String(stats.total), color: "text-emerald-600", bg: "bg-emerald-50 dark:bg-emerald-950/30" },
           { label: "Vigentes", value: String(stats.vigentes), color: "text-emerald-600", bg: "bg-emerald-50 dark:bg-emerald-950/30" },
           { label: "Por vencer", value: String(stats.porVencer), color: "text-amber-600", bg: "bg-amber-50 dark:bg-amber-950/30" },
           { label: "Vencidos", value: String(stats.vencidos), color: "text-red-500", bg: "bg-red-50 dark:bg-red-950/30" },
@@ -364,7 +364,7 @@ export default function DocumentManagerTab() {
                     <td className="px-2 sm:px-4 py-2 sm:py-3 text-xs text-gray-600 dark:text-muted">{d.relatedTo}</td>
                     <td className="px-2 sm:px-4 py-2 sm:py-3">
                       <div className="flex flex-wrap gap-1">
-                        <button onClick={() => setDetail(d)} className="p-1.5 rounded-lg text-gray-400 hover:text-blue-500 hover:bg-blue-50 dark:hover:bg-blue-950/20"><Eye className="h-3.5 w-3.5" /></button>
+                        <button onClick={() => setDetail(d)} className="p-1.5 rounded-lg text-gray-400 hover:text-emerald-500 hover:bg-emerald-50 dark:hover:bg-emerald-950/20"><Eye className="h-3.5 w-3.5" /></button>
                         {/* Renew button for contracts about to expire */}
                         {d.isContrato && (d.status === "por-vencer" || d.status === "vencido") && (
                           <button

@@ -194,7 +194,7 @@ export default function TaxTab() {
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-4 text-sm">
                 <div className="bg-white/60 dark:bg-card/40 rounded-xl p-3 text-center">
                   <p className="text-xs text-gray-500 dark:text-muted mb-1">IGV Ventas</p>
-                  <p className="font-extrabold text-blue-600">{fmt(summary.salesIGV)}</p>
+                  <p className="font-extrabold text-emerald-600">{fmt(summary.salesIGV)}</p>
                   <p className="text-xs text-gray-400 dark:text-muted">Base: {fmt(summary.salesBase)}</p>
                 </div>
                 <div className="bg-white/60 dark:bg-card/40 rounded-xl p-3 text-center">
@@ -236,7 +236,7 @@ export default function TaxTab() {
                   <tr key={line.id} className="hover:bg-gray-50 dark:hover:bg-surface/50 transition-colors">
                     <td className="px-5 py-3 text-xs text-gray-500 dark:text-muted">{fmtDate(line.date)}</td>
                     <td className="px-3 py-3">
-                      <span className={cn("text-xs font-bold px-2 py-0.5 rounded-full", line.type === "venta" ? "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400" : "bg-violet-100 text-violet-700 dark:bg-violet-900/30 dark:text-violet-400")}>
+                      <span className={cn("text-xs font-bold px-2 py-0.5 rounded-full", line.type === "venta" ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400" : "bg-violet-100 text-violet-700 dark:bg-violet-900/30 dark:text-violet-400")}>
                         {line.type === "venta" ? "V" : "C"}
                       </span>
                     </td>

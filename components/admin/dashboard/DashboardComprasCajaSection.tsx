@@ -9,7 +9,7 @@ import { cn } from "@/lib/utils";
 function fmt(n: number) { return `S/${n.toFixed(2)}`; }
 function fmtDateFull(iso: string) { try { return new Date(iso).toLocaleDateString("es-PE", { day: "2-digit", month: "short", year: "numeric" }); } catch { return iso; } }
 function DBadge({ children, color }: { children: React.ReactNode; color: "green"|"red"|"amber"|"blue"|"purple"|"gray" }) {
-  const m: Record<string,string> = { green:"bg-emerald-50 text-emerald-600", red:"bg-red-50 text-red-600", amber:"bg-amber-50 text-amber-600", blue:"bg-blue-50 text-blue-600", purple:"bg-purple-50 text-purple-600", gray:"bg-gray-100 text-gray-500" };
+  const m: Record<string,string> = { green:"bg-emerald-50 text-emerald-600", red:"bg-red-50 text-red-600", amber:"bg-amber-50 text-amber-600", blue:"bg-emerald-50 text-emerald-600", purple:"bg-purple-50 text-purple-600", gray:"bg-gray-100 text-gray-500" };
   return <span className={cn("inline-flex px-1.5 py-0.5 rounded text-xs font-semibold",m[color])}>{children}</span>;
 }
 
@@ -47,7 +47,7 @@ export default function DashboardComprasCajaSection({ st, expandAll, section }: 
             </div>
           )}
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
-            <Kpi label="Total Compras" value={fmt(st.totalPurch)} icon={Truck} accent="text-blue-500" />
+            <Kpi label="Total Compras" value={fmt(st.totalPurch)} icon={Truck} accent="text-emerald-500" />
             <Kpi label="Proveedores" value={String(st.totalSuppliers)} icon={Truck} accent="text-indigo-500" />
             <Kpi label="Deuda Pend." value={fmt(st.debt)} icon={Banknote} accent={st.debt>0?"text-red-500":"text-emerald-500"} />
             <Kpi label="Ctas. Vencidas" value={String(st.overdue.length)} icon={AlertCircle} accent={st.overdue.length>0?"text-red-500":"text-emerald-500"} />
@@ -158,7 +158,7 @@ export default function DashboardComprasCajaSection({ st, expandAll, section }: 
               <div className="space-y-3">
                 <FlowRow label="Ventas netas" value={fmt(st.ventas)} color="text-emerald-600" />
                 <FlowRow label="Costo estimado" value={fmt(st.ventas-st.utilidad)} color="text-gray-500" />
-                <FlowRow label="Utilidad bruta" value={fmt(st.utilidad)} color="text-blue-600" />
+                <FlowRow label="Utilidad bruta" value={fmt(st.utilidad)} color="text-emerald-600" />
                 <div className="border-t border-gray-100 dark:border-card-border pt-2" />
                 <FlowRow label="Compras" value={fmt(st.totalPurch)} color="text-red-500" />
                 <FlowRow label="Deuda pendiente" value={fmt(st.debt)} color={st.debt>0?"text-red-600":"text-emerald-600"} />
@@ -181,9 +181,9 @@ export default function DashboardComprasCajaSection({ st, expandAll, section }: 
                   <div className="text-[10px] font-semibold text-red-600 dark:text-red-400 mb-0.5">Egresos Est.</div>
                   <div className="text-sm font-bold text-red-700 dark:text-red-300">{fmt(st.forecastTotalExp)}</div>
                 </div>
-                <div className={cn("rounded-lg p-3 text-center", st.forecastTotalRev - st.forecastTotalExp >= 0 ? "bg-blue-50 dark:bg-blue-950/30" : "bg-amber-50 dark:bg-amber-950/30")}>
-                  <div className={cn("text-[10px] font-semibold mb-0.5", st.forecastTotalRev - st.forecastTotalExp >= 0 ? "text-blue-600 dark:text-blue-400" : "text-amber-600 dark:text-amber-400")}>Flujo Neto</div>
-                  <div className={cn("text-sm font-bold", st.forecastTotalRev - st.forecastTotalExp >= 0 ? "text-blue-700 dark:text-blue-300" : "text-amber-700 dark:text-amber-300")}>{fmt(st.forecastTotalRev - st.forecastTotalExp)}</div>
+                <div className={cn("rounded-lg p-3 text-center", st.forecastTotalRev - st.forecastTotalExp >= 0 ? "bg-emerald-50 dark:bg-emerald-950/30" : "bg-amber-50 dark:bg-amber-950/30")}>
+                  <div className={cn("text-[10px] font-semibold mb-0.5", st.forecastTotalRev - st.forecastTotalExp >= 0 ? "text-emerald-600 dark:text-emerald-400" : "text-amber-600 dark:text-amber-400")}>Flujo Neto</div>
+                  <div className={cn("text-sm font-bold", st.forecastTotalRev - st.forecastTotalExp >= 0 ? "text-emerald-700 dark:text-emerald-300" : "text-amber-700 dark:text-amber-300")}>{fmt(st.forecastTotalRev - st.forecastTotalExp)}</div>
                 </div>
               </div>
 
@@ -235,9 +235,9 @@ export default function DashboardComprasCajaSection({ st, expandAll, section }: 
                 </div>
               )}
               {st.forecastTotalRev - st.forecastTotalExp >= 0 && (
-                <div className="bg-blue-50 dark:bg-blue-950/30 rounded-lg p-3 text-xs">
-                  <div className="font-semibold text-blue-700 dark:text-blue-400 mb-1">Estimación por día de semana</div>
-                  <p className="text-blue-600 dark:text-blue-300 text-[10px]">
+                <div className="bg-emerald-50 dark:bg-emerald-950/30 rounded-lg p-3 text-xs">
+                  <div className="font-semibold text-emerald-700 dark:text-emerald-400 mb-1">Estimación por día de semana</div>
+                  <p className="text-emerald-600 dark:text-emerald-300 text-[10px]">
                     Basado en promedios de ingresos/egresos de los últimos 30 días agrupados por día de la semana.
                   </p>
                 </div>

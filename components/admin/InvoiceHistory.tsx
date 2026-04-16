@@ -240,7 +240,7 @@ export default function InvoiceHistory() {
                       <span
                         className={`inline-flex items-center px-2 py-0.5 rounded-lg text-[11px] font-bold ${
                           record.tipo === "factura"
-                            ? "bg-blue-50 text-blue-700 dark:bg-blue-950/20 dark:text-blue-400"
+                            ? "bg-emerald-50 text-emerald-700 dark:bg-emerald-950/20 dark:text-emerald-400"
                             : "bg-primary/10 text-primary"
                         }`}
                       >
@@ -286,7 +286,7 @@ export default function InvoiceHistory() {
                   <span
                     className={`inline-flex items-center px-2 py-0.5 rounded-lg text-[11px] font-bold ${
                       record.tipo === "factura"
-                        ? "bg-blue-50 text-blue-700 dark:bg-blue-950/20 dark:text-blue-400"
+                        ? "bg-emerald-50 text-emerald-700 dark:bg-emerald-950/20 dark:text-emerald-400"
                         : "bg-primary/10 text-primary"
                     }`}
                   >

@@ -145,7 +145,7 @@ export default function WishListAdminTab() {
       {/* KPIs */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
         {[
-          { label: "Listas activas",        value: String(lists.length),         color: "text-blue-500" },
+          { label: "Listas activas",        value: String(lists.length),         color: "text-emerald-500" },
           { label: "Productos deseados",     value: String(totalItems),           color: "text-violet-500" },
           { label: "Agotados en wishlists",  value: String(outOfStock),           color: "text-red-500" },
           { label: "Tasa conversión",        value: `${conversionRate}%`,         color: "text-emerald-500" },

@@ -204,8 +204,8 @@ export default function MiNegocioHoyCard({ onNavigate }: MiNegocioHoyCardProps) 
           className="group relative overflow-hidden rounded-2xl bg-white dark:bg-card border border-gray-200 dark:border-card-border p-4 text-left hover:border-primary/30 transition-colors"
         >
           <div className="flex items-center justify-between mb-2">
-            <div className="w-9 h-9 rounded-xl bg-blue-50 dark:bg-blue-900/20 flex items-center justify-center">
-              <ShoppingCart className="h-5 w-5 text-blue-600 dark:text-blue-400" />
+            <div className="w-9 h-9 rounded-xl bg-emerald-50 dark:bg-emerald-900/20 flex items-center justify-center">
+              <ShoppingCart className="h-5 w-5 text-emerald-600 dark:text-emerald-400" />
             </div>
             {data.pedidos.pendientes > 0 && (
               <span className="flex items-center gap-0.5 text-xs font-semibold text-amber-600 bg-amber-50 dark:text-amber-400 dark:bg-amber-900/30 px-1.5 py-0.5 rounded-full">

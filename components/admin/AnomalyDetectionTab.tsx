@@ -22,7 +22,7 @@ const TYPE_CONFIG: Record<AnomalyType, { label: string; color: string; icon: typ
   "stock-inusual": { label: "Stock Inusual", color: "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400", icon: Boxes },
   "precio-anomalo": { label: "Precio Anómalo", color: "bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400", icon: DollarSign },
   "fraude-potencial": { label: "Fraude Potencial", color: "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400", icon: AlertTriangle },
-  "patron-raro": { label: "Patrón Raro", color: "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400", icon: ShoppingCart },
+  "patron-raro": { label: "Patrón Raro", color: "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400", icon: ShoppingCart },
 };
 const SEV_COLORS: Record<Severity, string> = {
   baja: "bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-400",
@@ -131,7 +131,7 @@ export default function AnomalyDetectionTab() {
                     <span>Módulo: {a.module}</span>
                     <span>Valor: {typeof a.value === "number" && a.value > 10 ? fmt(a.value) : a.value}</span>
                     <span>Esperado: {typeof a.expected === "number" && a.expected > 10 ? fmt(a.expected) : a.expected}</span>
-                    <span className={cn("font-bold", a.deviation > 0 ? "text-red-500" : "text-blue-500")}>
+                    <span className={cn("font-bold", a.deviation > 0 ? "text-red-500" : "text-emerald-500")}>
                       Desviación: {a.deviation > 0 ? "+" : ""}{a.deviation}%
                     </span>
                   </div>
@@ -167,9 +167,9 @@ export default function AnomalyDetectionTab() {
                 <div className="bg-gray-50 dark:bg-surface rounded-xl p-3"><span className="text-xs text-gray-400">Valor Detectado</span><p className="font-bold text-red-500">{selected.value}</p></div>
                 <div className="bg-gray-50 dark:bg-surface rounded-xl p-3"><span className="text-xs text-gray-400">Valor Esperado</span><p className="font-bold text-emerald-500">{selected.expected}</p></div>
               </div>
-              <div className="bg-blue-50 dark:bg-blue-950/20 rounded-xl p-4">
-                <h4 className="text-sm font-bold text-blue-800 dark:text-blue-300 mb-1">Recomendación</h4>
-                <p className="text-xs text-blue-700 dark:text-blue-400">
+              <div className="bg-emerald-50 dark:bg-emerald-950/20 rounded-xl p-4">
+                <h4 className="text-sm font-bold text-emerald-800 dark:text-emerald-300 mb-1">Recomendación</h4>
+                <p className="text-xs text-emerald-700 dark:text-emerald-400">
                   {selected.type === "fraude-potencial" ? "Revisar cámaras de seguridad y confrontar con el empleado. Verificar recibos anulados." :
                    selected.type === "stock-inusual" ? "Realizar conteo físico inmediato. Revisar movimientos de almacén y mermas." :
                    selected.type === "precio-anomalo" ? "Corregir precio en el sistema. Verificar si se pueden revertir las ventas afectadas." :

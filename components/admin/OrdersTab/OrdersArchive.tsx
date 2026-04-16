@@ -127,7 +127,7 @@ export function OrdersArchive({
                               href={googleMapsUrl(o.customer.location)}
                               target="_blank"
                               rel="noopener noreferrer"
-                              className="p-1.5 rounded-lg text-gray-400 dark:text-muted hover:text-blue-500 hover:bg-blue-50 transition-colors"
+                              className="p-1.5 rounded-lg text-gray-400 dark:text-muted hover:text-emerald-500 hover:bg-emerald-50 transition-colors"
                               title="Ver en Maps"
                             >
                               <MapPin className="h-4 w-4" />
@@ -176,7 +176,7 @@ export function OrdersArchive({
                         href={googleMapsUrl(o.customer.location)}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="flex-1 flex items-center justify-center gap-1.5 py-2 rounded-lg text-xs font-semibold text-blue-600 bg-blue-50 hover:bg-blue-100 transition-colors"
+                        className="flex-1 flex items-center justify-center gap-1.5 py-2 rounded-lg text-xs font-semibold text-emerald-600 bg-emerald-50 hover:bg-emerald-100 transition-colors"
                       >
                         <MapPin className="h-4 w-4" /> Maps
                       </a>
