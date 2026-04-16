@@ -86,10 +86,10 @@ type FiadoStatsProps = {
 };
 
 const STATUS_META: Record<FiadoStatus, { label: string; color: string; bg: string; icon: typeof CheckCircle2 }> = {
-  ACTIVO:    { label: "Activo",    color: "text-amber-700 dark:text-amber-400",   bg: "bg-amber-100 dark:bg-amber-900/30",   icon: Clock },
-  PAGADO:    { label: "Pagado",    color: "text-emerald-700 dark:text-emerald-400", bg: "bg-emerald-100 dark:bg-emerald-900/30", icon: CheckCircle2 },
-  VENCIDO:   { label: "Vencido",   color: "text-red-700 dark:text-red-400",       bg: "bg-red-100 dark:bg-red-900/30",       icon: XCircle },
-  CANCELADO: { label: "Cancelado", color: "text-gray-600 dark:text-gray-400",     bg: "bg-gray-100 dark:bg-gray-800/50",     icon: Ban },
+  ACTIVO:    { label: "Activo",    color: "text-amber-700",   bg: "bg-amber-100",   icon: Clock },
+  PAGADO:    { label: "Pagado",    color: "text-emerald-700", bg: "bg-emerald-100", icon: CheckCircle2 },
+  VENCIDO:   { label: "Vencido",   color: "text-red-700",     bg: "bg-red-100",     icon: XCircle },
+  CANCELADO: { label: "Cancelado", color: "text-gray-600",    bg: "bg-gray-100",    icon: Ban },
 };
 
 function formatCurrency(n: number) { return `S/${n.toFixed(2)}`; }
@@ -121,28 +121,28 @@ export default function FiadoStats({ fiados, loading, totalSaldo, tendenciaMoros
         const bloqueadoC = activos.filter(f => { if (!f.fechaVence) return false; return new Date(f.fechaVence).getTime() < now.getTime() - 60 * 86400000; }).length;
 
         return (
-          <div className="flex flex-col lg:flex-row lg:items-center gap-4 bg-gray-50 dark:bg-gray-800/50 rounded-xl p-4">
+          <div className="flex flex-col lg:flex-row lg:items-center gap-4 bg-gray-50 rounded-xl p-4">
             {/* KPI inline */}
             <div className="flex gap-4 overflow-x-auto flex-1 scrollbar-hide">
               <div className="flex items-center gap-1.5 shrink-0">
-                <DollarSign className="h-3.5 w-3.5 text-[#00B4A6]" />
+                <DollarSign className="h-3.5 w-3.5 text-primary" />
                 <span className="text-xs text-gray-500">Total:</span>
-                <span className="text-xs font-mono font-bold text-gray-900 dark:text-white">{formatCurrency(totalPendienteKpi)}</span>
+                <span className="text-xs font-mono font-bold text-gray-900">{formatCurrency(totalPendienteKpi)}</span>
               </div>
               <div className="flex items-center gap-1.5 shrink-0">
                 <CheckCircle2 className="h-3.5 w-3.5 text-emerald-500" />
                 <span className="text-xs text-gray-500">Cobrado:</span>
-                <span className="text-xs font-mono font-bold text-emerald-600 dark:text-emerald-400">{formatCurrency(cobradoHoyKpi)}</span>
+                <span className="text-xs font-mono font-bold text-emerald-600">{formatCurrency(cobradoHoyKpi)}</span>
               </div>
               <div className="flex items-center gap-1.5 shrink-0">
                 <AlertTriangle className="h-3.5 w-3.5 text-red-500" />
                 <span className="text-xs text-gray-500">Vencidos:</span>
-                <span className={cn("text-xs font-mono font-bold", vencidosCountKpi > 0 ? "text-red-600 dark:text-red-400" : "text-gray-900 dark:text-white")}>{vencidosCountKpi}</span>
+                <span className={cn("text-xs font-mono font-bold", vencidosCountKpi > 0 ? "text-red-600" : "text-gray-900")}>{vencidosCountKpi}</span>
               </div>
               <div className="flex items-center gap-1.5 shrink-0">
-                <TrendingUp className="h-3.5 w-3.5 text-[#f97316]" />
+                <TrendingUp className="h-3.5 w-3.5 text-secondary" />
                 <span className="text-xs text-gray-500">Tasa:</span>
-                <span className="text-xs font-mono font-bold text-gray-900 dark:text-white">{tasaRecupKpi.toFixed(1)}%</span>
+                <span className="text-xs font-mono font-bold text-gray-900">{tasaRecupKpi.toFixed(1)}%</span>
               </div>
             </div>
             {/* Pills semaforo */}
@@ -168,17 +168,17 @@ export default function FiadoStats({ fiados, loading, totalSaldo, tendenciaMoros
         const cobrado = tendenciaMorosidad.cobradoEsteMes;
         const pct = meta > 0 ? Math.min(100, Math.round((cobrado / meta) * 100)) : 0;
         return (
-          <div className="rounded-xl border border-gray-200 dark:border-card-border bg-white dark:bg-card p-4">
+          <div className="rounded-xl border border-gray-200 bg-white p-4">
             <div className="flex items-center justify-between mb-2">
-              <span className="text-sm font-bold text-gray-700 dark:text-white">Cobro del mes: {formatCurrency(cobrado)} de {formatCurrency(meta)} ({pct}%)</span>
+              <span className="text-sm font-bold text-gray-700">Cobro del mes: {formatCurrency(cobrado)} de {formatCurrency(meta)} ({pct}%)</span>
               {pct > 80 ? (
-                <span className="text-xs font-bold text-emerald-600 dark:text-emerald-400">Casi todo cobrado!</span>
+                <span className="text-xs font-bold text-emerald-600">Casi todo cobrado!</span>
               ) : pct < 30 ? (
-                <span className="text-xs font-bold text-red-600 dark:text-red-400">Falta mucho por cobrar</span>
+                <span className="text-xs font-bold text-red-600">Falta mucho por cobrar</span>
               ) : null}
             </div>
-            <div className="w-full bg-gray-200 dark:bg-zinc-700 rounded-full h-2">
-              <div className="h-2 rounded-full transition-all" style={{ width: `${pct}%`, backgroundColor: pct > 80 ? "#22c55e" : pct < 30 ? "#ef4444" : "#00B4A6" }} />
+            <div className="w-full bg-gray-200 rounded-full h-2">
+              <div className={cn("h-2 rounded-full transition-all", pct > 80 ? "bg-emerald-500" : pct < 30 ? "bg-red-500" : "bg-primary")} style={{ width: `${pct}%` }} />
             </div>
           </div>
         );
@@ -186,36 +186,36 @@ export default function FiadoStats({ fiados, loading, totalSaldo, tendenciaMoros
 
       {/* Mejora 19 (ronda 3): Proyeccion de cobro */}
       {!loading && fiados.length > 0 && (
-        <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl p-4 ">
+        <div className="bg-white border border-gray-200 rounded-xl p-4">
           <div className="flex items-center gap-2 mb-3">
-            <TrendingUp className="h-4 w-4 text-[#00B4A6]" />
-            <p className="text-xs font-bold text-gray-600 dark:text-gray-400">Proyeccion de cobro</p>
+            <TrendingUp className="h-4 w-4 text-primary" />
+            <p className="text-xs font-bold text-gray-600">Proyeccion de cobro</p>
           </div>
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-3">
             <div className="text-center">
-              <p className="text-lg font-extrabold text-[#00B4A6]">{formatCurrency(proyeccionCobro.cobradoHoy)}</p>
-              <p className="text-[10px] text-gray-400 dark:text-muted uppercase">Cobrado hoy</p>
+              <p className="text-lg font-extrabold text-primary">{formatCurrency(proyeccionCobro.cobradoHoy)}</p>
+              <p className="text-[10px] text-gray-400 uppercase">Cobrado hoy</p>
             </div>
             <div className="text-center">
-              <p className="text-lg font-extrabold text-gray-900 dark:text-white">{formatCurrency(proyeccionCobro.cobradoSemana)}</p>
-              <p className="text-[10px] text-gray-400 dark:text-muted uppercase">Esta semana</p>
+              <p className="text-lg font-extrabold text-gray-900">{formatCurrency(proyeccionCobro.cobradoSemana)}</p>
+              <p className="text-[10px] text-gray-400 uppercase">Esta semana</p>
             </div>
             <div className="text-center">
               <p className="text-lg font-extrabold text-amber-600">{formatCurrency(proyeccionCobro.promedioDiario)}</p>
-              <p className="text-[10px] text-gray-400 dark:text-muted uppercase">Promedio/dia</p>
+              <p className="text-[10px] text-gray-400 uppercase">Promedio/dia</p>
             </div>
             <div className="text-center">
               <p className="text-lg font-extrabold text-red-600">{formatCurrency(proyeccionCobro.totalPendiente)}</p>
-              <p className="text-[10px] text-gray-400 dark:text-muted uppercase">Pendiente</p>
+              <p className="text-[10px] text-gray-400 uppercase">Pendiente</p>
             </div>
           </div>
           {/* Progress bar */}
-          <div className="w-full bg-gray-200 dark:bg-zinc-700 rounded-full h-2 mb-2">
-            <div className="h-2 rounded-full transition-all bg-[#00B4A6]" style={{ width: `${Math.min(100, proyeccionCobro.pctRecuperado)}%` }} />
+          <div className="w-full bg-gray-200 rounded-full h-2 mb-2">
+            <div className="h-2 rounded-full transition-all bg-primary" style={{ width: `${Math.min(100, proyeccionCobro.pctRecuperado)}%` }} />
           </div>
-          <p className="text-xs text-gray-600 dark:text-gray-400">
+          <p className="text-xs text-gray-600">
             {proyeccionCobro.promedioDiario > 0 ? (
-              <>Si cobras <span className="font-bold text-[#00B4A6]">{formatCurrency(proyeccionCobro.promedioDiario)}/dia</span>, recuperas todo en <span className="font-bold">{proyeccionCobro.diasRestantes} dias</span></>
+              <>Si cobras <span className="font-bold text-primary">{formatCurrency(proyeccionCobro.promedioDiario)}/dia</span>, recuperas todo en <span className="font-bold">{proyeccionCobro.diasRestantes} dias</span></>
             ) : (
               <span className="text-amber-600 font-bold">Aun no has cobrado esta semana — empieza hoy!</span>
             )}
@@ -227,10 +227,10 @@ export default function FiadoStats({ fiados, loading, totalSaldo, tendenciaMoros
       {!loading && fiados.length > 0 && (() => {
         // Agrupar por prefijo del nombre (zona aproximada)
         const TAG_MAP: Record<string, { emoji: string; color: string; bg: string }> = {
-          restaurante: { emoji: "\uD83C\uDF7D\uFE0F", color: "text-orange-700 dark:text-orange-400", bg: "bg-orange-100 dark:bg-orange-900/30" },
-          vecino: { emoji: "\uD83C\uDFE0", color: "text-emerald-700 dark:text-emerald-400", bg: "bg-emerald-100 dark:bg-emerald-900/30" },
-          mayorista: { emoji: "\uD83D\uDCE6", color: "text-purple-700 dark:text-purple-400", bg: "bg-purple-100 dark:bg-purple-900/30" },
-          otro: { emoji: "\uD83D\uDC64", color: "text-gray-700 dark:text-gray-400", bg: "bg-gray-100 dark:bg-zinc-700" },
+          restaurante: { emoji: "\uD83C\uDF7D\uFE0F", color: "text-orange-700", bg: "bg-orange-100" },
+          vecino: { emoji: "\uD83C\uDFE0", color: "text-emerald-700", bg: "bg-emerald-100" },
+          mayorista: { emoji: "\uD83D\uDCE6", color: "text-purple-700", bg: "bg-purple-100" },
+          otro: { emoji: "\uD83D\uDC64", color: "text-gray-700", bg: "bg-gray-100" },
         };
         // Agrupar activos por etiqueta del customerName (detectar palabras clave)
         const activos = fiados.filter(f => f.status === "ACTIVO" || f.status === "VENCIDO");
@@ -266,10 +266,10 @@ export default function FiadoStats({ fiados, loading, totalSaldo, tendenciaMoros
         <div className={cn(
           "rounded-xl px-4 py-2.5 text-xs font-bold",
           pagosEstaSemana.pagaron === pagosEstaSemana.total
-            ? "bg-emerald-100 dark:bg-emerald-900/20 text-emerald-700 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800/30"
+            ? "bg-emerald-100 text-emerald-700 border border-emerald-200"
             : pagosEstaSemana.pagaron > pagosEstaSemana.total / 2
-            ? "bg-emerald-50 dark:bg-emerald-900/10 text-emerald-600 dark:text-emerald-400 border border-emerald-100 dark:border-emerald-900/20"
-            : "bg-gray-50 dark:bg-zinc-800 text-gray-600 dark:text-zinc-400 border border-gray-200 dark:border-zinc-700"
+            ? "bg-emerald-50 text-emerald-600 border border-emerald-100"
+            : "bg-gray-50 text-gray-600 border border-gray-200"
         )}>
           {pagosEstaSemana.pagaron === pagosEstaSemana.total
             ? `Todos al dia! (${pagosEstaSemana.total} clientes)`
@@ -281,8 +281,8 @@ export default function FiadoStats({ fiados, loading, totalSaldo, tendenciaMoros
 
       {/* Mejora P-10: Mejor pagador del mes */}
       {!loading && mejorPagadorMes && (
-        <div className="rounded-xl bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-200 dark:border-emerald-800/30 px-4 py-2.5 flex items-center gap-2">
-          <span className="text-xs font-bold text-emerald-700 dark:text-emerald-400">
+        <div className="rounded-xl bg-emerald-50 border border-emerald-200 px-4 py-2.5 flex items-center gap-2">
+          <span className="text-xs font-bold text-emerald-700">
             Mejor pagador: {mejorPagadorMes.nombre} — {formatCurrency(mejorPagadorMes.total)} este mes
           </span>
         </div>
@@ -290,10 +290,10 @@ export default function FiadoStats({ fiados, loading, totalSaldo, tendenciaMoros
 
       {/* Mejora QW-7: Fiado mas antiguo destacado */}
       {fiadoMasAntiguo && (
-        <div className="rounded-xl border border-red-200 dark:border-red-800/30 bg-red-50 dark:bg-red-900/20 p-3 flex flex-col sm:flex-row sm:items-center gap-2">
+        <div className="rounded-xl border border-red-200 bg-red-50 p-3 flex flex-col sm:flex-row sm:items-center gap-2">
           <div className="flex-1 min-w-0">
-            <p className="text-xs font-bold text-red-700 dark:text-red-400">Fiado mas antiguo</p>
-            <p className="text-sm text-red-800 dark:text-red-300 mt-0.5 truncate">
+            <p className="text-xs font-bold text-red-700">Fiado mas antiguo</p>
+            <p className="text-sm text-red-800 mt-0.5 truncate">
               <span className="font-bold">{fiadoMasAntiguo.customerName || fiadoMasAntiguo.customerId}</span>
               {" · "}<span className="font-bold">{formatCurrency(fiadoMasAntiguo.saldo)}</span>
               {" · "}hace {fiadoMasAntiguo.dias} dias
@@ -330,13 +330,13 @@ export default function FiadoStats({ fiados, loading, totalSaldo, tendenciaMoros
               aria-label="Buscar fiados"
               value={search}
               onChange={e => setSearch(e.target.value)}
-              className="w-full pl-9 pr-3 py-2 rounded-lg border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 text-sm text-gray-900 dark:text-white placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#00B4A6]/30"
+              className="w-full pl-9 pr-3 py-2 rounded-lg border border-gray-200 bg-white text-sm text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-primary/30"
             />
           </div>
           <button
             type="button"
             onClick={() => setShowQuickClient?.(true)}
-            className="shrink-0 h-[38px] w-[38px] flex items-center justify-center rounded-lg border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 hover:bg-[#00B4A6] hover:text-white hover:border-[#00B4A6] text-gray-500 transition-colors"
+            className="shrink-0 h-[38px] w-[38px] flex items-center justify-center rounded-lg border border-gray-200 bg-white hover:bg-primary hover:text-white hover:border-primary text-gray-500 transition-colors"
             title="Crear cliente rapido"
           >
             <Plus className="h-4 w-4" />
@@ -350,8 +350,8 @@ export default function FiadoStats({ fiados, loading, totalSaldo, tendenciaMoros
               className={cn(
                 "shrink-0 px-3 py-2 rounded-xl text-xs font-bold transition-colors",
                 statusFilter === s
-                  ? "bg-[#00B4A6] text-white"
-                  : "bg-gray-100 dark:bg-white/5 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-white/10"
+                  ? "bg-primary text-white"
+                  : "bg-gray-100 text-gray-600 hover:bg-gray-200"
               )}
             >
               {s === "" ? "Todos" : STATUS_META[s].label}
@@ -368,8 +368,8 @@ export default function FiadoStats({ fiados, loading, totalSaldo, tendenciaMoros
         const activos = fiados.filter(f => (f.status === "ACTIVO" || f.status === "VENCIDO") && f.saldo > 0);
         if (activos.length === 0) {
           return (
-            <div className="bg-emerald-50 dark:bg-emerald-950/20 border border-emerald-200 dark:border-emerald-800 rounded-xl p-4 text-center">
-              <p className="text-sm font-bold text-emerald-700 dark:text-emerald-400">Sin deudores pendientes — Excelente!</p>
+            <div className="bg-emerald-50 border border-emerald-200 rounded-xl p-4 text-center">
+              <p className="text-sm font-bold text-emerald-700">Sin deudores pendientes — Excelente!</p>
             </div>
           );
         }
@@ -388,14 +388,14 @@ export default function FiadoStats({ fiados, loading, totalSaldo, tendenciaMoros
         }).sort((a, b) => b.riskScore - a.riskScore).slice(0, 5);
 
         const riskColors = {
-          ALTO: { bg: "bg-red-50 dark:bg-red-950/20", border: "border-red-200 dark:border-red-800", text: "text-red-700 dark:text-red-400", badge: "bg-red-100 text-red-700" },
-          MEDIO: { bg: "bg-amber-50 dark:bg-amber-950/20", border: "border-amber-200 dark:border-amber-800", text: "text-amber-700 dark:text-amber-400", badge: "bg-amber-100 text-amber-700" },
-          BAJO: { bg: "bg-emerald-50 dark:bg-emerald-950/20", border: "border-emerald-200 dark:border-emerald-800", text: "text-emerald-700 dark:text-emerald-400", badge: "bg-emerald-100 text-emerald-700" },
+          ALTO: { bg: "bg-red-50", border: "border-red-200", text: "text-red-700", badge: "bg-red-100 text-red-700" },
+          MEDIO: { bg: "bg-amber-50", border: "border-amber-200", text: "text-amber-700", badge: "bg-amber-100 text-amber-700" },
+          BAJO: { bg: "bg-emerald-50", border: "border-emerald-200", text: "text-emerald-700", badge: "bg-emerald-100 text-emerald-700" },
         };
 
         return (
           <div className="space-y-2">
-            <p className="text-xs font-bold text-gray-600 dark:text-gray-400 flex items-center gap-1.5">
+            <p className="text-xs font-bold text-gray-600 flex items-center gap-1.5">
               <Shield className="h-3.5 w-3.5 text-red-500" /> Top Deudores por Riesgo
             </p>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-2">
@@ -408,7 +408,7 @@ export default function FiadoStats({ fiados, loading, totalSaldo, tendenciaMoros
                     onClick={() => openDetail(f)}
                   >
                     <div className="flex items-center justify-between mb-1.5">
-                      <p className="text-xs font-bold text-gray-900 dark:text-white truncate">{f.customerName || f.customerId}</p>
+                      <p className="text-xs font-bold text-gray-900 truncate">{f.customerName || f.customerId}</p>
                       <span className={cn("text-[9px] font-extrabold px-1.5 py-0.5 rounded-full", colors.badge)}>
                         {f.riskLevel}
                       </span>
@@ -423,7 +423,7 @@ export default function FiadoStats({ fiados, loading, totalSaldo, tendenciaMoros
                           e.stopPropagation();
                           openDetail(f);
                         }}
-                        className="flex-1 text-[10px] font-bold text-center py-1 rounded-lg bg-white/80 dark:bg-white/10 text-gray-700 dark:text-foreground hover:bg-white transition-colors"
+                        className="flex-1 text-[10px] font-bold text-center py-1 rounded-lg bg-white/80 text-gray-700 hover:bg-white transition-colors"
                       >
                         Cobrar
                       </button>
@@ -436,6 +436,7 @@ export default function FiadoStats({ fiados, loading, totalSaldo, tendenciaMoros
                             const cleanPhone = f.customerId.replace(/\D/g, "");
                             window.open(`https://wa.me/${cleanPhone}?text=${encodeURIComponent(msg)}`, "_blank");
                           }}
+                          // TODO(#1): non-standard — WhatsApp brand color (#25D366), no token equivalent
                           className="text-[10px] font-bold px-2 py-1 rounded-lg bg-[#25D366]/10 text-[#25D366] hover:bg-[#25D366]/20 transition-colors"
                         >
                           <MessageCircle className="h-3 w-3" />
@@ -499,12 +500,12 @@ export default function FiadoStats({ fiados, loading, totalSaldo, tendenciaMoros
               className={cn(
                 "p-1 min-h-[50px] rounded-lg text-center transition-colors relative",
                 esHoy ? "ring-2 ring-emerald-500" : "",
-                tieneVencidos ? "bg-red-50 dark:bg-red-950/20" : "",
-                fiadosDia.length > 0 ? "cursor-pointer hover:bg-gray-100 dark:hover:bg-white/5" : "",
-                calDiaSeleccionado === diaKey ? "bg-[#00B4A6]/10 dark:bg-[#00B4A6]/20" : ""
+                tieneVencidos ? "bg-red-50" : "",
+                fiadosDia.length > 0 ? "cursor-pointer hover:bg-gray-100" : "",
+                calDiaSeleccionado === diaKey ? "bg-primary/10" : ""
               )}
             >
-              <span className={cn("text-xs font-bold", esHoy ? "text-emerald-600" : "text-gray-700 dark:text-gray-300")}>{d}</span>
+              <span className={cn("text-xs font-bold", esHoy ? "text-emerald-600" : "text-gray-700")}>{d}</span>
               {fiadosDia.length > 0 && (
                 <div className="flex items-center justify-center gap-0.5 mt-0.5">
                   <span className={cn("w-2 h-2 rounded-full", tieneVencidos ? "bg-red-500" : "bg-amber-500")} />
@@ -518,21 +519,21 @@ export default function FiadoStats({ fiados, loading, totalSaldo, tendenciaMoros
         return (
           <div className="space-y-2">
             <div className="flex items-center justify-between">
-              <p className="text-xs font-bold text-gray-600 dark:text-gray-400 flex items-center gap-1.5">
-                <Calendar className="h-3.5 w-3.5 text-[#00B4A6]" /> Calendario de Vencimientos
+              <p className="text-xs font-bold text-gray-600 flex items-center gap-1.5">
+                <Calendar className="h-3.5 w-3.5 text-primary" /> Calendario de Vencimientos
               </p>
               <p className="text-xs text-gray-500">
                 Este mes: {countMes} fiados vencen · Total: {formatCurrency(totalMes)}
               </p>
             </div>
-            <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl  overflow-hidden p-3">
+            <div className="bg-white border border-gray-200 rounded-xl overflow-hidden p-3">
               {/* Nav */}
               <div className="flex items-center justify-between mb-2">
-                <button onClick={() => setCalMes(p => { const d = new Date(p.year, p.month - 1); return { year: d.getFullYear(), month: d.getMonth() }; })} className="p-1 rounded-lg hover:bg-gray-100 dark:hover:bg-white/5">
+                <button onClick={() => setCalMes(p => { const d = new Date(p.year, p.month - 1); return { year: d.getFullYear(), month: d.getMonth() }; })} className="p-1 rounded-lg hover:bg-gray-100">
                   <ChevronLeft className="h-4 w-4 text-gray-500" />
                 </button>
-                <p className="text-sm font-bold text-gray-900 dark:text-white capitalize">{mesNombre}</p>
-                <button onClick={() => setCalMes(p => { const d = new Date(p.year, p.month + 1); return { year: d.getFullYear(), month: d.getMonth() }; })} className="p-1 rounded-lg hover:bg-gray-100 dark:hover:bg-white/5">
+                <p className="text-sm font-bold text-gray-900 capitalize">{mesNombre}</p>
+                <button onClick={() => setCalMes(p => { const d = new Date(p.year, p.month + 1); return { year: d.getFullYear(), month: d.getMonth() }; })} className="p-1 rounded-lg hover:bg-gray-100">
                   <ChevronRight className="h-4 w-4 text-gray-500" />
                 </button>
               </div>
@@ -547,19 +548,19 @@ export default function FiadoStats({ fiados, loading, totalSaldo, tendenciaMoros
                 {celdas}
               </div>
               {sinVence > 0 && (
-                <p className="text-[10px] text-amber-600 dark:text-amber-400 mt-2 text-center">{sinVence} fiados activos sin fecha de vencimiento</p>
+                <p className="text-[10px] text-amber-600 mt-2 text-center">{sinVence} fiados activos sin fecha de vencimiento</p>
               )}
             </div>
             {/* Detalle del dia seleccionado */}
             {calDiaSeleccionado && porDia[calDiaSeleccionado] && (
-              <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl p-3 space-y-2">
-                <p className="text-xs font-bold text-gray-700 dark:text-gray-300">
+              <div className="bg-white border border-gray-200 rounded-xl p-3 space-y-2">
+                <p className="text-xs font-bold text-gray-700">
                   Fiados que vencen el {new Date(calDiaSeleccionado).toLocaleDateString("es-PE", { day: "2-digit", month: "long" })}
                 </p>
                 {porDia[calDiaSeleccionado].map(f => (
-                  <div key={f.id} className="flex items-center gap-3 p-2 bg-gray-50 dark:bg-white/5 rounded-lg">
+                  <div key={f.id} className="flex items-center gap-3 p-2 bg-gray-50 rounded-lg">
                     <div className="flex-1 min-w-0">
-                      <p className="text-sm font-bold text-gray-900 dark:text-white truncate">{f.customerName || f.customerId}</p>
+                      <p className="text-sm font-bold text-gray-900 truncate">{f.customerName || f.customerId}</p>
                       <p className="text-xs text-gray-500">{formatCurrency(f.saldo)}</p>
                     </div>
                     <button
@@ -568,6 +569,7 @@ export default function FiadoStats({ fiados, loading, totalSaldo, tendenciaMoros
                         const msg = `Hola ${f.customerName || f.customerId}, te recordamos que tienes un pendiente de S/${f.saldo.toFixed(2)} en Buleje.`;
                         window.open(`https://wa.me/${cleanPhone}?text=${encodeURIComponent(msg)}`, "_blank");
                       }}
+                      // TODO(#1): non-standard — WhatsApp brand color (#25D366), no token equivalent
                       className="shrink-0 px-2 py-1 rounded-lg text-[10px] font-bold bg-[#25D366]/10 text-[#25D366] hover:bg-[#25D366]/20 transition-colors"
                     >
                       Cobrar

@@ -1328,7 +1328,6 @@ export default function CotizacionesModule() {
                             href={`https://wa.me/?text=${encodeURIComponent(waText)}`}
                             target="_blank"
                             rel="noopener noreferrer"
-                            // TODO(#1): non-standard hex, decide if token or semantic
                             className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold text-white bg-[#25D366] hover:bg-[#1da851] transition-colors"
                           >
                             <MessageCircle className="h-3.5 w-3.5" /> Recordar por WhatsApp
@@ -1395,7 +1394,6 @@ export default function CotizacionesModule() {
                       const url = phone ? `https://wa.me/${phone}?text=${encodedText}` : `https://wa.me/?text=${encodedText}`;
                       window.open(url, "_blank");
                     }}
-                    // TODO(#1): non-standard hex, decide if token or semantic
                     className="flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-bold text-white bg-[#25D366] hover:bg-[#1da851] transition-colors"
                   >
                     <MessageCircle className="h-4 w-4" /> WhatsApp

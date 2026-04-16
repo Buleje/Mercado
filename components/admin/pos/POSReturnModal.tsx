@@ -219,15 +219,15 @@ export default function POSReturnModal({
         className="fixed inset-0 z-50 flex items-center justify-center p-4"
         onClick={e => e.target === e.currentTarget && resetAndClose()}
       >
-        <div className="w-full max-w-xl bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl max-h-[90vh] flex flex-col overflow-hidden">
+        <div className="w-full max-w-xl bg-white border border-gray-200 rounded-xl max-h-[90vh] flex flex-col overflow-hidden">
           {/* Header */}
-          <div className="flex items-center justify-between p-4 border-b border-gray-100 dark:border-card-border">
-            <h3 className="text-base font-extrabold text-gray-900 dark:text-foreground flex items-center gap-2">
-              <RotateCcw className="h-4 w-4 text-[#f97316]" />
+          <div className="flex items-center justify-between p-4 border-b border-gray-100">
+            <h3 className="text-base font-extrabold text-gray-900 flex items-center gap-2">
+              <RotateCcw className="h-4 w-4 text-secondary" />
               Devolucion
-              {step < 3 && <span className="text-xs font-normal text-gray-400 dark:text-muted">Paso {step}/2</span>}
+              {step < 3 && <span className="text-xs font-normal text-gray-400">Paso {step}/2</span>}
             </h3>
-            <button onClick={resetAndClose} className="p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-accent transition-colors">
+            <button onClick={resetAndClose} className="p-1.5 rounded-lg hover:bg-gray-100 transition-colors">
               <X className="h-4 w-4 text-gray-500" />
             </button>
           </div>
@@ -244,25 +244,25 @@ export default function POSReturnModal({
                     onChange={e => setSearchQuery(e.target.value)}
                     onKeyDown={e => e.key === "Enter" && handleSearch()}
                     placeholder="Buscar por ID de boleta..."
-                    className="w-full pl-9 pr-3 py-2 rounded-lg border border-gray-200 dark:border-card-border bg-white dark:bg-card text-sm focus:outline-none focus:ring-2 focus:ring-[#00B4A6]/30 dark:text-foreground"
+                    className="w-full pl-9 pr-3 py-2 rounded-lg border border-gray-200 bg-white text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
                     autoFocus
                   />
                 </div>
                 <button
                   onClick={handleSearch}
-                  className="px-3 py-2 rounded-lg bg-[#00B4A6] text-white text-xs font-bold hover:bg-[#009690] transition-colors"
+                  className="px-3 py-2 rounded-lg bg-primary text-white text-xs font-bold hover:bg-primary-dark transition-colors"
                 >
                   Buscar
                 </button>
               </div>
 
-              <p className="text-[10px] font-bold text-gray-400 dark:text-muted">
+              <p className="text-[10px] font-bold text-gray-400">
                 {searchQuery ? "Resultados" : "Ventas recientes de hoy"}
               </p>
 
               {loading ? (
                 <div className="flex justify-center py-8">
-                  <Loader2 className="h-6 w-6 animate-spin text-[#00B4A6]" />
+                  <Loader2 className="h-6 w-6 animate-spin text-primary" />
                 </div>
               ) : sales.length === 0 ? (
                 <div className="text-center py-8">
@@ -275,17 +275,17 @@ export default function POSReturnModal({
                     <button
                       key={sale.id}
                       onClick={() => selectSale(sale)}
-                      className="w-full text-left p-3 rounded-lg border border-gray-100 dark:border-card-border hover:bg-gray-50 dark:hover:bg-accent transition-colors"
+                      className="w-full text-left p-3 rounded-lg border border-gray-100 hover:bg-gray-50 transition-colors"
                     >
                       <div className="flex items-center justify-between">
                         <div>
-                          <p className="text-xs font-bold text-gray-900 dark:text-foreground">
+                          <p className="text-xs font-bold text-gray-900">
                             #{sale.id.slice(0, 8)}
                           </p>
                           <p className="text-[10px] text-gray-400">{fmtDate(sale.createdAt)}</p>
                         </div>
                         <div className="text-right">
-                          <p className="text-sm font-extrabold text-[#00B4A6]">{fmt(sale.total)}</p>
+                          <p className="text-sm font-extrabold text-primary">{fmt(sale.total)}</p>
                           <p className="text-[10px] text-gray-400 capitalize">{sale.payment}</p>
                         </div>
                       </div>
@@ -304,14 +304,14 @@ export default function POSReturnModal({
           {/* Step 2: Select items to return */}
           {step === 2 && selectedSale && (
             <div className="flex-1 overflow-y-auto p-4 space-y-3">
-              <div className="bg-gray-50 dark:bg-accent rounded-xl p-3">
-                <p className="text-xs font-bold text-gray-900 dark:text-foreground">
+              <div className="bg-gray-50 rounded-xl p-3">
+                <p className="text-xs font-bold text-gray-900">
                   Venta #{selectedSale.id.slice(0, 8)} - {fmtDate(selectedSale.createdAt)}
                 </p>
                 <p className="text-[10px] text-gray-400">Total original: {fmt(selectedSale.total)}</p>
               </div>
 
-              <p className="text-[10px] font-bold text-gray-400 dark:text-muted">
+              <p className="text-[10px] font-bold text-gray-400">
                 Seleccionar items a devolver
               </p>
 
@@ -322,8 +322,8 @@ export default function POSReturnModal({
                     className={cn(
                       "p-3 rounded-xl border transition-colors",
                       item.selected
-                        ? "border-[#00B4A6] bg-[#00B4A6]/5"
-                        : "border-gray-100 dark:border-card-border"
+                        ? "border-primary bg-primary/5"
+                        : "border-gray-100"
                     )}
                   >
                     <div className="flex items-center gap-3">
@@ -331,10 +331,10 @@ export default function POSReturnModal({
                         type="checkbox"
                         checked={item.selected}
                         onChange={() => toggleItem(idx)}
-                        className="h-4 w-4 rounded border-gray-300 text-[#00B4A6] focus:ring-[#00B4A6]"
+                        className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary"
                       />
                       <div className="flex-1 min-w-0">
-                        <p className="text-xs font-bold text-gray-900 dark:text-foreground truncate">{item.name}</p>
+                        <p className="text-xs font-bold text-gray-900 truncate">{item.name}</p>
                         <p className="text-[10px] text-gray-400">{fmt(item.price)} x {item.maxQty} = {fmt(item.price * item.maxQty)}</p>
                       </div>
                       {item.selected && (
@@ -346,7 +346,7 @@ export default function POSReturnModal({
                             max={item.maxQty}
                             value={item.returnQty}
                             onChange={e => updateReturnQty(idx, parseInt(e.target.value) || 0)}
-                            className="w-14 px-2 py-1 rounded-lg border border-gray-200 dark:border-card-border text-xs text-center text-gray-900 dark:text-foreground bg-white dark:bg-card outline-none focus:border-[#00B4A6]"
+                            className="w-14 px-2 py-1 rounded-lg border border-gray-200 text-xs text-center text-gray-900 bg-white outline-none focus:border-primary"
                           />
                         </div>
                       )}
@@ -357,11 +357,11 @@ export default function POSReturnModal({
 
               {/* Motivo */}
               <div>
-                <label className="block text-xs font-bold text-gray-600 dark:text-muted mb-1">Motivo</label>
+                <label className="block text-xs font-bold text-gray-600 mb-1">Motivo</label>
                 <select
                   value={motivo}
                   onChange={e => setMotivo(e.target.value)}
-                  className="w-full px-3 py-2 rounded-lg border border-gray-200 dark:border-card-border bg-white dark:bg-card text-sm text-gray-900 dark:text-foreground focus:outline-none focus:ring-2 focus:ring-[#00B4A6]/30"
+                  className="w-full px-3 py-2 rounded-lg border border-gray-200 bg-white text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-primary/30"
                 >
                   {MOTIVOS.map(m => (
                     <option key={m} value={m}>{m}</option>
@@ -371,15 +371,15 @@ export default function POSReturnModal({
 
               {/* Refund type */}
               <div>
-                <label className="block text-xs font-bold text-gray-600 dark:text-muted mb-1">Devolver como</label>
+                <label className="block text-xs font-bold text-gray-600 mb-1">Devolver como</label>
                 <div className="flex gap-2">
                   <button
                     onClick={() => setRefundType("efectivo")}
                     className={cn(
                       "flex-1 py-2 rounded-xl text-xs font-bold transition-colors",
                       refundType === "efectivo"
-                        ? "bg-[#00B4A6] text-white"
-                        : "bg-gray-100 dark:bg-accent text-gray-600 dark:text-muted hover:bg-gray-200"
+                        ? "bg-primary text-white"
+                        : "bg-gray-100 text-gray-600 hover:bg-gray-200"
                     )}
                   >
                     Efectivo
@@ -389,8 +389,8 @@ export default function POSReturnModal({
                     className={cn(
                       "flex-1 py-2 rounded-xl text-xs font-bold transition-colors",
                       refundType === "credito"
-                        ? "bg-[#f97316] text-white"
-                        : "bg-gray-100 dark:bg-accent text-gray-600 dark:text-muted hover:bg-gray-200"
+                        ? "bg-secondary text-white"
+                        : "bg-gray-100 text-gray-600 hover:bg-gray-200"
                     )}
                   >
                     Credito en tienda
@@ -400,11 +400,11 @@ export default function POSReturnModal({
 
               {/* Summary */}
               {selectedCount > 0 && (
-                <div className="bg-[#00B4A6]/5 rounded-xl p-3 border border-[#00B4A6]/20">
+                <div className="bg-primary/5 rounded-xl p-3 border border-primary/20">
                   <p className="text-xs text-gray-500">
                     {selectedCount} item{selectedCount !== 1 ? "s" : ""} a devolver
                   </p>
-                  <p className="text-lg font-extrabold text-[#00B4A6]">{fmt(returnTotal)}</p>
+                  <p className="text-lg font-extrabold text-primary">{fmt(returnTotal)}</p>
                 </div>
               )}
 
@@ -419,7 +419,7 @@ export default function POSReturnModal({
                 <button
                   onClick={handleConfirm}
                   disabled={selectedCount === 0 || processing}
-                  className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg text-sm font-bold text-white bg-[#00B4A6] hover:bg-[#009690] disabled:opacity-50 transition-colors"
+                  className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg text-sm font-bold text-white bg-primary hover:bg-primary-dark disabled:opacity-50 transition-colors"
                 >
                   {processing ? <Loader2 className="h-4 w-4 animate-spin" /> : <Check className="h-4 w-4" />}
                   Confirmar devolucion
@@ -478,7 +478,7 @@ export default function POSReturnModal({
                     setCreatingNC(false);
                   }}
                   disabled={creatingNC}
-                  className="flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-bold text-[#00B4A6] bg-[#00B4A6]/10 hover:bg-[#00B4A6]/20 disabled:opacity-50 transition-colors"
+                  className="flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-bold text-primary bg-primary/10 hover:bg-primary/20 disabled:opacity-50 transition-colors"
                 >
                   {creatingNC ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <FileText className="h-3.5 w-3.5" />}
                   Crear Nota de Crédito
@@ -492,7 +492,7 @@ export default function POSReturnModal({
 
               <button
                 onClick={resetAndClose}
-                className="px-6 py-2.5 rounded-lg bg-[#00B4A6] text-white text-sm font-bold hover:bg-[#009690] transition-colors"
+                className="px-6 py-2.5 rounded-lg bg-primary text-white text-sm font-bold hover:bg-primary-dark transition-colors"
               >
                 Cerrar
               </button>

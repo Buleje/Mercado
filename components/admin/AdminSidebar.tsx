@@ -60,12 +60,12 @@ const GROUP_ICONS: Record<ModuleGroup, LucideIcon> = {
 };
 
 const GROUP_COLORS: Record<ModuleGroup, { icon: string; bg: string; border: string }> = {
-  operaciones: { icon: "text-gray-400", bg: "bg-gray-100 dark:bg-zinc-800/50", border: "border-gray-200 dark:border-zinc-700/40" },
-  gestion:     { icon: "text-gray-400", bg: "bg-gray-100 dark:bg-zinc-800/50", border: "border-gray-200 dark:border-zinc-700/40" },
-  finanzas:    { icon: "text-gray-400", bg: "bg-gray-100 dark:bg-zinc-800/50", border: "border-gray-200 dark:border-zinc-700/40" },
-  documentos:  { icon: "text-gray-400", bg: "bg-gray-100 dark:bg-zinc-800/50", border: "border-gray-200 dark:border-zinc-700/40" },
-  inteligencia:{ icon: "text-gray-400", bg: "bg-gray-100 dark:bg-zinc-800/50", border: "border-gray-200 dark:border-zinc-700/40" },
-  config:      { icon: "text-gray-400", bg: "bg-gray-100 dark:bg-zinc-800/50", border: "border-gray-200 dark:border-zinc-700/40" },
+  operaciones: { icon: "text-gray-400", bg: "bg-gray-100", border: "border-gray-200" },
+  gestion:     { icon: "text-gray-400", bg: "bg-gray-100", border: "border-gray-200" },
+  finanzas:    { icon: "text-gray-400", bg: "bg-gray-100", border: "border-gray-200" },
+  documentos:  { icon: "text-gray-400", bg: "bg-gray-100", border: "border-gray-200" },
+  inteligencia:{ icon: "text-gray-400", bg: "bg-gray-100", border: "border-gray-200" },
+  config:      { icon: "text-gray-400", bg: "bg-gray-100", border: "border-gray-200" },
 };
 
 const GROUP_ORDER: ModuleGroup[] = ["operaciones", "gestion", "finanzas", "documentos", "inteligencia"];
@@ -347,8 +347,8 @@ function ModuleItem({
         className={cn(
           "w-full flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all duration-200 group relative",
           isActive
-            ? "bg-[#2563EB]/10 dark:bg-[#2563EB]/20 text-[#2563EB] dark:text-emerald-400"
-            : "text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-white/5"
+            ? "bg-[#2563EB]/10 text-[#2563EB]"
+            : "text-gray-600 hover:bg-gray-100"
         )}
       >
         {/* Active indicator bar */}
@@ -361,8 +361,8 @@ function ModuleItem({
             "shrink-0 transition-colors",
             collapsed ? "h-5 w-5" : "h-4.5 w-4.5",
             isActive
-              ? "text-[#2563EB] dark:text-emerald-400"
-              : "text-gray-500 dark:text-gray-500 group-hover:text-gray-700 dark:group-hover:text-gray-300"
+              ? "text-[#2563EB]"
+              : "text-gray-500 group-hover:text-gray-700"
           )}
         />
 
@@ -396,7 +396,7 @@ function ModuleItem({
                     "p-0.5 rounded transition-colors",
                     canMoveUp
                       ? "text-gray-500 hover:text-[#2563EB] hover:bg-[#2563EB]/10"
-                      : "text-gray-300 dark:text-gray-600 cursor-not-allowed"
+                      : "text-gray-300 cursor-not-allowed"
                   )}
                   title="Subir"
                 >
@@ -409,7 +409,7 @@ function ModuleItem({
                     "p-0.5 rounded transition-colors",
                     canMoveDown
                       ? "text-gray-500 hover:text-[#2563EB] hover:bg-[#2563EB]/10"
-                      : "text-gray-300 dark:text-gray-600 cursor-not-allowed"
+                      : "text-gray-300 cursor-not-allowed"
                   )}
                   title="Bajar"
                 >
@@ -441,7 +441,7 @@ function ModuleItem({
               transition={{ duration: 0.22, ease: "easeInOut" }}
               className="overflow-hidden"
             >
-              <div className="ml-6 mt-0.5 mb-1 border-l border-gray-200 dark:border-white/10 pl-3 space-y-0.5">
+              <div className="ml-6 mt-0.5 mb-1 border-l border-gray-200 pl-3 space-y-0.5">
                 {module.tabs.map((tab) => {
                   const isTabActive = activeTab === tab.id;
                   return (
@@ -451,16 +451,16 @@ function ModuleItem({
                       className={cn(
                         "w-full flex items-center gap-2 px-2 py-1.5 rounded-lg text-xs transition-all duration-150",
                         isTabActive
-                          ? "bg-[#2563EB]/10 dark:bg-[#2563EB]/20 text-[#2563EB] dark:text-emerald-400 font-semibold"
-                          : "text-gray-500 dark:text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 hover:bg-gray-100 dark:hover:bg-white/5"
+                          ? "bg-[#2563EB]/10 text-[#2563EB] font-semibold"
+                          : "text-gray-500 hover:text-gray-700 hover:bg-gray-100"
                       )}
                     >
                       <span
                         className={cn(
                           "shrink-0 h-1.5 w-1.5 rounded-full",
                           isTabActive
-                            ? "bg-[#2563EB] dark:bg-emerald-400"
-                            : "bg-gray-300 dark:bg-gray-600"
+                            ? "bg-[#2563EB]"
+                            : "bg-gray-300"
                         )}
                       />
                       <span className="truncate" title={tab.label}>{tab.label}</span>
@@ -508,13 +508,13 @@ function FlyoutPanel({
       animate={{ opacity: 1, x: 0 }}
       exit={{ opacity: 0, x: -10 }}
       transition={{ duration: 0.16 }}
-      className="fixed z-300 bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl overflow-hidden"
+      className="fixed z-300 bg-white border border-gray-200 rounded-xl overflow-hidden"
       style={{ left: sidebarWidth + 8, top, width: 240 }}
       onMouseEnter={onHoverStart}
       onMouseLeave={onHoverEnd}
     >
       {/* Cabecera de categoría */}
-      <div className={cn("px-3 py-2.5 flex items-center gap-2.5 border-b border-gray-100 dark:border-white/5", col.bg)}>
+      <div className={cn("px-3 py-2.5 flex items-center gap-2.5 border-b border-gray-100", col.bg)}>
         <div className={cn("h-6 w-6 rounded-lg flex items-center justify-center", col.bg, col.border, "border")}>
           <Icon className={cn("h-3.5 w-3.5", col.icon)} />
         </div>
@@ -535,8 +535,8 @@ function FlyoutPanel({
               className={cn(
                 "w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-sm transition-all",
                 isActive
-                  ? "bg-[#2563EB]/10 dark:bg-[#2563EB]/20 text-[#2563EB] dark:text-emerald-400 font-semibold"
-                  : "text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-white/5"
+                  ? "bg-[#2563EB]/10 text-[#2563EB] font-semibold"
+                  : "text-gray-600 hover:bg-gray-100"
               )}
             >
               <Ic className="h-4 w-4 shrink-0" />
@@ -546,7 +546,7 @@ function FlyoutPanel({
                   {badge > 99 ? "99+" : badge}
                 </span>
               )}
-              {isActive && <span className="w-1.5 h-1.5 rounded-full bg-[#2563EB] dark:bg-emerald-400 shrink-0" />}
+              {isActive && <span className="w-1.5 h-1.5 rounded-full bg-[#2563EB] shrink-0" />}
             </button>
           );
         })}
@@ -603,18 +603,18 @@ function CategorySection({
           className={cn(
             "w-full flex items-center gap-2.5 px-3 py-2 rounded-xl transition-all group",
             isAnyActive
-              ? "bg-[#2563EB]/10 dark:bg-[#2563EB]/20"
-              : "hover:bg-gray-50 dark:hover:bg-white/5"
+              ? "bg-[#2563EB]/10"
+              : "hover:bg-gray-50"
           )}
         >
           {/* Icono de categoría con color */}
           <div className={cn(
             "h-7 w-7 rounded-lg flex items-center justify-center shrink-0 transition-all",
-            isOpen || isAnyActive ? cn(col.bg, "border", col.border) : "bg-gray-100 dark:bg-white/5"
+            isOpen || isAnyActive ? cn(col.bg, "border", col.border) : "bg-gray-100"
           )}>
             <Icon className={cn(
               "h-3.5 w-3.5 transition-colors",
-              isOpen || isAnyActive ? col.icon : "text-gray-400 dark:text-gray-500 group-hover:" + col.icon
+              isOpen || isAnyActive ? col.icon : "text-gray-400 group-hover:" + col.icon
             )} />
           </div>
 
@@ -624,12 +624,12 @@ function CategorySection({
                 <span className={cn(
                   "text-xs font-bold block",
                   isAnyActive
-                    ? "text-[#2563EB] dark:text-emerald-400"
-                    : "text-gray-500 dark:text-gray-400 group-hover:text-gray-700 dark:group-hover:text-gray-300"
+                    ? "text-[#2563EB]"
+                    : "text-gray-500 group-hover:text-gray-700"
                 )}>
                   {GROUP_LABELS[group]}
                 </span>
-                <span className="text-[9px] text-gray-400 dark:text-gray-500">
+                <span className="text-[9px] text-gray-400">
                   {modules.length} módulo{modules.length !== 1 ? "s" : ""}
                 </span>
               </div>
@@ -637,7 +637,7 @@ function CategorySection({
               <m.div animate={{ rotate: isOpen ? 90 : 0 }} transition={{ duration: 0.2 }}>
                 <ChevronRight className={cn(
                   "h-3.5 w-3.5 shrink-0 transition-colors",
-                  isOpen || isAnyActive ? col.icon : "text-gray-300 dark:text-gray-600"
+                  isOpen || isAnyActive ? col.icon : "text-gray-300"
                 )} />
               </m.div>
             </>
@@ -892,7 +892,7 @@ export default function AdminSidebar({
     return (
       <div
         className={cn(
-          "flex flex-col h-full bg-white dark:bg-card border-r border-gray-200 dark:border-card-border",
+          "flex flex-col h-full bg-white border-r border-gray-200",
           "transition-all duration-300",
           isMobile ? "w-72" : isCollapsed ? "w-16" : "w-70"
         )}
@@ -900,13 +900,13 @@ export default function AdminSidebar({
         {/* Header: toggle + logo */}
         <div
           className={cn(
-            "flex items-center h-16 px-3 border-b border-gray-200 dark:border-card-border shrink-0",
+            "flex items-center h-16 px-3 border-b border-gray-200 shrink-0",
             isCollapsed ? "justify-center" : "gap-3"
           )}
         >
           <button
             onClick={isMobile ? () => setMobileOpen(false) : onToggleCollapse}
-            className="p-2 rounded-lg text-gray-500 hover:bg-gray-100 dark:hover:bg-white/10 transition-colors shrink-0"
+            className="p-2 rounded-lg text-gray-500 hover:bg-gray-100 transition-colors shrink-0"
             aria-label="Toggle sidebar"
           >
             {isMobile ? (
@@ -928,10 +928,10 @@ export default function AdminSidebar({
                 <span className="text-white text-xs font-bold">B</span>
               </div>
               <div className="min-w-0">
-                <p className="text-sm font-bold text-gray-900 dark:text-white truncate leading-tight">
+                <p className="text-sm font-bold text-gray-900 truncate leading-tight">
                   Buleje
                 </p>
-                <p className="text-[10px] text-gray-400 dark:text-gray-500 truncate leading-tight">
+                <p className="text-[10px] text-gray-400 truncate leading-tight">
                   Panel Admin
                 </p>
               </div>
@@ -942,7 +942,7 @@ export default function AdminSidebar({
         {/* User info */}
         <div
           className={cn(
-            "flex items-center px-3 py-3 border-b border-gray-100 dark:border-white/5 shrink-0",
+            "flex items-center px-3 py-3 border-b border-gray-100 shrink-0",
             isCollapsed ? "justify-center" : "gap-3"
           )}
         >
@@ -955,10 +955,10 @@ export default function AdminSidebar({
               animate={{ opacity: 1 }}
               className="min-w-0"
             >
-              <p className="text-xs font-semibold text-gray-800 dark:text-gray-200 truncate">
+              <p className="text-xs font-semibold text-gray-800 truncate">
                 Administrador
               </p>
-              <p className="text-[10px] text-gray-400 dark:text-gray-500 truncate">
+              <p className="text-[10px] text-gray-400 truncate">
                 Admin General
               </p>
             </m.div>
@@ -992,7 +992,7 @@ export default function AdminSidebar({
                 "w-full flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-colors",
                 editMode
                   ? "bg-[#2563EB] text-white"
-                  : "text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-white/5 border border-gray-200 dark:border-card-border"
+                  : "text-gray-500 hover:bg-gray-100 border border-gray-200"
               )}
             >
               <ArrowUpDown className="h-3.5 w-3.5" />
@@ -1011,13 +1011,13 @@ export default function AdminSidebar({
                 placeholder="Buscar módulo..."
                 value={search}
                 onChange={e => setSearch(e.target.value)}
-                className="w-full h-8 pl-8 pr-8 text-xs rounded-lg border border-gray-200 dark:border-white/10 bg-gray-50 dark:bg-white/5 focus:outline-none focus:ring-1 focus:ring-[#2563EB] focus:border-[#2563EB] placeholder:text-gray-400 dark:placeholder:text-gray-500 text-gray-700 dark:text-gray-200"
+                className="w-full h-8 pl-8 pr-8 text-xs rounded-lg border border-gray-200 bg-gray-50 focus:outline-none focus:ring-1 focus:ring-[#2563EB] focus:border-[#2563EB] placeholder:text-gray-400 text-gray-700"
               />
               {search && (
                 <button
                   onClick={() => setSearch("")}
                   aria-label="Limpiar búsqueda"
-                  className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
+                  className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
                 >
                   <X className="h-3.5 w-3.5" />
                 </button>
@@ -1027,12 +1027,12 @@ export default function AdminSidebar({
         )}
 
         {/* Navigation con categorías */}
-        <nav className="flex-1 overflow-y-auto px-2 py-3 scrollbar-thin scrollbar-thumb-gray-200 dark:scrollbar-thumb-white/10">
+        <nav className="flex-1 overflow-y-auto px-2 py-3 scrollbar-thin scrollbar-thumb-gray-200">
           {searchResults !== null ? (
             /* Resultados de búsqueda */
             <div className="space-y-0.5">
               {searchResults.length === 0 ? (
-                <p className="text-xs text-gray-400 dark:text-gray-500 text-center py-6">
+                <p className="text-xs text-gray-400 text-center py-6">
                   Sin resultados para &ldquo;{search}&rdquo;
                 </p>
               ) : (
@@ -1099,11 +1099,11 @@ export default function AdminSidebar({
                       className={cn(
                         "w-full flex items-center justify-center p-2 rounded-xl transition-all",
                         isAnyActive
-                          ? "bg-[#2563EB]/10 dark:bg-[#2563EB]/20"
-                          : "hover:bg-gray-100 dark:hover:bg-white/5"
+                          ? "bg-[#2563EB]/10"
+                          : "hover:bg-gray-100"
                       )}
                     >
-                      <div className={cn("h-7 w-7 rounded-lg flex items-center justify-center", isAnyActive ? cn(col.bg, "border", col.border) : "bg-gray-100 dark:bg-white/5")}>
+                      <div className={cn("h-7 w-7 rounded-lg flex items-center justify-center", isAnyActive ? cn(col.bg, "border", col.border) : "bg-gray-100")}>
                         <Icon className={cn("h-3.5 w-3.5", isAnyActive ? col.icon : "text-gray-400")} />
                       </div>
                     </button>
@@ -1144,7 +1144,7 @@ export default function AdminSidebar({
         </nav>
 
         {/* Config + Logout al fondo */}
-        <div className="shrink-0 border-t border-gray-200 dark:border-card-border">
+        <div className="shrink-0 border-t border-gray-200">
           {/* Separador config */}
           <div className="px-2 pt-2">
             <ModuleItem
@@ -1162,8 +1162,8 @@ export default function AdminSidebar({
             <button
               className={cn(
                 "w-full flex items-center gap-3 px-3 py-2.5 rounded-xl",
-                "text-gray-500 dark:text-gray-500 hover:bg-red-50 dark:hover:bg-red-900/10",
-                "hover:text-red-600 dark:hover:text-red-400 transition-all duration-200 group",
+                "text-gray-500 hover:bg-red-50",
+                "hover:text-red-600 transition-all duration-200 group",
                 isCollapsed ? "justify-center" : ""
               )}
               title={isCollapsed ? "Cerrar sesion" : undefined}
@@ -1198,8 +1198,8 @@ export default function AdminSidebar({
         onClick={() => setMobileOpen(true)}
         className={cn(
           "md:hidden fixed top-4 left-4 z-40 p-2.5 rounded-xl",
-          "bg-white dark:bg-card border border-gray-200 dark:border-card-border",
-          "text-gray-700 dark:text-gray-300 active:scale-95 transition-transform"
+          "bg-white border border-gray-200",
+          "text-gray-700 active:scale-95 transition-transform"
         )}
         aria-label="Abrir menu"
       >
