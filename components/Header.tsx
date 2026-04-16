@@ -690,7 +690,7 @@ export default function Header() {
       case "recetas":
         return (
           <Link key="recetas" href="/recetas" onClick={() => setMobileOpen(false)} className={cn(cls, "flex items-center gap-2")}>
-            <ChefHat className="h-4 w-4 text-[#f97316]" /> Recetas
+            <ChefHat className="h-4 w-4 text-secondary" /> Recetas
           </Link>
         );
       case "marketplace":
