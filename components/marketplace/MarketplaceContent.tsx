@@ -33,9 +33,13 @@ const CatalogView = dynamic(
 
 function CatalogSkeleton() {
   return (
-    <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3 mt-6">
+    <div
+      className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3 mt-6"
+      aria-busy="true"
+      aria-label="Cargando catálogo..."
+    >
       {Array.from({ length: 20 }).map((_, i) => (
-        <div key={i} className="rounded-2xl border border-gray-100 dark:border-gray-800 bg-white dark:bg-gray-900 overflow-hidden">
+        <div key={i} className="rounded-2xl border border-gray-100 dark:border-gray-800 bg-white dark:bg-gray-900 overflow-hidden" aria-hidden="true">
           <div className="aspect-square bg-gray-100 dark:bg-gray-800 animate-pulse" />
           <div className="p-3 space-y-2">
             <div className="h-3 bg-gray-100 dark:bg-gray-800 rounded w-3/4 animate-pulse" />
@@ -149,6 +153,10 @@ function StoreCard({ store, index }: { store: MarketplaceStore; index: number })
     setPreviewLoaded(true);
   }, [store.slug, previewLoaded, previewLoading]);
 
+  const ratingText = store.rating > 0 ? `, ${store.rating.toFixed(1)} estrellas` : "";
+  const zoneText = store.zone ? `, ${store.zone}` : "";
+  const linkAriaLabel = `${store.name}${zoneText}${ratingText}${store.vacationMode ? " — de vacaciones" : ""}`;
+
   return (
     <m.div
       initial={{ opacity: 0, y: 24 }}
@@ -159,6 +167,7 @@ function StoreCard({ store, index }: { store: MarketplaceStore; index: number })
     >
       <Link
         href={`/marketplace/${store.slug}`}
+        aria-label={linkAriaLabel}
         className="group block bg-white dark:bg-card border border-gray-100 dark:border-card-border rounded-2xl overflow-hidden shadow-sm hover:shadow-xl hover:border-primary/30 transition-all duration-300 hover:-translate-y-1"
       >
         {/* Banner / gradient top */}
@@ -168,7 +177,7 @@ function StoreCard({ store, index }: { store: MarketplaceStore; index: number })
               <div className="relative w-20 h-20 rounded-2xl bg-white dark:bg-card shadow-lg border-2 border-white dark:border-card-border overflow-hidden group-hover:scale-110 transition-transform duration-300">
                 <Image
                   src={store.logo}
-                  alt={store.name}
+                  alt={`Logo de ${store.name}`}
                   fill
                   className="object-cover"
                   sizes="80px"
@@ -178,7 +187,7 @@ function StoreCard({ store, index }: { store: MarketplaceStore; index: number })
           ) : (
             <div className="absolute inset-0 flex items-center justify-center">
               <div className="w-20 h-20 rounded-2xl bg-primary/10 dark:bg-primary/20 flex items-center justify-center border-2 border-white dark:border-card-border shadow-lg group-hover:scale-110 transition-transform duration-300">
-                <Store className="h-10 w-10 text-primary" />
+                <Store className="h-10 w-10 text-primary" aria-hidden="true" />
               </div>
             </div>
           )}
@@ -250,9 +259,9 @@ function StoreCard({ store, index }: { store: MarketplaceStore; index: number })
                 className="mt-3 pt-3 border-t border-gray-100 dark:border-card-border overflow-hidden"
               >
                 {previewLoading ? (
-                  <div className="flex gap-2">
+                  <div className="flex gap-2" aria-busy="true" aria-label="Cargando productos...">
                     {[0, 1, 2].map((i) => (
-                      <div key={i} className="flex-1 h-16 rounded-xl bg-gray-100 dark:bg-surface animate-pulse" />
+                      <div key={i} aria-hidden="true" className="flex-1 h-16 rounded-xl bg-gray-100 dark:bg-surface animate-pulse" />
                     ))}
                   </div>
                 ) : preview.length > 0 ? (
@@ -461,6 +470,7 @@ export default function MarketplaceContent() {
               <span className="text-primary relative">
                 un solo lugar
                 <svg
+                  aria-hidden="true"
                   className="absolute -bottom-1 left-0 w-full h-2 text-primary/30"
                   viewBox="0 0 100 12"
                   preserveAspectRatio="none"
@@ -511,20 +521,20 @@ export default function MarketplaceContent() {
             transition={{ delay: 0.3 }}
           >
             <span className="inline-flex items-center gap-1.5">
-              <Store className="h-4 w-4 text-primary" />
+              <Store className="h-4 w-4 text-primary" aria-hidden="true" />
               <strong className="text-gray-900 dark:text-foreground">{stores.length}</strong> tiendas
             </span>
             <span className="inline-flex items-center gap-1.5">
-              <TrendingUp className="h-4 w-4 text-primary" />
+              <TrendingUp className="h-4 w-4 text-primary" aria-hidden="true" />
               Abierto 24/7
             </span>
             <span className="inline-flex items-center gap-1.5">
-              <Clock className="h-4 w-4 text-primary" />
+              <Clock className="h-4 w-4 text-primary" aria-hidden="true" />
               Delivery rápido
             </span>
             {geoActive && (
-              <span className="inline-flex items-center gap-1.5 text-primary font-semibold">
-                <LocateFixed className="h-4 w-4" />
+              <span className="inline-flex items-center gap-1.5 text-primary font-semibold" aria-live="polite">
+                <LocateFixed className="h-4 w-4" aria-hidden="true" />
                 Ordenado por cercanía
               </span>
             )}
@@ -537,9 +547,14 @@ export default function MarketplaceContent() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.4 }}
           >
-            <div className="inline-flex items-center rounded-2xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 p-1 shadow-md shadow-gray-200/40 dark:shadow-none">
+            <div
+              role="group"
+              aria-label="Modo de vista"
+              className="inline-flex items-center rounded-2xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 p-1 shadow-md shadow-gray-200/40 dark:shadow-none"
+            >
               <button
                 onClick={() => setViewMode("tiendas")}
+                aria-pressed={viewMode === "tiendas"}
                 className={cn(
                   "inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-bold transition-all",
                   viewMode === "tiendas"
@@ -547,11 +562,12 @@ export default function MarketplaceContent() {
                     : "text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-50 dark:hover:bg-gray-800"
                 )}
               >
-                <Store className="h-4 w-4" />
+                <Store className="h-4 w-4" aria-hidden="true" />
                 Tiendas
               </button>
               <button
                 onClick={() => setViewMode("catalogo")}
+                aria-pressed={viewMode === "catalogo"}
                 className={cn(
                   "inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-bold transition-all",
                   viewMode === "catalogo"
@@ -559,7 +575,7 @@ export default function MarketplaceContent() {
                     : "text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-50 dark:hover:bg-gray-800"
                 )}
               >
-                <LayoutGrid className="h-4 w-4" />
+                <LayoutGrid className="h-4 w-4" aria-hidden="true" />
                 Catálogo
               </button>
             </div>
@@ -570,11 +586,16 @@ export default function MarketplaceContent() {
       {/* ── Filters + Grid ── */}
       <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-10">
         {/* Category pills — arriba de todo */}
-        <div className="flex items-center gap-2 overflow-x-auto pb-3 scrollbar-hide -mx-4 px-4 sm:mx-0 sm:px-0">
+        <div
+          role="group"
+          aria-label="Filtrar por categoría de tienda"
+          className="flex items-center gap-2 overflow-x-auto pb-3 scrollbar-hide -mx-4 px-4 sm:mx-0 sm:px-0"
+        >
           {CATEGORIES.map((cat) => (
             <button
               key={cat.id}
               onClick={() => setCategory(cat.id)}
+              aria-pressed={category === cat.id}
               className={cn(
                 "inline-flex items-center gap-1.5 px-4 py-2.5 rounded-xl text-sm font-bold whitespace-nowrap border transition-all shrink-0",
                 category === cat.id
@@ -582,7 +603,7 @@ export default function MarketplaceContent() {
                   : "bg-white dark:bg-card text-gray-600 dark:text-muted border-gray-200 dark:border-card-border hover:border-primary/40 hover:text-primary",
               )}
             >
-              <span className="text-base">{cat.emoji}</span>
+              <span className="text-base" aria-hidden="true">{cat.emoji}</span>
               {cat.label}
             </button>
           ))}
@@ -630,6 +651,7 @@ export default function MarketplaceContent() {
                 setUserCoords(null);
                 setProductFilters(DEFAULT_FILTERS);
               }}
+              aria-label="Limpiar todos los filtros activos"
               className="text-xs font-semibold text-gray-400 hover:text-red-500 transition-colors underline"
             >
               Limpiar todo
@@ -658,10 +680,14 @@ export default function MarketplaceContent() {
           <>
             {/* Error state */}
             {error && (
-              <div className="mt-6 flex items-center gap-3 bg-red-50 dark:bg-red-950/20 border border-red-200 dark:border-red-800 rounded-2xl px-5 py-4">
+              <div
+                role="alert"
+                className="mt-6 flex items-center gap-3 bg-red-50 dark:bg-red-950/20 border border-red-200 dark:border-red-800 rounded-2xl px-5 py-4"
+              >
                 <span className="text-sm text-red-700 dark:text-red-400 flex-1">{error}</span>
                 <button
                   onClick={fetchStores}
+                  aria-label="Reintentar cargar tiendas"
                   className="text-xs font-bold text-red-600 hover:text-red-800 underline"
                 >
                   Reintentar
@@ -671,10 +697,15 @@ export default function MarketplaceContent() {
 
             {/* Loading state */}
             {loading && (
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 mt-6">
+              <div
+                aria-busy="true"
+                aria-label="Cargando tiendas..."
+                className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 mt-6"
+              >
                 {Array.from({ length: 6 }).map((_, i) => (
                   <div
                     key={i}
+                    aria-hidden="true"
                     className="bg-white dark:bg-card border border-gray-100 dark:border-card-border rounded-2xl overflow-hidden"
                   >
                     <div className="h-32 bg-gray-100 dark:bg-surface animate-pulse" />
@@ -705,6 +736,7 @@ export default function MarketplaceContent() {
                 {(search || category !== "todos" || zone || geoActive) && (
                   <button
                     onClick={() => { setSearch(""); setCategory("todos"); setZone(""); setGeoActive(false); setUserCoords(null); }}
+                    aria-label="Quitar todos los filtros y ver todas las tiendas"
                     className="mt-4 px-6 py-2.5 rounded-xl bg-primary text-white text-sm font-bold hover:bg-primary/90 transition-colors"
                   >
                     Ver todas las tiendas
@@ -713,11 +745,28 @@ export default function MarketplaceContent() {
               </div>
             )}
 
+            {/* Results count live region */}
+            {!loading && !error && filteredStores.length > 0 && (
+              <p
+                aria-live="polite"
+                aria-atomic="true"
+                className="sr-only"
+              >
+                {`Mostrando ${filteredStores.length} tienda${filteredStores.length !== 1 ? "s" : ""}`}
+              </p>
+            )}
+
             {/* Store grid */}
             {!loading && !error && filteredStores.length > 0 && (
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 mt-6">
+              <div
+                role="list"
+                aria-label={`${filteredStores.length} tienda${filteredStores.length !== 1 ? "s" : ""} encontrada${filteredStores.length !== 1 ? "s" : ""}`}
+                className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 mt-6"
+              >
                 {filteredStores.map((store, i) => (
-                  <StoreCard key={store.id} store={store} index={i} />
+                  <div key={store.id} role="listitem">
+                    <StoreCard store={store} index={i} />
+                  </div>
                 ))}
               </div>
             )}

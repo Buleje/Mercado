@@ -41,6 +41,7 @@ export default function MarketplaceNavbar() {
   return (
     <>
       <nav
+        aria-label="Navegación del marketplace"
         className="sticky top-0 z-50 border-b border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-950 backdrop-blur-md"
       >
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
@@ -49,9 +50,11 @@ export default function MarketplaceNavbar() {
             {/* Logo */}
             <Link
               href="/marketplace"
+              aria-label="Buleje — Ir al marketplace"
               className="flex items-center gap-2 font-bold text-lg tracking-tight shrink-0"
             >
               <span
+                aria-hidden="true"
                 className="inline-flex h-9 w-9 items-center justify-center rounded-xl bg-primary text-white text-sm font-black"
               >
                 B
@@ -60,14 +63,15 @@ export default function MarketplaceNavbar() {
             </Link>
 
             {/* Search bar — big and prominent */}
-            <form onSubmit={handleSearch} className="flex-1 max-w-2xl mx-2 sm:mx-4">
+            <form onSubmit={handleSearch} role="search" aria-label="Buscar en el marketplace" className="flex-1 max-w-2xl mx-2 sm:mx-4">
               <div className="relative">
-                <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4.5 w-4.5 text-gray-400 pointer-events-none" />
+                <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4.5 w-4.5 text-gray-400 pointer-events-none" aria-hidden="true" />
                 <input
                   type="text"
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   placeholder="Buscar tiendas, productos, categorías..."
+                  aria-label="Buscar tiendas, productos o categorías"
                   className="w-full rounded-xl bg-gray-100 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 pl-10 pr-4 py-2.5 text-sm text-gray-900 dark:text-white placeholder-gray-400 outline-none focus:border-gray-300 dark:focus:border-gray-600 transition-all"
                 />
               </div>
@@ -91,7 +95,7 @@ export default function MarketplaceNavbar() {
                 href="/marketplace/recetas"
                 className="rounded-lg px-3 py-1.5 text-sm font-semibold text-gray-600 dark:text-gray-400 transition-colors hover:text-gray-900 dark:hover:text-white flex items-center gap-1"
               >
-                <ChefHat className="h-3.5 w-3.5" />
+                <ChefHat className="h-3.5 w-3.5" aria-hidden="true" />
                 Recetas
               </Link>
               <CartBadge onClick={handleOpenCart} />
@@ -121,9 +125,11 @@ export default function MarketplaceNavbar() {
               <button
                 onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
                 className="p-2 rounded-lg text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-900"
-                aria-label="Abrir menú"
+                aria-label={mobileMenuOpen ? "Cerrar menú" : "Abrir menú"}
+                aria-expanded={mobileMenuOpen}
+                aria-controls="mobile-menu"
               >
-                {mobileMenuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
+                {mobileMenuOpen ? <X className="h-5 w-5" aria-hidden="true" /> : <Menu className="h-5 w-5" aria-hidden="true" />}
               </button>
             </div>
           </div>
@@ -131,7 +137,7 @@ export default function MarketplaceNavbar() {
 
         {/* Mobile menu dropdown */}
         {mobileMenuOpen && (
-          <div className="md:hidden border-t border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-950 backdrop-blur-sm px-4 py-3 space-y-1">
+          <div id="mobile-menu" className="md:hidden border-t border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-950 backdrop-blur-sm px-4 py-3 space-y-1">
             <Link href="/" onClick={() => setMobileMenuOpen(false)} className="block rounded-lg px-3 py-2.5 text-sm font-semibold text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-900">
               Inicio
             </Link>

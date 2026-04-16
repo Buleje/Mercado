@@ -78,7 +78,7 @@ function StoreInitials({ name }: { name: string }) {
 
 function StoreCardSkeleton() {
   return (
-    <div className="animate-pulse rounded-2xl border border-gray-200 bg-white dark:border-gray-800 dark:bg-gray-900">
+    <div aria-hidden="true" className="animate-pulse rounded-2xl border border-gray-200 bg-white dark:border-gray-800 dark:bg-gray-900">
       <div className="h-32 rounded-t-2xl bg-gray-200 dark:bg-gray-800" />
       <div className="p-4 space-y-2">
         <div className="h-4 w-3/4 rounded bg-gray-200 dark:bg-gray-800" />
@@ -152,6 +152,7 @@ function StoreCard({ store }: { store: Store }) {
 
         <Link
           href={`/marketplace/${store.slug}`}
+          aria-label={`Ver tienda ${store.name}`}
           className="mt-auto pt-4 block w-full min-h-[44px] rounded-xl text-center text-sm font-bold text-white transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-teal-600"
           style={{
             background: "linear-gradient(135deg, #00B4A6 0%, #0d6560 100%)",
@@ -290,16 +291,20 @@ export default function MarketplaceGrid() {
 
       {/* ── CONTENIDO ──────────────────────────────────────────── */}
       {error && (
-        <div className="mb-6 rounded-xl bg-red-50 p-4 text-sm text-red-700 dark:bg-red-900/20 dark:text-red-400">
+        <div role="alert" className="mb-6 rounded-xl bg-red-50 p-4 text-sm text-red-700 dark:bg-red-900/20 dark:text-red-400">
           {error}{" "}
-          <button onClick={fetchStores} className="underline hover:no-underline">
+          <button onClick={fetchStores} aria-label="Reintentar cargar tiendas" className="underline hover:no-underline">
             Reintentar
           </button>
         </div>
       )}
 
       {loading ? (
-        <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
+        <div
+          aria-busy="true"
+          aria-label="Cargando tiendas..."
+          className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3"
+        >
           {[...Array(6)].map((_, i) => <StoreCardSkeleton key={i} />)}
         </div>
       ) : stores.length === 0 ? (
@@ -321,6 +326,7 @@ export default function MarketplaceGrid() {
           </p>
           <button
             onClick={() => { setSearch(""); setZone(""); setCategory(""); }}
+            aria-label="Limpiar todos los filtros y ver todas las tiendas"
             className="mt-4 min-h-[44px] rounded-xl bg-teal-700 px-6 text-sm font-semibold text-white hover:bg-teal-800 focus-visible:outline focus-visible:outline-2 focus-visible:outline-teal-600"
           >
             Limpiar filtros
@@ -328,12 +334,22 @@ export default function MarketplaceGrid() {
         </div>
       ) : (
         <>
-          <p className="mb-4 text-sm text-gray-500 dark:text-gray-400">
+          <p
+            aria-live="polite"
+            aria-atomic="true"
+            className="mb-4 text-sm text-gray-500 dark:text-gray-400"
+          >
             {stores.length} {stores.length === 1 ? "tienda encontrada" : "tiendas encontradas"}
           </p>
-          <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
+          <div
+            role="list"
+            aria-label={`${stores.length} ${stores.length === 1 ? "tienda encontrada" : "tiendas encontradas"}`}
+            className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3"
+          >
             {stores.map((s) => (
-              <StoreCard key={s.id} store={s} />
+              <div key={s.id} role="listitem">
+                <StoreCard store={s} />
+              </div>
             ))}
           </div>
         </>

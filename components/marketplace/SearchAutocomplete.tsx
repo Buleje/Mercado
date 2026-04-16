@@ -209,6 +209,7 @@ export default function SearchAutocomplete({
           aria-expanded={showDropdown}
           aria-controls={listId}
           aria-activedescendant={activeIndex >= 0 ? `sugg-${activeIndex}` : undefined}
+          aria-label="Buscar productos, tiendas o categorías"
           value={value}
           onChange={(e) => handleChange(e.target.value)}
           onKeyDown={handleKeyDown}
@@ -260,14 +261,14 @@ export default function SearchAutocomplete({
             )}
           >
             {loading && (
-              <div className="flex items-center gap-3 px-5 py-4">
-                <Loader2 className="h-4 w-4 text-primary animate-spin shrink-0" />
+              <div role="status" aria-live="polite" className="flex items-center gap-3 px-5 py-4">
+                <Loader2 className="h-4 w-4 text-primary animate-spin shrink-0" aria-hidden="true" />
                 <span className="text-sm text-gray-500 dark:text-gray-400">Buscando sugerencias…</span>
               </div>
             )}
 
             {!loading && flatItems.length > 0 && (
-              <div id={listId} role="listbox" className="overflow-y-auto">
+              <div id={listId} role="listbox" aria-label="Sugerencias de búsqueda" className="overflow-y-auto">
                 {(Object.keys(TYPE_META) as MarketplaceSuggestionType[]).map((type) => {
                   const section = grouped[type];
                   if (section.length === 0) return null;
@@ -275,8 +276,8 @@ export default function SearchAutocomplete({
 
                   return (
                     <div key={type} className="border-b border-gray-100 dark:border-gray-800 last:border-b-0">
-                      <div className="px-4 py-2 text-[11px] font-bold uppercase tracking-wider text-gray-400 dark:text-gray-500 flex items-center gap-1.5 bg-gray-50/70 dark:bg-gray-900/70">
-                        <Icon className="h-3.5 w-3.5" />
+                      <div aria-hidden="true" className="px-4 py-2 text-[11px] font-bold uppercase tracking-wider text-gray-400 dark:text-gray-500 flex items-center gap-1.5 bg-gray-50/70 dark:bg-gray-900/70">
+                        <Icon className="h-3.5 w-3.5" aria-hidden="true" />
                         {TYPE_META[type].title}
                       </div>
                       {section.map((item) => {
@@ -320,7 +321,7 @@ export default function SearchAutocomplete({
                                 </p>
                               )}
                             </div>
-                            <ArrowRight className="h-3.5 w-3.5 text-gray-300 dark:text-gray-600 shrink-0" />
+                            <ArrowRight className="h-3.5 w-3.5 text-gray-300 dark:text-gray-600 shrink-0" aria-hidden="true" />
                           </button>
                         );
                       })}
@@ -334,12 +335,13 @@ export default function SearchAutocomplete({
               <div className="px-4 py-4">
                 <button
                   onMouseDown={handleSubmitRaw}
+                  aria-label={`Buscar "${value.trim()}" en el marketplace`}
                   className="w-full flex items-center justify-between rounded-xl border border-dashed border-gray-200 dark:border-gray-700 px-4 py-3 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
                 >
                   <span className="text-sm text-gray-600 dark:text-gray-300">
-                    Buscar “<strong className="text-gray-900 dark:text-white">{value.trim()}</strong>”
+                    Buscar &ldquo;<strong className="text-gray-900 dark:text-white">{value.trim()}</strong>&rdquo;
                   </span>
-                  <ArrowRight className="h-4 w-4 text-gray-400" />
+                  <ArrowRight className="h-4 w-4 text-gray-400" aria-hidden="true" />
                 </button>
               </div>
             )}
