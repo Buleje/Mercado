@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
+import Image from "next/image";
 import {
   X, Package, Loader2, Search, AlertTriangle,
   CheckCircle2, XCircle, ImageIcon,
@@ -103,8 +104,8 @@ export function TenantProductsModal({
             {/* Header */}
             <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200 dark:border-gray-800">
               <div className="flex items-center gap-3">
-                <div className="h-10 w-10 rounded-xl bg-teal-100 dark:bg-teal-900/40 flex items-center justify-center">
-                  <Package className="h-5 w-5 text-teal-600 dark:text-teal-400" />
+                <div className="h-10 w-10 rounded-xl bg-blue-100 dark:bg-blue-900/40 flex items-center justify-center">
+                  <Package className="h-5 w-5 text-blue-600 dark:text-blue-400" />
                 </div>
                 <div>
                   <h2 className="text-lg font-bold text-gray-900 dark:text-white">
@@ -154,7 +155,7 @@ export function TenantProductsModal({
                   placeholder="Buscar por nombre, código o categoría..."
                   value={search}
                   onChange={(e) => setSearch(e.target.value)}
-                  className="w-full pl-9 pr-4 py-2 rounded-xl bg-gray-100 dark:bg-gray-800 text-sm text-gray-900 dark:text-white placeholder:text-gray-400 border-0 outline-none focus:ring-2 focus:ring-teal-500/30"
+                  className="w-full pl-9 pr-4 py-2 rounded-xl bg-gray-100 dark:bg-gray-800 text-sm text-gray-900 dark:text-white placeholder:text-gray-400 border-0 outline-none focus:ring-2 focus:ring-blue-500/30"
                 />
               </div>
             </div>
@@ -163,7 +164,7 @@ export function TenantProductsModal({
             <div className="flex-1 overflow-y-auto px-6 py-3">
               {loading && (
                 <div className="flex items-center justify-center py-12">
-                  <Loader2 className="h-8 w-8 animate-spin text-teal-500" />
+                  <Loader2 className="h-8 w-8 animate-spin text-blue-500" />
                 </div>
               )}
 
@@ -191,12 +192,14 @@ export function TenantProductsModal({
                       className="flex items-center gap-3 p-3 rounded-xl bg-gray-50 dark:bg-gray-800/50 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
                     >
                       {/* Image */}
-                      <div className="w-10 h-10 rounded-lg bg-gray-200 dark:bg-gray-700 flex items-center justify-center overflow-hidden shrink-0">
+                      <div className="relative w-10 h-10 rounded-lg bg-gray-200 dark:bg-gray-700 flex items-center justify-center overflow-hidden shrink-0">
                         {p.image ? (
-                          <img
+                          <Image
                             src={p.image}
                             alt={p.name}
-                            className="w-full h-full object-cover"
+                            fill
+                            sizes="40px"
+                            className="object-cover"
                             loading="lazy"
                           />
                         ) : (

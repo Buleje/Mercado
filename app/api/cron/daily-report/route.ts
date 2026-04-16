@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { timingSafeCompare } from "@/lib/timing-safe";
 import { prisma } from "@/lib/prisma";
 import { generateDailyReport } from "@/lib/daily-report-generator";
-import { sendWhatsAppText } from "@/lib/whatsapp";
+import { sendWhatsAppQueued } from "@/lib/whatsapp";
 import { logger } from "@/lib/logger";
 
 /**
@@ -54,8 +54,8 @@ export async function GET(req: NextRequest) {
     try {
       const mensaje = await generateDailyReport(tenant.id);
 
-      // Fire-and-forget: el envío WA no debe bloquear ni romper el loop
-      sendWhatsAppText(phone, mensaje).catch((err) => logger.error("[cron/daily-report] WhatsApp send failed", { error: String(err), tenantId: tenant.id }));
+      // Fire-and-forget: encolar el envío WA en BullMQ (durable + retryable)
+      await sendWhatsAppQueued(phone, mensaje, { tenantId: tenant.id, context: "cron/daily-report" }).catch(() => {});
 
       logger.info("[cron/daily-report] Reporte enviado", { tenant: tenant.name, tenantId: tenant.id });
       enviados++;

@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { withCronAuth } from "@/lib/cron-auth";
 import { withCronRetry } from "@/lib/cron-retry";
 import { prisma } from "@/lib/prisma";
-import { sendWhatsAppText } from "@/lib/whatsapp";
+import { sendWhatsAppQueued } from "@/lib/whatsapp";
 import { logger } from "@/lib/logger";
 
 /**
@@ -50,7 +50,7 @@ export const GET = withCronAuth("loyalty-points-reminder", async (req) => {
             `Puedes canjearlos la proxima vez que compres. ` +
             `No los dejes guardados, usalos!`;
 
-          sendWhatsAppText(c.phone, message).catch((err) => logger.error("[cron/loyalty-points-reminder] WhatsApp send failed", { error: String(err), phone: c.phone }));
+          await sendWhatsAppQueued(c.phone, message, { tenantId: tenant.id, context: "cron/loyalty-points-reminder" }).catch(() => {});
           totalSent++;
         }
       }

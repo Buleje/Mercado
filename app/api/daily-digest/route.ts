@@ -1,7 +1,7 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { sendDailyDigestEmail, sendDailyDigestWhatsApp } from "@/lib/mailer-digest";
-import { sendWhatsAppText } from "@/lib/whatsapp";
+import { sendWhatsAppQueued } from "@/lib/whatsapp";
 import { toNumOrZero } from "@/lib/decimal-utils";
 import { logger } from "@/lib/logger";
 
@@ -177,11 +177,7 @@ async function sendDigest() {
   const fallbackPhone = process.env.NOTIFY_PHONE ?? process.env.WHATSAPP_OWNER_PHONE;
   if (tenantsBriefed === 0 && fallbackPhone) {
     const message = buildWhatsAppBriefing(data);
-    sendWhatsAppText(fallbackPhone, message).catch((err) => {
-      logger.error("[daily-digest] WhatsApp fallback al dueño falló", {
-        error: err instanceof Error ? err.message : String(err),
-      });
-    });
+    await sendWhatsAppQueued(fallbackPhone, message, { tenantId: "main", context: "daily-digest:fallback" }).catch(() => {});
   }
 
   // ── 4. Email al admin (solo si hay ventas, como antes) ──────────────────

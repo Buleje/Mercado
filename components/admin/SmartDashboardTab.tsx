@@ -6,6 +6,7 @@ import {
   useCallback,
   useMemo,
   useRef,
+  memo,
 } from "react";
 import {
   TrendingUp,
@@ -28,7 +29,6 @@ import {
   Check,
   Plus,
   X,
-  FileText,
   PieChart as PieChartIcon,
   LayoutDashboard,
   Settings,
@@ -39,28 +39,40 @@ import {
 import dynamic from "next/dynamic";
 import { cn } from "@/lib/utils";
 import type { Product, Sale } from "@/types/erp";
-import {
-  AreaChart,
-  Area,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip,
-  ResponsiveContainer,
-  PieChart,
-  Pie,
-  Cell,
-  BarChart,
-  Bar,
-  LineChart,
-  Line,
-  ComposedChart,
-  Legend,
-} from "recharts";
+import { BusinessOverviewHero } from "@/components/admin/shared/BusinessOverviewHero";
 
+// ── Lazy-loaded heavy chart components (recharts ~100KB) ─────────────────────
+const ChartSkeleton = ({ height = 200 }: { height?: number }) => (
+  <div className="w-full bg-gray-100 dark:bg-zinc-700/40 animate-pulse rounded" style={{ height }} />
+);
+
+const MonthlySalesAreaChart = dynamic(
+  () => import("@/components/admin/smart-dashboard/MonthlySalesAreaChart"),
+  { ssr: false, loading: () => <ChartSkeleton height={280} /> }
+);
+const DashboardCharts = dynamic(
+  () => import("@/components/admin/smart-dashboard/DashboardCharts"),
+  { ssr: false, loading: () => <ChartSkeleton height={200} /> }
+);
+
+// ── Lazy-loaded sub-components (defer JS until visible) ──────────────────────
 const WeeklyGoalCard = dynamic(() => import("@/components/admin/WeeklyGoalCard"), { ssr: false });
-const ActivityFeed = dynamic(() => import("@/components/admin/ActivityFeed"), { ssr: false });
-const WebVitalsWidget = dynamic(() => import("@/components/admin/WebVitalsWidget"), { ssr: false });
+const BirthdayCard = dynamic(
+  () => import("@/components/admin/smart-dashboard/BirthdayCard").then(m => ({ default: m.BirthdayCard })),
+  { ssr: false }
+);
+const InactiveCustomersCard = dynamic(
+  () => import("@/components/admin/smart-dashboard/InactiveCustomersCard").then(m => ({ default: m.InactiveCustomersCard })),
+  { ssr: false }
+);
+const RecentDocumentsFeed = dynamic(
+  () => import("@/components/admin/smart-dashboard/RecentDocumentsFeed").then(m => ({ default: m.RecentDocumentsFeed })),
+  { ssr: false }
+);
+const DeliveryZonesConfig = dynamic(
+  () => import("@/components/admin/smart-dashboard/DeliveryZonesConfig").then(m => ({ default: m.DeliveryZonesConfig })),
+  { ssr: false }
+);
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -345,289 +357,6 @@ function AlertBadge({ Icon, label, count, colorClass }: AlertBadgeProps) {
   );
 }
 
-// ── Inactive Customers Card ──────────────────────────────────────────────────
-
-function InactiveCustomersCard({ orders, sales, loading }: { orders: Order[]; sales: Sale[]; loading: boolean }) {
-  const [now] = useState(() => Date.now());
-  const inactiveCustomers = useMemo(() => {
-    const customerMap = new Map<string, { name: string; lastDate: string; totalSpent: number; orderCount: number; phone?: string }>();
-
-    for (const o of orders) {
-      if (o.status === "cancelado") continue;
-      const key = o.customer?.phone ?? o.customer?.name ?? "?";
-      const existing = customerMap.get(key);
-      const date = o.createdAt ?? "";
-      if (existing) {
-        existing.orderCount++;
-        existing.totalSpent += o.total ?? 0;
-        if (date > existing.lastDate) existing.lastDate = date;
-      } else {
-        customerMap.set(key, {
-          name: o.customer?.name ?? "Cliente",
-          lastDate: date,
-          totalSpent: o.total ?? 0,
-          orderCount: 1,
-          phone: o.customer?.phone,
-        });
-      }
-    }
-    for (const s of sales) {
-      const key = (s as unknown as { customerPhone?: string }).customerPhone ?? "?";
-      if (key === "?") continue;
-      const existing = customerMap.get(key);
-      const date = s.createdAt ?? "";
-      if (existing) {
-        existing.orderCount++;
-        existing.totalSpent += s.total ?? 0;
-        if (date > existing.lastDate) existing.lastDate = date;
-      }
-    }
-
-    const fifteenDaysAgo = new Date(now - 15 * 86_400_000).toISOString().slice(0, 10);
-
-    return Array.from(customerMap.values())
-      .filter(c => c.orderCount >= 2 && c.lastDate.slice(0, 10) < fifteenDaysAgo)
-      .map(c => {
-        const daysSince = Math.floor((now - new Date(c.lastDate).getTime()) / 86_400_000);
-        return { ...c, daysSince };
-      })
-      .sort((a, b) => b.daysSince - a.daysSince)
-      .slice(0, 5);
-  }, [orders, sales, now]);
-
-  if (loading) return null;
-
-  return (
-    <div className="rounded-xl border border-gray-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 p-4">
-      <div className="flex items-center gap-2 mb-3">
-        <Users className="w-4 h-4 text-gray-400" />
-        <span className="text-sm font-semibold text-gray-700 dark:text-zinc-300">Clientes que no vuelven</span>
-      </div>
-      {inactiveCustomers.length === 0 ? (
-        <div className="flex items-center gap-2 py-2 text-sm text-emerald-600 dark:text-emerald-400 font-semibold">
-          <Check className="w-4 h-4" /> Tus clientes frecuentes siguen activos
-        </div>
-      ) : (
-        <div className="space-y-2">
-          {inactiveCustomers.map((c, i) => (
-            <div key={i} className="flex items-center gap-3 bg-gray-50 dark:bg-zinc-700/50 rounded-lg px-3 py-2.5">
-              <div className="flex-1 min-w-0">
-                <p className="text-sm font-semibold text-gray-800 dark:text-zinc-200 truncate">{c.name}</p>
-                <p className="text-xs text-gray-400 dark:text-zinc-500">
-                  Ultima compra: hace {c.daysSince} dias &middot; Gasto total S/{c.totalSpent.toFixed(0)}
-                </p>
-              </div>
-              {c.phone && (
-                <a
-                  href={`https://wa.me/${c.phone.replace(/\D/g, "")}?text=${encodeURIComponent(`Hola ${c.name}! Te extrañamos en Buleje. Tenemos productos nuevos esperandote!`)}`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="shrink-0 px-2.5 py-1.5 rounded-lg bg-emerald-50 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400 text-xs font-bold hover:bg-emerald-100 dark:hover:bg-emerald-900/50 transition-colors"
-                >
-                  Contactar
-                </a>
-              )}
-            </div>
-          ))}
-        </div>
-      )}
-    </div>
-  );
-}
-
-// ── Birthday Card ─────────────────────────────────────────────────────────────
-
-function BirthdayCard() {
-  const [birthdays, setBirthdays] = useState<{ name: string; phone?: string; isToday: boolean }[]>([]);
-  useEffect(() => {
-    (async () => {
-      try {
-        const res = await fetch("/api/customers?limit=500", { credentials: "include" });
-        if (!res.ok) return;
-        const data = await res.json();
-        const customers: Array<{ name?: string; phone?: string; birthday?: string; fechaNacimiento?: string }> = Array.isArray(data) ? data : data.customers ?? [];
-        const today = new Date();
-        const tomorrow = new Date(today);
-        tomorrow.setDate(tomorrow.getDate() + 1);
-        const matches: { name: string; phone?: string; isToday: boolean }[] = [];
-        for (const c of customers) {
-          const bd = c.birthday || c.fechaNacimiento;
-          if (!bd) continue;
-          const d = new Date(bd);
-          if (isNaN(d.getTime())) continue;
-          const isTodayMatch = d.getMonth() === today.getMonth() && d.getDate() === today.getDate();
-          const isTomorrowMatch = d.getMonth() === tomorrow.getMonth() && d.getDate() === tomorrow.getDate();
-          if (isTodayMatch || isTomorrowMatch) matches.push({ name: c.name ?? "Cliente", phone: c.phone, isToday: isTodayMatch });
-        }
-        setBirthdays(matches.slice(0, 3));
-      } catch { /* silent */ }
-    })();
-  }, []);
-
-  if (birthdays.length === 0) return null;
-  return (
-    <div className="rounded-xl border border-gray-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 p-4">
-      <div className="flex items-center gap-2 mb-2">
-        <span className="text-xs font-bold text-gray-600 dark:text-zinc-300">Cumpleanos</span>
-      </div>
-      <div className="space-y-2">
-        {birthdays.map((b, i) => (
-          <div key={i} className="flex items-center justify-between gap-2">
-            <p className="text-sm font-semibold text-gray-800 dark:text-zinc-200">
-              {b.isToday ? "Hoy cumple" : "Manana cumple"}: {b.name}
-            </p>
-            {b.phone && b.isToday && (
-              <a
-                href={`https://wa.me/${b.phone.replace(/\D/g, "")}?text=${encodeURIComponent(`Feliz cumpleanos ${b.name}! De parte de Buleje.`)}`}
-                target="_blank" rel="noopener noreferrer"
-                className="shrink-0 px-2 py-1 rounded-lg bg-emerald-50 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400 text-[10px] font-bold hover:bg-emerald-100 transition-colors"
-              >
-                Felicitar
-              </a>
-            )}
-          </div>
-        ))}
-      </div>
-    </div>
-  );
-}
-
-// ── Recent Documents Feed ────────────────────────────────────────────────────
-
-type DocEntry = { type: string; number: string; status: string; createdAt: string };
-const DOC_ICONS: Record<string, string> = { GRR: "GRR", COT: "COT", NC: "NC", CONTRATO: "CTR" };
-
-function RecentDocumentsFeed() {
-  const [docs, setDocs] = useState<DocEntry[]>([]);
-  const [now] = useState(() => Date.now());
-  useEffect(() => {
-    (async () => {
-      try {
-        const res = await fetch("/api/activity-log?limit=20");
-        if (!res.ok) return;
-        const data = await res.json();
-        const items: Array<{ action?: string; entityType?: string; entityId?: string; createdAt?: string; details?: string }> = Array.isArray(data) ? data : data.entries ?? [];
-        const docEntries: DocEntry[] = [];
-        for (const item of items) {
-          const et = (item.entityType ?? "").toUpperCase();
-          if (["GRR", "GUIA", "COT", "COTIZACION", "NC", "NOTA_CREDITO", "CONTRATO"].some(t => et.includes(t))) {
-            const type = et.includes("GRR") || et.includes("GUIA") ? "GRR" : et.includes("COT") ? "COT" : et.includes("NC") || et.includes("NOTA") ? "NC" : "CONTRATO";
-            docEntries.push({ type, number: item.entityId ?? "—", status: item.action ?? "creado", createdAt: item.createdAt ?? "" });
-          }
-          if (docEntries.length >= 5) break;
-        }
-        setDocs(docEntries);
-      } catch { /* silent */ }
-    })();
-  }, []);
-
-  if (docs.length === 0) return null;
-  return (
-    <div className="rounded-xl border border-gray-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 p-4">
-      <div className="flex items-center gap-2 mb-3">
-        <FileText className="w-4 h-4 text-gray-400" />
-        <span className="text-xs font-bold text-gray-600 dark:text-zinc-300">Ultimos documentos</span>
-      </div>
-      <div className="space-y-2 max-h-[150px] overflow-auto">
-        {docs.map((d, i) => {
-          const daysAgo = Math.floor((now - new Date(d.createdAt).getTime()) / 86400000);
-          const timeLabel = daysAgo === 0 ? "hoy" : daysAgo === 1 ? "ayer" : `hace ${daysAgo}d`;
-          return (
-            <div key={i} className="flex items-center gap-2 text-sm">
-              <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-gray-100 dark:bg-zinc-700 text-gray-600 dark:text-zinc-300 shrink-0">{DOC_ICONS[d.type] ?? d.type}</span>
-              <span className="text-gray-700 dark:text-zinc-200 font-medium truncate">{d.number}</span>
-              <span className="text-[10px] text-gray-400 dark:text-zinc-500 capitalize">{d.status}</span>
-              <span className="text-[10px] text-gray-400 dark:text-zinc-500 ml-auto shrink-0">{timeLabel}</span>
-            </div>
-          );
-        })}
-      </div>
-    </div>
-  );
-}
-
-// ── Delivery Zones Config ────────────────────────────────────────────────────
-
-function DeliveryZonesConfig() {
-  type DeliveryZone = { zona: string; tarifa: number };
-  const ZONES_KEY = "delivery-zones";
-  const [zones, setZonesState] = useState<DeliveryZone[]>(() => {
-    try {
-      const raw = localStorage.getItem(ZONES_KEY);
-      return raw ? JSON.parse(raw) : [
-        { zona: "Centro", tarifa: 0 },
-        { zona: "Manantay", tarifa: 5 },
-        { zona: "San Juan", tarifa: 3 },
-        { zona: "Yarinacocha", tarifa: 8 },
-      ];
-    } catch { return []; }
-  });
-  const [addingZone, setAddingZone] = useState(false);
-  const [newZone, setNewZone] = useState({ zona: "", tarifa: 0 });
-
-  const saveZones = (z: DeliveryZone[]) => {
-    setZonesState(z);
-    localStorage.setItem(ZONES_KEY, JSON.stringify(z));
-  };
-
-  return (
-    <div className="rounded-xl border border-gray-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 p-4">
-      <div className="flex items-center justify-between mb-3">
-        <div className="flex items-center gap-2">
-          <span className="text-sm font-bold text-gray-700 dark:text-zinc-300">Tarifas de Delivery por Zona</span>
-        </div>
-      </div>
-      <div className="space-y-1.5">
-        {zones.map((z, i) => (
-          <div key={z.zona + i} className="flex items-center gap-3 bg-gray-50 dark:bg-zinc-700/50 rounded-lg px-3 py-2">
-            <span className="flex-1 text-xs font-bold text-gray-700 dark:text-zinc-200">{z.zona}</span>
-            <span className={cn(
-              "text-xs font-bold px-2 py-0.5 rounded-full",
-              z.tarifa === 0
-                ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400"
-                : "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400"
-            )}>
-              {z.tarifa === 0 ? "GRATIS" : `S/${z.tarifa.toFixed(0)}`}
-            </span>
-            <button
-              onClick={() => saveZones(zones.filter((_, idx) => idx !== i))}
-              className="text-gray-300 hover:text-red-500 transition-colors text-xs"
-            >&times;</button>
-          </div>
-        ))}
-      </div>
-      {addingZone ? (
-        <div className="mt-2 flex items-center gap-2">
-          <input type="text" placeholder="Nombre zona" value={newZone.zona} onChange={e => setNewZone({...newZone, zona: e.target.value})} className="flex-1 text-xs border border-gray-200 dark:border-zinc-600 rounded-lg px-2 py-1.5 bg-white dark:bg-zinc-900 text-gray-900 dark:text-zinc-100" />
-          <div className="flex items-center gap-1">
-            <span className="text-xs text-gray-400">S/</span>
-            <input type="number" min={0} value={newZone.tarifa} onChange={e => setNewZone({...newZone, tarifa: Number(e.target.value) || 0})} className="w-16 text-xs border border-gray-200 dark:border-zinc-600 rounded-lg px-2 py-1.5 bg-white dark:bg-zinc-900 text-gray-900 dark:text-zinc-100" />
-          </div>
-          <button onClick={() => { if (newZone.zona.trim()) { saveZones([...zones, { zona: newZone.zona.trim(), tarifa: newZone.tarifa }]); setNewZone({ zona: "", tarifa: 0 }); setAddingZone(false); } }} className="px-2 py-1.5 rounded-lg bg-[#00B4A6] text-white text-xs font-bold">OK</button>
-          <button onClick={() => setAddingZone(false)} className="text-xs text-gray-400">&times;</button>
-        </div>
-      ) : (
-        <button onClick={() => setAddingZone(true)} className="mt-2 w-full py-1.5 rounded-lg border border-dashed border-gray-200 dark:border-zinc-600 text-xs font-bold text-gray-400 hover:text-[#00B4A6] hover:border-[#00B4A6]/40 transition-colors">
-          + Agregar zona
-        </button>
-      )}
-      <p className="text-[10px] text-gray-400 dark:text-zinc-500 mt-2">Estas tarifas se aplican automaticamente al checkout segun la zona del cliente.</p>
-    </div>
-  );
-}
-
-// ── Custom Recharts Tooltip ──────────────────────────────────────────────────
-
-function CustomAreaTooltip({ active, payload, label }: { active?: boolean; payload?: Array<{ value: number }>; label?: string }) {
-  if (!active || !payload?.length) return null;
-  return (
-    <div className="bg-white dark:bg-zinc-800 border border-gray-200 dark:border-zinc-700 rounded-lg shadow-lg px-3 py-2">
-      <p className="text-xs font-semibold text-gray-700 dark:text-zinc-300">{label}</p>
-      <p className="text-sm font-bold font-mono text-[#00B4A6]">{fmt(payload[0].value)}</p>
-    </div>
-  );
-}
-
 // ── Chart type definitions ───────────────────────────────────────────────────
 
 type ChartType = "ventas-categoria" | "metodo-pago" | "top-10" | "ventas-hora" | "tendencia-semanal" | "flujo-caja";
@@ -641,22 +370,13 @@ const CHART_OPTIONS: { id: ChartType; label: string }[] = [
   { id: "flujo-caja", label: "Flujo de caja (ComposedChart)" },
 ];
 
-const PIE_COLORS = ["#00B4A6", "#f97316", "#264653", "#e76f51", "#2a9d8f", "#e9c46a", "#606c38", "#bc6c25"];
-const PAYMENT_COLORS: Record<string, string> = {
-  efectivo: "#00B4A6",
-  yape: "#6d28d9",
-  plin: "#33C4B8",
-  tarjeta: "#2563eb",
-  transferencia: "#f59e0b",
-};
-
 // ── Main Component ─────────────────────────────────────────────────────────────
 
 interface SmartDashboardTabProps {
   adminName?: string;
 }
 
-export default function SmartDashboardTab({
+function SmartDashboardTab({
   adminName = "Administrador",
 }: SmartDashboardTabProps) {
   const [loading, setLoading] = useState(true);
@@ -1676,28 +1396,34 @@ export default function SmartDashboardTab({
 
   // ── Chart management ──────────────────────────────────────────────────────
 
-  const addChart = (chartId: ChartType) => {
-    if (activeCharts.length >= 6 || activeCharts.includes(chartId)) return;
-    const next = [...activeCharts, chartId];
-    setActiveCharts(next);
-    localStorage.setItem("dashboard-active-charts", JSON.stringify(next));
+  const addChart = useCallback((chartId: ChartType) => {
+    setActiveCharts(prev => {
+      if (prev.length >= 6 || prev.includes(chartId)) return prev;
+      const next = [...prev, chartId];
+      localStorage.setItem("dashboard-active-charts", JSON.stringify(next));
+      return next;
+    });
     setShowChartPicker(false);
-  };
+  }, []);
 
-  const removeChart = (chartId: ChartType) => {
-    const next = activeCharts.filter(c => c !== chartId);
-    setActiveCharts(next);
-    localStorage.setItem("dashboard-active-charts", JSON.stringify(next));
-  };
+  const removeChart = useCallback((chartId: ChartType) => {
+    setActiveCharts(prev => {
+      const next = prev.filter(c => c !== chartId);
+      localStorage.setItem("dashboard-active-charts", JSON.stringify(next));
+      return next;
+    });
+  }, []);
 
-  const moveChart = (index: number, direction: "up" | "down") => {
-    const targetIndex = direction === "up" ? index - 1 : index + 1;
-    if (targetIndex < 0 || targetIndex >= activeCharts.length) return;
-    const next = [...activeCharts];
-    [next[index], next[targetIndex]] = [next[targetIndex], next[index]];
-    setActiveCharts(next);
-    localStorage.setItem("dashboard-active-charts", JSON.stringify(next));
-  };
+  const moveChart = useCallback((index: number, direction: "up" | "down") => {
+    setActiveCharts(prev => {
+      const targetIndex = direction === "up" ? index - 1 : index + 1;
+      if (targetIndex < 0 || targetIndex >= prev.length) return prev;
+      const next = [...prev];
+      [next[index], next[targetIndex]] = [next[targetIndex], next[index]];
+      localStorage.setItem("dashboard-active-charts", JSON.stringify(next));
+      return next;
+    });
+  }, []);
 
   // ── Combo generation ──────────────────────────────────────────────────────
 
@@ -1757,107 +1483,12 @@ export default function SmartDashboardTab({
   const hasAnyAlert =
     alerts.lowStock > 0 || alerts.overduePayables > 0 || expiringBatchCount > 0;
 
-  // ── Render chart by type ──────────────────────────────────────────────────
+  // ── Chart label helper ────────────────────────────────────────────────────
 
-  const renderChart = (chartId: ChartType) => {
-    switch (chartId) {
-      case "ventas-categoria":
-        return chartVentasCategoria.length > 0 ? (
-          <ResponsiveContainer width="100%" height={200}>
-            <PieChart>
-              {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
-              <Pie data={chartVentasCategoria} dataKey="value" nameKey="name" cx="50%" cy="50%" outerRadius={70} label={(({ name, percent }: any) => `${name} ${(Number(percent) * 100).toFixed(0)}%`) as any} labelLine={false} fontSize={10}>
-                {chartVentasCategoria.map((_, index) => (
-                  <Cell key={index} fill={PIE_COLORS[index % PIE_COLORS.length]} />
-                ))}
-              </Pie>
-              {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
-              <Tooltip formatter={((value: any) => fmt(Number(value))) as any} />
-            </PieChart>
-          </ResponsiveContainer>
-        ) : <p className="text-xs text-gray-400 text-center py-8">Sin datos de categorias</p>;
-
-      case "metodo-pago":
-        return chartMetodoPago.length > 0 ? (
-          <ResponsiveContainer width="100%" height={200}>
-            <PieChart>
-              {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
-              <Pie data={chartMetodoPago} dataKey="value" nameKey="name" cx="50%" cy="50%" outerRadius={70} label={(({ name, percent }: any) => `${name} ${(Number(percent) * 100).toFixed(0)}%`) as any} labelLine={false} fontSize={10}>
-                {chartMetodoPago.map((entry, index) => (
-                  <Cell key={index} fill={PAYMENT_COLORS[entry.name] ?? PIE_COLORS[index % PIE_COLORS.length]} />
-                ))}
-              </Pie>
-              {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
-              <Tooltip formatter={((value: any) => fmt(Number(value))) as any} />
-            </PieChart>
-          </ResponsiveContainer>
-        ) : <p className="text-xs text-gray-400 text-center py-8">Sin datos de pago</p>;
-
-      case "top-10":
-        return chartTop10.length > 0 ? (
-          <ResponsiveContainer width="100%" height={200}>
-            <BarChart data={chartTop10} layout="vertical" margin={{ left: 60, right: 20, top: 5, bottom: 5 }}>
-              <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
-              <XAxis type="number" fontSize={10} />
-              <YAxis type="category" dataKey="name" fontSize={9} width={55} />
-              {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
-              <Tooltip formatter={((value: any, name: any) => String(name) === "qty" ? `${value} uds` : fmt(Number(value))) as any} />
-              <Bar dataKey="qty" fill="#00B4A6" radius={[0, 4, 4, 0]} />
-            </BarChart>
-          </ResponsiveContainer>
-        ) : <p className="text-xs text-gray-400 text-center py-8">Sin datos de productos</p>;
-
-      case "ventas-hora":
-        return (
-          <ResponsiveContainer width="100%" height={200}>
-            <BarChart data={chartVentasHora} margin={{ left: 10, right: 10, top: 5, bottom: 5 }}>
-              <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
-              <XAxis dataKey="name" fontSize={9} />
-              <YAxis fontSize={10} tickFormatter={(v: number) => fmtShort(v)} />
-              {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
-              <Tooltip formatter={((value: any) => fmt(Number(value))) as any} />
-              <Bar dataKey="ventas" fill="#f97316" radius={[4, 4, 0, 0]} />
-            </BarChart>
-          </ResponsiveContainer>
-        );
-
-      case "tendencia-semanal":
-        return (
-          <ResponsiveContainer width="100%" height={200}>
-            <LineChart data={chartTendenciaSemanal} margin={{ left: 10, right: 10, top: 5, bottom: 5 }}>
-              <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
-              <XAxis dataKey="name" fontSize={10} />
-              <YAxis fontSize={10} tickFormatter={(v: number) => fmtShort(v)} />
-              {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
-              <Tooltip formatter={((value: any) => fmt(Number(value))) as any} />
-              <Line type="monotone" dataKey="ventas" stroke="#00B4A6" strokeWidth={2} dot={{ r: 4, fill: "#00B4A6" }} />
-            </LineChart>
-          </ResponsiveContainer>
-        );
-
-      case "flujo-caja":
-        return (
-          <ResponsiveContainer width="100%" height={200}>
-            <ComposedChart data={chartFlujoCaja} margin={{ left: 10, right: 10, top: 5, bottom: 5 }}>
-              <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
-              <XAxis dataKey="name" fontSize={10} />
-              <YAxis fontSize={10} tickFormatter={(v: number) => fmtShort(v)} />
-              {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
-              <Tooltip formatter={((value: any) => fmt(Number(value))) as any} />
-              <Legend fontSize={10} />
-              <Bar dataKey="ingresos" fill="#00B4A6" radius={[4, 4, 0, 0]} name="Ingresos" />
-              <Bar dataKey="egresos" fill="#e76f51" radius={[4, 4, 0, 0]} name="Egresos" />
-              <Line type="monotone" dataKey="ingresos" stroke="#00B4A6" strokeWidth={2} dot={false} name="Tendencia" />
-            </ComposedChart>
-          </ResponsiveContainer>
-        );
-
-      default:
-        return null;
-    }
-  };
-
-  const chartLabel = (id: ChartType) => CHART_OPTIONS.find(o => o.id === id)?.label ?? id;
+  const chartLabel = useCallback(
+    (id: ChartType) => CHART_OPTIONS.find(o => o.id === id)?.label ?? id,
+    []
+  );
 
   // ══════════════════════════════════════════════════════════════════════════
   // ── RENDER ─────────────────────────────────────────────────────────────────
@@ -1873,8 +1504,8 @@ export default function SmartDashboardTab({
       {/* Header: Resumen + period selector + refresh */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
         <div className="flex items-center gap-3">
-          <span className="flex items-center justify-center w-10 h-10 rounded-xl bg-[#00B4A6]/10 dark:bg-[#00B4A6]/20">
-            <GreetingIcon className="w-5 h-5 text-[#00B4A6]" />
+          <span className="flex items-center justify-center w-10 h-10 rounded-xl bg-primary/10 dark:bg-primary/20">
+            <GreetingIcon className="w-5 h-5 text-primary" />
           </span>
           <div>
             <h1 className="text-xl font-bold text-gray-900 dark:text-zinc-100 leading-tight">
@@ -1899,7 +1530,7 @@ export default function SmartDashboardTab({
                 className={cn(
                   "px-3 py-1.5 text-xs font-semibold rounded-md transition-all",
                   period === p.id
-                    ? "bg-white dark:bg-zinc-800 text-[#00B4A6] shadow-sm"
+                    ? "bg-white dark:bg-zinc-800 text-primary shadow-sm"
                     : "text-gray-500 dark:text-zinc-400 hover:text-gray-700 dark:hover:text-zinc-300"
                 )}
               >
@@ -1939,13 +1570,13 @@ export default function SmartDashboardTab({
                   <div className="flex items-center gap-2">
                     <button
                       onClick={() => updateRegionalConfig({ currency: "PEN" })}
-                      className={cn("flex-1 py-2 px-3 rounded-lg text-xs font-bold border transition-colors", regionalConfig.currency === "PEN" ? "bg-[#00B4A6]/10 border-[#00B4A6] text-[#00B4A6]" : "border-gray-200 dark:border-zinc-600 text-gray-500 dark:text-zinc-400 hover:border-gray-300")}
+                      className={cn("flex-1 py-2 px-3 rounded-lg text-xs font-bold border transition-colors", regionalConfig.currency === "PEN" ? "bg-primary/10 border-primary text-primary" : "border-gray-200 dark:border-zinc-600 text-gray-500 dark:text-zinc-400 hover:border-gray-300")}
                     >
                       S/ Soles {regionalConfig.currency === "PEN" && <Check className="w-3 h-3 inline ml-1" />}
                     </button>
                     <button
                       onClick={() => updateRegionalConfig({ currency: "USD" })}
-                      className={cn("flex-1 py-2 px-3 rounded-lg text-xs font-bold border transition-colors", regionalConfig.currency === "USD" ? "bg-[#00B4A6]/10 border-[#00B4A6] text-[#00B4A6]" : "border-gray-200 dark:border-zinc-600 text-gray-500 dark:text-zinc-400 hover:border-gray-300")}
+                      className={cn("flex-1 py-2 px-3 rounded-lg text-xs font-bold border transition-colors", regionalConfig.currency === "USD" ? "bg-primary/10 border-primary text-primary" : "border-gray-200 dark:border-zinc-600 text-gray-500 dark:text-zinc-400 hover:border-gray-300")}
                     >
                       $ Dolar {regionalConfig.currency === "USD" && <Check className="w-3 h-3 inline ml-1" />}
                     </button>
@@ -1957,13 +1588,13 @@ export default function SmartDashboardTab({
                   <div className="flex items-center gap-2">
                     <button
                       onClick={() => updateRegionalConfig({ dateFormat: "DD/MM/YYYY" })}
-                      className={cn("flex-1 py-2 px-3 rounded-lg text-xs font-bold border transition-colors", regionalConfig.dateFormat === "DD/MM/YYYY" ? "bg-[#00B4A6]/10 border-[#00B4A6] text-[#00B4A6]" : "border-gray-200 dark:border-zinc-600 text-gray-500 dark:text-zinc-400 hover:border-gray-300")}
+                      className={cn("flex-1 py-2 px-3 rounded-lg text-xs font-bold border transition-colors", regionalConfig.dateFormat === "DD/MM/YYYY" ? "bg-primary/10 border-primary text-primary" : "border-gray-200 dark:border-zinc-600 text-gray-500 dark:text-zinc-400 hover:border-gray-300")}
                     >
                       DD/MM/YYYY {regionalConfig.dateFormat === "DD/MM/YYYY" && <Check className="w-3 h-3 inline ml-1" />}
                     </button>
                     <button
                       onClick={() => updateRegionalConfig({ dateFormat: "MM/DD/YYYY" })}
-                      className={cn("flex-1 py-2 px-3 rounded-lg text-xs font-bold border transition-colors", regionalConfig.dateFormat === "MM/DD/YYYY" ? "bg-[#00B4A6]/10 border-[#00B4A6] text-[#00B4A6]" : "border-gray-200 dark:border-zinc-600 text-gray-500 dark:text-zinc-400 hover:border-gray-300")}
+                      className={cn("flex-1 py-2 px-3 rounded-lg text-xs font-bold border transition-colors", regionalConfig.dateFormat === "MM/DD/YYYY" ? "bg-primary/10 border-primary text-primary" : "border-gray-200 dark:border-zinc-600 text-gray-500 dark:text-zinc-400 hover:border-gray-300")}
                     >
                       MM/DD/YYYY {regionalConfig.dateFormat === "MM/DD/YYYY" && <Check className="w-3 h-3 inline ml-1" />}
                     </button>
@@ -1989,7 +1620,7 @@ export default function SmartDashboardTab({
             className={cn(
               "flex items-center gap-1.5 px-4 py-2.5 text-xs font-medium whitespace-nowrap transition-colors border-b-2 -mb-[1px]",
               dashTab === tab.id
-                ? "border-[#00B4A6] text-[#00B4A6] font-semibold"
+                ? "border-primary text-primary font-semibold"
                 : "border-transparent text-gray-500 dark:text-zinc-400 hover:text-gray-700 dark:hover:text-zinc-300 hover:border-gray-300 dark:hover:border-zinc-500"
             )}
           >
@@ -2019,7 +1650,7 @@ export default function SmartDashboardTab({
               label={`Ventas ${period === "hoy" ? "hoy" : period === "semana" ? "semana" : "mes"}`}
               value={fmtR(revenueFiltered)}
               subtext={`${filteredSales.length} transacciones`}
-              colorClass="bg-[#00B4A6]"
+              colorClass="bg-primary"
               isEmpty={revenueFiltered === 0}
               emptyLabel="Sin ventas"
             />
@@ -2077,16 +1708,135 @@ export default function SmartDashboardTab({
 
       {/* Banner motivacional — tienda nueva sin datos */}
       {!loading && dashTab === "resumen" && products.length === 0 && orders.length === 0 && sales.length === 0 && (
-        <div className="rounded-xl border border-[#00B4A6]/20 bg-[#00B4A6]/5 dark:bg-[#00B4A6]/10 p-5 flex items-start gap-4">
-          <div className="h-10 w-10 rounded-xl bg-[#00B4A6] flex items-center justify-center shrink-0">
+        <div className="rounded-xl border border-primary/20 bg-primary/5 dark:bg-primary/10 p-5 flex items-start gap-4">
+          <div className="h-10 w-10 rounded-xl bg-primary flex items-center justify-center shrink-0">
             <TrendingUp className="h-5 w-5 text-white" />
           </div>
           <div>
-            <p className="font-bold text-[#00B4A6] dark:text-emerald-400 text-sm">Tu tienda está lista.</p>
+            <p className="font-bold text-primary dark:text-emerald-400 text-sm">Tu tienda está lista.</p>
             <p className="text-xs text-gray-500 dark:text-zinc-400 mt-0.5">Agrega productos y empieza a vender. Los datos aparecerán aquí automáticamente.</p>
           </div>
         </div>
       )}
+
+      {!loading && dashTab === "resumen" && (() => {
+        const pendingItems = [
+          alerts.pendingOrders > 0
+            ? {
+                label: "Pedidos pendientes",
+                value: String(alerts.pendingOrders),
+                detail: "Atiendelos hoy para no frenar ventas",
+                Icon: ShoppingCart,
+                emphasis: "danger" as const,
+              }
+            : null,
+          upcomingPayables.overdue > 0
+            ? {
+                label: "Pagos vencidos",
+                value: String(upcomingPayables.overdue),
+                detail: "Ordena caja para no cortar credito",
+                Icon: DollarSign,
+                emphasis: "warning" as const,
+              }
+            : null,
+          productsRunningOut.length > 0
+            ? {
+                label: "Productos por agotarse",
+                value: String(productsRunningOut.length),
+                detail: "Repone lo que mas rota esta semana",
+                Icon: Package,
+                emphasis: "warning" as const,
+              }
+            : null,
+          expiringBatchCount > 0
+            ? {
+                label: "Lotes por vencer",
+                value: String(expiringBatchCount),
+                detail: "Muévelos antes de perder margen",
+                Icon: AlertTriangle,
+                emphasis: "warning" as const,
+              }
+            : null,
+        ].filter(Boolean) as Array<{
+          label: string;
+          value: string;
+          detail: string;
+          Icon: typeof ShoppingCart;
+          emphasis: "warning" | "danger";
+        }>;
+
+        const overviewTitle = monthDelta >= 0
+          ? "Tu negocio mantiene buen ritmo este mes"
+          : "Tu negocio necesita recuperar ritmo este mes";
+
+        const overviewDescription = monthDelta >= 0
+          ? `Vas ${monthDelta >= 0 ? "+" : ""}${monthDelta.toFixed(1)}% frente al mes anterior y ya puedes ver hacia donde empuja tu negocio.`
+          : `${monthDelta.toFixed(1)}% vs el mes anterior. Conviene mirar ventas, caja y reposicion en un solo lugar.`;
+
+        return (
+          <BusinessOverviewHero
+            eyebrow="Panorama del negocio"
+            title={overviewTitle}
+            description={overviewDescription}
+            icon={LayoutDashboard}
+            tone={monthDelta >= 0 ? (pendingItems.length === 0 ? "positive" : "neutral") : "warning"}
+            metrics={[
+              {
+                label: "Ventas del mes",
+                value: fmtR(revenueThisMonth),
+                detail: `${monthDelta >= 0 ? "+" : ""}${monthDelta.toFixed(1)}% vs mes anterior`,
+                emphasis: monthDelta >= 0 ? "positive" : "danger",
+              },
+              {
+                label: "Cierre estimado",
+                value: monthProjection ? fmtR(monthProjection.proyeccion) : "Sin base",
+                detail: monthProjection
+                  ? `Promedio actual proyecta ${fmtR(monthProjection.proyeccion)}`
+                  : "Necesitas mas dias de ventas para proyectar con confianza",
+              },
+              {
+                label: "Pendiente por cobrar",
+                value: fmtR(cuentasPorCobrar.total),
+                detail: `${cuentasPorCobrar.count} documento${cuentasPorCobrar.count !== 1 ? "s" : ""} abiertos`,
+                emphasis: cuentasPorCobrar.total > 0 ? "warning" : "default",
+              },
+            ]}
+            highlights={[
+              {
+                label: "Mejor dia",
+                value: bestDay ? bestDay.best.name : "Sin suficiente data",
+                detail: bestDay ? `Promedio ${fmtR(bestDay.best.avg)}` : "Aun no hay patron estable",
+              },
+              {
+                label: "Categoria que empuja",
+                value: growingCategory?.top ? growingCategory.top.cat : "Sin tendencia clara",
+                detail: growingCategory?.top
+                  ? `${growingCategory.top.pct.toFixed(0)}% esta semana frente a la anterior`
+                  : "Aun no hay suficientes ventas para comparar",
+                emphasis: growingCategory?.top ? "positive" : "default",
+              },
+              {
+                label: "Cliente mas valioso",
+                value: topClientMonth ? topClientMonth.name : "Sin cliente lider",
+                detail: topClientMonth
+                  ? `${topClientMonth.orderCount} compras · ${fmtR(topClientMonth.total)}`
+                  : "Todavia no hay compras suficientes este mes",
+              },
+            ]}
+            actionsTitle="Pendientes que mueven caja"
+            actionsDescription="Esto es lo que conviene resolver primero para proteger ventas y margen."
+            actions={pendingItems.map((item) => ({
+              label: item.label,
+              value: item.value,
+              detail: item.detail,
+              icon: item.Icon,
+              emphasis: item.emphasis,
+            }))}
+            emptyActionTitle="Hoy no hay bloqueos fuertes"
+            emptyActionDescription="Tu negocio está operando sin alertas críticas de caja, stock o vencimientos."
+          />
+        );
+      })()}
 
       {/* ════════════════════════════════════════════════════════════════════
           SECCION 2: GRAFICO DE VENTAS DEL MES (tipo Alegra)
@@ -2116,41 +1866,7 @@ export default function SmartDashboardTab({
             </div>
           </div>
           {monthlyDailyData.length > 0 ? (
-            <ResponsiveContainer width="100%" height={280}>
-              <AreaChart data={monthlyDailyData} margin={{ left: 10, right: 10, top: 10, bottom: 0 }}>
-                <defs>
-                  <linearGradient id="colorVentas" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#00B4A6" stopOpacity={0.3} />
-                    <stop offset="95%" stopColor="#00B4A6" stopOpacity={0.02} />
-                  </linearGradient>
-                </defs>
-                <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" strokeOpacity={0.5} vertical={false} />
-                <XAxis
-                  dataKey="name"
-                  tick={{ fontSize: 10, fill: "#9ca3af" }}
-                  axisLine={false}
-                  tickLine={false}
-                  interval={1}
-                />
-                <YAxis
-                  tick={{ fontSize: 10, fill: "#9ca3af" }}
-                  axisLine={false}
-                  tickLine={false}
-                  tickFormatter={(v: number) => fmtShort(v)}
-                  width={50}
-                />
-                <Tooltip content={<CustomAreaTooltip />} />
-                <Area
-                  type="monotone"
-                  dataKey="ventas"
-                  stroke="#00B4A6"
-                  strokeWidth={2}
-                  fill="url(#colorVentas)"
-                  dot={{ r: 3, fill: "#00B4A6", strokeWidth: 0 }}
-                  activeDot={{ r: 5, fill: "#00B4A6", stroke: "#fff", strokeWidth: 2 }}
-                />
-              </AreaChart>
-            </ResponsiveContainer>
+            <MonthlySalesAreaChart data={monthlyDailyData} fmtShort={fmtShort} fmt={fmt} />
           ) : (
             <div className="flex items-center justify-center h-[280px]">
               <p className="text-sm text-gray-400 dark:text-zinc-500">Sin ventas registradas este mes</p>
@@ -2167,7 +1883,7 @@ export default function SmartDashboardTab({
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
           {/* Card 1: Cuentas por cobrar (Fiados) */}
           <div className="bg-white dark:bg-zinc-800 rounded-xl border border-gray-200 dark:border-zinc-700 p-4 shadow-sm">
-            <a href="/admin?module=fiados" className="text-xs font-semibold text-gray-700 dark:text-zinc-300 hover:text-[#00B4A6] transition-colors cursor-pointer">
+            <a href="/admin?module=fiados" className="text-xs font-semibold text-gray-700 dark:text-zinc-300 hover:text-primary transition-colors cursor-pointer">
               Cuentas por cobrar
             </a>
             <p className="text-xl font-mono font-bold text-gray-900 dark:text-zinc-100 mt-1">
@@ -2190,7 +1906,7 @@ export default function SmartDashboardTab({
 
           {/* Card 2: Cuentas por pagar */}
           <div className="bg-white dark:bg-zinc-800 rounded-xl border border-gray-200 dark:border-zinc-700 p-4 shadow-sm">
-            <a href="/admin?module=compras" className="text-xs font-semibold text-gray-700 dark:text-zinc-300 hover:text-[#00B4A6] transition-colors cursor-pointer">
+            <a href="/admin?module=compras" className="text-xs font-semibold text-gray-700 dark:text-zinc-300 hover:text-primary transition-colors cursor-pointer">
               Cuentas por pagar
             </a>
             <p className="text-xl font-mono font-bold text-gray-900 dark:text-zinc-100 mt-1">
@@ -2290,7 +2006,7 @@ export default function SmartDashboardTab({
                   "flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-colors",
                   activeCharts.length >= 6
                     ? "bg-gray-100 dark:bg-zinc-700 text-gray-400 cursor-not-allowed"
-                    : "bg-[#00B4A6] text-white hover:bg-[#009690]"
+                    : "bg-primary text-white hover:bg-primary-dark"
                 )}
               >
                 <Plus className="w-3.5 h-3.5" />
@@ -2354,7 +2070,17 @@ export default function SmartDashboardTab({
                       </button>
                     </div>
                   </div>
-                  {renderChart(chartId)}
+                  <DashboardCharts
+                    chartId={chartId}
+                    chartVentasCategoria={chartVentasCategoria}
+                    chartMetodoPago={chartMetodoPago}
+                    chartTop10={chartTop10}
+                    chartVentasHora={chartVentasHora}
+                    chartTendenciaSemanal={chartTendenciaSemanal}
+                    chartFlujoCaja={chartFlujoCaja}
+                    fmt={fmt}
+                    fmtShort={fmtShort}
+                  />
                 </div>
               ))}
             </div>
@@ -2396,7 +2122,7 @@ export default function SmartDashboardTab({
           )}
           {bestHourToday && (
             <span className="inline-flex items-center gap-1 text-xs bg-white dark:bg-zinc-800 border border-gray-200 dark:border-zinc-700 rounded-lg px-3 py-2">
-              <Clock className="h-3.5 w-3.5 text-[#00B4A6]" />
+              <Clock className="h-3.5 w-3.5 text-primary" />
               <span className="text-gray-600 dark:text-zinc-300">Mejor hora: <span className="font-bold">{bestHourToday.hour}:00</span> (S/{bestHourToday.total.toFixed(0)})</span>
             </span>
           )}
@@ -2413,74 +2139,6 @@ export default function SmartDashboardTab({
           )}
         </div>
       )}
-
-      {/* Quincena Mode — Tab Resumen + Inventario */}
-      {!loading && (dashTab === "resumen" || dashTab === "inventario") && (() => {
-        const now = new Date();
-        const day = now.getDate();
-        const daysInMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
-        let diasHasta = -1;
-        if (day >= 28) diasHasta = daysInMonth - day + 1;
-        else if (day >= 12 && day <= 14) diasHasta = 15 - day;
-        else if (day >= 1 && day <= 3) diasHasta = 0;
-        else if (day === 15 || day === 16 || day === 17) diasHasta = 0;
-        if (diasHasta < 0 || diasHasta > 3) return null;
-        const topProds = topProducts.slice(0, 5);
-        const estimadoMultiplier = 1.5;
-        const lsKey = `quincena-prep-${now.getFullYear()}-${now.getMonth()}-${day <= 15 ? '15' : '01'}`;
-        let checks: Record<string, boolean> = {};
-        try { const raw = localStorage.getItem(lsKey); if (raw) checks = JSON.parse(raw); } catch {}
-        const toggleCheck = (key: string) => {
-          const next = { ...checks, [key]: !checks[key] };
-          localStorage.setItem(lsKey, JSON.stringify(next));
-        };
-        return (
-          <div className="rounded-2xl border-2 border-amber-400 dark:border-amber-600 shadow-lg overflow-hidden" style={{ background: "linear-gradient(135deg, #fef3c7, #fde68a)" }}>
-            <div className="px-5 py-4">
-              <div className="flex items-center gap-2 mb-3">
-                <h3 className="text-lg font-extrabold text-amber-900">
-                  {diasHasta === 0 ? "QUINCENA HOY" : `QUINCENA EN ${diasHasta} DIA${diasHasta > 1 ? "S" : ""}`}
-                </h3>
-                <span className="text-xs font-bold px-2 py-0.5 rounded-full bg-amber-800 text-amber-50">Ventas +100%</span>
-              </div>
-              <p className="text-xs text-amber-800 mb-3 font-medium">
-                {diasHasta === 0 ? "Las ventas se duplican hoy. Asegurate de tener todo listo." : "Prepara stock y efectivo para el pico de ventas."}
-              </p>
-              <div className="space-y-2">
-                {topProds.map((prod) => {
-                  const product = products.find(p => String(p.id) === String(prod.id));
-                  const stock = product?.stock ?? 0;
-                  const estimado = Math.ceil(prod.qty * estimadoMultiplier / 4);
-                  const ok = stock >= estimado;
-                  return (
-                    <label key={prod.id} className="flex items-center gap-2 text-sm cursor-pointer select-none" onClick={() => toggleCheck(String(prod.id))}>
-                      <span className={cn("w-4 h-4 rounded border-2 flex items-center justify-center shrink-0 transition-colors", checks[String(prod.id)] ? "bg-emerald-500 border-emerald-500 text-white" : "border-amber-600 bg-white")}>
-                        {checks[String(prod.id)] && <Check className="h-3 w-3" />}
-                      </span>
-                      <span className="text-amber-900 font-medium flex-1 truncate">{prod.name}</span>
-                      <span className={cn("text-xs font-bold", ok ? "text-emerald-700" : "text-red-700")}>
-                        {stock} uds {!ok && `(necesitas ~${estimado})`}
-                      </span>
-                    </label>
-                  );
-                })}
-                <label className="flex items-center gap-2 text-sm cursor-pointer select-none" onClick={() => toggleCheck("efectivo")}>
-                  <span className={cn("w-4 h-4 rounded border-2 flex items-center justify-center shrink-0 transition-colors", checks["efectivo"] ? "bg-emerald-500 border-emerald-500 text-white" : "border-amber-600 bg-white")}>
-                    {checks["efectivo"] && <Check className="h-3 w-3" />}
-                  </span>
-                  <span className="text-amber-900 font-medium">Efectivo en caja para cambio</span>
-                </label>
-                <label className="flex items-center gap-2 text-sm cursor-pointer select-none" onClick={() => toggleCheck("fiados")}>
-                  <span className={cn("w-4 h-4 rounded border-2 flex items-center justify-center shrink-0 transition-colors", checks["fiados"] ? "bg-emerald-500 border-emerald-500 text-white" : "border-amber-600 bg-white")}>
-                    {checks["fiados"] && <Check className="h-3 w-3" />}
-                  </span>
-                  <span className="text-amber-900 font-medium">Cobrar fiados pendientes antes de dar mas credito</span>
-                </label>
-              </div>
-            </div>
-          </div>
-        );
-      })()}
 
       {/* High-impact cards row — Tab Resumen muestra todos, otros tabs muestran parcial */}
       {!loading && (dashTab === "resumen" || dashTab === "finanzas" || dashTab === "clientes" || dashTab === "inventario") && (
@@ -2515,7 +2173,7 @@ export default function SmartDashboardTab({
             ) : upcomingPayables.overdue === 0 ? (
               <p className="text-xs text-emerald-500 font-medium">Sin pagos pendientes esta semana</p>
             ) : null}
-            <a href="/admin?module=compras" className="text-[10px] font-bold text-[#00B4A6] hover:underline mt-2 block">
+            <a href="/admin?module=compras" className="text-[10px] font-bold text-primary hover:underline mt-2 block">
               Ver todos &rarr;
             </a>
           </div>
@@ -2574,7 +2232,7 @@ export default function SmartDashboardTab({
               <p className="text-xs text-emerald-500 font-medium">Stock estable para esta semana</p>
             )}
             {productsRunningOut.length > 0 && (
-              <a href="/admin?module=compras" className="text-[10px] font-bold text-[#00B4A6] hover:underline mt-2 block">
+              <a href="/admin?module=compras" className="text-[10px] font-bold text-primary hover:underline mt-2 block">
                 Crear OC &rarr;
               </a>
             )}
@@ -2622,12 +2280,12 @@ export default function SmartDashboardTab({
           <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl p-4">
             <div className="flex items-center justify-between mb-2">
               <p className="text-sm font-bold text-gray-900 dark:text-white flex items-center gap-2">
-                <Target className="h-4 w-4 text-[#00B4A6]" /> Meta del día
+                <Target className="h-4 w-4 text-primary" /> Meta del día
               </p>
-              <span className="text-xs font-bold text-[#00B4A6]">{dailyGoalPct.toFixed(0)}%</span>
+              <span className="text-xs font-bold text-primary">{dailyGoalPct.toFixed(0)}%</span>
             </div>
             <div className="h-2 bg-gray-100 dark:bg-gray-800 rounded-full overflow-hidden">
-              <div className="h-full bg-[#00B4A6] rounded-full transition-all" style={{ width: `${Math.min(100, dailyGoalPct)}%` }} />
+              <div className="h-full bg-primary rounded-full transition-all" style={{ width: `${Math.min(100, dailyGoalPct)}%` }} />
             </div>
           </div>
         );
@@ -2664,7 +2322,7 @@ export default function SmartDashboardTab({
           className={cn(
             "relative group/section transition-all duration-200",
             dragIdx === sectionIdx && "opacity-50 scale-[0.98]",
-            dragOverIdx === sectionIdx && dragIdx !== sectionIdx && "ring-2 ring-[#00B4A6]/40 ring-offset-2 rounded-xl",
+            dragOverIdx === sectionIdx && dragIdx !== sectionIdx && "ring-2 ring-primary/40 ring-offset-2 rounded-xl",
           )}
           draggable
           onDragStart={() => handleDragStart(sectionIdx)}
@@ -2697,7 +2355,7 @@ export default function SmartDashboardTab({
           {sectionId === "top-productos" && (
             <div className="rounded-xl border border-gray-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 p-4 shadow-sm">
               <div className="flex items-center gap-2 mb-4">
-                <TrendingUp className="w-4 h-4" style={{ color: "#00B4A6" }} />
+                <TrendingUp className="w-4 h-4" style={{ color: "var(--color-primary)" }} />
                 <span className="text-sm font-semibold text-gray-700 dark:text-zinc-300">
                   Top 10 productos mas vendidos
                 </span>
@@ -2717,7 +2375,7 @@ export default function SmartDashboardTab({
                         <div className="flex-1 h-5 rounded bg-gray-100 dark:bg-zinc-700 relative overflow-hidden">
                           <div
                             className="absolute inset-y-0 left-0 rounded transition-all"
-                            style={{ width: `${pct}%`, backgroundColor: idx === 0 ? "#00B4A6" : "#00B4A660" }}
+                            style={{ width: `${pct}%`, backgroundColor: idx === 0 ? "var(--color-primary)" : "var(--color-primary)60" }}
                           />
                           <span className="absolute inset-y-0 left-2 flex items-center text-[10px] font-semibold text-white z-10">{prod.qty} uds</span>
                         </div>
@@ -2751,7 +2409,7 @@ export default function SmartDashboardTab({
                         <span className={cn("w-8 text-right shrink-0 font-mono", isActive ? "text-amber-500 font-bold" : "text-gray-400 dark:text-zinc-500")}>{bucket.label}</span>
                         <div className="flex-1 h-4 rounded bg-gray-100 dark:bg-zinc-700 relative overflow-hidden">
                           {pct > 0 && (
-                            <div className="absolute inset-y-0 left-0 rounded transition-all" style={{ width: `${pct}%`, backgroundColor: isActive ? "#f97316" : "#00B4A680" }} />
+                            <div className="absolute inset-y-0 left-0 rounded transition-all" style={{ width: `${pct}%`, backgroundColor: isActive ? "#f97316" : "var(--color-primary)80" }} />
                           )}
                           {pct > 10 && (
                             <span className="absolute inset-y-0 left-2 flex items-center text-[10px] font-semibold text-white z-10">{fmtR(bucket.amount)}</span>
@@ -2790,7 +2448,7 @@ export default function SmartDashboardTab({
               </p>
               <div className="mt-3 grid grid-cols-2 gap-2">
                 {[
-                  { label: "Este mes", value: revenueThisMonth, color: "#00B4A6", max: Math.max(revenueThisMonth, revenuePrevMonth, 1) },
+                  { label: "Este mes", value: revenueThisMonth, color: "var(--color-primary)", max: Math.max(revenueThisMonth, revenuePrevMonth, 1) },
                   { label: "Anterior", value: revenuePrevMonth, color: "#94a3b8", max: Math.max(revenueThisMonth, revenuePrevMonth, 1) },
                 ].map((bar) => (
                   <div key={bar.label}>
@@ -2899,7 +2557,7 @@ export default function SmartDashboardTab({
                 {/* Top 5 clientes */}
                 <div className="rounded-xl border border-gray-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 p-4 shadow-sm">
                   <div className="flex items-center gap-2 mb-4">
-                    <Users className="w-4 h-4" style={{ color: "#00B4A6" }} />
+                    <Users className="w-4 h-4" style={{ color: "var(--color-primary)" }} />
                     <span className="text-sm font-semibold text-gray-700 dark:text-zinc-300">Top 5 clientes del mes</span>
                   </div>
                   {loading ? (
@@ -2918,12 +2576,12 @@ export default function SmartDashboardTab({
                     <ol className="space-y-2">
                       {topCustomers.map((c, idx) => (
                         <li key={c.phone ?? c.name} className="flex items-center gap-2 text-sm">
-                          <span className="flex items-center justify-center w-5 h-5 rounded-full text-[10px] font-bold shrink-0 text-white" style={{ backgroundColor: idx === 0 ? "#00B4A6" : "#94a3b8" }}>
+                          <span className="flex items-center justify-center w-5 h-5 rounded-full text-[10px] font-bold shrink-0 text-white" style={{ backgroundColor: idx === 0 ? "var(--color-primary)" : "#94a3b8" }}>
                             {idx + 1}
                           </span>
                           <span className="flex-1 truncate text-gray-700 dark:text-zinc-300 text-xs" title={c.name}>{c.name}</span>
                           <span className="text-[10px] text-gray-400 dark:text-zinc-500 shrink-0">{c.orderCount} ped.</span>
-                          <span className="text-xs font-semibold tabular-nums shrink-0" style={{ color: "#00B4A6" }}>{fmtR(c.total)}</span>
+                          <span className="text-xs font-semibold tabular-nums shrink-0" style={{ color: "var(--color-primary)" }}>{fmtR(c.total)}</span>
                         </li>
                       ))}
                     </ol>
@@ -2987,7 +2645,7 @@ export default function SmartDashboardTab({
               )}
             </div>
             <p className="text-lg font-bold font-mono text-gray-900 dark:text-zinc-100">{fmtR(deadValue)} <span className="text-xs font-normal text-gray-400">en {deadStock.length} productos sin vender 30+ dias</span></p>
-            <a href="/admin?module=inventario&sub=sin-movimiento" className="text-[10px] font-bold text-[#00B4A6] hover:underline mt-1.5 block">Ver productos &rarr;</a>
+            <a href="/admin?module=inventario&sub=sin-movimiento" className="text-[10px] font-bold text-primary hover:underline mt-1.5 block">Ver productos &rarr;</a>
           </div>
         );
       })()}
@@ -3039,11 +2697,11 @@ export default function SmartDashboardTab({
           {topClientMonth && (
             <div className="rounded-xl border border-gray-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 p-4 shadow-sm">
               <div className="flex items-center gap-2 mb-2">
-                <Users className="w-4 h-4 text-[#00B4A6]" />
+                <Users className="w-4 h-4 text-primary" />
                 <span className="text-xs font-bold text-gray-600 dark:text-zinc-300">Cliente del mes</span>
               </div>
               <div className="flex items-center gap-2">
-                <span className="flex items-center justify-center w-8 h-8 rounded-full text-sm font-bold text-white" style={{ backgroundColor: "#00B4A6" }}>
+                <span className="flex items-center justify-center w-8 h-8 rounded-full text-sm font-bold text-white" style={{ backgroundColor: "var(--color-primary)" }}>
                   {topClientMonth.name.charAt(0).toUpperCase()}
                 </span>
                 <p className="text-sm font-bold text-gray-900 dark:text-zinc-100">{topClientMonth.name}</p>
@@ -3122,61 +2780,8 @@ export default function SmartDashboardTab({
       {/* Delivery Zones — Tab Finanzas */}
       {dashTab === "finanzas" && <DeliveryZonesConfig />}
 
-      {/* Compartir resumen — Tab Resumen */}
-      {!loading && dashTab === "resumen" && (
-        <div className="rounded-xl border border-gray-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 p-4 shadow-sm">
-          <div className="flex items-center justify-between mb-3">
-            <div className="flex items-center gap-2">
-              <span className="text-sm font-bold text-gray-700 dark:text-zinc-300">Compartir Resumen del Dia</span>
-            </div>
-          </div>
-          <p className="text-xs text-gray-400 dark:text-zinc-500 mb-3">Envia un resumen rapido a tu esposa, socio o contador por WhatsApp.</p>
-          {(() => {
-            const fecha = new Date().toLocaleDateString("es-PE", { weekday: "long", day: "numeric", month: "long" });
-            const ventasHoyVal = revenueToday;
-            const txCount = salesToday.length;
-            const ticket = txCount > 0 ? ventasHoyVal / txCount : 0;
-            const efectivo = salesToday.filter(s => {
-              const pay = (s as unknown as { payment?: string }).payment ?? (s as unknown as { paymentMethod?: string }).paymentMethod ?? "";
-              return pay === "efectivo";
-            }).reduce((a, s) => a + s.total, 0);
-            const yape = salesToday.filter(s => {
-              const pay = (s as unknown as { payment?: string }).payment ?? (s as unknown as { paymentMethod?: string }).paymentMethod ?? "";
-              return pay === "yape";
-            }).reduce((a, s) => a + s.total, 0);
-            const stockBajo = products.filter(p => p.stock != null && p.stockMin != null && p.stock <= p.stockMin).length;
-            const fiadosPendientes = payables.filter(p => p.status !== "pagado").reduce((a, p) => a + (p.amount - p.paidAmount), 0);
-            const comparacion = ventasHoyVal > revenueYesterday ? "Mejor que ayer!" : ventasHoyVal < revenueYesterday ? "Menos que ayer" : "Igual que ayer";
-            const msg = `*Resumen Buleje — ${fecha}*\n\nVentas hoy: S/ ${ventasHoyVal.toFixed(0)}\nTransacciones: ${txCount}\nTicket promedio: S/ ${ticket.toFixed(0)}\n\nEfectivo: S/ ${efectivo.toFixed(0)} | Yape: S/ ${yape.toFixed(0)}\nStock bajo: ${stockBajo} productos\nFiados pendientes: S/ ${fiadosPendientes.toFixed(0)}\n\n${comparacion}\n\nBuen dia!\nBuleje`;
-            return (
-              <div className="flex flex-wrap gap-2">
-                <a
-                  href={`https://wa.me/?text=${encodeURIComponent(msg)}`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl bg-[#25D366] text-white text-xs font-bold hover:bg-[#1da851] transition-colors min-w-[140px]"
-                >
-                  Enviar por WhatsApp
-                </a>
-                <button
-                  onClick={() => { navigator.clipboard.writeText(msg).catch(() => {}); }}
-                  className="px-4 py-2.5 rounded-xl border border-gray-200 dark:border-zinc-600 text-xs font-bold text-gray-600 dark:text-zinc-300 hover:bg-gray-50 dark:hover:bg-zinc-700 transition-colors"
-                >
-                  Copiar
-                </button>
-              </div>
-            );
-          })()}
-        </div>
-      )}
-
-      {/* Activity Feed + Web Vitals — Tab Resumen */}
-      {dashTab === "resumen" && (
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <ActivityFeed />
-          <WebVitalsWidget />
-        </div>
-      )}
     </div>
   );
 }
+
+export default memo(SmartDashboardTab);

@@ -3,8 +3,7 @@ import { z } from "zod";
 import { requireAdmin } from "@/lib/require-admin";
 import { logActivity } from "@/lib/activity-logger";
 import { prisma } from "@/lib/prisma";
-import { sendWhatsAppText } from "@/lib/whatsapp";
-import { logger } from "@/lib/logger";
+import { sendWhatsAppQueued } from "@/lib/whatsapp";
 
 const VALID_TRANSITIONS: Record<string, string[]> = {
   assigned: ["picked_up"],
@@ -188,7 +187,7 @@ export async function PATCH(req: NextRequest) {
       };
       const msg = trackingMessages[status];
       if (msg) {
-        sendWhatsAppText(updated.order.customerPhone, msg).catch((err) => logger.error("[delivery/assignments] WhatsApp tracking notify failed", { error: String(err), status }));
+        await sendWhatsAppQueued(updated.order.customerPhone, msg, { tenantId: auth.tenantId, context: `delivery/assignments:${status}` }).catch(() => {});
       }
     }
 

@@ -2,9 +2,9 @@ import "server-only";
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import nodemailer from "nodemailer";
-import { sendWhatsAppText } from "@/lib/whatsapp";
+import { sendWhatsAppQueued } from "@/lib/whatsapp";
 import { rateLimit, getClientIp } from "@/lib/rate-limit";
-import { logger } from "@/lib/logger";
+import { withApiHandler } from "@/lib/api-handler";
 
 /**
  * POST /api/abandoned-cart
@@ -39,7 +39,7 @@ function isQuietHours(): boolean {
   return hour >= 22 || hour < 8;
 }
 
-export async function POST(req: NextRequest) {
+export const POST = withApiHandler("abandoned-cart", async (req, ctx) => {
   try {
     const body = await req.json();
     const parsed = BodySchema.safeParse(body);
@@ -87,12 +87,7 @@ export async function POST(req: NextRequest) {
           `Si necesitas ayuda, escríbenos por aquí. Buleje - Tu bodega digital`,
         ].join("\n");
 
-        sendWhatsAppText(cleanPhone, message).catch((err) => {
-          logger.error("[abandoned-cart] WhatsApp al cliente falló", {
-            phone: cleanPhone.slice(-4),
-            error: err instanceof Error ? err.message : String(err),
-          });
-        });
+        await sendWhatsAppQueued(cleanPhone, message, { tenantId, context: "abandoned-cart:customer" }).catch(() => {});
 
         whatsappSent = true;
       }
@@ -142,7 +137,7 @@ export async function POST(req: NextRequest) {
                 <tfoot>
                   <tr>
                     <td style="padding:10px 8px;font-weight:bold;font-size:15px;">Total:</td>
-                    <td style="padding:10px 8px;font-weight:bold;font-size:15px;text-align:right;color:#00B4A6;">S/${total.toFixed(2)}</td>
+                    <td style="padding:10px 8px;font-weight:bold;font-size:15px;text-align:right;color:#2563EB;">S/${total.toFixed(2)}</td>
                   </tr>
                 </tfoot>
               </table>
@@ -175,4 +170,4 @@ export async function POST(req: NextRequest) {
   } catch {
     return NextResponse.json({ error: "Internal error" }, { status: 500 });
   }
-}
+});

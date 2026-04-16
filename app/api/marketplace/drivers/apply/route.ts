@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
-import { logger } from "@/lib/logger";
 
 const DriverApplySchema = z.object({
   name: z.string().min(2).max(100),
@@ -35,24 +34,24 @@ export async function POST(req: NextRequest) {
       },
     });
 
-    // Fire-and-forget WhatsApp notification to admin
-    import("@/lib/whatsapp").then(({ sendWhatsAppText }) => {
-      const adminPhone = process.env.ADMIN_WHATSAPP_PHONE;
-      if (adminPhone) {
-        const msg = [
-          "🛵 *Nueva solicitud de repartidor*",
-          "",
-          `👤 ${parsed.data.name}`,
-          `📱 ${parsed.data.phone}`,
-          `📍 Zona: ${parsed.data.zone}`,
-          `🚗 Vehículo: ${parsed.data.vehicleType}`,
-          `⏰ Horario: ${parsed.data.availability}`,
-          "",
-          "Revisa el panel admin para aprobar o rechazar.",
-        ].join("\n");
-        sendWhatsAppText(adminPhone, msg).catch((err) => logger.error("[drivers/apply] WhatsApp admin notify failed", { error: String(err) }));
-      }
-    }).catch((err) => logger.error("[drivers/apply] dynamic import failed", { error: String(err) }));
+    // Fire-and-forget WhatsApp notification to admin (queued)
+    const adminPhone = process.env.ADMIN_WHATSAPP_PHONE;
+    if (adminPhone) {
+      const msg = [
+        "🛵 *Nueva solicitud de repartidor*",
+        "",
+        `👤 ${parsed.data.name}`,
+        `📱 ${parsed.data.phone}`,
+        `📍 Zona: ${parsed.data.zone}`,
+        `🚗 Vehículo: ${parsed.data.vehicleType}`,
+        `⏰ Horario: ${parsed.data.availability}`,
+        "",
+        "Revisa el panel admin para aprobar o rechazar.",
+      ].join("\n");
+      await (await import("@/lib/whatsapp"))
+        .sendWhatsAppQueued(adminPhone, msg, { tenantId: "main", context: "drivers/apply:admin" })
+        .catch(() => {});
+    }
 
     return NextResponse.json({ success: true });
   } catch {

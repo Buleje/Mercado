@@ -224,10 +224,11 @@ export function PersonalizarTab({ stores, onRefresh }: PersonalizarTabProps) {
                 {/* Logo */}
                 <div className="w-10 h-10 rounded-xl bg-gray-100 dark:bg-gray-800 flex items-center justify-center overflow-hidden shrink-0">
                   {store.logo ? (
-                    // eslint-disable-next-line @next/next/no-img-element
-                    <img
+                    <Image
                       src={store.logo}
                       alt={store.name}
+                      width={40}
+                      height={40}
                       className="w-full h-full object-cover grayscale"
                     />
                   ) : (

@@ -3,9 +3,8 @@ import { z } from "zod/v4";
 import { MarketplaceStoresDB } from "@/lib/db/marketplace.db";
 import { applyRateLimit } from "@/lib/rate-limit";
 import { logActivity } from "@/lib/activity-logger";
-import { sendWhatsAppText } from "@/lib/whatsapp";
+import { sendWhatsAppQueued } from "@/lib/whatsapp";
 import { toErrorPayload, newTraceId } from "@/lib/api-error";
-import { logger } from "@/lib/logger";
 
 const RegisterSchema = z.object({
   ownerName:    z.string().min(2, "Nombre muy corto").max(80),
@@ -90,22 +89,26 @@ export async function POST(req: NextRequest) {
         `─────`,
         `Buleje 🏪`,
       ].filter(Boolean).join("\n");
-      sendWhatsAppText(adminPhone, msg).catch((err) => logger.error("[stores/apply] WhatsApp admin notify failed", { error: String(err) }));
+      await sendWhatsAppQueued(adminPhone, msg, { tenantId: store.id, context: "stores/apply:admin" }).catch(() => {});
     }
 
     // Confirmation to store owner
-    sendWhatsAppText(ownerPhone, [
-      `🎉 *¡Recibimos tu solicitud!*`,
-      ``,
-      `Hola ${ownerName} 👋`,
-      `Tu tienda *${storeName}* está siendo revisada.`,
-      `Te avisaremos por este número cuando esté lista.`,
-      ``,
-      `Mientras, puedes ir preparando tus productos 📦`,
-      ``,
-      `─────`,
-      `Marketplace Buleje 🏪`,
-    ].join("\n")).catch((err) => logger.error("[stores/apply] WhatsApp owner confirmation failed", { error: String(err) }));
+    await sendWhatsAppQueued(
+      ownerPhone,
+      [
+        `🎉 *¡Recibimos tu solicitud!*`,
+        ``,
+        `Hola ${ownerName} 👋`,
+        `Tu tienda *${storeName}* está siendo revisada.`,
+        `Te avisaremos por este número cuando esté lista.`,
+        ``,
+        `Mientras, puedes ir preparando tus productos 📦`,
+        ``,
+        `─────`,
+        `Marketplace Buleje 🏪`,
+      ].join("\n"),
+      { tenantId: store.id, context: "stores/apply:owner" },
+    ).catch(() => {});
 
     logActivity(
       "Solicitud",
