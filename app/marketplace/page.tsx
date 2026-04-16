@@ -1,33 +1,60 @@
 import type { Metadata } from "next";
 import MarketplaceContent from "@/components/marketplace/MarketplaceContent";
 import JsonLd from "@/components/JsonLd";
+import { getInitialMarketplaceStores } from "@/lib/marketplace/initial-stores";
+
+type SearchParams = Record<string, string | string[] | undefined>;
 
 const BASE_URL = "https://www.buleje.pe";
 
-export const metadata: Metadata = {
-  title: "Marketplace Buleje — Bodegas y Tiendas de Todo el Peru",
-  description:
-    "Encuentra bodegas, minimarkets y tiendas de todo el Peru en un solo lugar. Compra online con delivery rapido. Paga con Yape o efectivo.",
-  alternates: {
-    canonical: `${BASE_URL}/marketplace`,
-  },
-  openGraph: {
-    title: "Marketplace Buleje — Bodegas y Tiendas de Todo el Peru",
-    description:
-      "Encuentra bodegas, minimarkets y tiendas de todo el Peru. Delivery rapido, Yape y efectivo.",
-    url: `${BASE_URL}/marketplace`,
-    siteName: "Buleje",
-    locale: "es_PE",
-    type: "website",
-  },
-};
+// ────────────────────────────────────────────────────────────────────────
+// Task #14: Dynamic canonical per zone query parameter
+// If ?zona=X exists, set canonical to /marketplace?zona=X
+// Otherwise, canonical = /marketplace (self-canonical)
+// ────────────────────────────────────────────────────────────────────────
+
+export async function generateMetadata(props: {
+  searchParams: Promise<SearchParams>;
+}): Promise<Metadata> {
+  const searchParams = await props.searchParams;
+  const zona = (searchParams.zona as string) || null;
+
+  // Build canonical URL with zona query param if present
+  const canonicalUrl = zona
+    ? `${BASE_URL}/marketplace?zona=${encodeURIComponent(zona)}`
+    : `${BASE_URL}/marketplace`;
+
+  // Adapt title and description based on zona
+  const zonaDisplay = zona ? ` — ${zona.charAt(0).toUpperCase() + zona.slice(1)}` : "";
+  const title = zona
+    ? `Marketplace Buleje en ${zona.charAt(0).toUpperCase() + zona.slice(1)} — Bodegas y Tiendas`
+    : "Marketplace Buleje — Bodegas y Tiendas de Todo el Peru";
+  const description = zona
+    ? `Encuentra bodegas, minimarkets y tiendas en ${zona}. Compra online con delivery rapido. Paga con Yape o efectivo.`
+    : "Encuentra bodegas, minimarkets y tiendas de todo el Peru en un solo lugar. Compra online con delivery rapido. Paga con Yape o efectivo.";
+
+  return {
+    title,
+    description,
+    alternates: {
+      canonical: canonicalUrl,
+    },
+    robots: {
+      index: true,
+      follow: true,
+    },
+    openGraph: {
+      title,
+      description,
+      url: canonicalUrl,
+      siteName: "Buleje",
+      locale: "es_PE",
+      type: "website",
+    },
+  };
+}
 
 // JSON-LD schemas — SEO structured data for Google rich results.
-// Referencias:
-//  - WebSite + SearchAction: https://developers.google.com/search/docs/appearance/structured-data/sitelinks-searchbox
-//  - BreadcrumbList: https://developers.google.com/search/docs/appearance/structured-data/breadcrumb
-//  - CollectionPage: https://schema.org/CollectionPage
-
 const websiteSchema = {
   "@context": "https://schema.org",
   "@type": "WebSite",
@@ -77,13 +104,26 @@ const collectionSchema = {
   },
 };
 
-export default function MarketplacePage() {
+export default async function MarketplacePage(props: {
+  searchParams: Promise<SearchParams>;
+}) {
+  const searchParams = await props.searchParams;
+  const hasFilters =
+    !!searchParams.zona || !!searchParams.categoria || !!searchParams.buscar;
+
+  // Server-side prefetch de stores para eliminar skeleton flash del first paint.
+  // Solo lo pasamos cuando NO hay filtros — para requests con filtros, el cliente
+  // hace fetch correcto con los params (behavior previo).
+  const initialStores = hasFilters
+    ? undefined
+    : await getInitialMarketplaceStores();
+
   return (
     <>
       <JsonLd data={websiteSchema} />
       <JsonLd data={breadcrumbSchema} />
       <JsonLd data={collectionSchema} />
-      <MarketplaceContent />
+      <MarketplaceContent initialStores={initialStores} />
     </>
   );
 }

@@ -318,7 +318,20 @@ const DEFAULT_FILTERS: MarketplaceFiltersState = {
   nearbyEnabled: false,
 };
 
-export default function MarketplaceContent() {
+interface MarketplaceContentProps {
+  /**
+   * Stores pre-fetched en el servidor para eliminar el skeleton flash
+   * del first paint. Si están presentes, se usan como estado inicial
+   * y se skip-ea el primer fetch cliente.
+   *
+   * Solo deberían venir populados cuando NO hay filtros en la URL
+   * (zona, categoria, buscar) — para esos casos el cliente hace fetch
+   * fresh con los filtros correctos.
+   */
+  initialStores?: MarketplaceStore[];
+}
+
+export default function MarketplaceContent({ initialStores }: MarketplaceContentProps = {}) {
   const searchParams = useSearchParams();
   const initialCategoria = searchParams.get("categoria") ?? "todos";
   // Map landing category slugs to marketplace category IDs
@@ -334,8 +347,11 @@ export default function MarketplaceContent() {
   };
   const mappedCategory = CATEGORIA_MAP[initialCategoria] ?? (CATEGORIES.some(c => c.id === initialCategoria) ? initialCategoria : "todos");
 
-  const [stores, setStores] = useState<MarketplaceStore[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [stores, setStores] = useState<MarketplaceStore[]>(initialStores ?? []);
+  const [loading, setLoading] = useState(!initialStores || initialStores.length === 0);
+  // Si llegaron initialStores, skip-eamos el primer fetch cliente
+  // (solo se hace fetch al cambiar filtros).
+  const [initialFetchDone, setInitialFetchDone] = useState(!!initialStores && initialStores.length > 0);
   const [error, setError] = useState<string | null>(null);
   const [search, setSearch] = useState(searchParams.get("buscar") ?? "");
   const [category, setCategory] = useState(mappedCategory);
@@ -394,9 +410,15 @@ export default function MarketplaceContent() {
   }, [category, zone, search]);
 
   useEffect(() => {
+    // Si ya tenemos initialStores y no hay filtros, skip del primer fetch.
+    const hasFilters = category !== "todos" || zone !== "" || search.trim() !== "";
+    if (!initialFetchDone && !hasFilters) {
+      setInitialFetchDone(true);
+      return;
+    }
     const timer = setTimeout(fetchStores, search ? 400 : 0);
     return () => clearTimeout(timer);
-  }, [fetchStores, search]);
+  }, [fetchStores, search, category, zone, initialFetchDone]);
 
   const filteredStores = useMemo(() => {
     if (!geoActive || !userCoords) return stores;
