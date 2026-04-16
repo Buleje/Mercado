@@ -126,7 +126,7 @@ export default async function AboutPage() {
             <div className="flex flex-wrap items-center justify-center gap-3">
               <Link
                 href="/tienda"
-                className="inline-flex items-center gap-2 rounded-xl px-6 py-3 text-sm font-bold bg-white text-[#0f766e] hover:bg-white/90 transition-all shadow-lg"
+                className="inline-flex items-center gap-2 rounded-xl px-6 py-3 text-sm font-bold bg-white text-primary-dark hover:bg-white/90 transition-all shadow-lg"
               >
                 <ShoppingCart className="h-4 w-4" /> Ver Tienda
               </Link>
@@ -149,7 +149,7 @@ export default async function AboutPage() {
           <div className="mx-auto max-w-4xl px-4 sm:px-6">
             <div className="text-center mb-8">
               <div className="inline-flex items-center gap-2 mb-3">
-                <Heart className="h-5 w-5 text-[#f97316]" />
+                <Heart className="h-5 w-5 text-secondary" />
                 <h2 className="text-2xl sm:text-3xl font-extrabold text-foreground">
                   Nuestra Historia
                 </h2>
@@ -161,17 +161,17 @@ export default async function AboutPage() {
               </p>
               <div className="mt-8 flex flex-wrap items-center justify-center gap-6 text-center">
                 <div>
-                  <p className="text-2xl sm:text-3xl font-extrabold text-[#0f766e]">500+</p>
+                  <p className="text-2xl sm:text-3xl font-extrabold text-primary-dark">500+</p>
                   <p className="text-xs text-muted font-medium mt-1">Productos</p>
                 </div>
                 <div className="h-10 w-px bg-gray-200 dark:bg-card-border hidden sm:block" />
                 <div>
-                  <p className="text-2xl sm:text-3xl font-extrabold text-[#0f766e]">100+</p>
+                  <p className="text-2xl sm:text-3xl font-extrabold text-primary-dark">100+</p>
                   <p className="text-xs text-muted font-medium mt-1">Familias atendidas</p>
                 </div>
                 <div className="h-10 w-px bg-gray-200 dark:bg-card-border hidden sm:block" />
                 <div>
-                  <p className="text-2xl sm:text-3xl font-extrabold text-[#f97316]">30 min</p>
+                  <p className="text-2xl sm:text-3xl font-extrabold text-secondary">30 min</p>
                   <p className="text-xs text-muted font-medium mt-1">Delivery promedio</p>
                 </div>
               </div>
@@ -184,7 +184,7 @@ export default async function AboutPage() {
           <div className="mx-auto max-w-7xl px-4 sm:px-6">
             <div className="text-center mb-10">
               <div className="inline-flex items-center gap-2 mb-3">
-                <Users className="h-5 w-5 text-[#0f766e]" />
+                <Users className="h-5 w-5 text-primary-dark" />
                 <h2 className="text-2xl sm:text-3xl font-extrabold text-foreground">
                   Por qué elegirnos
                 </h2>
@@ -215,7 +215,7 @@ export default async function AboutPage() {
           <div className="mx-auto max-w-2xl px-4 sm:px-6">
             <div className="text-center mb-8">
               <div className="inline-flex items-center gap-2 mb-3">
-                <Clock className="h-5 w-5 text-[#0f766e]" />
+                <Clock className="h-5 w-5 text-primary-dark" />
                 <h2 className="text-2xl sm:text-3xl font-extrabold text-foreground">
                   Horarios de atención
                 </h2>
@@ -225,13 +225,13 @@ export default async function AboutPage() {
               <div className="space-y-4">
                 <div className="flex items-center justify-between py-3 border-b border-gray-100 dark:border-card-border">
                   <span className="font-semibold text-foreground">Lunes a Sábado</span>
-                  <span className="text-sm font-bold text-[#0f766e] bg-emerald-50 dark:bg-emerald-900/20 px-3 py-1 rounded-full">
+                  <span className="text-sm font-bold text-primary-dark bg-emerald-50 dark:bg-emerald-900/20 px-3 py-1 rounded-full">
                     {weekdayHours}
                   </span>
                 </div>
                 <div className="flex items-center justify-between py-3">
                   <span className="font-semibold text-foreground">Domingos</span>
-                  <span className="text-sm font-bold text-[#f97316] bg-amber-50 dark:bg-amber-900/20 px-3 py-1 rounded-full">
+                  <span className="text-sm font-bold text-secondary bg-amber-50 dark:bg-amber-900/20 px-3 py-1 rounded-full">
                     {weekendHours}
                   </span>
                 </div>
@@ -248,7 +248,7 @@ export default async function AboutPage() {
           <div className="mx-auto max-w-4xl px-4 sm:px-6">
             <div className="text-center mb-10">
               <div className="inline-flex items-center gap-2 mb-3">
-                <Phone className="h-5 w-5 text-[#0f766e]" />
+                <Phone className="h-5 w-5 text-primary-dark" />
                 <h2 className="text-2xl sm:text-3xl font-extrabold text-foreground">
                   Contacto
                 </h2>
@@ -315,7 +315,7 @@ export default async function AboutPage() {
           <div className="mx-auto max-w-4xl px-4 sm:px-6">
             <div className="text-center mb-8">
               <div className="inline-flex items-center gap-2 mb-3">
-                <MapPin className="h-5 w-5 text-[#0f766e]" />
+                <MapPin className="h-5 w-5 text-primary-dark" />
                 <h2 className="text-2xl sm:text-3xl font-extrabold text-foreground">
                   Encuéntranos
                 </h2>
@@ -329,7 +329,7 @@ export default async function AboutPage() {
                 href={mapsLink}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="inline-flex items-center gap-2 rounded-xl px-6 py-3 text-sm font-bold bg-[#0f766e] text-white hover:bg-[#0d5f58] transition-all shadow-md"
+                className="inline-flex items-center gap-2 rounded-xl px-6 py-3 text-sm font-bold bg-primary-dark text-white hover:bg-primary-dark/90 transition-all shadow-md"
               >
                 <MapPin className="h-4 w-4" /> Abrir en Google Maps
               </a>
@@ -348,7 +348,7 @@ export default async function AboutPage() {
             <div className="flex flex-wrap items-center justify-center gap-3">
               <Link
                 href="/tienda"
-                className="inline-flex items-center gap-2 rounded-xl px-6 py-3 text-sm font-bold bg-white text-[#0f766e] hover:bg-white/90 transition-all shadow-md"
+                className="inline-flex items-center gap-2 rounded-xl px-6 py-3 text-sm font-bold bg-white text-primary-dark hover:bg-white/90 transition-all shadow-md"
               >
                 <ShoppingCart className="h-4 w-4" /> Explorar la tienda
               </Link>

@@ -141,19 +141,19 @@ async function BulejeHeroServer() {
     >
       {/* Blobs decorativos */}
       <div className="pointer-events-none absolute inset-0">
-        <div className="absolute -top-32 -left-32 h-125 w-125 rounded-full bg-[#00B4A6]/15 blur-[120px]" />
-        <div className="absolute -bottom-40 -right-40 h-100 w-100 rounded-full bg-[#4ade80]/10 blur-[100px]" />
+        <div className="absolute -top-32 -left-32 h-125 w-125 rounded-full bg-primary/15 blur-[120px]" />
+        <div className="absolute -bottom-40 -right-40 h-100 w-100 rounded-full bg-green-400/10 blur-[100px]" />
       </div>
 
       <div className="relative z-10 mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 text-center">
         {/* Badge */}
-        <span className="inline-flex items-center gap-2 text-xs font-bold uppercase tracking-widest text-[#00B4A6] mb-6 bg-[#00B4A6]/10 rounded-full px-5 py-2 border border-[#00B4A6]/20">
+        <span className="inline-flex items-center gap-2 text-xs font-bold uppercase tracking-widest text-primary mb-6 bg-primary/10 rounded-full px-5 py-2 border border-primary/20">
           🏪 La plataforma #1 para bodegas
         </span>
 
         <h1 className="text-4xl sm:text-5xl lg:text-6xl font-extrabold text-white leading-tight">
           El software que potencia{" "}
-          <span className="text-transparent bg-clip-text bg-linear-to-r from-[#00B4A6] to-[#4ade80]">
+          <span className="text-transparent bg-clip-text bg-linear-to-r from-primary to-green-400">
             tu bodega
           </span>
         </h1>
@@ -166,7 +166,7 @@ async function BulejeHeroServer() {
         <div className="mt-8 flex flex-wrap justify-center gap-4">
           <Link
             href="/marketplace"
-            className="inline-flex items-center gap-2 bg-[#00B4A6] hover:bg-primary-dark text-white font-bold px-8 py-4 rounded-xl transition-all shadow-lg shadow-primary/25 text-lg"
+            className="inline-flex items-center gap-2 bg-primary hover:bg-primary-dark text-white font-bold px-8 py-4 rounded-xl transition-all shadow-lg shadow-primary/25 text-lg"
           >
             🛒 Explorar Marketplace
           </Link>
@@ -193,7 +193,7 @@ async function BulejeHeroServer() {
             <p className="text-xs text-white/50 mt-1">Productos</p>
           </div>
           <div className="bg-white/5 rounded-xl p-4 border border-white/10">
-            <p className="text-2xl sm:text-3xl font-extrabold text-[#00B4A6]">
+            <p className="text-2xl sm:text-3xl font-extrabold text-primary">
               ⭐ {stats.avgRating}
             </p>
             <p className="text-xs text-white/50 mt-1">Valoracion promedio</p>
@@ -217,14 +217,14 @@ async function MarketplaceReviewsServer() {
   const displayReviews = reviews.length > 0 ? reviews : fallbackReviews;
 
   return (
-    <section className="py-16 sm:py-24 bg-[#00B4A6]/5">
+    <section className="py-16 sm:py-24 bg-primary/5">
       <div className="max-w-7xl mx-auto px-4">
         <div className="text-center mb-14">
-          <span className="inline-flex items-center gap-2 text-xs font-bold uppercase tracking-widest text-[#00B4A6] mb-3 bg-[#00B4A6]/8 rounded-full px-4 py-1.5">
+          <span className="inline-flex items-center gap-2 text-xs font-bold uppercase tracking-widest text-primary mb-3 bg-primary/8 rounded-full px-4 py-1.5">
             ⭐ Opiniones
           </span>
           <h2 className="text-3xl sm:text-4xl font-extrabold text-gray-900 dark:text-white">
-            Lo que dicen nuestros <span className="text-[#00B4A6]">clientes</span>
+            Lo que dicen nuestros <span className="text-primary">clientes</span>
           </h2>
         </div>
         <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -265,12 +265,12 @@ function HowBulejeWorks() {
     <section className="py-16 sm:py-24 bg-white dark:bg-gray-950">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="text-center mb-14">
-          <span className="inline-flex items-center gap-2 text-xs font-bold uppercase tracking-widest text-[#00B4A6] mb-3 bg-[#00B4A6]/8 rounded-full px-4 py-1.5">
+          <span className="inline-flex items-center gap-2 text-xs font-bold uppercase tracking-widest text-primary mb-3 bg-primary/8 rounded-full px-4 py-1.5">
             ⚡ Asi de facil
           </span>
           <h2 className="text-3xl sm:text-4xl font-extrabold text-gray-900 dark:text-white">
             ¿Como funciona el{" "}
-            <span className="text-[#00B4A6]">Marketplace</span>?
+            <span className="text-primary">Marketplace</span>?
           </h2>
           <p className="mt-3 text-gray-500 dark:text-gray-400 max-w-xl mx-auto">
             Comprar en Buleje es tan facil como ir a la bodega de la esquina — pero sin salir de casa.
@@ -278,9 +278,9 @@ function HowBulejeWorks() {
         </div>
         <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-6">
           {steps.map((s) => (
-            <div key={s.num} className="relative bg-gray-50 dark:bg-gray-900 rounded-2xl p-6 border border-gray-100 dark:border-gray-800 hover:border-[#00B4A6]/30 transition-colors group">
+            <div key={s.num} className="relative bg-gray-50 dark:bg-gray-900 rounded-2xl p-6 border border-gray-100 dark:border-gray-800 hover:border-primary/30 transition-colors group">
               <span className="text-4xl mb-4 block">{s.emoji}</span>
-              <span className="text-xs font-bold text-[#00B4A6] tracking-wider">PASO {s.num}</span>
+              <span className="text-xs font-bold text-primary tracking-wider">PASO {s.num}</span>
               <h3 className="text-lg font-bold text-gray-900 dark:text-white mt-1">{s.title}</h3>
               <p className="text-sm text-gray-500 dark:text-gray-400 mt-2">{s.desc}</p>
             </div>
@@ -312,12 +312,12 @@ function CategoriesSection() {
     <section className="py-16 sm:py-24 bg-gray-50 dark:bg-gray-900/50">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="text-center mb-12">
-          <span className="inline-flex items-center gap-2 text-xs font-bold uppercase tracking-widest text-[#00B4A6] mb-3 bg-[#00B4A6]/8 rounded-full px-4 py-1.5">
+          <span className="inline-flex items-center gap-2 text-xs font-bold uppercase tracking-widest text-primary mb-3 bg-primary/8 rounded-full px-4 py-1.5">
             📦 Categorias
           </span>
           <h2 className="text-3xl sm:text-4xl font-extrabold text-gray-900 dark:text-white">
             Encuentra{" "}
-            <span className="text-[#00B4A6]">todo</span>{" "}
+            <span className="text-primary">todo</span>{" "}
             lo que necesitas
           </h2>
           <p className="mt-3 text-gray-500 dark:text-gray-400 max-w-lg mx-auto">
@@ -329,7 +329,7 @@ function CategoriesSection() {
             <Link
               key={c.slug}
               href={`/marketplace?categoria=${c.slug}`}
-              className="flex flex-col items-center gap-2 bg-white dark:bg-gray-800 rounded-2xl p-5 border border-gray-100 dark:border-gray-700 hover:border-[#00B4A6]/40 hover:shadow-lg hover:-translate-y-0.5 transition-all group"
+              className="flex flex-col items-center gap-2 bg-white dark:bg-gray-800 rounded-2xl p-5 border border-gray-100 dark:border-gray-700 hover:border-primary/40 hover:shadow-lg hover:-translate-y-0.5 transition-all group"
             >
               <span className="text-3xl group-hover:scale-110 transition-transform">{c.emoji}</span>
               <span className="text-sm font-semibold text-gray-700 dark:text-gray-200">{c.label}</span>
@@ -339,7 +339,7 @@ function CategoriesSection() {
         <div className="text-center mt-10">
           <Link
             href="/marketplace"
-            className="inline-flex items-center gap-2 text-[#00B4A6] font-bold hover:underline"
+            className="inline-flex items-center gap-2 text-primary font-bold hover:underline"
           >
             Ver todas las tiendas en el Marketplace →
           </Link>
@@ -395,12 +395,12 @@ function PricingSection() {
     <section className="py-16 sm:py-24 bg-gray-50 dark:bg-gray-900/50">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="text-center mb-14">
-          <span className="inline-flex items-center gap-2 text-xs font-bold uppercase tracking-widest text-[#00B4A6] mb-3 bg-[#00B4A6]/8 rounded-full px-4 py-1.5">
+          <span className="inline-flex items-center gap-2 text-xs font-bold uppercase tracking-widest text-primary mb-3 bg-primary/8 rounded-full px-4 py-1.5">
             💰 Planes
           </span>
           <h2 className="text-3xl sm:text-4xl font-extrabold text-gray-900 dark:text-white">
             Empieza{" "}
-            <span className="text-[#00B4A6]">gratis</span>,{" "}
+            <span className="text-primary">gratis</span>,{" "}
             crece a tu ritmo
           </h2>
         </div>
@@ -420,10 +420,10 @@ function PricingSection() {
             </Link>
           </div>
           {/* Pro */}
-          <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 border-2 border-[#00B4A6] relative">
-            <span className="absolute -top-3 left-1/2 -translate-x-1/2 bg-[#00B4A6] text-white text-xs font-bold px-3 py-1 rounded-full">Popular</span>
+          <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 border-2 border-primary relative">
+            <span className="absolute -top-3 left-1/2 -translate-x-1/2 bg-primary text-white text-xs font-bold px-3 py-1 rounded-full">Popular</span>
             <h3 className="text-lg font-bold text-gray-900 dark:text-white">Pro</h3>
-            <p className="text-3xl font-extrabold text-[#00B4A6] mt-2">S/49<span className="text-sm font-normal text-gray-400">/mes</span></p>
+            <p className="text-3xl font-extrabold text-primary mt-2">S/49<span className="text-sm font-normal text-gray-400">/mes</span></p>
             <ul className="mt-4 space-y-2 text-sm text-gray-600 dark:text-gray-300">
               <li>✅ Productos ilimitados</li>
               <li>✅ Facturacion SUNAT</li>
@@ -431,7 +431,7 @@ function PricingSection() {
               <li>✅ Reportes avanzados</li>
               <li>✅ Soporte prioritario</li>
             </ul>
-            <Link href="/marketplace/registrar" className="mt-6 block text-center bg-[#00B4A6] text-white font-semibold py-2.5 rounded-xl hover:bg-primary-dark transition-colors">
+            <Link href="/marketplace/registrar" className="mt-6 block text-center bg-primary text-white font-semibold py-2.5 rounded-xl hover:bg-primary-dark transition-colors">
               Empezar ahora
             </Link>
           </div>
@@ -473,7 +473,7 @@ function MarketplaceFAQ() {
     <section id="preguntas" className="py-16 sm:py-24 bg-white dark:bg-gray-950">
       <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="text-center mb-14">
-          <span className="inline-flex items-center gap-2 text-xs font-bold uppercase tracking-widest text-[#00B4A6] mb-3 bg-[#00B4A6]/8 rounded-full px-4 py-1.5">
+          <span className="inline-flex items-center gap-2 text-xs font-bold uppercase tracking-widest text-primary mb-3 bg-primary/8 rounded-full px-4 py-1.5">
             ❓ Preguntas frecuentes
           </span>
           <h2 className="text-3xl sm:text-4xl font-extrabold text-gray-900 dark:text-white">
@@ -483,7 +483,7 @@ function MarketplaceFAQ() {
         <div className="space-y-3">
           {faqs.map((f) => (
             <details key={f.q} className="group bg-gray-50 dark:bg-gray-900 rounded-xl border border-gray-100 dark:border-gray-800 overflow-hidden">
-              <summary className="flex items-center justify-between cursor-pointer p-5 text-left font-semibold text-gray-900 dark:text-white hover:text-[#00B4A6] transition-colors">
+              <summary className="flex items-center justify-between cursor-pointer p-5 text-left font-semibold text-gray-900 dark:text-white hover:text-primary transition-colors">
                 <span>{f.q}</span>
                 <span className="ml-3 text-gray-400 group-open:rotate-180 transition-transform">▼</span>
               </summary>
@@ -525,17 +525,17 @@ function ScheduleSection() {
               {hours.map((h) => (
                 <div key={h.day} className="flex items-center justify-between bg-white dark:bg-gray-800 rounded-xl p-4 border border-gray-100 dark:border-gray-700">
                   <span className="font-semibold text-gray-900 dark:text-white">{h.day}</span>
-                  <span className="text-[#00B4A6] font-bold">{h.time}</span>
+                  <span className="text-primary font-bold">{h.time}</span>
                 </div>
               ))}
             </div>
           </div>
-          <div className="bg-linear-to-br from-[#00B4A6] to-primary-dark rounded-2xl p-8 text-white">
+          <div className="bg-linear-to-br from-primary to-primary-dark rounded-2xl p-8 text-white">
             <h3 className="text-2xl font-extrabold mb-4">¿Tienes una bodega?</h3>
             <p className="text-white/80 mb-6">
               Registra tu negocio en Buleje y empieza a vender online hoy. Es gratis, rapido y sin compromisos.
             </p>
-            <Link href="/marketplace/registrar" className="inline-flex items-center gap-2 bg-white text-[#00B4A6] font-bold px-6 py-3 rounded-xl hover:bg-white/90 transition-colors">
+            <Link href="/marketplace/registrar" className="inline-flex items-center gap-2 bg-white text-primary font-bold px-6 py-3 rounded-xl hover:bg-white/90 transition-colors">
               🏪 Registrar mi bodega
             </Link>
           </div>
@@ -551,7 +551,7 @@ function ContactSection() {
     <section id="contacto" className="py-16 sm:py-24 bg-white dark:bg-gray-950">
       <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="text-center mb-12">
-          <span className="inline-flex items-center gap-2 text-xs font-bold uppercase tracking-widest text-[#00B4A6] mb-3 bg-[#00B4A6]/8 rounded-full px-4 py-1.5">
+          <span className="inline-flex items-center gap-2 text-xs font-bold uppercase tracking-widest text-primary mb-3 bg-primary/8 rounded-full px-4 py-1.5">
             📩 Contacto
           </span>
           <h2 className="text-3xl sm:text-4xl font-extrabold text-gray-900 dark:text-white">
@@ -577,7 +577,7 @@ function ContactSection() {
                 type="text"
                 required
                 placeholder="Tu nombre"
-                className="w-full rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 px-4 py-3 text-sm text-gray-900 dark:text-white placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#00B4A6]/40 focus:border-[#00B4A6]"
+                className="w-full rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 px-4 py-3 text-sm text-gray-900 dark:text-white placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-primary/40 focus:border-primary"
               />
             </div>
             <div>
@@ -590,7 +590,7 @@ function ContactSection() {
                 type="tel"
                 required
                 placeholder="999 999 999"
-                className="w-full rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 px-4 py-3 text-sm text-gray-900 dark:text-white placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#00B4A6]/40 focus:border-[#00B4A6]"
+                className="w-full rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 px-4 py-3 text-sm text-gray-900 dark:text-white placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-primary/40 focus:border-primary"
               />
             </div>
           </div>
@@ -603,7 +603,7 @@ function ContactSection() {
               name="email"
               type="email"
               placeholder="tu@email.com"
-              className="w-full rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 px-4 py-3 text-sm text-gray-900 dark:text-white placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#00B4A6]/40 focus:border-[#00B4A6]"
+              className="w-full rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 px-4 py-3 text-sm text-gray-900 dark:text-white placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-primary/40 focus:border-primary"
             />
           </div>
           <div>
@@ -616,12 +616,12 @@ function ContactSection() {
               required
               rows={4}
               placeholder="Cuentanos sobre tu negocio..."
-              className="w-full rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 px-4 py-3 text-sm text-gray-900 dark:text-white placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#00B4A6]/40 focus:border-[#00B4A6] resize-none"
+              className="w-full rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 px-4 py-3 text-sm text-gray-900 dark:text-white placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-primary/40 focus:border-primary resize-none"
             />
           </div>
           <button
             type="submit"
-            className="w-full sm:w-auto inline-flex items-center justify-center gap-2 bg-[#00B4A6] hover:bg-primary-dark text-white font-bold px-8 py-3.5 rounded-xl transition-all shadow-lg shadow-primary/25"
+            className="w-full sm:w-auto inline-flex items-center justify-center gap-2 bg-primary hover:bg-primary-dark text-white font-bold px-8 py-3.5 rounded-xl transition-all shadow-lg shadow-primary/25"
           >
             📩 Enviar mensaje
           </button>
@@ -638,7 +638,7 @@ function FinalCTA() {
       <div className="max-w-4xl mx-auto px-4 text-center">
         <h2 className="text-3xl sm:text-4xl lg:text-5xl font-extrabold">
           Empieza a comprar o vender{" "}
-          <span className="text-transparent bg-clip-text bg-linear-to-r from-[#00B4A6] to-[#4ade80]">hoy</span>
+          <span className="text-transparent bg-clip-text bg-linear-to-r from-primary to-green-400">hoy</span>
         </h2>
         <p className="mt-4 text-lg text-white/60 max-w-xl mx-auto">
           Unete a las tiendas que ya confian en Buleje para crecer su negocio.
@@ -646,7 +646,7 @@ function FinalCTA() {
         <div className="mt-8 flex flex-wrap justify-center gap-4">
           <Link
             href="/marketplace"
-            className="inline-flex items-center gap-2 bg-[#00B4A6] hover:bg-primary-dark text-white font-bold px-8 py-4 rounded-xl transition-all shadow-lg shadow-primary/25 text-lg"
+            className="inline-flex items-center gap-2 bg-primary hover:bg-primary-dark text-white font-bold px-8 py-4 rounded-xl transition-all shadow-lg shadow-primary/25 text-lg"
           >
             🛒 Ir al Marketplace
           </Link>
@@ -689,10 +689,10 @@ export default async function NegociosPage() {
 
 function ReviewsSkeleton() {
   return (
-    <section className="py-16 sm:py-24 bg-[#00B4A6]/5">
+    <section className="py-16 sm:py-24 bg-primary/5">
       <div className="max-w-7xl mx-auto px-4">
         <div className="text-center mb-14">
-          <div className="h-5 w-24 bg-[#00B4A6]/10 rounded-full mx-auto mb-3 animate-pulse" />
+          <div className="h-5 w-24 bg-primary/10 rounded-full mx-auto mb-3 animate-pulse" />
           <div className="h-10 w-64 bg-gray-200 dark:bg-gray-700 rounded-xl mx-auto animate-pulse" />
         </div>
         <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
