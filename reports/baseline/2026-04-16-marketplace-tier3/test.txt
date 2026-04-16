@@ -1,0 +1,23 @@
+
+> buleje@0.1.1 test
+> vitest run
+
+
+[1m[46m RUN [49m[22m [36mv4.1.0 [39m[90mC:/dev/bodega-san-martin/bodega-san-martin[39m
+
+Warning: A vi.mock("@/lib/db") call in "C:/dev/bodega-san-martin/bodega-san-martin/__tests__/ai-best-practices.test.ts" is not at the top level of the module. Although it appears nested, it will be hoisted and executed before any tests run. Move it to the top level to reflect its actual execution order. This will become an error in a future version.
+See: https://vitest.dev/guide/mocking/modules#how-it-works
+Warning: A vi.mock("@/lib/db/batches.db") call in "C:/dev/bodega-san-martin/bodega-san-martin/__tests__/ai-best-practices.test.ts" is not at the top level of the module. Although it appears nested, it will be hoisted and executed before any tests run. Move it to the top level to reflect its actual execution order. This will become an error in a future version.
+See: https://vitest.dev/guide/mocking/modules#how-it-works
+Warning: A vi.mock("@/lib/agents/bus") call in "C:/dev/bodega-san-martin/bodega-san-martin/__tests__/ai-best-practices.test.ts" is not at the top level of the module. Although it appears nested, it will be hoisted and executed before any tests run. Move it to the top level to reflect its actual execution order. This will become an error in a future version.
+See: https://vitest.dev/guide/mocking/modules#how-it-works
+Warning: A vi.mock("@/lib/agents/context") call in "C:/dev/bodega-san-martin/bodega-san-martin/__tests__/ai-best-practices.test.ts" is not at the top level of the module. Although it appears nested, it will be hoisted and executed before any tests run. Move it to the top level to reflect its actual execution order. This will become an error in a future version.
+See: https://vitest.dev/guide/mocking/modules#how-it-works
+Not implemented: navigation to another Document
+Not implemented: navigation to another Document
+
+[2m Test Files [22m [1m[32m200 passed[39m[22m[90m (200)[39m
+[2m      Tests [22m [1m[32m2942 passed[39m[22m[2m | [22m[33m5 skipped[39m[2m | [22m[90m4 todo[39m[90m (2951)[39m
+[2m   Start at [22m 18:02:44
+[2m   Duration [22m 77.51s[2m (transform 41.65s, setup 82.46s, import 138.24s, tests 124.09s, environment 579.56s)[22m
+
