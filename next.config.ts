@@ -43,6 +43,23 @@ const nextConfig: NextConfig = {
     },
   },
 
+  // Prisma + Turbopack (Next 16 + Prisma 7): el cliente generado importa
+  // `@prisma/client/runtime/client` que Turbopack intenta bundlear como un
+  // alias hasheado y falla ("Cannot find module @prisma/client-<hash>/runtime/client").
+  // Marcar estos como externals fuerza que se resuelvan vía Node module system.
+  serverExternalPackages: [
+    "@prisma/client",
+    "@prisma/adapter-pg",
+    ".prisma/client",
+    // Sentry + OpenTelemetry también tienen el mismo bug de hash-alias en Turbopack
+    "@sentry/nextjs",
+    "@sentry/node",
+    "@opentelemetry/api",
+    "@opentelemetry/instrumentation",
+    "require-in-the-middle",
+    "import-in-the-middle",
+  ],
+
   // No source maps in production browser bundle (saves ~30–50% of chunk sizes)
   productionBrowserSourceMaps: false,
 
