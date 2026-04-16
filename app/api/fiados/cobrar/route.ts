@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { requireAdmin } from "@/lib/require-admin";
-import { prisma } from "@/lib/prisma";
+import { FiadosDB } from "@/lib/db/fiados.db";
+import { logger } from "@/lib/logger";
 
 const CobrarSchema = z.object({
   customerPhone: z.string().min(1),
@@ -31,63 +32,26 @@ export async function POST(req: NextRequest) {
     }
 
     const { customerPhone, monto, notas } = parsed.data;
-    let remaining = monto;
 
-    // Get active fiados ordered by oldest first
-    const fiados = await prisma.fiado.findMany({
-      where: { tenantId, customerId: customerPhone, status: "ACTIVO" },
-      orderBy: { createdAt: "asc" },
-    });
+    const result = await FiadosDB.cobrarPorCliente(tenantId, customerPhone, monto, notas);
 
-    if (fiados.length === 0) {
+    if (result.payments.length === 0) {
       return NextResponse.json(
         { error: "No hay fiados activos para este cliente" },
         { status: 404 }
       );
     }
 
-    const payments: { fiadoId: string; amount: number }[] = [];
-
-    await prisma.$transaction(async (tx) => {
-      for (const fiado of fiados) {
-        if (remaining <= 0) break;
-        const saldo = Number(fiado.saldo);
-        const payment = Math.min(remaining, saldo);
-        const newSaldo = saldo - payment;
-
-        await tx.fiado.update({
-          where: { id: fiado.id },
-          data: {
-            saldo: newSaldo,
-            status: newSaldo <= 0.01 ? "PAGADO" : "ACTIVO",
-          },
-        });
-
-        // Create cuota record
-        await tx.fiadoCuota.create({
-          data: {
-            fiadoId: fiado.id,
-            monto: payment,
-            pagadoEn: new Date(),
-            notas: notas || `Cobro desde POS`,
-          },
-        });
-
-        payments.push({ fiadoId: fiado.id, amount: payment });
-        remaining -= payment;
-      }
-    });
-
     return NextResponse.json({
       success: true,
-      totalCobrado: monto - remaining,
-      payments,
-      remaining: Math.max(0, remaining),
+      totalCobrado: result.totalCobrado,
+      payments: result.payments,
+      remaining: result.remaining,
     });
   } catch (e) {
-    console.error("[Fiados Cobrar]", e);
+    logger.error("[Fiados Cobrar] unexpected error", { error: e instanceof Error ? e.message : String(e) });
     return NextResponse.json(
-      { error: "Error al procesar el cobro" },
+      { error: "Internal server error" },
       { status: 500 }
     );
   }
