@@ -197,8 +197,18 @@ export function AdminSidebar({
     });
   }, []);
 
-  // Effective compact: parent focusMode OR local compact toggle
-  const effectiveCompact = focusMode || isCompact;
+  // ── Auto-collapse on narrow screens (<1024px) ──
+  const [isNarrow, setIsNarrow] = React.useState(false);
+  React.useEffect(() => {
+    const mql = window.matchMedia("(max-width: 1023px)");
+    const handler = (e: MediaQueryListEvent) => setIsNarrow(e.matches);
+    setIsNarrow(mql.matches);
+    mql.addEventListener("change", handler);
+    return () => mql.removeEventListener("change", handler);
+  }, []);
+
+  // Effective compact: parent focusMode OR local compact toggle OR narrow viewport
+  const effectiveCompact = focusMode || isCompact || isNarrow;
 
   // Track which multi-tab categories are expanded (shows sub-tabs)
   const [expandedCategories, setExpandedCategories] = React.useState<Set<string>>(() => {
@@ -237,8 +247,8 @@ export function AdminSidebar({
     <>
       {/* Desktop permanent sidebar */}
       <aside className={cn(
-        "hidden sm:flex fixed left-0 bottom-0 z-40 bg-white dark:bg-card border-r border-gray-100 dark:border-card-border flex-col transition-all duration-300 overflow-hidden",
-        effectiveCompact ? "w-16" : "w-[260px]",
+        "hidden md:flex fixed left-0 bottom-0 z-40 bg-white dark:bg-card border-r border-gray-100 dark:border-card-border flex-col transition-[width] duration-200 ease-in-out overflow-hidden",
+        effectiveCompact ? "w-[60px]" : "w-[260px]",
         presentationMode && "hidden!",
         isSuperAdminImpersonating ? "top-10" : "top-0"
       )}>
@@ -583,8 +593,8 @@ export function AdminSidebar({
             <Store className="h-[18px] w-[18px] shrink-0" /> {!effectiveCompact && "Mi Tienda"}
           </Link>
 
-          {/* ── Compact mode toggle ── */}
-          {!focusMode && (
+          {/* ── Compact mode toggle (hidden when auto-collapsed on narrow screens) ── */}
+          {!focusMode && !isNarrow && (
             <>
               <div className="my-1.5 border-t border-gray-100 dark:border-zinc-800" />
               <button

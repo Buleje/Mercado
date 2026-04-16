@@ -8,6 +8,7 @@ import {
   Package,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { AdminCard } from "@/components/admin/shared";
 import type {
   Payable,
   DashboardAlerts,
@@ -68,7 +69,7 @@ export function InventarioSubTab(props: InventarioSubTabProps) {
       {!loading && (
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
           {/* Proximos pagos */}
-          <div className="rounded-xl border border-gray-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 p-4 shadow-sm">
+          <AdminCard padding="sm">
             <div className="flex items-center gap-2 mb-3">
               <span className="flex items-center justify-center w-7 h-7 rounded-lg bg-amber-50 dark:bg-amber-900/20">
                 <DollarSign className="w-3.5 h-3.5 text-amber-500" />
@@ -98,10 +99,10 @@ export function InventarioSubTab(props: InventarioSubTabProps) {
               <p className="text-xs text-emerald-500 font-medium">Sin pagos pendientes esta semana</p>
             ) : null}
             <a href="/admin?module=compras" className="text-[10px] font-bold text-primary hover:underline mt-2 block">Ver todos &rarr;</a>
-          </div>
+          </AdminCard>
 
           {/* Clientes del dia */}
-          <div className="rounded-xl border border-gray-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 p-4 shadow-sm">
+          <AdminCard padding="sm">
             <div className="flex items-center gap-2 mb-3">
               <span className="flex items-center justify-center w-7 h-7 rounded-lg bg-blue-50 dark:bg-blue-900/20">
                 <Users className="w-3.5 h-3.5 text-blue-500" />
@@ -119,10 +120,10 @@ export function InventarioSubTab(props: InventarioSubTabProps) {
                 <span className="text-[10px] font-bold text-gray-400 bg-gray-50 dark:bg-zinc-700 px-1.5 py-0.5 rounded-full">Igual que ayer</span>
               )}
             </div>
-          </div>
+          </AdminCard>
 
           {/* Productos que se agotan */}
-          <div className="rounded-xl border border-gray-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 p-4 shadow-sm">
+          <AdminCard padding="sm">
             <div className="flex items-center gap-2 mb-3">
               <span className="flex items-center justify-center w-7 h-7 rounded-lg bg-red-50 dark:bg-red-900/20">
                 <Package className="w-3.5 h-3.5 text-red-500" />
@@ -152,13 +153,13 @@ export function InventarioSubTab(props: InventarioSubTabProps) {
             {productsRunningOut.length > 0 && (
               <a href="/admin?module=compras" className="text-[10px] font-bold text-primary hover:underline mt-2 block">Crear OC &rarr;</a>
             )}
-          </div>
+          </AdminCard>
         </div>
       )}
 
       {/* Stock muerto */}
       {!loading && deadStockData && (
-        <div className="rounded-xl border border-gray-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 p-4 shadow-sm">
+        <AdminCard padding="sm">
           <div className="flex items-center gap-2 mb-2">
             <Package className="w-4 h-4 text-gray-400" />
             <span className="text-xs font-bold text-gray-600 dark:text-zinc-300">Stock muerto</span>
@@ -170,7 +171,7 @@ export function InventarioSubTab(props: InventarioSubTabProps) {
           </div>
           <p className="text-lg font-bold font-mono text-gray-900 dark:text-zinc-100">{fmtR(deadStockData.value)} <span className="text-xs font-normal text-gray-400">en {deadStockData.count} productos sin vender 30+ dias</span></p>
           <a href="/admin?module=inventario&sub=sin-movimiento" className="text-[10px] font-bold text-primary hover:underline mt-1.5 block">Ver productos &rarr;</a>
-        </div>
+        </AdminCard>
       )}
     </>
   );

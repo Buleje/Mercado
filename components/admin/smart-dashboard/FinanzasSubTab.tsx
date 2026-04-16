@@ -12,6 +12,7 @@ import {
 } from "lucide-react";
 import dynamic from "next/dynamic";
 import { cn } from "@/lib/utils";
+import { AdminCard } from "@/components/admin/shared";
 import type {
   Payable,
   DashboardAlerts,
@@ -102,7 +103,7 @@ export function FinanzasSubTab(props: FinanzasSubTabProps) {
       {!loading && (
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
           {/* Card 1: Cuentas por cobrar (Fiados) */}
-          <div className="bg-white dark:bg-zinc-800 rounded-xl border border-gray-200 dark:border-zinc-700 p-4 shadow-sm">
+          <AdminCard padding="sm">
             <a href="/admin?module=fiados" className="text-xs font-semibold text-gray-700 dark:text-zinc-300 hover:text-primary transition-colors cursor-pointer">
               Cuentas por cobrar
             </a>
@@ -120,10 +121,10 @@ export function FinanzasSubTab(props: FinanzasSubTabProps) {
               </span>
             </div>
             <p className="text-[10px] text-gray-400 dark:text-zinc-500 mt-1">{cuentasPorCobrar.count} documentos</p>
-          </div>
+          </AdminCard>
 
           {/* Card 2: Cuentas por pagar */}
-          <div className="bg-white dark:bg-zinc-800 rounded-xl border border-gray-200 dark:border-zinc-700 p-4 shadow-sm">
+          <AdminCard padding="sm">
             <a href="/admin?module=compras" className="text-xs font-semibold text-gray-700 dark:text-zinc-300 hover:text-primary transition-colors cursor-pointer">
               Cuentas por pagar
             </a>
@@ -141,23 +142,23 @@ export function FinanzasSubTab(props: FinanzasSubTabProps) {
               </span>
             </div>
             <p className="text-[10px] text-gray-400 dark:text-zinc-500 mt-1">{cuentasPorPagar.count} documentos</p>
-          </div>
+          </AdminCard>
 
           {/* Card 3: Impuestos en venta */}
-          <div className="bg-white dark:bg-zinc-800 rounded-xl border border-gray-200 dark:border-zinc-700 p-4 shadow-sm">
+          <AdminCard padding="sm">
             <span className="text-xs font-semibold text-gray-700 dark:text-zinc-300">Impuestos en venta</span>
             <p className="text-xl font-mono font-bold text-gray-900 dark:text-zinc-100 mt-1">{fmtR(igvVentasMes)}</p>
             <p className="text-[10px] text-gray-400 dark:text-zinc-500 mt-2">IGV estimado del mes</p>
-          </div>
+          </AdminCard>
 
           {/* Card 4: Devoluciones de clientes */}
-          <div className="bg-white dark:bg-zinc-800 rounded-xl border border-gray-200 dark:border-zinc-700 p-4 shadow-sm">
+          <AdminCard padding="sm">
             <span className="text-xs font-semibold text-gray-700 dark:text-zinc-300">Devoluciones</span>
             <p className={cn("text-xl font-mono font-bold mt-1", devoluciones > 0 ? "text-red-600 dark:text-red-400" : "text-gray-900 dark:text-zinc-100")}>
               {fmtR(devoluciones)}
             </p>
             <p className="text-[10px] text-gray-400 dark:text-zinc-500 mt-2">Incluye impuestos</p>
-          </div>
+          </AdminCard>
         </div>
       )}
 
@@ -165,7 +166,7 @@ export function FinanzasSubTab(props: FinanzasSubTabProps) {
       {!loading && (
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
           {/* Proximos pagos */}
-          <div className="rounded-xl border border-gray-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 p-4 shadow-sm">
+          <AdminCard padding="sm">
             <div className="flex items-center gap-2 mb-3">
               <span className="flex items-center justify-center w-7 h-7 rounded-lg bg-amber-50 dark:bg-amber-900/20">
                 <DollarSign className="w-3.5 h-3.5 text-amber-500" />
@@ -195,10 +196,10 @@ export function FinanzasSubTab(props: FinanzasSubTabProps) {
               <p className="text-xs text-emerald-500 font-medium">Sin pagos pendientes esta semana</p>
             ) : null}
             <a href="/admin?module=compras" className="text-[10px] font-bold text-primary hover:underline mt-2 block">Ver todos &rarr;</a>
-          </div>
+          </AdminCard>
 
           {/* Clientes del dia */}
-          <div className="rounded-xl border border-gray-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 p-4 shadow-sm">
+          <AdminCard padding="sm">
             <div className="flex items-center gap-2 mb-3">
               <span className="flex items-center justify-center w-7 h-7 rounded-lg bg-blue-50 dark:bg-blue-900/20">
                 <Users className="w-3.5 h-3.5 text-blue-500" />
@@ -216,10 +217,10 @@ export function FinanzasSubTab(props: FinanzasSubTabProps) {
                 <span className="text-[10px] font-bold text-gray-400 bg-gray-50 dark:bg-zinc-700 px-1.5 py-0.5 rounded-full">Igual que ayer</span>
               )}
             </div>
-          </div>
+          </AdminCard>
 
           {/* Productos que se agotan */}
-          <div className="rounded-xl border border-gray-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 p-4 shadow-sm">
+          <AdminCard padding="sm">
             <div className="flex items-center gap-2 mb-3">
               <span className="flex items-center justify-center w-7 h-7 rounded-lg bg-red-50 dark:bg-red-900/20">
                 <Package className="w-3.5 h-3.5 text-red-500" />
@@ -249,7 +250,7 @@ export function FinanzasSubTab(props: FinanzasSubTabProps) {
             {productsRunningOut.length > 0 && (
               <a href="/admin?module=compras" className="text-[10px] font-bold text-primary hover:underline mt-2 block">Crear OC &rarr;</a>
             )}
-          </div>
+          </AdminCard>
         </div>
       )}
 
@@ -259,7 +260,7 @@ export function FinanzasSubTab(props: FinanzasSubTabProps) {
           {sectionId === "margen-comparador" && (loading ? (
             <SkeletonCard />
           ) : (
-            <div className="rounded-xl border border-gray-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 p-4 shadow-sm">
+            <AdminCard padding="sm">
               <div className="flex items-center gap-2 mb-3">
                 <BarChart3 className="w-4 h-4" style={{ color: "#f97316" }} />
                 <span className="text-xs font-semibold text-gray-500 dark:text-zinc-400 uppercase tracking-wide">Este mes vs anterior</span>
@@ -293,7 +294,7 @@ export function FinanzasSubTab(props: FinanzasSubTabProps) {
                   </div>
                 ))}
               </div>
-            </div>
+            </AdminCard>
           ))}
         </div>
       ))}

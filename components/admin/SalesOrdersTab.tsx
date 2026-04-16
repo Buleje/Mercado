@@ -8,6 +8,7 @@ import {
   CheckSquare, DollarSign, Target, AlertTriangle, Maximize2, X as XIcon2, ShoppingCart,
 } from "lucide-react";
 import EmptyState from "@/components/admin/shared/EmptyState";
+import { AdminCard, AdminKPI } from "@/components/admin/shared";
 import {
   PieChart, Pie, Cell, BarChart, Bar,
   XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend,
@@ -511,17 +512,16 @@ export default function SalesOrdersTab() {
 
       {/* ── Day summary cards ─────────────────────────────────────────── */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-        <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl p-5">
-          <p className="text-sm font-medium text-gray-500 dark:text-zinc-400 uppercase tracking-wider">Vendido hoy</p>
-          <p className="text-2xl font-bold text-gray-900 dark:text-foreground mt-1">{fmt(todayStats.total)}</p>
-        </div>
-        <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl p-5">
-          <p className="text-sm font-medium text-gray-500 dark:text-zinc-400 uppercase tracking-wider">Pedidos hoy</p>
-          <p className="text-2xl font-bold text-gray-900 dark:text-foreground mt-1">{todayStats.count}</p>
-        </div>
-        <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl p-5 relative">
-          <p className="text-sm font-medium text-gray-500 dark:text-zinc-400 uppercase tracking-wider">Activos</p>
-          <p className="text-2xl font-bold text-gray-900 dark:text-foreground mt-1">{todayStats.active}</p>
+        <AdminKPI label="Vendido hoy" value={fmt(todayStats.total)} icon={DollarSign} iconColor="var(--color-primary)" />
+        <AdminKPI label="Pedidos hoy" value={todayStats.count} icon={ShoppingBag} iconColor="#3B82F6" />
+        <AdminCard padding="md" className="relative">
+          <div className="flex flex-col gap-2">
+            <div className="h-6 w-6 flex items-center justify-center">
+              <Target className="h-6 w-6" style={{ color: "#f59e0b" }} />
+            </div>
+            <p className="text-xs text-gray-500 dark:text-zinc-400 uppercase tracking-wide font-medium">Activos</p>
+            <p className="text-2xl font-bold text-gray-900 dark:text-white">{todayStats.active}</p>
+          </div>
           {newCount > 0 && (
             <button
               onClick={() => setNewCount(0)}
@@ -531,12 +531,9 @@ export default function SalesOrdersTab() {
               +{newCount}
             </button>
           )}
-        </div>
+        </AdminCard>
         {avgDeliveryTime !== null && (
-          <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl p-5">
-            <p className="text-sm font-medium text-gray-500 dark:text-zinc-400 uppercase tracking-wider">Entrega promedio</p>
-            <p className="text-2xl font-bold text-gray-900 dark:text-foreground mt-1">{avgDeliveryTime} min</p>
-          </div>
+          <AdminKPI label="Entrega promedio" value={`${avgDeliveryTime} min`} icon={Truck} iconColor="#06b6d4" />
         )}
       </div>
 

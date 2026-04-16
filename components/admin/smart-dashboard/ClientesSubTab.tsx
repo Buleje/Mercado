@@ -11,6 +11,7 @@ import {
 } from "lucide-react";
 import dynamic from "next/dynamic";
 import { cn } from "@/lib/utils";
+import { AdminCard } from "@/components/admin/shared";
 import type {
   Order,
   Payable,
@@ -108,7 +109,7 @@ export function ClientesSubTab(props: ClientesSubTabProps) {
       {!loading && (
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
           {/* Proximos pagos */}
-          <div className="rounded-xl border border-gray-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 p-4 shadow-sm">
+          <AdminCard padding="sm">
             <div className="flex items-center gap-2 mb-3">
               <span className="flex items-center justify-center w-7 h-7 rounded-lg bg-amber-50 dark:bg-amber-900/20">
                 <DollarSign className="w-3.5 h-3.5 text-amber-500" />
@@ -138,10 +139,10 @@ export function ClientesSubTab(props: ClientesSubTabProps) {
               <p className="text-xs text-emerald-500 font-medium">Sin pagos pendientes esta semana</p>
             ) : null}
             <a href="/admin?module=compras" className="text-[10px] font-bold text-primary hover:underline mt-2 block">Ver todos &rarr;</a>
-          </div>
+          </AdminCard>
 
           {/* Clientes del dia */}
-          <div className="rounded-xl border border-gray-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 p-4 shadow-sm">
+          <AdminCard padding="sm">
             <div className="flex items-center gap-2 mb-3">
               <span className="flex items-center justify-center w-7 h-7 rounded-lg bg-blue-50 dark:bg-blue-900/20">
                 <Users className="w-3.5 h-3.5 text-blue-500" />
@@ -159,10 +160,10 @@ export function ClientesSubTab(props: ClientesSubTabProps) {
                 <span className="text-[10px] font-bold text-gray-400 bg-gray-50 dark:bg-zinc-700 px-1.5 py-0.5 rounded-full">Igual que ayer</span>
               )}
             </div>
-          </div>
+          </AdminCard>
 
           {/* Productos que se agotan */}
-          <div className="rounded-xl border border-gray-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 p-4 shadow-sm">
+          <AdminCard padding="sm">
             <div className="flex items-center gap-2 mb-3">
               <span className="flex items-center justify-center w-7 h-7 rounded-lg bg-red-50 dark:bg-red-900/20">
                 <Package className="w-3.5 h-3.5 text-red-500" />
@@ -192,7 +193,7 @@ export function ClientesSubTab(props: ClientesSubTabProps) {
             {productsRunningOut.length > 0 && (
               <a href="/admin?module=compras" className="text-[10px] font-bold text-primary hover:underline mt-2 block">Crear OC &rarr;</a>
             )}
-          </div>
+          </AdminCard>
         </div>
       )}
 
@@ -221,7 +222,7 @@ export function ClientesSubTab(props: ClientesSubTabProps) {
               )}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 {/* Top 5 clientes */}
-                <div className="rounded-xl border border-gray-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 p-4 shadow-sm">
+                <AdminCard padding="sm">
                   <div className="flex items-center gap-2 mb-4">
                     <Users className="w-4 h-4" style={{ color: "var(--color-primary)" }} />
                     <span className="text-sm font-semibold text-gray-700 dark:text-zinc-300">Top 5 clientes del mes</span>
@@ -252,10 +253,10 @@ export function ClientesSubTab(props: ClientesSubTabProps) {
                       ))}
                     </ol>
                   )}
-                </div>
+                </AdminCard>
 
                 {/* Alertas activas */}
-                <div className="rounded-xl border border-gray-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 p-4 shadow-sm">
+                <AdminCard padding="sm">
                   <div className="flex items-center gap-2 mb-4">
                     <AlertTriangle className="w-4 h-4 text-amber-500" />
                     <span className="text-sm font-semibold text-gray-700 dark:text-zinc-300">Alertas activas</span>
@@ -279,7 +280,7 @@ export function ClientesSubTab(props: ClientesSubTabProps) {
                       <AlertBadge Icon={DollarSign} label="Fiados vencidos" count={alerts.overduePayables} colorClass="bg-orange-50 dark:bg-orange-900/20 text-orange-700 dark:text-orange-400 border border-orange-200 dark:border-orange-800" />
                     </div>
                   )}
-                </div>
+                </AdminCard>
               </div>
             </div>
           )}
@@ -293,7 +294,7 @@ export function ClientesSubTab(props: ClientesSubTabProps) {
       {!loading && (
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
           {bestDay && (
-            <div className="rounded-xl border border-gray-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 p-4 shadow-sm">
+            <AdminCard padding="sm">
               <div className="flex items-center gap-2 mb-2">
                 <TrendingUp className="w-4 h-4 text-amber-500" />
                 <span className="text-xs font-bold text-gray-600 dark:text-zinc-300">Mejor dia de la semana</span>
@@ -305,10 +306,10 @@ export function ClientesSubTab(props: ClientesSubTabProps) {
               {bestDay.worst && (
                 <p className="text-[10px] text-gray-400 dark:text-zinc-500 mt-1.5">Peor dia: {bestDay.worst.name} -- {fmtR(bestDay.worst.avg)}</p>
               )}
-            </div>
+            </AdminCard>
           )}
           {growingCategory?.top && (
-            <div className="rounded-xl border border-gray-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 p-4 shadow-sm">
+            <AdminCard padding="sm">
               <div className="flex items-center gap-2 mb-2">
                 <TrendingUp className="w-4 h-4 text-emerald-500" />
                 <span className="text-xs font-bold text-gray-600 dark:text-zinc-300">Categoria en crecimiento</span>
@@ -318,10 +319,10 @@ export function ClientesSubTab(props: ClientesSubTabProps) {
               {growingCategory.bottom && (
                 <p className="text-[10px] text-orange-500 dark:text-orange-400 mt-1.5 font-medium">{growingCategory.bottom.cat} bajo {Math.abs(growingCategory.bottom.pct).toFixed(0)}%</p>
               )}
-            </div>
+            </AdminCard>
           )}
           {topClientMonth && (
-            <div className="rounded-xl border border-gray-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 p-4 shadow-sm">
+            <AdminCard padding="sm">
               <div className="flex items-center gap-2 mb-2">
                 <Users className="w-4 h-4 text-primary" />
                 <span className="text-xs font-bold text-gray-600 dark:text-zinc-300">Cliente del mes</span>
@@ -338,7 +339,7 @@ export function ClientesSubTab(props: ClientesSubTabProps) {
               <span className="inline-block text-[10px] font-bold bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400 px-1.5 py-0.5 rounded-full mt-1.5 capitalize">
                 Cliente mas fiel de {topClientMonth.monthName}
               </span>
-            </div>
+            </AdminCard>
           )}
         </div>
       )}

@@ -9,6 +9,7 @@ import {
   Warehouse, Maximize2,
 } from "lucide-react";
 import EmptyState from "@/components/admin/shared/EmptyState";
+import StatusBadge from "@/components/admin/shared/StatusBadge";
 import Image from "next/image";
 import { cn, exportToCSV } from "@/lib/utils";
 import { exportToExcel } from "@/lib/export-excel";
@@ -1099,7 +1100,7 @@ export default function InventoryTab() {
                       <div className="flex items-center gap-1.5 flex-wrap">
                         <p className="font-bold text-gray-900 dark:text-foreground text-sm leading-tight">{p.name}</p>
                         {topRentables.includes(p.id) && (
-                          <span className="inline-flex px-1.5 py-0.5 rounded-full bg-emerald-100 text-emerald-700 dark:bg-emerald-950/30 dark:text-emerald-400 text-[10px] font-bold">Alta rentabilidad</span>
+                          <StatusBadge variant="success" label="Alta rentabilidad" size="sm" />
                         )}
                       </div>
                       <p className="text-xs text-gray-400 dark:text-muted mt-0.5">{cat?.label ?? p.category} · {p.unit}</p>
@@ -1213,9 +1214,7 @@ export default function InventoryTab() {
                             <span className="font-semibold text-gray-900 dark:text-foreground truncate-25">{p.name}</span>
                             {/* Mejora QW-10i: Badge alta rentabilidad */}
                             {topRentables.includes(p.id) && (
-                              <span className="inline-flex px-1.5 py-0.5 rounded-full bg-emerald-100 text-emerald-700 dark:bg-emerald-950/30 dark:text-emerald-400 text-[10px] font-bold">
-                                Alta rentabilidad
-                              </span>
+                              <StatusBadge variant="success" label="Alta rentabilidad" size="sm" />
                             )}
                             {!p.active && (
                               <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded bg-gray-200 dark:bg-gray-700 text-gray-600 dark:text-gray-300 text-[10px] font-bold">
