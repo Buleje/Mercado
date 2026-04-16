@@ -18,6 +18,7 @@ import { resolveSessionStorefrontTarget } from "@/lib/tenant-fetch";
 import { useModuleTabs } from "@/contexts/module-tabs-context";
 import type { Tab } from "@/app/admin/_lib/tabs.types";
 import type { TabCategory } from "@/app/admin/_lib/tab-categories";
+import { MODULE_INFO } from "@/app/admin/_lib/tab-categories";
 
 // ─── Tipos del tab-item que se usa en esta pantalla ───────────────────────────
 type TabItem = {
@@ -333,6 +334,7 @@ export function AdminSidebar({
                   style={{ gridTemplateRows: (sectionLabel && isSectionCollapsed) ? "0fr" : "1fr" }}
                 >
                   <div className="overflow-hidden">
+                    <div className="group/cat relative">
                     <button
                       data-tour-tab={isSingleTab ? catTabs[0] : category.id}
                       onClick={() => {
@@ -361,14 +363,14 @@ export function AdminSidebar({
                       )}
 
                       <DisplayIcon className={cn(
-                        "h-[18px] w-[18px] shrink-0 transition-colors",
+                        "h-[18px] w-[18px] shrink-0 transition-all duration-200 group-hover:scale-110",
                         isActive ? "text-emerald-600 dark:text-emerald-400" : iconColor
                       )} />
 
                       <span className="truncate flex-1 text-left">{displayLabel}</span>
 
                       {totalAlerts > 0 && (
-                        <span className="text-[10px] font-bold rounded-full px-1.5 py-0.5 min-w-[20px] text-center bg-red-500 text-white leading-none">
+                        <span className="text-[10px] font-bold min-w-[18px] h-[18px] rounded-full flex items-center justify-center bg-red-500 text-white leading-none animate-pulse">
                           {totalAlerts}
                         </span>
                       )}
@@ -385,6 +387,22 @@ export function AdminSidebar({
                         </m.div>
                       )}
                     </button>
+
+                    {/* Tooltip with tip preview on hover (expanded mode only) */}
+                    {(() => {
+                      const tipTabId = isSingleTab ? catTabs[0] : catTabs[0];
+                      const tipText = MODULE_INFO[tipTabId as Tab]?.tip;
+                      if (!tipText) return null;
+                      return (
+                        <div className="absolute left-full top-1/2 -translate-y-1/2 ml-2 opacity-0 pointer-events-none group-hover/cat:opacity-100 transition-opacity delay-500 z-50">
+                          <div className="relative bg-gray-900 dark:bg-zinc-700 text-white text-xs rounded-lg px-3 py-2 shadow-lg max-w-[200px] leading-relaxed">
+                            <div className="absolute right-full top-1/2 -translate-y-1/2 border-[5px] border-transparent border-r-gray-900 dark:border-r-zinc-700" />
+                            {tipText}
+                          </div>
+                        </div>
+                      );
+                    })()}
+                    </div>
 
                     {/* Animated sub-tabs for multi-tab categories */}
                     {!isSingleTab && (
@@ -405,7 +423,7 @@ export function AdminSidebar({
                                   key={subTabId}
                                   onClick={() => navigateTab(subTabId as Tab)}
                                   className={cn(
-                                    "relative w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-[13px] transition-all",
+                                    "group relative w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-[13px] transition-all",
                                     isSubActive
                                       ? "bg-gray-50 dark:bg-zinc-800/50 text-gray-900 dark:text-gray-100 font-semibold"
                                       : "text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800/30 hover:text-gray-700 font-medium"
@@ -415,12 +433,12 @@ export function AdminSidebar({
                                     <span className="absolute left-0 top-1/2 -translate-y-1/2 w-[3px] h-4 rounded-r-full bg-emerald-500" />
                                   )}
                                   <SubIcon className={cn(
-                                    "h-4 w-4 shrink-0",
+                                    "h-4 w-4 shrink-0 transition-transform duration-200 group-hover:scale-110",
                                     isSubActive ? "text-emerald-500" : "text-gray-400"
                                   )} />
                                   <span className="truncate">{subTabInfo.label}</span>
                                   {subAlertCount > 0 && (
-                                    <span className="text-[10px] font-bold rounded-full px-1.5 py-0.5 min-w-[20px] text-center bg-red-500 text-white leading-none ml-auto">
+                                    <span className="text-[10px] font-bold min-w-[18px] h-[18px] rounded-full flex items-center justify-center bg-red-500 text-white leading-none ml-auto animate-pulse">
                                       {subAlertCount}
                                     </span>
                                   )}
@@ -455,10 +473,10 @@ export function AdminSidebar({
                 {tab === id && (
                   <span className="absolute left-0 top-1/2 -translate-y-1/2 w-[3px] h-5 rounded-r-full bg-emerald-500" />
                 )}
-                <Icon className={cn("h-[18px] w-[18px] shrink-0", tab === id ? "text-emerald-500" : "")} />
+                <Icon className={cn("h-[18px] w-[18px] shrink-0 transition-transform duration-200 group-hover:scale-110", tab === id ? "text-emerald-500" : "")} />
                 <span className="truncate flex-1 text-left">{label}</span>
                 {alertCount > 0 && (
-                  <span className="text-[10px] font-bold rounded-full px-1.5 py-0.5 min-w-[20px] text-center bg-red-500 text-white">
+                  <span className="text-[10px] font-bold min-w-[18px] h-[18px] rounded-full flex items-center justify-center bg-red-500 text-white leading-none animate-pulse">
                     {alertCount}
                   </span>
                 )}
@@ -483,9 +501,9 @@ export function AdminSidebar({
                   )}
                 >
                   {tab === id && <span className="absolute left-0 top-1/2 -translate-y-1/2 w-[3px] h-5 rounded-r-full bg-emerald-500" />}
-                  <Icon className="h-5 w-5 shrink-0" />
+                  <Icon className="h-5 w-5 shrink-0 transition-transform duration-200 group-hover/tip:scale-110" />
                   {alertCount > 0 && (
-                    <span className="absolute top-1 right-1 text-[8px] font-bold rounded-full w-4 h-4 flex items-center justify-center bg-red-500 text-white leading-none">
+                    <span className="absolute top-1 right-1 text-[8px] font-bold rounded-full w-4 h-4 flex items-center justify-center bg-red-500 text-white leading-none animate-pulse">
                       {alertCount > 9 ? "9+" : alertCount}
                     </span>
                   )}

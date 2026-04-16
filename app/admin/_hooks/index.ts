@@ -9,6 +9,7 @@
  */
 
 export { useAdminTabs } from "./useAdminTabs";
+export { useTabFrequency } from "./useTabFrequency";
 export { useAdminModals } from "./useAdminModals";
 export { useKeyboardShortcuts } from "./useKeyboardShortcuts";
 export { useAdminLayout } from "./useAdminLayout";
@@ -38,3 +39,5 @@ export { useAdminPageState } from "./useAdminPageState";
 export { useAdminTenantPath } from "./useAdminTenantPath";
 export { useFuzzyMatch } from "./useFuzzyMatch";
 export { useVisibleCategories } from "./useVisibleCategories";
+export { useAdminMode } from "./useAdminMode";
+export type { AdminMode } from "./useAdminMode";
