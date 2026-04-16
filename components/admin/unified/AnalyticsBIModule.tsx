@@ -776,7 +776,7 @@ export default function AnalyticsBIModule() {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       <AdminModuleHeader
         title="Analytics BI"
         description="Analítica avanzada de ventas, productos, clientes y predicciones"

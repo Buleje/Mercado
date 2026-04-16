@@ -2059,7 +2059,7 @@ export default function MarketplaceModule() {
   const visibleTabs = TABS.filter((t) => t.id !== "multitienda" || isMultiStoreEnabled);
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       <AdminModuleHeader
         title="Marketplace"
         description="Gestiona tu tienda en la plataforma de ventas"

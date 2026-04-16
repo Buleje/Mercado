@@ -1811,7 +1811,7 @@ export default function FinanzasModule() {
   });
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       <AdminModuleHeader
         title="Mi Plata"
         description="Pérdidas y ganancias, gastos, flujo de caja y reportes financieros"

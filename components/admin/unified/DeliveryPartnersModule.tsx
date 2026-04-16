@@ -1219,7 +1219,7 @@ export default function DeliveryPartnersModule() {
   useEffect(() => { refreshKpis(); }, [refreshKpis]);
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       <AdminModuleHeader
         title="Delivery"
         description="Gestiona repartidores, asignaciones y permisos"

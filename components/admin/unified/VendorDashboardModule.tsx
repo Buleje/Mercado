@@ -152,13 +152,13 @@ export default function VendorDashboardModule() {
 
   return (
     <DashboardDataProvider>
-    <div className="space-y-6">
+    <div className="space-y-4">
       <AdminModuleHeader
         title="Inicio"
         description={TAB_DESCRIPTIONS[tab]}
         icon={LayoutDashboard}
-        bgTint="bg-emerald-50 dark:bg-emerald-900/20"
-        iconColorClass="text-emerald-600 dark:text-emerald-400"
+        bgTint="bg-emerald-50"
+        iconColorClass="text-emerald-600"
       >
         {tab !== "marketplace" && (
           <DashboardDateRange value={dateRange} onChange={setDateRange} />

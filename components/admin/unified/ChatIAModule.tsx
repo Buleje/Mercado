@@ -16,7 +16,7 @@ const AIAssistant = dynamic(
 export default function ChatIAModule() {
   void MODULE_ID;
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       <AdminModuleHeader
         title="Chat IA"
         description="Pregúntale cualquier cosa a tu asistente inteligente"

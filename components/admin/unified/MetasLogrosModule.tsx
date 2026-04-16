@@ -168,7 +168,7 @@ function SemaMesTab() {
   }, []);
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       {/* WeeklyGoalCard necesita prop sales — se pasa array vacío como fallback */}
       <WeeklyGoalCard sales={[]} />
 

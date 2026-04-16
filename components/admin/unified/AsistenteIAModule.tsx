@@ -39,7 +39,7 @@ export default function AsistenteIAModule() {
   const [tab, setTab] = useState("centro-comando");
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       <AdminModuleHeader
         title="Asistente IA"
         description="Panel de inteligencia artificial: dashboard, sugerencias y metas"

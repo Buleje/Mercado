@@ -15,7 +15,7 @@ const _MODULE_ID = "ai-command";
 
 export default function AICommandModule() {
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       <AdminModuleHeader
         title="Centro de Comando IA"
         description="Ejecuta comandos de inteligencia artificial para tu bodega"

@@ -503,7 +503,7 @@ export default function CatalogoTiendaModule() {
 
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       <AdminModuleHeader
         title="Promociones y Ofertas"
         description="Categorías, promociones, cupones y precios"

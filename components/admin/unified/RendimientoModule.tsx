@@ -60,7 +60,7 @@ function BrowserInfoTab() {
   const entries = Object.entries(info);
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       {/* Connection quality card */}
       <ConnectionQualityCard />
 
