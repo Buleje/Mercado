@@ -85,7 +85,7 @@ describe("POST /api/treasury/transferencias", () => {
       monto: 500,
     });
 
-    const res = await POST(req, defaultCtx);
+    const res = await POST(req);
     expect(res.status).toBe(401);
   });
 
@@ -99,7 +99,7 @@ describe("POST /api/treasury/transferencias", () => {
       monto: -100, // negativo
     });
 
-    const res = await POST(req, defaultCtx);
+    const res = await POST(req);
     expect(res.status).toBe(400);
     const body = await res.json();
     expect(body.error).toBe("Datos inválidos");
@@ -115,7 +115,7 @@ describe("POST /api/treasury/transferencias", () => {
       monto: 0, // cero
     });
 
-    const res = await POST(req, defaultCtx);
+    const res = await POST(req);
     expect(res.status).toBe(400);
     const body = await res.json();
     expect(body.error).toBe("Datos inválidos");
@@ -131,7 +131,7 @@ describe("POST /api/treasury/transferencias", () => {
       monto: 100000000, // overflow
     });
 
-    const res = await POST(req, defaultCtx);
+    const res = await POST(req);
     expect(res.status).toBe(400);
     const body = await res.json();
     expect(body.error).toBe("Datos inválidos");
@@ -147,7 +147,7 @@ describe("POST /api/treasury/transferencias", () => {
       monto: 500,
     });
 
-    const res = await POST(req, defaultCtx);
+    const res = await POST(req);
     expect(res.status).toBe(400);
     const body = await res.json();
     expect(body.error).toBe("Datos inválidos");
@@ -163,7 +163,7 @@ describe("POST /api/treasury/transferencias", () => {
       monto: 500,
     });
 
-    const res = await POST(req, defaultCtx);
+    const res = await POST(req);
     expect(res.status).toBe(400);
     const body = await res.json();
     expect(body.error).toBe("Datos inválidos");
@@ -180,7 +180,7 @@ describe("POST /api/treasury/transferencias", () => {
       descripcion: "x".repeat(501), // > 500 caracteres
     });
 
-    const res = await POST(req, defaultCtx);
+    const res = await POST(req);
     expect(res.status).toBe(400);
     const body = await res.json();
     expect(body.error).toBe("Datos inválidos");
@@ -208,7 +208,7 @@ describe("POST /api/treasury/transferencias", () => {
       descripcion: "Depósito diario",
     });
 
-    const res = await POST(req, defaultCtx);
+    const res = await POST(req);
     expect(res.status).toBe(201);
 
     const body = await res.json();
@@ -246,7 +246,7 @@ describe("POST /api/treasury/transferencias", () => {
       // sin descripcion
     });
 
-    const res = await POST(req, defaultCtx);
+    const res = await POST(req);
     expect(res.status).toBe(201);
   });
 
@@ -261,7 +261,7 @@ describe("POST /api/treasury/transferencias", () => {
       monto: 5000,
     });
 
-    const res = await POST(req, defaultCtx);
+    const res = await POST(req);
     expect(res.status).toBe(500);
     const body = await res.json();
     expect(body.error).toBe("Internal server error");
@@ -290,7 +290,7 @@ describe("POST /api/treasury/transferencias", () => {
       monto: 500,
     });
 
-    await POST(req, defaultCtx);
+    await POST(req);
 
     expect(mockTransferir).toHaveBeenCalledWith(
       expect.objectContaining({ tenantId: "tenant-2" })
@@ -313,7 +313,7 @@ describe("GET /api/treasury/transferencias", () => {
     const { GET } = await import("@/app/api/treasury/transferencias/route");
     const req = makeGetRequest();
 
-    const res = await GET(req, defaultCtx);
+    const res = await GET(req);
     expect(res.status).toBe(401);
   });
 
@@ -327,7 +327,7 @@ describe("GET /api/treasury/transferencias", () => {
     const { GET } = await import("@/app/api/treasury/transferencias/route");
     const req = makeGetRequest();
 
-    const res = await GET(req, defaultCtx);
+    const res = await GET(req);
     expect(res.status).toBe(200);
 
     const body = await res.json();
@@ -342,7 +342,7 @@ describe("GET /api/treasury/transferencias", () => {
     const { GET } = await import("@/app/api/treasury/transferencias/route");
     const req = makeGetRequest(10);
 
-    await GET(req, defaultCtx);
+    await GET(req);
 
     expect(mockListTransferencias).toHaveBeenCalledWith("main", 10);
   });
@@ -354,7 +354,7 @@ describe("GET /api/treasury/transferencias", () => {
     const { GET } = await import("@/app/api/treasury/transferencias/route");
     const req = makeGetRequest();
 
-    const res = await GET(req, defaultCtx);
+    const res = await GET(req);
     expect(res.status).toBe(500);
     const body = await res.json();
     expect(body.error).toBe("Internal server error");

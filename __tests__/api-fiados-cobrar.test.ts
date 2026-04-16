@@ -77,7 +77,7 @@ describe("POST /api/fiados/cobrar", () => {
       monto: 50,
     });
 
-    const res = await POST(req, defaultCtx);
+    const res = await POST(req);
     expect(res.status).toBe(401);
   });
 
@@ -95,7 +95,7 @@ describe("POST /api/fiados/cobrar", () => {
       monto: 50,
     });
 
-    const res = await POST(req, defaultCtx);
+    const res = await POST(req);
     expect(res.status).toBe(200);
   });
 
@@ -108,7 +108,7 @@ describe("POST /api/fiados/cobrar", () => {
       monto: -50, // negativo
     });
 
-    const res = await POST(req, defaultCtx);
+    const res = await POST(req);
     expect(res.status).toBe(400);
     const body = await res.json();
     expect(body.error).toBe("Datos invalidos");
@@ -123,7 +123,7 @@ describe("POST /api/fiados/cobrar", () => {
       monto: 0, // cero
     });
 
-    const res = await POST(req, defaultCtx);
+    const res = await POST(req);
     expect(res.status).toBe(400);
     const body = await res.json();
     expect(body.error).toBe("Datos invalidos");
@@ -138,7 +138,7 @@ describe("POST /api/fiados/cobrar", () => {
       monto: 50,
     });
 
-    const res = await POST(req, defaultCtx);
+    const res = await POST(req);
     expect(res.status).toBe(400);
     const body = await res.json();
     expect(body.error).toBe("Datos invalidos");
@@ -154,7 +154,7 @@ describe("POST /api/fiados/cobrar", () => {
       notas: "x".repeat(501), // > 500 caracteres
     });
 
-    const res = await POST(req, defaultCtx);
+    const res = await POST(req);
     expect(res.status).toBe(400);
     const body = await res.json();
     expect(body.error).toBe("Datos invalidos");
@@ -174,7 +174,7 @@ describe("POST /api/fiados/cobrar", () => {
       monto: 50,
     });
 
-    const res = await POST(req, defaultCtx);
+    const res = await POST(req);
     expect(res.status).toBe(404);
     const body = await res.json();
     expect(body.error).toBe("No hay fiados activos para este cliente");
@@ -198,7 +198,7 @@ describe("POST /api/fiados/cobrar", () => {
       notas: "Pago parcial",
     });
 
-    const res = await POST(req, defaultCtx);
+    const res = await POST(req);
     expect(res.status).toBe(200);
 
     const body = await res.json();
@@ -226,7 +226,7 @@ describe("POST /api/fiados/cobrar", () => {
       monto: 50,
     });
 
-    const res = await POST(req, defaultCtx);
+    const res = await POST(req);
     expect(res.status).toBe(500);
     const body = await res.json();
     expect(body.error).toBe("Internal server error");
@@ -246,7 +246,7 @@ describe("POST /api/fiados/cobrar", () => {
       monto: 75,
     });
 
-    await POST(req, defaultCtx);
+    await POST(req);
 
     // Verify correct tenantId was passed
     expect(mockCobrarPorCliente).toHaveBeenCalledWith(

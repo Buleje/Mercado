@@ -79,7 +79,7 @@ describe("POST /api/campaigns", () => {
       message: "Mensaje test",
     });
 
-    const res = await POST(req, defaultCtx);
+    const res = await POST(req);
     expect(res.status).toBe(401);
   });
 
@@ -94,7 +94,7 @@ describe("POST /api/campaigns", () => {
       message: "Mensaje test",
     });
 
-    const res = await POST(req, defaultCtx);
+    const res = await POST(req);
     expect(res.status).toBe(403);
   });
 
@@ -108,7 +108,7 @@ describe("POST /api/campaigns", () => {
       body: "invalid json{",
     });
 
-    const res = await POST(req, defaultCtx);
+    const res = await POST(req);
     expect(res.status).toBe(400);
     const body = await res.json();
     expect(body.error).toBe("Invalid JSON");
@@ -123,7 +123,7 @@ describe("POST /api/campaigns", () => {
       message: "Mensaje válido",
     });
 
-    const res = await POST(req, defaultCtx);
+    const res = await POST(req);
     expect(res.status).toBe(400);
     const body = await res.json();
     expect(body.error).toBeDefined();
@@ -138,7 +138,7 @@ describe("POST /api/campaigns", () => {
       message: "",
     });
 
-    const res = await POST(req, defaultCtx);
+    const res = await POST(req);
     expect(res.status).toBe(400);
   });
 
@@ -151,7 +151,7 @@ describe("POST /api/campaigns", () => {
       message: "Mensaje válido",
     });
 
-    const res = await POST(req, defaultCtx);
+    const res = await POST(req);
     expect(res.status).toBe(400);
   });
 
@@ -164,7 +164,7 @@ describe("POST /api/campaigns", () => {
       message: "x".repeat(1001), // > 1000 caracteres
     });
 
-    const res = await POST(req, defaultCtx);
+    const res = await POST(req);
     expect(res.status).toBe(400);
   });
 
@@ -178,7 +178,7 @@ describe("POST /api/campaigns", () => {
       segment: "invalido", // no es uno de los permitidos
     });
 
-    const res = await POST(req, defaultCtx);
+    const res = await POST(req);
     expect(res.status).toBe(400);
   });
 
@@ -192,7 +192,7 @@ describe("POST /api/campaigns", () => {
       channel: "email", // no soportado
     });
 
-    const res = await POST(req, defaultCtx);
+    const res = await POST(req);
     expect(res.status).toBe(400);
   });
 
@@ -206,7 +206,7 @@ describe("POST /api/campaigns", () => {
       status: "activa", // POST solo permite borrador/programada
     });
 
-    const res = await POST(req, defaultCtx);
+    const res = await POST(req);
     expect(res.status).toBe(400);
   });
 
@@ -236,7 +236,7 @@ describe("POST /api/campaigns", () => {
       message: "¡Descuentos del 20%!",
     });
 
-    const res = await POST(req, defaultCtx);
+    const res = await POST(req);
     expect(res.status).toBe(201);
 
     const body = await res.json();
@@ -278,7 +278,7 @@ describe("POST /api/campaigns", () => {
       scheduledAt: scheduledDate.toISOString(),
     });
 
-    const res = await POST(req, defaultCtx);
+    const res = await POST(req);
     expect(res.status).toBe(201);
 
     const body = await res.json();
@@ -309,7 +309,7 @@ describe("POST /api/campaigns", () => {
       segment: "vip",
     });
 
-    const res = await POST(req, defaultCtx);
+    const res = await POST(req);
     expect(res.status).toBe(201);
 
     const body = await res.json();
@@ -350,7 +350,7 @@ describe("POST /api/campaigns", () => {
       message: "Test",
     });
 
-    await POST(req, defaultCtx);
+    await POST(req);
 
     // Verify campaign was created with correct tenantId
     expect(mockCampaignCreate).toHaveBeenCalledWith({
@@ -385,7 +385,7 @@ describe("POST /api/campaigns", () => {
       message: "Test",
     });
 
-    const res = await POST(req, defaultCtx);
+    const res = await POST(req);
     expect(res.status).toBe(201);
 
     const body = await res.json();
