@@ -242,6 +242,7 @@ Cada sub-proyecto es un proyecto independiente con su propio spec, plan e implem
 |---|---|---|---|---|---|---|
 | 3 | Error hunt | ✅ **CERRADO** — TSC 83→0, tests 71→0, +334 passing | ✅ pre+post | ✅ | N/A (one-shot) | 31 commits |
 | 1 | Design System | 🟡 **29% completado** — Layer A + Layer B mayor parte + Layer C parcial + Layer E parcial (−548 hex) | ✅ pre+post | ✅ | En progreso | 7 commits |
+| - | **Marketplace Tier 1+2** | ✅ **100% items entregados** — SEO JSON-LD, sitemap, canonical, Server Component, a11y, prefetch, social proof, urgency, undo cart, 45 tests | ✅ pre+post | — | ✅ | 11 commits |
 | 2 | Animaciones | Pendiente | — | — | — | — |
 | 4 | Dedupe | Pendiente | — | — | — | — |
 | 5 | Performance | Pendiente | — | — | — | — |
