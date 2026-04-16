@@ -5,7 +5,7 @@ import type { LucideIcon } from "lucide-react";
 
 // ── SVG illustrations ─────────────────────────────────────────────────────────
 
-const strokeClasses = "stroke-gray-300 dark:stroke-zinc-600";
+const strokeClasses = "stroke-gray-300";
 
 function OrdersIllustration() {
   return (
@@ -114,7 +114,7 @@ export default function EmptyState({
   icon: Icon,
   illustration,
   title = "Sin datos",
-  description = "No hay informacion para mostrar aun.",
+  description = "No hay información para mostrar aún.",
   action,
   className,
 }: Props) {
@@ -125,12 +125,12 @@ export default function EmptyState({
       {Illust ? (
         <Illust />
       ) : Icon ? (
-        <div className="h-14 w-14 rounded-xl bg-primary/10 dark:bg-primary/20 flex items-center justify-center mb-4">
+        <div className="h-14 w-14 rounded-xl bg-primary/10 flex items-center justify-center mb-4">
           <Icon className="h-7 w-7 text-primary" />
         </div>
       ) : null}
-      <h3 className="text-lg font-semibold text-gray-500 dark:text-zinc-400 mt-4">{title}</h3>
-      <p className="text-sm text-gray-400 dark:text-zinc-500 mt-1 max-w-xs">{description}</p>
+      <h3 className="text-lg font-semibold text-gray-500 mt-4">{title}</h3>
+      <p className="text-sm text-gray-400 mt-1 max-w-xs">{description}</p>
       {action && (
         <button
           onClick={action.onClick}
