@@ -2,6 +2,7 @@ import { NextResponse, type NextRequest } from "next/server";
 import { requireAdmin } from "@/lib/require-admin";
 import { PageHeroesDB } from "@/lib/db/page-heroes.db";
 import { z } from "zod";
+import { logger } from "@/lib/logger";
 
 const VALID_PAGES = ["home", "marketplace", "recetas", "negocios", "tienda"] as const;
 
@@ -30,7 +31,8 @@ export async function POST(req: NextRequest) {
   const auth = await requireAdmin(req, ["admin"]);
   if (auth instanceof NextResponse) return auth;
 
-  const body = await req.json();
+  const body = await req.json().catch((err) => { logger.error("[superadmin/page-heroes] parse JSON body failed", { error: String(err) }); return null; });
+  if (!body) return NextResponse.json({ error: "Invalid JSON" }, { status: 400 });
   const parsed = CreateSchema.safeParse(body);
   if (!parsed.success) return NextResponse.json({ error: "Datos invalidos", issues: parsed.error.issues }, { status: 400 });
 

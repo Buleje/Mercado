@@ -93,7 +93,8 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "unauthorized" }, { status: 401 });
     }
 
-    const raw = await req.json();
+    const raw = await req.json().catch((err) => { logger.error("[superadmin/recetario] parse JSON body failed", { error: String(err) }); return null; });
+    if (!raw) return NextResponse.json({ error: "Invalid JSON" }, { status: 400 });
     const parsed = CreateRecetaSchema.safeParse(raw);
     if (!parsed.success) {
       return NextResponse.json(

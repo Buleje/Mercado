@@ -3,6 +3,7 @@ import { requireAdmin } from "@/lib/require-admin";
 import { prisma } from "@/lib/prisma";
 import { invalidateByPrefix } from "@/lib/cache";
 import { z } from "zod";
+import { logger } from "@/lib/logger";
 
 const PutSchema = z.object({
   metaTitle: z.string().max(70).optional(),
@@ -59,7 +60,8 @@ export async function PUT(
     return NextResponse.json({ error: "ID de producto inválido" }, { status: 400 });
   }
 
-  const body = await req.json();
+  const body = await req.json().catch((err) => { logger.error("[marketplace/products/[id]/seo] parse JSON body failed", { error: String(err) }); return null; });
+  if (!body) return NextResponse.json({ error: "Invalid JSON" }, { status: 400 });
   const parsed = PutSchema.safeParse(body);
   if (!parsed.success) {
     return NextResponse.json({ error: "Datos inválidos", issues: parsed.error.issues }, { status: 400 });

@@ -126,7 +126,7 @@ export async function DELETE(req: NextRequest) {
       err: e instanceof Error ? e.message : String(e),
     });
     return NextResponse.json(
-      { error: "Error al limpiar datos", detail: e instanceof Error ? e.message : String(e) },
+      { error: "Error al limpiar datos" },
       { status: 500 },
     );
   }

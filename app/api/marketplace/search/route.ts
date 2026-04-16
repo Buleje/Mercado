@@ -53,7 +53,7 @@ async function batchProductEnrichment(productIds: number[], tenantId: string) {
 }
 
 const QuerySchema = z.object({
-  q:        z.string().min(1).max(100),
+  q:        z.string().min(1).max(100).transform((s) => s.replace(/[<>"'&]/g, "").trim()),
   zone:     z.string().optional(),
   category: z.string().optional(),
   minPrice: z.coerce.number().min(0).optional(),
@@ -272,7 +272,7 @@ export async function GET(req: NextRequest) {
     });
 
     // Fire-and-forget: registrar la búsqueda para autocompletado/autocorrección
-    SearchSuggestionsDB.record(tenantId, q, data.length).catch(() => {});
+    SearchSuggestionsDB.record(tenantId, q, data.length).catch((err) => logger.error("[marketplace/search] operation failed", { error: String(err), tenantId }));
 
     // Si hay resultados, aplicar boosts (sponsored products)
     let finalData = data;

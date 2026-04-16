@@ -7,7 +7,7 @@ import { logger } from "@/lib/logger";
 
 const QuerySchema = z.object({
   q:     z.string().min(1).max(100),
-  limit: z.coerce.number().int().min(1).max(20).optional().default(8),
+  limit: z.coerce.number().int().min(1).max(30).optional().default(12),
 });
 
 export async function GET(req: NextRequest) {
@@ -32,12 +32,28 @@ export async function GET(req: NextRequest) {
     logger.debug("search/suggestions", { requestId, tenantId, prefix });
 
     // Cache 5 minutos por tenant + prefix
-    const cacheKey = `search-suggestions:${tenantId}:${prefix.toLowerCase()}`;
+    const cacheKey = `search-suggestions:${tenantId}:${prefix.toLowerCase()}:${limit}`;
     const suggestions = await getOrSet(cacheKey, 300, () =>
-      SearchSuggestionsDB.getTopSuggestions(tenantId, prefix, limit),
+      SearchSuggestionsDB.getMarketplaceAutocomplete(tenantId, prefix, limit),
     );
 
-    return NextResponse.json({ suggestions, total: suggestions.length });
+    const grouped = {
+      queries: suggestions.filter((s) => s.type === "query"),
+      stores: suggestions.filter((s) => s.type === "store"),
+      products: suggestions.filter((s) => s.type === "product"),
+      categories: suggestions.filter((s) => s.type === "category"),
+    };
+
+    return NextResponse.json({
+      query: prefix,
+      suggestions,
+      groups: grouped,
+      total: suggestions.length,
+      // Backward compatibility for old consumers expecting plain text suggestions
+      data: suggestions
+        .filter((s) => s.type === "query")
+        .map((s) => ({ suggestion: s.label, searchCount: s.searchCount ?? 0 })),
+    });
   } catch (err) {
     logger.error("search/suggestions: error", { requestId, err });
     const { payload, status } = toErrorPayload(err, traceId);

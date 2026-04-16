@@ -2,6 +2,7 @@ import { NextResponse, type NextRequest } from "next/server";
 import { requireAdmin } from "@/lib/require-admin";
 import { PageHeroesDB } from "@/lib/db/page-heroes.db";
 import { z } from "zod";
+import { logger } from "@/lib/logger";
 
 const UpdateSchema = z.object({
   title: z.string().max(200).nullish(),
@@ -21,7 +22,8 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
   if (auth instanceof NextResponse) return auth;
 
   const { id } = await params;
-  const body = await req.json();
+  const body = await req.json().catch((err) => { logger.error("[superadmin/page-heroes/[id]] parse JSON body failed", { error: String(err) }); return null; });
+  if (!body) return NextResponse.json({ error: "Invalid JSON" }, { status: 400 });
   const parsed = UpdateSchema.safeParse(body);
   if (!parsed.success) return NextResponse.json({ error: "Datos invalidos" }, { status: 400 });
 

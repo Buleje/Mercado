@@ -125,7 +125,8 @@ export async function POST(req: NextRequest, { params }: RouteParams) {
 
     const tenantId = req.headers.get("x-tenant-id") ?? "main";
 
-    const body = await req.json();
+    const body = await req.json().catch((err) => { logger.error("[marketplace/products/[id]/reviews-detailed] parse JSON body failed", { error: String(err) }); return null; });
+    if (!body) return NextResponse.json({ error: "Invalid JSON" }, { status: 400 });
     const parsed = PostSchema.safeParse(body);
     if (!parsed.success) {
       return NextResponse.json({ error: "Datos inválidos", issues: parsed.error.issues }, { status: 400 });

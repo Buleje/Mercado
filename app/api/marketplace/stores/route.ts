@@ -14,6 +14,8 @@ const QuerySchema = z.object({
   my:       z.string().optional(),
 });
 
+type TrustLevel = "alta" | "media" | "nueva";
+
 /**
 /**
  * Resolve tenantId → ensure the Tenant record exists and return
@@ -30,7 +32,7 @@ async function ensureTenant(tenantId: string): Promise<{ id: string; slug: strin
   if (bySlug) return { id: bySlug.id, slug: bySlug.slug, possibleIds: [bySlug.id, bySlug.slug] };
 
   // 3. Tenant doesn't exist — auto-create from Settings if available
-  const settings = await prisma.settings.findUnique({ where: { tenantId } }).catch(() => null);
+  const settings = await prisma.settings.findUnique({ where: { tenantId } }).catch((err) => { logger.error("[marketplace/stores] DB query failed", { error: String(err), tenantId }); return null; });
   const tenant = await prisma.tenant.create({
     data: {
       slug:   tenantId,
@@ -120,9 +122,10 @@ export async function GET(req: NextRequest) {
           description:     true,
           vacationMode:    true,
           vacationMessage: true,
+          createdAt:       true,
+          _count:          { select: { products: true } },
         },
-        orderBy: { rating: "desc" },
-        take:    limit,
+        take: limit * 2,
       });
     } catch (dbErr) {
       // If Store table doesn't exist or DB connection fails, return empty list
@@ -130,22 +133,95 @@ export async function GET(req: NextRequest) {
       stores = [];
     }
 
+    // ── Quality score ranking ── Stores with better ratings, more products, and
+    // more reviews bubble to the top. Vacation stores sink to the bottom.
+    function qualityScore(s: Record<string, unknown>): number {
+      const rating = Number(s.rating) || 0;
+      const reviews = Number(s.reviewCount) || 0;
+      const products = s._count
+        ? (s._count as { products: number }).products
+        : 0;
+      const isVacation = Boolean(s.vacationMode);
+
+      const reviewConfidence = Math.min(reviews / 10, 1);
+      const ratingScore = (rating / 5) * reviewConfidence * 40;
+      const productScore = Math.min(products / 20, 1) * 30;
+      const reviewScore = Math.min(reviews / 20, 1) * 30;
+      const vacationPenalty = isVacation ? -50 : 0;
+
+      return ratingScore + productScore + reviewScore + vacationPenalty;
+    }
+
+    function buildTrustSnapshot(s: Record<string, unknown>): {
+      productCount: number;
+      trustScore: number;
+      trustLevel: TrustLevel;
+      trustLabel: string;
+      trustReason: string;
+    } {
+      const rating = Number(s.rating) || 0;
+      const reviews = Number(s.reviewCount) || 0;
+      const productCount = s._count
+        ? (s._count as { products: number }).products
+        : 0;
+      const isVacation = Boolean(s.vacationMode);
+      const trustScore = Math.max(0, Math.min(100, Math.round(qualityScore(s))));
+
+      const trustLevel: TrustLevel = trustScore >= 70
+        ? "alta"
+        : trustScore >= 35
+          ? "media"
+          : "nueva";
+
+      const trustLabel = trustLevel === "alta"
+        ? "Muy confiable"
+        : trustLevel === "media"
+          ? "Buena reputación"
+          : "En crecimiento";
+
+      let trustReason = "Tienda nueva en el marketplace";
+      if (isVacation) {
+        trustReason = "Está en pausa temporal, pero conserva su historial";
+      } else if (reviews >= 20 && rating >= 4.5) {
+        trustReason = `${reviews} reseñas con calificación sobresaliente`;
+      } else if (productCount >= 15) {
+        trustReason = `${productCount} productos activos publicados`;
+      } else if (reviews > 0) {
+        trustReason = `${reviews} reseñas de clientes reales`;
+      } else if (productCount > 0) {
+        trustReason = `${productCount} productos ya visibles en catálogo`;
+      }
+
+      return { productCount, trustScore, trustLevel, trustLabel, trustReason };
+    }
+
+    stores.sort((a, b) => qualityScore(b) - qualityScore(a));
+    const rankedStores = stores.slice(0, limit);
+
     // Explicitly pick only public-safe fields (defense-in-depth: Prisma select
     // already excludes tenantId, but explicit destructuring ensures it can never
     // leak even if a mock, migration, or refactor adds the field back)
-    const safeStores = stores.map((s) => ({
-      id: s.id,
-      slug: s.slug,
-      name: s.name,
-      logo: s.logo,
-      category: s.category,
-      zone: s.zone,
-      rating: s.rating,
-      reviewCount: s.reviewCount,
-      description: s.description,
-      vacationMode: s.vacationMode,
-      vacationMessage: s.vacationMessage,
-    }));
+    const safeStores = rankedStores.map((s) => {
+      const trust = buildTrustSnapshot(s);
+      return {
+        id: s.id,
+        slug: s.slug,
+        name: s.name,
+        logo: s.logo,
+        category: s.category,
+        zone: s.zone,
+        rating: s.rating,
+        reviewCount: s.reviewCount,
+        description: s.description,
+        vacationMode: s.vacationMode,
+        vacationMessage: s.vacationMessage,
+        productCount: trust.productCount,
+        trustScore: trust.trustScore,
+        trustLevel: trust.trustLevel,
+        trustLabel: trust.trustLabel,
+        trustReason: trust.trustReason,
+      };
+    });
 
     return NextResponse.json({ data: safeStores, total: safeStores.length });
   } catch (err) {

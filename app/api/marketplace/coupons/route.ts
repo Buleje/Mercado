@@ -5,6 +5,7 @@ import { toErrorPayload, newTraceId } from "@/lib/api-error";
 import { z } from "zod";
 import { logActivity } from "@/lib/activity-logger";
 import { CouponsDB } from "@/lib/db/coupons.db";
+import { logger } from "@/lib/logger";
 
 const CreateCouponSchema = z.object({
   code: z
@@ -102,7 +103,7 @@ export async function POST(req: NextRequest) {
       `Cupón ${code} creado para tienda ${storeId ?? store.id}`,
       coupon.id,
       auth.username,
-    ).catch(() => {});
+    ).catch((err) => logger.error("[marketplace/coupons] operation failed", { error: String(err), tenantId: auth.tenantId }));
 
     return NextResponse.json({ data: coupon }, { status: 201 });
   } catch (err) {

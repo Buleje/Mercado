@@ -104,7 +104,8 @@ export async function PUT(
     }
 
     const { id } = await params;
-    const raw = await req.json();
+    const raw = await req.json().catch((err) => { logger.error("[superadmin/recetario/[id]] parse JSON body failed", { error: String(err) }); return null; });
+    if (!raw) return NextResponse.json({ error: "Invalid JSON" }, { status: 400 });
     const parsed = UpdateRecetaSchema.safeParse(raw);
     if (!parsed.success) {
       return NextResponse.json(

@@ -51,11 +51,21 @@ export async function GET(
       take: 20,
     });
 
-    const data = reviews.map((r) => ({
-      ...r,
-      imageUrls: r.photosJson ? (JSON.parse(r.photosJson) as string[]) : [],
-      photosJson: undefined,
-    }));
+    const data = reviews.map((r) => {
+      let imageUrls: string[] = [];
+      if (r.photosJson) {
+        try {
+          imageUrls = JSON.parse(r.photosJson) as string[];
+        } catch {
+          imageUrls = [];
+        }
+      }
+      return {
+        ...r,
+        imageUrls,
+        photosJson: undefined,
+      };
+    });
 
     return NextResponse.json({ data });
   } catch (err) {

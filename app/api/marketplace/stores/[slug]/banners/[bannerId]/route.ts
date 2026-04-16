@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { requireAdmin } from "@/lib/require-admin";
 import { StoreBannersDB } from "@/lib/db/store-banners.db";
 import { z } from "zod";
+import { logger } from "@/lib/logger";
 
 const PutSchema = z.object({
   title: z.string().min(1).max(200).optional(),
@@ -24,7 +25,8 @@ export async function PUT(
 
   const { bannerId } = await params;
 
-  const body = await req.json();
+  const body = await req.json().catch((err) => { logger.error("[marketplace/stores/[slug]/banners/[bannerId]] parse JSON body failed", { error: String(err) }); return null; });
+  if (!body) return NextResponse.json({ error: "Invalid JSON" }, { status: 400 });
   const parsed = PutSchema.safeParse(body);
   if (!parsed.success) {
     return NextResponse.json({ error: "Datos inválidos", issues: parsed.error.issues }, { status: 400 });

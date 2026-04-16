@@ -25,7 +25,8 @@ export async function PATCH(
     if (auth instanceof NextResponse) return auth;
 
     const { id } = await params;
-    const body = await req.json();
+    const body = await req.json().catch((err) => { logger.error("[marketplace/sponsored/[id]] parse JSON body failed", { error: String(err) }); return null; });
+    if (!body) return NextResponse.json({ error: "Invalid JSON" }, { status: 400 });
     const parsed = PatchSchema.safeParse(body);
     if (!parsed.success) {
       return NextResponse.json(

@@ -21,7 +21,7 @@ export async function POST(
 
     logger.debug("sponsored click", { requestId, tenantId, boostId: id });
 
-    SponsoredBoostsDB.recordClick(tenantId, id).catch(() => {});
+    SponsoredBoostsDB.recordClick(tenantId, id).catch((err) => logger.error("[marketplace/sponsored/[id]/click] operation failed", { error: String(err), tenantId }));
 
     return new NextResponse(null, { status: 204 });
   } catch (err) {

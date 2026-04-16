@@ -3,6 +3,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getPlatformSession, PLATFORM_SESSION } from "@/lib/superadmin-session";
 import { prisma } from "@/lib/prisma";
 import { applyRateLimit } from "@/lib/rate-limit";
+import { logger } from "@/lib/logger";
 
 async function requirePlatform(req: NextRequest) {
   const token = req.cookies.get(PLATFORM_SESSION.COOKIE_NAME)?.value;
@@ -72,7 +73,8 @@ export async function POST(req: NextRequest) {
   const session = await requirePlatform(req);
   if (!session) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
 
-  const body = await req.json();
+  const body = await req.json().catch((err) => { logger.error("[superadmin/activity] parse JSON body failed", { error: String(err) }); return null; });
+  if (!body) return NextResponse.json({ error: "Invalid JSON" }, { status: 400 });
   const { action, entity, entityId, detail, tenantId } = body;
 
   if (!action || !entity) {

@@ -6,6 +6,7 @@ import { prisma } from "@/lib/prisma";
 import { Prisma } from "@/lib/generated/prisma/client";
 import { invalidate } from "@/lib/cache";
 import { applyRateLimit } from "@/lib/rate-limit";
+import { logger } from "@/lib/logger";
 
 /**
  * /api/superadmin/integrations
@@ -526,7 +527,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "unauthorized" }, { status: 401 });
     }
 
-    const raw = await req.json().catch(() => null);
+    const raw = await req.json().catch((err) => { logger.error("[superadmin/integrations] parse JSON body failed", { error: String(err) }); return null; });
     const url = new URL(req.url);
     const kind = url.searchParams.get("kind");
 

@@ -224,7 +224,7 @@ export async function POST(req: NextRequest) {
       return t;
     });
 
-    logActivity("crear_tenant", "superadmin", `Tenant '${slug}' creado por superadmin con plan ${plan}`, tenant.id, "superadmin").catch(() => {});
+    logActivity("crear_tenant", "superadmin", `Tenant '${slug}' creado por superadmin con plan ${plan}`, tenant.id, "superadmin").catch((err) => logger.error("[superadmin/tenants] activity log failed", { error: String(err) }));
 
     return NextResponse.json({ tenant }, { status: 201 });
   } catch (error) {
