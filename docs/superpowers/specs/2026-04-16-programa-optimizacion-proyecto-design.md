@@ -241,7 +241,7 @@ Cada sub-proyecto es un proyecto independiente con su propio spec, plan e implem
 | # | Sub-proyecto | Estado | Baseline capturado | Spec | Plan | PR |
 |---|---|---|---|---|---|---|
 | 3 | Error hunt | ✅ **CERRADO** — TSC 83→0, tests 71→0, +334 passing | ✅ pre+post | ✅ | N/A (one-shot) | 31 commits |
-| 1 | Design System | 🟡 Arrancado — Layer A + 4/5 Layer B (−169 hex) | ✅ pre-work | ✅ | En progreso | 2 commits |
+| 1 | Design System | 🟡 **29% completado** — Layer A + Layer B mayor parte + Layer C parcial + Layer E parcial (−548 hex) | ✅ pre+post | ✅ | En progreso | 7 commits |
 | 2 | Animaciones | Pendiente | — | — | — | — |
 | 4 | Dedupe | Pendiente | — | — | — | — |
 | 5 | Performance | Pendiente | — | — | — | — |
