@@ -213,28 +213,30 @@ function FiltersDrawer({
 
   return (
     <div className="fixed inset-0 z-50 flex items-end sm:hidden" role="dialog" aria-modal="true" aria-label="Filtros">
+      {/* Backdrop */}
       <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={onClose} aria-hidden="true" />
-      <div className="relative w-full rounded-t-3xl bg-white px-5 pb-8 pt-5 dark:bg-gray-950 shadow-2xl animate-in slide-in-from-bottom-4 duration-300">
-        <div className="mx-auto mb-4 h-1 w-10 rounded-full bg-gray-200 dark:bg-gray-700" aria-hidden="true" />
-        <button
-          type="button"
-          onClick={onClose}
-          className="absolute right-4 top-4 flex h-8 w-8 items-center justify-center rounded-full bg-gray-100 text-gray-600 hover:bg-gray-200 dark:bg-gray-800 dark:text-gray-300"
-          aria-label="Cerrar filtros"
-        >
-          <X className="h-4 w-4" />
-        </button>
 
-        <div className="flex flex-col gap-5">
-          <div className="flex items-center justify-between">
+      {/* Sheet — 60-80% viewport height, scrollable body, sticky action bar */}
+      <div className="relative w-full max-h-[80vh] min-h-[60vh] rounded-t-3xl bg-white dark:bg-gray-950 shadow-2xl animate-in slide-in-from-bottom-4 duration-300 flex flex-col">
+        {/* Drag handle */}
+        <div className="shrink-0 px-5 pt-5 pb-0">
+          <div className="mx-auto mb-4 h-1 w-10 rounded-full bg-gray-200 dark:bg-gray-700" aria-hidden="true" />
+          {/* Header */}
+          <div className="flex items-center justify-between mb-1">
             <span className="text-sm font-bold text-gray-800 dark:text-white">Filtros</span>
-            {activeCount > 0 && (
-              <button type="button" onClick={onReset} aria-label="Limpiar todos los filtros" className="text-xs font-semibold text-gray-400 underline hover:text-red-500">
-                Limpiar
-              </button>
-            )}
+            <button
+              type="button"
+              onClick={onClose}
+              className="flex h-8 w-8 items-center justify-center rounded-full bg-gray-100 text-gray-600 hover:bg-gray-200 dark:bg-gray-800 dark:text-gray-300"
+              aria-label="Cerrar filtros"
+            >
+              <X className="h-4 w-4" />
+            </button>
           </div>
+        </div>
 
+        {/* Scrollable content */}
+        <div className="flex-1 overflow-y-auto px-5 py-4 space-y-5">
           {/* Sort */}
           <div>
             <label htmlFor="mobile-sort" className="mb-1.5 block text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">
@@ -294,7 +296,7 @@ function FiltersDrawer({
             aria-pressed={filters.nearbyEnabled}
             aria-label={geoLoading ? "Obteniendo ubicación..." : filters.nearbyEnabled ? "Desactivar tiendas cercanas" : "Mostrar tiendas cercanas"}
             className={cn(
-              "inline-flex min-h-11 items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-sm font-bold transition-colors disabled:opacity-60",
+              "inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-sm font-bold transition-colors disabled:opacity-60",
               filters.nearbyEnabled
                 ? "bg-primary text-white shadow-md"
                 : "border border-gray-200 bg-white text-gray-600 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300"
@@ -307,13 +309,28 @@ function FiltersDrawer({
           </button>
         </div>
 
-        <button
-          type="button"
-          onClick={onClose}
-          className="mt-6 min-h-12 w-full rounded-2xl bg-primary text-sm font-bold text-white shadow-md hover:bg-primary/90 transition-colors"
-        >
-          Ver resultados
-        </button>
+        {/* Sticky action bar */}
+        <div className="shrink-0 border-t border-gray-100 dark:border-gray-800 px-5 py-4 flex gap-3">
+          {activeCount > 0 ? (
+            <button
+              type="button"
+              onClick={onReset}
+              aria-label="Limpiar todos los filtros"
+              className="min-h-12 flex-1 rounded-2xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 text-sm font-bold text-gray-600 dark:text-gray-300 hover:border-red-300 hover:text-red-500 transition-colors"
+            >
+              Limpiar
+            </button>
+          ) : (
+            <div className="flex-1" aria-hidden="true" />
+          )}
+          <button
+            type="button"
+            onClick={onClose}
+            className="min-h-12 flex-[2] rounded-2xl bg-primary text-sm font-bold text-white shadow-md hover:bg-primary/90 transition-colors"
+          >
+            Aplicar
+          </button>
+        </div>
       </div>
     </div>
   );
