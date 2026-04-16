@@ -17,6 +17,14 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { render, screen, waitFor, fireEvent } from "@testing-library/react";
 
+vi.mock("next/navigation", () => ({
+  useRouter: () => ({
+    push: vi.fn(),
+    replace: vi.fn(),
+    prefetch: vi.fn(),
+  }),
+}));
+
 vi.mock("next/link", () => ({
   default: ({
     href,
@@ -25,6 +33,12 @@ vi.mock("next/link", () => ({
   }: { href: string; children: React.ReactNode } & React.AnchorHTMLAttributes<HTMLAnchorElement>) => (
     <a href={href} {...props}>{children}</a>
   ),
+}));
+
+// LiveViewers hace un fetch secundario por cada card.
+// Lo silenciamos globalmente para que no interfiera con los mocks del grid.
+vi.mock("@/components/marketplace/LiveViewers", () => ({
+  default: () => null,
 }));
 
 vi.mock("next/image", () => ({

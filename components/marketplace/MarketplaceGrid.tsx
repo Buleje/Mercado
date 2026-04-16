@@ -3,6 +3,8 @@
 import { useState, useEffect, useCallback, useDeferredValue } from "react";
 import Link from "next/link";
 import Image from "next/image";
+import { useHoverPrefetch } from "@/hooks/use-hover-prefetch";
+import LiveViewers from "@/components/marketplace/LiveViewers";
 
 // ---------- tipos ----------
 
@@ -94,11 +96,15 @@ function StoreCardSkeleton() {
 
 function StoreCard({ store, priority = false }: { store: Store; priority?: boolean }) {
   const isOpen = store.isOpen ?? true; // fallback optimista
+  const href = `/marketplace/${store.slug}`;
+  const { onMouseEnter, onMouseLeave } = useHoverPrefetch(href);
 
   return (
     <article
       className="group flex flex-col rounded-2xl border border-gray-200 bg-white transition-shadow hover:shadow-lg dark:border-gray-800 dark:bg-gray-900"
       aria-label={`Tienda ${store.name}`}
+      onMouseEnter={onMouseEnter}
+      onMouseLeave={onMouseLeave}
     >
       {/* imagen / iniciales */}
       <div className="relative h-32 overflow-hidden rounded-t-2xl bg-gray-100 dark:bg-gray-800">
@@ -154,8 +160,10 @@ function StoreCard({ store, priority = false }: { store: Store; priority?: boole
           </p>
         )}
 
+        <LiveViewers storeSlug={store.slug} compact className="mt-2" />
+
         <Link
-          href={`/marketplace/${store.slug}`}
+          href={href}
           aria-label={`Ver tienda ${store.name}`}
           className="mt-auto pt-4 block w-full min-h-[44px] rounded-xl text-center text-sm font-bold text-white transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-teal-600"
           style={{
