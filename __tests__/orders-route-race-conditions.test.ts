@@ -172,6 +172,35 @@ vi.mock("@/lib/prisma", () => {
   return { prisma: prismaMock };
 });
 
+// ─── Mock: @/lib/tenant — prismaForTenant returns the same mock client ───────
+// The route calls prismaForTenant(tenantId).model.method(...). We intercept at
+// the tenant layer so mockTransaction / mockExecuteRaw (overridden per-test in
+// beforeEach) are the same handles the route actually calls. Critical for
+// RED-005/RED-006 race-condition assertions.
+vi.mock("@/lib/tenant", () => ({
+  prismaForTenant: vi.fn(() => ({
+    order: {
+      findFirst: mockOrderFindFirst,
+      count:     mockOrderCount,
+    },
+    tenant: {
+      findFirst:  mockTenantFindFirst,
+      findUnique: vi.fn().mockResolvedValue(null),
+    },
+    product: {
+      findMany: mockProductFindMany,
+    },
+    customer: {
+      findUnique: mockCustomerFindUnique,
+    },
+    customerNotification: {
+      create: mockCustomerNotifCreate,
+    },
+    $executeRaw: mockExecuteRaw,
+    $transaction: mockTransaction,
+  })),
+}));
+
 // ─── Import handler AFTER all mocks are set ─────────────────────────────────
 import { POST } from "@/app/api/orders/route";
 

@@ -171,6 +171,36 @@ vi.mock("@/lib/prisma", () => ({
   },
 }));
 
+// ── Mock: @/lib/tenant — prismaForTenant returns the same mock client ─────────
+// The route calls prismaForTenant(tenantId).model.method(...) instead of
+// importing prisma directly. We intercept at the tenant layer so the hoisted
+// mock functions above are reused — no separate mock set needed.
+vi.mock("@/lib/tenant", () => ({
+  prismaForTenant: vi.fn(() => ({
+    order: {
+      findFirst: mockOrderFindFirst,
+      count:     mockOrderCount,
+    },
+    tenant: {
+      findFirst:  mockTenantFindFirst,
+      findUnique: vi.fn().mockResolvedValue(null),
+    },
+    product: {
+      findMany: mockProductFindMany,
+    },
+    customer: {
+      findUnique: mockCustomerFindUnique,
+    },
+    customerNotification: {
+      create: mockCustomerNotifCreate,
+    },
+    $transaction: vi.fn(async (fn: (tx: unknown) => Promise<unknown>) => {
+      const txProxy = { $executeRaw: vi.fn(async () => 1) };
+      return fn(txProxy);
+    }),
+  })),
+}));
+
 // ── Import handler AFTER all mocks are set up ─────────────────────────────────
 import { POST, GET } from "@/app/api/orders/route";
 
@@ -497,11 +527,14 @@ describe("GET /api/orders", () => {
     expect(res.headers.get("X-Total-Count")).toBe("0");
   });
 
-  it("returns 503 when DB throws", async () => {
+  it("returns 500 when DB throws (withApiHandler catches and returns generic error)", async () => {
     mockOrdersGetAllFiltered.mockRejectedValue(new Error("DB connection error"));
     const res = await GET(makeGetReq(), defaultCtx);
-    expect(res.status).toBe(503);
+    // withApiHandler wraps all unhandled errors with 500 + "Internal server error"
+    // (previously this test expected 503 + "Database error", but the route
+    // delegates error handling to withApiHandler which standardises to 500)
+    expect(res.status).toBe(500);
     const body = await res.json();
-    expect(body.error).toBe("Database error");
+    expect(body.error).toBe("Internal server error");
   });
 });

@@ -167,6 +167,35 @@ vi.mock("@/lib/prisma", () => ({
   },
 }));
 
+// ─── Mock: @/lib/tenant — prismaForTenant returns the same mock client ───────
+// The route calls prismaForTenant(tenantId).model.method(...) — we intercept
+// here so the hoisted mock fns above are reused without a separate mock set.
+vi.mock("@/lib/tenant", () => ({
+  prismaForTenant: vi.fn(() => ({
+    order: {
+      findFirst: mockOrderFindFirst,
+      count:     mockOrderCount,
+    },
+    tenant: {
+      findFirst:  mockTenantFindFirst,
+      findUnique: vi.fn().mockResolvedValue(null),
+    },
+    product: {
+      findMany: mockProductFindMany,
+    },
+    customer: {
+      findUnique: mockCustomerFindUnique,
+    },
+    customerNotification: {
+      create: mockCustomerNotifCreate,
+    },
+    $transaction: vi.fn(async (fn: (tx: unknown) => Promise<unknown>) => {
+      const txProxy = { $executeRaw: vi.fn(async () => 1) };
+      return fn(txProxy);
+    }),
+  })),
+}));
+
 // ─── Import handler AFTER all mocks are set ─────────────────────────────────
 import { POST } from "@/app/api/orders/route";
 
