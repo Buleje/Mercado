@@ -60,6 +60,7 @@ skills-lock.json
 /.claude/agent-memory/
 /.claude/cache/
 /.claude/settings.local.json
+/.claude/scheduled_tasks.lock
 
 # Phase 3 runtime artifacts (never commit)
 /backups/db/*.sql
