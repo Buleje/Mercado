@@ -354,7 +354,7 @@ export default function TurnosModule() {
   if (loading) {
     return (
       <div className="flex items-center justify-center py-16">
-        <Loader2 className="h-8 w-8 animate-spin text-[#00B4A6]" />
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
       </div>
     );
   }
@@ -363,8 +363,8 @@ export default function TurnosModule() {
     return (
       <div className="flex flex-col items-center justify-center py-16 gap-3">
         <AlertTriangle className="h-10 w-10 text-red-400" />
-        <p className="text-sm text-red-600 dark:text-red-400">{error}</p>
-        <button onClick={fetchData} className="text-xs text-[#00B4A6] hover:underline font-semibold">Reintentar</button>
+        <p className="text-sm text-red-600">{error}</p>
+        <button onClick={fetchData} className="text-xs text-primary hover:underline font-semibold">Reintentar</button>
       </div>
     );
   }
