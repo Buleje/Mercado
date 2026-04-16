@@ -6,6 +6,7 @@ import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
 import { useSearchParams } from "next/navigation";
 import { useMarketplaceCart } from "@/hooks/use-marketplace-cart";
+import { useCartWithUndo } from "@/hooks/use-cart-with-undo";
 import MarketplaceChat from "@/components/marketplace/MarketplaceChat";
 import MarketplaceCart from "@/components/marketplace/MarketplaceCart";
 
@@ -123,7 +124,8 @@ function ProductCard({
   const [justAdded, setJustAdded] = useState(false);
   const [imgError, setImgError] = useState(false);
   const [imgLoaded, setImgLoaded] = useState(false);
-  const { addItem, byStore, updateQuantity, removeItem } = useMarketplaceCart();
+  const { addItemWithUndo } = useCartWithUndo();
+  const { byStore, updateQuantity, removeItem } = useMarketplaceCart();
 
   // Find current qty in cart
   const cartItems = byStore[storeId]?.items ?? [];
@@ -131,7 +133,7 @@ function ProductCard({
   const qty = cartItem?.quantity ?? 0;
 
   const handleAdd = () => {
-    addItem({
+    addItemWithUndo({
       category: product.category,
       image: product.image,
       storeId,
@@ -144,7 +146,6 @@ function ProductCard({
       price: product.price,
       unit: product.unit,
     });
-    onAdded(product.name);
     setJustAdded(true);
     setTimeout(() => setJustAdded(false), 1500);
   };

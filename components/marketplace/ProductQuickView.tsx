@@ -15,7 +15,7 @@ import {
   Check,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { useMarketplaceCart } from "@/hooks/use-marketplace-cart";
+import { useCartWithUndo } from "@/hooks/use-cart-with-undo";
 
 interface QuickViewProduct {
   storeProductId: string;
@@ -43,7 +43,7 @@ const fmt = (n: unknown) =>
 export default function ProductQuickView({ product, onClose }: ProductQuickViewProps) {
   const [qty, setQty] = useState(1);
   const [added, setAdded] = useState(false);
-  const { addItem } = useMarketplaceCart();
+  const { addItemWithUndo } = useCartWithUndo();
 
   if (!product) return null;
 
@@ -51,19 +51,18 @@ export default function ProductQuickView({ product, onClose }: ProductQuickViewP
 
   const handleAdd = () => {
     if (isOutOfStock) return;
-    for (let i = 0; i < qty; i++) {
-      addItem({
-        storeId: product.storeId,
-        storeName: product.storeName,
-        storeSlug: product.storeSlug,
-        storeProductId: product.storeProductId,
-        productId: product.productId,
-        name: product.name,
-        price: product.price,
-        image: product.image,
-        unit: product.unit,
-      });
-    }
+    addItemWithUndo({
+      storeId: product.storeId,
+      storeName: product.storeName,
+      storeSlug: product.storeSlug,
+      storeProductId: product.storeProductId,
+      productId: product.productId,
+      name: product.name,
+      price: product.price,
+      image: product.image,
+      unit: product.unit,
+      quantity: qty,
+    });
     setAdded(true);
     setTimeout(() => {
       setAdded(false);

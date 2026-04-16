@@ -11,7 +11,7 @@ import {
   Star,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { useMarketplaceCart } from "@/hooks/use-marketplace-cart";
+import { useCartWithUndo } from "@/hooks/use-cart-with-undo";
 
 /* ── Tipos públicos ─────────────────────────────────────────────────────────── */
 
@@ -152,7 +152,7 @@ export default function UnifiedProductCard({
   href,
   index = 0,
 }: UnifiedProductCardProps) {
-  const { addItem } = useMarketplaceCart();
+  const { addItemWithUndo } = useCartWithUndo();
   const [justAdded, setJustAdded] = useState(false);
   const countdown = useCountdown(variant === "flash" ? endsAt : undefined);
 
@@ -164,7 +164,7 @@ export default function UnifiedProductCard({
 
   const handleAdd = useCallback(() => {
     if (isOutOfStock) return;
-    addItem({
+    addItemWithUndo({
       storeId: product.storeId ?? "",
       storeName: product.storeName ?? "",
       storeSlug: product.storeSlug ?? "",
@@ -177,7 +177,7 @@ export default function UnifiedProductCard({
     });
     setJustAdded(true);
     setTimeout(() => setJustAdded(false), 1200);
-  }, [addItem, product, isOutOfStock]);
+  }, [addItemWithUndo, product, isOutOfStock]);
 
   return (
     <motion.div
