@@ -92,7 +92,7 @@ function StoreCardSkeleton() {
 
 // ---------- card de tienda ----------
 
-function StoreCard({ store }: { store: Store }) {
+function StoreCard({ store, priority = false }: { store: Store; priority?: boolean }) {
   const isOpen = store.isOpen ?? true; // fallback optimista
 
   return (
@@ -107,8 +107,12 @@ function StoreCard({ store }: { store: Store }) {
             src={store.logo}
             alt={`Logo de ${store.name}`}
             fill
+            priority={priority}
+            loading={priority ? "eager" : "lazy"}
             className="object-cover transition-transform duration-300 group-hover:scale-105"
             sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
+            placeholder="blur"
+            blurDataURL="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIxMCIgaGVpZ2h0PSIxMCI+PGZpbHRlciBpZD0iYiI+PGZlR2F1c3NpYW5CbHVyIHN0ZERldmlhdGlvbj0iMiIvPjwvZmlsdGVyPjxyZWN0IHdpZHRoPSIxMCIgaGVpZ2h0PSIxMCIgZmlsdGVyPSJ1cmwoI2IpIiBmaWxsPSIjZWVlIi8+PC9zdmc+"
           />
         ) : (
           <StoreInitials name={store.name} />
@@ -346,9 +350,10 @@ export default function MarketplaceGrid() {
             aria-label={`${stores.length} ${stores.length === 1 ? "tienda encontrada" : "tiendas encontradas"}`}
             className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3"
           >
-            {stores.map((s) => (
+            {stores.map((s, idx) => (
               <div key={s.id} role="listitem">
-                <StoreCard store={s} />
+                {/* First 6 cards render eagerly with priority for LCP — rest lazy */}
+                <StoreCard store={s} priority={idx < 6} />
               </div>
             ))}
           </div>
