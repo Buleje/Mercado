@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import MarketplaceNavbar from "@/components/marketplace/MarketplaceNavbar";
 import StoreProviders from "@/components/StoreProviders";
+import MotionProvider from "@/components/MotionProvider";
 
 export const metadata: Metadata = {
   title: {
@@ -27,10 +28,16 @@ export default function MarketplaceLayout({
 }) {
   return (
     <StoreProviders tenantSlug="main">
-      <div className="min-h-screen bg-gray-50 dark:bg-gray-950">
-        <MarketplaceNavbar />
-        <main id="main-content">{children}</main>
-      </div>
+      {/* LazyMotion boundary — sin esto los `m.*` de framer-motion
+          (usados por MarketplaceContent y otros) quedan en opacity: 0
+          porque no hay features cargadas. Fix 2026-04-16 — el hero y
+          la stats row aparecían en blanco sin esto. */}
+      <MotionProvider>
+        <div className="min-h-screen bg-gray-50 dark:bg-gray-950">
+          <MarketplaceNavbar />
+          <main id="main-content">{children}</main>
+        </div>
+      </MotionProvider>
     </StoreProviders>
   );
 }
