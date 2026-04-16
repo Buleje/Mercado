@@ -99,66 +99,63 @@ export function FinanzasSubTab(props: FinanzasSubTabProps) {
 
   return (
     <>
-      {/* Financial cards */}
+      {/* Financial cards — Holded style */}
       {!loading && (
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-          {/* Card 1: Cuentas por cobrar (Fiados) */}
-          <AdminCard padding="sm">
-            <a href="/admin?module=fiados" className="text-xs font-semibold text-gray-700 dark:text-zinc-300 hover:text-primary transition-colors cursor-pointer">
-              Cuentas por cobrar
-            </a>
-            <p className="text-xl font-mono font-bold text-gray-900 dark:text-zinc-100 mt-1">{fmtR(cuentasPorCobrar.total)}</p>
-            <div className="flex items-center gap-2 mt-2 text-[10px]">
-              <span className="flex items-center gap-0.5">
-                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 inline-block" />
-                <span className="text-gray-500 dark:text-zinc-400">Vigentes {fmtShortR(cuentasPorCobrar.vigentes)}</span>
-              </span>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+          {/* Pagos pendientes */}
+          <div className="bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 rounded-xl p-6">
+            <div className="flex items-center gap-2 mb-1">
+              <div className="w-2.5 h-2.5 rounded-full bg-red-500" />
+              <h3 className="text-sm font-semibold text-gray-900 dark:text-white">Pagos pendientes</h3>
             </div>
-            <div className="flex items-center gap-2 mt-0.5 text-[10px]">
-              <span className="flex items-center gap-0.5">
-                <span className="w-1.5 h-1.5 rounded-full bg-red-500 inline-block" />
-                <span className="text-gray-500 dark:text-zinc-400">Vencidas {fmtShortR(cuentasPorCobrar.vencidas)}</span>
-              </span>
-            </div>
-            <p className="text-[10px] text-gray-400 dark:text-zinc-500 mt-1">{cuentasPorCobrar.count} documentos</p>
-          </AdminCard>
-
-          {/* Card 2: Cuentas por pagar */}
-          <AdminCard padding="sm">
-            <a href="/admin?module=compras" className="text-xs font-semibold text-gray-700 dark:text-zinc-300 hover:text-primary transition-colors cursor-pointer">
-              Cuentas por pagar
-            </a>
-            <p className="text-xl font-mono font-bold text-gray-900 dark:text-zinc-100 mt-1">{fmtR(cuentasPorPagar.total)}</p>
-            <div className="flex items-center gap-2 mt-2 text-[10px]">
-              <span className="flex items-center gap-0.5">
-                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 inline-block" />
-                <span className="text-gray-500 dark:text-zinc-400">Vigentes {fmtShortR(cuentasPorPagar.vigentes)}</span>
-              </span>
-            </div>
-            <div className="flex items-center gap-2 mt-0.5 text-[10px]">
-              <span className="flex items-center gap-0.5">
-                <span className="w-1.5 h-1.5 rounded-full bg-red-500 inline-block" />
-                <span className="text-gray-500 dark:text-zinc-400">Vencidas {fmtShortR(cuentasPorPagar.vencidas)}</span>
-              </span>
-            </div>
-            <p className="text-[10px] text-gray-400 dark:text-zinc-500 mt-1">{cuentasPorPagar.count} documentos</p>
-          </AdminCard>
-
-          {/* Card 3: Impuestos en venta */}
-          <AdminCard padding="sm">
-            <span className="text-xs font-semibold text-gray-700 dark:text-zinc-300">Impuestos en venta</span>
-            <p className="text-xl font-mono font-bold text-gray-900 dark:text-zinc-100 mt-1">{fmtR(igvVentasMes)}</p>
-            <p className="text-[10px] text-gray-400 dark:text-zinc-500 mt-2">IGV estimado del mes</p>
-          </AdminCard>
-
-          {/* Card 4: Devoluciones de clientes */}
-          <AdminCard padding="sm">
-            <span className="text-xs font-semibold text-gray-700 dark:text-zinc-300">Devoluciones</span>
-            <p className={cn("text-xl font-mono font-bold mt-1", devoluciones > 0 ? "text-red-600 dark:text-red-400" : "text-gray-900 dark:text-zinc-100")}>
-              {fmtR(devoluciones)}
+            <p className="text-xs text-gray-400">Mes actual</p>
+            <p className="text-3xl font-bold text-gray-900 dark:text-white mt-3">
+              {fmtR(cuentasPorPagar.total)}
             </p>
-            <p className="text-[10px] text-gray-400 dark:text-zinc-500 mt-2">Incluye impuestos</p>
-          </AdminCard>
+            <p className="text-[10px] text-gray-400 dark:text-zinc-500 mt-2">{cuentasPorPagar.count} documentos</p>
+          </div>
+
+          {/* Cobros pendientes */}
+          <div className="bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 rounded-xl p-6">
+            <div className="flex items-center gap-2 mb-1">
+              <div className="w-2.5 h-2.5 rounded-full bg-emerald-500" />
+              <h3 className="text-sm font-semibold text-gray-900 dark:text-white">Cobros pendientes</h3>
+            </div>
+            <p className="text-xs text-gray-400">Mes actual</p>
+            <p className="text-3xl font-bold text-gray-900 dark:text-white mt-3">
+              {fmtR(cuentasPorCobrar.total)}
+            </p>
+            <p className="text-[10px] text-gray-400 dark:text-zinc-500 mt-2">{cuentasPorCobrar.count} documentos</p>
+          </div>
+
+          {/* Entradas y salidas */}
+          <div className="bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 rounded-xl p-6">
+            <h3 className="text-sm font-semibold text-gray-900 dark:text-white">Entradas y salidas</h3>
+            <p className="text-xs text-gray-400 mb-4">Mes actual</p>
+            <div className="space-y-2">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <div className="w-2.5 h-2.5 rounded-full bg-emerald-500" />
+                  <span className="text-sm text-gray-600 dark:text-zinc-300">Entradas</span>
+                </div>
+                <span className="text-sm font-semibold text-gray-900 dark:text-white">{fmtR(revenueThisMonth)}</span>
+              </div>
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <div className="w-2.5 h-2.5 rounded-full bg-red-500" />
+                  <span className="text-sm text-gray-600 dark:text-zinc-300">Salidas</span>
+                </div>
+                <span className="text-sm font-semibold text-gray-900 dark:text-white">{fmtR(igvVentasMes + devoluciones)}</span>
+              </div>
+              <div className="flex items-center justify-between pt-1 border-t border-gray-100 dark:border-zinc-800">
+                <div className="flex items-center gap-2">
+                  <div className="w-2.5 h-2.5 rounded-full bg-emerald-600" />
+                  <span className="text-sm text-gray-600 dark:text-zinc-300">Saldo</span>
+                </div>
+                <span className="text-sm font-bold text-gray-900 dark:text-white">{fmtR(revenueThisMonth - igvVentasMes - devoluciones)}</span>
+              </div>
+            </div>
+          </div>
         </div>
       )}
 

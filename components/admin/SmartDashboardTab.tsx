@@ -29,6 +29,7 @@ import {
 import dynamic from "next/dynamic";
 import { cn } from "@/lib/utils";
 import { StaggerContainer, StaggerItem } from "@/components/admin/shared/StaggerContainer";
+import { DraggableWidgetGrid } from "@/components/admin/shared/DraggableWidgetGrid";
 import AdminModuleHeader from "@/components/admin/shared/AdminModuleHeader";
 import type { Product, Sale } from "@/types/erp";
 import type {
@@ -193,7 +194,7 @@ interface KpiCardNewProps {
 
 function KpiCardNew({ label, value, subtext, subtextColorClass, colorClass, isEmpty, emptyLabel }: KpiCardNewProps) {
   return (
-    <div className={cn("bg-white dark:bg-zinc-800 rounded-xl border border-gray-200 dark:border-zinc-700 p-5 shadow-sm transition-all hover:shadow-md", isEmpty && "opacity-60")}>
+    <div className={cn("bg-white dark:bg-zinc-900 rounded-xl border border-gray-200 dark:border-zinc-800 p-6 transition-all", isEmpty && "opacity-60")}>
       <p className="text-xs text-gray-500 dark:text-zinc-400 font-medium">{label}</p>
       {isEmpty && emptyLabel ? (
         <p className="text-lg font-mono font-bold text-gray-400 dark:text-zinc-500 mt-1">{emptyLabel}</p>
@@ -818,12 +819,24 @@ function SmartDashboardTab({ adminName = "Administrador" }: SmartDashboardTabPro
         </div>
       </AdminModuleHeader>
 
-      {/* Dashboard sub-tabs — pills style */}
-      <div className="flex items-center gap-1 bg-gray-100 dark:bg-zinc-800 rounded-lg p-1 overflow-x-auto">
+      {/* Dashboard sub-tabs — underline style */}
+      <div className="flex items-center gap-6 border-b border-gray-200 dark:border-zinc-800 overflow-x-auto">
         {DASHBOARD_TABS.map(tab => (
-          <button key={tab.id} onClick={() => handleDashTabChange(tab.id)} className={cn("flex items-center gap-1.5 px-4 py-2 text-xs font-medium whitespace-nowrap rounded-md transition-all", dashTab === tab.id ? "bg-white dark:bg-zinc-700 text-gray-900 dark:text-white font-semibold shadow-sm" : "text-gray-500 dark:text-zinc-400 hover:text-gray-700 dark:hover:text-zinc-300")}>
+          <button
+            key={tab.id}
+            onClick={() => handleDashTabChange(tab.id)}
+            className={cn(
+              "pb-3 text-sm font-medium transition-colors relative whitespace-nowrap flex items-center gap-1.5",
+              dashTab === tab.id
+                ? "text-emerald-600"
+                : "text-gray-500 hover:text-gray-700 dark:text-zinc-400 dark:hover:text-zinc-300"
+            )}
+          >
             <tab.Icon className="w-3.5 h-3.5" />
             {tab.label}
+            {dashTab === tab.id && (
+              <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-emerald-500 rounded-full" />
+            )}
           </button>
         ))}
       </div>
@@ -836,29 +849,29 @@ function SmartDashboardTab({ adminName = "Administrador" }: SmartDashboardTabPro
         </div>
       )}
 
-      {/* KPIs Row (shared: resumen + ventas) */}
+      {/* KPIs Row (shared: resumen + ventas) — draggable */}
       {(dashTab === "resumen" || dashTab === "ventas") && (
         loading ? (
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
             {Array.from({ length: 5 }).map((_, i) => <SkeletonCard key={i} />)}
           </div>
         ) : (
-          <StaggerContainer className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
-            <StaggerItem><KpiCardNew label={`Ventas ${period === "hoy" ? "hoy" : period === "semana" ? "semana" : "mes"}`} value={fmtR(revenueFiltered)} subtext={`${filteredSales.length} transacciones`} colorClass="bg-primary" isEmpty={revenueFiltered === 0} emptyLabel="Sin ventas" /></StaggerItem>
-            <StaggerItem><KpiCardNew label="Clientes" value={String(clientesFiltered)} subtext={`${clientesHoy} nuevos hoy`} colorClass="bg-emerald-500" isEmpty={clientesFiltered === 0} emptyLabel="Sin clientes" /></StaggerItem>
-            <StaggerItem><KpiCardNew label="Margen" value={`${marginFiltered.toFixed(0)}%`} subtext={marginFiltered >= 25 ? "Saludable" : marginFiltered >= 15 ? "Puede mejorar" : marginFiltered > 0 ? "Revisar costos" : `${fmtR(rentabilidadHoy)} ganancia`} subtextColorClass={marginFiltered >= 25 ? "text-emerald-600 dark:text-emerald-400" : marginFiltered >= 15 ? "text-amber-500 dark:text-amber-400" : marginFiltered > 0 ? "text-red-500 dark:text-red-400" : undefined} colorClass="bg-[#f97316]" isEmpty={marginFiltered === 0} /></StaggerItem>
-            <StaggerItem><KpiCardNew label="vs Ayer" value={`${hoyVsAyerPct > 0 ? "+" : ""}${hoyVsAyerPct.toFixed(0)}%`} subtext={revenueYesterday > 0 ? `${fmtR(revenueYesterday)} ayer` : "Sin datos ayer"} colorClass={hoyVsAyerPct >= 0 ? "bg-emerald-500" : "bg-red-500"} isEmpty={revenueToday === 0 && revenueYesterday === 0} emptyLabel="Sin datos" /></StaggerItem>
-            <StaggerItem><KpiCardNew label="Ticket promedio" value={fmtR(ticketPromedio)} subtext={salesToday.length > 0 ? `Max: ${fmtR(Math.max(...salesToday.map(s => s.total ?? 0)))}` : "Sin ventas"} colorClass="bg-purple-500" isEmpty={ticketPromedio === 0} emptyLabel="Sin ventas" /></StaggerItem>
-          </StaggerContainer>
+          <DraggableWidgetGrid storageKey="dashboard-kpis-order" columns={3} className="grid-cols-2 md:grid-cols-3 lg:grid-cols-5">
+            <div key="kpi-ventas"><KpiCardNew label={`Ventas ${period === "hoy" ? "hoy" : period === "semana" ? "semana" : "mes"}`} value={fmtR(revenueFiltered)} subtext={`${filteredSales.length} transacciones`} colorClass="bg-primary" isEmpty={revenueFiltered === 0} emptyLabel="Sin ventas" /></div>
+            <div key="kpi-clientes"><KpiCardNew label="Clientes" value={String(clientesFiltered)} subtext={`${clientesHoy} nuevos hoy`} colorClass="bg-emerald-500" isEmpty={clientesFiltered === 0} emptyLabel="Sin clientes" /></div>
+            <div key="kpi-margen"><KpiCardNew label="Margen" value={`${marginFiltered.toFixed(0)}%`} subtext={marginFiltered >= 25 ? "Saludable" : marginFiltered >= 15 ? "Puede mejorar" : marginFiltered > 0 ? "Revisar costos" : `${fmtR(rentabilidadHoy)} ganancia`} subtextColorClass={marginFiltered >= 25 ? "text-emerald-600 dark:text-emerald-400" : marginFiltered >= 15 ? "text-amber-500 dark:text-amber-400" : marginFiltered > 0 ? "text-red-500 dark:text-red-400" : undefined} colorClass="bg-[#f97316]" isEmpty={marginFiltered === 0} /></div>
+            <div key="kpi-ayer"><KpiCardNew label="vs Ayer" value={`${hoyVsAyerPct > 0 ? "+" : ""}${hoyVsAyerPct.toFixed(0)}%`} subtext={revenueYesterday > 0 ? `${fmtR(revenueYesterday)} ayer` : "Sin datos ayer"} colorClass={hoyVsAyerPct >= 0 ? "bg-emerald-500" : "bg-red-500"} isEmpty={revenueToday === 0 && revenueYesterday === 0} emptyLabel="Sin datos" /></div>
+            <div key="kpi-ticket"><KpiCardNew label="Ticket promedio" value={fmtR(ticketPromedio)} subtext={salesToday.length > 0 ? `Max: ${fmtR(Math.max(...salesToday.map(s => s.total ?? 0)))}` : "Sin ventas"} colorClass="bg-purple-500" isEmpty={ticketPromedio === 0} emptyLabel="Sin ventas" /></div>
+          </DraggableWidgetGrid>
         )
       )}
 
       {/* Monthly sales chart (shared: resumen + ventas) */}
       {!loading && (dashTab === "resumen" || dashTab === "ventas") && (
-        <div className="bg-white dark:bg-zinc-800 rounded-xl border border-gray-100 dark:border-zinc-800 p-4">
+        <div className="bg-white dark:bg-zinc-900 rounded-xl border border-gray-200 dark:border-zinc-800 p-6">
           <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-2 mb-4">
             <div>
-              <h2 className="text-sm font-medium text-gray-500 dark:text-zinc-400 uppercase tracking-wider">Total de ventas</h2>
+              <h2 className="text-sm font-semibold text-gray-900 dark:text-white">Total de ventas</h2>
               <p className="text-xs text-gray-400 dark:text-zinc-500">La grafica muestra el valor de tus ventas con impuestos incluidos</p>
             </div>
             <div className="text-right">
@@ -883,27 +896,27 @@ function SmartDashboardTab({ adminName = "Administrador" }: SmartDashboardTabPro
       {/* Financial cards (shared: resumen + finanzas) */}
       {!loading && (dashTab === "resumen" || dashTab === "finanzas") && dashTab === "resumen" && (
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          <div className="bg-white dark:bg-zinc-800 rounded-xl border border-gray-100 dark:border-zinc-800 p-4">
-            <a href="/admin?module=fiados" className="text-sm font-medium text-gray-500 dark:text-zinc-400 uppercase tracking-wider hover:text-primary transition-colors cursor-pointer">Cuentas por cobrar</a>
+          <div className="bg-white dark:bg-zinc-900 rounded-xl border border-gray-200 dark:border-zinc-800 p-6">
+            <a href="/admin?module=fiados" className="text-sm font-semibold text-gray-900 dark:text-white hover:text-primary transition-colors cursor-pointer">Cuentas por cobrar</a>
             <p className="text-2xl font-mono font-bold text-gray-900 dark:text-zinc-100 mt-1">{fmtR(cuentasPorCobrar.total)}</p>
             <div className="flex items-center gap-2 mt-2 text-[10px]"><span className="flex items-center gap-0.5"><span className="w-1.5 h-1.5 rounded-full bg-emerald-500 inline-block" /><span className="text-gray-500 dark:text-zinc-400">Vigentes {fmtShortR(cuentasPorCobrar.vigentes)}</span></span></div>
             <div className="flex items-center gap-2 mt-0.5 text-[10px]"><span className="flex items-center gap-0.5"><span className="w-1.5 h-1.5 rounded-full bg-red-500 inline-block" /><span className="text-gray-500 dark:text-zinc-400">Vencidas {fmtShortR(cuentasPorCobrar.vencidas)}</span></span></div>
             <p className="text-[10px] text-gray-400 dark:text-zinc-500 mt-1">{cuentasPorCobrar.count} documentos</p>
           </div>
-          <div className="bg-white dark:bg-zinc-800 rounded-xl border border-gray-100 dark:border-zinc-800 p-4">
-            <a href="/admin?module=compras" className="text-sm font-medium text-gray-500 dark:text-zinc-400 uppercase tracking-wider hover:text-primary transition-colors cursor-pointer">Cuentas por pagar</a>
+          <div className="bg-white dark:bg-zinc-900 rounded-xl border border-gray-200 dark:border-zinc-800 p-6">
+            <a href="/admin?module=compras" className="text-sm font-semibold text-gray-900 dark:text-white hover:text-primary transition-colors cursor-pointer">Cuentas por pagar</a>
             <p className="text-2xl font-mono font-bold text-gray-900 dark:text-zinc-100 mt-1">{fmtR(cuentasPorPagar.total)}</p>
             <div className="flex items-center gap-2 mt-2 text-[10px]"><span className="flex items-center gap-0.5"><span className="w-1.5 h-1.5 rounded-full bg-emerald-500 inline-block" /><span className="text-gray-500 dark:text-zinc-400">Vigentes {fmtShortR(cuentasPorPagar.vigentes)}</span></span></div>
             <div className="flex items-center gap-2 mt-0.5 text-[10px]"><span className="flex items-center gap-0.5"><span className="w-1.5 h-1.5 rounded-full bg-red-500 inline-block" /><span className="text-gray-500 dark:text-zinc-400">Vencidas {fmtShortR(cuentasPorPagar.vencidas)}</span></span></div>
             <p className="text-[10px] text-gray-400 dark:text-zinc-500 mt-1">{cuentasPorPagar.count} documentos</p>
           </div>
-          <div className="bg-white dark:bg-zinc-800 rounded-xl border border-gray-100 dark:border-zinc-800 p-4">
-            <span className="text-sm font-medium text-gray-500 dark:text-zinc-400 uppercase tracking-wider">Impuestos en venta</span>
+          <div className="bg-white dark:bg-zinc-900 rounded-xl border border-gray-200 dark:border-zinc-800 p-6">
+            <span className="text-sm font-semibold text-gray-900 dark:text-white">Impuestos en venta</span>
             <p className="text-2xl font-mono font-bold text-gray-900 dark:text-zinc-100 mt-1">{fmtR(igvVentasMes)}</p>
             <p className="text-[10px] text-gray-400 dark:text-zinc-500 mt-2">IGV estimado del mes</p>
           </div>
-          <div className="bg-white dark:bg-zinc-800 rounded-xl border border-gray-100 dark:border-zinc-800 p-4">
-            <span className="text-sm font-medium text-gray-500 dark:text-zinc-400 uppercase tracking-wider">Devoluciones</span>
+          <div className="bg-white dark:bg-zinc-900 rounded-xl border border-gray-200 dark:border-zinc-800 p-6">
+            <span className="text-sm font-semibold text-gray-900 dark:text-white">Devoluciones</span>
             <p className={cn("text-2xl font-mono font-bold mt-1", devoluciones > 0 ? "text-red-600 dark:text-red-400" : "text-gray-900 dark:text-zinc-100")}>{fmtR(devoluciones)}</p>
             <p className="text-[10px] text-gray-400 dark:text-zinc-500 mt-2">Incluye impuestos</p>
           </div>
@@ -958,6 +971,8 @@ function SmartDashboardTab({ adminName = "Administrador" }: SmartDashboardTabPro
           abandonedCartCount={abandonedCartCount}
           abandonedCartValue={abandonedCartValue}
           hasAnyAlert={hasAnyAlert}
+          chartVentasCategoria={chartVentasCategoria}
+          monthlyDailyData={monthlyDailyData}
           sectionOrder={sectionOrder}
           setSectionOrder={setSectionOrder}
           fmtR={fmtR}
@@ -1065,10 +1080,10 @@ function SmartDashboardTab({ adminName = "Administrador" }: SmartDashboardTabPro
       {!loading && dashTab === "ventas" && (
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
           {bestDay && (
-            <div className="rounded-xl border border-gray-100 dark:border-zinc-800 bg-white dark:bg-zinc-800 p-4">
+            <div className="rounded-xl border border-gray-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 p-6">
               <div className="flex items-center gap-2 mb-2">
                 <TrendingUp className="w-4 h-4 text-amber-500" />
-                <span className="text-sm font-medium text-gray-500 dark:text-zinc-400 uppercase tracking-wider">Mejor dia de la semana</span>
+                <span className="text-sm font-semibold text-gray-900 dark:text-white">Mejor dia de la semana</span>
               </div>
               <p className="text-sm font-bold text-gray-900 dark:text-zinc-100">Tu mejor dia es el {bestDay.best.name}</p>
               <p className="text-xs text-gray-500 dark:text-zinc-400 mt-0.5">Promedio: {fmtR(bestDay.best.avg)} {bestDay.pctVsOthers > 0 && <span className="text-emerald-600 dark:text-emerald-400 font-bold">(+{bestDay.pctVsOthers}% vs otros dias)</span>}</p>
@@ -1076,10 +1091,10 @@ function SmartDashboardTab({ adminName = "Administrador" }: SmartDashboardTabPro
             </div>
           )}
           {growingCategory?.top && (
-            <div className="rounded-xl border border-gray-100 dark:border-zinc-800 bg-white dark:bg-zinc-800 p-4">
+            <div className="rounded-xl border border-gray-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 p-6">
               <div className="flex items-center gap-2 mb-2">
                 <TrendingUp className="w-4 h-4 text-emerald-500" />
-                <span className="text-sm font-medium text-gray-500 dark:text-zinc-400 uppercase tracking-wider">Categoria en crecimiento</span>
+                <span className="text-sm font-semibold text-gray-900 dark:text-white">Categoria en crecimiento</span>
               </div>
               <p className="text-sm font-bold text-gray-900 dark:text-zinc-100">{growingCategory.top.cat} crecio {growingCategory.top.pct.toFixed(0)}% esta semana</p>
               <p className="text-xs text-gray-500 dark:text-zinc-400 mt-0.5">De {fmtR(growingCategory.top.lastWeek)} a {fmtR(growingCategory.top.thisWeek)}</p>
@@ -1087,10 +1102,10 @@ function SmartDashboardTab({ adminName = "Administrador" }: SmartDashboardTabPro
             </div>
           )}
           {topClientMonth && (
-            <div className="rounded-xl border border-gray-100 dark:border-zinc-800 bg-white dark:bg-zinc-800 p-4">
+            <div className="rounded-xl border border-gray-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 p-6">
               <div className="flex items-center gap-2 mb-2">
                 <Users className="w-4 h-4 text-primary" />
-                <span className="text-sm font-medium text-gray-500 dark:text-zinc-400 uppercase tracking-wider">Cliente del mes</span>
+                <span className="text-sm font-semibold text-gray-900 dark:text-white">Cliente del mes</span>
               </div>
               <div className="flex items-center gap-2">
                 <span className="flex items-center justify-center w-8 h-8 rounded-full text-sm font-bold text-white" style={{ backgroundColor: "var(--color-primary)" }}>{topClientMonth.name.charAt(0).toUpperCase()}</span>

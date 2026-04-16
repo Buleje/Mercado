@@ -196,9 +196,9 @@ export function VentasSubTab(props: VentasSubTabProps) {
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
               {activeCharts.map((chartId, index) => (
-                <div key={chartId} className="bg-white dark:bg-zinc-800 rounded-xl border border-gray-100 dark:border-zinc-800 p-4">
+                <div key={chartId} className="bg-white dark:bg-zinc-900 rounded-xl border border-gray-200 dark:border-zinc-800 p-6">
                   <div className="flex items-center justify-between mb-3">
-                    <span className="text-sm font-medium text-gray-500 dark:text-zinc-400 uppercase tracking-wider truncate">{chartLabel(chartId)}</span>
+                    <span className="text-sm font-semibold text-gray-900 dark:text-white truncate">{chartLabel(chartId)}</span>
                     <div className="flex items-center gap-1 shrink-0">
                       <button onClick={() => moveChart(index, "up")} disabled={index === 0} className="p-1 rounded hover:bg-gray-100 dark:hover:bg-zinc-700 disabled:opacity-30 transition-colors">
                         <ChevronUp className="w-3 h-3 text-gray-400" />
@@ -248,10 +248,10 @@ export function VentasSubTab(props: VentasSubTabProps) {
           .sort((a, b) => b.ventas - a.ventas)
           .slice(0, 3);
         return (
-          <div className="rounded-xl border border-gray-100 dark:border-zinc-800 bg-white dark:bg-zinc-800 p-4">
+          <div className="rounded-xl border border-gray-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 p-6">
             <div className="flex items-center gap-2 mb-2">
               <Users className="w-4 h-4 text-gray-400" />
-              <span className="text-sm font-medium text-gray-500 dark:text-zinc-400 uppercase tracking-wider">Rendimiento cajeros hoy</span>
+              <span className="text-sm font-semibold text-gray-900 dark:text-white">Rendimiento cajeros hoy</span>
             </div>
             <div className="flex flex-wrap gap-3">
               {ranking.map((c, i) => (
@@ -289,10 +289,10 @@ export function VentasSubTab(props: VentasSubTabProps) {
       {filteredSections.map((sectionId) => (
         <div key={sectionId}>
           {sectionId === "top-productos" && (
-            <div className="rounded-xl border border-gray-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 p-5 shadow-sm">
+            <div className="rounded-xl border border-gray-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 p-6">
               <div className="flex items-center gap-2 mb-4">
                 <TrendingUp className="w-4 h-4" style={{ color: "var(--color-primary)" }} />
-                <span className="text-sm font-medium text-gray-500 dark:text-zinc-400 uppercase tracking-wider">Top 10 productos mas vendidos</span>
+                <span className="text-sm font-semibold text-gray-900 dark:text-white">Top 10 productos mas vendidos</span>
               </div>
               {loading ? (
                 <SkeletonBar rows={10} />
@@ -320,10 +320,10 @@ export function VentasSubTab(props: VentasSubTabProps) {
           )}
 
           {sectionId === "horario-pico" && (
-            <div className="rounded-xl border border-gray-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 p-5 shadow-sm">
+            <div className="rounded-xl border border-gray-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 p-6">
               <div className="flex items-center gap-2 mb-4">
                 <TrendingUp className="w-4 h-4" style={{ color: "#f97316" }} />
-                <span className="text-sm font-medium text-gray-500 dark:text-zinc-400 uppercase tracking-wider">Ventas por hora (hoy)</span>
+                <span className="text-sm font-semibold text-gray-900 dark:text-white">Ventas por hora (hoy)</span>
               </div>
               {loading ? (
                 <SkeletonBar rows={4} />

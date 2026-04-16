@@ -17,10 +17,10 @@ import {
   Lightbulb,
   Target,
 } from "lucide-react";
+import dynamic from "next/dynamic";
 import { cn } from "@/lib/utils";
 import { BusinessOverviewHero } from "@/components/admin/shared/BusinessOverviewHero";
 import { DraggableWidgetGrid } from "@/components/admin/shared/DraggableWidgetGrid";
-import { StaggerContainer, StaggerItem } from "@/components/admin/shared/StaggerContainer";
 import type {
   Order,
   Payable,
@@ -32,6 +32,18 @@ import type {
   Product,
   Sale,
 } from "./types";
+
+// ── Lazy-loaded high-level charts ──────────────────────────────────────────────
+
+const BusinessOverviewChart = dynamic(
+  () => import("./BusinessOverviewChart"),
+  { ssr: false, loading: () => <div className="w-full h-[320px] bg-gray-100 dark:bg-zinc-700/40 animate-pulse rounded-xl" /> }
+);
+
+const CategoryDonutChart = dynamic(
+  () => import("./CategoryDonutChart"),
+  { ssr: false, loading: () => <div className="w-full h-[280px] bg-gray-100 dark:bg-zinc-700/40 animate-pulse rounded-xl" /> }
+);
 
 // ── Props ───────────────────────────────────────────────────────────────────────
 
@@ -83,6 +95,9 @@ export interface ResumenSubTabProps {
   abandonedCartCount: number;
   abandonedCartValue: number;
   hasAnyAlert: boolean;
+  // Chart data
+  chartVentasCategoria: { name: string; value: number }[];
+  monthlyDailyData: { name: string; ventas: number }[];
   // Widget order
   sectionOrder: SectionId[];
   setSectionOrder: (order: SectionId[]) => void;
@@ -153,6 +168,7 @@ export function ResumenSubTab(props: ResumenSubTabProps) {
     topClientMonth, comboData, insights, semanaAnterior, hitoProximo,
     bestHourToday, productosSinVenderHoy, decliningProduct,
     abandonedCartCount, abandonedCartValue, hasAnyAlert,
+    chartVentasCategoria, monthlyDailyData,
     sectionOrder, setSectionOrder,
     fmtR, fmtShortR, showLogro, setShowLogro, logro,
   } = props;
@@ -420,124 +436,6 @@ export function ResumenSubTab(props: ResumenSubTabProps) {
         </div>
       )}
 
-      {/* High-impact cards row */}
-      {!loading && (
-        <StaggerContainer className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-          {/* Proximos pagos */}
-          <StaggerItem>
-            <div className="rounded-xl border border-gray-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 p-5 shadow-sm h-full">
-              <div className="flex items-center gap-2 mb-3">
-                <span className="flex items-center justify-center w-7 h-7 rounded-lg bg-amber-50 dark:bg-amber-900/20">
-                  <DollarSign className="w-3.5 h-3.5 text-amber-500" />
-                </span>
-                <span className="text-sm font-medium text-gray-500 dark:text-zinc-400 uppercase tracking-wider">Pagos esta semana</span>
-              </div>
-              {upcomingPayables.overdue > 0 && (
-                <div className="flex items-center gap-1.5 mb-2 px-2 py-1 rounded-lg bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800">
-                  <AlertTriangle className="w-3 h-3 text-red-500" />
-                  <span className="text-[10px] font-bold text-red-600 dark:text-red-400">{upcomingPayables.overdue} vencido{upcomingPayables.overdue !== 1 ? "s" : ""}</span>
-                </div>
-              )}
-              {upcomingPayables.upcoming.length > 0 ? (
-                <ul className="space-y-1.5">
-                  {upcomingPayables.upcoming.map(p => {
-                    const daysLeft = p.dueDate ? Math.max(0, Math.ceil((new Date(p.dueDate).getTime() - now) / 86400000)) : 0;
-                    return (
-                      <li key={p.id} className="flex items-center justify-between text-xs">
-                        <span className="truncate text-gray-600 dark:text-zinc-300 flex-1">{p.supplierName || "Proveedor"}</span>
-                        <span className="font-bold text-gray-900 dark:text-zinc-100 ml-2">{fmtR(p.amount - p.paidAmount)}</span>
-                        <span className="text-[10px] text-gray-400 ml-1.5">{daysLeft}d</span>
-                      </li>
-                    );
-                  })}
-                </ul>
-              ) : upcomingPayables.overdue === 0 ? (
-                <p className="text-xs text-emerald-500 font-medium">Sin pagos pendientes esta semana</p>
-              ) : null}
-              <a href="/admin?module=compras" className="text-[10px] font-bold text-primary hover:underline mt-2 block">Ver todos &rarr;</a>
-            </div>
-          </StaggerItem>
-
-          {/* Clientes del dia */}
-          <StaggerItem>
-            <div className="rounded-xl border border-gray-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 p-5 shadow-sm h-full">
-              <div className="flex items-center gap-2 mb-3">
-                <span className="flex items-center justify-center w-7 h-7 rounded-lg bg-emerald-50 dark:bg-emerald-900/20">
-                  <Users className="w-3.5 h-3.5 text-emerald-500" />
-                </span>
-                <span className="text-sm font-medium text-gray-500 dark:text-zinc-400 uppercase tracking-wider">Clientes hoy</span>
-              </div>
-              <p className="text-2xl font-bold font-mono text-gray-900 dark:text-zinc-100">{clientesHoy}</p>
-              <p className="text-xs text-gray-400 mt-0.5">Promedio: {clientesPromedio}/dia</p>
-              <div className="flex items-center gap-1.5 mt-2">
-                {clientesHoy > clientesAyer ? (
-                  <span className="text-[10px] font-bold text-emerald-600 bg-emerald-50 dark:bg-emerald-900/30 px-1.5 py-0.5 rounded-full">+{clientesHoy - clientesAyer} vs ayer</span>
-                ) : clientesHoy < clientesAyer ? (
-                  <span className="text-[10px] font-bold text-red-500 bg-red-50 dark:bg-red-900/30 px-1.5 py-0.5 rounded-full">{clientesHoy - clientesAyer} vs ayer</span>
-                ) : (
-                  <span className="text-[10px] font-bold text-gray-400 bg-gray-50 dark:bg-zinc-700 px-1.5 py-0.5 rounded-full">Igual que ayer</span>
-                )}
-              </div>
-            </div>
-          </StaggerItem>
-
-          {/* Productos que se agotan */}
-          <StaggerItem>
-            <div className="rounded-xl border border-gray-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 p-5 shadow-sm h-full">
-              <div className="flex items-center gap-2 mb-3">
-                <span className="flex items-center justify-center w-7 h-7 rounded-lg bg-red-50 dark:bg-red-900/20">
-                  <Package className="w-3.5 h-3.5 text-red-500" />
-                </span>
-                <span className="text-sm font-medium text-gray-500 dark:text-zinc-400 uppercase tracking-wider">Se agotan esta semana</span>
-              </div>
-              {productsRunningOut.length > 0 ? (
-                <ul className="space-y-1.5">
-                  {productsRunningOut.map(p => (
-                    <li key={p.id} className="flex items-center justify-between text-xs">
-                      <span className="truncate text-gray-600 dark:text-zinc-300 flex-1">{p.name}</span>
-                      <span className="text-gray-400 ml-1">quedan {p.stock}</span>
-                      <span className={cn(
-                        "text-[10px] font-bold px-1.5 py-0.5 rounded-full ml-1.5",
-                        p.daysLeft < 3 ? "bg-red-100 text-red-600 dark:bg-red-900/30 dark:text-red-400" :
-                        p.daysLeft <= 5 ? "bg-amber-100 text-amber-600 dark:bg-amber-900/30 dark:text-amber-400" :
-                        "bg-orange-100 text-orange-600 dark:bg-orange-900/30 dark:text-orange-400"
-                      )}>
-                        {p.daysLeft}d
-                      </span>
-                    </li>
-                  ))}
-                </ul>
-              ) : (
-                <p className="text-xs text-emerald-500 font-medium">Stock estable para esta semana</p>
-              )}
-              {productsRunningOut.length > 0 && (
-                <a href="/admin?module=compras" className="text-[10px] font-bold text-primary hover:underline mt-2 block">Crear OC &rarr;</a>
-              )}
-            </div>
-          </StaggerItem>
-        </StaggerContainer>
-      )}
-
-      {/* Meta del dia */}
-      {!loading && (() => {
-        let dailyGoal = 800;
-        try { const stored = localStorage.getItem("daily-goal"); if (stored) dailyGoal = Number(stored) || 800; } catch { /* ignore */ }
-        const dailyGoalPct = dailyGoal > 0 ? (revenueToday / dailyGoal) * 100 : 0;
-        return (
-          <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl p-4">
-            <div className="flex items-center justify-between mb-2">
-              <p className="text-sm font-bold text-gray-900 dark:text-white flex items-center gap-2">
-                <Target className="h-4 w-4 text-primary" /> Meta del dia
-              </p>
-              <span className="text-xs font-bold text-primary">{dailyGoalPct.toFixed(0)}%</span>
-            </div>
-            <div className="h-2 bg-gray-100 dark:bg-gray-800 rounded-full overflow-hidden">
-              <div className="h-full bg-primary rounded-full transition-all" style={{ width: `${Math.min(100, dailyGoalPct)}%` }} />
-            </div>
-          </div>
-        );
-      })()}
-
       {/* Widget order controls */}
       {!isDefaultOrder && (
         <div className="flex items-center justify-end">
@@ -551,14 +449,48 @@ export function ResumenSubTab(props: ResumenSubTabProps) {
         </div>
       )}
 
-      {/* Draggable widget sections */}
-      <DraggableWidgetGrid storageKey="dashboard-resumen-order" columns={1}>
+      {/* Draggable widget sections — charts + cards all draggable */}
+      <DraggableWidgetGrid storageKey="dashboard-resumen-order" columns={2}>
+        {/* Chart A — Resumen del negocio (full-width) */}
+        <div key="chart-resumen" className="col-span-1 md:col-span-2">
+          <div className="rounded-xl border border-gray-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 p-4">
+            <div className="flex items-center gap-2 mb-4">
+              <BarChart3 className="w-4 h-4" style={{ color: "var(--color-primary)" }} />
+              <span className="text-sm font-semibold text-gray-900 dark:text-white">Resumen del negocio</span>
+            </div>
+            {loading ? (
+              <div className="w-full h-[320px] bg-gray-100 dark:bg-zinc-700/40 animate-pulse rounded" />
+            ) : monthlyDailyData.length === 0 ? (
+              <p className="text-sm text-gray-400 dark:text-zinc-500 py-12 text-center">Sin datos suficientes para graficar.</p>
+            ) : (
+              <BusinessOverviewChart data={monthlyDailyData} fmtR={fmtR} fmtShortR={fmtShortR} />
+            )}
+          </div>
+        </div>
+
+        {/* Chart B — Donut de categorias */}
+        <div key="chart-categorias" className="col-span-1">
+          <div className="rounded-xl border border-gray-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 p-4 h-full">
+            <div className="flex items-center gap-2 mb-4">
+              <TrendingUp className="w-4 h-4" style={{ color: "#8b5cf6" }} />
+              <span className="text-sm font-semibold text-gray-900 dark:text-white">Ventas por categoria</span>
+            </div>
+            {loading ? (
+              <div className="w-full h-[200px] bg-gray-100 dark:bg-zinc-700/40 animate-pulse rounded" />
+            ) : chartVentasCategoria.length === 0 ? (
+              <p className="text-sm text-gray-400 dark:text-zinc-500 py-12 text-center">Sin datos de categorias.</p>
+            ) : (
+              <CategoryDonutChart data={chartVentasCategoria} fmtR={fmtR} />
+            )}
+          </div>
+        </div>
+
         {/* Top 10 productos section */}
-        {filteredSections.includes("top-productos") && (
-          <div key="top-productos" className="rounded-xl border border-gray-100 dark:border-zinc-800 bg-white dark:bg-zinc-800 p-4">
+        <div key="top-productos" className="col-span-1">
+          <div className="rounded-xl border border-gray-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 p-6 h-full">
             <div className="flex items-center gap-2 mb-4">
               <TrendingUp className="w-4 h-4" style={{ color: "var(--color-primary)" }} />
-              <span className="text-sm font-medium text-gray-500 dark:text-zinc-400 uppercase tracking-wider">Top 10 productos mas vendidos</span>
+              <span className="text-sm font-semibold text-gray-900 dark:text-white">Top 10 productos</span>
             </div>
             {loading ? (
               <SkeletonBar rows={10} />
@@ -583,14 +515,14 @@ export function ResumenSubTab(props: ResumenSubTabProps) {
               </div>
             )}
           </div>
-        )}
+        </div>
 
         {/* Horario pico section */}
-        {filteredSections.includes("horario-pico") && (
-          <div key="horario-pico" className="rounded-xl border border-gray-100 dark:border-zinc-800 bg-white dark:bg-zinc-800 p-4">
+        <div key="horario-pico" className="col-span-1">
+          <div className="rounded-xl border border-gray-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 p-6 h-full">
             <div className="flex items-center gap-2 mb-4">
               <Clock className="w-4 h-4" style={{ color: "#f97316" }} />
-              <span className="text-sm font-medium text-gray-500 dark:text-zinc-400 uppercase tracking-wider">Ventas por hora (hoy)</span>
+              <span className="text-sm font-semibold text-gray-900 dark:text-white">Ventas por hora (hoy)</span>
             </div>
             {loading ? (
               <SkeletonBar rows={4} />
@@ -615,18 +547,17 @@ export function ResumenSubTab(props: ResumenSubTabProps) {
               </div>
             )}
           </div>
-        )}
+        </div>
 
         {/* Comparador mes actual vs anterior */}
-        {filteredSections.includes("margen-comparador") && (
-          <div key="margen-comparador">
+        <div key="margen-comparador" className="col-span-1">
             {loading ? (
               <SkeletonCard />
             ) : (
-              <div className="rounded-xl border border-gray-100 dark:border-zinc-800 bg-white dark:bg-zinc-800 p-4">
+              <div className="rounded-xl border border-gray-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 p-6">
                 <div className="flex items-center gap-2 mb-3">
                   <BarChart3 className="w-4 h-4" style={{ color: "#f97316" }} />
-                  <span className="text-sm font-medium text-gray-500 dark:text-zinc-400 uppercase tracking-wider">Este mes vs anterior</span>
+                  <span className="text-sm font-semibold text-gray-900 dark:text-white">Este mes vs anterior</span>
                 </div>
                 <div className="flex items-end gap-3">
                   <div>
@@ -659,15 +590,15 @@ export function ResumenSubTab(props: ResumenSubTabProps) {
                 </div>
               </div>
             )}
-          </div>
-        )}
+        </div>
 
         {/* KPIs extra section */}
-        {filteredSections.includes("kpis") && !loading && (
-          <div key="kpis" className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+        {!loading && (
+          <div key="kpis-extra" className="col-span-1 md:col-span-2">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
             {monthProjection && (
-              <div className="rounded-xl border border-gray-100 dark:border-zinc-800 bg-white dark:bg-zinc-800 p-4">
-                <span className="text-sm font-medium text-gray-500 dark:text-zinc-400 uppercase tracking-wider">Proyeccion mensual</span>
+              <div className="rounded-xl border border-gray-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 p-6">
+                <span className="text-sm font-semibold text-gray-900 dark:text-white">Proyeccion mensual</span>
                 <p className="text-lg font-bold font-mono text-gray-900 dark:text-zinc-100 mt-1">
                   {fmtR(monthProjection.ventasMes)} <span className="text-xs font-normal text-gray-400">de {fmtR(monthProjection.proyeccion)}</span>
                 </p>
@@ -694,8 +625,8 @@ export function ResumenSubTab(props: ResumenSubTabProps) {
               </div>
             )}
             {productosSinVenderHoy.length > 0 && (
-              <div className="rounded-xl border border-gray-100 dark:border-zinc-800 bg-white dark:bg-zinc-800 p-4">
-                <span className="text-sm font-medium text-gray-500 dark:text-zinc-400 uppercase tracking-wider">Sin vender hoy</span>
+              <div className="rounded-xl border border-gray-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 p-6">
+                <span className="text-sm font-semibold text-gray-900 dark:text-white">Sin vender hoy</span>
                 <div className="mt-2 space-y-1">
                   {productosSinVenderHoy.map((p, i) => (
                     <div key={i} className="flex items-center justify-between text-xs">
@@ -715,12 +646,13 @@ export function ResumenSubTab(props: ResumenSubTabProps) {
                 <p className="text-xs text-orange-500 mt-0.5">Revisa stock, precio o visibilidad</p>
               </div>
             )}
+            </div>
           </div>
         )}
 
         {/* Clientes + Alertas section */}
-        {filteredSections.includes("clientes-alertas") && (
-          <div key="clientes-alertas" className="space-y-4">
+        <div key="clientes-alertas" className="col-span-1 md:col-span-2">
+          <div className="space-y-4">
             {abandonedCartCount > 0 && (
               <div className="rounded-xl border border-amber-200 dark:border-amber-800 bg-amber-50 dark:bg-amber-900/20 p-4">
                 <div className="flex items-center gap-3">
@@ -741,10 +673,10 @@ export function ResumenSubTab(props: ResumenSubTabProps) {
             )}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               {/* Top 5 clientes */}
-              <div className="rounded-xl border border-gray-100 dark:border-zinc-800 bg-white dark:bg-zinc-800 p-4">
+              <div className="rounded-xl border border-gray-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 p-6">
                 <div className="flex items-center gap-2 mb-4">
                   <Users className="w-4 h-4" style={{ color: "var(--color-primary)" }} />
-                  <span className="text-sm font-medium text-gray-500 dark:text-zinc-400 uppercase tracking-wider">Top 5 clientes del mes</span>
+                  <span className="text-sm font-semibold text-gray-900 dark:text-white">Top 5 clientes del mes</span>
                 </div>
                 {loading ? (
                   <div className="space-y-3 animate-pulse">
@@ -775,10 +707,10 @@ export function ResumenSubTab(props: ResumenSubTabProps) {
               </div>
 
               {/* Alertas activas */}
-              <div className="rounded-xl border border-gray-100 dark:border-zinc-800 bg-white dark:bg-zinc-800 p-4">
+              <div className="rounded-xl border border-gray-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 p-6">
                 <div className="flex items-center gap-2 mb-4">
                   <AlertTriangle className="w-4 h-4 text-amber-500" />
-                  <span className="text-sm font-medium text-gray-500 dark:text-zinc-400 uppercase tracking-wider">Alertas activas</span>
+                  <span className="text-sm font-semibold text-gray-900 dark:text-white">Alertas activas</span>
                 </div>
                 {loading ? (
                   <div className="space-y-2 animate-pulse">
@@ -802,25 +734,25 @@ export function ResumenSubTab(props: ResumenSubTabProps) {
               </div>
             </div>
           </div>
-        )}
-      </DraggableWidgetGrid>
+        </div>
 
-      {/* Logros y Streaks */}
-      {!loading && (
-        <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl p-4 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="h-10 w-10 rounded-xl bg-amber-100 dark:bg-amber-900/30 flex items-center justify-center"><Target className="h-5 w-5 text-amber-600" /></div>
-            <div>
-              <p className="text-sm font-bold text-gray-900 dark:text-white">
-                {logrosData.unlocked}/{logrosData.total} logros desbloqueados
-              </p>
-              <p className="text-xs text-gray-500 dark:text-gray-400">
-                {logrosData.streak > 0 ? `Racha: ${logrosData.streak} dias` : "Empieza tu racha vendiendo hoy"}
-              </p>
+        {/* Logros y Streaks */}
+        <div key="logros" className="col-span-1 md:col-span-2">
+          <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl p-4 flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="h-10 w-10 rounded-xl bg-amber-100 dark:bg-amber-900/30 flex items-center justify-center"><Target className="h-5 w-5 text-amber-600" /></div>
+              <div>
+                <p className="text-sm font-bold text-gray-900 dark:text-white">
+                  {logrosData.unlocked}/{logrosData.total} logros desbloqueados
+                </p>
+                <p className="text-xs text-gray-500 dark:text-gray-400">
+                  {logrosData.streak > 0 ? `Racha: ${logrosData.streak} dias` : "Empieza tu racha vendiendo hoy"}
+                </p>
+              </div>
             </div>
           </div>
         </div>
-      )}
+      </DraggableWidgetGrid>
     </>
   );
 }
