@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback, useDeferredValue } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
+import { useSearchParams } from "next/navigation";
 import { useMarketplaceCart } from "@/hooks/use-marketplace-cart";
 import MarketplaceChat from "@/components/marketplace/MarketplaceChat";
 import MarketplaceCart from "@/components/marketplace/MarketplaceCart";
@@ -105,14 +106,18 @@ function ProductCard({
   storeId,
   storeName,
   storeSlug,
+  storeZone,
   onAdded,
+  highlighted,
   vacationMode,
 }: {
   product: StoreProduct;
   storeId: string;
   storeName: string;
   storeSlug: string;
+  storeZone?: string;
   onAdded: (productName: string) => void;
+  highlighted?: boolean;
   vacationMode?: boolean;
 }) {
   const [justAdded, setJustAdded] = useState(false);
@@ -127,14 +132,16 @@ function ProductCard({
 
   const handleAdd = () => {
     addItem({
+      category: product.category,
+      image: product.image,
       storeId,
       storeName,
       storeSlug,
+      storeZone,
       storeProductId: product.storeProductId,
       productId: product.id,
       name: product.name,
       price: product.price,
-      image: product.image,
       unit: product.unit,
     });
     onAdded(product.name);
@@ -158,6 +165,7 @@ function ProductCard({
 
   return (
     <article
+      id={`product-card-${product.id}`}
       className={`group relative flex flex-col rounded-2xl overflow-hidden border border-gray-100 dark:border-gray-800 bg-white dark:bg-gray-900 hover:shadow-xl hover:shadow-primary/10 hover:border-primary/20 transition-shadow duration-300 ${isOutOfStock ? "opacity-60" : ""}`}
     >
       {/* Badges */}
@@ -190,11 +198,13 @@ function ProductCard({
             onError={() => setImgError(true)}
           />
         ) : (
-          <div className="h-full w-full flex flex-col items-center justify-center bg-gradient-to-br from-gray-100 to-gray-50 dark:from-gray-800 dark:to-gray-900 text-gray-300 gap-2">
-            <svg aria-hidden="true" className="h-10 w-10" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
-            </svg>
-            <span className="text-[10px] font-medium text-gray-400 uppercase tracking-wider">Sin imagen</span>
+          <div className="h-full w-full flex flex-col items-center justify-center bg-linear-to-br from-slate-100 via-blue-50 to-indigo-100 dark:from-gray-800 dark:via-gray-800 dark:to-gray-900 text-gray-300 gap-2">
+            <div className="h-16 w-16 rounded-2xl bg-white/80 dark:bg-gray-900/40 ring-1 ring-white/70 dark:ring-gray-700/70 flex items-center justify-center shadow-sm">
+              <svg aria-hidden="true" className="h-8 w-8 text-gray-400 dark:text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
+              </svg>
+            </div>
+            <span className="text-[10px] font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Sin imagen</span>
           </div>
         )}
 
@@ -206,7 +216,7 @@ function ProductCard({
       </div>
 
       {/* Content */}
-      <div className="p-2.5 sm:p-3 flex flex-col gap-1.5 flex-1 min-h-[9.5rem] sm:min-h-[10.5rem]">
+      <div className="flex min-h-38 flex-1 flex-col gap-1.5 p-2.5 sm:min-h-42 sm:p-3">
         <h3 className="font-semibold text-gray-900 dark:text-white text-xs sm:text-sm leading-tight line-clamp-2">
           {product.name}
         </h3>
@@ -291,6 +301,10 @@ function ProductCard({
           </div>
         </div>
       </div>
+
+      {highlighted && (
+        <div className="pointer-events-none absolute inset-0 rounded-2xl ring-2 ring-primary/70 shadow-[0_0_0_4px_rgba(37,99,235,0.15)] animate-pulse" />
+      )}
     </article>
   );
 }
@@ -302,6 +316,7 @@ function RelatedProducts({
   storeId,
   storeName,
   storeSlug,
+  storeZone,
   onAdded,
   vacationMode,
 }: {
@@ -309,6 +324,7 @@ function RelatedProducts({
   storeId: string;
   storeName: string;
   storeSlug: string;
+  storeZone?: string;
   onAdded: (name: string) => void;
   vacationMode?: boolean;
 }) {
@@ -351,6 +367,7 @@ function RelatedProducts({
             storeId={storeId}
             storeName={storeName}
             storeSlug={storeSlug}
+            storeZone={storeZone}
             onAdded={onAdded}
             vacationMode={vacationMode}
           />
@@ -395,10 +412,12 @@ function ReviewPhotoGallery({ storeSlug }: { storeSlug: string }) {
       </h3>
       <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-thin scrollbar-thumb-gray-300 dark:scrollbar-thumb-gray-700">
         {photos.map((url, i) => (
-          <img
+          <Image
             key={i}
             src={url}
             alt={`Foto de cliente ${i + 1}`}
+            width={96}
+            height={96}
             className="h-24 w-24 shrink-0 rounded-xl object-cover border border-gray-200 dark:border-gray-700 cursor-pointer hover:opacity-80 hover:scale-105 transition-all"
             onClick={() => window.open(url, "_blank")}
           />
@@ -607,9 +626,11 @@ function StoreReviews({ storeSlug, storeName }: { storeSlug: string; storeName: 
               <div className="flex gap-2 flex-wrap">
                 {formPhotos.map((url, i) => (
                   <div key={i} className="relative group">
-                    <img
+                    <Image
                       src={url}
                       alt={`Foto ${i + 1}`}
+                      width={64}
+                      height={64}
                       className="h-16 w-16 object-cover rounded-lg border border-gray-200"
                     />
                     <button
@@ -704,10 +725,12 @@ function StoreReviews({ storeSlug, storeName }: { storeSlug: string; storeName: 
                   return (
                     <div className="flex gap-2 mt-2 flex-wrap">
                       {urls.map((url, i) => (
-                        <img
+                        <Image
                           key={i}
                           src={url}
                           alt={`Foto de reseña ${i + 1}`}
+                          width={80}
+                          height={80}
                           className="h-20 w-20 object-cover rounded-lg border border-gray-200 dark:border-gray-700 cursor-pointer hover:opacity-80 transition-opacity"
                           onClick={() => window.open(url, "_blank")}
                         />
@@ -806,7 +829,7 @@ function StoreInfoSection({ store }: { store: StoreInfo }) {
               href={mapsUrl}
               target="_blank"
               rel="noopener noreferrer"
-              className="mt-1.5 inline-flex min-h-[44px] items-center gap-1.5 rounded-xl bg-primary/10 px-3 py-2 text-xs font-semibold text-primary hover:bg-primary/20 transition-colors"
+              className="mt-1.5 inline-flex min-h-11 items-center gap-1.5 rounded-xl bg-primary/10 px-3 py-2 text-xs font-semibold text-primary transition-colors hover:bg-primary/20"
               aria-label={`Ver ${store.name} en Google Maps`}
             >
               <svg aria-hidden="true" className="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -831,7 +854,7 @@ function StoreInfoSection({ store }: { store: StoreInfo }) {
                 href={`https://wa.me/51?text=${encodeURIComponent(`Hola, vi tu tienda ${store.name} en Buleje`)}`}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="inline-flex min-h-[44px] items-center gap-2 rounded-xl bg-emerald-600 px-4 py-2 text-sm font-semibold text-white hover:bg-emerald-700 transition-colors shadow-sm"
+                className="inline-flex min-h-11 items-center gap-2 rounded-xl bg-emerald-600 px-4 py-2 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-emerald-700"
                 aria-label={`Contactar ${store.name} por WhatsApp`}
               >
                 <svg aria-hidden="true" className="h-4 w-4" viewBox="0 0 24 24" fill="currentColor">
@@ -842,7 +865,7 @@ function StoreInfoSection({ store }: { store: StoreInfo }) {
               </a>
               <a
                 href="tel:+51000000000"
-                className="inline-flex min-h-[44px] items-center gap-2 rounded-xl border border-gray-300 dark:border-gray-600 px-4 py-2 text-sm font-semibold text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+                className="inline-flex min-h-11 items-center gap-2 rounded-xl border border-gray-300 px-4 py-2 text-sm font-semibold text-gray-700 transition-colors hover:bg-gray-100 dark:border-gray-600 dark:text-gray-200 dark:hover:bg-gray-800"
                 aria-label={`Llamar a ${store.name}`}
               >
                 <svg aria-hidden="true" className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -886,7 +909,15 @@ function StoreInfoSection({ store }: { store: StoreInfo }) {
 const fmt = (n: number) =>
   new Intl.NumberFormat("es-PE", { style: "currency", currency: "PEN" }).format(n);
 
+// In-memory cache: avoids re-fetching products when navigating back to a store
+const storeProductCache = new Map<string, { data: StoreProduct[]; ts: number }>();
+const CACHE_TTL = 5 * 60_000; // 5 minutes
+
+// In-memory store info cache
+const storeInfoCache = new Map<string, { data: StoreInfo; ts: number }>();
+
 export default function StoreDetail({ slug }: { slug: string }) {
+  const searchParams = useSearchParams();
   const [store, setStore]       = useState<StoreInfo | null>(null);
   const [products, setProducts] = useState<StoreProduct[]>([]);
   const [search, setSearch]     = useState("");
@@ -900,6 +931,7 @@ export default function StoreDetail({ slug }: { slug: string }) {
   const [customerPhone, setCustomerPhone]   = useState<string | null>(null);
   const [cartOpen, setCartOpen]             = useState(false);
   const [followed, setFollowed]             = useState(false);
+  const [highlightedProductId, setHighlightedProductId] = useState<number | null>(null);
 
   // Cart info for this specific store
   const { byStore, totalByStore } = useMarketplaceCart();
@@ -920,13 +952,23 @@ export default function StoreDetail({ slug }: { slug: string }) {
   const deferredSearch = useDeferredValue(search);
 
   const fetchStore = useCallback(async () => {
+    // Try cache first
+    const cached = storeInfoCache.get(slug);
+    if (cached && Date.now() - cached.ts < CACHE_TTL) {
+      setStore(cached.data);
+      setLoadingStore(false);
+      return;
+    }
+
     setLoadingStore(true);
     setErrorStore(null);
     try {
       const res = await fetch(`/api/marketplace/stores/${slug}`);
       if (!res.ok) throw new Error(`Error ${res.status}`);
       const json = await res.json();
-      setStore(json.data ?? null);
+      const data = json.data ?? null;
+      setStore(data);
+      if (data) storeInfoCache.set(slug, { data, ts: Date.now() });
     } catch (err) {
       setErrorStore(err instanceof Error ? err.message : "No se pudo cargar la tienda");
     } finally {
@@ -935,14 +977,26 @@ export default function StoreDetail({ slug }: { slug: string }) {
   }, [slug]);
 
   const fetchProducts = useCallback(async () => {
+    // Build query params
+    const params = new URLSearchParams();
+    if (deferredSearch) params.set("search", deferredSearch);
+    if (catFilter)      params.set("category", catFilter);
+    if (sortBy === "price_asc" || sortBy === "price_desc") params.set("sort", sortBy);
+
+    const isDefaultQuery = !deferredSearch && !catFilter && !sortBy;
+    const cacheKey = `${slug}:${params.toString()}`;
+
+    // Try cache first (avoids re-fetch when navigating back)
+    const cached = storeProductCache.get(cacheKey);
+    if (cached && Date.now() - cached.ts < CACHE_TTL) {
+      setProducts(cached.data);
+      setLoadingProducts(false);
+      return;
+    }
+
     setLoadingProducts(true);
     setErrorProducts(null);
     try {
-      const params = new URLSearchParams();
-      if (deferredSearch) params.set("search", deferredSearch);
-      if (catFilter)      params.set("category", catFilter);
-      if (sortBy === "price_asc" || sortBy === "price_desc") params.set("sort", sortBy);
-
       const res = await fetch(`/api/marketplace/stores/${slug}/products?${params}`);
       if (!res.ok) throw new Error(`Error ${res.status}`);
       const json = await res.json();
@@ -952,6 +1006,12 @@ export default function StoreDetail({ slug }: { slug: string }) {
         data = [...data].sort((a: StoreProduct, b: StoreProduct) => b.stock - a.stock);
       }
       setProducts(data);
+      // Cache the result (default query + filtered queries)
+      storeProductCache.set(cacheKey, { data, ts: Date.now() });
+      // Also cache filtered data under default key for faster back-navigation
+      if (isDefaultQuery) {
+        storeProductCache.set(`${slug}:`, { data, ts: Date.now() });
+      }
     } catch (err) {
       setErrorProducts(err instanceof Error ? err.message : "No se pudieron cargar los productos");
     } finally {
@@ -961,6 +1021,35 @@ export default function StoreDetail({ slug }: { slug: string }) {
 
   useEffect(() => { fetchStore(); }, [fetchStore]);
   useEffect(() => { fetchProducts(); }, [fetchProducts]);
+
+  useEffect(() => {
+    const raw = searchParams.get("product");
+    if (!raw) return;
+    const productId = Number(raw);
+    if (!Number.isFinite(productId) || productId <= 0) return;
+    setSearch("");
+    setCatFilter("");
+    setHighlightedProductId(productId);
+  }, [searchParams]);
+
+  useEffect(() => {
+    if (!highlightedProductId) return;
+    if (!products.some((p) => p.id === highlightedProductId)) return;
+
+    const targetId = `product-card-${highlightedProductId}`;
+    const raf = requestAnimationFrame(() => {
+      const el = document.getElementById(targetId);
+      if (el) {
+        el.scrollIntoView({ behavior: "smooth", block: "center" });
+      }
+    });
+
+    const timeout = setTimeout(() => setHighlightedProductId(null), 3000);
+    return () => {
+      cancelAnimationFrame(raf);
+      clearTimeout(timeout);
+    };
+  }, [highlightedProductId, products]);
 
   // categorías únicas de los productos para el filtro
   const categories = Array.from(
@@ -986,7 +1075,7 @@ export default function StoreDetail({ slug }: { slug: string }) {
       ) : store ? (
         <div className="mb-8">
           {/* ── BANNER PRINCIPAL ── */}
-          <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-primary to-[#1a4a36] sm:rounded-3xl" style={{ minHeight: "200px" }}>
+          <div className="relative overflow-hidden rounded-2xl bg-linear-to-br from-primary to-[#1a4a36] sm:rounded-3xl" style={{ minHeight: "200px" }}>
             {store.banner && (
               <Image
                 src={store.banner}
@@ -998,7 +1087,7 @@ export default function StoreDetail({ slug }: { slug: string }) {
               />
             )}
             {/* Capa de gradiente sobre la imagen */}
-            <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent" />
+            <div className="absolute inset-0 bg-linear-to-t from-black/70 via-black/20 to-transparent" />
 
             {/* Acciones top-right: compartir */}
             <div className="absolute top-4 right-4 flex items-center gap-2 z-10">
@@ -1034,7 +1123,7 @@ export default function StoreDetail({ slug }: { slug: string }) {
                 ) : (
                   <div
                     className="flex h-full w-full items-center justify-center text-3xl font-black text-white"
-                    style={{ background: "linear-gradient(135deg, #1D4ED8, #1a4a36)" }}
+                    style={{ background: "linear-gradient(135deg, var(--color-primary-dark), #1a4a36)" }}
                   >
                     {store.name.slice(0, 2).toUpperCase()}
                   </div>
@@ -1103,7 +1192,7 @@ export default function StoreDetail({ slug }: { slug: string }) {
                   onClick={() => setFollowed((v) => !v)}
                   aria-pressed={followed}
                   aria-label={followed ? `Dejar de seguir ${store.name}` : `Seguir ${store.name}`}
-                  className={`inline-flex min-h-[44px] items-center gap-2 rounded-full px-6 py-2.5 text-sm font-bold shadow-lg transition-all duration-200 ${
+                  className={`inline-flex min-h-11 items-center gap-2 rounded-full px-6 py-2.5 text-sm font-bold shadow-lg transition-all duration-200 ${
                     followed
                       ? "bg-white text-primary hover:bg-white/90"
                       : "bg-white/20 text-white backdrop-blur-sm hover:bg-white/30 border border-white/40"
@@ -1130,7 +1219,7 @@ export default function StoreDetail({ slug }: { slug: string }) {
                 {store.tenantSlug && (
                   <Link
                     href={`/t/${store.tenantSlug}/tienda`}
-                    className="inline-flex min-h-[44px] flex-col items-center justify-center rounded-xl border border-white/40 px-4 py-2 backdrop-blur-sm transition-all duration-200 hover:bg-white/10"
+                    className="inline-flex min-h-11 flex-col items-center justify-center rounded-xl border border-white/40 px-4 py-2 backdrop-blur-sm transition-all duration-200 hover:bg-white/10"
                   >
                     <span className="text-sm font-bold text-white">Ver ofertas exclusivas</span>
                     <span className="text-[10px] text-white/60">Promociones, combos y mas</span>
@@ -1216,7 +1305,7 @@ export default function StoreDetail({ slug }: { slug: string }) {
               <button
                 onClick={() => setCatFilter("")}
                 aria-pressed={catFilter === ""}
-                className={`min-h-[44px] shrink-0 rounded-full px-4 py-2 text-sm font-semibold transition-colors focus-visible:outline-2 focus-visible:outline-primary ${
+                className={`min-h-11 shrink-0 rounded-full px-4 py-2 text-sm font-semibold transition-colors focus-visible:outline-2 focus-visible:outline-primary ${
                   catFilter === ""
                     ? "bg-primary text-white shadow-md shadow-primary/25"
                     : "border border-gray-200 bg-white text-gray-600 hover:bg-gray-50 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700"
@@ -1229,7 +1318,7 @@ export default function StoreDetail({ slug }: { slug: string }) {
                   key={c}
                   onClick={() => setCatFilter(c === catFilter ? "" : c)}
                   aria-pressed={catFilter === c}
-                  className={`min-h-[44px] shrink-0 rounded-full px-4 py-2 text-sm font-semibold capitalize transition-colors focus-visible:outline-2 focus-visible:outline-primary ${
+                  className={`min-h-11 shrink-0 rounded-full px-4 py-2 text-sm font-semibold capitalize transition-colors focus-visible:outline-2 focus-visible:outline-primary ${
                     catFilter === c
                       ? "bg-primary text-white shadow-md shadow-primary/25"
                       : "border border-gray-200 bg-white text-gray-600 hover:bg-gray-50 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700"
@@ -1303,7 +1392,9 @@ export default function StoreDetail({ slug }: { slug: string }) {
                 storeId={store?.id ?? slug}
                 storeName={store?.name ?? "Tienda"}
                 storeSlug={store?.slug ?? slug}
+                storeZone={store?.zone}
                 onAdded={(name) => showToast(`${name} agregado al carrito`)}
+                highlighted={highlightedProductId === p.id}
                 vacationMode={store?.vacationMode}
               />
             ))}
@@ -1315,6 +1406,7 @@ export default function StoreDetail({ slug }: { slug: string }) {
             storeId={store?.id ?? slug}
             storeName={store?.name ?? "Tienda"}
             storeSlug={store?.slug ?? slug}
+            storeZone={store?.zone}
             onAdded={(name) => showToast(`${name} agregado al carrito`)}
             vacationMode={store?.vacationMode}
           />

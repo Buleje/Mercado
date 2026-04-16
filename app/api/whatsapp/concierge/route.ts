@@ -270,18 +270,25 @@ async function processPayload(rawBody: string): Promise<void> {
             trimmed,
           );
 
-          await sendWhatsAppReply(
+          // Fire-and-forget: don't block webhook on WhatsApp API latency
+          sendWhatsAppReply(
             phoneNumberId,
             effectiveToken,
             phone,
             response.reply,
-          );
-
-          logger.info("[whatsapp/concierge] reply sent", {
-            tenantId: effectiveTenantId,
-            phone,
-            state: response.state,
-            escalated: response.escalated,
+          ).then(() => {
+            logger.info("[whatsapp/concierge] reply sent", {
+              tenantId: effectiveTenantId,
+              phone,
+              state: response.state,
+              escalated: response.escalated,
+            });
+          }).catch((replyErr) => {
+            logger.warn("[whatsapp/concierge] reply failed", {
+              tenantId: effectiveTenantId,
+              phone,
+              error: replyErr instanceof Error ? replyErr.message : String(replyErr),
+            });
           });
         } catch (err) {
           logger.error("[whatsapp/concierge] engine error", {
@@ -291,12 +298,12 @@ async function processPayload(rawBody: string): Promise<void> {
           });
 
           // Best-effort error reply to customer
-          await sendWhatsAppReply(
+          sendWhatsAppReply(
             phoneNumberId,
             effectiveToken,
             phone,
             "Lo siento, ocurrió un error. Escribe *hola* para volver al menú.",
-          ).catch(() => {});
+          ).catch((replyErr) => logger.error("[whatsapp/concierge] error reply send failed", { error: String(replyErr), phone }));
         }
       }
     }

@@ -111,7 +111,7 @@ export async function GET(req: NextRequest) {
             recipient: customer.phone,
             message,
             tenantId: customer.tenantId,
-          }).catch(() => {});
+          }).catch((err) => logger.error("[cron/recompra-coupon] WhatsApp enqueue failed", { error: String(err), phone: customer.phone, tenantId: customer.tenantId }));
           sent++;
         } catch (err) {
           errors.push(`${customer.phone}: ${err instanceof Error ? err.message : "error"}`);

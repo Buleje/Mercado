@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
+import { logger } from "@/lib/logger";
 
 const DriverApplySchema = z.object({
   name: z.string().min(2).max(100),
@@ -49,9 +50,9 @@ export async function POST(req: NextRequest) {
           "",
           "Revisa el panel admin para aprobar o rechazar.",
         ].join("\n");
-        sendWhatsAppText(adminPhone, msg).catch(() => {});
+        sendWhatsAppText(adminPhone, msg).catch((err) => logger.error("[drivers/apply] WhatsApp admin notify failed", { error: String(err) }));
       }
-    }).catch(() => {});
+    }).catch((err) => logger.error("[drivers/apply] dynamic import failed", { error: String(err) }));
 
     return NextResponse.json({ success: true });
   } catch {

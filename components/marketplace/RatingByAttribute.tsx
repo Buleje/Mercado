@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Image from "next/image";
 import { Star, ThumbsUp, ChevronDown, ChevronUp } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { timeAgo } from "@/lib/utils";
@@ -192,7 +193,7 @@ export default function RatingByAttribute({ summary, reviews }: RatingByAttribut
             >
               <div className="flex items-start gap-3">
                 {/* Avatar */}
-                <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[#00B4A6]/10 text-[#00B4A6] font-bold text-sm">
+                <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary font-bold text-sm">
                   {review.name.charAt(0).toUpperCase()}
                 </div>
 
@@ -248,11 +249,12 @@ export default function RatingByAttribute({ summary, reviews }: RatingByAttribut
                           key={i}
                           className="relative h-16 w-16 shrink-0 rounded-lg overflow-hidden border border-gray-200 dark:border-gray-700"
                         >
-                          {/* eslint-disable-next-line @next/next/no-img-element */}
-                          <img
+                          <Image
                             src={url}
                             alt={`Foto ${i + 1} de resena de ${review.name}`}
-                            className="h-full w-full object-cover"
+                            fill
+                            sizes="64px"
+                            className="object-cover"
                           />
                         </div>
                       ))}
@@ -266,8 +268,8 @@ export default function RatingByAttribute({ summary, reviews }: RatingByAttribut
                     className={cn(
                       "mt-3 flex items-center gap-1.5 text-xs font-medium transition-colors",
                       voted
-                        ? "text-[#00B4A6] cursor-default"
-                        : "text-gray-400 dark:text-gray-500 hover:text-[#00B4A6]"
+                        ? "text-primary cursor-default"
+                        : "text-gray-400 dark:text-gray-500 hover:text-primary"
                     )}
                   >
                     <ThumbsUp className="h-3.5 w-3.5" />

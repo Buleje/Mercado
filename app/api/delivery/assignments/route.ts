@@ -4,6 +4,7 @@ import { requireAdmin } from "@/lib/require-admin";
 import { logActivity } from "@/lib/activity-logger";
 import { prisma } from "@/lib/prisma";
 import { sendWhatsAppText } from "@/lib/whatsapp";
+import { logger } from "@/lib/logger";
 
 const VALID_TRANSITIONS: Record<string, string[]> = {
   assigned: ["picked_up"],
@@ -187,7 +188,7 @@ export async function PATCH(req: NextRequest) {
       };
       const msg = trackingMessages[status];
       if (msg) {
-        sendWhatsAppText(updated.order.customerPhone, msg).catch(() => {});
+        sendWhatsAppText(updated.order.customerPhone, msg).catch((err) => logger.error("[delivery/assignments] WhatsApp tracking notify failed", { error: String(err), status }));
       }
     }
 

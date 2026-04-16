@@ -185,12 +185,12 @@ export async function GET(req: NextRequest) {
               recipient: ownerPhone,
               message: whatsappMsg,
               tenantId,
-            }).catch(() => {});
+            }).catch((err) => logger.error("[cron/daily-deal-bundle] WhatsApp enqueue failed", { error: String(err), tenantId }));
             sendPushToPhone(ownerPhone, {
               title: `🔥 Paquete del Día: ${selected.length} productos a S/ ${bundlePrice.toFixed(2)}`,
               body: `${DISCOUNT_PCT}% descuento sobre productos sin ventas esta semana`,
               url: "/admin?module=catalogo",
-            }).catch(() => {});
+            }).catch((err) => logger.error("[cron/daily-deal-bundle] push send failed", { error: String(err), tenantId }));
           }
         } catch { /* silent */ }
       })();

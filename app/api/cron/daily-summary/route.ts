@@ -251,12 +251,12 @@ export async function GET(req: NextRequest) {
             });
             const ownerPhone = tenantWithPhone?.ownerPhone || (tenant.slug === "main" ? process.env.NOTIFY_PHONE : null);
             if (ownerPhone) {
-              enqueueNotification({ type: "whatsapp", recipient: ownerPhone, message: whatsappText, tenantId: tenant.id, metadata: { purpose: "daily-summary" } }).catch(() => {});
+              enqueueNotification({ type: "whatsapp", recipient: ownerPhone, message: whatsappText, tenantId: tenant.id, metadata: { purpose: "daily-summary" } }).catch((err) => logger.error("[cron/daily-summary] WhatsApp enqueue failed", { error: String(err), tenantId: tenant.id }));
               sendPushToPhone(ownerPhone, {
                 title: `📊 Resumen del día — ${tenant.name}`,
                 body: `S/ ${totalVentas.toFixed(2)} en ventas · ${totalPedidos} pedidos · ${productosStockBajo.length} alertas`,
                 url: "/admin?module=panel-principal",
-              }).catch(() => {});
+              }).catch((err) => logger.error("[cron/daily-summary] push send failed", { error: String(err), tenantId: tenant.id }));
             }
           } catch { /* silencioso */ }
         })();

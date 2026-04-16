@@ -199,12 +199,12 @@ export async function GET(req: NextRequest) {
               recipient: phone,
               message,
               tenantId: tenant.id,
-            }).catch(() => {});
+            }).catch((err) => logger.error("[cron/supplier-scoring] WhatsApp enqueue failed", { error: String(err), tenantId: tenant.id }));
             sendPushToPhone(phone, {
               title: `📋 Ranking de proveedores — ${tenant.name}`,
               body: `${scored.length} proveedores evaluados. Mejor: ${scored[0]?.name ?? "—"} (${scored[0]?.avg ?? 0}/5)`,
               url: "/admin?module=proveedores",
-            }).catch(() => {});
+            }).catch((err) => logger.error("[cron/supplier-scoring] push send failed", { error: String(err), tenantId: tenant.id }));
           }
         }
 

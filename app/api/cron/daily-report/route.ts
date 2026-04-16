@@ -55,7 +55,7 @@ export async function GET(req: NextRequest) {
       const mensaje = await generateDailyReport(tenant.id);
 
       // Fire-and-forget: el envío WA no debe bloquear ni romper el loop
-      sendWhatsAppText(phone, mensaje).catch(() => {});
+      sendWhatsAppText(phone, mensaje).catch((err) => logger.error("[cron/daily-report] WhatsApp send failed", { error: String(err), tenantId: tenant.id }));
 
       logger.info("[cron/daily-report] Reporte enviado", { tenant: tenant.name, tenantId: tenant.id });
       enviados++;

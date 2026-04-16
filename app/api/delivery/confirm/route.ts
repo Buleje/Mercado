@@ -3,6 +3,7 @@ import { z } from "zod";
 import { requireAdmin } from "@/lib/require-admin";
 import { logActivity } from "@/lib/activity-logger";
 import { prisma } from "@/lib/prisma";
+import { logger } from "@/lib/logger";
 
 const BodySchema = z.object({
   orderId: z.string().min(1, "orderId requerido"),
@@ -112,7 +113,7 @@ export async function POST(req: NextRequest) {
           orderId,
           message: `Tu pedido fue entregado por ${assignment.partner.name}. Gracias por tu compra!`,
         }),
-      }).catch(() => {});
+      }).catch((err) => logger.error("[delivery/confirm] notify fetch failed", { error: String(err), orderId }));
 
       // Fire-and-forget: enviar link de calificación por WhatsApp (30s delay via setTimeout no disponible en serverless, se envía inmediato en segundo mensaje)
       const ratingUrl = `${baseUrl}/marketplace/calificar-entrega?id=${updatedAssignment.id}`;
@@ -121,8 +122,8 @@ export async function POST(req: NextRequest) {
         sendWhatsAppText(
           assignment.order.customerPhone!,
           `⭐ ¡Hola ${customerName}! ¿Cómo fue tu entrega con ${assignment.partner.name}?\n\nCalifica aquí en 10 segundos 👉 ${ratingUrl}\n\nTu opinión nos ayuda a mejorar 🙏`
-        ).catch(() => {});
-      }).catch(() => {});
+        ).catch((err) => logger.error("[delivery/confirm] rating WhatsApp send failed", { error: String(err), orderId }));
+      }).catch((err) => logger.error("[delivery/confirm] dynamic whatsapp import failed", { error: String(err) }));
     }
 
     // Fire-and-forget: log de actividad

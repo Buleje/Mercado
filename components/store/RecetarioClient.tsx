@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useMemo, useRef, useCallback } from "react";
+import Image from "next/image";
 import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
 import {
@@ -55,8 +56,7 @@ const CATEGORIAS = [
   { id: "rapidas", label: "Rapidas", emoji: "\u26A1" },
 ];
 
-/** Neutral fallback — no rainbow gradients, just gray for all categories */
-const CATEGORIA_GRADIENTS: Record<string, { from: string; to: string }> = {};
+import { CATEGORIA_GRADIENTS } from "@/lib/recipe-gradients";
 
 const DIFICULTAD_LABELS: Record<string, { label: string; icon: string }> = {
   "Facil": { label: "Facil", icon: "\u2B50" },
@@ -132,11 +132,12 @@ function RecetaCard({
           <div className={cn("relative w-full overflow-hidden", aspectClass)}>
             {receta.imageUrl ? (
               /* Recipe image */
-              /* eslint-disable-next-line @next/next/no-img-element */
-              <img
+              <Image
                 src={receta.imageUrl}
                 alt={receta.nombre}
-                className="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                fill
+                sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
+                className="object-cover group-hover:scale-105 transition-transform duration-500"
               />
             ) : (
               /* Gray placeholder with ChefHat icon */
@@ -696,11 +697,12 @@ function RecetaListItem({
         <Link href={`/recetas/${receta.id}`} className="shrink-0 w-28 sm:w-36 relative overflow-hidden">
           {receta.imageUrl ? (
             <div className="h-full min-h-30 relative">
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
+              <Image
                 src={receta.imageUrl}
                 alt={receta.nombre}
-                className="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                fill
+                sizes="(max-width: 640px) 112px, 144px"
+                className="object-cover group-hover:scale-105 transition-transform duration-500"
               />
             </div>
           ) : (

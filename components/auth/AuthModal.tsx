@@ -7,7 +7,7 @@ import {
   useCallback,
   type KeyboardEvent,
 } from "react";
-import { X } from "lucide-react";
+import { X, User, Phone, Shield, Loader2, Search } from "lucide-react";
 
 // ---------------------------------------------------------------------------
 // Tipos de respuesta de la API
@@ -16,6 +16,12 @@ interface VerifyResponse {
   ok: boolean;
   customer?: { id: string; name: string; phone: string };
   isNew?: boolean;
+  error?: string;
+}
+
+interface DniResponse {
+  ok: boolean;
+  nombre?: string;
   error?: string;
 }
 
@@ -41,15 +47,11 @@ interface AuthModalProps {
 }
 
 // ---------------------------------------------------------------------------
-// Iconos SVG inline (sin framer-motion ni librerías externas de íconos extra)
+// Iconos SVG inline
 // ---------------------------------------------------------------------------
 function GoogleIcon() {
   return (
-    <svg
-      aria-hidden="true"
-      viewBox="0 0 24 24"
-      className="h-5 w-5 shrink-0"
-    >
+    <svg aria-hidden="true" viewBox="0 0 24 24" className="h-5 w-5 shrink-0">
       <path
         fill="#4285F4"
         d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
@@ -76,7 +78,7 @@ function FacebookIcon() {
       aria-hidden="true"
       viewBox="0 0 24 24"
       className="h-5 w-5 shrink-0"
-      fill="#1877F2"
+      fill="white"
     >
       <path d="M24 12.073C24 5.405 18.627 0 12 0S0 5.405 0 12.073C0 18.1 4.388 23.094 10.125 24v-8.437H7.078v-3.49h3.047V9.41c0-3.025 1.792-4.697 4.533-4.697 1.312 0 2.686.236 2.686.236v2.97h-1.513c-1.491 0-1.956.93-1.956 1.886v2.267h3.328l-.532 3.49h-2.796V24C19.612 23.094 24 18.1 24 12.073z" />
     </svg>
@@ -91,6 +93,10 @@ export function AuthModal({ open, onClose }: AuthModalProps) {
   const [step, setStep] = useState<Step>("phone");
   const [phone, setPhone] = useState("");
   const [name, setName] = useState("");
+  const [dni, setDni] = useState("");
+  const [dniLoading, setDniLoading] = useState(false);
+  const [dniError, setDniError] = useState<string | null>(null);
+  const [dniVerified, setDniVerified] = useState(false);
   const [otpCode, setOtpCode] = useState("");
   const [loading, setLoading] = useState(false);
   const [toast, setToast] = useState<string | null>(null);
@@ -107,13 +113,12 @@ export function AuthModal({ open, onClose }: AuthModalProps) {
   useEffect(() => {
     if (open) {
       setRendered(true);
-      // Forzar reflow para que la transición de entrada funcione
       requestAnimationFrame(() => {
         requestAnimationFrame(() => setVisible(true));
       });
     } else {
       setVisible(false);
-      const timer = setTimeout(() => setRendered(false), 250);
+      const timer = setTimeout(() => setRendered(false), 300);
       return () => clearTimeout(timer);
     }
   }, [open]);
@@ -161,7 +166,7 @@ export function AuthModal({ open, onClose }: AuthModalProps) {
         }
       }
     },
-    []
+    [],
   );
 
   const showToast = useCallback((msg: string) => {
@@ -169,12 +174,57 @@ export function AuthModal({ open, onClose }: AuthModalProps) {
     setTimeout(() => setToast(null), 3500);
   }, []);
 
-  // Normaliza el numero: elimina espacios y guiones
+  // Normaliza el número: elimina espacios y guiones
   const normalizedPhone = phone.replace(/\D/g, "");
+
+  // ── DNI Lookup ──
+  const handleDniLookup = useCallback(async () => {
+    const cleanDni = dni.replace(/\D/g, "");
+    if (cleanDni.length !== 8) {
+      setDniError("El DNI debe tener 8 dígitos");
+      return;
+    }
+
+    setDniLoading(true);
+    setDniError(null);
+    setDniVerified(false);
+
+    try {
+      const res = await fetch("/api/auth/dni", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ dni: cleanDni }),
+      });
+      const data = (await res.json()) as DniResponse;
+
+      if (data.ok && data.nombre) {
+        setName(data.nombre);
+        setDniVerified(true);
+      } else {
+        setDniError(data.error ?? "No se encontró el DNI. Escribe tu nombre.");
+      }
+    } catch {
+      setDniError("Error de conexión. Escribe tu nombre manualmente.");
+    } finally {
+      setDniLoading(false);
+    }
+  }, [dni]);
+
+  // Auto-lookup cuando DNI tiene 8 dígitos
+  useEffect(() => {
+    const cleanDni = dni.replace(/\D/g, "");
+    if (cleanDni.length === 8 && tab === "register") {
+      void handleDniLookup();
+    }
+    if (cleanDni.length < 8) {
+      setDniVerified(false);
+      setDniError(null);
+    }
+  }, [dni, tab, handleDniLookup]);
 
   const handleSendOtp = useCallback(async () => {
     if (!normalizedPhone || normalizedPhone.length < 9) {
-      showToast("Ingresa un numero de celular valido (9 digitos).");
+      showToast("Ingresa un número de celular válido (9 dígitos).");
       return;
     }
     if (tab === "register" && !name.trim()) {
@@ -188,15 +238,15 @@ export function AuthModal({ open, onClose }: AuthModalProps) {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ phone: normalizedPhone }),
       });
-      const data = await res.json() as { ok?: boolean; error?: string };
+      const data = (await res.json()) as { ok?: boolean; error?: string };
       if (!res.ok) {
-        showToast(data.error ?? "No se pudo enviar el codigo. Intenta de nuevo.");
+        showToast(data.error ?? "No se pudo enviar el código. Intenta de nuevo.");
         return;
       }
-      showToast("Codigo enviado. Revisa tu WhatsApp.");
+      showToast("Código enviado. Revisa tu WhatsApp.");
       setStep("otp");
     } catch {
-      showToast("Error de conexion. Verifica tu internet.");
+      showToast("Error de conexión. Verifica tu internet.");
     } finally {
       setLoading(false);
     }
@@ -204,50 +254,54 @@ export function AuthModal({ open, onClose }: AuthModalProps) {
 
   const handleVerifyOtp = useCallback(async () => {
     if (otpCode.length !== 6) {
-      showToast("El codigo tiene 6 digitos.");
+      showToast("El código tiene 6 dígitos.");
       return;
     }
     setLoading(true);
     try {
-      const body: { phone: string; code: string; name?: string } = {
+      const body: { phone: string; code: string; name?: string; dni?: string } = {
         phone: normalizedPhone,
         code: otpCode,
       };
-      if (tab === "register" && name.trim()) {
-        body.name = name.trim();
+      if (tab === "register") {
+        if (name.trim()) body.name = name.trim();
+        const cleanDni = dni.replace(/\D/g, "");
+        if (cleanDni.length === 8) body.dni = cleanDni;
       }
       const res = await fetch("/api/auth/otp/verify", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(body),
       });
-      const data = await res.json() as VerifyResponse;
+      const data = (await res.json()) as VerifyResponse;
       if (!res.ok) {
-        showToast(data.error ?? "Codigo incorrecto. Intenta de nuevo.");
+        showToast(data.error ?? "Código incorrecto. Intenta de nuevo.");
         return;
       }
-      showToast(data.isNew ? `Bienvenido, ${data.customer?.name ?? ""}!` : `Hola de nuevo, ${data.customer?.name ?? ""}!`);
+      showToast(
+        data.isNew
+          ? `¡Bienvenido, ${data.customer?.name ?? ""}!`
+          : `¡Hola de nuevo, ${data.customer?.name ?? ""}!`,
+      );
       setTimeout(() => onClose(), 1500);
     } catch {
-      showToast("Error de conexion. Verifica tu internet.");
+      showToast("Error de conexión. Verifica tu internet.");
     } finally {
       setLoading(false);
     }
-  }, [otpCode, normalizedPhone, name, tab, showToast, onClose]);
+  }, [otpCode, normalizedPhone, name, dni, tab, showToast, onClose]);
 
-  const handleResendOtp = useCallback(async () => {
+  const handleResendOtp = useCallback(() => {
     setOtpCode("");
     setStep("phone");
-    showToast("Puedes solicitar un nuevo codigo.");
+    showToast("Puedes solicitar un nuevo código.");
   }, [showToast]);
 
   const handleGoogle = useCallback(() => {
-    // Redirect to Google OAuth flow — the server handles CSRF + consent
     window.location.href = "/api/auth/google";
   }, []);
 
   const handleFacebook = useCallback(() => {
-    // Redirect to Facebook OAuth flow — the server handles CSRF + consent
     window.location.href = "/api/auth/facebook";
   }, []);
 
@@ -255,136 +309,241 @@ export function AuthModal({ open, onClose }: AuthModalProps) {
     setTab(newTab);
     setStep("phone");
     setOtpCode("");
+    setDni("");
+    setName("");
+    setDniError(null);
+    setDniVerified(false);
   }, []);
 
   const handleBackdropClick = useCallback(
     (e: React.MouseEvent<HTMLDivElement>) => {
       if (e.target === backdropRef.current) onClose();
     },
-    [onClose]
+    [onClose],
   );
 
   if (!rendered) return null;
 
   return (
-    // Backdrop con blur
     <div
       ref={backdropRef}
       onClick={handleBackdropClick}
       className={[
-        "fixed inset-0 z-[200] flex items-end sm:items-center justify-center px-0 sm:px-4",
-        "bg-black/50 backdrop-blur-sm",
-        "transition-opacity duration-250",
+        "fixed inset-0 z-200 flex items-end sm:items-center justify-center px-0 sm:px-4",
+        "bg-black/60 backdrop-blur-md",
+        "transition-opacity duration-300",
         visible ? "opacity-100" : "opacity-0 pointer-events-none",
       ].join(" ")}
       aria-hidden={!open}
     >
-      {/* Panel del modal */}
       <div
         role="dialog"
         aria-modal="true"
-        aria-label="Autenticacion — Buleje"
+        aria-label="Autenticación — Buleje"
         onKeyDown={handleFocusTrap}
         className={[
-          // Layout
-          "relative w-full sm:max-w-md",
-          // Mobile: ocupa toda la pantalla por abajo; desktop: centrado con bordes
-          "fixed inset-x-0 bottom-0 rounded-t-2xl",
-          "sm:static sm:rounded-2xl",
-          // Fondo siempre blanco (incluso en dark mode, por diseño)
-          "bg-white shadow-2xl",
-          // Animación CSS: escala + opacidad
-          "transition-all duration-250 ease-out",
+          "relative w-full sm:max-w-110 max-h-[90vh] overflow-y-auto",
+          "fixed inset-x-0 bottom-0 rounded-t-3xl",
+          "sm:static sm:rounded-3xl",
+          "bg-white dark:bg-gray-900 shadow-2xl",
+          "transition-all duration-300 ease-out",
           visible
             ? "opacity-100 translate-y-0 scale-100"
-            : "opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95",
+            : "opacity-0 translate-y-8 sm:translate-y-0 sm:scale-95",
         ].join(" ")}
       >
+        {/* ── Gradient header decoration ── */}
+        <div className="absolute inset-x-0 top-0 h-32 bg-linear-to-br from-blue-600 via-blue-500 to-indigo-600 opacity-[0.07] dark:opacity-[0.15] pointer-events-none" />
+
         {/* Toast */}
         {toast && (
           <div
             role="alert"
-            className="absolute inset-x-4 top-4 z-10 rounded-xl bg-[#2563EB] px-4 py-2.5 text-center text-sm font-medium text-white shadow-lg"
+            className="absolute inset-x-4 top-4 z-10 rounded-2xl bg-linear-to-r from-blue-600 to-indigo-600 px-4 py-3 text-center text-sm font-medium text-white shadow-lg shadow-blue-500/25 animate-[fadeIn_0.3s_ease-out]"
           >
             {toast}
           </div>
         )}
 
-        {/* Boton cerrar */}
+        {/* Botón cerrar */}
         <button
           ref={closeButtonRef}
           onClick={onClose}
           aria-label="Cerrar modal"
-          className="absolute right-4 top-4 flex h-8 w-8 items-center justify-center rounded-full text-gray-400 hover:bg-gray-100 hover:text-gray-600 transition-colors focus-visible:outline-2 focus-visible:outline-[#2563EB]"
+          className="absolute right-4 top-4 z-10 flex h-9 w-9 items-center justify-center rounded-full bg-gray-100/80 dark:bg-gray-800/80 text-gray-500 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700 hover:text-gray-700 transition-all focus-visible:outline-2 focus-visible:outline-blue-500"
         >
           <X className="h-4 w-4" />
         </button>
 
-        <div className="px-6 pb-8 pt-6 sm:px-8">
-          {/* Logo + título */}
-          <div className="mb-6 flex flex-col items-center gap-2">
-            <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-br from-blue-500 to-blue-700 text-white text-2xl font-black shadow-lg shadow-blue-500/25">
+        <div className="relative px-6 pb-8 pt-8 sm:px-8">
+          {/* ── Logo + título ── */}
+          <div className="mb-7 flex flex-col items-center gap-3">
+            <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-linear-to-br from-blue-500 to-indigo-600 text-white text-2xl font-black shadow-xl shadow-blue-500/30 ring-4 ring-white dark:ring-gray-900">
               B
             </div>
-            <h2 className="text-xl font-bold text-gray-900">
-              {tab === "register" ? "Crea tu cuenta" : "Bienvenido"}
-            </h2>
-            <p className="text-sm text-gray-400">
-              {tab === "register" ? "Regístrate para comprar y recibir ofertas" : "Inicia sesión con tu celular"}
-            </p>
+            <div className="text-center">
+              <h2 className="text-2xl font-bold text-gray-900 dark:text-white tracking-tight">
+                {step === "otp"
+                  ? "Verificación"
+                  : tab === "register"
+                    ? "Crea tu cuenta"
+                    : "¡Hola de nuevo!"}
+              </h2>
+              <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
+                {step === "otp"
+                  ? "Ingresa el código que te enviamos"
+                  : tab === "register"
+                    ? "Regístrate y empieza a comprar"
+                    : "Inicia sesión para continuar"}
+              </p>
+            </div>
           </div>
 
-          {/* Tabs — solo visibles en paso "phone" */}
+          {/* ── Botones sociales primero (paso phone) ── */}
           {step === "phone" && (
-            <div className="mb-6 flex rounded-xl border border-gray-200 p-1 bg-gray-50">
-              <button
-                ref={firstFocusableRef}
-                onClick={() => handleTabChange("login")}
-                className={[
-                  "flex-1 rounded-lg py-2 text-sm font-semibold transition-all",
-                  "min-h-[44px]",
-                  tab === "login"
-                    ? "bg-white text-[#2563EB] shadow-sm border-b-2 border-[#2563EB]"
-                    : "text-gray-500 hover:text-gray-700",
-                ].join(" ")}
-              >
-                Iniciar sesion
-              </button>
-              <button
-                onClick={() => handleTabChange("register")}
-                className={[
-                  "flex-1 rounded-lg py-2 text-sm font-semibold transition-all",
-                  "min-h-[44px]",
-                  tab === "register"
-                    ? "bg-white text-[#2563EB] shadow-sm border-b-2 border-[#2563EB]"
-                    : "text-gray-500 hover:text-gray-700",
-                ].join(" ")}
-              >
-                Registrarse
-              </button>
-            </div>
+            <>
+              <div className="space-y-2.5 mb-5">
+                <button
+                  ref={firstFocusableRef}
+                  onClick={handleGoogle}
+                  className="group flex w-full min-h-12 items-center justify-center gap-3 rounded-2xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 px-4 py-3 text-sm font-semibold text-gray-700 dark:text-gray-200 shadow-sm transition-all hover:border-gray-300 dark:hover:border-gray-600 hover:shadow-md hover:scale-[1.01] active:scale-[0.98] focus-visible:outline-2 focus-visible:outline-blue-500"
+                >
+                  <GoogleIcon />
+                  Continuar con Google
+                </button>
+
+                <button
+                  onClick={handleFacebook}
+                  className="group flex w-full min-h-12 items-center justify-center gap-3 rounded-2xl bg-[#1877F2] px-4 py-3 text-sm font-semibold text-white shadow-sm transition-all hover:bg-[#166FE5] hover:shadow-md hover:shadow-blue-500/20 hover:scale-[1.01] active:scale-[0.98] focus-visible:outline-2 focus-visible:outline-blue-500"
+                >
+                  <FacebookIcon />
+                  Continuar con Facebook
+                </button>
+              </div>
+
+              {/* Divider */}
+              <div className="mb-5 flex items-center gap-4">
+                <div className="h-px flex-1 bg-linear-to-r from-transparent via-gray-200 dark:via-gray-700 to-transparent" />
+                <span className="text-[11px] text-gray-400 dark:text-gray-500 font-medium uppercase tracking-widest">
+                  o con tu celular
+                </span>
+                <div className="h-px flex-1 bg-linear-to-r from-transparent via-gray-200 dark:via-gray-700 to-transparent" />
+              </div>
+
+              {/* Tabs */}
+              <div className="mb-5 flex rounded-2xl bg-gray-100 dark:bg-gray-800 p-1">
+                <button
+                  onClick={() => handleTabChange("login")}
+                  className={[
+                    "flex-1 rounded-xl py-2.5 text-sm font-semibold transition-all min-h-11",
+                    tab === "login"
+                      ? "bg-white dark:bg-gray-700 text-blue-600 dark:text-blue-400 shadow-sm"
+                      : "text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300",
+                  ].join(" ")}
+                >
+                  Iniciar sesión
+                </button>
+                <button
+                  onClick={() => handleTabChange("register")}
+                  className={[
+                    "flex-1 rounded-xl py-2.5 text-sm font-semibold transition-all min-h-11",
+                    tab === "register"
+                      ? "bg-white dark:bg-gray-700 text-blue-600 dark:text-blue-400 shadow-sm"
+                      : "text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300",
+                  ].join(" ")}
+                >
+                  Registrarse
+                </button>
+              </div>
+            </>
           )}
 
-          {/* ── Paso 1: Ingresar telefono ── */}
+          {/* ── Paso 1: Formulario de teléfono ── */}
           {step === "phone" && (
-            <div className="space-y-4">
+            <div className="space-y-3.5">
+              {/* Campo DNI — solo en registro */}
+              {tab === "register" && (
+                <div>
+                  <label
+                    htmlFor="auth-dni"
+                    className="mb-1.5 flex items-center gap-1.5 text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wide"
+                  >
+                    <Shield className="h-3.5 w-3.5" />
+                    DNI
+                    <span className="ml-auto font-normal normal-case tracking-normal text-gray-400 dark:text-gray-500">
+                      Autocompleta tu nombre
+                    </span>
+                  </label>
+                  <div className="relative">
+                    <input
+                      id="auth-dni"
+                      type="text"
+                      value={dni}
+                      onChange={(e) => setDni(e.target.value.replace(/\D/g, "").slice(0, 8))}
+                      placeholder="12345678"
+                      inputMode="numeric"
+                      maxLength={8}
+                      className={[
+                        "w-full rounded-2xl border bg-gray-50 dark:bg-gray-800 px-4 py-3 pr-12 text-sm text-gray-900 dark:text-white placeholder-gray-400 outline-none transition-all",
+                        dniVerified
+                          ? "border-green-400 dark:border-green-500 ring-2 ring-green-400/20"
+                          : dniError
+                            ? "border-red-400 dark:border-red-500 ring-2 ring-red-400/20"
+                            : "border-gray-200 dark:border-gray-700 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20",
+                      ].join(" ")}
+                    />
+                    <div className="absolute right-3 top-1/2 -translate-y-1/2">
+                      {dniLoading ? (
+                        <Loader2 className="h-5 w-5 animate-spin text-blue-500" />
+                      ) : dniVerified ? (
+                        <div className="flex h-6 w-6 items-center justify-center rounded-full bg-green-500 text-white">
+                          <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                          </svg>
+                        </div>
+                      ) : dni.length > 0 ? (
+                        <Search className="h-4 w-4 text-gray-400" />
+                      ) : null}
+                    </div>
+                  </div>
+                  {dniError && (
+                    <p className="mt-1 text-xs text-red-500 dark:text-red-400">{dniError}</p>
+                  )}
+                  {dniVerified && (
+                    <p className="mt-1 text-xs text-green-600 dark:text-green-400 font-medium flex items-center gap-1">
+                      <span>✓</span> Nombre encontrado automáticamente
+                    </p>
+                  )}
+                </div>
+              )}
+
               {/* Campo nombre — solo en registro */}
               {tab === "register" && (
                 <div>
                   <label
                     htmlFor="auth-name"
-                    className="mb-1.5 block text-xs font-semibold text-gray-600 uppercase tracking-wide"
+                    className="mb-1.5 flex items-center gap-1.5 text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wide"
                   >
+                    <User className="h-3.5 w-3.5" />
                     Nombre completo
                   </label>
                   <input
                     id="auth-name"
                     type="text"
                     value={name}
-                    onChange={(e) => setName(e.target.value)}
-                    placeholder="Tu nombre"
+                    onChange={(e) => {
+                      setName(e.target.value);
+                      if (dniVerified) setDniVerified(false);
+                    }}
+                    placeholder="Tu nombre completo"
                     autoComplete="name"
-                    className="w-full rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 text-sm text-gray-900 placeholder-gray-400 outline-none transition-all focus:border-[#2563EB] focus:ring-2 focus:ring-[#2563EB]/20"
+                    readOnly={dniVerified}
+                    className={[
+                      "w-full rounded-2xl border bg-gray-50 dark:bg-gray-800 px-4 py-3 text-sm text-gray-900 dark:text-white placeholder-gray-400 outline-none transition-all",
+                      dniVerified
+                        ? "border-green-400/50 dark:border-green-500/30 bg-green-50 dark:bg-green-900/20 cursor-default"
+                        : "border-gray-200 dark:border-gray-700 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20",
+                    ].join(" ")}
                   />
                 </div>
               )}
@@ -393,12 +552,13 @@ export function AuthModal({ open, onClose }: AuthModalProps) {
               <div>
                 <label
                   htmlFor="auth-phone"
-                  className="mb-1.5 block text-xs font-semibold text-gray-600 uppercase tracking-wide"
+                  className="mb-1.5 flex items-center gap-1.5 text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wide"
                 >
-                  Numero de celular
+                  <Phone className="h-3.5 w-3.5" />
+                  Número de celular
                 </label>
                 <div className="flex gap-2">
-                  <div className="flex items-center gap-1.5 rounded-xl border border-gray-200 bg-gray-50 px-3 py-3 text-sm font-semibold text-gray-700 shrink-0">
+                  <div className="flex items-center gap-1.5 rounded-2xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 px-3.5 py-3 text-sm font-semibold text-gray-700 dark:text-gray-300 shrink-0">
                     <span className="text-base leading-none">🇵🇪</span>
                     <span>+51</span>
                   </div>
@@ -410,122 +570,117 @@ export function AuthModal({ open, onClose }: AuthModalProps) {
                     placeholder="987 654 321"
                     autoComplete="tel-national"
                     inputMode="numeric"
-                    className="flex-1 rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 text-sm text-gray-900 placeholder-gray-400 outline-none transition-all focus:border-[#2563EB] focus:ring-2 focus:ring-[#2563EB]/20"
+                    className="flex-1 rounded-2xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 px-4 py-3 text-sm text-gray-900 dark:text-white placeholder-gray-400 outline-none transition-all focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20"
                   />
                 </div>
               </div>
 
-              {/* Boton enviar OTP */}
+              {/* Botón enviar OTP */}
               <button
-                onClick={() => { void handleSendOtp(); }}
+                onClick={() => {
+                  void handleSendOtp();
+                }}
                 disabled={loading}
-                className="w-full min-h-[44px] rounded-xl bg-[#2563EB] px-4 py-3 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-[#1D4ED8] active:scale-[0.98] focus-visible:outline-2 focus-visible:outline-[#2563EB] disabled:opacity-60 disabled:cursor-not-allowed"
+                className="w-full min-h-12 rounded-2xl bg-linear-to-r from-blue-600 to-indigo-600 px-4 py-3.5 text-sm font-bold text-white shadow-lg shadow-blue-500/25 transition-all hover:shadow-xl hover:shadow-blue-500/30 hover:scale-[1.01] active:scale-[0.98] focus-visible:outline-2 focus-visible:outline-blue-500 disabled:opacity-60 disabled:cursor-not-allowed disabled:hover:scale-100"
               >
-                {loading
-                  ? "Enviando..."
-                  : tab === "login"
-                  ? "Enviar codigo"
-                  : "Crear cuenta y enviar codigo"}
+                {loading ? (
+                  <span className="flex items-center justify-center gap-2">
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                    Enviando...
+                  </span>
+                ) : tab === "login" ? (
+                  "Enviar código"
+                ) : (
+                  "Crear cuenta"
+                )}
               </button>
             </div>
           )}
 
-          {/* ── Paso 2: Ingresar codigo OTP ── */}
+          {/* ── Paso 2: Ingresar código OTP ── */}
           {step === "otp" && (
-            <div className="space-y-4">
-              <p className="text-sm text-gray-600 text-center">
-                Ingresa el codigo de 6 digitos enviado a{" "}
-                <span className="font-semibold text-gray-900">+51 {phone}</span>
-              </p>
+            <div className="space-y-5">
+              {/* Ilustración OTP */}
+              <div className="flex flex-col items-center gap-3">
+                <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400">
+                  <Shield className="h-8 w-8" />
+                </div>
+                <p className="text-sm text-gray-600 dark:text-gray-400 text-center">
+                  Ingresa el código de 6 dígitos enviado a{" "}
+                  <span className="font-semibold text-gray-900 dark:text-white">
+                    +51 {phone}
+                  </span>
+                </p>
+              </div>
 
               <div>
                 <label
                   htmlFor="auth-otp"
-                  className="mb-1.5 block text-xs font-semibold text-gray-600 uppercase tracking-wide"
+                  className="mb-1.5 block text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wide"
                 >
-                  Codigo de verificacion
+                  Código de verificación
                 </label>
                 <input
                   id="auth-otp"
                   ref={otpInputRef}
                   type="text"
                   value={otpCode}
-                  onChange={(e) => setOtpCode(e.target.value.replace(/\D/g, "").slice(0, 6))}
-                  placeholder="123456"
+                  onChange={(e) =>
+                    setOtpCode(e.target.value.replace(/\D/g, "").slice(0, 6))
+                  }
+                  placeholder="• • • • • •"
                   inputMode="numeric"
                   autoComplete="one-time-code"
                   maxLength={6}
-                  className="w-full rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 text-center text-2xl font-bold tracking-[0.5em] text-gray-900 placeholder-gray-300 outline-none transition-all focus:border-[#2563EB] focus:ring-2 focus:ring-[#2563EB]/20"
+                  className="w-full rounded-2xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 px-4 py-4 text-center text-2xl font-bold tracking-[0.5em] text-gray-900 dark:text-white placeholder-gray-300 dark:placeholder-gray-600 outline-none transition-all focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20"
                 />
               </div>
 
-              {/* Boton verificar */}
+              {/* Botón verificar */}
               <button
-                onClick={() => { void handleVerifyOtp(); }}
+                onClick={() => {
+                  void handleVerifyOtp();
+                }}
                 disabled={loading || otpCode.length !== 6}
-                className="w-full min-h-[44px] rounded-xl bg-[#2563EB] px-4 py-3 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-[#1D4ED8] active:scale-[0.98] focus-visible:outline-2 focus-visible:outline-[#2563EB] disabled:opacity-60 disabled:cursor-not-allowed"
+                className="w-full min-h-12 rounded-2xl bg-linear-to-r from-blue-600 to-indigo-600 px-4 py-3.5 text-sm font-bold text-white shadow-lg shadow-blue-500/25 transition-all hover:shadow-xl hover:shadow-blue-500/30 hover:scale-[1.01] active:scale-[0.98] focus-visible:outline-2 focus-visible:outline-blue-500 disabled:opacity-60 disabled:cursor-not-allowed disabled:hover:scale-100"
               >
-                {loading ? "Verificando..." : "Verificar y entrar"}
+                {loading ? (
+                  <span className="flex items-center justify-center gap-2">
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                    Verificando...
+                  </span>
+                ) : (
+                  "Verificar y entrar"
+                )}
               </button>
 
               {/* Reenviar */}
               <button
-                onClick={() => { void handleResendOtp(); }}
+                ref={lastFocusableRef}
+                onClick={handleResendOtp}
                 disabled={loading}
-                className="w-full text-sm text-[#2563EB] underline hover:text-[#1D4ED8] transition-colors disabled:opacity-50"
+                className="w-full text-sm font-medium text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 transition-colors disabled:opacity-50 min-h-11"
               >
-                Volver y solicitar nuevo codigo
+                ← Volver y solicitar nuevo código
               </button>
             </div>
           )}
 
-          {/* Divisor + botones sociales — solo en paso phone */}
-          {step === "phone" && (
-            <>
-              <div className="my-5 flex items-center gap-3">
-                <div className="h-px flex-1 bg-gray-200" />
-                <span className="text-xs text-gray-400 font-medium">
-                  o continua con
-                </span>
-                <div className="h-px flex-1 bg-gray-200" />
-              </div>
-
-              <div className="space-y-3">
-                <button
-                  onClick={handleGoogle}
-                  className="flex w-full min-h-[44px] items-center justify-center gap-3 rounded-xl border border-gray-200 bg-white px-4 py-3 text-sm font-semibold text-gray-700 shadow-sm transition-colors hover:bg-gray-50 active:scale-[0.98] focus-visible:outline-2 focus-visible:outline-[#2563EB]"
-                >
-                  <GoogleIcon />
-                  Continuar con Google
-                </button>
-
-                <button
-                  ref={lastFocusableRef}
-                  onClick={handleFacebook}
-                  className="flex w-full min-h-[44px] items-center justify-center gap-3 rounded-xl border border-gray-200 bg-white px-4 py-3 text-sm font-semibold text-gray-700 shadow-sm transition-colors hover:bg-gray-50 active:scale-[0.98] focus-visible:outline-2 focus-visible:outline-[#2563EB]"
-                >
-                  <FacebookIcon />
-                  Continuar con Facebook
-                </button>
-              </div>
-            </>
-          )}
-
           {/* Aviso legal */}
-          <p className="mt-5 text-center text-xs text-gray-400 leading-relaxed">
+          <p className="mt-6 text-center text-[11px] text-gray-400 dark:text-gray-500 leading-relaxed">
             Al continuar aceptas los{" "}
             <a
               href="/terminos"
-              className="underline hover:text-[#2563EB] transition-colors"
+              className="underline decoration-gray-300 dark:decoration-gray-600 hover:text-blue-500 transition-colors"
             >
-              Terminos
+              Términos
             </a>{" "}
             y la{" "}
             <a
               href="/privacidad"
-              className="underline hover:text-[#2563EB] transition-colors"
+              className="underline decoration-gray-300 dark:decoration-gray-600 hover:text-blue-500 transition-colors"
             >
-              Politica de Privacidad
+              Política de Privacidad
             </a>
           </p>
         </div>

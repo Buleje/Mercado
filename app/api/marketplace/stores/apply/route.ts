@@ -5,6 +5,7 @@ import { applyRateLimit } from "@/lib/rate-limit";
 import { logActivity } from "@/lib/activity-logger";
 import { sendWhatsAppText } from "@/lib/whatsapp";
 import { toErrorPayload, newTraceId } from "@/lib/api-error";
+import { logger } from "@/lib/logger";
 
 const RegisterSchema = z.object({
   ownerName:    z.string().min(2, "Nombre muy corto").max(80),
@@ -89,7 +90,7 @@ export async function POST(req: NextRequest) {
         `─────`,
         `Buleje 🏪`,
       ].filter(Boolean).join("\n");
-      sendWhatsAppText(adminPhone, msg).catch(() => {});
+      sendWhatsAppText(adminPhone, msg).catch((err) => logger.error("[stores/apply] WhatsApp admin notify failed", { error: String(err) }));
     }
 
     // Confirmation to store owner
@@ -104,7 +105,7 @@ export async function POST(req: NextRequest) {
       ``,
       `─────`,
       `Marketplace Buleje 🏪`,
-    ].join("\n")).catch(() => {});
+    ].join("\n")).catch((err) => logger.error("[stores/apply] WhatsApp owner confirmation failed", { error: String(err) }));
 
     logActivity(
       "Solicitud",

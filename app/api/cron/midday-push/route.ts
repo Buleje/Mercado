@@ -107,7 +107,7 @@ export async function GET(req: NextRequest) {
           body,
           url: "/admin",
           icon: "/icons/icon-192x192.png",
-        }).catch(() => {});
+        }).catch((err) => logger.error("[cron/midday-push] broadcast push failed", { error: String(err), tenant: tenant.slug }));
 
         // Fire-and-forget: log the activity
         logActivity(

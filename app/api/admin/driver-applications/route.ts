@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { sendWhatsAppText } from "@/lib/whatsapp";
+import { logger } from "@/lib/logger";
 
 const ActionSchema = z.object({
   action: z.enum(["approve", "reject"]),
@@ -35,7 +36,8 @@ export async function PATCH(req: NextRequest) {
   const auth = await requireAdmin(req, ["admin"]);
   if (auth instanceof NextResponse) return auth;
 
-  const body = await req.json();
+  const body = await req.json().catch(() => null);
+  if (!body) return NextResponse.json({ error: "Invalid JSON" }, { status: 400 });
   const parsed = ActionSchema.safeParse(body);
   if (!parsed.success) {
     return NextResponse.json({ error: "Datos inválidos", issues: parsed.error.issues }, { status: 400 });
@@ -79,12 +81,12 @@ export async function PATCH(req: NextRequest) {
       if (phone) {
         const earningsUrl = partner ? `${baseUrl}/marketplace/repartidor/ganancias?id=${partner.id}` : "";
         const message = `✅ ¡Felicidades ${name}! Tu solicitud como repartidor ha sido APROBADA. 🎉\n\n📋 Siguiente paso: entra aquí para ver tus instrucciones de bienvenida:\n${baseUrl}/marketplace/repartidor/bienvenida\n\n💰 Tu panel de ganancias:\n${earningsUrl}\n\n¡Bienvenido al equipo de Buleje!`;
-        sendWhatsAppText(phone, message).catch(() => {});
+        sendWhatsAppText(phone, message).catch((err) => logger.error("[driver-applications] WhatsApp approve notify failed", { error: String(err) }));
       }
     } else {
       if (phone) {
         const message = `❌ Hola ${name}, lamentamos informarte que tu solicitud como repartidor no fue aprobada en esta oportunidad. Puedes volver a postularte más adelante. ¡Gracias por tu interés!`;
-        sendWhatsAppText(phone, message).catch(() => {});
+        sendWhatsAppText(phone, message).catch((err) => logger.error("[driver-applications] WhatsApp reject notify failed", { error: String(err) }));
       }
     }
 
