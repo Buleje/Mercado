@@ -128,30 +128,98 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     priority: 0.6,
   }));
 
-  // Marketplace stores — dynamic from DB
-  let marketplaceStorePages: MetadataRoute.Sitemap = [];
+  // ────────────────────────────────────────────────────────────────────────
+  // Task #13: Marketplace stores + store products + recipes
+  // ────────────────────────────────────────────────────────────────────────
+
+  // Marketplace stores + store products — dynamic from DB
+  const marketplacePages: MetadataRoute.Sitemap = [];
   try {
+    // Fetch all published stores
     const stores = await prisma.store.findMany({
       where: { isPublished: true },
-      select: { slug: true, updatedAt: true },
+      select: { id: true, slug: true, updatedAt: true },
       orderBy: { rating: "desc" },
     });
-    marketplaceStorePages = [
-      {
-        url: `${baseUrl}/marketplace`,
-        lastModified,
-        changeFrequency: "daily" as const,
-        priority: 0.9,
-      },
-      ...stores.map((s) => ({
-        url: `${baseUrl}/marketplace/${s.slug}`,
-        lastModified: s.updatedAt,
-        changeFrequency: "weekly" as const,
-        priority: 0.7,
-      })),
-    ];
+
+    // Add marketplace hub
+    marketplacePages.push({
+      url: `${baseUrl}/marketplace`,
+      lastModified,
+      changeFrequency: "daily" as const,
+      priority: 0.9,
+    });
+
+    // Add individual store pages
+    const storePages = stores.map((s) => ({
+      url: `${baseUrl}/marketplace/${s.slug}`,
+      lastModified: s.updatedAt,
+      changeFrequency: "weekly" as const,
+      priority: 0.7,
+    }));
+    marketplacePages.push(...storePages);
+
+    // Fetch all active store products from all published stores
+    const storeIds = stores.map((s) => s.id);
+    if (storeIds.length > 0) {
+      const storeProducts = await prisma.storeProduct.findMany({
+        where: {
+          storeId: { in: storeIds },
+          isActive: true,
+        },
+        select: {
+          id: true,
+          storeId: true,
+          productId: true,
+        },
+      });
+
+      // Build storeId -> slug map
+      const storeSlugMap = new Map(stores.map((s) => [s.id, s.slug]));
+
+      // StoreProduct no tiene updatedAt — usar ahora mismo como fallback conservador.
+      const now = new Date();
+
+      // Add store product detail pages: /marketplace/{storeSlug}/producto/{productId}
+      const productDetailPages = storeProducts.map((sp) => {
+        const storeSlug = storeSlugMap.get(sp.storeId) || "unknown";
+        return {
+          url: `${baseUrl}/marketplace/${storeSlug}/producto/${sp.productId}`,
+          lastModified: now,
+          changeFrequency: "weekly" as const,
+          priority: 0.6,
+        };
+      });
+      marketplacePages.push(...productDetailPages);
+    }
   } catch {
     // DB unavailable during static build
+    marketplacePages.push({
+      url: `${baseUrl}/marketplace`,
+      lastModified,
+      changeFrequency: "daily" as const,
+      priority: 0.9,
+    });
+  }
+
+  // Recipe detail pages — dynamic from DB
+  let recipePages: MetadataRoute.Sitemap = [];
+  try {
+    const recipes = await prisma.receta.findMany({
+      where: { activa: true },
+      select: { id: true, updatedAt: true },
+      orderBy: { updatedAt: "desc" },
+      take: 1000,
+    });
+
+    recipePages = recipes.map((r) => ({
+      url: `${baseUrl}/recetas/${r.id}`,
+      lastModified: r.updatedAt,
+      changeFrequency: "monthly" as const,
+      priority: 0.5,
+    }));
+  } catch {
+    // DB unavailable
   }
 
   // Programmatic SEO — zone pages (/zona/[ciudad] + /zona/[ciudad]/[categoria])
@@ -195,7 +263,8 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     ...categoryPages,
     ...dbCategoryPages,
     ...productPages,
-    ...marketplaceStorePages,
+    ...marketplacePages,    // Stores + store products
+    ...recipePages,         // Recipe detail pages
     ...zonePages,
     ...zoneProductPages,
   ];
