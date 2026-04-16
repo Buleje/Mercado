@@ -1,10 +1,19 @@
 # MCP installation guide — 4 recomendados Nivel 1
 
-Los MCPs van configurados por MÁQUINA (no por repo), normalmente en
-`~/.claude/settings.json` o vía comando `claude mcp add`. Por eso este
-archivo es una GUÍA para que Brandon los instale manualmente en su
-terminal — Claude Code no puede instalarlos desde una sesión porque
-necesitan credenciales y modifican config de usuario.
+**Status 2026-04-16**: Los 4 MCPs **ya están instalados y activos** en
+`~/.claude.json` para este proyecto. Esta doc queda como referencia por
+si hay que reinstalarlos en otra máquina o recuperarlos.
+
+| MCP | Estado | Credenciales |
+|---|---|---|
+| sequential-thinking | ✅ Conectado | — (sin creds) |
+| memory | ✅ Conectado | — (sin creds) |
+| github | ✅ Conectado | `gh auth token` del usuario (scopes: gist, read:org, repo) |
+| sentry | ✅ Conectado | `SENTRY_AUTH_TOKEN` del .env.local (org=buleje-sy, project=bodega-san-martin) |
+
+Para otras máquinas, seguir los pasos de abajo.
+
+---
 
 ## Instalación paso a paso
 
