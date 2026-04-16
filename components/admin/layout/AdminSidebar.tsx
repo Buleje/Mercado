@@ -14,7 +14,7 @@ import {
   PanelLeft,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { resolveSessionStorefrontTarget } from "@/lib/tenant-fetch";
+// resolveSessionStorefrontTarget removed — use activeTenantSlug directly
 import { useModuleTabs } from "@/contexts/module-tabs-context";
 import type { Tab } from "@/app/admin/_lib/tabs.types";
 import type { TabCategory } from "@/app/admin/_lib/tab-categories";
@@ -95,8 +95,8 @@ export type AdminSidebarProps = {
   sidebarSearch: string;
 
   // Modo fácil / avanzado
-  isEasyMode: boolean;
-  onToggleAdminMode: () => void;
+  isEasyMode?: boolean;
+  onToggleAdminMode?: () => void;
 
   // ALL_TABS necesario para resolver el accordion (readonly porque viene de const as const)
   allTabs: readonly TabItem[];
@@ -152,9 +152,8 @@ export function AdminSidebar({
   React.useEffect(() => {
     let active = true;
 
-    void resolveSessionStorefrontTarget().then(({ storefrontHref }) => {
-      if (active) setStoreHref(storefrontHref);
-    });
+    const href = activeTenantSlug ? `/t/${activeTenantSlug}/tienda` : "/marketplace";
+    if (active) setStoreHref(href);
 
     return () => {
       active = false;

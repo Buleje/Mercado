@@ -7,6 +7,8 @@ import {
 import { cn, exportToCSV } from "@/lib/utils";
 import EmptyState from "@/components/admin/shared/EmptyState";
 import TableSkeleton from "@/components/admin/shared/TableSkeleton";
+import StatusBadge from "@/components/admin/shared/StatusBadge";
+import type { BadgeVariant } from "@/components/admin/shared/StatusBadge";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -39,6 +41,12 @@ const STATUS_COLOR: Record<ARStatus, string> = {
   parcial:   "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400",
   pagado:    "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400",
   vencido:   "bg-red-100 text-red-600 dark:bg-red-900/30 dark:text-red-400",
+};
+const STATUS_VARIANT: Record<ARStatus, BadgeVariant> = {
+  pendiente: "warning",
+  parcial:   "info",
+  pagado:    "success",
+  vencido:   "error",
 };
 
 function fmt(n: number) {
@@ -362,7 +370,7 @@ export default function AccountsReceivableTab() {
                       <p className="font-bold text-gray-900 dark:text-foreground text-sm">{ar.customerName}</p>
                       <p className="text-xs text-gray-500 dark:text-muted">{ar.description}</p>
                     </div>
-                    <span className={cn("text-xs font-bold px-2.5 py-1 rounded-full shrink-0", STATUS_COLOR[ar.status])}>{STATUS_LABEL[ar.status]}</span>
+                    <StatusBadge variant={STATUS_VARIANT[ar.status]} label={STATUS_LABEL[ar.status]} />
                   </div>
                   <div className="flex items-center justify-between text-sm">
                     <span className="text-gray-500 dark:text-muted text-xs">Vence: {fmtDate(ar.dueDate)}</span>

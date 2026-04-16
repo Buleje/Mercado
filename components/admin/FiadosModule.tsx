@@ -9,6 +9,8 @@ import {
   ArrowUp, ArrowDown, Maximize2, Minimize2,
   LayoutList, Columns3, MapPin } from "lucide-react";
 import EmptyState from "@/components/admin/shared/EmptyState";
+import StatusBadge from "@/components/admin/shared/StatusBadge";
+import type { BadgeVariant } from "@/components/admin/shared/StatusBadge";
 import { Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend, Line, ComposedChart } from "recharts";
 import { cn } from "@/lib/utils";
 import { exportToExcel } from "@/lib/export-excel";
@@ -51,11 +53,11 @@ type Fiado = {
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
-const STATUS_META: Record<FiadoStatus, { label: string; color: string; bg: string; icon: typeof CheckCircle2 }> = {
-  ACTIVO:    { label: "Activo",    color: "text-amber-700 dark:text-amber-400",   bg: "bg-amber-100 dark:bg-amber-900/30",   icon: Clock },
-  PAGADO:    { label: "Pagado",    color: "text-emerald-700 dark:text-emerald-400", bg: "bg-emerald-100 dark:bg-emerald-900/30", icon: CheckCircle2 },
-  VENCIDO:   { label: "Vencido",   color: "text-red-700 dark:text-red-400",       bg: "bg-red-100 dark:bg-red-900/30",       icon: XCircle },
-  CANCELADO: { label: "Cancelado", color: "text-gray-600 dark:text-gray-400",     bg: "bg-gray-100 dark:bg-gray-800/50",     icon: Ban },
+const STATUS_META: Record<FiadoStatus, { label: string; color: string; bg: string; icon: typeof CheckCircle2; variant: BadgeVariant }> = {
+  ACTIVO:    { label: "Activo",    color: "text-amber-700 dark:text-amber-400",   bg: "bg-amber-100 dark:bg-amber-900/30",   icon: Clock,       variant: "warning" },
+  PAGADO:    { label: "Pagado",    color: "text-emerald-700 dark:text-emerald-400", bg: "bg-emerald-100 dark:bg-emerald-900/30", icon: CheckCircle2, variant: "success" },
+  VENCIDO:   { label: "Vencido",   color: "text-red-700 dark:text-red-400",       bg: "bg-red-100 dark:bg-red-900/30",       icon: XCircle,     variant: "error" },
+  CANCELADO: { label: "Cancelado", color: "text-gray-600 dark:text-gray-400",     bg: "bg-gray-100 dark:bg-gray-800/50",     icon: Ban,         variant: "neutral" },
 };
 
 function formatCurrency(n: number) {
@@ -75,14 +77,7 @@ function FiadoSemaphore({ fiado }: { fiado: { status: string; fechaVence?: strin
   now.setHours(0, 0, 0, 0);
 
   if (fiado.status === "PAGADO") {
-    return (
-      <span className="inline-flex items-center gap-1 text-[10px] font-bold text-emerald-600 dark:text-emerald-400">
-        <span className="w-3 h-3 rounded-full bg-emerald-500 flex items-center justify-center">
-          <CheckCircle2 className="h-2 w-2 text-white" />
-        </span>
-        Pagado
-      </span>
-    );
+    return <StatusBadge variant="success" label="Pagado" icon={CheckCircle2} size="sm" />;
   }
   if (fiado.status === "CANCELADO") {
     return null;
@@ -94,45 +89,25 @@ function FiadoSemaphore({ fiado }: { fiado: { status: string; fechaVence?: strin
 
   // Bloqueado: vencido > 60 dias
   if (vence && vence.getTime() < now.getTime() - 60 * 24 * 60 * 60 * 1000) {
-    return (
-      <span className="inline-flex items-center gap-1 text-[10px] font-bold text-red-800 dark:text-red-300">
-        <span className="w-3 h-3 rounded-full bg-red-800 dark:bg-red-600 animate-pulse" />
-        Bloqueado
-      </span>
-    );
+    return <StatusBadge variant="error" label="Bloqueado" dot size="sm" pulse />;
   }
 
   // Vencido
   if (fiado.status === "VENCIDO" || (vence && vence < now)) {
     const diasVencido = vence ? Math.floor((now.getTime() - vence.getTime()) / (1000 * 60 * 60 * 24)) : 0;
-    return (
-      <span className="inline-flex items-center gap-1 text-[10px] font-bold text-red-600 dark:text-red-400">
-        <span className="w-3 h-3 rounded-full bg-red-500" />
-        Vencido{diasVencido > 0 ? ` hace ${diasVencido}d` : ""}
-      </span>
-    );
+    return <StatusBadge variant="error" label={`Vencido${diasVencido > 0 ? ` hace ${diasVencido}d` : ""}`} dot size="sm" />;
   }
 
   // Por vencer (7 dias)
   if (vence) {
     const diasRestantes = Math.floor((vence.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
     if (diasRestantes <= 7) {
-      return (
-        <span className="inline-flex items-center gap-1 text-[10px] font-bold text-amber-600 dark:text-amber-400">
-          <span className="w-3 h-3 rounded-full bg-amber-500 animate-pulse" />
-          Vence en {diasRestantes}d
-        </span>
-      );
+      return <StatusBadge variant="warning" label={`Vence en ${diasRestantes}d`} dot size="sm" pulse />;
     }
   }
 
   // Al dia
-  return (
-    <span className="inline-flex items-center gap-1 text-[10px] font-bold text-emerald-600 dark:text-emerald-400">
-      <span className="w-3 h-3 rounded-full bg-emerald-500" />
-      Al dia
-    </span>
-  );
+  return <StatusBadge variant="success" label="Al dia" dot size="sm" />;
 }
 
 // ── Mejora 11: Score de confiabilidad para fiados ────────────────────────────
@@ -299,9 +274,10 @@ function FiadoTendenciaCobro() {
     <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl p-4 sm:p-5 shadow-sm">
       <div className="flex items-center justify-between mb-3">
         <p className="text-xs font-bold text-gray-600 dark:text-gray-400 uppercase tracking-wider">Tendencia de Cobro</p>
-        <span className={cn("text-xs font-bold px-2 py-0.5 rounded-full", lastNeto >= 0 ? "bg-emerald-100 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400" : "bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400")}>
-          {lastNeto >= 0 ? "Recuperando mas de lo que prestas" : "Prestando mas de lo que cobras"}
-        </span>
+        <StatusBadge
+          variant={lastNeto >= 0 ? "success" : "error"}
+          label={lastNeto >= 0 ? "Recuperando mas de lo que prestas" : "Prestando mas de lo que cobras"}
+        />
       </div>
       <ResponsiveContainer width="100%" height={200}>
         <ComposedChart data={chartData} margin={{ top: 5, right: 10, left: 0, bottom: 5 }}>
@@ -1521,9 +1497,7 @@ export default function FiadosModule() {
                     </div>
                     <div className="ml-auto flex items-center gap-1.5">
                       <FiadoStreakBadge customerId={selected.customerId} fiados={fiados} />
-                      <span className={cn("inline-flex items-center gap-1 px-2 py-1 rounded-lg text-xs font-bold", STATUS_META[selected.status].bg, STATUS_META[selected.status].color)}>
-                        {STATUS_META[selected.status].label}
-                      </span>
+                      <StatusBadge variant={STATUS_META[selected.status].variant} label={STATUS_META[selected.status].label} icon={STATUS_META[selected.status].icon} />
                     </div>
                   </div>
                   {selected.descripcion && (
@@ -1578,9 +1552,7 @@ export default function FiadosModule() {
                             <div className="flex-1 min-w-0 bg-gray-50 dark:bg-white/5 rounded-xl p-3">
                               <div className="flex items-center justify-between gap-2">
                                 <p className="text-sm font-bold text-gray-900 dark:text-white">{formatCurrency(c.monto)}</p>
-                                <span className="shrink-0 px-1.5 py-0.5 rounded-full bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400 text-[9px] font-bold">
-                                  Pagado
-                                </span>
+                                <StatusBadge variant="success" label="Pagado" size="sm" />
                               </div>
                               <p className="text-[10px] text-gray-400 mt-0.5">
                                 {new Date(c.createdAt).toLocaleDateString("es-PE", { day: "2-digit", month: "2-digit", year: "numeric" })}

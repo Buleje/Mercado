@@ -17,6 +17,7 @@ const paddingMap = {
 function AdminCard({ children, className, padding = "md", hover = false }: AdminCardProps) {
   return (
     <div
+      data-card=""
       className={cn(
         "rounded-2xl border border-gray-100 dark:border-zinc-800 bg-white dark:bg-zinc-900",
         paddingMap[padding],

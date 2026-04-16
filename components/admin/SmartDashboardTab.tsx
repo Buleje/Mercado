@@ -27,6 +27,7 @@ import {
 } from "lucide-react";
 import dynamic from "next/dynamic";
 import { cn } from "@/lib/utils";
+import { StaggerContainer, StaggerItem } from "@/components/admin/shared/StaggerContainer";
 import type { Product, Sale } from "@/types/erp";
 import type {
   Order,
@@ -848,13 +849,13 @@ function SmartDashboardTab({ adminName = "Administrador" }: SmartDashboardTabPro
             {Array.from({ length: 5 }).map((_, i) => <SkeletonCard key={i} />)}
           </div>
         ) : (
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
-            <KpiCardNew label={`Ventas ${period === "hoy" ? "hoy" : period === "semana" ? "semana" : "mes"}`} value={fmtR(revenueFiltered)} subtext={`${filteredSales.length} transacciones`} colorClass="bg-primary" isEmpty={revenueFiltered === 0} emptyLabel="Sin ventas" />
-            <KpiCardNew label="Clientes" value={String(clientesFiltered)} subtext={`${clientesHoy} nuevos hoy`} colorClass="bg-blue-500" isEmpty={clientesFiltered === 0} emptyLabel="Sin clientes" />
-            <KpiCardNew label="Margen" value={`${marginFiltered.toFixed(0)}%`} subtext={marginFiltered >= 25 ? "Saludable" : marginFiltered >= 15 ? "Puede mejorar" : marginFiltered > 0 ? "Revisar costos" : `${fmtR(rentabilidadHoy)} ganancia`} subtextColorClass={marginFiltered >= 25 ? "text-emerald-600 dark:text-emerald-400" : marginFiltered >= 15 ? "text-amber-500 dark:text-amber-400" : marginFiltered > 0 ? "text-red-500 dark:text-red-400" : undefined} colorClass="bg-[#f97316]" isEmpty={marginFiltered === 0} />
-            <KpiCardNew label="vs Ayer" value={`${hoyVsAyerPct > 0 ? "+" : ""}${hoyVsAyerPct.toFixed(0)}%`} subtext={revenueYesterday > 0 ? `${fmtR(revenueYesterday)} ayer` : "Sin datos ayer"} colorClass={hoyVsAyerPct >= 0 ? "bg-emerald-500" : "bg-red-500"} isEmpty={revenueToday === 0 && revenueYesterday === 0} emptyLabel="Sin datos" />
-            <KpiCardNew label="Ticket promedio" value={fmtR(ticketPromedio)} subtext={salesToday.length > 0 ? `Max: ${fmtR(Math.max(...salesToday.map(s => s.total ?? 0)))}` : "Sin ventas"} colorClass="bg-purple-500" isEmpty={ticketPromedio === 0} emptyLabel="Sin ventas" />
-          </div>
+          <StaggerContainer className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
+            <StaggerItem><KpiCardNew label={`Ventas ${period === "hoy" ? "hoy" : period === "semana" ? "semana" : "mes"}`} value={fmtR(revenueFiltered)} subtext={`${filteredSales.length} transacciones`} colorClass="bg-primary" isEmpty={revenueFiltered === 0} emptyLabel="Sin ventas" /></StaggerItem>
+            <StaggerItem><KpiCardNew label="Clientes" value={String(clientesFiltered)} subtext={`${clientesHoy} nuevos hoy`} colorClass="bg-blue-500" isEmpty={clientesFiltered === 0} emptyLabel="Sin clientes" /></StaggerItem>
+            <StaggerItem><KpiCardNew label="Margen" value={`${marginFiltered.toFixed(0)}%`} subtext={marginFiltered >= 25 ? "Saludable" : marginFiltered >= 15 ? "Puede mejorar" : marginFiltered > 0 ? "Revisar costos" : `${fmtR(rentabilidadHoy)} ganancia`} subtextColorClass={marginFiltered >= 25 ? "text-emerald-600 dark:text-emerald-400" : marginFiltered >= 15 ? "text-amber-500 dark:text-amber-400" : marginFiltered > 0 ? "text-red-500 dark:text-red-400" : undefined} colorClass="bg-[#f97316]" isEmpty={marginFiltered === 0} /></StaggerItem>
+            <StaggerItem><KpiCardNew label="vs Ayer" value={`${hoyVsAyerPct > 0 ? "+" : ""}${hoyVsAyerPct.toFixed(0)}%`} subtext={revenueYesterday > 0 ? `${fmtR(revenueYesterday)} ayer` : "Sin datos ayer"} colorClass={hoyVsAyerPct >= 0 ? "bg-emerald-500" : "bg-red-500"} isEmpty={revenueToday === 0 && revenueYesterday === 0} emptyLabel="Sin datos" /></StaggerItem>
+            <StaggerItem><KpiCardNew label="Ticket promedio" value={fmtR(ticketPromedio)} subtext={salesToday.length > 0 ? `Max: ${fmtR(Math.max(...salesToday.map(s => s.total ?? 0)))}` : "Sin ventas"} colorClass="bg-purple-500" isEmpty={ticketPromedio === 0} emptyLabel="Sin ventas" /></StaggerItem>
+          </StaggerContainer>
         )
       )}
 

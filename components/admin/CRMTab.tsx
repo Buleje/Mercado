@@ -8,6 +8,8 @@ import {
   ChevronLeft, ChevronRight, BarChart3,
 } from "lucide-react";
 import EmptyState from "@/components/admin/shared/EmptyState";
+import StatusBadge from "@/components/admin/shared/StatusBadge";
+import type { BadgeVariant } from "@/components/admin/shared/StatusBadge";
 import { m, AnimatePresence } from "@/components/admin/providers";
 import { PieChart, Pie, Cell, ResponsiveContainer } from "recharts";
 import { cn, exportToCSV } from "@/lib/utils";
@@ -67,11 +69,11 @@ function inferSegment(c: Customer): Segment {
 
 // ── Config ─────────────────────────────────────────────────────────────────
 
-const SEGMENT_CONFIG: Record<Segment, { label: string; color: string; bg: string; border: string; Icon: React.ElementType }> = {
-  frecuente: { label: "Frecuente", color: "text-emerald-700 dark:text-emerald-400", bg: "bg-emerald-50 dark:bg-emerald-950/30", border: "border-emerald-300 dark:border-emerald-700", Icon: Crown },
-  ocasional: { label: "Ocasional", color: "text-blue-700 dark:text-blue-400",     bg: "bg-blue-50 dark:bg-blue-950/30",     border: "border-blue-300 dark:border-blue-700",     Icon: Star },
-  nuevo:     { label: "Nuevo",     color: "text-violet-700 dark:text-violet-400", bg: "bg-violet-50 dark:bg-violet-950/30", border: "border-violet-300 dark:border-violet-700", Icon: UserPlus },
-  perdido:   { label: "Perdido",   color: "text-red-700 dark:text-red-400",       bg: "bg-red-50 dark:bg-red-950/30",       border: "border-red-300 dark:border-red-700",       Icon: Moon },
+const SEGMENT_CONFIG: Record<Segment, { label: string; color: string; bg: string; border: string; Icon: React.ElementType; variant: BadgeVariant }> = {
+  frecuente: { label: "Frecuente", color: "text-emerald-700 dark:text-emerald-400", bg: "bg-emerald-50 dark:bg-emerald-950/30", border: "border-emerald-300 dark:border-emerald-700", Icon: Crown,    variant: "success" },
+  ocasional: { label: "Ocasional", color: "text-blue-700 dark:text-blue-400",     bg: "bg-blue-50 dark:bg-blue-950/30",     border: "border-blue-300 dark:border-blue-700",     Icon: Star,     variant: "info" },
+  nuevo:     { label: "Nuevo",     color: "text-violet-700 dark:text-violet-400", bg: "bg-violet-50 dark:bg-violet-950/30", border: "border-violet-300 dark:border-violet-700", Icon: UserPlus, variant: "pending" },
+  perdido:   { label: "Perdido",   color: "text-red-700 dark:text-red-400",       bg: "bg-red-50 dark:bg-red-950/30",       border: "border-red-300 dark:border-red-700",       Icon: Moon,     variant: "error" },
 };
 
 const PAGE_SIZE = 25;
@@ -771,16 +773,11 @@ export default function CRMTab() {
                           title="Click para editar límite de crédito"
                         >
                           {c.creditLimit != null && c.creditLimit > 0 ? (
-                            <span className={cn(
-                              "inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full border",
-                              (c.creditBalance ?? 0) >= c.creditLimit
-                                ? "bg-red-50 dark:bg-red-900/20 text-red-600 border-red-300 dark:border-red-700"
-                                : "bg-emerald-50 dark:bg-emerald-900/20 text-emerald-700 dark:text-emerald-400 border-emerald-300 dark:border-emerald-700"
-                            )}>
-                              {(c.creditBalance ?? 0) >= c.creditLimit
-                                ? "LÍMITE ALCANZADO"
-                                : `${fmt(c.creditBalance ?? 0)} / ${fmt(c.creditLimit)}`}
-                            </span>
+                            <StatusBadge
+                              variant={(c.creditBalance ?? 0) >= c.creditLimit ? "error" : "success"}
+                              label={(c.creditBalance ?? 0) >= c.creditLimit ? "LÍMITE ALCANZADO" : `${fmt(c.creditBalance ?? 0)} / ${fmt(c.creditLimit)}`}
+                              size="sm"
+                            />
                           ) : (
                             <span className="text-[10px] text-gray-400 group-hover:text-primary transition-colors">+ Añadir límite</span>
                           )}
@@ -790,9 +787,7 @@ export default function CRMTab() {
 
                     {/* Segmento */}
                     <td className="px-4 py-3">
-                      <span className={cn("inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full border", cfg.bg, cfg.color, cfg.border)}>
-                        <Icon className="h-2.5 w-2.5" />{cfg.label}
-                      </span>
+                      <StatusBadge variant={cfg.variant} label={cfg.label} icon={Icon} size="sm" />
                     </td>
 
                     {/* Mejora 9R2: Ultimo contacto */}

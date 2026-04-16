@@ -6,7 +6,7 @@ import {
   Search, Loader2, ClipboardList, Plus, Pencil, Trash2,
   ScanBarcode, X, Camera, Download, CheckSquare, Filter, ChevronDown,
   TrendingUp, PackagePlus, Eye, EyeOff, Layers, ChevronRight, Upload, CheckCircle, BookOpen,
-  Warehouse, Maximize2,
+  Warehouse, Maximize2, Copy,
 } from "lucide-react";
 import EmptyState from "@/components/admin/shared/EmptyState";
 import StatusBadge from "@/components/admin/shared/StatusBadge";
@@ -100,6 +100,81 @@ async function resizeImage(file: File, maxPx = 800, quality = 0.8): Promise<stri
   });
 }
 
+// ── InventoryContextMenu (right-click menu for product rows) ───────────────
+
+interface InventoryContextMenuProps {
+  product: DbProduct;
+  x: number;
+  y: number;
+  onClose: () => void;
+  onEdit: (p: DbProduct) => void;
+  onView: (p: DbProduct) => void;
+  onDuplicate: (p: DbProduct) => void;
+  onDelete: (p: DbProduct) => void;
+}
+
+function InventoryContextMenu({ product, x, y, onClose, onEdit, onView, onDuplicate, onDelete }: InventoryContextMenuProps) {
+  const menuRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    function handleClickOutside(e: MouseEvent) {
+      if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
+        onClose();
+      }
+    }
+    function handleEscape(e: KeyboardEvent) {
+      if (e.key === "Escape") onClose();
+    }
+    const timer = setTimeout(() => {
+      document.addEventListener("mousedown", handleClickOutside);
+      document.addEventListener("keydown", handleEscape);
+    }, 0);
+    return () => {
+      clearTimeout(timer);
+      document.removeEventListener("mousedown", handleClickOutside);
+      document.removeEventListener("keydown", handleEscape);
+    };
+  }, [onClose]);
+
+  const items: Array<{ label: string; icon: typeof Pencil; onClick: () => void; variant?: "default" | "danger"; divider?: boolean }> = [
+    { label: "Editar producto", icon: Pencil, onClick: () => onEdit(product) },
+    { label: "Ver detalles", icon: Eye, onClick: () => onView(product) },
+    { label: "Duplicar", icon: Copy, onClick: () => onDuplicate(product) },
+    { label: "Eliminar", icon: Trash2, onClick: () => onDelete(product), variant: "danger", divider: true },
+  ];
+
+  return (
+    <div
+      ref={menuRef}
+      className="fixed z-[9999] bg-white dark:bg-zinc-900 rounded-xl shadow-2xl border border-gray-100 dark:border-zinc-800 min-w-[180px] py-1 animate-in fade-in zoom-in-95 duration-150"
+      style={{ left: x, top: y }}
+    >
+      {items.map((item, i) => {
+        const Icon = item.icon;
+        return (
+          <div key={i}>
+            {item.divider && (
+              <div className="my-1 border-t border-gray-100 dark:border-zinc-800" />
+            )}
+            <button
+              onClick={item.onClick}
+              className={cn(
+                "w-full px-3 py-2 text-sm flex items-center gap-2 cursor-pointer transition-colors",
+                item.variant === "danger"
+                  ? "text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20"
+                  : "text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-zinc-800",
+              )}
+            >
+              <Icon className="h-4 w-4 shrink-0" />
+              <span>{item.label}</span>
+            </button>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
 // ── Component ────────────────────────────────────────────────────────────────
 
 export default function InventoryTab() {
@@ -183,6 +258,9 @@ export default function InventoryTab() {
   const [csvImporting, setCsvImporting] = useState(false);
   const [csvResult, setCsvResult] = useState<{ created: number; errors: string[] } | null>(null);
   const [kardexProduct, setKardexProduct] = useState<{ id: number; name: string } | null>(null);
+
+  // Context menu state for right-click on product rows
+  const [ctxMenu, setCtxMenu] = useState<{ product: DbProduct; x: number; y: number } | null>(null);
 
   useScrollLock(!!(showAdd || showPicker || editModalProduct || showScanner || bulkModal || bulkDeleteConfirm));
 
@@ -675,9 +753,7 @@ export default function InventoryTab() {
           <p className="text-sm text-gray-500 dark:text-muted flex items-center flex-wrap gap-2">
             {totalProducts} productos · {activeProducts} activos
             {lowStockCount > 0 && (
-              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-amber-100 text-amber-700 text-xs font-bold">
-                <AlertTriangle className="h-3 w-3" /> {lowStockCount} con pocas existencias
-              </span>
+              <StatusBadge variant="warning" label={`${lowStockCount} con pocas existencias`} icon={AlertTriangle} />
             )}
           </p>
         </div>
@@ -1083,9 +1159,7 @@ export default function InventoryTab() {
                 >
                   {!p.active && (
                     <div className="absolute top-2 right-2 z-10">
-                      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-gray-200 dark:bg-gray-700 text-gray-600 dark:text-gray-300 text-xs font-bold">
-                        <EyeOff className="h-3 w-3" /> Inactivo
-                      </span>
+                      <StatusBadge variant="neutral" label="Inactivo" icon={EyeOff} />
                     </div>
                   )}
                   <div className="flex flex-wrap items-start gap-3">
@@ -1152,9 +1226,9 @@ export default function InventoryTab() {
             })}
             {filteredProducts.length === 0 && (
               <EmptyState
-                icon={products.length === 0 ? Warehouse : Package}
+                illustration={products.length === 0 ? "products" : "search"}
                 title={products.length === 0 ? "Sin inventario" : "Sin resultados"}
-                description={products.length === 0 ? "Agrega productos y registra movimientos de stock." : "Prueba con otro filtro o búsqueda."}
+                description={products.length === 0 ? "Agrega productos y registra movimientos de stock." : "Prueba con otro filtro o busqueda."}
               />
             )}
             <Paginator page={pgProducts.page} totalPages={pgProducts.totalPages} total={pgProducts.total} pageSize={pgProducts.pageSize} onPage={pgProducts.setPage} onPageSize={pgProducts.setPageSize} />
@@ -1187,7 +1261,18 @@ export default function InventoryTab() {
                   {pgProducts.items.map(p => {
                     const lowStock = isLowStock(p);
                     return (
-                      <tr key={p.id} className={cn("hover:bg-gray-50 dark:hover:bg-surface transition-colors", !p.active && "opacity-50 bg-gray-50 dark:bg-gray-900/30", lowStock && "bg-amber-50/40", selectedIds.has(p.id) && "bg-primary/5")}>
+                      <tr
+                        key={p.id}
+                        className={cn("hover:bg-gray-50 dark:hover:bg-surface transition-colors", !p.active && "opacity-50 bg-gray-50 dark:bg-gray-900/30", lowStock && "bg-amber-50/40", selectedIds.has(p.id) && "bg-primary/5")}
+                        onContextMenu={(e) => {
+                          e.preventDefault();
+                          let x = e.clientX;
+                          let y = e.clientY;
+                          if (x + 200 > window.innerWidth) x = window.innerWidth - 208;
+                          if (y + 200 > window.innerHeight) y = window.innerHeight - 208;
+                          setCtxMenu({ product: p, x, y });
+                        }}
+                      >
                         <td className="px-3 py-3">
                           <input type="checkbox" checked={selectedIds.has(p.id)} onChange={() => toggleSelect(p.id)} className="rounded border-gray-300 text-primary focus:ring-primary" />
                         </td>
@@ -1217,9 +1302,7 @@ export default function InventoryTab() {
                               <StatusBadge variant="success" label="Alta rentabilidad" size="sm" />
                             )}
                             {!p.active && (
-                              <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded bg-gray-200 dark:bg-gray-700 text-gray-600 dark:text-gray-300 text-[10px] font-bold">
-                                <EyeOff className="h-2.5 w-2.5" /> Inactivo
-                              </span>
+                              <StatusBadge variant="neutral" label="Inactivo" icon={EyeOff} size="sm" />
                             )}
                           </div>
                         </td>
@@ -1366,9 +1449,9 @@ export default function InventoryTab() {
             </div>
             {filteredProducts.length === 0 && (
               <EmptyState
-                icon={products.length === 0 ? Warehouse : Package}
+                illustration={products.length === 0 ? "products" : "search"}
                 title={products.length === 0 ? "Sin inventario" : "Sin resultados"}
-                description={products.length === 0 ? "Agrega productos y registra movimientos de stock." : "Prueba con otro filtro o búsqueda."}
+                description={products.length === 0 ? "Agrega productos y registra movimientos de stock." : "Prueba con otro filtro o busqueda."}
               />
             )}
             <Paginator page={pgProducts.page} totalPages={pgProducts.totalPages} total={pgProducts.total} pageSize={pgProducts.pageSize} onPage={pgProducts.setPage} onPageSize={pgProducts.setPageSize} />
@@ -2190,6 +2273,40 @@ export default function InventoryTab() {
       {/* Expanded table modal */}
       {showExpandedTable && (
         <ExpandedStockModal products={products} movements={movements} onClose={() => setShowExpandedTable(false)} />
+      )}
+
+      {/* Context menu for product rows (right-click) */}
+      {ctxMenu && (
+        <InventoryContextMenu
+          product={ctxMenu.product}
+          x={ctxMenu.x}
+          y={ctxMenu.y}
+          onClose={() => setCtxMenu(null)}
+          onEdit={(p) => { openEditModal(p); setCtxMenu(null); }}
+          onView={(p) => { setKardexProduct({ id: p.id, name: p.name }); setCtxMenu(null); }}
+          onDuplicate={(p) => {
+            setAddForm({
+              name: `${p.name} (Copia)`,
+              category: p.category,
+              price: String(p.price),
+              unit: p.unit,
+              badge: p.badge ?? "",
+              image: p.image ?? "",
+              barcode: "",
+              costPrice: p.costPrice != null ? String(p.costPrice) : "",
+              stock: "0",
+              stockMin: p.stockMin != null ? String(p.stockMin) : "",
+              stockMax: p.stockMax != null ? String(p.stockMax) : "",
+              expiryDate: "",
+              isVariant: false,
+              variantOf: "",
+              variantAttr: "",
+            });
+            setShowAdd(true);
+            setCtxMenu(null);
+          }}
+          onDelete={(p) => { deleteProduct(p.id); setCtxMenu(null); }}
+        />
       )}
     </div>
   );

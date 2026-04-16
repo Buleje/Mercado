@@ -17,4 +17,6 @@ export { default as AdminCard } from "./AdminCard";
 export { default as AdminKPI } from "./AdminKPI";
 export { default as AdminSectionHeader } from "./AdminSectionHeader";
 export { default as StatusBadge } from "./StatusBadge";
+export type { BadgeVariant, StatusBadgeProps } from "./StatusBadge";
 export { default as AdminTable } from "./AdminTable";
+export type { Column as AdminTableColumn } from "./AdminTable";

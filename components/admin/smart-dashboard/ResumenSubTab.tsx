@@ -21,6 +21,7 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { BusinessOverviewHero } from "@/components/admin/shared/BusinessOverviewHero";
+import { StaggerContainer, StaggerItem } from "@/components/admin/shared/StaggerContainer";
 import type {
   Order,
   Payable,
@@ -449,94 +450,100 @@ export function ResumenSubTab(props: ResumenSubTabProps) {
 
       {/* High-impact cards row */}
       {!loading && (
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+        <StaggerContainer className="grid grid-cols-1 sm:grid-cols-3 gap-4">
           {/* Proximos pagos */}
-          <div className="rounded-xl border border-gray-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 p-5 shadow-sm">
-            <div className="flex items-center gap-2 mb-3">
-              <span className="flex items-center justify-center w-7 h-7 rounded-lg bg-amber-50 dark:bg-amber-900/20">
-                <DollarSign className="w-3.5 h-3.5 text-amber-500" />
-              </span>
-              <span className="text-sm font-medium text-gray-500 dark:text-zinc-400 uppercase tracking-wider">Pagos esta semana</span>
-            </div>
-            {upcomingPayables.overdue > 0 && (
-              <div className="flex items-center gap-1.5 mb-2 px-2 py-1 rounded-lg bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800">
-                <AlertTriangle className="w-3 h-3 text-red-500" />
-                <span className="text-[10px] font-bold text-red-600 dark:text-red-400">{upcomingPayables.overdue} vencido{upcomingPayables.overdue !== 1 ? "s" : ""}</span>
+          <StaggerItem>
+            <div className="rounded-xl border border-gray-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 p-5 shadow-sm h-full">
+              <div className="flex items-center gap-2 mb-3">
+                <span className="flex items-center justify-center w-7 h-7 rounded-lg bg-amber-50 dark:bg-amber-900/20">
+                  <DollarSign className="w-3.5 h-3.5 text-amber-500" />
+                </span>
+                <span className="text-sm font-medium text-gray-500 dark:text-zinc-400 uppercase tracking-wider">Pagos esta semana</span>
               </div>
-            )}
-            {upcomingPayables.upcoming.length > 0 ? (
-              <ul className="space-y-1.5">
-                {upcomingPayables.upcoming.map(p => {
-                  const daysLeft = p.dueDate ? Math.max(0, Math.ceil((new Date(p.dueDate).getTime() - now) / 86400000)) : 0;
-                  return (
-                    <li key={p.id} className="flex items-center justify-between text-xs">
-                      <span className="truncate text-gray-600 dark:text-zinc-300 flex-1">{p.supplierName || "Proveedor"}</span>
-                      <span className="font-bold text-gray-900 dark:text-zinc-100 ml-2">{fmtR(p.amount - p.paidAmount)}</span>
-                      <span className="text-[10px] text-gray-400 ml-1.5">{daysLeft}d</span>
-                    </li>
-                  );
-                })}
-              </ul>
-            ) : upcomingPayables.overdue === 0 ? (
-              <p className="text-xs text-emerald-500 font-medium">Sin pagos pendientes esta semana</p>
-            ) : null}
-            <a href="/admin?module=compras" className="text-[10px] font-bold text-primary hover:underline mt-2 block">Ver todos &rarr;</a>
-          </div>
+              {upcomingPayables.overdue > 0 && (
+                <div className="flex items-center gap-1.5 mb-2 px-2 py-1 rounded-lg bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800">
+                  <AlertTriangle className="w-3 h-3 text-red-500" />
+                  <span className="text-[10px] font-bold text-red-600 dark:text-red-400">{upcomingPayables.overdue} vencido{upcomingPayables.overdue !== 1 ? "s" : ""}</span>
+                </div>
+              )}
+              {upcomingPayables.upcoming.length > 0 ? (
+                <ul className="space-y-1.5">
+                  {upcomingPayables.upcoming.map(p => {
+                    const daysLeft = p.dueDate ? Math.max(0, Math.ceil((new Date(p.dueDate).getTime() - now) / 86400000)) : 0;
+                    return (
+                      <li key={p.id} className="flex items-center justify-between text-xs">
+                        <span className="truncate text-gray-600 dark:text-zinc-300 flex-1">{p.supplierName || "Proveedor"}</span>
+                        <span className="font-bold text-gray-900 dark:text-zinc-100 ml-2">{fmtR(p.amount - p.paidAmount)}</span>
+                        <span className="text-[10px] text-gray-400 ml-1.5">{daysLeft}d</span>
+                      </li>
+                    );
+                  })}
+                </ul>
+              ) : upcomingPayables.overdue === 0 ? (
+                <p className="text-xs text-emerald-500 font-medium">Sin pagos pendientes esta semana</p>
+              ) : null}
+              <a href="/admin?module=compras" className="text-[10px] font-bold text-primary hover:underline mt-2 block">Ver todos &rarr;</a>
+            </div>
+          </StaggerItem>
 
           {/* Clientes del dia */}
-          <div className="rounded-xl border border-gray-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 p-5 shadow-sm">
-            <div className="flex items-center gap-2 mb-3">
-              <span className="flex items-center justify-center w-7 h-7 rounded-lg bg-blue-50 dark:bg-blue-900/20">
-                <Users className="w-3.5 h-3.5 text-blue-500" />
-              </span>
-              <span className="text-sm font-medium text-gray-500 dark:text-zinc-400 uppercase tracking-wider">Clientes hoy</span>
+          <StaggerItem>
+            <div className="rounded-xl border border-gray-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 p-5 shadow-sm h-full">
+              <div className="flex items-center gap-2 mb-3">
+                <span className="flex items-center justify-center w-7 h-7 rounded-lg bg-blue-50 dark:bg-blue-900/20">
+                  <Users className="w-3.5 h-3.5 text-blue-500" />
+                </span>
+                <span className="text-sm font-medium text-gray-500 dark:text-zinc-400 uppercase tracking-wider">Clientes hoy</span>
+              </div>
+              <p className="text-2xl font-bold font-mono text-gray-900 dark:text-zinc-100">{clientesHoy}</p>
+              <p className="text-xs text-gray-400 mt-0.5">Promedio: {clientesPromedio}/dia</p>
+              <div className="flex items-center gap-1.5 mt-2">
+                {clientesHoy > clientesAyer ? (
+                  <span className="text-[10px] font-bold text-emerald-600 bg-emerald-50 dark:bg-emerald-900/30 px-1.5 py-0.5 rounded-full">+{clientesHoy - clientesAyer} vs ayer</span>
+                ) : clientesHoy < clientesAyer ? (
+                  <span className="text-[10px] font-bold text-red-500 bg-red-50 dark:bg-red-900/30 px-1.5 py-0.5 rounded-full">{clientesHoy - clientesAyer} vs ayer</span>
+                ) : (
+                  <span className="text-[10px] font-bold text-gray-400 bg-gray-50 dark:bg-zinc-700 px-1.5 py-0.5 rounded-full">Igual que ayer</span>
+                )}
+              </div>
             </div>
-            <p className="text-2xl font-bold font-mono text-gray-900 dark:text-zinc-100">{clientesHoy}</p>
-            <p className="text-xs text-gray-400 mt-0.5">Promedio: {clientesPromedio}/dia</p>
-            <div className="flex items-center gap-1.5 mt-2">
-              {clientesHoy > clientesAyer ? (
-                <span className="text-[10px] font-bold text-emerald-600 bg-emerald-50 dark:bg-emerald-900/30 px-1.5 py-0.5 rounded-full">+{clientesHoy - clientesAyer} vs ayer</span>
-              ) : clientesHoy < clientesAyer ? (
-                <span className="text-[10px] font-bold text-red-500 bg-red-50 dark:bg-red-900/30 px-1.5 py-0.5 rounded-full">{clientesHoy - clientesAyer} vs ayer</span>
-              ) : (
-                <span className="text-[10px] font-bold text-gray-400 bg-gray-50 dark:bg-zinc-700 px-1.5 py-0.5 rounded-full">Igual que ayer</span>
-              )}
-            </div>
-          </div>
+          </StaggerItem>
 
           {/* Productos que se agotan */}
-          <div className="rounded-xl border border-gray-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 p-5 shadow-sm">
-            <div className="flex items-center gap-2 mb-3">
-              <span className="flex items-center justify-center w-7 h-7 rounded-lg bg-red-50 dark:bg-red-900/20">
-                <Package className="w-3.5 h-3.5 text-red-500" />
-              </span>
-              <span className="text-sm font-medium text-gray-500 dark:text-zinc-400 uppercase tracking-wider">Se agotan esta semana</span>
+          <StaggerItem>
+            <div className="rounded-xl border border-gray-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 p-5 shadow-sm h-full">
+              <div className="flex items-center gap-2 mb-3">
+                <span className="flex items-center justify-center w-7 h-7 rounded-lg bg-red-50 dark:bg-red-900/20">
+                  <Package className="w-3.5 h-3.5 text-red-500" />
+                </span>
+                <span className="text-sm font-medium text-gray-500 dark:text-zinc-400 uppercase tracking-wider">Se agotan esta semana</span>
+              </div>
+              {productsRunningOut.length > 0 ? (
+                <ul className="space-y-1.5">
+                  {productsRunningOut.map(p => (
+                    <li key={p.id} className="flex items-center justify-between text-xs">
+                      <span className="truncate text-gray-600 dark:text-zinc-300 flex-1">{p.name}</span>
+                      <span className="text-gray-400 ml-1">quedan {p.stock}</span>
+                      <span className={cn(
+                        "text-[10px] font-bold px-1.5 py-0.5 rounded-full ml-1.5",
+                        p.daysLeft < 3 ? "bg-red-100 text-red-600 dark:bg-red-900/30 dark:text-red-400" :
+                        p.daysLeft <= 5 ? "bg-amber-100 text-amber-600 dark:bg-amber-900/30 dark:text-amber-400" :
+                        "bg-orange-100 text-orange-600 dark:bg-orange-900/30 dark:text-orange-400"
+                      )}>
+                        {p.daysLeft}d
+                      </span>
+                    </li>
+                  ))}
+                </ul>
+              ) : (
+                <p className="text-xs text-emerald-500 font-medium">Stock estable para esta semana</p>
+              )}
+              {productsRunningOut.length > 0 && (
+                <a href="/admin?module=compras" className="text-[10px] font-bold text-primary hover:underline mt-2 block">Crear OC &rarr;</a>
+              )}
             </div>
-            {productsRunningOut.length > 0 ? (
-              <ul className="space-y-1.5">
-                {productsRunningOut.map(p => (
-                  <li key={p.id} className="flex items-center justify-between text-xs">
-                    <span className="truncate text-gray-600 dark:text-zinc-300 flex-1">{p.name}</span>
-                    <span className="text-gray-400 ml-1">quedan {p.stock}</span>
-                    <span className={cn(
-                      "text-[10px] font-bold px-1.5 py-0.5 rounded-full ml-1.5",
-                      p.daysLeft < 3 ? "bg-red-100 text-red-600 dark:bg-red-900/30 dark:text-red-400" :
-                      p.daysLeft <= 5 ? "bg-amber-100 text-amber-600 dark:bg-amber-900/30 dark:text-amber-400" :
-                      "bg-orange-100 text-orange-600 dark:bg-orange-900/30 dark:text-orange-400"
-                    )}>
-                      {p.daysLeft}d
-                    </span>
-                  </li>
-                ))}
-              </ul>
-            ) : (
-              <p className="text-xs text-emerald-500 font-medium">Stock estable para esta semana</p>
-            )}
-            {productsRunningOut.length > 0 && (
-              <a href="/admin?module=compras" className="text-[10px] font-bold text-primary hover:underline mt-2 block">Crear OC &rarr;</a>
-            )}
-          </div>
-        </div>
+          </StaggerItem>
+        </StaggerContainer>
       )}
 
       {/* Meta del dia */}

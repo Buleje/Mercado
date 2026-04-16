@@ -51,7 +51,7 @@ function ExpandableMapSection() {
         </button>
       </div>
       <div style={{ height: maximized ? "calc(100vh - 120px)" : 520 }}>
-        <CustomerGeoMap height={maximized ? "100%" : 520} />
+        <CustomerGeoMap />
       </div>
     </div>
   );

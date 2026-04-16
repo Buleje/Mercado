@@ -6,6 +6,8 @@ import {
   AlertTriangle,
 } from "lucide-react";
 import { cn, exportToCSV } from "@/lib/utils";
+import StatusBadge from "@/components/admin/shared/StatusBadge";
+import type { BadgeVariant } from "@/components/admin/shared/StatusBadge";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -34,13 +36,13 @@ type ReturnRecord = {
 
 const fmt = (n: number) => "S/ " + n.toLocaleString("es-PE", { minimumFractionDigits: 2 });
 
-const REASON_META: Record<ReturnReason, { label: string; color: string; bg: string }> = {
-  defectuoso:        { label: "Defectuoso",         color: "text-red-600",     bg: "bg-red-100 dark:bg-red-900/30" },
-  vencido:           { label: "Vencido",             color: "text-amber-600",   bg: "bg-amber-100 dark:bg-amber-900/30" },
-  equivocado:        { label: "Producto equivocado", color: "text-blue-600",    bg: "bg-blue-100 dark:bg-blue-900/30" },
-  insatisfecho:      { label: "Insatisfecho",        color: "text-violet-600",  bg: "bg-violet-100 dark:bg-violet-900/30" },
-  "dañado-transporte": { label: "Dañado en transporte", color: "text-orange-600", bg: "bg-orange-100 dark:bg-orange-900/30" },
-  duplicado:         { label: "Pedido duplicado",    color: "text-gray-600",    bg: "bg-gray-100 dark:bg-gray-800/30" },
+const REASON_META: Record<ReturnReason, { label: string; color: string; bg: string; variant: BadgeVariant }> = {
+  defectuoso:        { label: "Defectuoso",         color: "text-red-600",     bg: "bg-red-100 dark:bg-red-900/30",     variant: "error" },
+  vencido:           { label: "Vencido",             color: "text-amber-600",   bg: "bg-amber-100 dark:bg-amber-900/30", variant: "warning" },
+  equivocado:        { label: "Producto equivocado", color: "text-blue-600",    bg: "bg-blue-100 dark:bg-blue-900/30",   variant: "info" },
+  insatisfecho:      { label: "Insatisfecho",        color: "text-violet-600",  bg: "bg-violet-100 dark:bg-violet-900/30", variant: "pending" },
+  "dañado-transporte": { label: "Dañado en transporte", color: "text-orange-600", bg: "bg-orange-100 dark:bg-orange-900/30", variant: "warning" },
+  duplicado:         { label: "Pedido duplicado",    color: "text-gray-600",    bg: "bg-gray-100 dark:bg-gray-800/30",   variant: "neutral" },
 };
 
 const DECISION_META: Record<ReturnDecision, { label: string; color: string }> = {
@@ -165,7 +167,7 @@ export default function AdvancedReturnsTab() {
                   <td className="px-2 sm:px-4 py-2 sm:py-3 font-mono text-xs text-gray-700 dark:text-foreground">{r.orderRef}</td>
                   <td className="px-2 sm:px-4 py-2 sm:py-3 font-bold text-gray-800 dark:text-foreground">{r.product}<br/><span className="text-xs text-gray-400">{r.clientName}</span></td>
                   <td className="px-2 sm:px-4 py-2 sm:py-3 font-bold text-red-600">{fmt(r.totalValue)}</td>
-                  <td className="px-2 sm:px-4 py-2 sm:py-3"><span className={cn("text-xs font-bold px-2 py-0.5 rounded-full", REASON_META[r.reason].bg, REASON_META[r.reason].color)}>{REASON_META[r.reason].label}</span></td>
+                  <td className="px-2 sm:px-4 py-2 sm:py-3"><StatusBadge variant={REASON_META[r.reason].variant} label={REASON_META[r.reason].label} /></td>
                   <td className="px-2 sm:px-4 py-2 sm:py-3"><span className={cn("text-xs font-bold", DECISION_META[r.decision].color)}>{DECISION_META[r.decision].label}</span></td>
                   <td className="px-2 sm:px-4 py-2 sm:py-3"><button onClick={() => setDetail(r)} className="text-primary hover:underline text-xs font-bold"><Eye className="h-3.5 w-3.5 inline" /></button></td>
                 </tr>

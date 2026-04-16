@@ -2,13 +2,17 @@
 import { useState, useEffect, useCallback, useRef, useMemo } from "react";
 import { Search, ArrowRight, Package, Users, Zap, Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import type { ComponentType } from "react";
 
 interface CommandItem {
   id: string;
   label: string;
-  category: string; // "Módulo" | "Producto" | "Cliente" | "Acción" | "Documento" | "Sistema"
-  icon?: string; // emoji
+  category: string;
+  icon?: string;
+  iconComponent?: ComponentType<{ className?: string }>;
+  iconColor?: string;
   subtitle?: string;
+  shortcut?: string;
   onSelect: () => void;
 }
 
@@ -16,14 +20,14 @@ interface AdminCommandPaletteProps {
   items: CommandItem[];
 }
 
-// Categorías con icono Lucide para las dinámicas
+// Lucide icons for dynamic categories (Producto / Cliente / Accion)
 const DYN_ICONS: Record<string, React.ReactNode> = {
   Producto: <Package className="h-3 w-3" />,
   Cliente:  <Users className="h-3 w-3" />,
-  Acción:   <Zap className="h-3 w-3" />,
+  Accion:   <Zap className="h-3 w-3" />,
 };
 
-const CATEGORY_ORDER = ["Acción", "Módulo", "Documento", "Sistema", "Producto", "Cliente"];
+const CATEGORY_ORDER = ["Accion", "Negocio", "Inventario", "Dinero", "Documento", "Sistema", "Producto", "Cliente"];
 
 export default function AdminCommandPalette({ items }: AdminCommandPaletteProps) {
   const [open, setOpen]             = useState(false);
@@ -59,7 +63,7 @@ export default function AdminCommandPalette({ items }: AdminCommandPaletteProps)
     }
   }, [open]);
 
-  // ── Búsqueda dinámica con debounce 200ms ───────────────────────────────────
+  // ── Busqueda dinamica con debounce 200ms ───────────────────────────────────
   useEffect(() => {
     if (debounceRef.current) clearTimeout(debounceRef.current);
     const q = query.trim();
@@ -86,7 +90,6 @@ export default function AdminCommandPalette({ items }: AdminCommandPaletteProps)
             category: "Producto",
             icon: "📦",
             onSelect: () => {
-              // Navega al módulo de productos — el padre maneja la lógica de tab
               window.dispatchEvent(new CustomEvent("admin:navigate", { detail: { tab: "productos" } }));
             },
           })));
@@ -94,7 +97,6 @@ export default function AdminCommandPalette({ items }: AdminCommandPaletteProps)
 
         if (cRes.status === "fulfilled" && cRes.value.ok) {
           const raw = await cRes.value.json();
-          // La API puede devolver array directo o { customers: [] }
           const customers: Array<{ phone?: string; name: string; location?: string }> = Array.isArray(raw) ? raw : (raw.customers ?? []);
           setDynCustomers(customers.slice(0, 5).map((c, i) => ({
             id: `customer-${c.phone ?? i}`,
@@ -108,7 +110,7 @@ export default function AdminCommandPalette({ items }: AdminCommandPaletteProps)
           })));
         }
       } catch {
-        // Fallo silencioso — los resultados estáticos siguen funcionando
+        // Fallo silencioso — los resultados estaticos siguen funcionando
       } finally {
         setSearching(false);
       }
@@ -117,17 +119,19 @@ export default function AdminCommandPalette({ items }: AdminCommandPaletteProps)
     return () => { if (debounceRef.current) clearTimeout(debounceRef.current); };
   }, [query]);
 
-  // ── Resultados filtrados (estáticos + dinámicos) ───────────────────────────
+  // ── Resultados filtrados (estaticos + dinamicos) ───────────────────────────
   const filtered = useMemo<CommandItem[]>(() => {
     const q = query.trim().toLowerCase();
-    if (!q) return items.slice(0, 12);
+    if (!q) return items.slice(0, 16);
     const staticFiltered = items.filter(i =>
-      i.label.toLowerCase().includes(q) || i.category.toLowerCase().includes(q)
+      i.label.toLowerCase().includes(q) ||
+      i.category.toLowerCase().includes(q) ||
+      (i.subtitle && i.subtitle.toLowerCase().includes(q))
     );
     return [...staticFiltered, ...dynProducts, ...dynCustomers].slice(0, 20);
   }, [items, query, dynProducts, dynCustomers]);
 
-  // ── Agrupado por categoría ─────────────────────────────────────────────────
+  // ── Agrupado por categoria ─────────────────────────────────────────────────
   const grouped = useMemo(() => {
     const map = new Map<string, CommandItem[]>();
     for (const item of filtered) {
@@ -135,7 +139,6 @@ export default function AdminCommandPalette({ items }: AdminCommandPaletteProps)
       arr.push(item);
       map.set(item.category, arr);
     }
-    // Ordenar categorías
     return Array.from(map.entries()).sort(([a], [b]) => {
       const ia = CATEGORY_ORDER.indexOf(a);
       const ib = CATEGORY_ORDER.indexOf(b);
@@ -143,7 +146,7 @@ export default function AdminCommandPalette({ items }: AdminCommandPaletteProps)
     });
   }, [filtered]);
 
-  // ── Navegación por teclado ─────────────────────────────────────────────────
+  // ── Navegacion por teclado ─────────────────────────────────────────────────
   const handleKeyDown = useCallback((e: React.KeyboardEvent) => {
     if (e.key === "ArrowDown") {
       e.preventDefault();
@@ -159,7 +162,6 @@ export default function AdminCommandPalette({ items }: AdminCommandPaletteProps)
 
   useEffect(() => { setSelectedIdx(0); }, [filtered]);
 
-  // No trigger button — the top header search bar triggers Ctrl+K
   if (!open) return null;
 
   // ── Render: modal ─────────────────────────────────────────────────────────
@@ -171,7 +173,7 @@ export default function AdminCommandPalette({ items }: AdminCommandPaletteProps)
       onClick={() => setOpen(false)}
       role="dialog"
       aria-modal="true"
-      aria-label="Búsqueda global"
+      aria-label="Busqueda global"
     >
       <div
         className="bg-white dark:bg-gray-900 rounded-2xl shadow-2xl w-full max-w-lg mx-4 overflow-hidden border border-gray-200 dark:border-gray-700"
@@ -186,7 +188,7 @@ export default function AdminCommandPalette({ items }: AdminCommandPaletteProps)
             value={query}
             onChange={e => setQuery(e.target.value)}
             onKeyDown={handleKeyDown}
-            placeholder="Buscar módulos, productos, clientes, acciones..."
+            placeholder="Buscar modulos, productos, clientes, acciones..."
             className="flex-1 text-sm bg-transparent text-gray-900 dark:text-white placeholder:text-gray-400 outline-none"
           />
           {searching && <Loader2 className="h-3.5 w-3.5 animate-spin text-gray-400 shrink-0" />}
@@ -201,38 +203,74 @@ export default function AdminCommandPalette({ items }: AdminCommandPaletteProps)
             <div className="text-center py-8 text-sm text-gray-400">
               <Search className="h-6 w-6 mx-auto mb-2 opacity-30" />
               <p>No se encontraron resultados</p>
-              {query.length > 0 && <p className="text-xs mt-1 text-gray-400">Intenta con otro término</p>}
+              {query.length > 0 && <p className="text-xs mt-1 text-gray-400">Intenta con otro termino</p>}
             </div>
           ) : (
             grouped.map(([category, categoryItems]) => (
               <div key={category}>
-                <p className="px-4 py-1.5 text-[10px] font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider flex items-center gap-1.5">
-                  {DYN_ICONS[category]}
-                  {category}
-                </p>
+                {/* Category separator */}
+                <div className="flex items-center gap-2 px-4 pt-3 pb-1.5">
+                  <span className="h-px flex-1 bg-gray-100 dark:bg-gray-800" />
+                  <span className="text-[10px] font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider flex items-center gap-1.5">
+                    {DYN_ICONS[category]}
+                    {category}
+                  </span>
+                  <span className="h-px flex-1 bg-gray-100 dark:bg-gray-800" />
+                </div>
                 {categoryItems.map(item => {
                   const idx = globalIdx++;
+                  const IconComp = item.iconComponent;
                   return (
                     <button
                       key={item.id}
                       onClick={() => { item.onSelect(); setOpen(false); }}
                       className={cn(
-                        "w-full flex items-center gap-3 px-4 py-2 text-sm text-left transition-colors",
+                        "w-full flex items-center gap-3 px-4 py-2.5 text-sm text-left transition-colors",
                         idx === selectedIdx
-                          ? "bg-primary/10 dark:bg-primary/20 text-primary dark:text-emerald-400"
+                          ? "bg-gray-100 dark:bg-white/10"
                           : "text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-white/5",
                       )}
                     >
-                      {item.icon && <span className="text-base shrink-0 w-5 text-center">{item.icon}</span>}
+                      {/* Icon: Lucide component with tinted bg, or emoji fallback */}
+                      {IconComp ? (
+                        <span className="shrink-0 w-8 h-8 rounded-lg bg-gray-100 dark:bg-gray-800 flex items-center justify-center">
+                          <IconComp className={cn("h-4 w-4", item.iconColor ?? "text-gray-500")} />
+                        </span>
+                      ) : item.icon ? (
+                        <span className="shrink-0 w-8 h-8 rounded-lg bg-gray-100 dark:bg-gray-800 flex items-center justify-center text-base">
+                          {item.icon}
+                        </span>
+                      ) : (
+                        <span className="shrink-0 w-8 h-8 rounded-lg bg-gray-100 dark:bg-gray-800 flex items-center justify-center">
+                          <Zap className="h-4 w-4 text-gray-400" />
+                        </span>
+                      )}
+
+                      {/* Label + description */}
                       <div className="flex-1 min-w-0">
-                        <span className="block truncate font-medium">{item.label}</span>
+                        <span className={cn(
+                          "block truncate font-medium",
+                          idx === selectedIdx ? "text-gray-900 dark:text-white" : "",
+                        )}>
+                          {item.label}
+                        </span>
                         {item.subtitle && (
-                          <span className="block truncate text-xs text-gray-400 dark:text-gray-500 mt-0.5">{item.subtitle}</span>
+                          <span className="block truncate text-xs text-gray-400 dark:text-gray-500 mt-0.5">
+                            {item.subtitle}
+                          </span>
                         )}
                       </div>
+
+                      {/* Shortcut badge */}
+                      {item.shortcut && (
+                        <kbd className="shrink-0 px-1.5 py-0.5 rounded bg-gray-100 dark:bg-gray-800 text-[9px] font-mono text-gray-400">
+                          {item.shortcut}
+                        </kbd>
+                      )}
+
                       <ArrowRight className={cn(
                         "h-3 w-3 shrink-0 transition-opacity",
-                        idx === selectedIdx ? "opacity-100" : "opacity-20"
+                        idx === selectedIdx ? "opacity-100" : "opacity-0"
                       )} />
                     </button>
                   );
@@ -245,7 +283,7 @@ export default function AdminCommandPalette({ items }: AdminCommandPaletteProps)
         {/* Footer */}
         <div className="px-4 py-2.5 border-t border-gray-100 dark:border-gray-800 flex items-center gap-4 text-[10px] text-gray-400">
           <span className="flex items-center gap-1">
-            <kbd className="px-1 py-0.5 rounded bg-gray-100 dark:bg-gray-800 font-mono">↑↓</kbd>
+            <kbd className="px-1 py-0.5 rounded bg-gray-100 dark:bg-gray-800 font-mono">&#8593;&#8595;</kbd>
             Navegar
           </span>
           <span className="flex items-center gap-1">

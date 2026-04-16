@@ -151,9 +151,9 @@ export type TabRouterProps = {
   /** Callback para navegar a una tab (lo usa el botón "Repetir tutorial") */
   onNavigateTab: (tab: Tab) => void;
   /** Modo admin fácil/avanzado */
-  adminMode: AdminMode;
+  adminMode?: AdminMode;
   /** Callback para alternar modo admin */
-  onToggleAdminMode: () => void;
+  onToggleAdminMode?: () => void;
 };
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -221,7 +221,7 @@ export function TabRouter({
   if (tab === "config") {
     return (
       <div className="space-y-8">
-        <SettingsTab storeMode={storeMode} onModeChange={onModeChange} adminMode={adminMode} onToggleAdminMode={onToggleAdminMode} />
+        <SettingsTab storeMode={storeMode} onModeChange={onModeChange} />
 
         {/* ── Gestión de Equipo ── */}
         <div className="pt-8 border-t border-gray-200 dark:border-card-border">

@@ -3,12 +3,14 @@
 import { useState, useEffect } from "react";
 import { Loader2, BarChart2, Search } from "lucide-react";
 import { cn } from "@/lib/utils";
+import StatusBadge from "@/components/admin/shared/StatusBadge";
+import type { BadgeVariant } from "@/components/admin/shared/StatusBadge";
 import type { ABCProduct } from "@/app/api/analytics/abc/route";
 
-const CLASS_STYLES: Record<"A" | "B" | "C", { badge: string; row: string; label: string; border: string }> = {
-  A: { badge: "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400", row: "bg-emerald-50/30 dark:bg-emerald-900/10", label: "A — Critico", border: "border-l-4 border-l-green-500" },
-  B: { badge: "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400",   row: "bg-amber-50/20 dark:bg-amber-900/10",   label: "B — Importante", border: "border-l-4 border-l-amber-500" },
-  C: { badge: "bg-red-100 text-red-600 dark:bg-red-900/30 dark:text-red-400",      row: "",                 label: "C — Bajo impacto", border: "border-l-4 border-l-red-500" },
+const CLASS_STYLES: Record<"A" | "B" | "C", { badge: string; row: string; label: string; border: string; variant: BadgeVariant }> = {
+  A: { badge: "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400", row: "bg-emerald-50/30 dark:bg-emerald-900/10", label: "A — Critico", border: "border-l-4 border-l-green-500", variant: "success" },
+  B: { badge: "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400",   row: "bg-amber-50/20 dark:bg-amber-900/10",   label: "B — Importante", border: "border-l-4 border-l-amber-500", variant: "warning" },
+  C: { badge: "bg-red-100 text-red-600 dark:bg-red-900/30 dark:text-red-400",      row: "",                 label: "C — Bajo impacto", border: "border-l-4 border-l-red-500", variant: "error" },
 };
 
 function fmt(n: number) { return `S/${n.toFixed(2)}`; }
@@ -68,7 +70,7 @@ export default function ABCAnalysisTab() {
             )}
           >
             <div className="flex items-center justify-between mb-2">
-              <span className={cn("px-2.5 py-0.5 rounded-full text-xs font-bold", CLASS_STYLES[cls].badge)}>Clase {cls}</span>
+              <StatusBadge variant={CLASS_STYLES[cls].variant} label={`Clase ${cls}`} />
               <span className="text-sm font-extrabold text-gray-900 dark:text-foreground">{counts[cls]} productos</span>
             </div>
             <p className="text-xl font-mono font-extrabold text-gray-900 dark:text-foreground">{fmt(revenue[cls])}</p>
@@ -109,9 +111,7 @@ export default function ABCAnalysisTab() {
                     <td className="px-2 sm:px-4 py-1.5 sm:py-2.5 text-right text-gray-600 dark:text-muted hidden md:table-cell">{p.units}</td>
                     <td className="px-2 sm:px-4 py-1.5 sm:py-2.5 text-right text-gray-500 dark:text-muted hidden md:table-cell">{p.cumulativePct}%</td>
                     <td className="px-2 sm:px-4 py-1.5 sm:py-2.5 text-center">
-                      <span className={cn("inline-flex px-2 py-0.5 rounded-full text-xs font-bold", CLASS_STYLES[p.class].badge)}>
-                        {p.class}
-                      </span>
+                      <StatusBadge variant={CLASS_STYLES[p.class].variant} label={p.class} />
                     </td>
                   </tr>
                 ))}

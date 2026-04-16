@@ -6,6 +6,8 @@ import {
   Loader2, ShieldCheck, ShieldAlert, ShieldOff, Eye, EyeOff,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import StatusBadge from "@/components/admin/shared/StatusBadge";
+import type { BadgeVariant } from "@/components/admin/shared/StatusBadge";
 
 type AdminUserRow = {
   id: string;
@@ -16,10 +18,10 @@ type AdminUserRow = {
   createdAt: string;
 };
 
-const ROLE_CONFIG: Record<string, { label: string; color: string; icon: React.ElementType }> = {
-  admin: { label: "Administrador", color: "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400", icon: ShieldCheck },
-  cajero: { label: "Cajero", color: "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400", icon: ShieldAlert },
-  almacenero: { label: "Almacenero", color: "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400", icon: ShieldOff },
+const ROLE_CONFIG: Record<string, { label: string; color: string; variant: BadgeVariant; icon: React.ElementType }> = {
+  admin: { label: "Administrador", color: "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400", variant: "error", icon: ShieldCheck },
+  cajero: { label: "Cajero", color: "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400", variant: "info", icon: ShieldAlert },
+  almacenero: { label: "Almacenero", color: "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400", variant: "warning", icon: ShieldOff },
 };
 
 type FormMode = "create" | "edit-info" | "reset-password" | null;
@@ -258,16 +260,10 @@ export default function AdminUsersTab() {
                       </div>
                     </td>
                     <td className="px-5 py-4 hidden sm:table-cell">
-                      <span className={cn("inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold", rc.color)}>
-                        <RoleIcon className="h-3 w-3" /> {rc.label}
-                      </span>
+                      <StatusBadge variant={rc.variant} label={rc.label} icon={RoleIcon} />
                     </td>
                     <td className="px-5 py-4 hidden md:table-cell">
-                      <span className={cn("inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold",
-                        u.active ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400" : "bg-gray-100 text-gray-500 dark:bg-surface dark:text-muted"
-                      )}>
-                        {u.active ? "Activo" : "Inactivo"}
-                      </span>
+                      <StatusBadge variant={u.active ? "success" : "neutral"} label={u.active ? "Activo" : "Inactivo"} />
                     </td>
                     <td className="px-5 py-4">
                       <div className="flex flex-wrap items-center gap-2 justify-end">

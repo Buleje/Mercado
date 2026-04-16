@@ -18,7 +18,7 @@ import {
   Tag,
   Wallet,
 } from "lucide-react";
-import { resolveSessionTenantSlug } from "@/lib/tenant-fetch";
+import { resolveActiveTenantSlug } from "@/lib/tenant-fetch";
 import DashboardDateRange, { getDefaultRange, type DateRange } from "@/components/admin/inicio/DashboardDateRange";
 import dynamic from "next/dynamic";
 import ChartSkeleton from "@/components/charts/ChartSkeleton";
@@ -104,7 +104,7 @@ export default function VendorDashboardModule() {
 
   useEffect(() => {
     let active = true;
-    void resolveSessionTenantSlug().then((resolved) => {
+    void resolveActiveTenantSlug().then((resolved: string) => {
       if (active && resolved) setStoreSlug(resolved);
     });
     return () => { active = false; };

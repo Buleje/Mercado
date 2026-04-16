@@ -1,30 +1,118 @@
 import React from "react";
+import { ChevronUp, ChevronDown } from "lucide-react";
 import { cn } from "@/lib/utils";
 
-interface AdminTableProps {
-  headers: string[];
-  children: React.ReactNode;
-  className?: string;
+// ── Types ────────────────────────────────────────────────────────────────────
+export interface Column {
+  key: string;
+  label: string;
+  align?: "left" | "center" | "right";
+  sortable?: boolean;
+  width?: string;
 }
 
-function AdminTable({ headers, children, className }: AdminTableProps) {
+interface AdminTableProps {
+  columns: Column[];
+  children: React.ReactNode;
+  sortKey?: string;
+  sortDir?: "asc" | "desc";
+  onSort?: (key: string) => void;
+  stickyHeader?: boolean;
+  className?: string;
+  emptyState?: React.ReactNode;
+}
+
+// ── Alignment utility ────────────────────────────────────────────────────────
+const ALIGN_CLASS: Record<string, string> = {
+  left: "text-left",
+  center: "text-center",
+  right: "text-right",
+};
+
+// ── Component ────────────────────────────────────────────────────────────────
+function AdminTable({
+  columns,
+  children,
+  sortKey,
+  sortDir,
+  onSort,
+  stickyHeader = false,
+  className,
+  emptyState,
+}: AdminTableProps) {
+  const isEmpty = React.Children.count(children) === 0;
+
   return (
     <div className={cn("overflow-x-auto", className)}>
       <table className="w-full">
         <thead>
-          <tr className="bg-gray-50 dark:bg-zinc-800/50">
-            {headers.map((header) => (
-              <th
-                key={header}
-                className="px-4 py-3 text-left text-xs text-gray-500 dark:text-zinc-400 uppercase tracking-wider font-medium"
-              >
-                {header}
-              </th>
-            ))}
+          <tr
+            className={cn(
+              "bg-gray-50 dark:bg-zinc-800/50",
+              stickyHeader && "sticky top-0 z-10 bg-white dark:bg-zinc-900",
+            )}
+          >
+            {columns.map((col) => {
+              const isSorted = sortKey === col.key;
+              const alignCls = ALIGN_CLASS[col.align ?? "left"];
+
+              return (
+                <th
+                  key={col.key}
+                  className={cn(
+                    "px-4 py-3 text-xs text-gray-500 dark:text-zinc-400 uppercase tracking-wider font-medium select-none",
+                    alignCls,
+                    col.width,
+                    col.sortable && onSort && "cursor-pointer hover:text-gray-700 dark:hover:text-zinc-200 transition-colors",
+                  )}
+                  onClick={col.sortable && onSort ? () => onSort(col.key) : undefined}
+                >
+                  <span className={cn(
+                    "inline-flex items-center gap-1",
+                    col.align === "right" && "flex-row-reverse",
+                    col.align === "center" && "justify-center",
+                  )}>
+                    {col.label}
+                    {col.sortable && onSort && (
+                      <span className="inline-flex flex-col -space-y-1">
+                        <ChevronUp
+                          className={cn(
+                            "h-3.5 w-3.5",
+                            isSorted && sortDir === "asc"
+                              ? "text-gray-900 dark:text-white"
+                              : "text-gray-300 dark:text-zinc-600",
+                          )}
+                        />
+                        <ChevronDown
+                          className={cn(
+                            "h-3.5 w-3.5",
+                            isSorted && sortDir === "desc"
+                              ? "text-gray-900 dark:text-white"
+                              : "text-gray-300 dark:text-zinc-600",
+                          )}
+                        />
+                      </span>
+                    )}
+                  </span>
+                </th>
+              );
+            })}
           </tr>
         </thead>
         <tbody className="divide-y divide-gray-50 dark:divide-zinc-800">
-          {children}
+          {isEmpty ? (
+            <tr>
+              <td colSpan={columns.length} className="py-12">
+                {emptyState ?? (
+                  <p className="text-center text-sm text-gray-400 dark:text-zinc-500">
+                    Sin datos disponibles
+                  </p>
+                )}
+              </td>
+            </tr>
+          ) : (
+            children
+          )}
         </tbody>
       </table>
     </div>

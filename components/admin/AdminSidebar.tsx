@@ -1182,7 +1182,7 @@ export default function AdminSidebar({
   return (
     <>
       {/* ── Desktop sidebar ── */}
-      <div className="hidden md:flex h-full shrink-0">
+      <div className="hidden md:flex h-full shrink-0" data-sidebar="">
         <m.div
           animate={{ width: collapsed ? 64 : 280 }}
           transition={{ duration: 0.25, ease: "easeInOut" }}
@@ -1227,6 +1227,7 @@ export default function AdminSidebar({
               exit={{ x: "-100%" }}
               transition={{ duration: 0.25, ease: "easeInOut" }}
               className="md:hidden fixed inset-y-0 left-0 z-50 h-full shadow-2xl"
+              data-sidebar=""
             >
               {sidebarContent(true)}
             </m.div>

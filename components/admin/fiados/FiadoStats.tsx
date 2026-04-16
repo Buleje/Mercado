@@ -7,6 +7,7 @@ import {
   ChevronLeft, ChevronRight, Search, Plus, Clock, XCircle, Ban,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import StatusBadge from "@/components/admin/shared/StatusBadge";
 
 type FiadoStatus = "ACTIVO" | "PAGADO" | "VENCIDO" | "CANCELADO";
 
@@ -146,23 +147,15 @@ export default function FiadoStats({ fiados, loading, totalSaldo, tendenciaMoros
             </div>
             {/* Pills semaforo */}
             <div className="flex gap-1.5 shrink-0 flex-wrap">
-              <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-[10px] font-bold bg-emerald-50 dark:bg-emerald-900/20 text-emerald-700 dark:text-emerald-400">
-                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" /> {alDiaC}
-              </span>
+              <StatusBadge variant="success" label={String(alDiaC)} dot size="sm" />
               {porVencerC > 0 && (
-                <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-[10px] font-bold bg-amber-50 dark:bg-amber-900/20 text-amber-700 dark:text-amber-400">
-                  <span className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse" /> {porVencerC}
-                </span>
+                <StatusBadge variant="warning" label={String(porVencerC)} dot size="sm" pulse />
               )}
               {vencidoC > 0 && (
-                <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-[10px] font-bold bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-400">
-                  <span className="w-1.5 h-1.5 rounded-full bg-red-500" /> {vencidoC}
-                </span>
+                <StatusBadge variant="error" label={String(vencidoC)} dot size="sm" />
               )}
               {bloqueadoC > 0 && (
-                <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-[10px] font-bold bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-400">
-                  <span className="w-1.5 h-1.5 rounded-full bg-gray-700 dark:bg-gray-500" /> {bloqueadoC}
-                </span>
+                <StatusBadge variant="neutral" label={String(bloqueadoC)} dot size="sm" />
               )}
             </div>
           </div>

@@ -8,7 +8,9 @@ import {
   CheckSquare, DollarSign, Target, AlertTriangle, Maximize2, X as XIcon2, ShoppingCart,
 } from "lucide-react";
 import EmptyState from "@/components/admin/shared/EmptyState";
-import { AdminCard, AdminKPI } from "@/components/admin/shared";
+import { AdminCard, AdminKPI, StatusBadge } from "@/components/admin/shared";
+import { StaggerContainer, StaggerItem } from "@/components/admin/shared/StaggerContainer";
+import type { BadgeVariant } from "@/components/admin/shared";
 import {
   PieChart, Pie, Cell, BarChart, Bar,
   XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend,
@@ -49,18 +51,18 @@ interface Order {
 
 // ── Status config (Spanish API + English fallback) ───────────────────────────
 
-const STATUS_CONFIG: Record<string, { label: string; color: string; icon: React.ReactNode; next?: string }> = {
-  pendiente:   { label: "Pendiente",   color: "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400",         icon: <Clock className="h-3 w-3" />,        next: "confirmado" },
-  confirmado:  { label: "Confirmado",  color: "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400",             icon: <CheckCircle className="h-3 w-3" />,   next: "en_camino" },
-  en_camino:   { label: "En camino",   color: "bg-cyan-100 text-cyan-700 dark:bg-cyan-900/30 dark:text-cyan-400",             icon: <Truck className="h-3 w-3" />,         next: "entregado" },
-  entregado:   { label: "Entregado",   color: "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400", icon: <CheckCircle className="h-3 w-3" /> },
-  cancelado:   { label: "Cancelado",   color: "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400",                 icon: <XCircle className="h-3 w-3" /> },
-  pending:     { label: "Pendiente",   color: "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400",         icon: <Clock className="h-3 w-3" />,        next: "confirmado" },
-  confirmed:   { label: "Confirmado",  color: "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400",             icon: <CheckCircle className="h-3 w-3" />,   next: "en_camino" },
-  preparing:   { label: "Preparando",  color: "bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400",     icon: <Package className="h-3 w-3" />,       next: "en_camino" },
-  delivering:  { label: "En camino",   color: "bg-cyan-100 text-cyan-700 dark:bg-cyan-900/30 dark:text-cyan-400",             icon: <Truck className="h-3 w-3" />,         next: "entregado" },
-  delivered:   { label: "Entregado",   color: "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400", icon: <CheckCircle className="h-3 w-3" /> },
-  cancelled:   { label: "Cancelado",   color: "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400",                 icon: <XCircle className="h-3 w-3" /> },
+const STATUS_CONFIG: Record<string, { label: string; variant: BadgeVariant; badgeIcon: React.ComponentType<{ className?: string }>; color: string; icon: React.ReactNode; next?: string }> = {
+  pendiente:   { label: "Pendiente",   variant: "warning", badgeIcon: Clock,       color: "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400",         icon: <Clock className="h-3 w-3" />,        next: "confirmado" },
+  confirmado:  { label: "Confirmado",  variant: "info",    badgeIcon: CheckCircle, color: "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400",             icon: <CheckCircle className="h-3 w-3" />,   next: "en_camino" },
+  en_camino:   { label: "En camino",   variant: "info",    badgeIcon: Truck,       color: "bg-cyan-100 text-cyan-700 dark:bg-cyan-900/30 dark:text-cyan-400",             icon: <Truck className="h-3 w-3" />,         next: "entregado" },
+  entregado:   { label: "Entregado",   variant: "success", badgeIcon: CheckCircle, color: "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400", icon: <CheckCircle className="h-3 w-3" /> },
+  cancelado:   { label: "Cancelado",   variant: "error",   badgeIcon: XCircle,     color: "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400",                 icon: <XCircle className="h-3 w-3" /> },
+  pending:     { label: "Pendiente",   variant: "warning", badgeIcon: Clock,       color: "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400",         icon: <Clock className="h-3 w-3" />,        next: "confirmado" },
+  confirmed:   { label: "Confirmado",  variant: "info",    badgeIcon: CheckCircle, color: "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400",             icon: <CheckCircle className="h-3 w-3" />,   next: "en_camino" },
+  preparing:   { label: "Preparando",  variant: "pending", badgeIcon: Package,     color: "bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400",     icon: <Package className="h-3 w-3" />,       next: "en_camino" },
+  delivering:  { label: "En camino",   variant: "info",    badgeIcon: Truck,       color: "bg-cyan-100 text-cyan-700 dark:bg-cyan-900/30 dark:text-cyan-400",             icon: <Truck className="h-3 w-3" />,         next: "entregado" },
+  delivered:   { label: "Entregado",   variant: "success", badgeIcon: CheckCircle, color: "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400", icon: <CheckCircle className="h-3 w-3" /> },
+  cancelled:   { label: "Cancelado",   variant: "error",   badgeIcon: XCircle,     color: "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400",                 icon: <XCircle className="h-3 w-3" /> },
 };
 
 const TERMINAL = new Set(["delivered", "cancelled", "entregado", "cancelado"]);
@@ -511,31 +513,33 @@ export default function SalesOrdersTab() {
       {/* Pedido mas grande del dia — inline en summary cards */}
 
       {/* ── Day summary cards ─────────────────────────────────────────── */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-        <AdminKPI label="Vendido hoy" value={fmt(todayStats.total)} icon={DollarSign} iconColor="var(--color-primary)" />
-        <AdminKPI label="Pedidos hoy" value={todayStats.count} icon={ShoppingBag} iconColor="#3B82F6" />
-        <AdminCard padding="md" className="relative">
-          <div className="flex flex-col gap-2">
-            <div className="h-6 w-6 flex items-center justify-center">
-              <Target className="h-6 w-6" style={{ color: "#f59e0b" }} />
+      <StaggerContainer className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+        <StaggerItem><AdminKPI label="Vendido hoy" value={fmt(todayStats.total)} icon={DollarSign} iconColor="var(--color-primary)" /></StaggerItem>
+        <StaggerItem><AdminKPI label="Pedidos hoy" value={todayStats.count} icon={ShoppingBag} iconColor="#3B82F6" /></StaggerItem>
+        <StaggerItem>
+          <AdminCard padding="md" className="relative">
+            <div className="flex flex-col gap-2">
+              <div className="h-6 w-6 flex items-center justify-center">
+                <Target className="h-6 w-6" style={{ color: "#f59e0b" }} />
+              </div>
+              <p className="text-xs text-gray-500 dark:text-zinc-400 uppercase tracking-wide font-medium">Activos</p>
+              <p className="text-2xl font-bold text-gray-900 dark:text-white">{todayStats.active}</p>
             </div>
-            <p className="text-xs text-gray-500 dark:text-zinc-400 uppercase tracking-wide font-medium">Activos</p>
-            <p className="text-2xl font-bold text-gray-900 dark:text-white">{todayStats.active}</p>
-          </div>
-          {newCount > 0 && (
-            <button
-              onClick={() => setNewCount(0)}
-              className="absolute top-2 right-2 h-5 min-w-5 px-1.5 rounded-full bg-red-500 text-white text-[10px] font-bold flex items-center justify-center"
-              title="Nuevos pedidos"
-            >
-              +{newCount}
-            </button>
-          )}
-        </AdminCard>
+            {newCount > 0 && (
+              <button
+                onClick={() => setNewCount(0)}
+                className="absolute top-2 right-2 h-5 min-w-5 px-1.5 rounded-full bg-red-500 text-white text-[10px] font-bold flex items-center justify-center"
+                title="Nuevos pedidos"
+              >
+                +{newCount}
+              </button>
+            )}
+          </AdminCard>
+        </StaggerItem>
         {avgDeliveryTime !== null && (
-          <AdminKPI label="Entrega promedio" value={`${avgDeliveryTime} min`} icon={Truck} iconColor="#06b6d4" />
+          <StaggerItem><AdminKPI label="Entrega promedio" value={`${avgDeliveryTime} min`} icon={Truck} iconColor="#06b6d4" /></StaggerItem>
         )}
-      </div>
+      </StaggerContainer>
 
       {/* Métricas inline integradas en summary cards */}
 
@@ -781,9 +785,7 @@ export default function SalesOrdersTab() {
                         <td className="px-4 py-3 text-xs font-semibold text-gray-900 dark:text-foreground">{order.customerName ?? "Cliente"}</td>
                         <td className="px-4 py-3 text-xs font-extrabold text-primary text-right">{fmt(order.total)}</td>
                         <td className="px-4 py-3 text-center">
-                          <span className={cn("inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold", cfg.color)}>
-                            {cfg.icon} {cfg.label}
-                          </span>
+                          <StatusBadge variant={cfg.variant} label={cfg.label} icon={cfg.badgeIcon} size="sm" />
                         </td>
                         <td className="px-4 py-3 text-center">
                           <button
@@ -812,17 +814,16 @@ export default function SalesOrdersTab() {
       {/* ── Orders list ───────────────────────────────────────────────── */}
       {viewMode === "list" && orders.length === 0 ? (
         <EmptyState
-          icon={Package}
+          illustration="orders"
           title="Sin pedidos"
-          description="Los pedidos de tus clientes aparecerán aquí."
+          description="Los pedidos de tus clientes apareceran aqui."
         />
       ) : viewMode === "list" && filtered.length === 0 ? (
-        <div className="flex flex-col items-center justify-center py-16 gap-2 text-center">
-          <ShoppingBag className="h-10 w-10 text-gray-300 dark:text-muted" />
-          <p className="text-sm font-semibold text-gray-500 dark:text-muted">
-            {search ? "Sin resultados para esa búsqueda" : "No hay pedidos con estos filtros"}
-          </p>
-        </div>
+        <EmptyState
+          illustration="search"
+          title={search ? "Sin resultados" : "Sin pedidos"}
+          description={search ? "No se encontraron pedidos para esa busqueda." : "No hay pedidos con estos filtros."}
+        />
       ) : viewMode === "list" && (() => {
         // Mejora 15: Group by zone
         const renderOrder = (order: Order) => {
@@ -855,9 +856,7 @@ export default function SalesOrdersTab() {
                   <p className="text-xs text-gray-500 dark:text-muted mt-0.5">{fmtDate(order.createdAt)}</p>
                 </div>
                 <div className="flex items-center gap-2 shrink-0">
-                  <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-bold ${cfg.color}`}>
-                    {cfg.icon} {cfg.label}
-                  </span>
+                  <StatusBadge variant={cfg.variant} label={cfg.label} icon={cfg.badgeIcon} />
                   {/* Mejora 14: Time badge */}
                   {!isTerminal && (
                     <span className={cn(
@@ -887,9 +886,7 @@ export default function SalesOrdersTab() {
                         </div>
                       </div>
                       <div className="flex items-center gap-2">
-                        <span className={cn("inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-bold", cfg.color)}>
-                          {cfg.icon} {cfg.label}
-                        </span>
+                        <StatusBadge variant={cfg.variant} label={cfg.label} icon={cfg.badgeIcon} />
                         <span className="text-lg font-extrabold text-primary">{fmt(order.total)}</span>
                       </div>
                     </div>
@@ -997,9 +994,7 @@ export default function SalesOrdersTab() {
                           </div>
                           {allChecked && (
                             <div className="mt-2 text-center">
-                              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400 text-[10px] font-bold">
-                                <CheckCircle className="h-3 w-3" /> Listo para enviar
-                              </span>
+                              <StatusBadge variant="success" label="Listo para enviar" icon={CheckCircle} size="sm" />
                             </div>
                           )}
                         </div>
@@ -1543,8 +1538,8 @@ function OrdersDashboard({ orders }: { orders: Order[] }) {
       {/* === Alertas Pedidos === */}
       {(alertas.sinAtender > 0 || kpis.pendientes > 5) && (
         <div className="flex flex-wrap gap-2">
-          {alertas.sinAtender > 0 && <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400"><AlertTriangle className="h-3 w-3" /> {alertas.sinAtender} pedidos sin atender por mas de 1h</span>}
-          {kpis.pendientes > 5 && <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400"><AlertTriangle className="h-3 w-3" /> {kpis.pendientes} pedidos retrasados</span>}
+          {alertas.sinAtender > 0 && <StatusBadge variant="error" label={`${alertas.sinAtender} pedidos sin atender por mas de 1h`} icon={AlertTriangle} pulse />}
+          {kpis.pendientes > 5 && <StatusBadge variant="warning" label={`${kpis.pendientes} pedidos retrasados`} icon={AlertTriangle} />}
         </div>
       )}
 

@@ -8,6 +8,9 @@ interface StatusBadgeProps {
   label: string;
   size?: "sm" | "md";
   dot?: boolean;
+  icon?: React.ElementType<{ className?: string }>;
+  pulse?: boolean;
+  onClick?: () => void;
 }
 
 const variantStyles: Record<BadgeVariant, { badge: string; dot: string }> = {
@@ -37,17 +40,23 @@ const variantStyles: Record<BadgeVariant, { badge: string; dot: string }> = {
   },
 };
 
-function StatusBadge({ variant, label, size = "md", dot = false }: StatusBadgeProps) {
+function StatusBadge({ variant, label, size = "md", dot = false, icon: Icon, pulse = false, onClick }: StatusBadgeProps) {
   const styles = variantStyles[variant];
+  const Tag = onClick ? "button" : "span";
 
   return (
-    <span
+    <Tag
+      type={onClick ? "button" : undefined}
+      onClick={onClick}
       className={cn(
         "rounded-full font-medium inline-flex items-center gap-1",
         styles.badge,
         size === "sm" ? "px-2 py-0.5 text-[10px]" : "px-2.5 py-0.5 text-xs",
+        pulse && "animate-pulse",
+        onClick && "cursor-pointer hover:opacity-80 transition-opacity",
       )}
     >
+      {Icon && <Icon className="w-3 h-3 shrink-0" />}
       {dot && (
         <span
           className={cn(
@@ -58,8 +67,9 @@ function StatusBadge({ variant, label, size = "md", dot = false }: StatusBadgePr
         />
       )}
       {label}
-    </span>
+    </Tag>
   );
 }
 
 export default React.memo(StatusBadge);
+export type { BadgeVariant, StatusBadgeProps };
