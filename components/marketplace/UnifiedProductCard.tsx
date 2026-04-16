@@ -12,6 +12,7 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useCartWithUndo } from "@/hooks/use-cart-with-undo";
+import { useHoverPrefetch } from "@/hooks/use-hover-prefetch";
 
 /* ── Tipos públicos ─────────────────────────────────────────────────────────── */
 
@@ -160,6 +161,8 @@ export default function UnifiedProductCard({
     href ??
     (product.storeSlug ? `/marketplace/${product.storeSlug}` : "/marketplace");
 
+  const { onMouseEnter, onMouseLeave } = useHoverPrefetch(productHref);
+
   const isOutOfStock = product.stock === 0;
 
   const handleAdd = useCallback(() => {
@@ -185,6 +188,8 @@ export default function UnifiedProductCard({
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.3, delay: index * 0.05 }}
       className="group relative flex w-full flex-col overflow-hidden rounded-2xl border border-gray-100 bg-white shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-lg hover:border-primary/30 dark:border-card-border dark:bg-card"
+      onMouseEnter={onMouseEnter}
+      onMouseLeave={onMouseLeave}
     >
       {/* ── Badges de variante ── */}
       <VariantBadge

@@ -937,6 +937,25 @@ export default function StoreDetail({ slug }: { slug: string }) {
   // Cart info for this specific store
   const { byStore, totalByStore } = useMarketplaceCart();
 
+  // Registrar visita para el contador de live-viewers (fire-and-forget)
+  useEffect(() => {
+    try {
+      const key = "mp-session-id";
+      let sessionId = sessionStorage.getItem(key);
+      if (!sessionId) {
+        sessionId = crypto.randomUUID();
+        sessionStorage.setItem(key, sessionId);
+      }
+      fetch(`/api/marketplace/stores/${slug}/live-viewers`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ sessionId }),
+      }).catch(() => {
+        // Fire-and-forget: pérdida del registro no afecta UX. Silent por diseño.
+      });
+    } catch { /* sessionStorage bloqueado (Safari incógnito, etc) */ }
+  }, [slug]);
+
   // Leer phone del localStorage para el chat
   useEffect(() => {
     try {

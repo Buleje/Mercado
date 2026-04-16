@@ -55,6 +55,23 @@ const POSITION_CLASSES: Record<ToastPosition, string> = {
   "bottom-center": "bottom-4 left-1/2 -translate-x-1/2",
 };
 
+/**
+ * En mobile (< sm = 640 px) los toasts van siempre en la parte inferior
+ * centrada, cerca del pulgar. En desktop/tablet respetan la posición
+ * configurada mediante POSITION_CLASSES.
+ *
+ * Tailwind 4 requiere clases estáticas; se usa un mapa explícito para
+ * evitar interpolación dinámica de strings que no se purguería.
+ */
+const POSITION_CLASSES_SM: Record<ToastPosition, string> = {
+  "top-right":    "sm:top-4 sm:right-4 sm:bottom-auto sm:left-auto sm:translate-x-0",
+  "top-left":     "sm:top-4 sm:left-4 sm:bottom-auto sm:right-auto sm:translate-x-0",
+  "bottom-right": "sm:bottom-4 sm:right-4 sm:top-auto sm:left-auto sm:translate-x-0",
+  "bottom-left":  "sm:bottom-4 sm:left-4 sm:top-auto sm:right-auto sm:translate-x-0",
+  "top-center":   "sm:top-4 sm:left-1/2 sm:-translate-x-1/2 sm:bottom-auto sm:right-auto",
+  "bottom-center":"sm:bottom-4 sm:left-1/2 sm:-translate-x-1/2 sm:top-auto sm:right-auto",
+};
+
 interface ToastItemProps {
   toast: Toast;
   onDismiss: () => void;
@@ -172,7 +189,10 @@ export function ToastContainer({
     <div
       className={cn(
         "fixed z-50 flex flex-col gap-2 pointer-events-none",
-        POSITION_CLASSES[position]
+        // Mobile base: centrado abajo, cerca del pulgar
+        "bottom-6 left-1/2 -translate-x-1/2",
+        // Desktop (≥ sm): posición configurada via prop
+        POSITION_CLASSES_SM[position]
       )}
     >
       {visibleToasts.map((toast) => (
