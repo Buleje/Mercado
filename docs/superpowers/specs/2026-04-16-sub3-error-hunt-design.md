@@ -198,9 +198,34 @@ Pasar al **Sub-Proyecto #1 — Design System lockdown**. Los 2 tests ya migrados
 | B — API test arity | 40 | 0 | Quitar 2º arg (req, ctx) → (req) |
 | **TOTAL** | **83** | **0** | 5 commits atómicos |
 
-### Fase 3 — Tests rojos ⏸️ PENDIENTE
+### Fase 3 — Tests rojos 🟡 EN PROGRESO (71 → 48)
 
-Post Fase 2, los tests siguen en **71 fallos de 2621**. Los fixes TSC no cascadearon a runtime como hipotetizado. Análisis pendiente:
+Post Fase 2, los tests se redujeron **71 → 48** con 3 commits de Phase 3:
+
+| Cluster | Antes | Después | Fix aplicado |
+|---|---|---|---|
+| ProductGallery + VariantSelector | 2 | 0 | `border-[#00B4A6]` → `border-primary` en estado seleccionado |
+| image-placeholders | 2 | 0 | Test actualizado a `#00B4A6` (era color viejo `#2563EB`) |
+| admin-module-standards | 19 | 0 | 17 modules a `space-y-4`, removidos `dark:` en VendorDashboard |
+| env DATABASE_URL bloqueo | — | — | Fix en `vitest.setup.ts` desbloquea import-time |
+
+### Fase 3 — 48 fallos restantes ⏸️ PENDIENTE
+
+| Archivo | Fallos | Causa raíz identificada |
+|---|---|---|
+| `api-activity-log.test.ts` | 11 | Route usa `prisma` directo; test mockea solo `@/lib/tenant` |
+| `api-notes.test.ts` | 8 | Mismo patrón — mock de prisma faltante |
+| `api-message-templates.test.ts` | 7 | Mismo patrón |
+| `api-campaigns-create.test.ts` | 6 | Mismo patrón (runtime post TSC fix) |
+| `api-fiados-cobrar.test.ts` | 5 | Mismo patrón |
+| `api-treasury-transferencias.test.ts` | 2 | Mismo patrón |
+| `SearchAutocomplete.test.tsx` | 6 | Pendiente investigar |
+| `empty-state.test.tsx` | 2 | Pendiente investigar |
+| `tenant-hardcoded-main-guard.test.ts` | 1 | Probable assertion sobre hardcoded `"main"` |
+
+**Causa raíz común (39 de los 48 fallos):** Rutas API importan `prisma` directo de `@/lib/prisma` (viola Regla 1 CLAUDE.md: "Nunca Prisma directo — usar lib/db/*.db.ts"). Tests esperan mocks pero solo hay mock de `@/lib/tenant`.
+
+**Decisión pendiente:** arreglar a nivel test (mock de `@/lib/prisma` en cada file) o a nivel arquitectural (migrar rutas a DB classes). El segundo es correcto per CLAUDE.md pero implica más cambios. El primero es pragmático para cerrar #3.
 
 | Archivo | Fallos | Hipótesis |
 |---|---|---|
@@ -227,3 +252,4 @@ Después de Fase 3.
 
 - **2026-04-16 14:00** — Draft inicial con baseline capturado.
 - **2026-04-16 15:30** — Fases 1 y 2 completadas. TSC 83 → 0. Tests aún en 71.
+- **2026-04-16 17:15** — Fase 3 parcial. Tests 71 → 48. Causa raíz de los 48 restantes identificada (Regla 1 CLAUDE.md). 23 commits totales en la sesión.
