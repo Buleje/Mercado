@@ -971,8 +971,8 @@ export default function AIPerformanceCoach({ data }: Props) {
     <div className="space-y-5">
       {/* ── Daily Question ──────────────────────────────────────────────────── */}
       {dailyQuestion && !questionDismissed && (
-        <div className="bg-gradient-to-br from-[#f97316]/10 to-[#f97316]/5 dark:from-[#f97316]/15 dark:to-[#f97316]/5 rounded-xl border border-[#f97316]/20 p-4 shadow-sm">
-          <p className="text-xs font-bold text-[#f97316] uppercase tracking-wider mb-2 flex items-center gap-1.5">
+        <div className="bg-gradient-to-br from-[#f97316]/10 to-[#f97316]/5 dark:from-[#f97316]/15 dark:to-[#f97316]/5 rounded-xl border border-[#f97316]/20 p-4 ">
+          <p className="text-xs font-bold text-[#f97316] mb-2 flex items-center gap-1.5">
             Pregunta del dia
           </p>
           <p className="text-sm font-semibold text-gray-800 dark:text-foreground mb-3">{dailyQuestion.pregunta}</p>
@@ -995,8 +995,8 @@ export default function AIPerformanceCoach({ data }: Props) {
       )}
 
       {/* ── Proactive Alerts ─────────────────────────────────────────────────── */}
-      <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 p-4 shadow-sm">
-        <p className="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-3 flex items-center gap-1.5">
+      <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 p-4 ">
+        <p className="text-xs font-bold text-gray-500 dark:text-gray-400 mb-3 flex items-center gap-1.5">
           El Coach detecto esto
         </p>
         {proactiveAlerts.length === 0 ? (
@@ -1077,8 +1077,8 @@ export default function AIPerformanceCoach({ data }: Props) {
         const suggestedClose = Math.min(23, lastSaleHour + 1);
 
         return (
-          <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 p-4 shadow-sm">
-            <p className="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-3 flex items-center gap-1.5">
+          <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 p-4 ">
+            <p className="text-xs font-bold text-gray-500 dark:text-gray-400 mb-3 flex items-center gap-1.5">
               &#9200; Analisis de Horario
             </p>
             <div className="space-y-2">
@@ -1134,8 +1134,8 @@ export default function AIPerformanceCoach({ data }: Props) {
         const lowStock = (data.products ?? []).filter((p: { stock?: number; stockMin?: number }) => p.stock != null && p.stockMin != null && p.stock! <= p.stockMin!).length;
         if (thisRev === 0) return null;
         return (
-          <div className="bg-gray-50 dark:bg-gray-800/50 rounded-xl border border-gray-200 dark:border-gray-700 p-4 shadow-sm">
-            <p className="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-2 flex items-center gap-1.5">
+          <div className="bg-gray-50 dark:bg-gray-800/50 rounded-xl border border-gray-200 dark:border-gray-700 p-4 ">
+            <p className="text-xs font-bold text-gray-500 dark:text-gray-400 mb-2 flex items-center gap-1.5">
               Tu semana en 30 segundos
             </p>
             <p className="text-sm text-gray-700 dark:text-gray-300 leading-relaxed">
@@ -1149,11 +1149,11 @@ export default function AIPerformanceCoach({ data }: Props) {
       })()}
 
       {/* ── Metric Cards ────────────────────────────────────────────────────── */}
-      <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 p-5 shadow-sm">
+      <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 p-5 ">
         <div className="flex items-center justify-between mb-4">
           <div>
             <div className="flex items-center gap-2">
-              <h2 className="text-sm font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wide">
+              <h2 className="text-sm font-semibold text-gray-700 dark:text-gray-300">
                 Coach de Rendimiento
               </h2>
               <span className={cn("text-sm", coachMood.color)} title={coachMood.label}>
@@ -1245,7 +1245,7 @@ export default function AIPerformanceCoach({ data }: Props) {
 
         {/* Advice section */}
         <div className="border-t border-gray-100 dark:border-gray-800 pt-4">
-          <h3 className="text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wide mb-3">
+          <h3 className="text-xs font-semibold text-gray-600 dark:text-gray-400 mb-3">
             Consejos del coach
           </h3>
           <div className="flex flex-col gap-2">
@@ -1289,11 +1289,11 @@ export default function AIPerformanceCoach({ data }: Props) {
       </div>
 
       {/* ── Chat: Preguntale al Coach ──────────────────────────────────────── */}
-      <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 p-5 shadow-sm">
+      <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 p-5 ">
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center gap-2">
             <MessageCircle className="w-4 h-4 text-[#00B4A6]" />
-            <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wide">
+            <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300">
               Preguntale al Coach
             </h3>
           </div>
@@ -1407,7 +1407,7 @@ export default function AIPerformanceCoach({ data }: Props) {
         {/* Quick suggestions */}
         {chatMessages.length === 0 && !viewingHistoryId && (
           <div className="mb-3">
-            <p className="text-[10px] text-gray-400 dark:text-gray-500 mb-1.5 uppercase tracking-wider">Sugerencias</p>
+            <p className="text-[10px] text-gray-400 dark:text-gray-500 mb-1.5">Sugerencias</p>
             <div className="flex flex-wrap gap-1.5">
               {CHAT_SUGGESTIONS.map((q) => (
                 <button
@@ -1446,11 +1446,11 @@ export default function AIPerformanceCoach({ data }: Props) {
       </div>
 
       {/* ── Goals ──────────────────────────────────────────────────────────── */}
-      <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 p-5 shadow-sm">
+      <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 p-5 ">
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center gap-2">
             <Target className="w-4 h-4 text-[#f97316]" />
-            <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wide">
+            <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300">
               Mis Metas
             </h3>
           </div>
@@ -1561,11 +1561,11 @@ export default function AIPerformanceCoach({ data }: Props) {
       </div>
 
       {/* ── Business Calendar ──────────────────────────────────────────────── */}
-      <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 p-5 shadow-sm">
+      <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 p-5 ">
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center gap-2">
             <Calendar className="w-4 h-4 text-[#00B4A6]" />
-            <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wide">
+            <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300">
               Calendario Comercial
             </h3>
           </div>
@@ -1622,11 +1622,11 @@ export default function AIPerformanceCoach({ data }: Props) {
       </div>
 
       {/* ── Narrative Report Button ─────────────────────────────────────────── */}
-      <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 p-5 shadow-sm">
+      <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 p-5 ">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
             <FileText className="w-4 h-4 text-[#f97316]" />
-            <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wide">
+            <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300">
               Reporte Narrativo
             </h3>
           </div>
@@ -1647,7 +1647,7 @@ export default function AIPerformanceCoach({ data }: Props) {
       {/* ── Report Modal ──────────────────────────────────────────────────── */}
       {reportOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-          <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-xl max-w-2xl w-full max-h-[80vh] flex flex-col">
+          <div className="bg-white dark:bg-gray-900 rounded-xl max-w-2xl w-full max-h-[80vh] flex flex-col">
             <div className="flex items-center justify-between p-4 border-b border-gray-100 dark:border-gray-800">
               <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300">Reporte Ejecutivo</h3>
               <button onClick={() => setReportOpen(false)} className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300">

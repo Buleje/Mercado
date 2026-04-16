@@ -120,7 +120,7 @@ export default function SupportWidget() {
         <button
           onClick={() => setOpen((v) => !v)}
           className={cn(
-            "relative flex items-center gap-2 px-4 py-3 rounded-full shadow-lg transition-all",
+            "relative flex items-center gap-2 px-4 py-3 rounded-full transition-all",
             "bg-[#00B4A6] hover:bg-[#255c44] text-white text-sm font-medium",
             open && "bg-[#255c44]",
           )}
@@ -139,7 +139,7 @@ export default function SupportWidget() {
       {/* Panel lateral */}
       <div
         className={cn(
-          "fixed bottom-20 right-6 z-50 w-[360px] max-w-[calc(100vw-1.5rem)] rounded-2xl shadow-2xl",
+          "fixed bottom-20 right-6 z-50 w-[360px] max-w-[calc(100vw-1.5rem)] rounded-xl",
           "bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700",
           "transition-all duration-200 origin-bottom-right",
           open ? "opacity-100 scale-100 pointer-events-auto" : "opacity-0 scale-95 pointer-events-none",

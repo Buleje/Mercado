@@ -112,7 +112,7 @@ export default function DashboardDateRange({ value, onChange, className }: Dashb
             className={cn(
               "px-3 py-1.5 rounded-md text-xs font-medium transition-all whitespace-nowrap",
               value.preset === p.id && !showCustom
-                ? "bg-white dark:bg-card text-gray-900 dark:text-foreground shadow-sm"
+                ? "bg-white dark:bg-card text-gray-900 dark:text-foreground "
                 : "text-gray-500 dark:text-muted hover:text-gray-700 dark:hover:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700",
             )}
           >
@@ -125,7 +125,7 @@ export default function DashboardDateRange({ value, onChange, className }: Dashb
           className={cn(
             "flex items-center gap-1 px-2.5 py-1.5 rounded-md text-xs font-medium transition-all",
             showCustom
-              ? "bg-white dark:bg-card text-gray-900 dark:text-foreground shadow-sm"
+              ? "bg-white dark:bg-card text-gray-900 dark:text-foreground "
               : "text-gray-500 dark:text-muted hover:text-gray-700 dark:hover:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700",
           )}
           title="Rango personalizado"

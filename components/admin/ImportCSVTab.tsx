@@ -138,7 +138,7 @@ export default function ImportCSVTab() {
   const previewRows = allRows.slice(0, 5);
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-6">
       <div className="flex items-center justify-between flex-wrap gap-2">
         <h3 className="text-sm font-extrabold text-gray-900 dark:text-foreground flex items-center gap-2">
           <Upload className="h-4 w-4 text-primary" /> Importar CSV
@@ -152,7 +152,7 @@ export default function ImportCSVTab() {
 
       {/* Idle: File input */}
       {phase === "idle" && (
-        <div className="bg-white dark:bg-card border-2 border-dashed border-gray-300 dark:border-card-border rounded-2xl p-8 text-center">
+        <div className="bg-white dark:bg-card border-2 border-dashed border-gray-300 dark:border-card-border rounded-xl p-8 text-center">
           <Upload className="h-10 w-10 text-gray-300 dark:text-muted mx-auto mb-3" />
           <p className="text-sm font-bold text-gray-700 dark:text-foreground mb-1">
             Selecciona un archivo CSV
@@ -172,7 +172,7 @@ export default function ImportCSVTab() {
           />
           <button
             onClick={() => fileRef.current?.click()}
-            className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-primary text-white text-sm font-bold hover:bg-primary/90 transition-colors"
+            className="inline-flex items-center gap-2 px-5 py-2.5 rounded-lg bg-primary text-white text-sm font-bold hover:bg-primary/90 transition-colors"
           >
             <FileText className="h-4 w-4" />
             Elegir archivo
@@ -190,8 +190,8 @@ export default function ImportCSVTab() {
 
       {/* Preview */}
       {phase === "preview" && (
-        <div className="space-y-4">
-          <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl p-4">
+        <div className="space-y-6">
+          <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl p-4">
             <div className="flex items-center justify-between mb-3">
               <p className="text-xs font-bold text-gray-700 dark:text-foreground flex items-center gap-1">
                 <Table className="h-3.5 w-3.5 text-primary" />
@@ -203,10 +203,10 @@ export default function ImportCSVTab() {
               <table className="w-full min-w-[400px] text-xs">
                 <thead>
                   <tr className="border-b border-gray-100 dark:border-card-border">
-                    <th className="pb-2 text-[10px] font-bold text-gray-400 uppercase tracking-wide text-left">#</th>
+                    <th className="pb-2 text-[10px] font-bold text-gray-400 text-left">#</th>
                     {headers.map(h => (
                       <th key={h} className={cn(
-                        "pb-2 text-[10px] font-bold uppercase tracking-wide text-left",
+                        "pb-2 text-[10px] font-bold text-left",
                         EXPECTED_FIELDS.includes(h) ? "text-primary" : "text-gray-400"
                       )}>
                         {h}
@@ -234,12 +234,12 @@ export default function ImportCSVTab() {
           </div>
 
           <div className="flex flex-wrap gap-2">
-            <button onClick={reset} className="flex-1 py-2.5 rounded-xl border-2 border-gray-200 dark:border-card-border text-sm font-bold text-gray-600 dark:text-muted hover:bg-gray-50 dark:hover:bg-surface">
+            <button onClick={reset} className="flex-1 py-2.5 rounded-lg border-2 border-gray-200 dark:border-card-border text-sm font-bold text-gray-600 dark:text-muted hover:bg-gray-50 dark:hover:bg-surface">
               Cancelar
             </button>
             <button
               onClick={handleConfirm}
-              className="flex-1 py-2.5 rounded-xl bg-primary text-white text-sm font-bold hover:bg-primary/90 flex items-center justify-center gap-1"
+              className="flex-1 py-2.5 rounded-lg bg-primary text-white text-sm font-bold hover:bg-primary/90 flex items-center justify-center gap-1"
             >
               <Upload className="h-4 w-4" />
               Confirmar Importación ({allRows.length} productos)
@@ -259,7 +259,7 @@ export default function ImportCSVTab() {
 
       {/* Success */}
       {phase === "success" && (
-        <div className="bg-white dark:bg-card border border-emerald-200 dark:border-emerald-800 rounded-2xl p-6 text-center">
+        <div className="bg-white dark:bg-card border border-emerald-200 dark:border-emerald-800 rounded-xl p-6 text-center">
           <CheckCircle className="h-10 w-10 text-emerald-500 mx-auto mb-3" />
           <p className="text-sm font-extrabold text-gray-900 dark:text-foreground mb-1">
             Importación exitosa
@@ -282,7 +282,7 @@ export default function ImportCSVTab() {
               </div>
             </div>
           )}
-          <button onClick={reset} className="px-5 py-2 rounded-xl bg-primary text-white text-sm font-bold hover:bg-primary/90 transition-colors">
+          <button onClick={reset} className="px-5 py-2 rounded-lg bg-primary text-white text-sm font-bold hover:bg-primary/90 transition-colors">
             Importar otro archivo
           </button>
         </div>
@@ -290,7 +290,7 @@ export default function ImportCSVTab() {
 
       {/* Error */}
       {phase === "error" && (
-        <div className="bg-white dark:bg-card border border-red-200 dark:border-red-800 rounded-2xl p-6 text-center">
+        <div className="bg-white dark:bg-card border border-red-200 dark:border-red-800 rounded-xl p-6 text-center">
           <X className="h-10 w-10 text-red-400 mx-auto mb-3" />
           <p className="text-sm font-extrabold text-gray-900 dark:text-foreground mb-1">
             Error en la importación
@@ -304,7 +304,7 @@ export default function ImportCSVTab() {
               ))}
             </div>
           </div>
-          <button onClick={reset} className="px-5 py-2 rounded-xl bg-primary text-white text-sm font-bold hover:bg-primary/90 transition-colors">
+          <button onClick={reset} className="px-5 py-2 rounded-lg bg-primary text-white text-sm font-bold hover:bg-primary/90 transition-colors">
             Intentar de nuevo
           </button>
         </div>

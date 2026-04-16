@@ -266,7 +266,7 @@ export default function POSVoiceInput({ products, onAddToCart, onHighlightProduc
         className={cn(
           "relative h-10 w-10 rounded-full flex items-center justify-center transition-all border-2 shrink-0",
           isListening
-            ? "bg-red-500 border-red-400 text-white animate-pulse shadow-lg shadow-red-500/30"
+            ? "bg-red-500 border-red-400 text-white animate-pulse"
             : "bg-white dark:bg-card border-gray-200 dark:border-card-border text-gray-500 dark:text-muted hover:border-primary hover:text-primary"
         )}
         title={isListening ? "Detener (Ctrl+M)" : "Dictar por voz (Ctrl+M)"}
@@ -276,7 +276,7 @@ export default function POSVoiceInput({ products, onAddToCart, onHighlightProduc
 
       {/* Voice panel */}
       {showPanel && (
-        <div className="absolute top-12 right-0 z-50 w-80 bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl shadow-xl overflow-hidden">
+        <div className="absolute top-12 right-0 z-50 w-80 bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl overflow-hidden">
           {/* Panel header */}
           <div className="px-3 py-2.5 border-b border-gray-100 dark:border-card-border flex items-center justify-between">
             <div className="flex items-center gap-2">
@@ -376,7 +376,7 @@ export default function POSVoiceInput({ products, onAddToCart, onHighlightProduc
           {/* Recognized items */}
           {items.length > 0 && (
             <div className="px-3 py-2.5 border-t border-gray-100 dark:border-card-border">
-              <p className="text-[10px] font-bold text-gray-500 dark:text-muted uppercase tracking-wider mb-2">
+              <p className="text-[10px] font-bold text-gray-500 dark:text-muted mb-2">
                 Productos reconocidos
               </p>
               <div className="space-y-1.5">

@@ -28,7 +28,7 @@ import {
 } from "lucide-react";
 import dynamic from "next/dynamic";
 import { cn } from "@/lib/utils";
-import { StaggerContainer, StaggerItem } from "@/components/admin/shared/StaggerContainer";
+
 import { DraggableWidgetGrid } from "@/components/admin/shared/DraggableWidgetGrid";
 import AdminModuleHeader from "@/components/admin/shared/AdminModuleHeader";
 import type { Product, Sale } from "@/types/erp";
@@ -769,7 +769,7 @@ function SmartDashboardTab({ adminName = "Administrador" }: SmartDashboardTabPro
       >
         <div className="flex items-center bg-gray-100 dark:bg-zinc-700 rounded-lg p-0.5">
           {([{ id: "hoy" as Period, label: "Hoy" }, { id: "semana" as Period, label: "Semana" }, { id: "mes" as Period, label: "Mes actual" }]).map(p => (
-            <button key={p.id} onClick={() => setPeriod(p.id)} className={cn("px-3 py-1.5 text-xs font-semibold rounded-md transition-all", period === p.id ? "bg-white dark:bg-zinc-800 text-primary shadow-sm" : "text-gray-500 dark:text-zinc-400 hover:text-gray-700 dark:hover:text-zinc-300")}>
+            <button key={p.id} onClick={() => setPeriod(p.id)} className={cn("px-3 py-1.5 text-xs font-semibold rounded-md transition-all", period === p.id ? "bg-white dark:bg-zinc-800 text-primary " : "text-gray-500 dark:text-zinc-400 hover:text-gray-700 dark:hover:text-zinc-300")}>
               {p.label}
             </button>
           ))}
@@ -783,7 +783,7 @@ function SmartDashboardTab({ adminName = "Administrador" }: SmartDashboardTabPro
             <Settings className="w-3.5 h-3.5" />
           </button>
           {showRegionalConfig && (
-            <div className="absolute right-0 top-full mt-1 z-30 bg-white dark:bg-zinc-800 border border-gray-200 dark:border-zinc-700 rounded-xl shadow-xl p-4 w-72">
+            <div className="absolute right-0 top-full mt-1 z-30 bg-white dark:bg-zinc-800 border border-gray-200 dark:border-zinc-700 rounded-xl p-4 w-72">
               <div className="flex items-center justify-between mb-3">
                 <span className="text-sm font-bold text-gray-700 dark:text-zinc-300">Configuracion Regional</span>
                 <button onClick={() => setShowRegionalConfig(false)} className="text-gray-400 hover:text-gray-600 dark:hover:text-zinc-200"><X className="w-4 h-4" /></button>

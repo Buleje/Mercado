@@ -108,7 +108,7 @@ export default function QuickActionFAB({ onNavigate }: QuickActionFABProps) {
                     animate={{ opacity: 1, x: 0 }}
                     exit={{ opacity: 0, x: 10 }}
                     transition={{ duration: 0.15, delay: (actions.length - 1 - index) * 0.05 + 0.05 }}
-                    className="px-3 py-1.5 rounded-lg bg-gray-900 dark:bg-zinc-700 text-white text-xs font-medium shadow-lg whitespace-nowrap"
+                    className="px-3 py-1.5 rounded-lg bg-gray-900 dark:bg-zinc-700 text-white text-xs font-medium whitespace-nowrap"
                   >
                     {action.label}
                   </m.span>
@@ -116,7 +116,7 @@ export default function QuickActionFAB({ onNavigate }: QuickActionFABProps) {
                   {/* Boton de accion */}
                   <button
                     onClick={action.onClick}
-                    className="w-12 h-12 rounded-full bg-white dark:bg-zinc-800 shadow-lg flex items-center justify-center hover:scale-110 transition-transform border border-gray-100 dark:border-zinc-700"
+                    className="w-12 h-12 rounded-full bg-white dark:bg-zinc-800 flex items-center justify-center hover:scale-110 transition-transform border border-gray-100 dark:border-zinc-700"
                     title={action.label}
                   >
                     <Icon className={cn("h-5 w-5", action.iconColor)} />
@@ -132,7 +132,7 @@ export default function QuickActionFAB({ onNavigate }: QuickActionFABProps) {
       <button
         onClick={() => setOpen(!open)}
         className={cn(
-          "w-14 h-14 rounded-full bg-emerald-600 hover:bg-emerald-700 text-white shadow-xl shadow-emerald-600/30",
+          "w-14 h-14 rounded-full bg-emerald-600 hover:bg-emerald-700 text-white",
           "flex items-center justify-center transition-all duration-200",
           open && "bg-emerald-700"
         )}

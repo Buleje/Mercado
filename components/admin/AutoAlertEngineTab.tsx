@@ -162,7 +162,7 @@ export default function AutoAlertEngineTab() {
       </div>
 
       {view === "rules" ? (
-        <div className="bg-white dark:bg-card rounded-2xl border border-gray-200 dark:border-card-border overflow-hidden">
+        <div className="bg-white dark:bg-card rounded-xl border border-gray-200 dark:border-card-border overflow-hidden">
           <div className="overflow-x-auto">
             <table className="w-full min-w-[600px] text-sm">
               <thead><tr className="bg-gray-50 dark:bg-surface text-left">
@@ -241,24 +241,24 @@ export default function AutoAlertEngineTab() {
       {/* Modal */}
       {showModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40" onClick={() => setShowModal(false)}>
-          <div className="bg-white dark:bg-card rounded-2xl shadow-2xl p-3 sm:p-6 max-w-md w-full mx-4 border border-gray-200 dark:border-card-border" onClick={e => e.stopPropagation()}>
+          <div className="bg-white dark:bg-card rounded-xl p-3 sm:p-6 max-w-md w-full mx-4 border border-gray-200 dark:border-card-border" onClick={e => e.stopPropagation()}>
             <h3 className="text-lg font-extrabold text-gray-900 dark:text-foreground mb-4">{editRule ? "Editar regla" : "Nueva regla"}</h3>
             <div className="space-y-3">
-              <div><label className="text-xs font-bold text-gray-500 dark:text-muted">Nombre</label><input value={formName} onChange={e => setFormName(e.target.value)} className="w-full mt-1 px-3 py-2 rounded-xl border border-gray-200 dark:border-card-border bg-white dark:bg-surface text-sm" placeholder="Nombre de la regla" /></div>
+              <div><label className="text-xs font-bold text-gray-500 dark:text-muted">Nombre</label><input value={formName} onChange={e => setFormName(e.target.value)} className="w-full mt-1 px-3 py-2 rounded-lg border border-gray-200 dark:border-card-border bg-white dark:bg-surface text-sm" placeholder="Nombre de la regla" /></div>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <div><label className="text-xs font-bold text-gray-500 dark:text-muted">Módulo</label><select value={formModule} onChange={e => setFormModule(e.target.value)} className="w-full mt-1 px-3 py-2 rounded-xl border border-gray-200 dark:border-card-border bg-white dark:bg-surface text-sm">{MODULES.map(m => <option key={m}>{m}</option>)}</select></div>
-                <div><label className="text-xs font-bold text-gray-500 dark:text-muted">Severidad</label><select value={formSeverity} onChange={e => setFormSeverity(e.target.value as AlertRule["severity"])} className="w-full mt-1 px-3 py-2 rounded-xl border border-gray-200 dark:border-card-border bg-white dark:bg-surface text-sm"><option value="info">Info</option><option value="warning">Warning</option><option value="critical">Crítico</option></select></div>
+                <div><label className="text-xs font-bold text-gray-500 dark:text-muted">Módulo</label><select value={formModule} onChange={e => setFormModule(e.target.value)} className="w-full mt-1 px-3 py-2 rounded-lg border border-gray-200 dark:border-card-border bg-white dark:bg-surface text-sm">{MODULES.map(m => <option key={m}>{m}</option>)}</select></div>
+                <div><label className="text-xs font-bold text-gray-500 dark:text-muted">Severidad</label><select value={formSeverity} onChange={e => setFormSeverity(e.target.value as AlertRule["severity"])} className="w-full mt-1 px-3 py-2 rounded-lg border border-gray-200 dark:border-card-border bg-white dark:bg-surface text-sm"><option value="info">Info</option><option value="warning">Warning</option><option value="critical">Crítico</option></select></div>
               </div>
-              <div><label className="text-xs font-bold text-gray-500 dark:text-muted">Campo/condición</label><input value={formCondition} onChange={e => setFormCondition(e.target.value)} className="w-full mt-1 px-3 py-2 rounded-xl border border-gray-200 dark:border-card-border bg-white dark:bg-surface text-sm" placeholder="ej: stock_actual" /></div>
+              <div><label className="text-xs font-bold text-gray-500 dark:text-muted">Campo/condición</label><input value={formCondition} onChange={e => setFormCondition(e.target.value)} className="w-full mt-1 px-3 py-2 rounded-lg border border-gray-200 dark:border-card-border bg-white dark:bg-surface text-sm" placeholder="ej: stock_actual" /></div>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <div><label className="text-xs font-bold text-gray-500 dark:text-muted">Operador</label><select value={formOperator} onChange={e => setFormOperator(e.target.value as AlertRule["operator"])} className="w-full mt-1 px-3 py-2 rounded-xl border border-gray-200 dark:border-card-border bg-white dark:bg-surface text-sm">{OPERATORS.map(o => <option key={o}>{o}</option>)}</select></div>
-                <div><label className="text-xs font-bold text-gray-500 dark:text-muted">Umbral</label><input type="number" value={formThreshold} onChange={e => setFormThreshold(+e.target.value)} className="w-full mt-1 px-3 py-2 rounded-xl border border-gray-200 dark:border-card-border bg-white dark:bg-surface text-sm" /></div>
+                <div><label className="text-xs font-bold text-gray-500 dark:text-muted">Operador</label><select value={formOperator} onChange={e => setFormOperator(e.target.value as AlertRule["operator"])} className="w-full mt-1 px-3 py-2 rounded-lg border border-gray-200 dark:border-card-border bg-white dark:bg-surface text-sm">{OPERATORS.map(o => <option key={o}>{o}</option>)}</select></div>
+                <div><label className="text-xs font-bold text-gray-500 dark:text-muted">Umbral</label><input type="number" value={formThreshold} onChange={e => setFormThreshold(+e.target.value)} className="w-full mt-1 px-3 py-2 rounded-lg border border-gray-200 dark:border-card-border bg-white dark:bg-surface text-sm" /></div>
               </div>
-              <div><label className="text-xs font-bold text-gray-500 dark:text-muted">Acción</label><select value={formAction} onChange={e => setFormAction(e.target.value as AlertRule["action"])} className="w-full mt-1 px-3 py-2 rounded-xl border border-gray-200 dark:border-card-border bg-white dark:bg-surface text-sm">{Object.entries(ACTIONS).map(([k, v]) => <option key={k} value={k}>{v}</option>)}</select></div>
+              <div><label className="text-xs font-bold text-gray-500 dark:text-muted">Acción</label><select value={formAction} onChange={e => setFormAction(e.target.value as AlertRule["action"])} className="w-full mt-1 px-3 py-2 rounded-lg border border-gray-200 dark:border-card-border bg-white dark:bg-surface text-sm">{Object.entries(ACTIONS).map(([k, v]) => <option key={k} value={k}>{v}</option>)}</select></div>
             </div>
             <div className="flex flex-wrap justify-end gap-2 mt-5">
-              <button onClick={() => setShowModal(false)} className="px-2 sm:px-4 py-1.5 sm:py-2 rounded-xl text-sm font-bold text-gray-500 hover:bg-gray-100 dark:hover:bg-accent"><X className="h-4 w-4 inline mr-1" />Cancelar</button>
-              <button onClick={saveRule} className="px-2 sm:px-4 py-1.5 sm:py-2 rounded-xl text-sm font-bold bg-primary text-white hover:bg-primary/90"><Check className="h-4 w-4 inline mr-1" />Guardar</button>
+              <button onClick={() => setShowModal(false)} className="px-2 sm:px-4 py-1.5 sm:py-2 rounded-lg text-sm font-bold text-gray-500 hover:bg-gray-100 dark:hover:bg-accent"><X className="h-4 w-4 inline mr-1" />Cancelar</button>
+              <button onClick={saveRule} className="px-2 sm:px-4 py-1.5 sm:py-2 rounded-lg text-sm font-bold bg-primary text-white hover:bg-primary/90"><Check className="h-4 w-4 inline mr-1" />Guardar</button>
             </div>
           </div>
         </div>

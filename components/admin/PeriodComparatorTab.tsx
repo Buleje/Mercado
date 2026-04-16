@@ -137,7 +137,7 @@ export default function PeriodComparatorTab() {
       </div>
 
       {/* Summary */}
-      <div className="bg-white dark:bg-card rounded-2xl border border-gray-200 dark:border-card-border p-3 sm:p-5">
+      <div className="bg-white dark:bg-card rounded-xl border border-gray-200 dark:border-card-border p-3 sm:p-5">
         <div className="flex items-center justify-between mb-4">
           <h3 className="font-bold text-gray-900 dark:text-foreground flex flex-wrap items-center gap-2"><BarChart3 className="h-4 w-4 text-primary" /> Resumen</h3>
           <span className="text-xs font-semibold text-emerald-600">{improvements}/{data.length} métricas mejoraron</span>

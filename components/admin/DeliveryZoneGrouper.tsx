@@ -85,7 +85,7 @@ export default function DeliveryZoneGrouper() {
   }
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
           <h2 className="text-base font-extrabold text-gray-900 dark:text-foreground flex items-center gap-2">

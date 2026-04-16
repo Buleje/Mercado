@@ -243,7 +243,7 @@ export default function CreditScoreCard({ customerPhone, className }: CreditScor
   };
 
   return (
-    <div className={cn("rounded-2xl border border-gray-200 dark:border-card-border bg-white dark:bg-card overflow-hidden", className)}>
+    <div className={cn("rounded-xl border border-gray-200 dark:border-card-border bg-white dark:bg-card overflow-hidden", className)}>
       {/* Header */}
       <div className="flex items-center gap-2 px-4 py-3 border-b border-gray-100 dark:border-card-border bg-gray-50 dark:bg-gray-900/50">
         <CreditCard className="h-4 w-4 text-primary" />
@@ -304,7 +304,7 @@ export default function CreditScoreCard({ customerPhone, className }: CreditScor
 
             {/* Breakdown */}
             <div className="space-y-2">
-              <p className="text-xs font-semibold text-gray-500 dark:text-muted uppercase tracking-wide">Detalle del score</p>
+              <p className="text-xs font-semibold text-gray-500 dark:text-muted">Detalle del score</p>
               {[
                 { label: "Paga puntualmente", value: result.breakdown.paysOnTime, icon: Clock },
                 { label: "Antiguedad (>6 meses)", value: result.breakdown.seniority, icon: TrendingUp },

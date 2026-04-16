@@ -117,7 +117,7 @@ export default function SimpleExpiryTab() {
   }
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-6">
       {/* Summary */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
         <StatCard label="Vencidos" count={stats.vencidos} color="red" icon={AlertTriangle} onClick={() => setFilter(filter === "vencido" ? "todos" : "vencido")} active={filter === "vencido"} />
@@ -134,7 +134,7 @@ export default function SimpleExpiryTab() {
             value={search}
             onChange={e => setSearch(e.target.value)}
             placeholder="Buscar producto o lote..."
-            className="w-full pl-9 pr-3 py-2 rounded-xl border border-gray-200 dark:border-card-border bg-white dark:bg-surface text-sm focus:outline-none focus:ring-2 focus:ring-primary/20"
+            className="w-full pl-9 pr-3 py-2 rounded-lg border border-gray-200 dark:border-card-border bg-white dark:bg-surface text-sm focus:outline-none focus:ring-2 focus:ring-primary/20"
           />
         </div>
         <button
@@ -164,7 +164,7 @@ export default function SimpleExpiryTab() {
               <div
                 key={b.id}
                 className={cn(
-                  "rounded-2xl border p-4 flex flex-col sm:flex-row sm:items-center gap-3 transition-all",
+                  "rounded-xl border p-4 flex flex-col sm:flex-row sm:items-center gap-3 transition-all",
                   isReviewed ? "border-gray-200 dark:border-card-border bg-gray-50/50 dark:bg-surface/30 opacity-60" :
                   b.urgency === "vencido" ? "border-red-200 dark:border-red-800/40 bg-red-50/80 dark:bg-red-950/20" :
                   b.urgency === "critico" ? "border-orange-200 dark:border-orange-800/40 bg-orange-50/50 dark:bg-orange-950/20" :
@@ -237,7 +237,7 @@ function StatCard({ label, count, color, icon: Icon, onClick, active }: {
   return (
     <button
       onClick={onClick}
-      className={cn("rounded-2xl p-4 text-left transition-all border-2",
+      className={cn("rounded-xl p-4 text-left transition-all border-2",
         active ? c.border : "border-transparent",
         c.bg, "hover:scale-[1.02]"
       )}

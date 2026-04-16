@@ -101,7 +101,7 @@ function SalesBar({
   return (
     <div className="group relative flex flex-1 flex-col items-center gap-1">
       {/* Tooltip */}
-      <div className="absolute -top-14 left-1/2 z-10 hidden -translate-x-1/2 whitespace-nowrap rounded-lg border border-gray-200 bg-white px-2 py-1.5 text-center shadow-lg group-hover:block dark:border-gray-600 dark:bg-gray-800">
+      <div className="absolute -top-14 left-1/2 z-10 hidden -translate-x-1/2 whitespace-nowrap rounded-lg border border-gray-200 bg-white px-2 py-1.5 text-center group-hover:block dark:border-gray-600 dark:bg-gray-800">
         <p className="text-xs font-semibold text-gray-800 dark:text-gray-100">
           {month.label}
         </p>

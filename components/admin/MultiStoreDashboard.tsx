@@ -410,7 +410,7 @@ export default function MultiStoreDashboard() {
         ].map(({ label, value, icon: Icon, color }) => (
           <div
             key={label}
-            className="rounded-xl border border-gray-200 bg-white p-3 shadow-sm dark:border-gray-700 dark:bg-gray-900"
+            className="rounded-xl border border-gray-200 bg-white p-3  dark:border-gray-700 dark:bg-gray-900"
           >
             <div className="flex items-center gap-2">
               <Icon className={cn("h-4 w-4", color)} />
@@ -449,7 +449,7 @@ export default function MultiStoreDashboard() {
                 className={cn(
                   "flex flex-1 items-center justify-center gap-1.5 rounded-lg py-2 text-sm font-medium transition-colors",
                   viewTab === id
-                    ? "bg-white text-primary shadow-sm dark:bg-gray-900"
+                    ? "bg-white text-primary  dark:bg-gray-900"
                     : "text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
                 )}
               >

@@ -195,7 +195,7 @@ export default function SuspiciousActivityAlert() {
       {expanded && (
         <div
           className={cn(
-            "absolute right-0 top-full mt-2 w-96 z-50 rounded-xl shadow-xl",
+            "absolute right-0 top-full mt-2 w-96 z-50 rounded-xl",
             "bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700",
             "overflow-hidden"
           )}

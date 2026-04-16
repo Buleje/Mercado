@@ -135,7 +135,7 @@ function BannerForm({
         onChange={e => setForm(f => ({ ...f, [field]: e.target.value }))}
         placeholder={placeholder}
         className={cn(
-          "w-full px-3 py-2 rounded-xl border bg-white dark:bg-card text-gray-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-primary/40",
+          "w-full px-3 py-2 rounded-lg border bg-white dark:bg-card text-gray-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-primary/40",
           errors[field] ? "border-red-400 dark:border-red-500" : "border-gray-200 dark:border-card-border"
         )}
       />
@@ -144,7 +144,7 @@ function BannerForm({
   );
 
   return (
-    <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl p-5 shadow-sm space-y-4">
+    <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl p-5  space-y-4">
       <p className="text-sm font-semibold text-gray-700 dark:text-gray-300">
         {initial.title ? "Editar banner" : "Nuevo banner"}
       </p>
@@ -193,13 +193,13 @@ function BannerForm({
       <div className="flex justify-end gap-2 pt-1">
         <button
           onClick={onCancel}
-          className="px-4 py-2 rounded-xl text-sm font-medium text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+          className="px-4 py-2 rounded-lg text-sm font-medium text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
         >
           Cancelar
         </button>
         <button
           onClick={handleSave}
-          className="px-4 py-2 rounded-xl text-sm font-medium bg-primary text-white hover:bg-[#245a41] transition-colors"
+          className="px-4 py-2 rounded-lg text-sm font-medium bg-primary text-white hover:bg-[#245a41] transition-colors"
         >
           Guardar banner
         </button>
@@ -338,7 +338,7 @@ export default function BannerEditor() {
                 onDragOver={e => { e.preventDefault(); setDragOver(banner.id); }}
                 onDrop={() => handleDrop(banner.id)}
                 className={cn(
-                  "bg-white dark:bg-card border rounded-2xl overflow-hidden shadow-sm transition-all cursor-grab active:cursor-grabbing",
+                  "bg-white dark:bg-card border rounded-xl overflow-hidden  transition-all cursor-grab active:cursor-grabbing",
                   dragging === banner.id ? "opacity-50 scale-[0.98]" : "",
                   dragOver === banner.id && dragging !== banner.id ? "border-primary ring-2 ring-primary/30" : "border-gray-200 dark:border-card-border"
                 )}

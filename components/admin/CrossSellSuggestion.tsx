@@ -175,7 +175,7 @@ export default function CrossSellSuggestion({ currentItems, onAddProduct, classN
         }
       `}</style>
 
-      <div className="rounded-2xl border border-secondary/40 bg-secondary/5 dark:bg-secondary/10 p-3">
+      <div className="rounded-xl border border-secondary/40 bg-secondary/5 dark:bg-secondary/10 p-3">
         {/* Header */}
         <div className="flex items-center gap-2 mb-2.5">
           <div className="flex items-center gap-1.5">
@@ -197,7 +197,7 @@ export default function CrossSellSuggestion({ currentItems, onAddProduct, classN
             visibleSuggestions.map((product) => (
               <div
                 key={product.id}
-                className="flex items-center gap-2 bg-white dark:bg-card rounded-xl px-3 py-2 border border-gray-100 dark:border-card-border shadow-sm"
+                className="flex items-center gap-2 bg-white dark:bg-card rounded-xl px-3 py-2 border border-gray-100 dark:border-card-border "
               >
                 <ShoppingBasket className="h-4 w-4 text-secondary shrink-0" />
                 <div className="flex-1 min-w-0">

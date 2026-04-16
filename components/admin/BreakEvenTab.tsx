@@ -227,7 +227,7 @@ export default function BreakEvenTab() {
         <p className="text-gray-500 dark:text-muted text-sm">Error cargando datos</p>
         <button
           onClick={load}
-          className="flex items-center gap-2 px-4 py-2 rounded-xl bg-primary text-white text-sm font-semibold"
+          className="flex items-center gap-2 px-4 py-2 rounded-lg bg-primary text-white text-sm font-semibold"
         >
           <RefreshCw className="h-4 w-4" /> Reintentar
         </button>
@@ -264,7 +264,7 @@ export default function BreakEvenTab() {
               "break-even"
             )
           }
-          className="flex flex-wrap items-center gap-2 px-4 py-2 rounded-xl bg-primary text-white text-sm font-bold hover:bg-primary/90"
+          className="flex flex-wrap items-center gap-2 px-4 py-2 rounded-lg bg-primary text-white text-sm font-bold hover:bg-primary/90"
         >
           <Download className="h-4 w-4" /> Exportar
         </button>
@@ -313,7 +313,7 @@ export default function BreakEvenTab() {
       </div>
 
       {/* Costos fijos */}
-      <div className="bg-white dark:bg-card rounded-2xl border border-gray-200 dark:border-card-border p-5">
+      <div className="bg-white dark:bg-card rounded-xl border border-gray-200 dark:border-card-border p-5">
         <h3 className="text-sm font-extrabold text-gray-900 dark:text-foreground mb-3">
           Costos Fijos Mensuales
           {expenses.length > 0 && (
@@ -353,7 +353,7 @@ export default function BreakEvenTab() {
         <>
           {/* KPIs */}
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-4">
-            <div className="bg-white dark:bg-card rounded-2xl border border-gray-200 dark:border-card-border p-5">
+            <div className="bg-white dark:bg-card rounded-xl border border-gray-200 dark:border-card-border p-5">
               <p className="text-xs font-semibold text-gray-500 dark:text-muted uppercase">Ventas del mes</p>
               <p className="text-xl sm:text-2xl font-extrabold text-gray-900 dark:text-foreground mt-1">
                 {fmt(generalAnalysis.totalRevenue)}
@@ -362,14 +362,14 @@ export default function BreakEvenTab() {
                 {enrichedProducts.filter((p) => (p.monthlySales ?? 0) > 0).length} productos vendidos
               </p>
             </div>
-            <div className="bg-white dark:bg-card rounded-2xl border border-gray-200 dark:border-card-border p-5">
+            <div className="bg-white dark:bg-card rounded-xl border border-gray-200 dark:border-card-border p-5">
               <p className="text-xs font-semibold text-gray-500 dark:text-muted uppercase">Punto de equilibrio</p>
               <p className="text-xl sm:text-2xl font-extrabold text-red-600 dark:text-red-400 mt-1">
                 {generalAnalysis.breakEvenRevenue === Infinity ? "∞" : fmt(generalAnalysis.breakEvenRevenue)}
               </p>
               <p className="text-xs text-gray-400 mt-1">necesitas vender esto al mes</p>
             </div>
-            <div className="bg-white dark:bg-card rounded-2xl border border-gray-200 dark:border-card-border p-5">
+            <div className="bg-white dark:bg-card rounded-xl border border-gray-200 dark:border-card-border p-5">
               <p className="text-xs font-semibold text-gray-500 dark:text-muted uppercase">Utilidad mensual</p>
               <p
                 className={cn(
@@ -390,7 +390,7 @@ export default function BreakEvenTab() {
                 </p>
               </div>
             </div>
-            <div className="bg-white dark:bg-card rounded-2xl border border-gray-200 dark:border-card-border p-5">
+            <div className="bg-white dark:bg-card rounded-xl border border-gray-200 dark:border-card-border p-5">
               <p className="text-xs font-semibold text-gray-500 dark:text-muted uppercase">Margen de seguridad</p>
               <p
                 className={cn(
@@ -411,7 +411,7 @@ export default function BreakEvenTab() {
           {/* Mensaje clave */}
           <div
             className={cn(
-              "rounded-2xl border p-5 flex flex-wrap items-start gap-3",
+              "rounded-xl border p-5 flex flex-wrap items-start gap-3",
               generalAnalysis.currentProfit >= 0
                 ? "bg-emerald-50 dark:bg-emerald-950/20 border-emerald-200 dark:border-emerald-800"
                 : "bg-red-50 dark:bg-red-950/20 border-red-200 dark:border-red-800"
@@ -443,7 +443,7 @@ export default function BreakEvenTab() {
           </div>
 
           {/* Gráfico SVG */}
-          <div className="bg-white dark:bg-card rounded-2xl border border-gray-200 dark:border-card-border p-6">
+          <div className="bg-white dark:bg-card rounded-xl border border-gray-200 dark:border-card-border p-6">
             <h3 className="text-sm font-extrabold text-gray-900 dark:text-foreground mb-4">
               Gráfico Break-Even
             </h3>
@@ -550,7 +550,7 @@ export default function BreakEvenTab() {
       {productAnalysis && (
         <>
           {/* Inputs de simulación */}
-          <div className="bg-white dark:bg-card rounded-2xl border border-gray-200 dark:border-card-border p-5">
+          <div className="bg-white dark:bg-card rounded-xl border border-gray-200 dark:border-card-border p-5">
             <h3 className="text-sm font-extrabold text-gray-900 dark:text-foreground mb-3">
               Simular Precio/Costo — {productAnalysis.product.name}
             </h3>
@@ -580,14 +580,14 @@ export default function BreakEvenTab() {
 
           {/* KPIs por producto */}
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-4">
-            <div className="bg-white dark:bg-card rounded-2xl border border-gray-200 dark:border-card-border p-5">
+            <div className="bg-white dark:bg-card rounded-xl border border-gray-200 dark:border-card-border p-5">
               <p className="text-xs font-semibold text-gray-500 dark:text-muted uppercase">Contribución/Unidad</p>
               <p className="text-xl sm:text-2xl font-extrabold text-emerald-600 dark:text-emerald-400 mt-1">
                 {fmt(productAnalysis.contrib)}
               </p>
               <p className="text-xs text-gray-400 mt-1">por cada unidad vendida</p>
             </div>
-            <div className="bg-white dark:bg-card rounded-2xl border border-gray-200 dark:border-card-border p-5">
+            <div className="bg-white dark:bg-card rounded-xl border border-gray-200 dark:border-card-border p-5">
               <p className="text-xs font-semibold text-gray-500 dark:text-muted uppercase">Punto equilibrio</p>
               <p className="text-xl sm:text-2xl font-extrabold text-red-600 dark:text-red-400 mt-1">
                 {productAnalysis.breakEvenUnits === Infinity
@@ -596,7 +596,7 @@ export default function BreakEvenTab() {
               </p>
               <p className="text-xs text-gray-400 mt-1">unidades/mes necesarias</p>
             </div>
-            <div className="bg-white dark:bg-card rounded-2xl border border-gray-200 dark:border-card-border p-5">
+            <div className="bg-white dark:bg-card rounded-xl border border-gray-200 dark:border-card-border p-5">
               <p className="text-xs font-semibold text-gray-500 dark:text-muted uppercase">Ventas del mes</p>
               <p className="text-xl sm:text-2xl font-extrabold text-gray-900 dark:text-foreground mt-1">
                 {productAnalysis.monthlySales.toLocaleString()} und
@@ -605,7 +605,7 @@ export default function BreakEvenTab() {
                 {fmt(productAnalysis.currentRevenue)} en ingresos
               </p>
             </div>
-            <div className="bg-white dark:bg-card rounded-2xl border border-gray-200 dark:border-card-border p-5">
+            <div className="bg-white dark:bg-card rounded-xl border border-gray-200 dark:border-card-border p-5">
               <p className="text-xs font-semibold text-gray-500 dark:text-muted uppercase">
                 {productAnalysis.monthlySales >= productAnalysis.breakEvenUnits ? "Ganancia" : "Pérdida"}
               </p>
@@ -622,7 +622,7 @@ export default function BreakEvenTab() {
           </div>
 
           {/* Barra de progreso hacia break-even */}
-          <div className="bg-white dark:bg-card rounded-2xl border border-gray-200 dark:border-card-border p-5">
+          <div className="bg-white dark:bg-card rounded-xl border border-gray-200 dark:border-card-border p-5">
             <h3 className="text-sm font-extrabold text-gray-900 dark:text-foreground mb-3">
               Progreso hacia el Punto de Equilibrio
             </h3>

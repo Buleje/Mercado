@@ -166,7 +166,7 @@ export default function SalesHeatmap() {
         {/* Tooltip */}
         {tooltip && (
           <div
-            className="pointer-events-none fixed z-50 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 px-3 py-2 text-xs shadow-lg"
+            className="pointer-events-none fixed z-50 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 px-3 py-2 text-xs"
             style={{ left: tooltip.x + 12, top: tooltip.y - 40 }}
           >
             <p className="font-medium text-gray-800 dark:text-gray-200">

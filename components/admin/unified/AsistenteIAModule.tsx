@@ -39,7 +39,7 @@ export default function AsistenteIAModule() {
   const [tab, setTab] = useState("centro-comando");
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-6">
       <AdminModuleHeader
         title="Asistente IA"
         description="Panel de inteligencia artificial: dashboard, sugerencias y metas"
@@ -57,7 +57,7 @@ export default function AsistenteIAModule() {
       {tab === "sugerencias" && <SugerenciasIAModule />}
       {tab === "metas" && <MetasLogrosModule />}
       {tab === "chat-ia" && (
-        <div className="bg-white rounded-2xl border border-gray-200 min-h-[600px] h-[calc(100vh-220px)]">
+        <div className="bg-white rounded-xl border border-gray-200 min-h-[600px] h-[calc(100vh-220px)]">
           <AIAssistant embedded />
         </div>
       )}

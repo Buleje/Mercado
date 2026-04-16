@@ -160,7 +160,7 @@ export default function TicketPreview({ ticket, business, onClose }: Props) {
 
       {/* Modal overlay */}
       <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 no-print">
-        <div className="bg-white dark:bg-card rounded-2xl shadow-2xl max-w-md w-full max-h-[90vh] overflow-y-auto">
+        <div className="bg-white dark:bg-card rounded-xl max-w-md w-full max-h-[90vh] overflow-y-auto">
           {/* Close button + width toggle */}
           <div className="flex justify-between items-center p-4 border-b border-gray-100 dark:border-card-border no-print">
             <h3 className="font-bold text-gray-900 dark:text-foreground">
@@ -173,7 +173,7 @@ export default function TicketPreview({ ticket, business, onClose }: Props) {
                   onClick={() => setTicketWidth("58mm")}
                   className={`px-2 py-1 rounded-md text-[10px] font-bold transition-colors ${
                     ticketWidth === "58mm"
-                      ? "bg-white dark:bg-card text-gray-900 dark:text-foreground shadow-sm"
+                      ? "bg-white dark:bg-card text-gray-900 dark:text-foreground "
                       : "text-gray-500 dark:text-muted"
                   }`}
                 >
@@ -183,7 +183,7 @@ export default function TicketPreview({ ticket, business, onClose }: Props) {
                   onClick={() => setTicketWidth("80mm")}
                   className={`px-2 py-1 rounded-md text-[10px] font-bold transition-colors ${
                     ticketWidth === "80mm"
-                      ? "bg-white dark:bg-card text-gray-900 dark:text-foreground shadow-sm"
+                      ? "bg-white dark:bg-card text-gray-900 dark:text-foreground "
                       : "text-gray-500 dark:text-muted"
                   }`}
                 >
@@ -355,7 +355,7 @@ export default function TicketPreview({ ticket, business, onClose }: Props) {
             {/* Yape QR */}
             {qrUrl && (
               <div className="text-center space-y-1 pt-2">
-                <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wide">
+                <p className="text-[10px] font-bold text-gray-400">
                   Paga con Yape
                 </p>
                 <Image
@@ -387,7 +387,7 @@ export default function TicketPreview({ ticket, business, onClose }: Props) {
           <div className="flex gap-2 p-4 border-t border-gray-100 dark:border-card-border no-print">
             <button
               onClick={handlePrint}
-              className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-primary text-white text-sm font-bold hover:bg-primary/90 transition-colors"
+              className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg bg-primary text-white text-sm font-bold hover:bg-primary/90 transition-colors"
             >
               <Printer className="h-4 w-4" />
               Imprimir
@@ -395,7 +395,7 @@ export default function TicketPreview({ ticket, business, onClose }: Props) {
             <button
               onClick={handleWhatsApp}
               disabled={sending}
-              className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-[#25D366] text-white text-sm font-bold hover:bg-[#1ebe5d] transition-colors disabled:opacity-50"
+              className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg bg-[#25D366] text-white text-sm font-bold hover:bg-[#1ebe5d] transition-colors disabled:opacity-50"
             >
               <MessageCircle className="h-4 w-4" />
               WhatsApp

@@ -284,7 +284,7 @@ Responde en español, directo, sin rodeos.`,
   }, [data]);
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-6">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
@@ -321,7 +321,7 @@ Responde en español, directo, sin rodeos.`,
             <button
               onClick={askAI}
               disabled={loading}
-              className="flex items-center gap-2 px-4 py-2 rounded-xl bg-primary text-white font-bold text-sm hover:bg-primary/90 transition-colors disabled:opacity-50"
+              className="flex items-center gap-2 px-4 py-2 rounded-lg bg-primary text-white font-bold text-sm hover:bg-primary/90 transition-colors disabled:opacity-50"
             >
               {loading ? (
                 <RefreshCw className="w-4 h-4 animate-spin" />
@@ -368,7 +368,7 @@ Responde en español, directo, sin rodeos.`,
           return (
             <div
               key={insight.id}
-              className="rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 p-4 hover:shadow-md transition-shadow"
+              className="rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 p-4 hover:shadow-sm transition-shadow"
             >
               <div className="flex items-start gap-3">
                 <div className={cn("shrink-0 w-9 h-9 rounded-lg flex items-center justify-center border", config.color)}>
@@ -399,7 +399,7 @@ Responde en español, directo, sin rodeos.`,
                         "mt-2 flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[11px] font-bold transition-all",
                         comboCreated.has(insight.id)
                           ? "bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400 cursor-default"
-                          : "bg-primary text-white hover:bg-primary/90 shadow-sm hover:shadow-md"
+                          : "bg-primary text-white hover:bg-primary/90  hover:shadow-sm"
                       )}
                     >
                       {comboCreated.has(insight.id) ? (

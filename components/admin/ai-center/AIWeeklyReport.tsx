@@ -470,11 +470,11 @@ export default function AIWeeklyReport({ data }: Props) {
   const priorityOrder = { critica: 0, importante: 1, sugerencia: 2 };
 
   return (
-    <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 p-5 shadow-sm">
+    <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 p-5 ">
       {/* Header */}
       <div className="flex items-center justify-between mb-4">
         <div>
-          <h2 className="text-sm font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wide">
+          <h2 className="text-sm font-semibold text-gray-700 dark:text-gray-300">
             Reporte Semanal IA
           </h2>
           <p className="text-xs text-gray-400 mt-0.5">
@@ -587,7 +587,7 @@ export default function AIWeeklyReport({ data }: Props) {
           {/* Recommendations */}
           <div className="rounded-lg bg-[#00B4A6]/5 dark:bg-[#00B4A6]/10 border border-[#00B4A6]/15 p-4">
             <div className="flex items-center justify-between mb-2">
-              <h3 className="text-xs font-semibold text-[#00B4A6] dark:text-[#2dd4bf] uppercase tracking-wide">
+              <h3 className="text-xs font-semibold text-[#00B4A6] dark:text-[#2dd4bf]">
                 Recomendaciones ({report.recommendations.length})
               </h3>
               {report.recommendations.length > 3 && (

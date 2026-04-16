@@ -234,7 +234,7 @@ function ColorPicker({
 }) {
   return (
     <div className="space-y-2">
-      <label className="text-xs font-semibold text-muted uppercase tracking-wide">{label}</label>
+      <label className="text-xs font-semibold text-muted">{label}</label>
       <div className="flex flex-wrap gap-2">
         {COLOR_PRESETS.map((c) => (
           <button
@@ -245,7 +245,7 @@ function ColorPicker({
             className={cn(
               "h-8 w-8 rounded-full border-2 transition-all shrink-0",
               value === c.value
-                ? "border-foreground scale-110 shadow-md"
+                ? "border-foreground scale-110"
                 : "border-transparent hover:scale-105"
             )}
             style={{ backgroundColor: c.value }}
@@ -270,14 +270,14 @@ function ColorPicker({
 function FieldRow({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <div className="space-y-1.5">
-      <label className="text-xs font-semibold text-muted uppercase tracking-wide">{label}</label>
+      <label className="text-xs font-semibold text-muted">{label}</label>
       {children}
     </div>
   );
 }
 
 const inputCls =
-  "w-full px-3 py-2.5 rounded-xl border border-gray-200 dark:border-card-border bg-white dark:bg-surface text-sm text-foreground placeholder:text-muted focus:outline-none focus:ring-2 focus:ring-primary/40 transition-all min-h-[44px]";
+  "w-full px-3 py-2.5 rounded-lg border border-gray-200 dark:border-card-border bg-white dark:bg-surface text-sm text-foreground placeholder:text-muted focus:outline-none focus:ring-2 focus:ring-primary/40 transition-all min-h-[44px]";
 
 // ── Tabs del panel ─────────────────────────────────────────────────────────────
 
@@ -333,7 +333,7 @@ function _StorePreview({ theme }: { theme: StoreTheme }) {
   return (
     <div
       className={cn(
-        "w-full h-full rounded-2xl overflow-hidden border border-gray-200 dark:border-card-border flex flex-col text-sm shadow-inner",
+        "w-full h-full rounded-xl overflow-hidden border border-gray-200 dark:border-card-border flex flex-col text-sm shadow-inner",
         theme.darkModeDefault ? "bg-gray-900 text-white" : "bg-white text-gray-900"
       )}
       style={{ fontFamily: fontMap[theme.fontFamily] ?? fontMap.sistema }}
@@ -405,7 +405,7 @@ function _StorePreview({ theme }: { theme: StoreTheme }) {
       {/* Categories mockup */}
       {theme.sections.includes("categories") && (
         <div className="px-3 pt-3 pb-1 shrink-0">
-          <p className="text-[10px] font-bold text-muted mb-2 uppercase tracking-wider">Categorías</p>
+          <p className="text-[10px] font-bold text-muted mb-2">Categorías</p>
           <div className="flex gap-2 overflow-hidden">
             {["Abarrotes", "Bebidas", "Lácteos", "Snacks"].map((cat) => (
               <div
@@ -433,7 +433,7 @@ function _StorePreview({ theme }: { theme: StoreTheme }) {
       {/* Products mockup */}
       {theme.sections.includes("popular") && (
         <div className="px-3 pt-3 flex-1">
-          <p className="text-[10px] font-bold text-muted mb-2 uppercase tracking-wider">Populares</p>
+          <p className="text-[10px] font-bold text-muted mb-2">Populares</p>
           <div className="grid grid-cols-2 gap-2">
             {["Aceite 1L", "Arroz 5kg"].map((prod) => (
               <div
@@ -668,7 +668,7 @@ export default function StoreCustomizer() {
     <div className="flex flex-col h-full">
       {/* Toast de éxito */}
       {toastMsg && (
-        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 flex items-center gap-2.5 px-5 py-3 rounded-2xl bg-emerald-600 text-white text-sm font-bold shadow-xl animate-[fadeDown_0.35s_ease-out_both] pointer-events-none">
+        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 flex items-center gap-2.5 px-5 py-3 rounded-xl bg-emerald-600 text-white text-sm font-bold animate-[fadeDown_0.35s_ease-out_both] pointer-events-none">
           <Check className="h-4 w-4 shrink-0" />
           {toastMsg}
         </div>
@@ -677,7 +677,7 @@ export default function StoreCustomizer() {
       {/* ── Header mejorado ───────────────────────────────────────── */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-5 shrink-0">
         <div className="flex items-center gap-3">
-          <div className="h-11 w-11 rounded-2xl bg-gradient-to-br from-emerald-500 to-emerald-600 flex items-center justify-center shadow-md">
+          <div className="h-11 w-11 rounded-xl bg-gradient-to-br from-emerald-500 to-emerald-600 flex items-center justify-center">
             <Palette className="h-5 w-5 text-white" />
           </div>
           <div>
@@ -705,7 +705,7 @@ export default function StoreCustomizer() {
           <button
             type="button"
             onClick={() => setShowPreview(true)}
-            className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-primary/10 text-primary text-xs font-bold hover:bg-primary/20 transition-colors min-h-[44px]"
+            className="flex items-center gap-1.5 px-4 py-2 rounded-lg bg-primary/10 text-primary text-xs font-bold hover:bg-primary/20 transition-colors min-h-[44px]"
           >
             <Eye className="h-4 w-4" />
             Vista previa
@@ -713,7 +713,7 @@ export default function StoreCustomizer() {
           <button
             type="button"
             onClick={() => setShowCreativeMode(true)}
-            className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-gradient-to-r from-violet-600 to-emerald-600 text-white text-xs font-bold hover:from-violet-500 hover:to-emerald-500 transition-all min-h-[44px] shadow-md"
+            className="flex items-center gap-1.5 px-4 py-2 rounded-lg bg-gradient-to-r from-violet-600 to-emerald-600 text-white text-xs font-bold hover:from-violet-500 hover:to-emerald-500 transition-all min-h-[44px]"
           >
             <Paintbrush className="h-4 w-4" />
             Modo Creativo
@@ -736,7 +736,7 @@ export default function StoreCustomizer() {
                 className={cn(
                   "flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold whitespace-nowrap transition-all min-h-[44px] shrink-0",
                   activeTab === t.id
-                    ? "bg-emerald-600 text-white shadow-sm"
+                    ? "bg-emerald-600 text-white "
                     : "bg-gray-100 dark:bg-surface text-muted hover:text-foreground hover:bg-gray-200 dark:hover:bg-accent"
                 )}
               >
@@ -747,11 +747,11 @@ export default function StoreCustomizer() {
           </div>
 
           {/* Desktop: grouped vertical sidebar */}
-          <nav className="hidden lg:flex flex-col gap-1 bg-gray-50/50 dark:bg-surface/50 rounded-2xl p-2.5 border border-gray-100 dark:border-card-border">
+          <nav className="hidden lg:flex flex-col gap-1 bg-gray-50/50 dark:bg-surface/50 rounded-xl p-2.5 border border-gray-100 dark:border-card-border">
             {TAB_GROUPS.map((group, gi) => (
               <div key={group.group}>
                 {gi > 0 && <div className="border-t border-gray-100 dark:border-card-border my-1.5" />}
-                <p className="text-[10px] font-bold text-muted/70 uppercase tracking-widest px-2.5 pt-1.5 pb-1 flex items-center gap-1.5">
+                <p className="text-[10px] font-bold text-muted/70 px-2.5 pt-1.5 pb-1 flex items-center gap-1.5">
                   {group.icon}
                   {group.group}
                 </p>
@@ -763,7 +763,7 @@ export default function StoreCustomizer() {
                     className={cn(
                       "w-full flex items-center gap-2.5 px-2.5 py-2 rounded-xl text-xs font-semibold transition-all text-left min-h-[40px]",
                       activeTab === t.id
-                        ? "bg-emerald-600 text-white shadow-sm"
+                        ? "bg-emerald-600 text-white "
                         : "text-muted hover:text-foreground hover:bg-gray-100 dark:hover:bg-accent"
                     )}
                   >
@@ -777,7 +777,7 @@ export default function StoreCustomizer() {
         </div>
 
         {/* ── Panel de contenido ────────────────────────────────────── */}
-        <div className="flex-1 flex flex-col min-h-0 bg-white dark:bg-card rounded-2xl border border-gray-100 dark:border-card-border shadow-sm overflow-hidden">
+        <div className="flex-1 flex flex-col min-h-0 bg-white dark:bg-card rounded-xl border border-gray-100 dark:border-card-border  overflow-hidden">
 
           {/* Tab header with active tab info */}
           <div className="flex items-center gap-2.5 px-5 py-3.5 border-b border-gray-100 dark:border-card-border bg-gray-50/50 dark:bg-surface/30 shrink-0">
@@ -790,12 +790,12 @@ export default function StoreCustomizer() {
 
             {/* ── TAB: IDENTIDAD ─────────────────────────────────────── */}
             {activeTab === "identidad" && (
-              <div className="space-y-4">
+              <div className="space-y-6">
                 {/* Logo + Nombre en fila */}
                 <div className="flex items-start gap-4">
                   <div className="shrink-0 w-20">
-                    <p className="text-[10px] font-semibold text-muted uppercase tracking-wide mb-1.5">Logo</p>
-                    <div className="w-20 h-20 rounded-xl border-2 border-dashed border-gray-200 dark:border-card-border bg-gray-50 dark:bg-surface flex items-center justify-center overflow-hidden cursor-pointer hover:border-primary transition-colors relative group">
+                    <p className="text-[10px] font-semibold text-muted mb-1.5">Logo</p>
+                    <div className="w-20 h-20 rounded-lg border-2 border-dashed border-gray-200 dark:border-card-border bg-gray-50 dark:bg-surface flex items-center justify-center overflow-hidden cursor-pointer hover:border-primary transition-colors relative group">
                       {theme.logo ? (
                         <>
                           <Image src={theme.logo} alt="Logo" fill className="object-cover" sizes="80px" />
@@ -845,7 +845,7 @@ export default function StoreCustomizer() {
               <div className="space-y-6">
                 {/* Plantillas rápidas */}
                 <div className="space-y-2">
-                  <p className="text-xs font-semibold text-muted uppercase tracking-wide">Plantillas</p>
+                  <p className="text-xs font-semibold text-muted">Plantillas</p>
                   <div className="grid grid-cols-2 gap-2">
                     {THEME_TEMPLATES.map((t) => (
                       <button
@@ -900,18 +900,18 @@ export default function StoreCustomizer() {
 
                 {/* Preview de botón CTA */}
                 <div className="space-y-2">
-                  <p className="text-xs font-semibold text-muted uppercase tracking-wide">Preview botón CTA</p>
+                  <p className="text-xs font-semibold text-muted">Preview botón CTA</p>
                   <div className="flex gap-3 items-center flex-wrap">
                     <button
                       type="button"
-                      className="px-5 py-2.5 rounded-xl text-sm font-bold text-white shadow transition-all hover:opacity-90"
+                      className="px-5 py-2.5 rounded-lg text-sm font-bold text-white shadow transition-all hover:opacity-90"
                       style={{ backgroundColor: theme.primaryColor, borderRadius: `${theme.borderRadius}px` }}
                     >
                       {theme.heroCTA || "Ver productos"}
                     </button>
                     <button
                       type="button"
-                      className="px-5 py-2.5 rounded-xl text-sm font-bold text-white shadow transition-all hover:opacity-90"
+                      className="px-5 py-2.5 rounded-lg text-sm font-bold text-white shadow transition-all hover:opacity-90"
                       style={{ backgroundColor: theme.secondaryColor, borderRadius: `${theme.borderRadius}px` }}
                     >
                       Secundario
@@ -950,7 +950,7 @@ export default function StoreCustomizer() {
 
             {/* ── TAB: SECCIONES — delegado a StorefrontEditor ──────── */}
             {activeTab === "secciones" && (
-              <div className="space-y-4">
+              <div className="space-y-6">
                 <div className="bg-primary/5 dark:bg-primary/10 border border-primary/15 rounded-xl p-4 space-y-3">
                   <p className="text-sm font-semibold text-foreground">
                     Editor de secciones
@@ -1063,7 +1063,7 @@ export default function StoreCustomizer() {
 
                 {/* Horarios */}
                 <div className="space-y-2">
-                  <p className="text-xs font-semibold text-muted uppercase tracking-wide">Horarios de atención</p>
+                  <p className="text-xs font-semibold text-muted">Horarios de atención</p>
                   <div className="space-y-2">
                     {DAYS.map(({ key, label }) => (
                       <div key={key} className="flex items-center gap-2">
@@ -1103,7 +1103,7 @@ export default function StoreCustomizer() {
               <div className="space-y-5">
                 {/* Estilo de cards */}
                 <div className="space-y-2">
-                  <p className="text-xs font-semibold text-muted uppercase tracking-wide">Estilo de productos</p>
+                  <p className="text-xs font-semibold text-muted">Estilo de productos</p>
                   <div className="grid grid-cols-2 gap-2">
                     {([
                       { value: "minimal", label: "Minimal", desc: "Sin bordes ni sombra" },
@@ -1122,11 +1122,11 @@ export default function StoreCustomizer() {
 
                 {/* Estilo de botones */}
                 <div className="space-y-2">
-                  <p className="text-xs font-semibold text-muted uppercase tracking-wide">Estilo de botones</p>
+                  <p className="text-xs font-semibold text-muted">Estilo de botones</p>
                   <div className="flex gap-2">
                     {([{ value: "rounded", label: "Redondeado" }, { value: "square", label: "Cuadrado" }, { value: "pill", label: "Pill" }] as const).map((s) => (
                       <button key={s.value} type="button" onClick={() => update("buttonStyle", s.value)}
-                        className={cn("flex-1 py-2.5 rounded-xl text-xs font-bold border transition-all min-h-[44px]", theme.buttonStyle === s.value ? "bg-primary text-white border-primary" : "border-gray-200 dark:border-card-border text-muted hover:border-primary")}>
+                        className={cn("flex-1 py-2.5 rounded-lg text-xs font-bold border transition-all min-h-[44px]", theme.buttonStyle === s.value ? "bg-primary text-white border-primary" : "border-gray-200 dark:border-card-border text-muted hover:border-primary")}>
                         {s.label}
                       </button>
                     ))}
@@ -1135,11 +1135,11 @@ export default function StoreCustomizer() {
 
                 {/* Estilo de navbar */}
                 <div className="space-y-2">
-                  <p className="text-xs font-semibold text-muted uppercase tracking-wide">Estilo del navbar</p>
+                  <p className="text-xs font-semibold text-muted">Estilo del navbar</p>
                   <div className="grid grid-cols-2 gap-2">
                     {([{ value: "solid", label: "Solido" }, { value: "transparent", label: "Transparente" }, { value: "blur", label: "Con blur" }, { value: "minimal", label: "Minimalista" }] as const).map((s) => (
                       <button key={s.value} type="button" onClick={() => update("navbarStyle", s.value)}
-                        className={cn("py-2 rounded-xl text-xs font-bold border transition-all", theme.navbarStyle === s.value ? "bg-primary text-white border-primary" : "border-gray-200 dark:border-card-border text-muted hover:border-primary")}>
+                        className={cn("py-2 rounded-lg text-xs font-bold border transition-all", theme.navbarStyle === s.value ? "bg-primary text-white border-primary" : "border-gray-200 dark:border-card-border text-muted hover:border-primary")}>
                         {s.label}
                       </button>
                     ))}
@@ -1148,11 +1148,11 @@ export default function StoreCustomizer() {
 
                 {/* Sombras */}
                 <div className="space-y-2">
-                  <p className="text-xs font-semibold text-muted uppercase tracking-wide">Sombras</p>
+                  <p className="text-xs font-semibold text-muted">Sombras</p>
                   <div className="flex gap-2">
                     {([{ value: "none", label: "Sin sombra" }, { value: "soft", label: "Suave" }, { value: "deep", label: "Profunda" }] as const).map((s) => (
                       <button key={s.value} type="button" onClick={() => update("shadowLevel", s.value)}
-                        className={cn("flex-1 py-2.5 rounded-xl text-xs font-bold border transition-all min-h-[44px]", theme.shadowLevel === s.value ? "bg-primary text-white border-primary" : "border-gray-200 dark:border-card-border text-muted hover:border-primary")}>
+                        className={cn("flex-1 py-2.5 rounded-lg text-xs font-bold border transition-all min-h-[44px]", theme.shadowLevel === s.value ? "bg-primary text-white border-primary" : "border-gray-200 dark:border-card-border text-muted hover:border-primary")}>
                         {s.label}
                       </button>
                     ))}
@@ -1161,11 +1161,11 @@ export default function StoreCustomizer() {
 
                 {/* Animaciones */}
                 <div className="space-y-2">
-                  <p className="text-xs font-semibold text-muted uppercase tracking-wide">Animaciones</p>
+                  <p className="text-xs font-semibold text-muted">Animaciones</p>
                   <div className="flex gap-2">
                     {([{ value: "none", label: "Ninguna" }, { value: "subtle", label: "Suaves" }, { value: "dynamic", label: "Dinamicas" }] as const).map((s) => (
                       <button key={s.value} type="button" onClick={() => update("animations", s.value)}
-                        className={cn("flex-1 py-2.5 rounded-xl text-xs font-bold border transition-all min-h-[44px]", theme.animations === s.value ? "bg-primary text-white border-primary" : "border-gray-200 dark:border-card-border text-muted hover:border-primary")}>
+                        className={cn("flex-1 py-2.5 rounded-lg text-xs font-bold border transition-all min-h-[44px]", theme.animations === s.value ? "bg-primary text-white border-primary" : "border-gray-200 dark:border-card-border text-muted hover:border-primary")}>
                         {s.label}
                       </button>
                     ))}
@@ -1174,11 +1174,11 @@ export default function StoreCustomizer() {
 
                 {/* Fondo */}
                 <div className="space-y-2">
-                  <p className="text-xs font-semibold text-muted uppercase tracking-wide">Fondo de la tienda</p>
+                  <p className="text-xs font-semibold text-muted">Fondo de la tienda</p>
                   <div className="grid grid-cols-2 gap-2">
                     {([{ value: "none", label: "Liso" }, { value: "dots", label: "Puntos" }, { value: "waves", label: "Ondas" }, { value: "gradient", label: "Gradiente" }] as const).map((s) => (
                       <button key={s.value} type="button" onClick={() => update("backgroundPattern", s.value)}
-                        className={cn("py-2 rounded-xl text-xs font-bold border transition-all", theme.backgroundPattern === s.value ? "bg-primary text-white border-primary" : "border-gray-200 dark:border-card-border text-muted hover:border-primary")}>
+                        className={cn("py-2 rounded-lg text-xs font-bold border transition-all", theme.backgroundPattern === s.value ? "bg-primary text-white border-primary" : "border-gray-200 dark:border-card-border text-muted hover:border-primary")}>
                         {s.label}
                       </button>
                     ))}
@@ -1260,7 +1260,7 @@ export default function StoreCustomizer() {
 
                 {/* CSS personalizado */}
                 <div className="space-y-2">
-                  <p className="text-xs font-bold text-foreground uppercase tracking-wider">CSS personalizado</p>
+                  <p className="text-xs font-bold text-foreground">CSS personalizado</p>
                   <p className="text-[10px] text-muted">CSS inyectado directamente en tu tienda. Para usuarios avanzados.</p>
                   <textarea value={theme.customCSS} onChange={(e) => update("customCSS", e.target.value)}
                     placeholder=".product-card { border: 2px solid gold; }" rows={4}
@@ -1291,7 +1291,7 @@ export default function StoreCustomizer() {
                 {/* Bordes redondeados */}
                 <div className="space-y-2">
                   <div className="flex items-center justify-between">
-                    <p className="text-xs font-semibold text-muted uppercase tracking-wide">Bordes redondeados</p>
+                    <p className="text-xs font-semibold text-muted">Bordes redondeados</p>
                     <span className="text-xs font-bold text-foreground">{theme.borderRadius}px</span>
                   </div>
                   <input
@@ -1310,7 +1310,7 @@ export default function StoreCustomizer() {
 
                 {/* Espaciado */}
                 <div className="space-y-2">
-                  <p className="text-xs font-semibold text-muted uppercase tracking-wide">Espaciado</p>
+                  <p className="text-xs font-semibold text-muted">Espaciado</p>
                   <div className="flex gap-2">
                     {(["compact", "normal", "spacious"] as const).map((s) => (
                       <button
@@ -1348,7 +1348,7 @@ export default function StoreCustomizer() {
                   <button
                     type="button"
                     onClick={handleReset}
-                    className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl border border-red-200 dark:border-red-800/50 text-sm font-semibold text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors min-h-[44px]"
+                    className="w-full flex items-center justify-center gap-2 py-2.5 rounded-lg border border-red-200 dark:border-red-800/50 text-sm font-semibold text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors min-h-[44px]"
                   >
                     Restaurar valores por defecto
                   </button>
@@ -1357,7 +1357,7 @@ export default function StoreCustomizer() {
 
                 {/* Tracking */}
                 <div className="space-y-3 pt-2 border-t border-gray-100 dark:border-card-border">
-                  <p className="text-xs font-semibold text-muted uppercase tracking-wide flex items-center gap-1.5">
+                  <p className="text-xs font-semibold text-muted flex items-center gap-1.5">
                     <Sliders className="h-3.5 w-3.5" />
                     Seguimiento y analítica
                   </p>
@@ -1397,7 +1397,7 @@ export default function StoreCustomizer() {
                 "w-full flex items-center justify-center gap-2 py-3 rounded-xl text-sm font-bold transition-all min-h-[48px] relative",
                 saved
                   ? "bg-emerald-600 text-white"
-                  : "bg-emerald-600 hover:bg-emerald-700 text-white shadow-md hover:shadow-lg active:scale-[0.98]",
+                  : "bg-emerald-600 hover:bg-emerald-700 text-white hover:shadow-lg active:scale-[0.98]",
                 saving && "opacity-60 cursor-not-allowed"
               )}
             >
@@ -1456,7 +1456,7 @@ export default function StoreCustomizer() {
           {/* Iframe */}
           <div className="flex-1 flex justify-center items-start p-4 overflow-auto bg-gray-100 dark:bg-gray-900">
             <div
-              className="bg-white rounded-xl overflow-hidden shadow-2xl transition-all duration-300"
+              className="bg-white rounded-xl overflow-hidden transition-all duration-300"
               style={{ width: previewWidth > 0 ? `${previewWidth}px` : "100%", maxWidth: "100%", height: "calc(100vh - 80px)" }}
             >
               <iframe key={previewKey} src={`/t/${activeTenantSlug}?preview=true`} title="Vista previa" className="w-full h-full border-0" />

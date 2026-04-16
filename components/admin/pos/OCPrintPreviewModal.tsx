@@ -149,7 +149,7 @@ export default function OCPrintPreviewModal({
 
   return (
     <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
-      <div className="bg-white dark:bg-gray-900 rounded-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto shadow-2xl">
+      <div className="bg-white dark:bg-gray-900 rounded-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
         <div className="p-6 space-y-4" id="oc-print-area">
           {/* Header */}
           <div className="flex items-center justify-between border-b dark:border-gray-700 pb-4">
@@ -265,21 +265,21 @@ export default function OCPrintPreviewModal({
                 }
               }
             }}
-            className="flex-1 py-2 bg-[#00B4A6] text-white rounded-xl text-sm font-medium hover:bg-[#009690] transition-colors"
+            className="flex-1 py-2 bg-[#00B4A6] text-white rounded-lg text-sm font-medium hover:bg-[#009690] transition-colors"
           >
             Imprimir
           </button>
           <button
             type="button"
             onClick={handleDownloadPDF}
-            className="flex-1 py-2 bg-emerald-600 text-white rounded-xl text-sm font-medium hover:bg-emerald-700 transition-colors"
+            className="flex-1 py-2 bg-emerald-600 text-white rounded-lg text-sm font-medium hover:bg-emerald-700 transition-colors"
           >
             Descargar PDF
           </button>
           <button
             type="button"
             onClick={onClose}
-            className="px-4 py-2 bg-gray-200 text-gray-700 rounded-xl text-sm font-medium hover:bg-gray-300 transition-colors"
+            className="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg text-sm font-medium hover:bg-gray-300 transition-colors"
           >
             Cerrar
           </button>

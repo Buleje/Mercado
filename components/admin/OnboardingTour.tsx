@@ -151,11 +151,11 @@ export function OnboardingTour({
 
   return (
     <TourSpotlight targetSelector={targetSelector}>
-      <div className="w-[320px] sm:w-[340px] bg-white dark:bg-[#1e293b] rounded-2xl shadow-2xl border border-gray-200 dark:border-gray-700 overflow-hidden">
+      <div className="w-[320px] sm:w-[340px] bg-white dark:bg-[#1e293b] rounded-xl border border-gray-200 dark:border-gray-700 overflow-hidden">
         {/* Header with step counter */}
         <div className="flex items-center justify-between px-4 pt-3 pb-1">
           <div className="flex items-center gap-2">
-            <span className="text-xs font-bold text-[#2563EB] dark:text-emerald-400 uppercase tracking-wider">
+            <span className="text-xs font-bold text-[#2563EB] dark:text-emerald-400">
               Paso {currentStep + 1} de {totalSteps}
             </span>
           </div>
@@ -213,7 +213,7 @@ export function OnboardingTour({
 
           <button
             onClick={isLastStep ? onComplete : onNext}
-            className="flex items-center gap-1 px-4 py-1.5 rounded-lg text-sm font-bold text-white bg-[#2563EB] hover:bg-[#1D4ED8] shadow-sm transition-colors"
+            className="flex items-center gap-1 px-4 py-1.5 rounded-lg text-sm font-bold text-white bg-[#2563EB] hover:bg-[#1D4ED8]  transition-colors"
           >
             {isLastStep ? (
               <>

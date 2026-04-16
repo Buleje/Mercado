@@ -18,7 +18,7 @@ function urgencyColor(stock: number | undefined): string {
 export function VendorLowStockList({ products }: Props) {
   if (products.length === 0) {
     return (
-      <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl p-6 shadow-sm">
+      <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl p-6 ">
         <h3 className="font-bold text-gray-900 dark:text-foreground mb-4 flex items-center gap-2">
           <AlertTriangle className="h-5 w-5 text-yellow-500" />
           Stock bajo
@@ -34,7 +34,7 @@ export function VendorLowStockList({ products }: Props) {
   }
 
   return (
-    <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl p-6 shadow-sm">
+    <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl p-6 ">
       <h3 className="font-bold text-gray-900 dark:text-foreground mb-4 flex items-center gap-2">
         <AlertTriangle className="h-5 w-5 text-yellow-500" />
         Stock bajo

@@ -160,7 +160,7 @@ function StepRow({
   return (
     <div
       className={cn(
-        "flex items-center gap-3 p-3 rounded-2xl border transition-all duration-200",
+        "flex items-center gap-3 p-3 rounded-xl border transition-all duration-200",
         done
           ? "bg-emerald-50 dark:bg-emerald-900/15 border-emerald-100 dark:border-emerald-800/40"
           : "bg-white dark:bg-gray-800/60 border-gray-100 dark:border-gray-700/60 hover:border-emerald-200 dark:hover:border-emerald-700"
@@ -316,7 +316,7 @@ export default function OnboardingWizard({ tenantSlug, onClose }: OnboardingWiza
     >
       {/* Panel */}
       <div
-        className="relative w-full max-w-lg bg-white dark:bg-gray-900 rounded-3xl shadow-2xl border border-gray-100 dark:border-gray-700 overflow-hidden"
+        className="relative w-full max-w-lg bg-white dark:bg-gray-900 rounded-3xl border border-gray-100 dark:border-gray-700 overflow-hidden"
         onClick={(e) => e.stopPropagation()}
       >
         {allDone && <ConfettiOverlay />}
@@ -324,7 +324,7 @@ export default function OnboardingWizard({ tenantSlug, onClose }: OnboardingWiza
         {/* Header */}
         <div className="relative px-6 pt-6 pb-4 bg-gradient-to-br from-emerald-50 to-white dark:from-emerald-900/20 dark:to-gray-900 border-b border-gray-100 dark:border-gray-800">
           <div className="flex items-start gap-3">
-            <div className="flex-shrink-0 w-10 h-10 rounded-2xl bg-[#2563EB] flex items-center justify-center shadow-md">
+            <div className="flex-shrink-0 w-10 h-10 rounded-xl bg-[#2563EB] flex items-center justify-center">
               <Sparkles className="h-5 w-5 text-white" />
             </div>
             <div className="flex-1">
@@ -342,7 +342,7 @@ export default function OnboardingWizard({ tenantSlug, onClose }: OnboardingWiza
               type="button"
               onClick={handleClose}
               title="Saltar por ahora"
-              className="flex-shrink-0 flex items-center justify-center w-8 h-8 rounded-xl text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+              className="flex-shrink-0 flex items-center justify-center w-8 h-8 rounded-lg text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
             >
               <X className="h-4 w-4" />
             </button>
@@ -359,7 +359,7 @@ export default function OnboardingWizard({ tenantSlug, onClose }: OnboardingWiza
           {loading ? (
             // Skeleton
             Array.from({ length: 5 }).map((_, i) => (
-              <div key={i} className="h-16 rounded-2xl bg-gray-100 dark:bg-gray-800 animate-pulse" />
+              <div key={i} className="h-16 rounded-xl bg-gray-100 dark:bg-gray-800 animate-pulse" />
             ))
           ) : (
             STEPS.map((step, i) => (
@@ -380,7 +380,7 @@ export default function OnboardingWizard({ tenantSlug, onClose }: OnboardingWiza
             <button
               type="button"
               onClick={handleClose}
-              className="flex-1 flex items-center justify-center gap-2 h-11 rounded-2xl bg-[#2563EB] hover:bg-[#1D4ED8] text-white text-sm font-bold transition-colors shadow-md"
+              className="flex-1 flex items-center justify-center gap-2 h-11 rounded-xl bg-[#2563EB] hover:bg-[#1D4ED8] text-white text-sm font-bold transition-colors"
             >
               <Sparkles className="h-4 w-4" />
               ¡Empezar a vender!
@@ -401,7 +401,7 @@ export default function OnboardingWizard({ tenantSlug, onClose }: OnboardingWiza
                   const first = STEPS.find((s) => !status[s.id]);
                   if (first) handleNavigate(first.href);
                 }}
-                className="flex-1 flex items-center justify-center gap-2 h-11 rounded-2xl bg-[#2563EB] hover:bg-[#1D4ED8] text-white text-sm font-bold transition-colors shadow-md"
+                className="flex-1 flex items-center justify-center gap-2 h-11 rounded-xl bg-[#2563EB] hover:bg-[#1D4ED8] text-white text-sm font-bold transition-colors"
               >
                 Continuar configurando
                 <ArrowRight className="h-4 w-4" />

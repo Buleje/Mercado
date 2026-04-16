@@ -192,19 +192,19 @@ export default function CashFlowTab() {
           <p className="text-sm text-gray-500 dark:text-muted mt-0.5">Proyección de ingresos y egresos del período</p>
         </div>
         <div className="flex items-center gap-2 flex-wrap">
-          <select value={month} onChange={e => setMonth(Number(e.target.value))} className="text-sm border border-gray-200 dark:border-card-border rounded-xl px-3 py-2 bg-white dark:bg-surface text-gray-700 dark:text-foreground">
+          <select value={month} onChange={e => setMonth(Number(e.target.value))} className="text-sm border border-gray-200 dark:border-card-border rounded-lg px-3 py-2 bg-white dark:bg-surface text-gray-700 dark:text-foreground">
             {MONTHS.map((m, i) => <option key={i} value={i}>{m}</option>)}
           </select>
-          <select value={year} onChange={e => setYear(Number(e.target.value))} className="text-sm border border-gray-200 dark:border-card-border rounded-xl px-3 py-2 bg-white dark:bg-surface text-gray-700 dark:text-foreground">
+          <select value={year} onChange={e => setYear(Number(e.target.value))} className="text-sm border border-gray-200 dark:border-card-border rounded-lg px-3 py-2 bg-white dark:bg-surface text-gray-700 dark:text-foreground">
             {[now.getFullYear() - 1, now.getFullYear(), now.getFullYear() + 1].map(y => <option key={y} value={y}>{y}</option>)}
           </select>
-          <button onClick={() => setTick(t => t + 1)} className="p-2 rounded-xl border border-gray-200 dark:border-card-border bg-white dark:bg-surface hover:bg-gray-50 dark:hover:bg-accent transition-colors">
+          <button onClick={() => setTick(t => t + 1)} className="p-2 rounded-lg border border-gray-200 dark:border-card-border bg-white dark:bg-surface hover:bg-gray-50 dark:hover:bg-accent transition-colors">
             <RefreshCw className="h-4 w-4 text-gray-500 dark:text-muted" />
           </button>
-          <button onClick={handleExport} className="flex items-center gap-1.5 px-3 py-2 rounded-xl border border-gray-200 dark:border-card-border bg-white dark:bg-surface text-sm font-semibold text-gray-700 dark:text-foreground hover:bg-gray-50 dark:hover:bg-accent transition-colors">
+          <button onClick={handleExport} className="flex items-center gap-1.5 px-3 py-2 rounded-lg border border-gray-200 dark:border-card-border bg-white dark:bg-surface text-sm font-semibold text-gray-700 dark:text-foreground hover:bg-gray-50 dark:hover:bg-accent transition-colors">
             <Download className="h-4 w-4" /> Exportar
           </button>
-          <button onClick={() => setShowForm(v => !v)} className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-primary text-white text-sm font-semibold hover:bg-primary/90 transition-colors">
+          <button onClick={() => setShowForm(v => !v)} className="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-primary text-white text-sm font-semibold hover:bg-primary/90 transition-colors">
             + Movimiento
           </button>
         </div>
@@ -227,7 +227,7 @@ export default function CashFlowTab() {
 
       {/* Quick form */}
       {showForm && (
-        <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl p-3 sm:p-5 space-y-4">
+        <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl p-3 sm:p-5 space-y-4">
           <h3 className="font-bold text-gray-900 dark:text-foreground text-sm">Registrar movimiento manual</h3>
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
             <div>
@@ -251,8 +251,8 @@ export default function CashFlowTab() {
             </div>
           </div>
           <div className="flex flex-wrap gap-2 justify-end">
-            <button onClick={() => setShowForm(false)} className="px-2 sm:px-4 py-1.5 sm:py-2 text-sm rounded-xl border border-gray-200 dark:border-card-border text-gray-600 dark:text-muted hover:bg-gray-50 dark:hover:bg-surface transition-colors">Cancelar</button>
-            <button onClick={handleAddEntry} disabled={saving} className="px-2 sm:px-4 py-1.5 sm:py-2 text-sm rounded-xl bg-primary text-white font-semibold hover:bg-primary/90 disabled:opacity-60 transition-colors">
+            <button onClick={() => setShowForm(false)} className="px-2 sm:px-4 py-1.5 sm:py-2 text-sm rounded-lg border border-gray-200 dark:border-card-border text-gray-600 dark:text-muted hover:bg-gray-50 dark:hover:bg-surface transition-colors">Cancelar</button>
+            <button onClick={handleAddEntry} disabled={saving} className="px-2 sm:px-4 py-1.5 sm:py-2 text-sm rounded-lg bg-primary text-white font-semibold hover:bg-primary/90 disabled:opacity-60 transition-colors">
               {saving ? "Guardando..." : "Registrar"}
             </button>
           </div>
@@ -273,7 +273,7 @@ export default function CashFlowTab() {
               { label: "Flujo neto", value: netFlow, icon: netFlow >= 0 ? ArrowUpRight : ArrowDownRight, color: netFlow >= 0 ? "text-emerald-600" : "text-red-500", bg: netFlow >= 0 ? "bg-emerald-50 dark:bg-emerald-950/30" : "bg-red-50 dark:bg-red-950/30" },
               { label: "Saldo proyectado", value: closingBalance, icon: closingBalance > 1000 ? CheckCircle : AlertTriangle, color: closingBalance > 1000 ? "text-emerald-600" : "text-amber-600", bg: closingBalance > 1000 ? "bg-emerald-50 dark:bg-emerald-950/30" : "bg-amber-50 dark:bg-amber-950/30" },
             ].map(({ label, value, icon: Icon, color, bg }) => (
-              <div key={label} className={cn("rounded-2xl p-4", bg)}>
+              <div key={label} className={cn("rounded-xl p-4", bg)}>
                 <Icon className={cn("h-5 w-5 mb-2", color)} />
                 <p className="text-xs font-semibold text-gray-500 dark:text-muted mb-1">{label}</p>
                 <p className={cn("text-xl font-extrabold", color)}>{fmt(value)}</p>
@@ -298,22 +298,22 @@ export default function CashFlowTab() {
           {/* View toggle */}
           <div className="flex flex-wrap items-center gap-2">
             {(["summary", "detail"] as const).map(v => (
-              <button key={v} onClick={() => setView(v)} className={cn("px-2 sm:px-4 py-1.5 sm:py-2 text-sm font-semibold rounded-xl transition-colors", view === v ? "bg-primary text-white" : "bg-white dark:bg-card border border-gray-200 dark:border-card-border text-gray-600 dark:text-muted hover:bg-gray-50 dark:hover:bg-accent")}>
+              <button key={v} onClick={() => setView(v)} className={cn("px-2 sm:px-4 py-1.5 sm:py-2 text-sm font-semibold rounded-lg transition-colors", view === v ? "bg-primary text-white" : "bg-white dark:bg-card border border-gray-200 dark:border-card-border text-gray-600 dark:text-muted hover:bg-gray-50 dark:hover:bg-accent")}>
                 {v === "summary" ? "Vista diaria" : "Movimientos"}
               </button>
             ))}
           </div>
 
           {view === "summary" ? (
-            <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl overflow-y-hidden overflow-x-auto">
+            <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl overflow-y-hidden overflow-x-auto">
               <table className="w-full min-w-[600px] text-sm">
                 <thead className="bg-gray-50 dark:bg-surface border-b border-gray-100 dark:border-card-border">
                   <tr>
-                    <th className="text-left px-3 sm:px-6 py-3 font-bold text-gray-500 dark:text-muted text-xs uppercase tracking-wide">Fecha</th>
-                    <th className="text-right px-2 sm:px-4 py-2 sm:py-3 font-bold text-gray-500 dark:text-muted text-xs uppercase tracking-wide">Ingresos</th>
-                    <th className="text-right px-2 sm:px-4 py-2 sm:py-3 font-bold text-gray-500 dark:text-muted text-xs uppercase tracking-wide">Egresos</th>
-                    <th className="text-right px-2 sm:px-4 py-2 sm:py-3 font-bold text-gray-500 dark:text-muted text-xs uppercase tracking-wide">Neto</th>
-                    <th className="text-right px-3 sm:px-6 py-3 font-bold text-gray-500 dark:text-muted text-xs uppercase tracking-wide">Saldo</th>
+                    <th className="text-left px-3 sm:px-6 py-3 font-bold text-gray-500 dark:text-muted text-xs">Fecha</th>
+                    <th className="text-right px-2 sm:px-4 py-2 sm:py-3 font-bold text-gray-500 dark:text-muted text-xs">Ingresos</th>
+                    <th className="text-right px-2 sm:px-4 py-2 sm:py-3 font-bold text-gray-500 dark:text-muted text-xs">Egresos</th>
+                    <th className="text-right px-2 sm:px-4 py-2 sm:py-3 font-bold text-gray-500 dark:text-muted text-xs">Neto</th>
+                    <th className="text-right px-3 sm:px-6 py-3 font-bold text-gray-500 dark:text-muted text-xs">Saldo</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-100 dark:divide-card-border">
@@ -338,14 +338,14 @@ export default function CashFlowTab() {
               )}
             </div>
           ) : (
-            <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl overflow-y-hidden overflow-x-auto">
+            <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl overflow-y-hidden overflow-x-auto">
               <table className="w-full min-w-[600px] text-sm">
                 <thead className="bg-gray-50 dark:bg-surface border-b border-gray-100 dark:border-card-border">
                   <tr>
-                    <th className="text-left px-3 sm:px-6 py-3 font-bold text-gray-500 dark:text-muted text-xs uppercase tracking-wide">Fecha</th>
-                    <th className="text-left px-2 sm:px-4 py-2 sm:py-3 font-bold text-gray-500 dark:text-muted text-xs uppercase tracking-wide">Descripción</th>
-                    <th className="text-left px-2 sm:px-4 py-2 sm:py-3 font-bold text-gray-500 dark:text-muted text-xs uppercase tracking-wide">Categoría</th>
-                    <th className="text-right px-3 sm:px-6 py-3 font-bold text-gray-500 dark:text-muted text-xs uppercase tracking-wide">Monto</th>
+                    <th className="text-left px-3 sm:px-6 py-3 font-bold text-gray-500 dark:text-muted text-xs">Fecha</th>
+                    <th className="text-left px-2 sm:px-4 py-2 sm:py-3 font-bold text-gray-500 dark:text-muted text-xs">Descripción</th>
+                    <th className="text-left px-2 sm:px-4 py-2 sm:py-3 font-bold text-gray-500 dark:text-muted text-xs">Categoría</th>
+                    <th className="text-right px-3 sm:px-6 py-3 font-bold text-gray-500 dark:text-muted text-xs">Monto</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-100 dark:divide-card-border">

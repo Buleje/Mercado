@@ -141,7 +141,7 @@ export default function ImageUpload({
           onDrop={handleDrop}
           onClick={() => inputRef.current?.click()}
           className={cn(
-            "rounded-xl border-2 border-dashed cursor-pointer transition-all flex flex-col items-center justify-center gap-2 p-6",
+            "rounded-lg border-2 border-dashed cursor-pointer transition-all flex flex-col items-center justify-center gap-2 p-6",
             ASPECT_MAP[aspectRatio],
             dragOver
               ? "border-primary bg-primary/5 dark:bg-primary/10"

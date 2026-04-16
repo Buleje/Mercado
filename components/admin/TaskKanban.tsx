@@ -136,7 +136,7 @@ export default function TaskKanban() {
 
   /* ── Render ── */
   return (
-    <div className="space-y-4">
+    <div className="space-y-6">
       {/* Header */}
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
         <div className="flex items-center gap-2">
@@ -262,7 +262,7 @@ export default function TaskKanban() {
                   return (
                     <div
                       key={task.id}
-                      className="rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 p-3 space-y-2 shadow-sm"
+                      className="rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 p-3 space-y-2 "
                     >
                       {isEditing ? (
                         <div className="space-y-2">

@@ -33,7 +33,7 @@ function statusColor(status: string): string {
 export function VendorPendingOrders({ orders }: Props) {
   if (orders.length === 0) {
     return (
-      <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl p-6 shadow-sm">
+      <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl p-6 ">
         <h3 className="font-bold text-gray-900 dark:text-foreground mb-4 flex items-center gap-2">
           <Package className="h-5 w-5 text-[#f97316]" />
           Pedidos sin atender
@@ -49,7 +49,7 @@ export function VendorPendingOrders({ orders }: Props) {
   }
 
   return (
-    <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl p-6 shadow-sm">
+    <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl p-6 ">
       <div className="flex items-center justify-between mb-4">
         <h3 className="font-bold text-gray-900 dark:text-foreground flex items-center gap-2">
           <Package className="h-5 w-5 text-[#f97316]" />

@@ -152,7 +152,7 @@ function CategoryTreemapView() {
   };
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-6">
       <div className="flex items-center justify-between flex-wrap gap-2">
         <div>
           <h3 className="text-lg font-extrabold text-gray-900">Vista General del Inventario</h3>
@@ -163,7 +163,7 @@ function CategoryTreemapView() {
         {/* Mejora 9: SUNAT export button */}
         <button
           onClick={handleExportSunat}
-          className="flex items-center gap-1.5 px-3 py-2 rounded-xl border border-emerald-300 text-emerald-600 text-sm font-bold hover:bg-emerald-50 transition-colors"
+          className="flex items-center gap-1.5 px-3 py-2 rounded-lg border border-emerald-300 text-emerald-600 text-sm font-bold hover:bg-emerald-50 transition-colors"
         >
           Exportar para Contador
         </button>
@@ -172,7 +172,7 @@ function CategoryTreemapView() {
       {treemapData.length === 0 ? (
         <p className="text-center text-gray-400 py-8">No hay datos de inventario para mostrar</p>
       ) : (
-        <div className="bg-white border border-gray-200 rounded-2xl p-4">
+        <div className="bg-white border border-gray-200 rounded-xl p-4">
           <ResponsiveContainer width="100%" height={320}>
             <Treemap
               data={treemapData}
@@ -186,7 +186,7 @@ function CategoryTreemapView() {
                   const d = payload[0]?.payload as { name: string; size: number; count: number } | undefined;
                   if (!d) return null;
                   return (
-                    <div className="bg-white border border-gray-200 rounded-xl px-3 py-2 shadow-lg text-xs">
+                    <div className="bg-white border border-gray-200 rounded-xl px-3 py-2 text-xs">
                       <p className="font-bold text-gray-900 capitalize">{d.name}</p>
                       <p className="text-gray-500">Valor: {formatCurrency(d.size, { decimals: 0 })}</p>
                       <p className="text-gray-500">{d.count} productos</p>
@@ -373,7 +373,7 @@ function InventoryAnalyticsDashboard() {
       {/* ── 2. Distribucion por Categoria ── */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Pie Chart */}
-        <div className="bg-white border border-gray-200 rounded-2xl p-4">
+        <div className="bg-white border border-gray-200 rounded-xl p-4">
           <div className="flex items-center justify-between mb-3">
             <h4 className="text-sm font-bold text-gray-700">Valor por Categoria</h4>
             <div className="flex items-center gap-2">
@@ -412,7 +412,7 @@ function InventoryAnalyticsDashboard() {
                   const d = payload[0]?.payload as { name: string; value: number; count: number; units: number } | undefined;
                   if (!d) return null;
                   return (
-                    <div className="bg-white border border-gray-200 rounded-xl px-3 py-2 shadow-lg text-xs">
+                    <div className="bg-white border border-gray-200 rounded-xl px-3 py-2 text-xs">
                       <p className="font-bold text-gray-900 capitalize">{d.name}</p>
                       <p className="text-gray-500">Valor: {formatCurrency(d.value, { decimals: 0 })}</p>
                       <p className="text-gray-500">{d.count} productos | {d.units} unidades</p>
@@ -428,7 +428,7 @@ function InventoryAnalyticsDashboard() {
         </div>
 
         {/* Bar Chart */}
-        <div className="bg-white border border-gray-200 rounded-2xl p-4">
+        <div className="bg-white border border-gray-200 rounded-xl p-4">
           <div className="flex items-center justify-between mb-3">
             <h4 className="text-sm font-bold text-gray-700">Unidades por Categoria</h4>
             <FavStar id="unidades" favs={invFavs} />
@@ -450,7 +450,7 @@ function InventoryAnalyticsDashboard() {
                   const d = payload[0]?.payload as { name: string; units: number; count: number } | undefined;
                   if (!d) return null;
                   return (
-                    <div className="bg-white border border-gray-200 rounded-xl px-3 py-2 shadow-lg text-xs">
+                    <div className="bg-white border border-gray-200 rounded-xl px-3 py-2 text-xs">
                       <p className="font-bold capitalize">{d.name}</p>
                       <p className="text-gray-500">{d.units} unidades en {d.count} productos</p>
                     </div>
@@ -468,7 +468,7 @@ function InventoryAnalyticsDashboard() {
       </div>
 
       {/* ── 3. Top 10 Productos por Valor ── */}
-      <div className="bg-white border border-gray-200 rounded-2xl p-4">
+      <div className="bg-white border border-gray-200 rounded-xl p-4">
         <div className="flex items-center justify-between mb-3">
           <h4 className="text-sm font-bold text-gray-700">Top 10 Productos por Valor en Stock</h4>
           <FavStar id="top10" favs={invFavs} />
@@ -484,7 +484,7 @@ function InventoryAnalyticsDashboard() {
                 const d = payload[0]?.payload as { fullName: string; value: number; units: number; unitCost: number } | undefined;
                 if (!d) return null;
                 return (
-                  <div className="bg-white border border-gray-200 rounded-xl px-3 py-2 shadow-lg text-xs">
+                  <div className="bg-white border border-gray-200 rounded-xl px-3 py-2 text-xs">
                     <p className="font-bold text-gray-900">{d.fullName}</p>
                     <p className="text-primary font-bold">{formatCurrency(d.value, { decimals: 0 })}</p>
                     <p className="text-gray-500">{d.units} unid x S/ {d.unitCost.toFixed(2)}</p>
@@ -507,7 +507,7 @@ function InventoryAnalyticsDashboard() {
       </div>
 
       {/* ── 4. Analisis de Rotacion (Scatter) ── */}
-      <div className="bg-white border border-gray-200 rounded-2xl p-4">
+      <div className="bg-white border border-gray-200 rounded-xl p-4">
         <div className="flex items-center justify-between mb-1">
           <h4 className="text-sm font-bold text-gray-700">Analisis de Rotacion</h4>
           <FavStar id="rotacion" favs={invFavs} />
@@ -528,7 +528,7 @@ function InventoryAnalyticsDashboard() {
                   const d = payload[0]?.payload as { name: string; x: number; y: number; z: number } | undefined;
                   if (!d) return null;
                   return (
-                    <div className="bg-white border border-gray-200 rounded-xl px-3 py-2 shadow-lg text-xs">
+                    <div className="bg-white border border-gray-200 rounded-xl px-3 py-2 text-xs">
                       <p className="font-bold text-gray-900">{d.name}</p>
                       <p className="text-gray-500">{d.x} dias de stock</p>
                       <p className="text-gray-500">{d.y} ventas est./mes</p>
@@ -568,7 +568,7 @@ function InventoryAnalyticsDashboard() {
           .slice(0, 10);
 
         return rentables.length > 0 ? (
-          <div className="bg-white border border-gray-200 rounded-2xl p-4">
+          <div className="bg-white border border-gray-200 rounded-xl p-4">
             <h4 className="text-sm font-bold text-gray-700 mb-3">Productos mas rentables</h4>
             <ResponsiveContainer width="100%" height={300}>
               <BarChart data={rentables} layout="vertical" margin={{ left: 10, right: 30 }}>
@@ -587,7 +587,7 @@ function InventoryAnalyticsDashboard() {
                     const d = payload[0]?.payload as { fullName: string; margen: number; ventasEst: number; ganancia: number } | undefined;
                     if (!d) return null;
                     return (
-                      <div className="bg-white border border-gray-200 rounded-xl px-3 py-2 shadow-lg text-xs">
+                      <div className="bg-white border border-gray-200 rounded-xl px-3 py-2 text-xs">
                         <p className="font-bold text-gray-900">{d.fullName}</p>
                         <p className="text-primary font-bold">Margen: {d.margen}% x {d.ventasEst} unid/mes = {formatCurrency(d.ganancia, { decimals: 0 })} ganancia</p>
                       </div>
@@ -602,7 +602,7 @@ function InventoryAnalyticsDashboard() {
       })()}
 
       {/* ── 6. Prediccion de Agotamiento ── */}
-      <div className="bg-white border border-gray-200 rounded-2xl p-4">
+      <div className="bg-white border border-gray-200 rounded-xl p-4">
         <div className="flex items-center justify-between mb-3">
           <h4 className="text-sm font-bold text-gray-700">Prediccion de Agotamiento</h4>
           <FavStar id="agotamiento" favs={invFavs} />
@@ -649,7 +649,7 @@ function InventoryAnalyticsDashboard() {
                   const d = payload[0]?.payload as { name: string; value: number; count: number; units: number } | undefined;
                   if (!d) return null;
                   return (
-                    <div className="bg-white border border-gray-200 rounded-xl px-3 py-2 shadow-lg text-xs">
+                    <div className="bg-white border border-gray-200 rounded-xl px-3 py-2 text-xs">
                       <p className="font-bold capitalize">{d.name}</p>
                       <p className="text-gray-500">Valor: {formatCurrency(d.value, { decimals: 0 })}</p>
                       <p className="text-gray-500">{d.count} productos | {d.units} unidades</p>
@@ -770,7 +770,7 @@ export default function InventarioAlmacenesModule() {
         {/* Mejora 7: Price labels button */}
         <button
           onClick={() => { setShowPriceLabels(true); void loadLabelProducts(); }}
-          className="flex items-center gap-1.5 px-3 py-2 rounded-xl border border-gray-200 bg-white text-sm font-semibold text-gray-700 hover:bg-gray-50 transition-colors"
+          className="flex items-center gap-1.5 px-3 py-2 rounded-lg border border-gray-200 bg-white text-sm font-semibold text-gray-700 hover:bg-gray-50 transition-colors"
         >
           Imprimir etiquetas
         </button>
@@ -787,7 +787,7 @@ export default function InventarioAlmacenesModule() {
 
       {/* Tab 1: Existencias + acciones rápidas */}
       {sub === "stock" && (
-        <div key={refreshKey} className="space-y-4">
+        <div key={refreshKey} className="space-y-6">
           {/* Acciones rápidas: Conteo Físico + Declaración */}
           <div className="flex flex-wrap gap-2">
             <button
@@ -818,7 +818,7 @@ export default function InventarioAlmacenesModule() {
       {/* ── Modal: Conteo Físico ── */}
       {showConteoModal && (
         <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/50" onClick={(e) => e.target === e.currentTarget && setShowConteoModal(false)}>
-          <div className="bg-white dark:bg-card w-full sm:max-w-4xl sm:rounded-2xl rounded-t-2xl shadow-2xl overflow-hidden max-h-[90dvh] flex flex-col">
+          <div className="bg-white dark:bg-card w-full sm:max-w-4xl sm:rounded-xl rounded-t-2xl overflow-hidden max-h-[90dvh] flex flex-col">
             <div className="flex items-center justify-between px-5 py-4 border-b border-gray-200 dark:border-card-border sticky top-0 bg-white dark:bg-card z-10">
               <h3 className="font-extrabold text-gray-900 dark:text-foreground">Conteo Físico</h3>
               <div className="flex items-center gap-2">
@@ -844,7 +844,7 @@ export default function InventarioAlmacenesModule() {
       {/* ── Modal: Declaración de Inventario ── */}
       {showDeclaracionModal && (
         <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/50" onClick={(e) => e.target === e.currentTarget && setShowDeclaracionModal(false)}>
-          <div className="bg-white dark:bg-card w-full sm:max-w-5xl sm:rounded-2xl rounded-t-2xl shadow-2xl overflow-hidden max-h-[90dvh] flex flex-col">
+          <div className="bg-white dark:bg-card w-full sm:max-w-5xl sm:rounded-xl rounded-t-2xl overflow-hidden max-h-[90dvh] flex flex-col">
             <div className="flex items-center justify-between px-5 py-4 border-b border-gray-200 dark:border-card-border sticky top-0 bg-white dark:bg-card z-10">
               <h3 className="font-extrabold text-gray-900 dark:text-foreground">Declaración de Inventario</h3>
               <button onClick={() => setShowDeclaracionModal(false)} className="p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-surface transition-colors">
@@ -861,7 +861,7 @@ export default function InventarioAlmacenesModule() {
       {/* ── Demand Forecast Modal ── */}
       {forecastProductId !== null && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-          <div className="bg-white rounded-2xl shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto p-6">
+          <div className="bg-white rounded-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto p-6">
             <DemandForecast
               productId={forecastProductId}
               onClose={() => setForecastProductId(null)}
@@ -884,7 +884,7 @@ export default function InventarioAlmacenesModule() {
       {/* ── Mejora 7: Price Labels Modal ── */}
       {showPriceLabels && (
         <div className="fixed inset-0 z-50 bg-black/40 flex items-center justify-center p-4" onClick={() => setShowPriceLabels(false)}>
-          <div className="bg-white rounded-2xl shadow-xl max-w-lg w-full max-h-[80vh] flex flex-col" onClick={e => e.stopPropagation()}>
+          <div className="bg-white rounded-xl max-w-lg w-full max-h-[80vh] flex flex-col" onClick={e => e.stopPropagation()}>
             <div className="px-5 py-4 border-b border-gray-100 flex items-center justify-between">
               <h3 className="font-bold text-gray-900 text-sm">Imprimir Etiquetas de Precio</h3>
               <button onClick={() => setShowPriceLabels(false)} className="p-1 rounded-lg hover:bg-gray-100 transition-colors">
@@ -929,7 +929,7 @@ export default function InventarioAlmacenesModule() {
               <button
                 onClick={handlePrintLabels}
                 disabled={selectedLabelIds.size === 0}
-                className="w-full py-2.5 rounded-xl text-white text-sm font-bold transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                className="w-full py-2.5 rounded-lg text-white text-sm font-bold transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                 style={{ backgroundColor: "var(--color-primary)" }}
               >
                 Generar etiquetas ({selectedLabelIds.size})

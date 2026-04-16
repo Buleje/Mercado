@@ -28,11 +28,11 @@ function fmtDate(iso: string) {
 function HealthSkeleton() {
   return (
     <div className="space-y-4 animate-pulse">
-      <div className="h-20 bg-gray-100 dark:bg-surface rounded-2xl" />
+      <div className="h-20 bg-gray-100 dark:bg-surface rounded-xl" />
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
         {[1, 2, 3].map(i => <div key={i} className="h-32 bg-gray-100 dark:bg-surface rounded-xl" />)}
       </div>
-      <div className="h-28 bg-gray-100 dark:bg-surface rounded-2xl" />
+      <div className="h-28 bg-gray-100 dark:bg-surface rounded-xl" />
     </div>
   );
 }
@@ -67,7 +67,7 @@ export default function SystemHealthTab() {
   if (loading) return <HealthSkeleton />;
 
   if (error) return (
-    <div className="rounded-2xl bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-900/40 p-3 sm:p-6 text-center">
+    <div className="rounded-xl bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-900/40 p-3 sm:p-6 text-center">
       <XCircle className="h-8 w-8 text-red-500 mx-auto mb-2" />
       <p className="font-bold text-red-700 dark:text-red-400">Error al cargar health check</p>
       <p className="text-xs text-red-500 mt-1">{error}</p>
@@ -113,7 +113,7 @@ export default function SystemHealthTab() {
       </div>
 
       {/* Overall status banner */}
-      <div className={cn("rounded-2xl p-3 sm:p-5 flex items-center gap-2 sm:gap-4", STATUS_CONFIG[overallStatus].bg)}>
+      <div className={cn("rounded-xl p-3 sm:p-5 flex items-center gap-2 sm:gap-4", STATUS_CONFIG[overallStatus].bg)}>
         <OverallIcon className={cn("h-10 w-10 shrink-0", STATUS_CONFIG[overallStatus].color)} />
         <div>
           <h3 className={cn("text-lg font-extrabold", STATUS_CONFIG[overallStatus].color)}>
@@ -176,7 +176,7 @@ export default function SystemHealthTab() {
 
       {/* Metrics */}
       {metrics.length > 0 && (
-        <div className="bg-white dark:bg-card rounded-2xl border border-gray-200 dark:border-card-border p-3 sm:p-5">
+        <div className="bg-white dark:bg-card rounded-xl border border-gray-200 dark:border-card-border p-3 sm:p-5">
           <h3 className="font-bold text-sm text-gray-900 dark:text-foreground mb-4 flex flex-wrap items-center gap-2">
             <Cpu className="h-4 w-4 text-primary" /> Métricas clave
           </h3>
@@ -204,7 +204,7 @@ export default function SystemHealthTab() {
       )}
 
       {/* Incidents */}
-      <div className="bg-white dark:bg-card rounded-2xl border border-gray-200 dark:border-card-border p-3 sm:p-5">
+      <div className="bg-white dark:bg-card rounded-xl border border-gray-200 dark:border-card-border p-3 sm:p-5">
         <h3 className="font-bold text-sm text-gray-900 dark:text-foreground mb-3 flex flex-wrap items-center gap-2">
           <AlertTriangle className="h-4 w-4 text-amber-500" /> Incidentes
         </h3>

@@ -64,7 +64,7 @@ const SECTION_META: { id: SectionId; icon: React.ReactNode; title: string; desc:
 
 function FieldLabel({ icon, children }: { icon?: React.ReactNode; children: React.ReactNode }) {
   return (
-    <label className="flex items-center gap-1.5 text-[10px] font-bold text-gray-500 dark:text-muted uppercase tracking-wider mb-1.5">
+    <label className="flex items-center gap-1.5 text-[10px] font-bold text-gray-500 dark:text-muted mb-1.5">
       {icon}{children}
     </label>
   );
@@ -101,7 +101,7 @@ function NumberInput({ value, onChange, min, max, step, suffix }: {
         value={value}
         onChange={e => onChange(Number(e.target.value))}
         min={min} max={max} step={step}
-        className="flex-1 px-3 py-2.5 rounded-xl border border-gray-200 dark:border-card-border bg-white dark:bg-surface text-gray-900 dark:text-foreground text-sm outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-colors font-mono"
+        className="flex-1 px-3 py-2.5 rounded-lg border border-gray-200 dark:border-card-border bg-white dark:bg-surface text-gray-900 dark:text-foreground text-sm outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-colors font-mono"
       />
       {suffix && <span className="text-xs text-gray-500 dark:text-muted font-medium shrink-0">{suffix}</span>}
     </div>
@@ -115,7 +115,7 @@ function SelectInput({ value, onChange, options }: {
     <select
       value={value}
       onChange={e => onChange(e.target.value)}
-      className="w-full px-3 py-2.5 rounded-xl border border-gray-200 dark:border-card-border bg-white dark:bg-surface text-gray-900 dark:text-foreground text-sm outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary cursor-pointer transition-colors"
+      className="w-full px-3 py-2.5 rounded-lg border border-gray-200 dark:border-card-border bg-white dark:bg-surface text-gray-900 dark:text-foreground text-sm outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary cursor-pointer transition-colors"
     >
       {options.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
     </select>
@@ -147,7 +147,7 @@ function Toggle({ enabled, onChange, label, desc, danger }: {
 
 function SectionCard({ title, desc, children }: { title: string; desc?: string; children: React.ReactNode }) {
   return (
-    <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl overflow-hidden">
+    <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl overflow-hidden">
       <div className="px-5 py-4 border-b border-gray-100 dark:border-card-border">
         <h4 className="font-bold text-sm text-gray-900 dark:text-foreground">{title}</h4>
         {desc && <p className="text-xs text-gray-500 dark:text-muted mt-0.5">{desc}</p>}
@@ -211,7 +211,7 @@ function OverviewCard({ section, completionPct, onClick }: {
       whileHover={{ scale: 1.02, y: -2 }}
       whileTap={{ scale: 0.98 }}
       onClick={onClick}
-      className="relative flex flex-col items-start gap-3 p-4 rounded-2xl border-2 border-gray-100 dark:border-card-border text-left transition-all bg-white dark:bg-card hover:shadow-lg hover:border-gray-200 dark:hover:border-gray-600"
+      className="relative flex flex-col items-start gap-3 p-4 rounded-xl border-2 border-gray-100 dark:border-card-border text-left transition-all bg-white dark:bg-card hover:shadow-lg hover:border-gray-200 dark:hover:border-gray-600"
     >
       <div className={cn("w-10 h-10 rounded-xl flex items-center justify-center", section.color)}>
         {section.icon}
@@ -594,7 +594,7 @@ export default function SettingsModule({ storeMode, onModeChange }: { storeMode:
   if (loading) return (
     <div className="space-y-4 animate-pulse">
       {[1, 2, 3, 4].map(i => (
-        <div key={i} className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl p-6">
+        <div key={i} className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl p-6">
           <div className="flex items-center gap-4"><div className="h-12 w-12 bg-gray-200 dark:bg-surface rounded-xl" /><div className="flex-1 space-y-2"><div className="h-5 bg-gray-200 dark:bg-surface rounded w-1/3" /><div className="h-3 bg-gray-200 dark:bg-surface rounded w-2/3" /></div></div>
         </div>
       ))}
@@ -606,12 +606,12 @@ export default function SettingsModule({ storeMode, onModeChange }: { storeMode:
   // ══════════════════════════════════════════════════════════════════════════════
 
   const renderModules = () => (
-    <div className="space-y-4">
+    <div className="space-y-6">
       <SectionCard title="Módulos activos" desc="Controla qué módulos ves en tu panel">
         <p className="text-sm text-gray-600 dark:text-muted">Activa, oculta o limpia datos de ejemplo por módulo. Los cambios se aplican inmediatamente.</p>
         <button
           onClick={() => window.dispatchEvent(new CustomEvent("open-module-manager"))}
-          className="w-full flex items-center justify-center gap-2 px-5 py-3 rounded-xl bg-primary text-white font-bold text-sm hover:bg-primary/90 transition-colors mt-2"
+          className="w-full flex items-center justify-center gap-2 px-5 py-3 rounded-lg bg-primary text-white font-bold text-sm hover:bg-primary/90 transition-colors mt-2"
         >
           <Layers className="h-4 w-4" /> Abrir gestión de módulos
         </button>
@@ -656,7 +656,7 @@ export default function SettingsModule({ storeMode, onModeChange }: { storeMode:
     };
 
     return (
-      <div className="space-y-4">
+      <div className="space-y-6">
         <SectionCard title="Mis accesos directos" desc="Aparecen como favoritos en tu barra lateral (máx. 6)">
           {customShortcuts.length === 0 && (
             <p className="text-sm text-gray-400 dark:text-muted text-center py-4">No tienes accesos directos aún. Agrega uno para navegar más rápido.</p>
@@ -685,7 +685,7 @@ export default function SettingsModule({ storeMode, onModeChange }: { storeMode:
             ))}
           </div>
           {customShortcuts.length < 6 && (
-            <button onClick={addShortcut} className="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl border-2 border-dashed border-gray-200 dark:border-card-border text-sm font-semibold text-gray-500 hover:text-primary hover:border-primary transition-colors mt-2">
+            <button onClick={addShortcut} className="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg border-2 border-dashed border-gray-200 dark:border-card-border text-sm font-semibold text-gray-500 hover:text-primary hover:border-primary transition-colors mt-2">
               <Plus className="h-4 w-4" /> Agregar acceso directo
             </button>
           )}
@@ -698,7 +698,7 @@ export default function SettingsModule({ storeMode, onModeChange }: { storeMode:
   };
 
   const renderBusiness = () => (
-    <div className="space-y-4">
+    <div className="space-y-6">
       {/* Store mode selector */}
       <SectionCard title="Modo de tienda" desc="Cómo reciben pedidos tus clientes">
         <div className="grid grid-cols-2 gap-3">
@@ -739,7 +739,7 @@ export default function SettingsModule({ storeMode, onModeChange }: { storeMode:
             <FieldLabel icon={<MapPin className="h-3.5 w-3.5" />}>Dirección</FieldLabel>
             <div className="flex gap-2">
               <div className="flex-1"><TextInput value={businessAddress} onChange={setBusinessAddress} /></div>
-              <button onClick={() => setShowMapPicker(true)} className="px-3 py-2 rounded-xl text-xs font-bold text-emerald-600 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 transition-colors shrink-0">
+              <button onClick={() => setShowMapPicker(true)} className="px-3 py-2 rounded-lg text-xs font-bold text-emerald-600 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 transition-colors shrink-0">
                 <MapPin className="h-4 w-4" />
               </button>
               <button
@@ -756,7 +756,7 @@ export default function SettingsModule({ storeMode, onModeChange }: { storeMode:
                     { enableHighAccuracy: true }
                   );
                 }}
-                className="px-3 py-2 rounded-xl text-xs font-bold text-emerald-600 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 transition-colors shrink-0 flex items-center gap-1.5"
+                className="px-3 py-2 rounded-lg text-xs font-bold text-emerald-600 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 transition-colors shrink-0 flex items-center gap-1.5"
               >
                 <MapPin className="h-4 w-4" /> Mi ubicación
               </button>
@@ -767,14 +767,14 @@ export default function SettingsModule({ storeMode, onModeChange }: { storeMode:
           <div><FieldLabel icon={<Clock className="h-3.5 w-3.5" />}>Horario</FieldLabel><TextInput value={hours} onChange={setHours} placeholder="Lun - Sáb: 7am - 9pm" /></div>
         </div>
         <div><FieldLabel icon={<AlignLeft className="h-3.5 w-3.5" />}>Descripción</FieldLabel>
-          <textarea value={description} onChange={e => setDescription(e.target.value)} rows={2} className="w-full px-3 py-2.5 rounded-xl border border-gray-200 dark:border-card-border bg-white dark:bg-surface text-gray-900 dark:text-foreground text-sm outline-none focus:ring-2 focus:ring-primary/20 resize-none" />
+          <textarea value={description} onChange={e => setDescription(e.target.value)} rows={2} className="w-full px-3 py-2.5 rounded-lg border border-gray-200 dark:border-card-border bg-white dark:bg-surface text-gray-900 dark:text-foreground text-sm outline-none focus:ring-2 focus:ring-primary/20 resize-none" />
         </div>
       </SectionCard>
 
       {/* Logo */}
       <SectionCard title="Logo del negocio">
         <div className="flex flex-col gap-2">
-          <button type="button" onClick={() => logoImgRef.current?.click()} className="inline-flex items-center justify-center gap-2 w-full py-3 rounded-xl border-2 border-dashed border-gray-300 hover:border-primary text-sm font-semibold text-gray-500 hover:text-primary bg-gray-50 dark:bg-surface transition-colors">
+          <button type="button" onClick={() => logoImgRef.current?.click()} className="inline-flex items-center justify-center gap-2 w-full py-3 rounded-lg border-2 border-dashed border-gray-300 hover:border-primary text-sm font-semibold text-gray-500 hover:text-primary bg-gray-50 dark:bg-surface transition-colors">
             <Upload className="h-4 w-4" /> Subir imagen
           </button>
           <input ref={logoImgRef} type="file" accept="image/*" className="hidden" onChange={handleFileUpload(setLogoUrl)} />
@@ -826,7 +826,7 @@ export default function SettingsModule({ storeMode, onModeChange }: { storeMode:
   );
 
   const renderSecurity = () => (
-    <div className="space-y-4">
+    <div className="space-y-6">
       {/* Current credentials display */}
       <SectionCard title="Credenciales de acceso" desc="Usuario y contraseña para iniciar sesión en el panel">
         <div className="space-y-3">
@@ -834,7 +834,7 @@ export default function SettingsModule({ storeMode, onModeChange }: { storeMode:
             <div className="p-3 rounded-xl bg-gray-50 dark:bg-surface border border-gray-100 dark:border-card-border">
               <div className="flex items-center gap-2 mb-1.5">
                 <User className="h-3.5 w-3.5 text-gray-400" />
-                <span className="text-[10px] font-bold uppercase tracking-wider text-gray-400">Usuario</span>
+                <span className="text-[10px] font-bold text-gray-400">Usuario</span>
               </div>
               <div className="flex items-center justify-between">
                 <span className="text-sm font-bold text-gray-900 dark:text-white font-mono">admin</span>
@@ -846,7 +846,7 @@ export default function SettingsModule({ storeMode, onModeChange }: { storeMode:
             <div className="p-3 rounded-xl bg-gray-50 dark:bg-surface border border-gray-100 dark:border-card-border">
               <div className="flex items-center gap-2 mb-1.5">
                 <Key className="h-3.5 w-3.5 text-gray-400" />
-                <span className="text-[10px] font-bold uppercase tracking-wider text-gray-400">Contraseña</span>
+                <span className="text-[10px] font-bold text-gray-400">Contraseña</span>
               </div>
               <div className="flex items-center justify-between">
                 <span className="text-sm font-bold text-gray-900 dark:text-white font-mono">{showCredPw ? storedAdminPw : "••••••••"}</span>
@@ -873,7 +873,7 @@ export default function SettingsModule({ storeMode, onModeChange }: { storeMode:
                 alert("Credenciales copiadas al portapapeles");
               }
             }}
-            className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl border border-primary/30 text-primary text-sm font-semibold hover:bg-primary/5 transition-colors"
+            className="w-full flex items-center justify-center gap-2 py-2.5 rounded-lg border border-primary/30 text-primary text-sm font-semibold hover:bg-primary/5 transition-colors"
           >
             <Send className="h-4 w-4" /> Compartir credenciales
           </button>
@@ -915,7 +915,7 @@ export default function SettingsModule({ storeMode, onModeChange }: { storeMode:
             </div>
           )}
           {pwChangeError && <p className="text-xs text-red-500 font-semibold">{pwChangeError}</p>}
-          <button type="submit" disabled={saving} className="px-5 py-2.5 rounded-xl bg-primary text-white text-sm font-bold hover:bg-primary/90 disabled:opacity-50 flex items-center gap-2">
+          <button type="submit" disabled={saving} className="px-5 py-2.5 rounded-lg bg-primary text-white text-sm font-bold hover:bg-primary/90 disabled:opacity-50 flex items-center gap-2">
             <Lock className="h-4 w-4" /> Cambiar contraseña
           </button>
         </form>
@@ -978,7 +978,7 @@ export default function SettingsModule({ storeMode, onModeChange }: { storeMode:
   );
 
   const renderSystem = () => (
-    <div className="space-y-4">
+    <div className="space-y-6">
       <SectionCard title="Formato y regional" desc="Cómo se muestran fechas, horas y números">
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div>
@@ -1014,7 +1014,7 @@ export default function SettingsModule({ storeMode, onModeChange }: { storeMode:
   );
 
   const renderSales = () => (
-    <div className="space-y-4">
+    <div className="space-y-6">
       <SectionCard title="Datos del emisor SUNAT" desc="Aparecen en facturas y boletas">
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div><FieldLabel icon={<Hash className="h-3.5 w-3.5" />}>RUC del emisor</FieldLabel><TextInput value={sunatRuc} onChange={setSunatRuc} placeholder="20123456789" mono /></div>
@@ -1073,7 +1073,7 @@ export default function SettingsModule({ storeMode, onModeChange }: { storeMode:
 
       <SectionCard title="Pie de comprobante">
         <FieldLabel>Texto legal / agradecimiento</FieldLabel>
-        <textarea value={invoiceFooterText} onChange={e => setInvoiceFooterText(e.target.value)} rows={2} placeholder="Gracias por su compra. Conserve este comprobante." className="w-full px-3 py-2.5 rounded-xl border border-gray-200 dark:border-card-border bg-white dark:bg-surface text-sm outline-none focus:ring-2 focus:ring-primary/20 resize-none" />
+        <textarea value={invoiceFooterText} onChange={e => setInvoiceFooterText(e.target.value)} rows={2} placeholder="Gracias por su compra. Conserve este comprobante." className="w-full px-3 py-2.5 rounded-lg border border-gray-200 dark:border-card-border bg-white dark:bg-surface text-sm outline-none focus:ring-2 focus:ring-primary/20 resize-none" />
       </SectionCard>
 
       <SaveButton saving={saving} saved={savedSection === "sales"} onClick={() => patch({
@@ -1084,7 +1084,7 @@ export default function SettingsModule({ storeMode, onModeChange }: { storeMode:
   );
 
   const renderInventory = () => (
-    <div className="space-y-4">
+    <div className="space-y-6">
       <SectionCard title="Configuración general" desc="Unidades, stock mínimo y alertas">
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div>
@@ -1153,7 +1153,7 @@ export default function SettingsModule({ storeMode, onModeChange }: { storeMode:
   );
 
   const renderCash = () => (
-    <div className="space-y-4">
+    <div className="space-y-6">
       <SectionCard title="Apertura / cierre de caja">
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div><FieldLabel icon={<DollarSign className="h-3.5 w-3.5" />}>Monto base de apertura</FieldLabel><NumberInput value={cashOpeningAmount} onChange={setCashOpeningAmount} min={0} suffix="soles" /></div>
@@ -1174,9 +1174,9 @@ export default function SettingsModule({ storeMode, onModeChange }: { storeMode:
               </div>
               <div>
                 <FieldLabel>QR de Yape</FieldLabel>
-                <button onClick={() => yapeImgRef.current?.click()} className="w-full py-3 rounded-xl border-2 border-dashed border-purple-300 hover:border-purple-500 text-sm font-semibold text-purple-600 bg-purple-50 transition-colors"><Upload className="h-4 w-4 inline mr-1.5" />Subir QR</button>
+                <button onClick={() => yapeImgRef.current?.click()} className="w-full py-3 rounded-lg border-2 border-dashed border-purple-300 hover:border-purple-500 text-sm font-semibold text-purple-600 bg-purple-50 transition-colors"><Upload className="h-4 w-4 inline mr-1.5" />Subir QR</button>
                 <input ref={yapeImgRef} type="file" accept="image/*" capture="environment" className="hidden" onChange={handleFileUpload(setYapeImage)} />
-                {yapeImage && <div className="mt-2 flex items-center gap-3 p-2 bg-purple-50 rounded-xl"><Image src={yapeImage} alt="QR" width={64} height={64} className="rounded-lg object-contain border" unoptimized /><button onClick={() => setYapeImage("")} className="text-xs text-red-400 hover:text-red-600">Quitar</button></div>}
+                {yapeImage && <div className="mt-2 flex items-center gap-3 p-2 bg-purple-50 rounded-lg"><Image src={yapeImage} alt="QR" width={64} height={64} className="rounded-lg object-contain border" unoptimized /><button onClick={() => setYapeImage("")} className="text-xs text-red-400 hover:text-red-600">Quitar</button></div>}
               </div>
             </div>
           )}
@@ -1188,9 +1188,9 @@ export default function SettingsModule({ storeMode, onModeChange }: { storeMode:
                 <div><FieldLabel>Número</FieldLabel><TextInput value={plinPhone} onChange={setPlinPhone} mono /></div>
               </div>
               <div>
-                <button onClick={() => plinImgRef.current?.click()} className="w-full py-3 rounded-xl border-2 border-dashed border-emerald-300 hover:border-emerald-500 text-sm font-semibold text-emerald-600 bg-emerald-50 transition-colors"><Upload className="h-4 w-4 inline mr-1.5" />Subir QR Plin</button>
+                <button onClick={() => plinImgRef.current?.click()} className="w-full py-3 rounded-lg border-2 border-dashed border-emerald-300 hover:border-emerald-500 text-sm font-semibold text-emerald-600 bg-emerald-50 transition-colors"><Upload className="h-4 w-4 inline mr-1.5" />Subir QR Plin</button>
                 <input ref={plinImgRef} type="file" accept="image/*" className="hidden" onChange={handleFileUpload(setPlinImage)} />
-                {plinImage && <div className="mt-2 flex items-center gap-3 p-2 bg-emerald-50 rounded-xl"><Image src={plinImage} alt="QR" width={64} height={64} className="rounded-lg object-contain border" unoptimized /><button onClick={() => setPlinImage("")} className="text-xs text-red-400">Quitar</button></div>}
+                {plinImage && <div className="mt-2 flex items-center gap-3 p-2 bg-emerald-50 rounded-lg"><Image src={plinImage} alt="QR" width={64} height={64} className="rounded-lg object-contain border" unoptimized /><button onClick={() => setPlinImage("")} className="text-xs text-red-400">Quitar</button></div>}
               </div>
             </div>
           )}
@@ -1224,7 +1224,7 @@ export default function SettingsModule({ storeMode, onModeChange }: { storeMode:
   );
 
   const renderDelivery = () => (
-    <div className="space-y-4">
+    <div className="space-y-6">
       <SectionCard title="Zonas de delivery" desc="Define zonas con tarifas y tiempos diferentes">
         <div className="space-y-2">
           {deliveryZones.map((zone, idx) => (
@@ -1285,7 +1285,7 @@ export default function SettingsModule({ storeMode, onModeChange }: { storeMode:
   );
 
   const renderNotifications = () => (
-    <div className="space-y-4">
+    <div className="space-y-6">
       <SectionCard title="Configuración SMTP (Email)" desc="Servidor para enviar correos automáticos">
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div><FieldLabel icon={<Mail className="h-3.5 w-3.5" />}>Servidor SMTP</FieldLabel><TextInput value={smtpHost} onChange={setSmtpHost} placeholder="smtp.gmail.com" /></div>
@@ -1328,7 +1328,7 @@ export default function SettingsModule({ storeMode, onModeChange }: { storeMode:
   );
 
   const renderIntegrations = () => (
-    <div className="space-y-4">
+    <div className="space-y-6">
       {/* Status dashboard */}
       <SectionCard title="Estado de integraciones" desc="Vista rápida de qué está conectado">
         <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
@@ -1393,7 +1393,7 @@ export default function SettingsModule({ storeMode, onModeChange }: { storeMode:
   );
 
   const renderAppearance = () => (
-    <div className="space-y-4">
+    <div className="space-y-6">
       <SectionCard title="Colores de marca" desc="Personaliza los colores de tu tienda">
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div>
@@ -1414,9 +1414,9 @@ export default function SettingsModule({ storeMode, onModeChange }: { storeMode:
         </div>
         {/* Live preview */}
         <div className="mt-4 p-4 rounded-xl border border-gray-200 dark:border-card-border" style={{ background: `linear-gradient(135deg, ${primaryColor}15, ${secondaryColor}15)` }}>
-          <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-2">Vista previa</p>
+          <p className="text-[10px] font-bold text-gray-400 mb-2">Vista previa</p>
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl flex items-center justify-center text-white font-bold text-sm" style={{ backgroundColor: primaryColor }}>Buleje</div>
+            <div className="w-10 h-10 rounded-lg flex items-center justify-center text-white font-bold text-sm" style={{ backgroundColor: primaryColor }}>Buleje</div>
             <div><p className="text-sm font-extrabold" style={{ color: primaryColor }}>{businessName}</p><p className="text-xs" style={{ color: secondaryColor }}>{slogan}</p></div>
           </div>
           <div className="mt-3 flex gap-2">
@@ -1470,7 +1470,7 @@ export default function SettingsModule({ storeMode, onModeChange }: { storeMode:
   );
 
   const renderAudit = () => (
-    <div className="space-y-4">
+    <div className="space-y-6">
       <SectionCard title="Retención de logs" desc="Cuánto tiempo se guardan los registros de actividad">
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div>
@@ -1504,7 +1504,7 @@ export default function SettingsModule({ storeMode, onModeChange }: { storeMode:
   );
 
   const renderBackup = () => (
-    <div className="space-y-4">
+    <div className="space-y-6">
       <SectionCard title="Respaldo de datos" desc="Protege tu información con backups regulares">
         {/* Last backup indicator */}
         {(() => {
@@ -1528,10 +1528,10 @@ export default function SettingsModule({ storeMode, onModeChange }: { storeMode:
             document.body.appendChild(link); link.click(); document.body.removeChild(link);
             if (typeof window !== "undefined") localStorage.setItem("buleje-last-backup", new Date().toISOString());
             setLastBackupAt(new Date().toISOString());
-          }} className="flex items-center justify-center gap-2 px-4 py-3 rounded-xl border-2 border-teal-200 bg-white hover:bg-teal-50 text-sm font-semibold text-teal-700">
+          }} className="flex items-center justify-center gap-2 px-4 py-3 rounded-lg border-2 border-teal-200 bg-white hover:bg-teal-50 text-sm font-semibold text-teal-700">
             <Download className="h-4 w-4" /> Generar respaldo
           </button>
-          <button onClick={() => setShowRestoreModal(true)} className="flex items-center justify-center gap-2 px-4 py-3 rounded-xl border-2 border-cyan-200 bg-white hover:bg-cyan-50 text-sm font-semibold text-cyan-700">
+          <button onClick={() => setShowRestoreModal(true)} className="flex items-center justify-center gap-2 px-4 py-3 rounded-lg border-2 border-cyan-200 bg-white hover:bg-cyan-50 text-sm font-semibold text-cyan-700">
             <Upload className="h-4 w-4" /> Restaurar desde respaldo
           </button>
         </div>
@@ -1546,7 +1546,7 @@ export default function SettingsModule({ storeMode, onModeChange }: { storeMode:
       {/* Restore modal */}
       {showRestoreModal && (
         <div className="fixed inset-0 z-50 bg-black/60 flex items-center justify-center p-4" onClick={() => !restoring && setShowRestoreModal(false)}>
-          <div className="bg-white dark:bg-card rounded-2xl shadow-2xl w-full max-w-lg" onClick={e => e.stopPropagation()}>
+          <div className="bg-white dark:bg-card rounded-xl w-full max-w-lg" onClick={e => e.stopPropagation()}>
             <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100 dark:border-card-border">
               <h3 className="font-extrabold text-gray-900 dark:text-foreground">Restaurar Base de Datos</h3>
               {!restoring && <button onClick={() => setShowRestoreModal(false)} className="p-1.5 rounded-lg text-gray-400 hover:bg-gray-100"><X className="h-5 w-5" /></button>}
@@ -1567,7 +1567,7 @@ export default function SettingsModule({ storeMode, onModeChange }: { storeMode:
                       setRestoreFile(file); setRestorePreview({ date: data.exportDate || "?", products: data.products?.length || 0, orders: data.orders?.length || 0, customers: data.customers?.length || 0, size: (file.size / 1024).toFixed(2) + " KB" });
                     } catch { setRestoreError("JSON inválido"); }
                   }} />
-                  <button onClick={() => fileInputRef.current?.click()} className="w-full py-8 rounded-xl border-2 border-dashed border-cyan-300 bg-cyan-50 text-cyan-600 hover:border-cyan-500 hover:bg-cyan-100 transition-colors">
+                  <button onClick={() => fileInputRef.current?.click()} className="w-full py-8 rounded-lg border-2 border-dashed border-cyan-300 bg-cyan-50 text-cyan-600 hover:border-cyan-500 hover:bg-cyan-100 transition-colors">
                     <Upload className="h-8 w-8 mx-auto mb-2" /><p className="text-sm font-semibold">Seleccionar archivo .json</p>
                   </button>
                   {restoreError && <p className="text-xs text-red-600 font-semibold bg-red-50 p-3 rounded-xl">{restoreError}</p>}
@@ -1590,13 +1590,13 @@ export default function SettingsModule({ storeMode, onModeChange }: { storeMode:
             </div>
             <div className="flex justify-end gap-3 px-6 py-4 border-t border-gray-100">
               {!restoreSuccess && (<>
-                <button onClick={() => { setShowRestoreModal(false); setRestoreFile(null); setRestorePreview(null); setRestoreError(null); }} disabled={restoring} className="px-4 py-2.5 rounded-xl text-sm font-semibold text-gray-600 hover:bg-gray-100">Cancelar</button>
+                <button onClick={() => { setShowRestoreModal(false); setRestoreFile(null); setRestorePreview(null); setRestoreError(null); }} disabled={restoring} className="px-4 py-2.5 rounded-lg text-sm font-semibold text-gray-600 hover:bg-gray-100">Cancelar</button>
                 {restoreFile && <button onClick={async () => {
                   if (!restoreFile) return; setRestoring(true); setRestoreError(null);
                   try { const text = await restoreFile.text(); const res = await fetch("/api/restore", { method: "POST", headers: { "Content-Type": "application/json" }, body: text });
                     if (!res.ok) throw new Error(await res.text()); setRestoreSuccess(true); setTimeout(() => window.location.reload(), 2000);
                   } catch (err: unknown) { setRestoreError(err instanceof Error ? err.message : "Error"); setRestoring(false); }
-                }} disabled={restoring} className="px-5 py-2.5 rounded-xl text-sm font-bold text-white bg-red-600 hover:bg-red-700 disabled:opacity-50 flex items-center gap-2">
+                }} disabled={restoring} className="px-5 py-2.5 rounded-lg text-sm font-bold text-white bg-red-600 hover:bg-red-700 disabled:opacity-50 flex items-center gap-2">
                   {restoring ? <><Loader2 className="h-4 w-4 animate-spin" /> Restaurando...</> : <><AlertTriangle className="h-4 w-4" /> Confirmar</>}
                 </button>}
               </>)}
@@ -1608,10 +1608,10 @@ export default function SettingsModule({ storeMode, onModeChange }: { storeMode:
   );
 
   const renderSubscription = () => (
-    <div className="space-y-4">
+    <div className="space-y-6">
       <SectionCard title="Plan actual">
         <div className="flex items-center gap-4 p-4 rounded-xl bg-linear-to-r from-primary/10 to-secondary/10 border border-primary/20">
-          <div className="w-14 h-14 rounded-2xl bg-primary flex items-center justify-center"><Crown className="h-7 w-7 text-white" /></div>
+          <div className="w-14 h-14 rounded-xl bg-primary flex items-center justify-center"><Crown className="h-7 w-7 text-white" /></div>
           <div className="flex-1">
             <p className="text-lg font-extrabold text-gray-900 dark:text-foreground capitalize">{planName === "free" ? "Plan Gratuito" : `Plan ${planName}`}</p>
             {planExpiresAt && <p className="text-xs text-gray-500">Vence: {new Date(planExpiresAt).toLocaleDateString("es-PE", { day: "2-digit", month: "short", year: "numeric" })}</p>}
@@ -1696,7 +1696,7 @@ export default function SettingsModule({ storeMode, onModeChange }: { storeMode:
             value={searchQuery}
             onChange={e => { setSearchQuery(e.target.value); if (e.target.value) setShowOverview(true); }}
             placeholder="Buscar configuración..."
-            className="w-full pl-9 pr-4 py-2.5 rounded-xl border border-gray-200 dark:border-card-border bg-white dark:bg-surface text-sm text-gray-900 dark:text-foreground placeholder:text-gray-400 outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-colors"
+            className="w-full pl-9 pr-4 py-2.5 rounded-lg border border-gray-200 dark:border-card-border bg-white dark:bg-surface text-sm text-gray-900 dark:text-foreground placeholder:text-gray-400 outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-colors"
           />
           {searchQuery && (
             <button onClick={() => setSearchQuery("")} className="absolute right-3 top-1/2 -translate-y-1/2 p-0.5 rounded text-gray-400 hover:text-gray-600">
@@ -1790,7 +1790,7 @@ export default function SettingsModule({ storeMode, onModeChange }: { storeMode:
                 {/* Back to overview */}
                 <button
                   onClick={() => setShowOverview(true)}
-                  className="w-full flex items-center gap-2 px-3 py-2 rounded-xl text-xs font-semibold text-primary hover:bg-primary/5 mb-2 transition-colors"
+                  className="w-full flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-semibold text-primary hover:bg-primary/5 mb-2 transition-colors"
                 >
                   <ChevronDown className="h-3.5 w-3.5 rotate-90" /> Ver todas las secciones
                 </button>
@@ -1804,7 +1804,7 @@ export default function SettingsModule({ storeMode, onModeChange }: { storeMode:
                       className={cn(
                         "w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-left transition-all group",
                         activeSection === s.id
-                          ? "bg-primary/10 text-primary font-bold shadow-sm"
+                          ? "bg-primary/10 text-primary font-bold "
                           : "text-gray-600 dark:text-muted hover:bg-gray-50 dark:hover:bg-accent"
                       )}
                     >
@@ -1841,7 +1841,7 @@ export default function SettingsModule({ storeMode, onModeChange }: { storeMode:
                     <p className="text-xs text-gray-500 dark:text-muted">{SECTION_META.find(s => s.id === activeSection)?.desc}</p>
                   </div>
                   {/* Mobile nav toggle */}
-                  <button onClick={() => setShowMobileNav(!showMobileNav)} className="sm:hidden p-2 rounded-xl bg-gray-100 dark:bg-accent">
+                  <button onClick={() => setShowMobileNav(!showMobileNav)} className="sm:hidden p-2 rounded-lg bg-gray-100 dark:bg-accent">
                     <Settings className="h-5 w-5 text-gray-600" />
                   </button>
                 </div>
@@ -1870,7 +1870,7 @@ export default function SettingsModule({ storeMode, onModeChange }: { storeMode:
           <m.div
             initial={{ opacity: 0, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}
-            className="bg-white dark:bg-card rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] flex flex-col"
+            className="bg-white dark:bg-card rounded-xl w-full max-w-2xl max-h-[90vh] flex flex-col"
             onClick={e => e.stopPropagation()}
           >
             <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100 dark:border-card-border">
@@ -1878,14 +1878,14 @@ export default function SettingsModule({ storeMode, onModeChange }: { storeMode:
               <button onClick={() => setShowMapPicker(false)} className="p-1.5 rounded-lg text-gray-400 hover:bg-gray-100"><X className="h-5 w-5" /></button>
             </div>
             <div className="p-4 flex flex-col gap-3">
-              <button onClick={() => { if (!navigator.geolocation) return; navigator.geolocation.getCurrentPosition(pos => { setPickerLat(pos.coords.latitude); setPickerLon(pos.coords.longitude); setBusinessLat(pos.coords.latitude); setBusinessLon(pos.coords.longitude); }); }} className="self-start inline-flex items-center gap-2 px-3 py-2 rounded-xl text-sm font-semibold text-emerald-700 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200">
+              <button onClick={() => { if (!navigator.geolocation) return; navigator.geolocation.getCurrentPosition(pos => { setPickerLat(pos.coords.latitude); setPickerLon(pos.coords.longitude); setBusinessLat(pos.coords.latitude); setBusinessLon(pos.coords.longitude); }); }} className="self-start inline-flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-semibold text-emerald-700 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200">
                 <MapPin className="h-4 w-4" /> Usar ubicación actual
               </button>
               <LeafletMap lat={pickerLat} lon={pickerLon} zoom={15} height={340} onPick={(lat: number, lon: number, address: string) => { setPickerLat(lat); setPickerLon(lon); setBusinessLat(lat); setBusinessLon(lon); setBusinessAddress(address); }} />
             </div>
             <div className="flex justify-end gap-3 px-5 py-4 border-t border-gray-100">
-              <button onClick={() => setShowMapPicker(false)} className="px-4 py-2.5 rounded-xl text-sm font-semibold text-gray-600 hover:bg-gray-100">Cancelar</button>
-              <button onClick={() => setShowMapPicker(false)} className="px-4 py-2.5 rounded-xl text-sm font-bold text-white bg-primary hover:bg-primary/90">Confirmar</button>
+              <button onClick={() => setShowMapPicker(false)} className="px-4 py-2.5 rounded-lg text-sm font-semibold text-gray-600 hover:bg-gray-100">Cancelar</button>
+              <button onClick={() => setShowMapPicker(false)} className="px-4 py-2.5 rounded-lg text-sm font-bold text-white bg-primary hover:bg-primary/90">Confirmar</button>
             </div>
           </m.div>
         </div>

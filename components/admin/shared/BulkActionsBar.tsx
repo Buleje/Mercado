@@ -39,7 +39,7 @@ export default function BulkActionsBar({
 
   return (
     <div className={cn(
-      "sticky top-0 z-20 flex items-center gap-3 px-4 py-2.5 rounded-xl border border-primary/20 bg-primary/5 backdrop-blur-sm shadow-sm",
+      "sticky top-0 z-20 flex items-center gap-3 px-4 py-2.5 rounded-xl border border-primary/20 bg-primary/5 backdrop-blur-sm ",
       className,
     )}>
       {/* Selection info */}
@@ -77,7 +77,7 @@ export default function BulkActionsBar({
             <MoreHorizontal className="h-4 w-4 text-gray-600" />
           </button>
           {showMore && (
-            <div className="absolute top-full right-0 mt-1 w-44 bg-white border border-gray-200 rounded-xl shadow-lg py-1 z-30">
+            <div className="absolute top-full right-0 mt-1 w-44 bg-white border border-gray-200 rounded-xl py-1 z-30">
               {overflowActions.map(action => {
                 const Icon = action.icon;
                 return (

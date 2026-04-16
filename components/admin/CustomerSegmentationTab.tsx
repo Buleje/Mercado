@@ -94,13 +94,13 @@ export default function CustomerSegmentationTab() {
           </button>
           <div className="relative">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
-            <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Buscar..." className="pl-9 pr-4 py-2 border border-gray-200 dark:border-card-border rounded-xl bg-white dark:bg-surface text-sm w-44" />
+            <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Buscar..." className="pl-9 pr-4 py-2 border border-gray-200 dark:border-card-border rounded-lg bg-white dark:bg-surface text-sm w-44" />
           </div>
         </div>
       </div>
 
       {/* Gráfico de distribución por segmento */}
-      <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl p-4 sm:p-5">
+      <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl p-4 sm:p-5">
         <h3 className="text-sm font-bold text-gray-700 dark:text-foreground mb-3">Distribución de clientes</h3>
         <div className="flex h-8 rounded-xl overflow-hidden gap-0.5">
           {(Object.keys(SEGMENT_CONFIG) as SegmentLabel[]).map(seg => {
@@ -164,7 +164,7 @@ export default function CustomerSegmentationTab() {
           const pct = totalCustomers > 0 ? ((count / totalCustomers) * 100).toFixed(0) : "0";
           const isSent = campaignSent === seg;
           return (
-            <div key={seg} className={cn("rounded-2xl border p-4 space-y-2", cfg.bg, cfg.border)}>
+            <div key={seg} className={cn("rounded-xl border p-4 space-y-2", cfg.bg, cfg.border)}>
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
                   <Icon className={cn("h-5 w-5", cfg.color)} />
@@ -187,7 +187,7 @@ export default function CustomerSegmentationTab() {
 
       {/* Vista tabla o RFM */}
       {view === "tabla" ? (
-        <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl overflow-hidden">
+        <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl overflow-hidden">
           <div className="overflow-x-auto">
             <table className="w-full min-w-[600px] text-sm">
               <thead className="bg-gray-50 dark:bg-surface border-b border-gray-200 dark:border-card-border">
@@ -241,7 +241,7 @@ export default function CustomerSegmentationTab() {
         /* Vista RFM */
         <div className="space-y-2">
           {filtered.length === 0 && (
-            <div className="text-center py-10 text-gray-400 bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl">No se encontraron clientes</div>
+            <div className="text-center py-10 text-gray-400 bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl">No se encontraron clientes</div>
           )}
           {filtered.slice(0, 50).map(c => {
             const { r, f, m } = getRFMScores(c, data.customers);

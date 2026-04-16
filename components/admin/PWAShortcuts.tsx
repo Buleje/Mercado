@@ -138,7 +138,7 @@ export default function PWAShortcuts() {
 
   /* ── Render ── */
   return (
-    <div className="space-y-4">
+    <div className="space-y-6">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
@@ -189,7 +189,7 @@ export default function PWAShortcuts() {
               key={s.id}
               onClick={() => toggleShortcut(s.id)}
               className={cn(
-                "rounded-xl border p-4 cursor-pointer flex items-center gap-4 transition-all select-none",
+                "rounded-lg border p-4 cursor-pointer flex items-center gap-4 transition-all select-none",
                 s.enabled
                   ? "border-[#00B4A6] bg-[#00B4A6]/5 dark:bg-[#00B4A6]/10"
                   : "border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-750"
@@ -231,13 +231,13 @@ export default function PWAShortcuts() {
 
       {/* Tab: Preview */}
       {activeTab === "preview" && (
-        <div className="space-y-4">
+        <div className="space-y-6">
           <p className="text-xs text-gray-500 dark:text-gray-400">
             Asi aparecen los shortcuts en el menu del celular al mantener presionado el icono de la app.
           </p>
 
           {/* Simulacion de menu de celular */}
-          <div className="mx-auto w-64 rounded-2xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 shadow-xl overflow-hidden">
+          <div className="mx-auto w-64 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 overflow-hidden">
             <div className="bg-gray-100 dark:bg-gray-700 px-4 py-3 flex items-center gap-3">
               <div className="w-10 h-10 rounded-xl bg-[#00B4A6] flex items-center justify-center">
                 <Smartphone className="w-5 h-5 text-white" />
@@ -297,7 +297,7 @@ export default function PWAShortcuts() {
 
       {/* Tab: Instalar */}
       {activeTab === "install" && (
-        <div className="space-y-4">
+        <div className="space-y-6">
           {isInstalled ? (
             <div className="rounded-xl border border-emerald-200 dark:border-emerald-800 bg-emerald-50 dark:bg-emerald-900/10 p-4 flex items-start gap-3">
               <Check className="w-5 h-5 text-emerald-600 dark:text-emerald-400 shrink-0 mt-0.5" />
@@ -345,7 +345,7 @@ export default function PWAShortcuts() {
               },
             ].map(({ device, steps }) => (
               <div key={device}>
-                <p className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-2">
+                <p className="text-xs font-semibold text-gray-500 dark:text-gray-400 mb-2">
                   {device}
                 </p>
                 <ol className="space-y-1.5">

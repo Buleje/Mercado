@@ -37,7 +37,7 @@ export function ThreadsList({
             onClick={() => onStatusFilterChange(s)}
             aria-pressed={statusFilter === s}
             className={cn(
-              "rounded-full px-3 py-1 text-xs font-medium transition",
+              "rounded-lg px-3 py-1 text-xs font-medium transition",
               statusFilter === s
                 ? "bg-[#00B4A6] text-white"
                 : "bg-slate-100 text-slate-600 hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700",

@@ -77,7 +77,7 @@ export default function ExportButton({
       </button>
 
       {open && options.length > 1 && (
-        <div className="absolute right-0 mt-1 w-32 rounded-xl border border-gray-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 shadow-lg z-20 overflow-hidden">
+        <div className="absolute right-0 mt-1 w-32 rounded-xl border border-gray-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 z-20 overflow-hidden">
           {options.map(opt => (
             <button
               key={opt.key}

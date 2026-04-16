@@ -65,7 +65,7 @@ function BubblePoint({ product }: { product: BCGProduct }) {
       onMouseLeave={() => setHover(false)}
     >
       <div
-        className="rounded-full border-2 border-white dark:border-gray-800 shadow-sm transition-transform duration-150"
+        className="rounded-full border-2 border-white dark:border-gray-800  transition-transform duration-150"
         style={{
           width: size,
           height: size,
@@ -74,7 +74,7 @@ function BubblePoint({ product }: { product: BCGProduct }) {
         }}
       />
       {hover && (
-        <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 bg-gray-900 dark:bg-gray-700 text-white rounded-lg px-2 py-1.5 text-[10px] whitespace-nowrap z-30 shadow-lg pointer-events-none min-w-[120px]">
+        <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 bg-gray-900 dark:bg-gray-700 text-white rounded-lg px-2 py-1.5 text-[10px] whitespace-nowrap z-30 pointer-events-none min-w-[120px]">
           <p className="font-semibold">{product.name}</p>
           <p>Participacion: {product.share.toFixed(1)}%</p>
           <p>Crecimiento: {fmtPct(product.growth)}</p>

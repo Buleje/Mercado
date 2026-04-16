@@ -210,7 +210,7 @@ export default function DeclaracionInventarioModule() {
     <div className="space-y-4 sm:space-y-6">
       {/* Header — Mejora 20 */}
       <div className="flex items-center gap-3 mb-6">
-        <div className="h-10 w-10 rounded-xl bg-[#00B4A6] text-white flex items-center justify-center shadow-sm">
+        <div className="h-10 w-10 rounded-lg bg-[#00B4A6] text-white flex items-center justify-center ">
           <BarChart3 className="h-5 w-5" />
         </div>
         <div>
@@ -261,7 +261,7 @@ export default function DeclaracionInventarioModule() {
 
       {/* Mejora 18: Resumen ejecutivo siempre visible */}
       {resumenLoading ? (
-        <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl p-6 shadow-sm animate-pulse">
+        <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl p-6  animate-pulse">
           <div className="h-4 bg-gray-200 dark:bg-white/10 rounded w-1/3 mb-3" />
           <div className="h-8 bg-gray-200 dark:bg-white/10 rounded w-1/2 mb-2" />
           <div className="h-3 bg-gray-200 dark:bg-white/10 rounded w-2/3" />
@@ -274,7 +274,7 @@ export default function DeclaracionInventarioModule() {
         const isUp = diff > 0;
         const isDown = diff < 0;
         return (
-          <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl p-5 shadow-sm">
+          <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl p-5 ">
             <div className="flex items-center gap-2 mb-2">
               <Package className="h-5 w-5 text-[#00B4A6]" />
               <p className="text-sm font-bold text-gray-600 dark:text-gray-400">Tu inventario</p>
@@ -305,14 +305,14 @@ export default function DeclaracionInventarioModule() {
               type="date"
               value={fecha}
               onChange={e => setFecha(e.target.value)}
-              className="pl-9 pr-3 py-2 rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 text-sm text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-[#00B4A6]/30"
+              className="pl-9 pr-3 py-2 rounded-lg border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 text-sm text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-[#00B4A6]/30"
             />
           </div>
         </div>
         <button
           onClick={handleGenerar}
           disabled={loading}
-          className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-bold text-white bg-[#00B4A6] hover:bg-[#009690] disabled:opacity-50 shadow-sm transition-colors"
+          className="inline-flex items-center gap-2 px-5 py-2.5 rounded-lg text-sm font-bold text-white bg-[#00B4A6] hover:bg-[#009690] disabled:opacity-50  transition-colors"
         >
           {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <BarChart3 className="h-4 w-4" />}
           Generar Declaración
@@ -348,7 +348,7 @@ export default function DeclaracionInventarioModule() {
             ].map(card => {
               const CardIcon = card.icon;
               return (
-                <div key={card.label} className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl p-4 shadow-sm">
+                <div key={card.label} className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl p-4 ">
                   <div className="flex items-center gap-2 mb-2">
                     <div className={cn("h-8 w-8 rounded-lg flex items-center justify-center", card.bg)}>
                       <CardIcon className={cn("h-4 w-4", card.color)} />
@@ -364,12 +364,12 @@ export default function DeclaracionInventarioModule() {
           {/* Actions */}
           <div className="flex gap-2">
             <button onClick={handleExport}
-              className="inline-flex flex-col items-start gap-0.5 px-4 py-2 rounded-xl text-sm font-bold text-[#00B4A6] bg-[#00B4A6]/10 hover:bg-[#00B4A6]/20 transition-colors">
+              className="inline-flex flex-col items-start gap-0.5 px-4 py-2 rounded-lg text-sm font-bold text-[#00B4A6] bg-[#00B4A6]/10 hover:bg-[#00B4A6]/20 transition-colors">
               <span className="inline-flex items-center gap-2"><Download className="h-4 w-4" /> Descargar para mi Contador</span>
               <span className="text-[10px] font-normal text-gray-500">Tu contador puede usar este archivo para la declaracion ante SUNAT</span>
             </button>
             <button onClick={handlePrint}
-              className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-bold text-gray-600 dark:text-gray-300 bg-gray-100 dark:bg-white/5 hover:bg-gray-200 dark:hover:bg-white/10 transition-colors">
+              className="inline-flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-bold text-gray-600 dark:text-gray-300 bg-gray-100 dark:bg-white/5 hover:bg-gray-200 dark:hover:bg-white/10 transition-colors">
               <Printer className="h-4 w-4" /> Imprimir
             </button>
           </div>
@@ -391,7 +391,7 @@ export default function DeclaracionInventarioModule() {
             const pctTotal = prevTotal > 0 ? ((diffTotal / prevTotal) * 100) : 0;
 
             return (
-              <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl overflow-hidden shadow-sm">
+              <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl overflow-hidden ">
                 <div className="px-4 py-3 bg-emerald-50 dark:bg-emerald-900/20 border-b border-emerald-200 dark:border-emerald-800">
                   <p className="text-sm font-bold text-emerald-800 dark:text-emerald-300">
                     Comparativa con declaracion anterior ({formatDate(prevDecl.fecha + "T00:00:00")})
@@ -457,7 +457,7 @@ export default function DeclaracionInventarioModule() {
               const catPrecio = productItems.reduce((s: number, p: ProductItem) => s + p.stock * p.price, 0);
               const catUnidades = productItems.reduce((s: number, p: ProductItem) => s + p.stock, 0);
               return (
-                <div key={category} className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl overflow-hidden shadow-sm">
+                <div key={category} className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl overflow-hidden ">
                   {/* Category header */}
                   <div className="px-4 py-3 bg-gray-50 dark:bg-white/5 border-b border-gray-100 dark:border-white/5 flex items-center justify-between">
                     <div className="flex items-center gap-2">
@@ -508,7 +508,7 @@ export default function DeclaracionInventarioModule() {
       )}
 
       {/* Mejora 17: Historial de declaraciones */}
-      <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl shadow-sm overflow-hidden">
+      <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl  overflow-hidden">
         <button
           onClick={() => setShowHistorial(!showHistorial)}
           className="w-full px-4 py-3 flex items-center justify-between hover:bg-gray-50 dark:hover:bg-white/5 transition-colors"
@@ -583,12 +583,12 @@ export default function DeclaracionInventarioModule() {
       {/* Empty state when no data yet */}
       {!data && !loading && !error && (
         <div className="text-center py-16 px-4">
-          <div className="h-16 w-16 rounded-2xl bg-gray-100 dark:bg-surface flex items-center justify-center mx-auto mb-4">
+          <div className="h-16 w-16 rounded-xl bg-gray-100 dark:bg-surface flex items-center justify-center mx-auto mb-4">
             <BarChart3 className="h-8 w-8 text-gray-400 dark:text-muted" />
           </div>
           <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">Sin declaraciones</h3>
           <p className="text-sm text-gray-500 mb-6 max-w-md mx-auto">Genera un snapshot de tu inventario actual</p>
-          <button onClick={handleGenerar} className="bg-[#00B4A6] text-white px-6 py-2.5 rounded-xl font-medium hover:bg-[#009690]">Generar declaración</button>
+          <button onClick={handleGenerar} className="bg-[#00B4A6] text-white px-6 py-2.5 rounded-lg font-medium hover:bg-[#009690]">Generar declaración</button>
         </div>
       )}
     </div>

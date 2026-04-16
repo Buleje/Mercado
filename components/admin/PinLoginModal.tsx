@@ -245,7 +245,7 @@ export default function PinLoginModal({ onSuccess, onClose, title = "Ingresa tu 
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm">
       <div
         className={cn(
-          "relative w-full max-w-sm rounded-2xl bg-white dark:bg-gray-900 shadow-2xl border border-gray-200 dark:border-gray-700 p-8",
+          "relative w-full max-w-sm rounded-xl bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 p-8",
           shake && "animate-shake"
         )}
         style={
@@ -372,7 +372,7 @@ export default function PinLoginModal({ onSuccess, onClose, title = "Ingresa tu 
               onClick={submitPin}
               disabled={digits.some((d) => !d) || loading}
               className={cn(
-                "mt-4 w-full h-12 rounded-xl font-semibold text-white transition-all duration-150",
+                "mt-4 w-full h-12 rounded-lg font-semibold text-white transition-all duration-150",
                 "bg-[#00B4A6] hover:bg-[#235c42] active:scale-[0.98]",
                 "disabled:opacity-40 disabled:cursor-not-allowed"
               )}

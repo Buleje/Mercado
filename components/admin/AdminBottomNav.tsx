@@ -21,7 +21,7 @@ export default function AdminBottomNav({ currentTab, setTab, toggleSidebar }: Ad
   ];
 
   return (
-    <div className="md:hidden fixed bottom-0 left-0 right-0 h-[72px] bg-white/80 dark:bg-card/80 backdrop-blur-xl border-t border-gray-200 dark:border-card-border flex items-center justify-around px-2 z-50 pb-[safe-area-inset-bottom] shadow-2xl">
+    <div className="md:hidden fixed bottom-0 left-0 right-0 h-[72px] bg-white/80 dark:bg-card/80 backdrop-blur-xl border-t border-gray-200 dark:border-card-border flex items-center justify-around px-2 z-50 pb-[safe-area-inset-bottom]">
       {navItems.map((item) => {
         const isActive = currentTab === item.id;
         const Icon = item.icon;
@@ -30,7 +30,7 @@ export default function AdminBottomNav({ currentTab, setTab, toggleSidebar }: Ad
             key={item.id}
             onClick={() => setTab(item.id)}
             className={cn(
-              "flex flex-col items-center justify-center w-20 h-full space-y-1.5 rounded-2xl transition-all active:scale-95",
+              "flex flex-col items-center justify-center w-20 h-full space-y-1.5 rounded-xl transition-all active:scale-95",
               isActive ? "text-violet-600 dark:text-violet-400 bg-violet-50/50 dark:bg-violet-900/20" : "text-gray-500 hover:bg-gray-100 dark:hover:bg-surface/50"
             )}
           >
@@ -43,7 +43,7 @@ export default function AdminBottomNav({ currentTab, setTab, toggleSidebar }: Ad
       {/* Menu / More Button */}
       <button
         onClick={toggleSidebar}
-        className="flex flex-col items-center justify-center w-20 h-full space-y-1.5 rounded-2xl text-gray-500 hover:bg-gray-100 dark:hover:bg-surface/50 transition-all active:scale-95"
+        className="flex flex-col items-center justify-center w-20 h-full space-y-1.5 rounded-xl text-gray-500 hover:bg-gray-100 dark:hover:bg-surface/50 transition-all active:scale-95"
       >
         <Menu className="h-5 w-5 stroke-2" />
         <span className="text-[10px] font-medium leading-none">Menú</span>

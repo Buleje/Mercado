@@ -43,7 +43,7 @@ function ModuleTooltip() {
         <Info className="h-4 w-4" />
       </button>
       {open && (
-        <div className="pointer-events-none absolute left-6 top-0 z-50 w-80 rounded-2xl border border-gray-200 bg-white p-4 text-xs leading-relaxed shadow-xl dark:border-card-border dark:bg-card">
+        <div className="pointer-events-none absolute left-6 top-0 z-50 w-80 rounded-xl border border-gray-200 bg-white p-4 text-xs leading-relaxed dark:border-card-border dark:bg-card">
           <p className="mb-2 text-sm font-extrabold text-gray-900 dark:text-foreground">Inventario Fisico</p>
           <p className="mb-3 text-gray-600 dark:text-muted">Compara el stock real contado en bodega contra el stock del sistema y registra ajustes reales.</p>
           <p className="text-gray-500 dark:text-muted">Ejemplo: si el sistema dice 20 unidades y cuentas 18, al registrar el conteo se crea un ajuste y el stock queda corregido.</p>
@@ -208,18 +208,18 @@ export default function PhysicalInventoryTab() {
           <button
             onClick={() => bulkSubmit()}
             disabled={bulkSubmitting || Object.keys(countInput).length === 0}
-            className="flex flex-wrap items-center gap-2 rounded-xl border border-violet-300 bg-violet-50 px-2 sm:px-4 py-1.5 sm:py-2.5 text-sm font-bold text-violet-700 hover:bg-violet-100 disabled:cursor-not-allowed disabled:opacity-50 dark:border-violet-700 dark:bg-violet-900/30 dark:text-violet-300 dark:hover:bg-violet-900/50"
+            className="flex flex-wrap items-center gap-2 rounded-lg border border-violet-300 bg-violet-50 px-2 sm:px-4 py-1.5 sm:py-2.5 text-sm font-bold text-violet-700 hover:bg-violet-100 disabled:cursor-not-allowed disabled:opacity-50 dark:border-violet-700 dark:bg-violet-900/30 dark:text-violet-300 dark:hover:bg-violet-900/50"
           >
             {bulkSubmitting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Check className="h-4 w-4" />}
             Registrar todos ({Object.keys(countInput).length})
           </button>
-          <button onClick={() => exportToCSV(items.map((item) => ({ Producto: item.product, SKU: item.sku, Ubicacion: item.location, Sistema: item.systemQty, Conteo: item.countedQty ?? "", Diferencia: item.difference ?? "", Estado: item.status })), "inventario-fisico")} className="flex flex-wrap items-center gap-2 rounded-xl bg-primary px-2 sm:px-4 py-1.5 sm:py-2.5 text-sm font-bold text-white hover:bg-primary/90">
+          <button onClick={() => exportToCSV(items.map((item) => ({ Producto: item.product, SKU: item.sku, Ubicacion: item.location, Sistema: item.systemQty, Conteo: item.countedQty ?? "", Diferencia: item.difference ?? "", Estado: item.status })), "inventario-fisico")} className="flex flex-wrap items-center gap-2 rounded-lg bg-primary px-2 sm:px-4 py-1.5 sm:py-2.5 text-sm font-bold text-white hover:bg-primary/90">
             <Download className="h-4 w-4" /> Exportar
           </button>
         </div>
       </div>
 
-      <div className="rounded-2xl border border-gray-200 bg-white p-3 sm:p-5 dark:border-card-border dark:bg-card">
+      <div className="rounded-xl border border-gray-200 bg-white p-3 sm:p-5 dark:border-card-border dark:bg-card">
         <div className="mb-2 flex items-center justify-between">
           <span className="text-sm font-bold text-gray-900 dark:text-foreground">Progreso del Conteo</span>
           <span className="text-sm font-extrabold text-violet-600 dark:text-violet-400">{stats.pct}%</span>
@@ -238,16 +238,16 @@ export default function PhysicalInventoryTab() {
       <div className="flex flex-wrap items-center gap-3">
         <div className="relative max-w-xs flex-1">
           <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
-          <input value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Buscar producto o SKU..." className="w-full rounded-xl border-2 border-gray-200 bg-white py-2.5 pl-10 pr-4 text-sm outline-none focus:border-primary dark:border-card-border dark:bg-card" />
+          <input value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Buscar producto o SKU..." className="w-full rounded-lg border-2 border-gray-200 bg-white py-2.5 pl-10 pr-4 text-sm outline-none focus:border-primary dark:border-card-border dark:bg-card" />
         </div>
         {(["todas", "pendiente", "contando", "finalizado", "diferencias"] as const).map((status) => (
-          <button key={status} onClick={() => setStatusFilter(status)} className={cn("rounded-xl px-2 sm:px-4 py-1.5 sm:py-2.5 text-sm font-bold transition-colors", statusFilter === status ? "bg-violet-500 text-white" : "border border-gray-200 bg-white text-gray-600 hover:bg-gray-50 dark:border-card-border dark:bg-card dark:text-muted dark:hover:bg-accent")}>
+          <button key={status} onClick={() => setStatusFilter(status)} className={cn("rounded-lg px-2 sm:px-4 py-1.5 sm:py-2.5 text-sm font-bold transition-colors", statusFilter === status ? "bg-violet-500 text-white" : "border border-gray-200 bg-white text-gray-600 hover:bg-gray-50 dark:border-card-border dark:bg-card dark:text-muted dark:hover:bg-accent")}>
             {status === "todas" ? "Todos" : status === "diferencias" ? "Diferencias" : status.charAt(0).toUpperCase() + status.slice(1)}
           </button>
         ))}
       </div>
 
-      <div className="overflow-hidden rounded-2xl border border-gray-200 bg-white dark:border-card-border dark:bg-card">
+      <div className="overflow-hidden rounded-xl border border-gray-200 bg-white dark:border-card-border dark:bg-card">
         <div className="overflow-x-auto">
           <table className="w-full min-w-[600px] text-sm">
             <thead>
@@ -317,7 +317,7 @@ export default function PhysicalInventoryTab() {
       </div>
 
       {stats.withDiff > 0 && (
-        <div className="flex flex-wrap items-start gap-3 rounded-2xl border border-amber-200 bg-amber-50 p-3 sm:p-5 dark:border-amber-800 dark:bg-amber-950/20">
+        <div className="flex flex-wrap items-start gap-3 rounded-xl border border-amber-200 bg-amber-50 p-3 sm:p-5 dark:border-amber-800 dark:bg-amber-950/20">
           <AlertTriangle className="mt-0.5 h-5 w-5 shrink-0 text-amber-500" />
           <div>
             <h3 className="text-sm font-extrabold text-amber-800 dark:text-amber-300">Diferencias Detectadas</h3>

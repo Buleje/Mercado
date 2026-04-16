@@ -198,7 +198,7 @@ export default function SugerenciasCompraTab() {
   }
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-6">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
@@ -248,7 +248,7 @@ export default function SugerenciasCompraTab() {
                   <div
                     key={s.productId}
                     className={cn(
-                      "bg-white dark:bg-card border rounded-xl p-3 transition-all cursor-pointer",
+                      "bg-white dark:bg-card border rounded-lg p-3 transition-all cursor-pointer",
                       selected.has(s.productId)
                         ? "border-primary ring-1 ring-primary/30"
                         : "border-gray-200 dark:border-card-border hover:border-gray-300",

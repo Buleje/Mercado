@@ -87,7 +87,7 @@ export default function MarginDashboardTab() {
 
       {/* KPI Row */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-4">
-        <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl p-4">
+        <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl p-4">
           <div className="w-9 h-9 rounded-xl bg-emerald-500 flex items-center justify-center mb-3">
             <DollarSign className="h-4 w-4 text-white" />
           </div>
@@ -96,7 +96,7 @@ export default function MarginDashboardTab() {
           </p>
           <p className="text-xs font-semibold text-gray-500 dark:text-muted mt-0.5">Ingresos totales</p>
         </div>
-        <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl p-4">
+        <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl p-4">
           <div className="w-9 h-9 rounded-xl bg-emerald-500 flex items-center justify-center mb-3">
             <TrendingUp className="h-4 w-4 text-white" />
           </div>
@@ -105,7 +105,7 @@ export default function MarginDashboardTab() {
           </p>
           <p className="text-xs font-semibold text-gray-500 dark:text-muted mt-0.5">Ganancia bruta</p>
         </div>
-        <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl p-4">
+        <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl p-4">
           <div className="w-9 h-9 rounded-xl bg-violet-500 flex items-center justify-center mb-3">
             <BarChart3 className="h-4 w-4 text-white" />
           </div>
@@ -114,7 +114,7 @@ export default function MarginDashboardTab() {
           </p>
           <p className="text-xs font-semibold text-gray-500 dark:text-muted mt-0.5">Margen global</p>
         </div>
-        <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl p-4">
+        <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl p-4">
           <div className="w-9 h-9 rounded-xl bg-amber-500 flex items-center justify-center mb-3">
             <AlertCircle className="h-4 w-4 text-white" />
           </div>
@@ -126,7 +126,7 @@ export default function MarginDashboardTab() {
       </div>
 
       {/* Alerta de umbral */}
-      <div className="flex flex-wrap items-center gap-3 bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl p-4">
+      <div className="flex flex-wrap items-center gap-3 bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl p-4">
         <AlertTriangle className="h-5 w-5 text-amber-500 shrink-0" />
         <p className="text-sm font-semibold text-gray-700 dark:text-foreground">
           Umbral de alerta de margen:
@@ -172,7 +172,7 @@ export default function MarginDashboardTab() {
           <div className="ml-auto flex items-center gap-2">
             <button
               onClick={() => setSortDir((d) => (d === "desc" ? "asc" : "desc"))}
-              className="flex items-center gap-1 px-3 py-2 rounded-xl border border-gray-200 dark:border-card-border text-sm text-gray-600 dark:text-muted hover:bg-gray-50 dark:hover:bg-surface"
+              className="flex items-center gap-1 px-3 py-2 rounded-lg border border-gray-200 dark:border-card-border text-sm text-gray-600 dark:text-muted hover:bg-gray-50 dark:hover:bg-surface"
             >
               {sortDir === "desc" ? <ChevronDown className="h-4 w-4" /> : <ChevronUp className="h-4 w-4" />}
               Margen {sortDir === "desc" ? "mayor" : "menor"} primero
@@ -189,7 +189,7 @@ export default function MarginDashboardTab() {
 
       {/* Vista: productos */}
       {view === "products" && (
-        <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl overflow-hidden shadow-sm">
+        <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl overflow-hidden ">
           <div className="overflow-x-auto">
             <table className="w-full min-w-[600px] text-sm">
               <thead>
@@ -241,7 +241,7 @@ export default function MarginDashboardTab() {
       {view === "categories" && (
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           {data.byCategory.map((cat) => (
-            <div key={cat.category} className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl p-4">
+            <div key={cat.category} className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl p-4">
               <div className="flex items-center justify-between mb-2">
                 <h3 className="font-semibold text-gray-900 dark:text-foreground">{cat.category}</h3>
                 <span className={cn("font-bold text-sm", pctColor(cat.marginPct))}>
@@ -272,7 +272,7 @@ export default function MarginDashboardTab() {
       {view === "top" && (
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
           {/* Top 10 mejores */}
-          <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl overflow-hidden shadow-sm">
+          <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl overflow-hidden ">
             <div className="px-4 py-3 border-b border-gray-100 dark:border-card-border bg-emerald-50 dark:bg-emerald-950/20">
               <h3 className="text-sm font-bold text-emerald-700 dark:text-emerald-400 flex items-center gap-2">
                 <ChevronUp className="h-4 w-4" /> Top 10 mayor margen
@@ -298,7 +298,7 @@ export default function MarginDashboardTab() {
           </div>
 
           {/* Top 10 peores */}
-          <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl overflow-hidden shadow-sm">
+          <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl overflow-hidden ">
             <div className="px-4 py-3 border-b border-gray-100 dark:border-card-border bg-red-50 dark:bg-red-950/20">
               <h3 className="text-sm font-bold text-red-700 dark:text-red-400 flex items-center gap-2">
                 <ChevronDown className="h-4 w-4" /> Top 10 menor margen
@@ -327,7 +327,7 @@ export default function MarginDashboardTab() {
 
       {/* Productos bajo umbral — sección de alerta */}
       {belowThreshold.length > 0 && view !== "top" && (
-        <div className="bg-red-50 dark:bg-red-950/20 border border-red-200 dark:border-red-800/40 rounded-2xl p-4">
+        <div className="bg-red-50 dark:bg-red-950/20 border border-red-200 dark:border-red-800/40 rounded-xl p-4">
           <div className="flex items-start gap-2 mb-3">
             <AlertTriangle className="h-5 w-5 text-red-600 shrink-0 mt-0.5" />
             <div>

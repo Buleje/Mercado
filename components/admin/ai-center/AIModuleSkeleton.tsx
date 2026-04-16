@@ -13,7 +13,7 @@ export function AIModuleSkeleton({ rows = 4, className }: AIModuleSkeletonProps)
   return (
     <div
       className={cn(
-        "rounded-xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 p-5 shadow-sm",
+        "rounded-xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 p-5 ",
         className
       )}
     >
@@ -41,7 +41,7 @@ export function AIModuleCardSkeleton({ className }: { className?: string }) {
   return (
     <div
       className={cn(
-        "rounded-xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 p-5 shadow-sm",
+        "rounded-xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 p-5 ",
         className
       )}
     >

@@ -353,7 +353,7 @@ export default function MassMessageSender({
 
           {/* WhatsApp-style bubble */}
           <div className="rounded-xl bg-[#e8f5e9] p-4 dark:bg-[#007A72]">
-            <div className="inline-block max-w-[85%] rounded-2xl rounded-tl-none bg-white px-4 py-3 shadow-sm dark:bg-gray-800">
+            <div className="inline-block max-w-[85%] rounded-xl rounded-tl-none bg-white px-4 py-3  dark:bg-gray-800">
               <p className="text-sm leading-relaxed text-gray-800 dark:text-gray-100">
                 {previewCustomer ? previewText : template}
               </p>
@@ -392,7 +392,7 @@ export default function MassMessageSender({
             onClick={generateList}
             disabled={filtered.length === 0 || !template.trim()}
             className={cn(
-              "flex-1 flex items-center justify-center gap-2 rounded-xl px-6 py-3 text-sm font-semibold text-white transition",
+              "flex-1 flex items-center justify-center gap-2 rounded-lg px-6 py-3 text-sm font-semibold text-white transition",
               copied ? "bg-green-600" : "bg-[#00B4A6] hover:bg-[#245a40]",
               "disabled:opacity-40"
             )}
@@ -413,7 +413,7 @@ export default function MassMessageSender({
           <button
             onClick={() => setShowWaLinks(!showWaLinks)}
             disabled={filtered.length === 0 || !template.trim()}
-            className="flex items-center justify-center gap-2 rounded-xl px-4 py-3 text-sm font-semibold text-white bg-emerald-600 hover:bg-emerald-700 transition disabled:opacity-40"
+            className="flex items-center justify-center gap-2 rounded-lg px-4 py-3 text-sm font-semibold text-white bg-emerald-600 hover:bg-emerald-700 transition disabled:opacity-40"
           >
             <MessageSquare className="h-4 w-4" />
             Links WhatsApp

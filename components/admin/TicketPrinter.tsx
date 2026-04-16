@@ -145,7 +145,7 @@ export default function TicketPrinter({ data, className, variant = "button" }: T
     <button
       onClick={handlePrint}
       className={cn(
-        "flex items-center gap-1.5 px-3 py-2 rounded-xl bg-gray-100 dark:bg-surface text-gray-700 dark:text-foreground text-xs font-bold hover:bg-gray-200 dark:hover:bg-accent transition-colors",
+        "flex items-center gap-1.5 px-3 py-2 rounded-lg bg-gray-100 dark:bg-surface text-gray-700 dark:text-foreground text-xs font-bold hover:bg-gray-200 dark:hover:bg-accent transition-colors",
         className
       )}
     >

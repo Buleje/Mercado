@@ -293,7 +293,7 @@ export default function BulkPriceUpdater() {
                   onDrop={onDrop}
                   onClick={() => fileRef.current?.click()}
                   className={cn(
-                    "flex flex-col items-center justify-center gap-3 rounded-xl border-2 border-dashed p-10 cursor-pointer transition-colors",
+                    "flex flex-col items-center justify-center gap-3 rounded-lg border-2 border-dashed p-10 cursor-pointer transition-colors",
                     dragging
                       ? "border-[#00B4A6] bg-[#00B4A6]/5"
                       : "border-gray-200 dark:border-gray-700 hover:border-[#00B4A6]"
@@ -338,7 +338,7 @@ export default function BulkPriceUpdater() {
 
       {/* Preview */}
       {step === "preview" && (
-        <div className="space-y-4">
+        <div className="space-y-6">
           <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400">
             <AlertTriangle className="h-4 w-4 text-amber-500" />
             Se actualizaran <strong className="text-gray-900 dark:text-gray-100">{changes.length}</strong> productos. Revisa antes de confirmar.

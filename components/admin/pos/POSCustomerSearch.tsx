@@ -405,7 +405,7 @@ export default function POSCustomerSearch({
         {/* Mejora 2: Payment history */}
         {paymentHistory.length > 0 && !loadingLastPurchase && (
           <div className="px-2 py-1">
-            <p className="text-[9px] font-bold text-gray-400 dark:text-muted uppercase tracking-wider mb-1">Ultimos pagos</p>
+            <p className="text-[9px] font-bold text-gray-400 dark:text-muted mb-1">Ultimos pagos</p>
             <div className="max-h-[3.5rem] overflow-y-auto space-y-0.5">
               {paymentHistory.map((p, i) => {
                 const d = new Date(p.date);
@@ -469,7 +469,7 @@ export default function POSCustomerSearch({
 
       {/* Dropdown */}
       {showResults && query.trim().length >= 3 && (
-        <div className="absolute z-40 left-0 right-0 mt-1 bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl shadow-lg max-h-60 overflow-y-auto">
+        <div className="absolute z-40 left-0 right-0 mt-1 bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl max-h-60 overflow-y-auto">
           {loading ? (
             <div className="py-4 text-center text-xs text-gray-400 dark:text-muted">
               Buscando...

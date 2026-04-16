@@ -136,11 +136,11 @@ export default function CashflowRollingTable() {
   }, [data]);
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-6">
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div className="flex items-center gap-3">
-          <div className="h-10 w-10 rounded-xl bg-emerald-600 text-white flex items-center justify-center shadow-sm shrink-0">
+          <div className="h-10 w-10 rounded-lg bg-emerald-600 text-white flex items-center justify-center  shrink-0">
             <TrendingUp className="h-5 w-5" />
           </div>
           <div>
@@ -157,7 +157,7 @@ export default function CashflowRollingTable() {
           type="button"
           onClick={() => void fetchData()}
           disabled={loading}
-          className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-bold text-white bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 shadow-sm transition-colors shrink-0 min-h-[44px]"
+          className="inline-flex items-center gap-2 px-4 py-2.5 rounded-lg text-sm font-bold text-white bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50  transition-colors shrink-0 min-h-[44px]"
         >
           <RefreshCw className={cn("h-4 w-4", loading && "animate-spin")} />
           Actualizar
@@ -192,7 +192,7 @@ export default function CashflowRollingTable() {
       {data && (
         <div className="flex items-center justify-between p-4 rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-card">
           <div>
-            <p className="text-xs uppercase tracking-wider font-bold text-gray-500 dark:text-gray-400">
+            <p className="text-xs font-bold text-gray-500 dark:text-gray-400">
               Saldo hoy
             </p>
             <p className="text-2xl font-bold text-gray-900 dark:text-white mt-1 font-mono">
@@ -200,7 +200,7 @@ export default function CashflowRollingTable() {
             </p>
           </div>
           <div className="text-right">
-            <p className="text-xs uppercase tracking-wider font-bold text-gray-500 dark:text-gray-400">
+            <p className="text-xs font-bold text-gray-500 dark:text-gray-400">
               Semanas sanas
             </p>
             <p className="text-2xl font-bold text-emerald-600 dark:text-emerald-400 mt-1">
@@ -242,7 +242,7 @@ export default function CashflowRollingTable() {
               <tr className="border-b border-gray-200 dark:border-white/10">
                 <th
                   scope="col"
-                  className="sticky left-0 z-10 bg-gray-50 dark:bg-card/80 text-left py-3 px-3 text-[10px] uppercase tracking-wider font-bold text-gray-500 dark:text-gray-400 border-r border-gray-200 dark:border-white/10"
+                  className="sticky left-0 z-10 bg-gray-50 dark:bg-card/80 text-left py-3 px-3 text-[10px] font-bold text-gray-500 dark:text-gray-400 border-r border-gray-200 dark:border-white/10"
                 >
                   Concepto
                 </th>
@@ -251,7 +251,7 @@ export default function CashflowRollingTable() {
                     scope="col"
                     key={h.number}
                     className={cn(
-                      "py-3 px-2 text-right text-[10px] uppercase tracking-wider font-bold",
+                      "py-3 px-2 text-right text-[10px] font-bold",
                       h.isNegative
                         ? "text-red-600 dark:text-red-400 bg-red-50/50 dark:bg-red-900/10"
                         : "text-gray-500 dark:text-gray-400",

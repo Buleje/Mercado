@@ -198,7 +198,7 @@ export default function RevenueBreakdownChart({ sales, products }: RevenueBreakd
             className={cn(
               "flex-1 text-xs py-1 rounded-md font-medium transition-colors",
               view === key
-                ? "bg-white dark:bg-gray-600 text-[#00B4A6] dark:text-[#2dd4bf] shadow-sm"
+                ? "bg-white dark:bg-gray-600 text-[#00B4A6] dark:text-[#2dd4bf] "
                 : "text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200"
             )}
           >

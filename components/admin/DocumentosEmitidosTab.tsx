@@ -147,7 +147,7 @@ export default function DocumentosEmitidosTab() {
   };
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-6">
       {/* Header */}
       <div>
         <h2 className="text-lg font-extrabold text-gray-900 dark:text-foreground flex items-center gap-2">
@@ -162,24 +162,24 @@ export default function DocumentosEmitidosTab() {
       {/* KPI Cards */}
       <div className="grid grid-cols-2 lg:grid-cols-5 gap-3">
         <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl p-3">
-          <p className="text-[10px] font-bold text-gray-400 dark:text-muted uppercase tracking-wider">Boletas del mes</p>
+          <p className="text-[10px] font-bold text-gray-400 dark:text-muted">Boletas del mes</p>
           <p className="text-xl font-extrabold text-emerald-600 dark:text-emerald-400">{kpis.boletasMes}</p>
         </div>
         <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl p-3">
-          <p className="text-[10px] font-bold text-gray-400 dark:text-muted uppercase tracking-wider">Facturas del mes</p>
+          <p className="text-[10px] font-bold text-gray-400 dark:text-muted">Facturas del mes</p>
           <p className="text-xl font-extrabold text-purple-600 dark:text-purple-400">{kpis.facturasMes}</p>
         </div>
         <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl p-3">
-          <p className="text-[10px] font-bold text-gray-400 dark:text-muted uppercase tracking-wider">Total facturado</p>
+          <p className="text-[10px] font-bold text-gray-400 dark:text-muted">Total facturado</p>
           <p className="text-xl font-extrabold text-primary">{fmt(kpis.totalFacturado)}</p>
         </div>
         <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl p-3">
-          <p className="text-[10px] font-bold text-gray-400 dark:text-muted uppercase tracking-wider">Documentos hoy</p>
+          <p className="text-[10px] font-bold text-gray-400 dark:text-muted">Documentos hoy</p>
           <p className="text-xl font-extrabold text-gray-900 dark:text-foreground">{kpis.docsHoy}</p>
         </div>
         {/* Contratos KPI */}
         <div className="bg-violet-50 dark:bg-violet-950/30 border border-violet-200 dark:border-violet-800 rounded-xl p-3">
-          <p className="text-[10px] font-bold text-violet-500 dark:text-violet-400 uppercase tracking-wider">Contratos activos</p>
+          <p className="text-[10px] font-bold text-violet-500 dark:text-violet-400">Contratos activos</p>
           <p className="text-xl font-extrabold text-violet-600 dark:text-violet-400">{contratoKpis.activos}</p>
           {contratoKpis.porVencer > 0 && (
             <p className="text-[10px] text-amber-600 dark:text-amber-400 font-bold mt-0.5 flex items-center gap-0.5">
@@ -287,13 +287,13 @@ export default function DocumentosEmitidosTab() {
             <table className="w-full text-xs">
               <thead>
                 <tr className="border-b border-gray-100 dark:border-card-border bg-gray-50 dark:bg-surface/30">
-                  <th className="text-left px-3 py-2.5 font-bold text-gray-500 dark:text-muted uppercase tracking-wider">Tipo</th>
-                  <th className="text-left px-3 py-2.5 font-bold text-gray-500 dark:text-muted uppercase tracking-wider">N Documento</th>
-                  <th className="text-left px-3 py-2.5 font-bold text-gray-500 dark:text-muted uppercase tracking-wider">Cliente</th>
-                  <th className="text-left px-3 py-2.5 font-bold text-gray-500 dark:text-muted uppercase tracking-wider">Fecha</th>
-                  <th className="text-right px-3 py-2.5 font-bold text-gray-500 dark:text-muted uppercase tracking-wider">Total</th>
-                  <th className="text-center px-3 py-2.5 font-bold text-gray-500 dark:text-muted uppercase tracking-wider">Estado</th>
-                  <th className="text-center px-3 py-2.5 font-bold text-gray-500 dark:text-muted uppercase tracking-wider">Acciones</th>
+                  <th className="text-left px-3 py-2.5 font-bold text-gray-500 dark:text-muted">Tipo</th>
+                  <th className="text-left px-3 py-2.5 font-bold text-gray-500 dark:text-muted">N Documento</th>
+                  <th className="text-left px-3 py-2.5 font-bold text-gray-500 dark:text-muted">Cliente</th>
+                  <th className="text-left px-3 py-2.5 font-bold text-gray-500 dark:text-muted">Fecha</th>
+                  <th className="text-right px-3 py-2.5 font-bold text-gray-500 dark:text-muted">Total</th>
+                  <th className="text-center px-3 py-2.5 font-bold text-gray-500 dark:text-muted">Estado</th>
+                  <th className="text-center px-3 py-2.5 font-bold text-gray-500 dark:text-muted">Acciones</th>
                 </tr>
               </thead>
               <tbody>

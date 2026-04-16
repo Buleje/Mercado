@@ -150,7 +150,7 @@ function AlertSkeleton() {
       {Array.from({ length: 4 }).map((_, i) => (
         <div
           key={i}
-          className="bg-white dark:bg-card rounded-2xl border border-gray-200 dark:border-card-border p-4 animate-pulse"
+          className="bg-white dark:bg-card rounded-xl border border-gray-200 dark:border-card-border p-4 animate-pulse"
         >
           <div className="flex items-center gap-3">
             <div className="h-10 w-10 bg-gray-200 dark:bg-gray-700 rounded-xl shrink-0" />
@@ -385,14 +385,14 @@ export default function AlertsCenterTab({ tenantId: _tenantId, onNavigate }: Pro
 
   if (error) {
     return (
-      <div className="bg-red-50 dark:bg-red-950/20 rounded-2xl border border-red-200 dark:border-red-800/30 p-6 text-center">
+      <div className="bg-red-50 dark:bg-red-950/20 rounded-xl border border-red-200 dark:border-red-800/30 p-6 text-center">
         <AlertTriangle className="w-8 h-8 text-red-500 mx-auto mb-2" />
         <p className="text-sm font-semibold text-red-700 dark:text-red-300 mb-3">
           {error}
         </p>
         <button
           onClick={fetchAlerts}
-          className="px-4 py-2 rounded-xl bg-red-600 hover:bg-red-700 text-white text-sm font-bold transition-colors"
+          className="px-4 py-2 rounded-lg bg-red-600 hover:bg-red-700 text-white text-sm font-bold transition-colors"
         >
           Reintentar
         </button>
@@ -427,7 +427,7 @@ export default function AlertsCenterTab({ tenantId: _tenantId, onNavigate }: Pro
         </p>
         <button
           onClick={fetchAlerts}
-          className="mt-6 inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-300 text-sm font-bold hover:bg-emerald-200 dark:hover:bg-emerald-900/50 transition-colors"
+          className="mt-6 inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-300 text-sm font-bold hover:bg-emerald-200 dark:hover:bg-emerald-900/50 transition-colors"
         >
           <RefreshCw className="w-4 h-4" />
           Actualizar ahora
@@ -462,7 +462,7 @@ export default function AlertsCenterTab({ tenantId: _tenantId, onNavigate }: Pro
   const orderedCategories = categoryOrder.filter((cat) => grouped[cat]?.length > 0);
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-6">
       {/* KPI badges */}
       <div className="flex flex-wrap gap-3 mb-1">
         {criticalCount > 0 && (
@@ -502,7 +502,7 @@ export default function AlertsCenterTab({ tenantId: _tenantId, onNavigate }: Pro
             {/* Category separator */}
             <div className="flex items-center gap-2 pt-2">
               <span className="text-sm">{catConfig.emoji}</span>
-              <h4 className="text-xs font-extrabold text-gray-500 dark:text-muted uppercase tracking-wider">
+              <h4 className="text-xs font-extrabold text-gray-500 dark:text-muted">
                 {catConfig.label}
               </h4>
               <div className="flex-1 h-px bg-gray-200 dark:bg-card-border" />
@@ -517,7 +517,7 @@ export default function AlertsCenterTab({ tenantId: _tenantId, onNavigate }: Pro
                   <div
                     key={alert.id}
                     className={cn(
-                      "flex items-center gap-3 sm:gap-4 rounded-2xl border border-l-4 p-4",
+                      "flex items-center gap-3 sm:gap-4 rounded-xl border border-l-4 p-4",
                       config.border,
                       config.bg,
                       "border-gray-200 dark:border-card-border",
@@ -541,7 +541,7 @@ export default function AlertsCenterTab({ tenantId: _tenantId, onNavigate }: Pro
                         </p>
                         <span
                           className={cn(
-                            "hidden sm:inline-flex shrink-0 px-1.5 py-0.5 rounded text-[10px] font-bold uppercase tracking-wide",
+                            "hidden sm:inline-flex shrink-0 px-1.5 py-0.5 rounded text-[10px] font-bold",
                             config.badge,
                             config.badgeText,
                           )}

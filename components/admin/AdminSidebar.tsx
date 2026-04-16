@@ -60,12 +60,12 @@ const GROUP_ICONS: Record<ModuleGroup, LucideIcon> = {
 };
 
 const GROUP_COLORS: Record<ModuleGroup, { icon: string; bg: string; border: string }> = {
-  operaciones: { icon: "text-emerald-500", bg: "bg-emerald-50 dark:bg-emerald-900/20", border: "border-emerald-200 dark:border-emerald-800/40" },
-  gestion:     { icon: "text-amber-500", bg: "bg-amber-50 dark:bg-amber-900/20", border: "border-amber-200 dark:border-amber-800/40" },
-  finanzas:    { icon: "text-emerald-500", bg: "bg-emerald-50 dark:bg-emerald-900/20", border: "border-emerald-200 dark:border-emerald-800/40" },
-  documentos:  { icon: "text-purple-500", bg: "bg-purple-50 dark:bg-purple-900/20", border: "border-purple-200 dark:border-purple-800/40" },
-  inteligencia:{ icon: "text-pink-500", bg: "bg-pink-50 dark:bg-pink-900/20", border: "border-pink-200 dark:border-pink-800/40" },
-  config:      { icon: "text-gray-500", bg: "bg-gray-100 dark:bg-gray-800/50", border: "border-gray-200 dark:border-gray-700/50" },
+  operaciones: { icon: "text-gray-400", bg: "bg-gray-100 dark:bg-zinc-800/50", border: "border-gray-200 dark:border-zinc-700/40" },
+  gestion:     { icon: "text-gray-400", bg: "bg-gray-100 dark:bg-zinc-800/50", border: "border-gray-200 dark:border-zinc-700/40" },
+  finanzas:    { icon: "text-gray-400", bg: "bg-gray-100 dark:bg-zinc-800/50", border: "border-gray-200 dark:border-zinc-700/40" },
+  documentos:  { icon: "text-gray-400", bg: "bg-gray-100 dark:bg-zinc-800/50", border: "border-gray-200 dark:border-zinc-700/40" },
+  inteligencia:{ icon: "text-gray-400", bg: "bg-gray-100 dark:bg-zinc-800/50", border: "border-gray-200 dark:border-zinc-700/40" },
+  config:      { icon: "text-gray-400", bg: "bg-gray-100 dark:bg-zinc-800/50", border: "border-gray-200 dark:border-zinc-700/40" },
 };
 
 const GROUP_ORDER: ModuleGroup[] = ["operaciones", "gestion", "finanzas", "documentos", "inteligencia"];
@@ -508,7 +508,7 @@ function FlyoutPanel({
       animate={{ opacity: 1, x: 0 }}
       exit={{ opacity: 0, x: -10 }}
       transition={{ duration: 0.16 }}
-      className="fixed z-300 bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl shadow-2xl overflow-hidden"
+      className="fixed z-300 bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl overflow-hidden"
       style={{ left: sidebarWidth + 8, top, width: 240 }}
       onMouseEnter={onHoverStart}
       onMouseLeave={onHoverEnd}
@@ -518,7 +518,7 @@ function FlyoutPanel({
         <div className={cn("h-6 w-6 rounded-lg flex items-center justify-center", col.bg, col.border, "border")}>
           <Icon className={cn("h-3.5 w-3.5", col.icon)} />
         </div>
-        <span className={cn("text-[10px] font-bold uppercase tracking-widest", col.icon)}>
+        <span className={cn("text-[10px] font-bold", col.icon)}>
           {GROUP_LABELS[category]}
         </span>
       </div>
@@ -622,7 +622,7 @@ function CategorySection({
             <>
               <div className="flex-1 text-left min-w-0">
                 <span className={cn(
-                  "text-xs font-bold uppercase tracking-wide block",
+                  "text-xs font-bold block",
                   isAnyActive
                     ? "text-[#2563EB] dark:text-emerald-400"
                     : "text-gray-500 dark:text-gray-400 group-hover:text-gray-700 dark:group-hover:text-gray-300"
@@ -906,7 +906,7 @@ export default function AdminSidebar({
         >
           <button
             onClick={isMobile ? () => setMobileOpen(false) : onToggleCollapse}
-            className="p-2 rounded-xl text-gray-500 hover:bg-gray-100 dark:hover:bg-white/10 transition-colors shrink-0"
+            className="p-2 rounded-lg text-gray-500 hover:bg-gray-100 dark:hover:bg-white/10 transition-colors shrink-0"
             aria-label="Toggle sidebar"
           >
             {isMobile ? (
@@ -1198,7 +1198,7 @@ export default function AdminSidebar({
         onClick={() => setMobileOpen(true)}
         className={cn(
           "md:hidden fixed top-4 left-4 z-40 p-2.5 rounded-xl",
-          "bg-white dark:bg-card shadow-lg border border-gray-200 dark:border-card-border",
+          "bg-white dark:bg-card border border-gray-200 dark:border-card-border",
           "text-gray-700 dark:text-gray-300 active:scale-95 transition-transform"
         )}
         aria-label="Abrir menu"
@@ -1226,7 +1226,7 @@ export default function AdminSidebar({
               animate={{ x: 0 }}
               exit={{ x: "-100%" }}
               transition={{ duration: 0.25, ease: "easeInOut" }}
-              className="md:hidden fixed inset-y-0 left-0 z-50 h-full shadow-2xl"
+              className="md:hidden fixed inset-y-0 left-0 z-50 h-full"
               data-sidebar=""
             >
               {sidebarContent(true)}

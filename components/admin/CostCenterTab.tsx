@@ -106,11 +106,11 @@ export default function CostCenterTab() {
           <p className="text-sm text-gray-500 dark:text-muted mt-0.5">Distribución y seguimiento de gastos operativos por centro</p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
-          <button onClick={() => exportToCSV(filteredAllocations.map(a => ({ centro: centerName(a.centerId), fecha: a.date, concepto: a.concept, categoria: a.category, monto: a.amount, referencia: a.reference, notas: a.notes })), "centros-costo")} className="flex items-center gap-1.5 px-3 py-2 rounded-xl border border-gray-200 dark:border-card-border bg-white dark:bg-surface text-sm font-semibold text-gray-700 dark:text-foreground hover:bg-gray-50 dark:hover:bg-accent transition-colors">
+          <button onClick={() => exportToCSV(filteredAllocations.map(a => ({ centro: centerName(a.centerId), fecha: a.date, concepto: a.concept, categoria: a.category, monto: a.amount, referencia: a.reference, notas: a.notes })), "centros-costo")} className="flex items-center gap-1.5 px-3 py-2 rounded-lg border border-gray-200 dark:border-card-border bg-white dark:bg-surface text-sm font-semibold text-gray-700 dark:text-foreground hover:bg-gray-50 dark:hover:bg-accent transition-colors">
             <Download className="h-4 w-4" /> Exportar
           </button>
           {view === "asignaciones" && (
-            <button onClick={() => setShowFormAlloc(v => !v)} className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-primary text-white text-sm font-semibold hover:bg-primary/90 transition-colors">
+            <button onClick={() => setShowFormAlloc(v => !v)} className="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-primary text-white text-sm font-semibold hover:bg-primary/90 transition-colors">
               <Plus className="h-4 w-4" /> Asignar gasto
             </button>
           )}
@@ -125,7 +125,7 @@ export default function CostCenterTab() {
           { label: "Total asignado", value: fmt(globalStats.totalAllocated), color: "text-violet-600", bg: "bg-violet-50 dark:bg-violet-950/30" },
           { label: "Disponible", value: fmt(globalStats.totalBudget - globalStats.totalAllocated), color: globalStats.totalBudget >= globalStats.totalAllocated ? "text-emerald-600" : "text-red-500", bg: globalStats.totalBudget >= globalStats.totalAllocated ? "bg-emerald-50 dark:bg-emerald-950/30" : "bg-red-50 dark:bg-red-950/30" },
         ].map(({ label, value, color, bg }) => (
-          <div key={label} className={cn("rounded-2xl p-4", bg)}>
+          <div key={label} className={cn("rounded-xl p-4", bg)}>
             <p className="text-xs font-semibold text-gray-500 dark:text-muted mb-1">{label}</p>
             <p className={cn("text-xl font-extrabold", color)}>{value}</p>
           </div>
@@ -135,7 +135,7 @@ export default function CostCenterTab() {
       {/* View toggle */}
       <div className="flex flex-wrap gap-1 bg-gray-100 dark:bg-surface rounded-xl p-1 w-fit">
         {([["centros", "Centros"], ["asignaciones", "Asignaciones"]] as const).map(([v, label]) => (
-          <button key={v} onClick={() => setView(v)} className={cn("px-2 sm:px-4 py-1.5 sm:py-2 text-sm font-semibold rounded-lg transition-colors", view === v ? "bg-white dark:bg-card text-gray-900 dark:text-foreground shadow-sm" : "text-gray-500 dark:text-muted hover:text-gray-700")}>
+          <button key={v} onClick={() => setView(v)} className={cn("px-2 sm:px-4 py-1.5 sm:py-2 text-sm font-semibold rounded-lg transition-colors", view === v ? "bg-white dark:bg-card text-gray-900 dark:text-foreground " : "text-gray-500 dark:text-muted hover:text-gray-700")}>
             {label}
           </button>
         ))}
@@ -145,7 +145,7 @@ export default function CostCenterTab() {
       {view === "centros" && (
         <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-2 sm:gap-4">
           {centerStats.map(c => (
-            <div key={c.id} className={cn("bg-white dark:bg-card border rounded-2xl p-3 sm:p-5", c.pct > 100 ? "border-red-200 dark:border-red-800" : c.pct > 85 ? "border-amber-200 dark:border-amber-800" : "border-gray-200 dark:border-card-border")}>
+            <div key={c.id} className={cn("bg-white dark:bg-card border rounded-xl p-3 sm:p-5", c.pct > 100 ? "border-red-200 dark:border-red-800" : c.pct > 85 ? "border-amber-200 dark:border-amber-800" : "border-gray-200 dark:border-card-border")}>
               <div className="flex items-start justify-between mb-3">
                 <div>
                   <span className="text-xs font-mono font-bold text-gray-400">{c.code}</span>
@@ -176,10 +176,10 @@ export default function CostCenterTab() {
 
       {/* Allocations view */}
       {view === "asignaciones" && (
-        <div className="space-y-4">
+        <div className="space-y-6">
           {/* New allocation form */}
           {showFormAlloc && (
-            <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl p-3 sm:p-5 space-y-4">
+            <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl p-3 sm:p-5 space-y-4">
               <div className="flex items-center justify-between">
                 <h3 className="font-bold text-gray-900 dark:text-foreground text-sm flex flex-wrap items-center gap-2"><Plus className="h-4 w-4 text-primary" /> Asignar gasto a centro</h3>
                 <button onClick={() => setShowFormAlloc(false)}><X className="h-4 w-4 text-gray-400" /></button>
@@ -211,8 +211,8 @@ export default function CostCenterTab() {
                 </div>
               </div>
               <div className="flex flex-wrap gap-2 justify-end">
-                <button onClick={() => setShowFormAlloc(false)} className="px-2 sm:px-4 py-1.5 sm:py-2 text-sm rounded-xl border border-gray-200 dark:border-card-border text-gray-600 dark:text-muted">Cancelar</button>
-                <button onClick={handleAddAllocation} className="px-2 sm:px-4 py-1.5 sm:py-2 text-sm rounded-xl bg-primary text-white font-semibold hover:bg-primary/90">Registrar</button>
+                <button onClick={() => setShowFormAlloc(false)} className="px-2 sm:px-4 py-1.5 sm:py-2 text-sm rounded-lg border border-gray-200 dark:border-card-border text-gray-600 dark:text-muted">Cancelar</button>
+                <button onClick={handleAddAllocation} className="px-2 sm:px-4 py-1.5 sm:py-2 text-sm rounded-lg bg-primary text-white font-semibold hover:bg-primary/90">Registrar</button>
               </div>
             </div>
           )}
@@ -221,20 +221,20 @@ export default function CostCenterTab() {
           <div className="flex flex-col sm:flex-row gap-3">
             <div className="relative flex-1 max-w-sm">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
-              <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Concepto, referencia..." className="w-full pl-9 pr-3 py-2 text-sm border border-gray-200 dark:border-card-border rounded-xl bg-white dark:bg-surface text-gray-700 dark:text-foreground" />
+              <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Concepto, referencia..." className="w-full pl-9 pr-3 py-2 text-sm border border-gray-200 dark:border-card-border rounded-lg bg-white dark:bg-surface text-gray-700 dark:text-foreground" />
             </div>
-            <select value={filterCenter} onChange={e => setFilterCenter(e.target.value)} className="text-sm border border-gray-200 dark:border-card-border rounded-xl px-3 py-2 bg-white dark:bg-surface text-gray-700 dark:text-foreground">
+            <select value={filterCenter} onChange={e => setFilterCenter(e.target.value)} className="text-sm border border-gray-200 dark:border-card-border rounded-lg px-3 py-2 bg-white dark:bg-surface text-gray-700 dark:text-foreground">
               <option value="todos">Todos los centros</option>
               {centers.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
             </select>
-            <select value={filterCat} onChange={e => setFilterCat(e.target.value)} className="text-sm border border-gray-200 dark:border-card-border rounded-xl px-3 py-2 bg-white dark:bg-surface text-gray-700 dark:text-foreground">
+            <select value={filterCat} onChange={e => setFilterCat(e.target.value)} className="text-sm border border-gray-200 dark:border-card-border rounded-lg px-3 py-2 bg-white dark:bg-surface text-gray-700 dark:text-foreground">
               <option value="todos">Todas las categorías</option>
               {EXPENSE_CATEGORIES.map(c => <option key={c} value={c}>{c}</option>)}
             </select>
           </div>
 
           {/* Table */}
-          <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl overflow-hidden">
+          <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl overflow-hidden">
             <div className="overflow-x-auto">
               <table className="w-full min-w-[600px] text-sm">
                 <thead className="bg-gray-50 dark:bg-surface/50 border-b border-gray-200 dark:border-card-border">

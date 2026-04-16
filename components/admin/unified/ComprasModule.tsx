@@ -324,7 +324,7 @@ function ComprasDashboard() {
       </div>
 
       {/* === Compras por Mes (AreaChart) === */}
-      <div className="bg-white rounded-2xl border border-gray-100 p-6 shadow-sm">
+      <div className="bg-white rounded-xl border border-gray-100 p-6 ">
         <div className="flex items-center gap-2 mb-4"><FavStar id="compras-mes" favs={compFavs} /><h3 className="text-sm font-bold text-gray-900">Compras por mes (ultimos 6 meses)</h3></div>
         <ResponsiveContainer width="100%" height={280}>
           <AreaChart data={purchasesByMonth}>
@@ -343,7 +343,7 @@ function ComprasDashboard() {
               const val = typeof rawVal === "number" ? rawVal : 0;
               const count = (payload[0]?.payload as { count?: number } | undefined)?.count || 0;
               return (
-                <div className="bg-white rounded-xl shadow-lg border border-gray-100 px-4 py-3">
+                <div className="bg-white rounded-xl border border-gray-100 px-4 py-3">
                   <p className="text-xs font-semibold text-gray-900">{String(label ?? "")}</p>
                   <p className="text-xs text-gray-500 mt-1">
                     S/ {val.toLocaleString()} ({count} OCs)
@@ -358,7 +358,7 @@ function ComprasDashboard() {
 
       {/* === Distribucion por Proveedor (PieChart + tabla) === */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <div className="bg-white rounded-2xl border border-gray-100 p-6 shadow-sm">
+        <div className="bg-white rounded-xl border border-gray-100 p-6 ">
           <div className="flex items-center justify-between mb-4">
             <h3 className="text-sm font-bold text-gray-900">Gasto por proveedor</h3>
             <div className="flex items-center gap-2">
@@ -387,7 +387,7 @@ function ComprasDashboard() {
           </ResponsiveContainer>
         </div>
 
-        <div className="bg-white rounded-2xl border border-gray-100 p-6 shadow-sm">
+        <div className="bg-white rounded-xl border border-gray-100 p-6 ">
           <h3 className="text-sm font-bold text-gray-900 mb-4">Ranking de proveedores</h3>
           <div className="max-h-70 space-y-3 overflow-y-auto">
             {supplierSpend.length === 0 ? (
@@ -420,7 +420,7 @@ function ComprasDashboard() {
       </div>
 
       {/* === Estado de OC (BarChart stacked) === */}
-      <div className="bg-white rounded-2xl border border-gray-100 p-6 shadow-sm">
+      <div className="bg-white rounded-xl border border-gray-100 p-6 ">
         <h3 className="text-sm font-bold text-gray-900 mb-4">Estado de ordenes por mes</h3>
         <ResponsiveContainer width="100%" height={250}>
           <BarChart data={statusByMonth}>
@@ -439,7 +439,7 @@ function ComprasDashboard() {
 
       {/* === Deuda por Proveedor (horizontal) + Proximos Pagos === */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <div className="bg-white rounded-2xl border border-gray-100 p-6 shadow-sm">
+        <div className="bg-white rounded-xl border border-gray-100 p-6 ">
           <h3 className="text-sm font-bold text-gray-900 mb-4">Deuda por proveedor</h3>
           {debtBySupplier.length === 0 ? (
             <EmptyState title="Sin deudas registradas" description="No hay deudas pendientes con proveedores" />
@@ -460,7 +460,7 @@ function ComprasDashboard() {
           )}
         </div>
 
-        <div className="bg-white rounded-2xl border border-gray-100 p-6 shadow-sm">
+        <div className="bg-white rounded-xl border border-gray-100 p-6 ">
           <h3 className="text-sm font-bold text-gray-900 mb-4">Proximos pagos</h3>
           {nextPayments.length === 0 ? (
             <EmptyState title="Sin pagos pendientes" description="No hay pagos próximos registrados" />
@@ -500,7 +500,7 @@ function ComprasDashboard() {
       </div>
 
       {/* === Tendencia de Gastos vs Promedio Movil (ComposedChart) === */}
-      <div className="bg-white rounded-2xl border border-gray-100 p-6 shadow-sm">
+      <div className="bg-white rounded-xl border border-gray-100 p-6 ">
         <h3 className="text-sm font-bold text-gray-900 mb-1">Tendencia de gastos</h3>
         <p className="text-[10px] text-gray-400 mb-4">Gasto real vs promedio movil 3 meses</p>
         <ResponsiveContainer width="100%" height={260}>
@@ -558,7 +558,7 @@ export default function ComprasModule() {
 
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-6">
       <AdminModuleHeader
         title="Compras"
         description="Pedidos a proveedores, recepción y cuentas por pagar"

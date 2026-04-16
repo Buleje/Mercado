@@ -17,19 +17,19 @@ export default function AnalisisDashboard() {
   return (
     <div className="space-y-6">
       <div>
-        <h3 className="text-sm font-bold text-gray-500 dark:text-muted uppercase tracking-wider mb-3">Análisis ABC</h3>
+        <h3 className="text-sm font-bold text-gray-500 dark:text-muted mb-3">Análisis ABC</h3>
         <ABCAnalysisTab />
       </div>
       <div className="border-t border-gray-200 dark:border-gray-700 pt-6">
-        <h3 className="text-sm font-bold text-gray-500 dark:text-muted uppercase tracking-wider mb-3">Control de Vencimientos</h3>
+        <h3 className="text-sm font-bold text-gray-500 dark:text-muted mb-3">Control de Vencimientos</h3>
         <ExpiryDashboardTab />
       </div>
       <div className="border-t border-gray-200 dark:border-gray-700 pt-6">
-        <h3 className="text-sm font-bold text-gray-500 dark:text-muted uppercase tracking-wider mb-3">Predicción de Stock</h3>
+        <h3 className="text-sm font-bold text-gray-500 dark:text-muted mb-3">Predicción de Stock</h3>
         <StockPredictionWidget />
       </div>
       <div className="border-t border-gray-200 dark:border-gray-700 pt-6">
-        <h3 className="text-sm font-bold text-gray-500 dark:text-muted uppercase tracking-wider mb-3">Estacionalidad</h3>
+        <h3 className="text-sm font-bold text-gray-500 dark:text-muted mb-3">Estacionalidad</h3>
         <SeasonalityInsights />
       </div>
     </div>

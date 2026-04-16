@@ -376,7 +376,7 @@ export default function CRMTab() {
         <div className="flex items-center gap-2 shrink-0 flex-wrap">
           <button
             onClick={() => setShowNewClientModal(true)}
-            className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-sm font-bold text-white transition-colors shadow-sm"
+            className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-bold text-white transition-colors "
             style={{ backgroundColor: "#00B4A6" }}
           >
             <UserPlus className="h-4 w-4" /> Nuevo Cliente
@@ -386,7 +386,7 @@ export default function CRMTab() {
               customers.map(c => ({ nombre: c.name, telefono: c.phone, ubicacion: c.location ?? "", gastado: c.totalSpent ?? 0, segmento: c._segment ?? "nuevo" })),
               "crm-clientes"
             )}
-            className="flex items-center gap-1.5 px-3 py-2 rounded-xl border border-gray-200 dark:border-card-border bg-white dark:bg-surface text-sm font-semibold text-gray-700 dark:text-foreground hover:bg-gray-50 dark:hover:bg-accent transition-colors"
+            className="flex items-center gap-1.5 px-3 py-2 rounded-lg border border-gray-200 dark:border-card-border bg-white dark:bg-surface text-sm font-semibold text-gray-700 dark:text-foreground hover:bg-gray-50 dark:hover:bg-accent transition-colors"
           >
             <Download className="h-4 w-4" /> CSV
           </button>
@@ -405,7 +405,7 @@ export default function CRMTab() {
               const fecha = new Date().toISOString().slice(0, 10);
               exportToExcel(rows, `clientes-${fecha}`, "Clientes");
             }}
-            className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-emerald-50 dark:bg-emerald-950/30 text-sm font-bold text-emerald-700 dark:text-emerald-400 hover:bg-emerald-100 dark:hover:bg-emerald-900/30 transition-colors"
+            className="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-emerald-50 dark:bg-emerald-950/30 text-sm font-bold text-emerald-700 dark:text-emerald-400 hover:bg-emerald-100 dark:hover:bg-emerald-900/30 transition-colors"
           >
             <Download className="h-4 w-4" /> Excel
           </button>
@@ -435,7 +435,7 @@ export default function CRMTab() {
             key={k.label}
             initial={{ opacity: 0, y: 6 }}
             animate={{ opacity: 1, y: 0 }}
-            className={cn("rounded-2xl p-4", k.bg)}
+            className={cn("rounded-xl p-4", k.bg)}
           >
             <div className="flex items-center gap-1.5 mb-1">
               <k.icon className={cn("h-4 w-4", k.color)} />
@@ -462,7 +462,7 @@ export default function CRMTab() {
         if (totalWithChannel < 5) return null;
         const chartData = entries.map(([name, value]) => ({ name: CHANNEL_LABELS[name] ?? name, value }));
         return (
-          <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl p-4 flex items-center gap-4">
+          <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl p-4 flex items-center gap-4">
             <div style={{ width: 100, height: 100 }}>
               <ResponsiveContainer width="100%" height="100%">
                 <PieChart>
@@ -495,7 +495,7 @@ export default function CRMTab() {
             value={search}
             onChange={e => setSearch(e.target.value)}
             placeholder="Nombre o telefono..."
-            className="w-full pl-10 pr-9 py-2.5 text-sm rounded-xl border border-gray-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 focus:border-violet-500 focus:ring-2 focus:ring-violet-500/20 outline-none transition-all"
+            className="w-full pl-10 pr-9 py-2.5 text-sm rounded-lg border border-gray-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 focus:border-violet-500 focus:ring-2 focus:ring-violet-500/20 outline-none transition-all"
           />
           {search && (
             <button onClick={() => setSearch("")} className="absolute right-3 top-1/2 -translate-y-1/2">
@@ -516,7 +516,7 @@ export default function CRMTab() {
             key={f.key}
             onClick={() => setFilterSegment(f.key)}
             className={cn(
-              "inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-sm font-medium border transition-all",
+              "inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-sm font-medium border transition-all",
               filterSegment === f.key
                 ? "bg-violet-50 dark:bg-violet-900/20 border-violet-200 dark:border-violet-800 text-violet-700 dark:text-violet-400"
                 : "border-gray-200 dark:border-zinc-700 text-gray-600 dark:text-zinc-400 bg-white dark:bg-zinc-900 hover:bg-gray-50 dark:hover:bg-zinc-800"
@@ -543,7 +543,7 @@ export default function CRMTab() {
         </span>
 
         {/* Acciones */}
-        <button onClick={load} className="p-2 rounded-xl bg-gray-100 dark:bg-surface hover:bg-gray-200 dark:hover:bg-accent transition-colors" title="Actualizar">
+        <button onClick={load} className="p-2 rounded-lg bg-gray-100 dark:bg-surface hover:bg-gray-200 dark:hover:bg-accent transition-colors" title="Actualizar">
           <RefreshCw className="h-4 w-4 text-gray-500" />
         </button>
       </div>
@@ -561,7 +561,7 @@ export default function CRMTab() {
             key={f.key}
             onClick={() => setQuickFilter(f.key)}
             className={cn(
-              "inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-sm font-medium border transition-all",
+              "inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-sm font-medium border transition-all",
               quickFilter === f.key
                 ? "bg-violet-50 dark:bg-violet-900/20 border-violet-200 dark:border-violet-800 text-violet-700 dark:text-violet-400"
                 : "border-gray-200 dark:border-zinc-700 text-gray-600 dark:text-zinc-400 bg-white dark:bg-zinc-900 hover:bg-gray-50 dark:hover:bg-zinc-800"
@@ -592,7 +592,7 @@ export default function CRMTab() {
             key={f.key}
             onClick={() => setFreqFilter(f.key)}
             className={cn(
-              "inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-sm font-medium border transition-all",
+              "inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-sm font-medium border transition-all",
               freqFilter === f.key
                 ? "bg-violet-50 dark:bg-violet-900/20 border-violet-200 dark:border-violet-800 text-violet-700 dark:text-violet-400"
                 : "border-gray-200 dark:border-zinc-700 text-gray-600 dark:text-zinc-400 bg-white dark:bg-zinc-900 hover:bg-gray-50 dark:hover:bg-zinc-800"
@@ -615,7 +615,7 @@ export default function CRMTab() {
           <span className="text-xs font-semibold text-gray-500 dark:text-muted">Etiqueta:</span>
           <button
             onClick={() => setFilterTag("todos")}
-            className={cn("inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-sm font-medium border transition-all",
+            className={cn("inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-sm font-medium border transition-all",
               filterTag === "todos"
                 ? "bg-violet-50 dark:bg-violet-900/20 border-violet-200 dark:border-violet-800 text-violet-700 dark:text-violet-400"
                 : "border-gray-200 dark:border-zinc-700 text-gray-600 dark:text-zinc-400 bg-white dark:bg-zinc-900 hover:bg-gray-50 dark:hover:bg-zinc-800"
@@ -629,7 +629,7 @@ export default function CRMTab() {
               <button
                 key={tag}
                 onClick={() => setFilterTag(tag)}
-                className={cn("inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-sm font-medium border transition-all",
+                className={cn("inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-sm font-medium border transition-all",
                   isActive
                     ? "bg-violet-50 dark:bg-violet-900/20 border-violet-200 dark:border-violet-800 text-violet-700 dark:text-violet-400"
                     : "border-gray-200 dark:border-zinc-700 text-gray-600 dark:text-zinc-400 bg-white dark:bg-zinc-900 hover:bg-gray-50 dark:hover:bg-zinc-800"
@@ -653,21 +653,21 @@ export default function CRMTab() {
       )}
 
       {/* Table — UX Mejora 18: Sticky header */}
-      <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl overflow-hidden">
+      <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl overflow-hidden">
         <div className="max-h-[65vh] overflow-y-auto overflow-x-auto">
           <table className="w-full min-w-[600px] text-sm">
             <thead className="sticky top-0 bg-gray-50 dark:bg-surface border-b border-gray-200 dark:border-card-border z-10 shadow-[0_1px_0_0_rgba(0,0,0,0.05)]">
               <tr>
                 {compareMode && <th className="w-10 px-2 py-3"><span className="sr-only">Seleccionar</span></th>}
-                <th className="text-center px-3 py-3 text-[10px] font-bold text-gray-400 uppercase tracking-wide w-14">Rank</th>
-                <th className="text-left px-4 py-3 text-[10px] font-bold text-gray-400 uppercase tracking-wide">Cliente</th>
-                <th className="text-left px-4 py-3 text-[10px] font-bold text-gray-400 uppercase tracking-wide">Telefono</th>
-                <th className="text-left px-4 py-3 text-[10px] font-bold text-gray-400 uppercase tracking-wide hidden sm:table-cell">Ultimo pedido</th>
-                <th className="text-right px-4 py-3 text-[10px] font-bold text-gray-400 uppercase tracking-wide hidden md:table-cell">Total gastado</th>
-                <th className="text-left px-4 py-3 text-[10px] font-bold text-gray-400 uppercase tracking-wide hidden lg:table-cell">Credito</th>
-                <th className="text-left px-4 py-3 text-[10px] font-bold text-gray-400 uppercase tracking-wide">Segmento</th>
-                <th className="text-left px-4 py-3 text-[10px] font-bold text-gray-400 uppercase tracking-wide hidden md:table-cell">Contacto</th>
-                <th className="text-center px-4 py-3 text-[10px] font-bold text-gray-400 uppercase tracking-wide">Ver</th>
+                <th className="text-center px-3 py-3 text-[10px] font-bold text-gray-400 w-14">Rank</th>
+                <th className="text-left px-4 py-3 text-[10px] font-bold text-gray-400">Cliente</th>
+                <th className="text-left px-4 py-3 text-[10px] font-bold text-gray-400">Telefono</th>
+                <th className="text-left px-4 py-3 text-[10px] font-bold text-gray-400 hidden sm:table-cell">Ultimo pedido</th>
+                <th className="text-right px-4 py-3 text-[10px] font-bold text-gray-400 hidden md:table-cell">Total gastado</th>
+                <th className="text-left px-4 py-3 text-[10px] font-bold text-gray-400 hidden lg:table-cell">Credito</th>
+                <th className="text-left px-4 py-3 text-[10px] font-bold text-gray-400">Segmento</th>
+                <th className="text-left px-4 py-3 text-[10px] font-bold text-gray-400 hidden md:table-cell">Contacto</th>
+                <th className="text-center px-4 py-3 text-[10px] font-bold text-gray-400">Ver</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-50 dark:divide-card-border">
@@ -879,7 +879,7 @@ export default function CRMTab() {
 
       {/* Mejora 13: Compare sticky bar */}
       {compareMode && comparePhones.size > 0 && (
-        <div className="fixed bottom-0 left-0 right-0 z-30 bg-white dark:bg-card border-t border-gray-200 dark:border-card-border shadow-lg px-4 py-3">
+        <div className="fixed bottom-0 left-0 right-0 z-30 bg-white dark:bg-card border-t border-gray-200 dark:border-card-border px-4 py-3">
           <div className="max-w-5xl mx-auto flex items-center justify-between gap-3">
             <p className="text-sm font-bold text-gray-900 dark:text-foreground">
               {comparePhones.size} cliente{comparePhones.size !== 1 ? "s" : ""} seleccionado{comparePhones.size !== 1 ? "s" : ""} (max 3)
@@ -887,14 +887,14 @@ export default function CRMTab() {
             <div className="flex gap-2">
               <button
                 onClick={() => { setComparePhones(new Set()); }}
-                className="px-3 py-2 rounded-xl text-xs font-bold text-gray-500 bg-gray-100 hover:bg-gray-200 transition-colors"
+                className="px-3 py-2 rounded-lg text-xs font-bold text-gray-500 bg-gray-100 hover:bg-gray-200 transition-colors"
               >
                 Limpiar
               </button>
               <button
                 onClick={() => setShowCompareModal(true)}
                 disabled={comparePhones.size < 2}
-                className="px-4 py-2 rounded-xl text-xs font-bold text-white bg-violet-600 hover:bg-violet-700 disabled:opacity-50 transition-colors"
+                className="px-4 py-2 rounded-lg text-xs font-bold text-white bg-violet-600 hover:bg-violet-700 disabled:opacity-50 transition-colors"
               >
                 Ver comparativa
               </button>
@@ -923,7 +923,7 @@ export default function CRMTab() {
               className="fixed inset-0 z-50 flex items-center justify-center p-4"
               onClick={e => e.target === e.currentTarget && setShowCompareModal(false)}
             >
-              <div className="w-full max-w-2xl bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl shadow-2xl p-5 space-y-4 max-h-[85vh] overflow-y-auto">
+              <div className="w-full max-w-2xl bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl p-5 space-y-4 max-h-[85vh] overflow-y-auto">
                 <div className="flex items-center justify-between">
                   <h3 className="text-lg font-bold text-gray-900 dark:text-foreground flex items-center gap-2">
                     <BarChart3 className="h-5 w-5 text-violet-500" /> Comparativa de Clientes

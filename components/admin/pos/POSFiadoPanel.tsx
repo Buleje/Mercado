@@ -131,7 +131,7 @@ export default function POSFiadoPanel({
 
       {/* Cobrar mini modal */}
       {showCobrar && (
-        <div className="p-3 rounded-lg bg-white dark:bg-card border border-gray-200 dark:border-card-border shadow-sm space-y-2">
+        <div className="p-3 rounded-lg bg-white dark:bg-card border border-gray-200 dark:border-card-border  space-y-2">
           <div className="flex items-center justify-between">
             <p className="text-xs font-bold text-gray-700 dark:text-foreground">
               Cobrar fiado

@@ -54,7 +54,7 @@ export default function PrestamoTimeline({ cuotas, totalCuotas }: Props) {
   const nextPendingIdx = cuotas.findIndex(c => !c.pagadoEn);
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-6">
       {/* Summary bar */}
       <div className="bg-gray-50 dark:bg-white/5 rounded-xl p-3 space-y-2">
         <div className="flex items-center justify-between">

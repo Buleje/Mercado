@@ -311,7 +311,7 @@ export default function PhysicalCountTab() {
           <button
             onClick={handleStart}
             disabled={loading}
-            className="flex items-center gap-3 p-5 rounded-xl border-2 border-[#00B4A6] bg-[#00B4A6]/5 dark:bg-[#00B4A6]/10 hover:bg-[#00B4A6]/10 dark:hover:bg-[#00B4A6]/20 transition-colors text-left disabled:opacity-60"
+            className="flex items-center gap-3 p-5 rounded-lg border-2 border-[#00B4A6] bg-[#00B4A6]/5 dark:bg-[#00B4A6]/10 hover:bg-[#00B4A6]/10 dark:hover:bg-[#00B4A6]/20 transition-colors text-left disabled:opacity-60"
           >
             {loading ? (
               <RefreshCw className="h-8 w-8 text-[#00B4A6] animate-spin shrink-0" />
@@ -328,7 +328,7 @@ export default function PhysicalCountTab() {
 
           <button
             onClick={() => setView("history")}
-            className="flex items-center gap-3 p-5 rounded-xl border border-gray-200 dark:border-card-border hover:bg-gray-50 dark:hover:bg-card/60 transition-colors text-left"
+            className="flex items-center gap-3 p-5 rounded-lg border border-gray-200 dark:border-card-border hover:bg-gray-50 dark:hover:bg-card/60 transition-colors text-left"
           >
             <History className="h-8 w-8 text-gray-400 shrink-0" />
             <div>
@@ -357,7 +357,7 @@ export default function PhysicalCountTab() {
     const total = session.rows.length;
 
     return (
-      <div className="space-y-4">
+      <div className="space-y-6">
         {/* Header */}
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
@@ -476,7 +476,7 @@ export default function PhysicalCountTab() {
 
   if (view === "reconcile" && session) {
     return (
-      <div className="space-y-4">
+      <div className="space-y-6">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
             <h2 className="text-lg font-bold text-gray-900 dark:text-foreground flex items-center gap-2">
@@ -578,7 +578,7 @@ export default function PhysicalCountTab() {
 
   if (view === "history") {
     return (
-      <div className="space-y-4">
+      <div className="space-y-6">
         <div className="flex items-center justify-between gap-3">
           <h2 className="text-lg font-bold text-gray-900 dark:text-foreground flex items-center gap-2">
             <History className="h-5 w-5 text-[#00B4A6]" />

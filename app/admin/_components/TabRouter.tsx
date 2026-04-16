@@ -270,7 +270,7 @@ export function TabRouter({
 
         {/* ── Repetir tutorial ── */}
         <div className="pt-8 border-t border-gray-200 dark:border-card-border">
-          <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl p-5 shadow-sm flex flex-col sm:flex-row sm:items-center gap-4">
+          <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl p-5  flex flex-col sm:flex-row sm:items-center gap-4">
             <div className="flex items-center gap-3 flex-1 min-w-0">
               <div className="w-11 h-11 rounded-xl bg-gray-50 dark:bg-gray-800/40 flex items-center justify-center shrink-0">
                 <GraduationCap className="h-5 w-5 text-gray-400" />
@@ -285,7 +285,7 @@ export function TabRouter({
                 onboarding.resetTour();
                 onNavigateTab("asistente-ia");
               }}
-              className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-bold text-white bg-gray-900 dark:bg-white dark:text-gray-900 hover:bg-gray-800 dark:hover:bg-gray-100 shadow-sm transition-colors shrink-0"
+              className="inline-flex items-center gap-2 px-4 py-2.5 rounded-lg text-sm font-bold text-white bg-gray-900 dark:bg-white dark:text-gray-900 hover:bg-gray-800 dark:hover:bg-gray-100  transition-colors shrink-0"
             >
               <RefreshCw className="h-4 w-4" />
               Repetir tutorial de bienvenida

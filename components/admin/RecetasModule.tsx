@@ -39,7 +39,7 @@ function RecetasDashboard() {
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
           {[...Array(4)].map((_, i) => <div key={i} className="h-20 bg-gray-200 dark:bg-gray-700 rounded-xl" />)}
         </div>
-        <div className="h-64 bg-gray-200 dark:bg-gray-700 rounded-2xl" />
+        <div className="h-64 bg-gray-200 dark:bg-gray-700 rounded-xl" />
       </div>
     );
   }
@@ -108,8 +108,8 @@ function RecetasDashboard() {
           { label: "Costo promedio", value: `S/${costoPromedio.toFixed(2)}`, border: "border-b-4 border-purple-500" },
           { label: "Ingredientes totales", value: String(ingredientesTotales), border: "border-b-4 border-emerald-500" },
         ].map(k => (
-          <div key={k.label} className={cn("bg-white dark:bg-card rounded-xl border border-gray-200 dark:border-card-border p-4 shadow-sm", k.border)}>
-            <p className="text-[10px] text-gray-500 font-medium uppercase tracking-wider">{k.label}</p>
+          <div key={k.label} className={cn("bg-white dark:bg-card rounded-xl border border-gray-200 dark:border-card-border p-4 ", k.border)}>
+            <p className="text-[10px] text-gray-500 font-medium">{k.label}</p>
             <p className="text-2xl font-mono font-bold mt-1 text-gray-900 dark:text-white">{k.value}</p>
           </div>
         ))}
@@ -118,7 +118,7 @@ function RecetasDashboard() {
 
       {/* Lotes producidos por semana */}
       <m.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 1 * 0.1 }}>
-      <div className="bg-white dark:bg-card rounded-2xl border border-gray-200 dark:border-card-border p-6 shadow-sm">
+      <div className="bg-white dark:bg-card rounded-xl border border-gray-200 dark:border-card-border p-6 ">
         <h3 className="text-sm font-bold text-gray-700 dark:text-foreground mb-4">Lotes producidos por semana</h3>
         {weeklyData.some(d => d.lotes > 0) ? (
           <ResponsiveContainer width="100%" height={220}>
@@ -139,7 +139,7 @@ function RecetasDashboard() {
       <m.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 2 * 0.1 }}>
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* PieChart: recetas por categoria */}
-        <div className="bg-white dark:bg-card rounded-2xl border border-gray-200 dark:border-card-border p-6 shadow-sm">
+        <div className="bg-white dark:bg-card rounded-xl border border-gray-200 dark:border-card-border p-6 ">
           <h3 className="text-sm font-bold text-gray-700 dark:text-foreground mb-4">Recetas por tipo</h3>
           {categoryData.length > 0 ? (
             <ResponsiveContainer width="100%" height={220}>
@@ -156,7 +156,7 @@ function RecetasDashboard() {
         </div>
 
         {/* Top 5 recetas mas producidas */}
-        <div className="bg-white dark:bg-card rounded-2xl border border-gray-200 dark:border-card-border p-6 shadow-sm">
+        <div className="bg-white dark:bg-card rounded-xl border border-gray-200 dark:border-card-border p-6 ">
           <h3 className="text-sm font-bold text-gray-700 dark:text-foreground mb-4">Top 5 recetas mas producidas</h3>
           {top5Recetas.length > 0 ? (
             <div className="space-y-3">
@@ -184,7 +184,7 @@ const RecetarioAdminTab = React.lazy(() => import("@/components/admin/recetas/Re
 function EmptyChart({ message }: { message: string }) {
   return (
     <div className="flex flex-col items-center justify-center py-12 text-center">
-      <div className="h-12 w-12 rounded-2xl bg-primary/10 flex items-center justify-center mb-3"><ChefHat className="h-6 w-6 text-primary" /></div>
+      <div className="h-12 w-12 rounded-xl bg-primary/10 flex items-center justify-center mb-3"><ChefHat className="h-6 w-6 text-primary" /></div>
       <p className="text-sm font-medium text-gray-500 dark:text-gray-400">{message}</p>
       <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">Los datos apareceran cuando registres actividad</p>
     </div>
@@ -484,7 +484,7 @@ export default function RecetasModule() {
       {/* Header — Mejora 20 */}
       <div className="flex flex-col sm:flex-row sm:items-center gap-3">
         <div className="flex items-center gap-3 flex-1">
-          <div className="h-10 w-10 rounded-xl bg-[#2563EB] text-white flex items-center justify-center shadow-sm shrink-0">
+          <div className="h-10 w-10 rounded-lg bg-[#2563EB] text-white flex items-center justify-center  shrink-0">
             <FlaskConical className="h-5 w-5" />
           </div>
           <div>
@@ -501,7 +501,7 @@ export default function RecetasModule() {
         {activeTab === "recetas" && (
           <button
             onClick={() => { setShowNew(true); addIngrediente(); }}
-            className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-bold text-white bg-[#2563EB] hover:bg-[#1D4ED8] shadow-sm transition-colors shrink-0"
+            className="inline-flex items-center gap-2 px-4 py-2.5 rounded-lg text-sm font-bold text-white bg-[#2563EB] hover:bg-[#1D4ED8]  transition-colors shrink-0"
           >
             <Plus className="h-4 w-4" />
             Nueva Receta
@@ -581,7 +581,7 @@ export default function RecetasModule() {
                       placeholder="Buscar receta..."
                       value={recetaSearch}
                       onChange={e => setRecetaSearch(e.target.value)}
-                      className="w-full pl-9 pr-3 py-2 rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 text-sm text-gray-900 dark:text-white placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#2563EB]/30"
+                      className="w-full pl-9 pr-3 py-2 rounded-lg border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 text-sm text-gray-900 dark:text-white placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#2563EB]/30"
                     />
                   </div>
                   <div className="flex gap-1">
@@ -597,7 +597,7 @@ export default function RecetasModule() {
                   <select
                     value={recetaSort}
                     onChange={e => setRecetaSort(e.target.value as typeof recetaSort)}
-                    className="px-3 py-2 rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 text-xs font-bold text-gray-700 dark:text-gray-300 focus:outline-none focus:ring-2 focus:ring-[#2563EB]/30"
+                    className="px-3 py-2 rounded-lg border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 text-xs font-bold text-gray-700 dark:text-gray-300 focus:outline-none focus:ring-2 focus:ring-[#2563EB]/30"
                   >
                     <option value="nombre">Nombre A-Z</option>
                     <option value="costo-asc">Costo menor</option>
@@ -624,7 +624,7 @@ export default function RecetasModule() {
                         <div
                           key={r.id}
                           className={cn(
-                            "relative text-left bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl p-4 shadow-sm hover:shadow-lg hover:scale-[1.01] transition-all group",
+                            "relative text-left bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl p-4  hover:shadow-lg hover:scale-[1.01] transition-all group",
                             !r.activa && "opacity-60"
                           )}
                         >
@@ -740,12 +740,12 @@ export default function RecetasModule() {
               animate={{ x: 0 }}
               exit={{ x: "100%" }}
               transition={{ type: "spring", damping: 25, stiffness: 250 }}
-              className="fixed inset-y-0 right-0 z-50 w-full max-w-md bg-white dark:bg-card border-l border-gray-200 dark:border-card-border shadow-2xl overflow-y-auto"
+              className="fixed inset-y-0 right-0 z-50 w-full max-w-md bg-white dark:bg-card border-l border-gray-200 dark:border-card-border overflow-y-auto"
             >
               <div className="p-4 sm:p-6 space-y-5">
                 <div className="flex items-center justify-between">
                   <h3 className="text-lg font-bold text-gray-900 dark:text-white">{selected.nombre}</h3>
-                  <button onClick={() => setSelected(null)} className="p-2 rounded-xl hover:bg-gray-100 dark:hover:bg-white/5 transition-colors">
+                  <button onClick={() => setSelected(null)} className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-white/5 transition-colors">
                     <X className="h-5 w-5 text-gray-500" />
                   </button>
                 </div>
@@ -923,7 +923,7 @@ export default function RecetasModule() {
                       {/* Producir button */}
                       <button
                         onClick={() => { setShowProducir(true); setProducirError(null); }}
-                        className="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-sm font-bold text-white bg-[#2563EB] hover:bg-[#1D4ED8] shadow-sm transition-colors"
+                        className="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg text-sm font-bold text-white bg-[#2563EB] hover:bg-[#1D4ED8]  transition-colors"
                       >
                         <Layers className="h-4 w-4" />
                         Producir Lote
@@ -958,7 +958,7 @@ export default function RecetasModule() {
               className="fixed inset-0 z-50 flex items-center justify-center p-4"
               onClick={e => e.target === e.currentTarget && resetNew()}
             >
-              <div className="w-full max-w-xl bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl shadow-2xl flex flex-col max-h-[90vh]">
+              <div className="w-full max-w-xl bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl flex flex-col max-h-[90vh]">
                 {/* UX Mejora 12: Sticky header */}
                 <div className="sticky top-0 z-10 bg-white dark:bg-card border-b border-gray-200 dark:border-gray-700 px-6 py-4 flex items-center justify-between rounded-t-2xl">
                   <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
@@ -987,7 +987,7 @@ export default function RecetasModule() {
                         value={newName}
                         onChange={e => setNewName(e.target.value)}
                         placeholder="Ej: Pan de yuca"
-                        className="w-full px-3 py-2 rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 text-sm text-gray-900 dark:text-white placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#2563EB]/30"
+                        className="w-full px-3 py-2 rounded-lg border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 text-sm text-gray-900 dark:text-white placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#2563EB]/30"
                       />
                     </div>
                     <div>
@@ -997,7 +997,7 @@ export default function RecetasModule() {
                         onChange={e => setNewDesc(e.target.value)}
                         placeholder="Proceso de preparación..."
                         rows={2}
-                        className="w-full px-3 py-2 rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 text-sm text-gray-900 dark:text-white placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#2563EB]/30 resize-none"
+                        className="w-full px-3 py-2 rounded-lg border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 text-sm text-gray-900 dark:text-white placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#2563EB]/30 resize-none"
                       />
                     </div>
                     <div>
@@ -1007,7 +1007,7 @@ export default function RecetasModule() {
                         value={newProductoId}
                         onChange={e => setNewProductoId(e.target.value)}
                         placeholder="ID del producto resultante"
-                        className="w-full px-3 py-2 rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 text-sm text-gray-900 dark:text-white placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#2563EB]/30"
+                        className="w-full px-3 py-2 rounded-lg border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 text-sm text-gray-900 dark:text-white placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#2563EB]/30"
                       />
                     </div>
                   </div>
@@ -1107,7 +1107,7 @@ export default function RecetasModule() {
                   {step < 3 ? (
                     <button
                       onClick={() => setStep(s => s + 1)}
-                      className="px-4 py-2 text-sm font-bold text-white bg-[#2563EB] hover:bg-[#1D4ED8] rounded-lg shadow-sm transition-colors"
+                      className="px-4 py-2 text-sm font-bold text-white bg-[#2563EB] hover:bg-[#1D4ED8] rounded-lg  transition-colors"
                     >
                       Siguiente
                     </button>
@@ -1115,7 +1115,7 @@ export default function RecetasModule() {
                     <button
                       onClick={handleCreate}
                       disabled={creating}
-                      className="flex items-center justify-center gap-2 px-4 py-2 text-sm font-bold text-white bg-[#2563EB] hover:bg-[#1D4ED8] disabled:opacity-50 rounded-lg shadow-sm transition-colors"
+                      className="flex items-center justify-center gap-2 px-4 py-2 text-sm font-bold text-white bg-[#2563EB] hover:bg-[#1D4ED8] disabled:opacity-50 rounded-lg  transition-colors"
                     >
                       {creating ? <Loader2 className="h-4 w-4 animate-spin" /> : <Plus className="h-4 w-4" />}
                       Crear Receta
@@ -1148,7 +1148,7 @@ export default function RecetasModule() {
               className="fixed inset-0 z-[60] flex items-center justify-center p-4"
               onClick={e => e.target === e.currentTarget && setShowProducir(false)}
             >
-              <div className="w-full max-w-sm bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl shadow-2xl p-5 space-y-4">
+              <div className="w-full max-w-sm bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl p-5 space-y-4">
                 <h3 className="text-lg font-bold text-gray-900 dark:text-white">Producir Lote</h3>
                 <p className="text-sm text-gray-500 dark:text-gray-400">
                   Receta: <span className="font-bold text-gray-900 dark:text-white">{selected.nombre}</span>
@@ -1163,7 +1163,7 @@ export default function RecetasModule() {
                       value={producirCantidad}
                       onChange={e => setProducirCantidad(e.target.value)}
                       placeholder="Ej: 10"
-                      className="w-full px-3 py-2 rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 text-sm text-gray-900 dark:text-white placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#2563EB]/30"
+                      className="w-full px-3 py-2 rounded-lg border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 text-sm text-gray-900 dark:text-white placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#2563EB]/30"
                     />
                   </div>
 
@@ -1256,7 +1256,7 @@ export default function RecetasModule() {
                       value={producirNotas}
                       onChange={e => setProducirNotas(e.target.value)}
                       placeholder="Observaciones..."
-                      className="w-full px-3 py-2 rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 text-sm text-gray-900 dark:text-white placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#2563EB]/30"
+                      className="w-full px-3 py-2 rounded-lg border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 text-sm text-gray-900 dark:text-white placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#2563EB]/30"
                     />
                   </div>
                 </div>
@@ -1268,14 +1268,14 @@ export default function RecetasModule() {
                 <div className="flex gap-2">
                   <button
                     onClick={() => setShowProducir(false)}
-                    className="flex-1 px-4 py-2.5 rounded-xl text-sm font-bold text-gray-600 dark:text-gray-400 bg-gray-100 dark:bg-white/5 hover:bg-gray-200 dark:hover:bg-white/10 transition-colors"
+                    className="flex-1 px-4 py-2.5 rounded-lg text-sm font-bold text-gray-600 dark:text-gray-400 bg-gray-100 dark:bg-white/5 hover:bg-gray-200 dark:hover:bg-white/10 transition-colors"
                   >
                     Cancelar
                   </button>
                   <button
                     onClick={handleProducir}
                     disabled={producing}
-                    className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-sm font-bold text-white bg-[#2563EB] hover:bg-[#1D4ED8] disabled:opacity-50 shadow-sm transition-colors"
+                    className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg text-sm font-bold text-white bg-[#2563EB] hover:bg-[#1D4ED8] disabled:opacity-50  transition-colors"
                   >
                     {producing ? <Loader2 className="h-4 w-4 animate-spin" /> : <Layers className="h-4 w-4" />}
                     Producir
@@ -1367,7 +1367,7 @@ function ProduccionTab() {
   }
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-6">
       {/* Mejora M6: KPIs de produccion */}
       {lotes.length > 0 && (
         <>
@@ -1388,7 +1388,7 @@ function ProduccionTab() {
 
           {/* Grafica semanal */}
           {chartData.some(d => d.lotes > 0) && (
-            <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl p-4 shadow-sm">
+            <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl p-4 ">
               <h4 className="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase mb-3 flex items-center gap-1.5">
                 <BarChart3 className="h-3.5 w-3.5" /> Produccion semanal (ultimas 4 semanas)
               </h4>
@@ -1410,7 +1410,7 @@ function ProduccionTab() {
         </>
       )}
 
-      <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl overflow-hidden shadow-sm">
+      <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl overflow-hidden ">
         {lotes.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-12 gap-2">
             <Layers className="h-8 w-8 text-gray-300 dark:text-gray-600" />

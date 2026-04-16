@@ -240,7 +240,7 @@ export default function AnomalyDetector({ sales, orders }: AnomalyDetectorProps)
                 <div className={cn("w-2 h-2 rounded-full mt-1 shrink-0", style.dot)} />
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2 mb-0.5">
-                    <span className={cn("text-[10px] font-bold uppercase tracking-wide", style.text)}>
+                    <span className={cn("text-[10px] font-bold", style.text)}>
                       {style.label}
                     </span>
                     <span className={cn("text-[10px]", style.text)}>

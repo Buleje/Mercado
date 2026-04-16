@@ -505,7 +505,7 @@ export default function AICommandCenter() {
                 className={cn(
                   "relative flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all whitespace-nowrap",
                   isActive
-                    ? "bg-[#00B4A6] text-white shadow-sm"
+                    ? "bg-[#00B4A6] text-white "
                     : "text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800"
                 )}
                 title={tab.shortcut}
@@ -556,7 +556,7 @@ export default function AICommandCenter() {
               </div>
             )}
             {activeTab === "plan" && (
-              <div className="space-y-4">
+              <div className="space-y-6">
                 <DailyChecklist />
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
                   <div className="lg:col-span-2">
@@ -584,7 +584,7 @@ export default function AICommandCenter() {
               </div>
             )}
             {activeTab === "simulador" && (
-              <div className="space-y-4">
+              <div className="space-y-6">
                 <AIWhatIfSimulator data={data} />
                 <BusinessCalculators />
               </div>

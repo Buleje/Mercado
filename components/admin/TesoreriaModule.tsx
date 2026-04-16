@@ -117,7 +117,7 @@ const PER_PAGE = 15;
 function EmptyChart({ message }: { message: string }) {
   return (
     <div className="flex flex-col items-center justify-center py-12 text-center">
-      <div className="h-12 w-12 rounded-2xl bg-primary/10 flex items-center justify-center mb-3"><Wallet className="h-6 w-6 text-primary" /></div>
+      <div className="h-12 w-12 rounded-xl bg-primary/10 flex items-center justify-center mb-3"><Wallet className="h-6 w-6 text-primary" /></div>
       <p className="text-sm font-medium text-gray-500 dark:text-gray-400">{message}</p>
       <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">Los datos aparecerán cuando registres movimientos</p>
     </div>
@@ -157,7 +157,7 @@ function TresoDashboard({ cuentas, resumen }: { cuentas: Cuenta[]; resumen: Resu
       {/* KPIs */}
       <m.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-          <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl shadow-sm p-4 border-b-4 border-b-[#2563EB]">
+          <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl  p-4 border-b-4 border-b-[#2563EB]">
             <div className="flex items-center justify-between mb-2">
               <div className="flex items-center gap-1.5">
                 <Wallet className="h-4 w-4 text-[#2563EB]" />
@@ -173,7 +173,7 @@ function TresoDashboard({ cuentas, resumen }: { cuentas: Cuenta[]; resumen: Resu
             <p className="text-[10px] text-gray-400 mt-1">{cuentasActivas} cuenta{cuentasActivas !== 1 ? "s" : ""} activa{cuentasActivas !== 1 ? "s" : ""}</p>
           </div>
 
-          <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl shadow-sm p-4 border-b-4 border-b-emerald-500">
+          <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl  p-4 border-b-4 border-b-emerald-500">
             <div className="flex items-center gap-1.5 mb-2">
               <ArrowDownToLine className="h-4 w-4 text-emerald-500" />
               <p className="text-[10px] uppercase font-bold text-gray-400">Ingresos mes</p>
@@ -183,7 +183,7 @@ function TresoDashboard({ cuentas, resumen }: { cuentas: Cuenta[]; resumen: Resu
             </p>
           </div>
 
-          <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl shadow-sm p-4 border-b-4 border-b-red-500">
+          <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl  p-4 border-b-4 border-b-red-500">
             <div className="flex items-center gap-1.5 mb-2">
               <ArrowUpFromLine className="h-4 w-4 text-red-500" />
               <p className="text-[10px] uppercase font-bold text-gray-400">Egresos mes</p>
@@ -194,7 +194,7 @@ function TresoDashboard({ cuentas, resumen }: { cuentas: Cuenta[]; resumen: Resu
           </div>
 
           <div className={cn(
-            "bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl shadow-sm p-4 border-b-4",
+            "bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl  p-4 border-b-4",
             flujoNeto >= 0 ? "border-b-[#2563EB]" : "border-b-red-600"
           )}>
             <div className="flex items-center gap-1.5 mb-2">
@@ -217,7 +217,7 @@ function TresoDashboard({ cuentas, resumen }: { cuentas: Cuenta[]; resumen: Resu
               const meta = TIPO_META[cuenta.tipo];
               const Icon = meta.icon;
               return (
-                <div key={cuenta.id} className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl p-4 hover:shadow-md transition-shadow">
+                <div key={cuenta.id} className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl p-4 hover:shadow-sm transition-shadow">
                   <div className="flex items-center gap-3 mb-3">
                     <div className={cn("h-10 w-10 rounded-xl flex items-center justify-center", meta.bg)}>
                       <Icon className={cn("h-5 w-5", meta.color)} />
@@ -245,7 +245,7 @@ function TresoDashboard({ cuentas, resumen }: { cuentas: Cuenta[]; resumen: Resu
       <m.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}>
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {/* Flow chart */}
-          <div className="bg-white dark:bg-card rounded-2xl border border-gray-200 dark:border-card-border p-6 shadow-sm">
+          <div className="bg-white dark:bg-card rounded-xl border border-gray-200 dark:border-card-border p-6 ">
             <h3 className="text-sm font-bold text-gray-700 dark:text-foreground mb-4">Flujo de caja (6 meses)</h3>
             {flowData.some(d => d.ingresos > 0 || d.egresos > 0) ? (
               <ResponsiveContainer width="100%" height={220}>
@@ -277,7 +277,7 @@ function TresoDashboard({ cuentas, resumen }: { cuentas: Cuenta[]; resumen: Resu
           </div>
 
           {/* Pie by tipo */}
-          <div className="bg-white dark:bg-card rounded-2xl border border-gray-200 dark:border-card-border p-6 shadow-sm">
+          <div className="bg-white dark:bg-card rounded-xl border border-gray-200 dark:border-card-border p-6 ">
             <h3 className="text-sm font-bold text-gray-700 dark:text-foreground mb-4">Saldo por tipo de cuenta</h3>
             {tipoPieData.length > 0 ? (
               <ResponsiveContainer width="100%" height={220}>
@@ -307,7 +307,7 @@ function TresoDashboard({ cuentas, resumen }: { cuentas: Cuenta[]; resumen: Resu
       {/* Low Balance Alerts */}
       {cuentas.filter(c => c.activa && c.saldo < LOW_BALANCE_THRESHOLD).length > 0 && (
         <m.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }}>
-          <div className="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-2xl p-4">
+          <div className="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-xl p-4">
             <div className="flex items-center gap-2 mb-2">
               <AlertCircle className="h-4 w-4 text-amber-600 dark:text-amber-400" />
               <h3 className="text-sm font-bold text-amber-800 dark:text-amber-300">Cuentas con saldo bajo</h3>
@@ -759,7 +759,7 @@ export default function TesoreriaModule() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center gap-3">
         <div className="flex items-center gap-3 flex-1 min-w-0">
-          <div className="h-10 w-10 rounded-xl bg-[#2563EB] text-white flex items-center justify-center shadow-sm shrink-0">
+          <div className="h-10 w-10 rounded-lg bg-[#2563EB] text-white flex items-center justify-center  shrink-0">
             <Landmark className="h-5 w-5" />
           </div>
           <div>
@@ -775,13 +775,13 @@ export default function TesoreriaModule() {
           </div>
         </div>
         <div className="flex gap-2">
-          <button onClick={() => fetchAll()} className="p-2 rounded-xl hover:bg-gray-100 dark:hover:bg-white/5 transition-colors" title="Actualizar">
+          <button onClick={() => fetchAll()} className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-white/5 transition-colors" title="Actualizar">
             <RefreshCw className={cn("h-4 w-4 text-gray-500", loading && "animate-spin")} />
           </button>
           {activeTab === "cuentas" && (
             <button
               onClick={() => { resetCuentaForm(); setShowCreateCuenta(true); }}
-              className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-bold text-white bg-[#2563EB] hover:bg-[#1D4ED8] shadow-sm transition-colors"
+              className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-bold text-white bg-[#2563EB] hover:bg-[#1D4ED8]  transition-colors"
             >
               <Plus className="h-4 w-4" /> Nueva cuenta
             </button>
@@ -791,7 +791,7 @@ export default function TesoreriaModule() {
               <button
                 onClick={handleExportCSV}
                 disabled={filteredMov.length === 0}
-                className="flex items-center gap-2 px-3 py-2 rounded-xl text-sm font-bold text-gray-600 dark:text-gray-400 bg-gray-100 dark:bg-white/5 hover:bg-gray-200 dark:hover:bg-white/10 disabled:opacity-30 transition-colors"
+                className="flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-bold text-gray-600 dark:text-gray-400 bg-gray-100 dark:bg-white/5 hover:bg-gray-200 dark:hover:bg-white/10 disabled:opacity-30 transition-colors"
                 title="Exportar CSV"
               >
                 <FileDown className="h-4 w-4" />
@@ -799,7 +799,7 @@ export default function TesoreriaModule() {
               </button>
               <button
                 onClick={() => { setMovFormError(null); setShowCreateMov(true); }}
-                className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-bold text-white bg-[#2563EB] hover:bg-[#1D4ED8] shadow-sm transition-colors"
+                className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-bold text-white bg-[#2563EB] hover:bg-[#1D4ED8]  transition-colors"
               >
                 <Plus className="h-4 w-4" /> Registrar
               </button>
@@ -808,7 +808,7 @@ export default function TesoreriaModule() {
           {activeTab === "transferencias" && (
             <button
               onClick={() => { setTransError(null); setShowCreateTransfer(true); }}
-              className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-bold text-white bg-[#2563EB] hover:bg-[#1D4ED8] shadow-sm transition-colors"
+              className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-bold text-white bg-[#2563EB] hover:bg-[#1D4ED8]  transition-colors"
             >
               <ArrowLeftRight className="h-4 w-4" /> Transferir
             </button>
@@ -860,15 +860,15 @@ export default function TesoreriaModule() {
 
       {/* ── Tab: Cuentas ───────────────────────────────────────────────── */}
       {activeTab === "cuentas" && !loading && (
-        <div className="space-y-4">
+        <div className="space-y-6">
           {cuentas.length === 0 ? (
-            <div className="text-center py-16 px-4 bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl">
+            <div className="text-center py-16 px-4 bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl">
               <div className="text-6xl mb-4">🏦</div>
               <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">Sin cuentas</h3>
               <p className="text-sm text-gray-500 mb-6 max-w-md mx-auto">Crea tu primera cuenta (banco, caja o billetera digital)</p>
               <button
                 onClick={() => { resetCuentaForm(); setShowCreateCuenta(true); }}
-                className="bg-[#2563EB] text-white px-6 py-2.5 rounded-xl font-medium hover:bg-[#1D4ED8]"
+                className="bg-[#2563EB] text-white px-6 py-2.5 rounded-lg font-medium hover:bg-[#1D4ED8]"
               >
                 Crear cuenta
               </button>
@@ -884,7 +884,7 @@ export default function TesoreriaModule() {
                     initial={{ opacity: 0, scale: 0.95 }}
                     animate={{ opacity: 1, scale: 1 }}
                     className={cn(
-                      "bg-white dark:bg-card border rounded-2xl p-5 hover:shadow-lg transition-all cursor-pointer group",
+                      "bg-white dark:bg-card border rounded-xl p-5 hover:shadow-lg transition-all cursor-pointer group",
                       cuenta.activa ? "border-gray-200 dark:border-card-border" : "border-dashed border-gray-300 dark:border-gray-600 opacity-60"
                     )}
                     onClick={() => openEditCuenta(cuenta)}
@@ -941,13 +941,13 @@ export default function TesoreriaModule() {
 
       {/* ── Tab: Movimientos ───────────────────────────────────────────── */}
       {activeTab === "movimientos" && (
-        <div className="space-y-4">
+        <div className="space-y-6">
           {/* Basic Filters */}
           <div className="flex flex-wrap gap-2">
             <select
               value={movCuentaFilter}
               onChange={e => setMovCuentaFilter(e.target.value)}
-              className="px-3 py-2 rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 text-sm text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-[#2563EB]/30"
+              className="px-3 py-2 rounded-lg border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 text-sm text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-[#2563EB]/30"
             >
               <option value="">Todas las cuentas</option>
               {activeCuentas.map(c => (
@@ -957,7 +957,7 @@ export default function TesoreriaModule() {
             <select
               value={movTipoFilter}
               onChange={e => setMovTipoFilter(e.target.value)}
-              className="px-3 py-2 rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 text-sm text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-[#2563EB]/30"
+              className="px-3 py-2 rounded-lg border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 text-sm text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-[#2563EB]/30"
             >
               <option value="">Todos los tipos</option>
               <option value="INGRESO">Ingresos</option>
@@ -972,7 +972,7 @@ export default function TesoreriaModule() {
                 value={movSearch}
                 onChange={e => setMovSearch(e.target.value)}
                 placeholder="Buscar..."
-                className="w-full pl-9 pr-3 py-2 rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 text-sm text-gray-900 dark:text-white placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#2563EB]/30"
+                className="w-full pl-9 pr-3 py-2 rounded-lg border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 text-sm text-gray-900 dark:text-white placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#2563EB]/30"
               />
             </div>
             <button
@@ -1092,7 +1092,7 @@ export default function TesoreriaModule() {
           )}
 
           {/* Movements table */}
-          <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl overflow-hidden shadow-sm">
+          <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl overflow-hidden ">
             {filteredMov.length === 0 ? (
               <div className="text-center py-16 px-4">
                 <div className="text-6xl mb-4">💸</div>
@@ -1100,7 +1100,7 @@ export default function TesoreriaModule() {
                 <p className="text-sm text-gray-500 mb-6">Registra ingresos y egresos para ver tu historial</p>
                 <button
                   onClick={() => { setMovFormError(null); setShowCreateMov(true); }}
-                  className="bg-[#2563EB] text-white px-6 py-2.5 rounded-xl font-medium hover:bg-[#1D4ED8]"
+                  className="bg-[#2563EB] text-white px-6 py-2.5 rounded-lg font-medium hover:bg-[#1D4ED8]"
                 >
                   Registrar movimiento
                 </button>
@@ -1190,15 +1190,15 @@ export default function TesoreriaModule() {
 
       {/* ── Tab: Transferencias ────────────────────────────────────────── */}
       {activeTab === "transferencias" && (
-        <div className="space-y-4">
+        <div className="space-y-6">
           {transferencias.length === 0 ? (
-            <div className="text-center py-16 px-4 bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl">
+            <div className="text-center py-16 px-4 bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl">
               <div className="text-6xl mb-4">↔️</div>
               <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">Sin transferencias</h3>
               <p className="text-sm text-gray-500 mb-6">Mueve dinero entre tus cuentas</p>
               <button
                 onClick={() => { setTransError(null); setShowCreateTransfer(true); }}
-                className="bg-[#2563EB] text-white px-6 py-2.5 rounded-xl font-medium hover:bg-[#1D4ED8]"
+                className="bg-[#2563EB] text-white px-6 py-2.5 rounded-lg font-medium hover:bg-[#1D4ED8]"
               >
                 Nueva transferencia
               </button>
@@ -1273,14 +1273,14 @@ export default function TesoreriaModule() {
               initial={{ opacity: 0, scale: 0.95, y: 20 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.95, y: 20 }}
-              className="fixed inset-x-4 top-[10%] sm:inset-x-auto sm:left-1/2 sm:-translate-x-1/2 z-50 w-auto sm:w-full sm:max-w-lg bg-white dark:bg-card rounded-2xl border border-gray-200 dark:border-card-border shadow-2xl overflow-hidden"
+              className="fixed inset-x-4 top-[10%] sm:inset-x-auto sm:left-1/2 sm:-translate-x-1/2 z-50 w-auto sm:w-full sm:max-w-lg bg-white dark:bg-card rounded-xl border border-gray-200 dark:border-card-border overflow-hidden"
             >
               <div className="p-5 sm:p-6 space-y-4">
                 <div className="flex items-center justify-between">
                   <h3 className="text-lg font-bold text-gray-900 dark:text-white">
                     {editCuenta ? "Editar cuenta" : "Nueva cuenta"}
                   </h3>
-                  <button onClick={() => { setShowCreateCuenta(false); setEditCuenta(null); }} className="p-2 rounded-xl hover:bg-gray-100 dark:hover:bg-white/5">
+                  <button onClick={() => { setShowCreateCuenta(false); setEditCuenta(null); }} className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-white/5">
                     <X className="h-5 w-5 text-gray-500" />
                   </button>
                 </div>
@@ -1292,7 +1292,7 @@ export default function TesoreriaModule() {
                       value={formNombre}
                       onChange={e => setFormNombre(e.target.value)}
                       placeholder="Ej: BCP Ahorro, Caja Principal, Yape..."
-                      className="w-full px-3 py-2 rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 text-sm text-gray-900 dark:text-white placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#2563EB]/30"
+                      className="w-full px-3 py-2 rounded-lg border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 text-sm text-gray-900 dark:text-white placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#2563EB]/30"
                     />
                   </div>
 
@@ -1332,7 +1332,7 @@ export default function TesoreriaModule() {
                         value={formBanco}
                         onChange={e => setFormBanco(e.target.value)}
                         placeholder="BCP, BBVA, Yape..."
-                        className="w-full px-3 py-2 rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 text-sm text-gray-900 dark:text-white placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#2563EB]/30"
+                        className="w-full px-3 py-2 rounded-lg border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 text-sm text-gray-900 dark:text-white placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#2563EB]/30"
                       />
                     </div>
                     <div>
@@ -1341,7 +1341,7 @@ export default function TesoreriaModule() {
                         value={formNumeroCuenta}
                         onChange={e => setFormNumeroCuenta(e.target.value)}
                         placeholder="123-456-789"
-                        className="w-full px-3 py-2 rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 text-sm text-gray-900 dark:text-white placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#2563EB]/30"
+                        className="w-full px-3 py-2 rounded-lg border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 text-sm text-gray-900 dark:text-white placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#2563EB]/30"
                       />
                     </div>
                   </div>
@@ -1356,7 +1356,7 @@ export default function TesoreriaModule() {
                         value={formSaldoInicial}
                         onChange={e => setFormSaldoInicial(e.target.value)}
                         placeholder="0.00"
-                        className="w-full px-3 py-2 rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 text-sm text-gray-900 dark:text-white placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#2563EB]/30"
+                        className="w-full px-3 py-2 rounded-lg border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 text-sm text-gray-900 dark:text-white placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#2563EB]/30"
                       />
                     </div>
                   )}
@@ -1368,7 +1368,7 @@ export default function TesoreriaModule() {
                       value={formNotas}
                       onChange={e => setFormNotas(e.target.value)}
                       placeholder="Notas opcionales..."
-                      className="w-full px-3 py-2 rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 text-sm text-gray-900 dark:text-white placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#2563EB]/30 resize-none"
+                      className="w-full px-3 py-2 rounded-lg border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 text-sm text-gray-900 dark:text-white placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#2563EB]/30 resize-none"
                     />
                   </div>
                 </div>
@@ -1383,14 +1383,14 @@ export default function TesoreriaModule() {
                 <div className="flex gap-2 pt-2">
                   <button
                     onClick={() => { setShowCreateCuenta(false); setEditCuenta(null); }}
-                    className="flex-1 px-4 py-2.5 rounded-xl text-sm font-bold text-gray-600 dark:text-gray-400 bg-gray-100 dark:bg-white/5 hover:bg-gray-200 dark:hover:bg-white/10 transition-colors"
+                    className="flex-1 px-4 py-2.5 rounded-lg text-sm font-bold text-gray-600 dark:text-gray-400 bg-gray-100 dark:bg-white/5 hover:bg-gray-200 dark:hover:bg-white/10 transition-colors"
                   >
                     Cancelar
                   </button>
                   <button
                     onClick={editCuenta ? handleEditCuenta : handleCreateCuenta}
                     disabled={formSubmitting}
-                    className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-sm font-bold text-white bg-[#2563EB] hover:bg-[#1D4ED8] disabled:opacity-50 transition-colors"
+                    className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg text-sm font-bold text-white bg-[#2563EB] hover:bg-[#1D4ED8] disabled:opacity-50 transition-colors"
                   >
                     {formSubmitting && <Loader2 className="h-4 w-4 animate-spin" />}
                     {editCuenta ? "Guardar" : "Crear cuenta"}
@@ -1417,12 +1417,12 @@ export default function TesoreriaModule() {
               initial={{ opacity: 0, scale: 0.95, y: 20 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.95, y: 20 }}
-              className="fixed inset-x-4 top-[10%] sm:inset-x-auto sm:left-1/2 sm:-translate-x-1/2 z-50 w-auto sm:w-full sm:max-w-lg bg-white dark:bg-card rounded-2xl border border-gray-200 dark:border-card-border shadow-2xl overflow-hidden"
+              className="fixed inset-x-4 top-[10%] sm:inset-x-auto sm:left-1/2 sm:-translate-x-1/2 z-50 w-auto sm:w-full sm:max-w-lg bg-white dark:bg-card rounded-xl border border-gray-200 dark:border-card-border overflow-hidden"
             >
               <div className="p-5 sm:p-6 space-y-4">
                 <div className="flex items-center justify-between">
                   <h3 className="text-lg font-bold text-gray-900 dark:text-white">Registrar movimiento</h3>
-                  <button onClick={() => setShowCreateMov(false)} className="p-2 rounded-xl hover:bg-gray-100 dark:hover:bg-white/5">
+                  <button onClick={() => setShowCreateMov(false)} className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-white/5">
                     <X className="h-5 w-5 text-gray-500" />
                   </button>
                 </div>
@@ -1433,7 +1433,7 @@ export default function TesoreriaModule() {
                     <select
                       value={movFormCuenta}
                       onChange={e => setMovFormCuenta(e.target.value)}
-                      className="w-full px-3 py-2 rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 text-sm text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-[#2563EB]/30"
+                      className="w-full px-3 py-2 rounded-lg border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 text-sm text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-[#2563EB]/30"
                     >
                       <option value="">Seleccionar cuenta...</option>
                       {activeCuentas.map(c => (
@@ -1481,7 +1481,7 @@ export default function TesoreriaModule() {
                       value={movFormMonto}
                       onChange={e => setMovFormMonto(e.target.value)}
                       placeholder="100.00"
-                      className="w-full px-3 py-2 rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 text-sm text-gray-900 dark:text-white placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#2563EB]/30"
+                      className="w-full px-3 py-2 rounded-lg border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 text-sm text-gray-900 dark:text-white placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#2563EB]/30"
                     />
                   </div>
 
@@ -1491,7 +1491,7 @@ export default function TesoreriaModule() {
                       <select
                         value={movFormCategoria}
                         onChange={e => setMovFormCategoria(e.target.value)}
-                        className="w-full px-3 py-2 rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 text-sm text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-[#2563EB]/30"
+                        className="w-full px-3 py-2 rounded-lg border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 text-sm text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-[#2563EB]/30"
                       >
                         <option value="">Sin categoría</option>
                         {CATEGORIAS.map(c => <option key={c} value={c}>{c}</option>)}
@@ -1503,7 +1503,7 @@ export default function TesoreriaModule() {
                         value={movFormRef}
                         onChange={e => setMovFormRef(e.target.value)}
                         placeholder="N° boleta, fact..."
-                        className="w-full px-3 py-2 rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 text-sm text-gray-900 dark:text-white placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#2563EB]/30"
+                        className="w-full px-3 py-2 rounded-lg border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 text-sm text-gray-900 dark:text-white placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#2563EB]/30"
                       />
                     </div>
                   </div>
@@ -1514,7 +1514,7 @@ export default function TesoreriaModule() {
                       value={movFormDesc}
                       onChange={e => setMovFormDesc(e.target.value)}
                       placeholder="Detalle del movimiento..."
-                      className="w-full px-3 py-2 rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 text-sm text-gray-900 dark:text-white placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#2563EB]/30"
+                      className="w-full px-3 py-2 rounded-lg border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 text-sm text-gray-900 dark:text-white placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#2563EB]/30"
                     />
                   </div>
                 </div>
@@ -1546,7 +1546,7 @@ export default function TesoreriaModule() {
                 <div className="flex gap-2 pt-2">
                   <button
                     onClick={() => setShowCreateMov(false)}
-                    className="flex-1 px-4 py-2.5 rounded-xl text-sm font-bold text-gray-600 dark:text-gray-400 bg-gray-100 dark:bg-white/5 hover:bg-gray-200 dark:hover:bg-white/10 transition-colors"
+                    className="flex-1 px-4 py-2.5 rounded-lg text-sm font-bold text-gray-600 dark:text-gray-400 bg-gray-100 dark:bg-white/5 hover:bg-gray-200 dark:hover:bg-white/10 transition-colors"
                   >
                     Cancelar
                   </button>
@@ -1554,7 +1554,7 @@ export default function TesoreriaModule() {
                     onClick={handleCreateMov}
                     disabled={movFormSubmitting}
                     className={cn(
-                      "flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-sm font-bold text-white disabled:opacity-50 transition-colors",
+                      "flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg text-sm font-bold text-white disabled:opacity-50 transition-colors",
                       movFormTipo === "INGRESO" ? "bg-emerald-600 hover:bg-emerald-700" : "bg-red-600 hover:bg-red-700"
                     )}
                   >
@@ -1583,12 +1583,12 @@ export default function TesoreriaModule() {
               initial={{ opacity: 0, scale: 0.95, y: 20 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.95, y: 20 }}
-              className="fixed inset-x-4 top-[10%] sm:inset-x-auto sm:left-1/2 sm:-translate-x-1/2 z-50 w-auto sm:w-full sm:max-w-lg bg-white dark:bg-card rounded-2xl border border-gray-200 dark:border-card-border shadow-2xl overflow-hidden"
+              className="fixed inset-x-4 top-[10%] sm:inset-x-auto sm:left-1/2 sm:-translate-x-1/2 z-50 w-auto sm:w-full sm:max-w-lg bg-white dark:bg-card rounded-xl border border-gray-200 dark:border-card-border overflow-hidden"
             >
               <div className="p-5 sm:p-6 space-y-4">
                 <div className="flex items-center justify-between">
                   <h3 className="text-lg font-bold text-gray-900 dark:text-white">Transferencia entre cuentas</h3>
-                  <button onClick={() => setShowCreateTransfer(false)} className="p-2 rounded-xl hover:bg-gray-100 dark:hover:bg-white/5">
+                  <button onClick={() => setShowCreateTransfer(false)} className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-white/5">
                     <X className="h-5 w-5 text-gray-500" />
                   </button>
                 </div>
@@ -1599,7 +1599,7 @@ export default function TesoreriaModule() {
                     <select
                       value={transOrigen}
                       onChange={e => setTransOrigen(e.target.value)}
-                      className="w-full px-3 py-2 rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 text-sm text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-[#2563EB]/30"
+                      className="w-full px-3 py-2 rounded-lg border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 text-sm text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-[#2563EB]/30"
                     >
                       <option value="">Seleccionar origen...</option>
                       {activeCuentas.map(c => (
@@ -1619,7 +1619,7 @@ export default function TesoreriaModule() {
                     <select
                       value={transDestino}
                       onChange={e => setTransDestino(e.target.value)}
-                      className="w-full px-3 py-2 rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 text-sm text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-[#2563EB]/30"
+                      className="w-full px-3 py-2 rounded-lg border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 text-sm text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-[#2563EB]/30"
                     >
                       <option value="">Seleccionar destino...</option>
                       {activeCuentas.filter(c => c.id !== transOrigen).map(c => (
@@ -1637,7 +1637,7 @@ export default function TesoreriaModule() {
                       value={transMonto}
                       onChange={e => setTransMonto(e.target.value)}
                       placeholder="500.00"
-                      className="w-full px-3 py-2 rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 text-sm text-gray-900 dark:text-white placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#2563EB]/30"
+                      className="w-full px-3 py-2 rounded-lg border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 text-sm text-gray-900 dark:text-white placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#2563EB]/30"
                     />
                   </div>
 
@@ -1647,7 +1647,7 @@ export default function TesoreriaModule() {
                       value={transDesc}
                       onChange={e => setTransDesc(e.target.value)}
                       placeholder="Motivo de la transferencia..."
-                      className="w-full px-3 py-2 rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 text-sm text-gray-900 dark:text-white placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#2563EB]/30"
+                      className="w-full px-3 py-2 rounded-lg border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 text-sm text-gray-900 dark:text-white placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#2563EB]/30"
                     />
                   </div>
                 </div>
@@ -1679,14 +1679,14 @@ export default function TesoreriaModule() {
                 <div className="flex gap-2 pt-2">
                   <button
                     onClick={() => setShowCreateTransfer(false)}
-                    className="flex-1 px-4 py-2.5 rounded-xl text-sm font-bold text-gray-600 dark:text-gray-400 bg-gray-100 dark:bg-white/5 hover:bg-gray-200 dark:hover:bg-white/10 transition-colors"
+                    className="flex-1 px-4 py-2.5 rounded-lg text-sm font-bold text-gray-600 dark:text-gray-400 bg-gray-100 dark:bg-white/5 hover:bg-gray-200 dark:hover:bg-white/10 transition-colors"
                   >
                     Cancelar
                   </button>
                   <button
                     onClick={handleCreateTransfer}
                     disabled={transSubmitting}
-                    className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-sm font-bold text-white bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 transition-colors"
+                    className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg text-sm font-bold text-white bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 transition-colors"
                   >
                     {transSubmitting && <Loader2 className="h-4 w-4 animate-spin" />}
                     Transferir
@@ -1713,7 +1713,7 @@ export default function TesoreriaModule() {
               initial={{ opacity: 0, scale: 0.95, y: 20 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.95, y: 20 }}
-              className="fixed inset-x-4 top-[20%] sm:inset-x-auto sm:left-1/2 sm:-translate-x-1/2 z-50 w-auto sm:w-full sm:max-w-md bg-white dark:bg-card rounded-2xl border border-gray-200 dark:border-card-border shadow-2xl overflow-hidden"
+              className="fixed inset-x-4 top-[20%] sm:inset-x-auto sm:left-1/2 sm:-translate-x-1/2 z-50 w-auto sm:w-full sm:max-w-md bg-white dark:bg-card rounded-xl border border-gray-200 dark:border-card-border overflow-hidden"
             >
               <div className="p-5 sm:p-6 space-y-4">
                 <div className="flex items-center gap-3">
@@ -1749,7 +1749,7 @@ export default function TesoreriaModule() {
                 <div className="flex gap-2 pt-2">
                   <button
                     onClick={() => { setShowDeactivateModal(false); setDeactivateTarget(null); }}
-                    className="flex-1 px-4 py-2.5 rounded-xl text-sm font-bold text-gray-600 dark:text-gray-400 bg-gray-100 dark:bg-white/5 hover:bg-gray-200 dark:hover:bg-white/10 transition-colors"
+                    className="flex-1 px-4 py-2.5 rounded-lg text-sm font-bold text-gray-600 dark:text-gray-400 bg-gray-100 dark:bg-white/5 hover:bg-gray-200 dark:hover:bg-white/10 transition-colors"
                   >
                     Cancelar
                   </button>
@@ -1757,7 +1757,7 @@ export default function TesoreriaModule() {
                     onClick={handleToggleActive}
                     disabled={deactivating}
                     className={cn(
-                      "flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-sm font-bold text-white disabled:opacity-50 transition-colors",
+                      "flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg text-sm font-bold text-white disabled:opacity-50 transition-colors",
                       deactivateTarget.activa ? "bg-red-600 hover:bg-red-700" : "bg-emerald-600 hover:bg-emerald-700"
                     )}
                   >

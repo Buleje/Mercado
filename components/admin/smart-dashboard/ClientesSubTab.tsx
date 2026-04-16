@@ -201,7 +201,7 @@ export function ClientesSubTab(props: ClientesSubTabProps) {
       {filteredSections.map((sectionId) => (
         <div key={sectionId}>
           {sectionId === "clientes-alertas" && (
-            <div className="space-y-4">
+            <div className="space-y-6">
               {abandonedCartCount > 0 && (
                 <div className="rounded-xl border border-amber-200 dark:border-amber-800 bg-amber-50 dark:bg-amber-900/20 p-4">
                   <div className="flex items-center gap-3">

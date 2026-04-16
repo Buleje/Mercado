@@ -125,7 +125,7 @@ export default function SupplierPortalLink() {
   );
 
   return (
-    <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-700 overflow-hidden shadow-sm">
+    <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-700 overflow-hidden ">
       {/* Header */}
       <div className="p-5 border-b border-gray-100 dark:border-gray-800">
         <div className="flex items-center gap-3">
@@ -154,7 +154,7 @@ export default function SupplierPortalLink() {
               value={supplierName}
               onChange={(e) => setSupplierName(e.target.value)}
               placeholder="Ej: Distribuidora Hernandez SAC"
-              className="flex-1 rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 px-3 py-2.5 text-sm text-gray-900 dark:text-white outline-none focus:border-[#00B4A6]"
+              className="flex-1 rounded-lg border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 px-3 py-2.5 text-sm text-gray-900 dark:text-white outline-none focus:border-[#00B4A6]"
               onKeyDown={(e) => {
                 if (e.key === "Enter") generateLink();
               }}
@@ -162,7 +162,7 @@ export default function SupplierPortalLink() {
             <button
               onClick={generateLink}
               disabled={!supplierName.trim() || generating}
-              className="px-4 py-2.5 rounded-xl bg-[#00B4A6] text-white text-sm font-semibold disabled:opacity-50 flex items-center gap-2 whitespace-nowrap"
+              className="px-4 py-2.5 rounded-lg bg-[#00B4A6] text-white text-sm font-semibold disabled:opacity-50 flex items-center gap-2 whitespace-nowrap"
             >
               {generating ? (
                 <RefreshCw className="w-4 h-4 animate-spin" />
@@ -185,8 +185,8 @@ export default function SupplierPortalLink() {
 
         {/* Preview */}
         {showPreview && (
-          <div className="rounded-2xl border-2 border-dashed border-[#00B4A6]/30 p-4 bg-[#00B4A6]/5 dark:bg-[#00B4A6]/10">
-            <p className="text-xs font-bold text-[#00B4A6] dark:text-[#2dd4bf] uppercase tracking-wider mb-3">
+          <div className="rounded-xl border-2 border-dashed border-[#00B4A6]/30 p-4 bg-[#00B4A6]/5 dark:bg-[#00B4A6]/10">
+            <p className="text-xs font-bold text-[#00B4A6] dark:text-[#2dd4bf] mb-3">
               Vista del proveedor
             </p>
             <p className="text-sm font-bold text-gray-900 dark:text-white mb-2">
@@ -225,7 +225,7 @@ export default function SupplierPortalLink() {
         {/* Active links */}
         {activeConfigs.length > 0 && (
           <div>
-            <p className="text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wider mb-2">
+            <p className="text-xs font-semibold text-gray-600 dark:text-gray-400 mb-2">
               Links activos ({activeConfigs.length})
             </p>
             <div className="space-y-2">
@@ -237,7 +237,7 @@ export default function SupplierPortalLink() {
                 return (
                   <div
                     key={config.token}
-                    className="p-4 rounded-2xl bg-gray-50 dark:bg-gray-800/50 border border-gray-200 dark:border-gray-700"
+                    className="p-4 rounded-xl bg-gray-50 dark:bg-gray-800/50 border border-gray-200 dark:border-gray-700"
                   >
                     <div className="flex items-start justify-between gap-3 mb-2">
                       <div className="min-w-0">
@@ -282,7 +282,7 @@ export default function SupplierPortalLink() {
                       </button>
                       <button
                         onClick={() => sendWhatsApp(config)}
-                        className="flex-1 flex items-center justify-center gap-2 py-2 rounded-xl text-xs font-semibold bg-green-500 text-white border border-green-500"
+                        className="flex-1 flex items-center justify-center gap-2 py-2 rounded-lg text-xs font-semibold bg-green-500 text-white border border-green-500"
                       >
                         <MessageCircle className="w-3.5 h-3.5" />
                         WhatsApp
@@ -296,7 +296,7 @@ export default function SupplierPortalLink() {
         )}
 
         {/* Stock summary */}
-        <div className="p-4 rounded-2xl bg-[#f97316]/5 border border-[#f97316]/20">
+        <div className="p-4 rounded-xl bg-[#f97316]/5 border border-[#f97316]/20">
           <div className="flex items-center gap-2 mb-2">
             <Package className="w-4 h-4 text-[#f97316]" />
             <p className="text-xs font-semibold text-[#f97316]">

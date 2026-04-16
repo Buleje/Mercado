@@ -125,7 +125,7 @@ function HealthSemaphore() {
 
   if (loading || !score) {
     return (
-      <div className="bg-white border border-gray-200 rounded-2xl p-4 animate-pulse">
+      <div className="bg-white border border-gray-200 rounded-xl p-4 animate-pulse">
         <div className="h-20 w-20 rounded-full bg-gray-200 mx-auto" />
       </div>
     );
@@ -142,18 +142,18 @@ function HealthSemaphore() {
   ];
 
   return (
-    <div className="bg-white border border-gray-200 rounded-2xl p-4 sm:p-5 shadow-sm">
+    <div className="bg-white border border-gray-200 rounded-xl p-4 sm:p-5 ">
       <div className="flex flex-col sm:flex-row items-center gap-4">
         {/* Circulo grande */}
         <div className={`w-20 h-20 rounded-full flex items-center justify-center ring-4 ${bgRing} shrink-0`} style={{ backgroundColor: `${color}20` }}>
           <div className="text-center">
             <span className="text-2xl font-extrabold" style={{ color }}>{score.total}</span>
-            <p className="text-[9px] font-bold uppercase tracking-wider" style={{ color }}>{label}</p>
+            <p className="text-[9px] font-bold" style={{ color }}>{label}</p>
           </div>
         </div>
         {/* Mini barras */}
         <div className="flex-1 w-full space-y-2">
-          <p className="text-xs font-bold text-gray-600 uppercase tracking-wider">Salud Financiera</p>
+          <p className="text-xs font-bold text-gray-600">Salud Financiera</p>
           {factors.map(f => (
             <div key={f.label} className="flex items-center gap-2">
               <span className="text-[10px] font-semibold text-gray-500 w-14">{f.label}</span>
@@ -220,7 +220,7 @@ function ComparativoMensual() {
 
   if (loading) {
     return (
-      <div className="bg-white border border-gray-200 rounded-2xl p-4 animate-pulse">
+      <div className="bg-white border border-gray-200 rounded-xl p-4 animate-pulse">
         <div className="h-75 bg-gray-100 rounded-xl" />
       </div>
     );
@@ -231,8 +231,8 @@ function ComparativoMensual() {
   }
 
   return (
-    <div className="bg-white border border-gray-200 rounded-2xl p-4 sm:p-5 shadow-sm">
-      <p className="text-xs font-bold text-gray-600 uppercase tracking-wider mb-3">Comparativo Mensual</p>
+    <div className="bg-white border border-gray-200 rounded-xl p-4 sm:p-5 ">
+      <p className="text-xs font-bold text-gray-600 mb-3">Comparativo Mensual</p>
       <ResponsiveContainer width="100%" height={300}>
         <BarChart data={chartData} margin={{ top: 5, right: 10, left: 0, bottom: 5 }}>
           <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
@@ -295,7 +295,7 @@ function PuntoEquilibrio() {
 
   if (loading || !data) {
     return (
-      <div className="bg-white border border-gray-200 rounded-2xl p-4 animate-pulse">
+      <div className="bg-white border border-gray-200 rounded-xl p-4 animate-pulse">
         <div className="h-16 bg-gray-100 rounded-xl" />
       </div>
     );
@@ -308,8 +308,8 @@ function PuntoEquilibrio() {
   const pct = Math.min((data.ventasHoy / data.gastoDiario) * 100, 150);
 
   return (
-    <div className="bg-white border border-gray-200 rounded-2xl p-4 sm:p-5 shadow-sm">
-      <p className="text-xs font-bold text-gray-600 uppercase tracking-wider mb-3">Punto de Equilibrio Diario</p>
+    <div className="bg-white border border-gray-200 rounded-xl p-4 sm:p-5 ">
+      <p className="text-xs font-bold text-gray-600 mb-3">Punto de Equilibrio Diario</p>
       <div className="flex items-center gap-4">
         <div className="flex-1">
           <div className="relative h-3 bg-gray-200 rounded-full overflow-hidden">
@@ -420,7 +420,7 @@ function GastosDonut() {
 
   if (loading) {
     return (
-      <div className="bg-white border border-gray-200 rounded-2xl p-4 animate-pulse">
+      <div className="bg-white border border-gray-200 rounded-xl p-4 animate-pulse">
         <div className="h-55 bg-gray-100 rounded-xl" />
       </div>
     );
@@ -438,8 +438,8 @@ function GastosDonut() {
   const getColor = (category: string) => EXPENSE_COLORS[category] ?? EXPENSE_COLORS[category.toLowerCase()] ?? "#6b7280";
 
   return (
-    <div className="bg-white border border-gray-200 rounded-2xl p-4 sm:p-5 shadow-sm">
-      <p className="text-xs font-bold text-gray-600 uppercase tracking-wider mb-3">Gastos del Mes por Categoria</p>
+    <div className="bg-white border border-gray-200 rounded-xl p-4 sm:p-5 ">
+      <p className="text-xs font-bold text-gray-600 mb-3">Gastos del Mes por Categoria</p>
       <div className="flex flex-col sm:flex-row items-center gap-4">
         <div className="relative w-45 h-45">
           <ResponsiveContainer width="100%" height="100%">
@@ -530,7 +530,7 @@ function ProyeccionCierreMes() {
 
   if (loading || !data) {
     return (
-      <div className="bg-white border border-gray-200 rounded-2xl p-4 animate-pulse">
+      <div className="bg-white border border-gray-200 rounded-xl p-4 animate-pulse">
         <div className="h-32 bg-gray-100 rounded-xl" />
       </div>
     );
@@ -544,10 +544,10 @@ function ProyeccionCierreMes() {
   const mesNombre = new Date().toLocaleDateString("es-PE", { month: "long", year: "numeric" });
 
   return (
-    <div className="bg-white border border-gray-200 rounded-2xl p-4 sm:p-5 shadow-sm">
+    <div className="bg-white border border-gray-200 rounded-xl p-4 sm:p-5 ">
       <div className="flex items-center gap-2 mb-3">
         <TrendingUp className="h-4 w-4 text-purple-500" />
-        <p className="text-xs font-bold text-gray-600 uppercase tracking-wider">
+        <p className="text-xs font-bold text-gray-600">
           Proyeccion {mesNombre.charAt(0).toUpperCase() + mesNombre.slice(1)}
         </p>
       </div>
@@ -610,7 +610,7 @@ function ResumenFiscal() {
 
   if (loading || !data) {
     return (
-      <div className="bg-white border border-gray-200 rounded-2xl p-4 animate-pulse">
+      <div className="bg-white border border-gray-200 rounded-xl p-4 animate-pulse">
         <div className="h-32 bg-gray-100 rounded-xl" />
       </div>
     );
@@ -622,10 +622,10 @@ function ResumenFiscal() {
   const mesActual = new Date().toLocaleDateString("es-PE", { month: "long", year: "numeric" });
 
   return (
-    <div className="bg-white border border-gray-200 rounded-2xl p-4 sm:p-5 shadow-sm">
+    <div className="bg-white border border-gray-200 rounded-xl p-4 sm:p-5 ">
       <div className="flex items-center gap-2 mb-3">
         <Calculator className="h-4 w-4 text-amber-500" />
-        <p className="text-xs font-bold text-gray-600 uppercase tracking-wider">
+        <p className="text-xs font-bold text-gray-600">
           Resumen Fiscal — {mesActual.charAt(0).toUpperCase() + mesActual.slice(1)}
         </p>
       </div>
@@ -758,8 +758,8 @@ function GaugeChart({ value, max, label, unit, color }: { value: number; max: nu
     { name: "empty", value: empty },
   ];
   return (
-    <div className="bg-white border border-gray-200 rounded-2xl p-4 shadow-sm flex flex-col items-center">
-      <p className="text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-1">{label}</p>
+    <div className="bg-white border border-gray-200 rounded-xl p-4  flex flex-col items-center">
+      <p className="text-[10px] font-bold text-gray-500 mb-1">{label}</p>
       <div className="relative w-35 h-20">
         <ResponsiveContainer width="100%" height={80}>
           <PieChart>
@@ -789,17 +789,9 @@ function GaugeChart({ value, max, label, unit, color }: { value: number; max: nu
 
 
 
-// Mejora 11: Stagger animation wrapper
-function StaggerItem({ children, index }: { children: React.ReactNode; index: number }) {
-  return (
-    <m.div
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.3, delay: index * 0.05 }}
-    >
-      {children}
-    </m.div>
-  );
+// Flat wrapper (animations removed for professional style)
+function StaggerItem({ children }: { children: React.ReactNode; index?: number }) {
+  return <div>{children}</div>;
 }
 
 
@@ -1014,7 +1006,7 @@ function FinanzasDashboard() {
       <div className="space-y-6 animate-pulse">
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
           {Array.from({ length: 8 }).map((_, i) => (
-            <div key={i} className="bg-white border border-gray-200 rounded-2xl p-4">
+            <div key={i} className="bg-white border border-gray-200 rounded-xl p-4">
               <div className="flex items-center gap-3 mb-3">
                 <div className="h-10 w-10 rounded-full bg-gray-200" />
                 <div className="flex-1 space-y-2">
@@ -1025,19 +1017,19 @@ function FinanzasDashboard() {
             </div>
           ))}
         </div>
-        <div className="bg-white border border-gray-200 rounded-2xl p-6">
+        <div className="bg-white border border-gray-200 rounded-xl p-6">
           <div className="h-4 bg-gray-200 rounded w-48 mb-4" />
           <div className="h-80 bg-gray-100 rounded-xl" />
         </div>
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-          <div className="bg-white border border-gray-200 rounded-2xl p-6">
+          <div className="bg-white border border-gray-200 rounded-xl p-6">
             <div className="h-50 bg-gray-100 rounded-xl" />
           </div>
-          <div className="bg-white border border-gray-200 rounded-2xl p-6">
+          <div className="bg-white border border-gray-200 rounded-xl p-6">
             <div className="h-50 bg-gray-100 rounded-xl" />
           </div>
         </div>
-        <div className="bg-white border border-gray-200 rounded-2xl p-6">
+        <div className="bg-white border border-gray-200 rounded-xl p-6">
           <div className="h-70 bg-gray-100 rounded-xl" />
         </div>
       </div>
@@ -1067,7 +1059,7 @@ function FinanzasDashboard() {
   if (Object.values(kpis).every(v => v === 0) && monthlyData.every(m => m.ingresos === 0 && m.gastos === 0)) {
     return (
       <div className="text-center py-16">
-        <div className="h-16 w-16 rounded-2xl bg-gray-100 dark:bg-surface flex items-center justify-center mx-auto mb-4">
+        <div className="h-16 w-16 rounded-xl bg-gray-100 dark:bg-surface flex items-center justify-center mx-auto mb-4">
           <BarChart3 className="h-8 w-8 text-gray-400 dark:text-muted" />
         </div>
         <h3 className="text-lg font-semibold text-foreground">Sin datos financieros</h3>
@@ -1145,13 +1137,13 @@ function FinanzasDashboard() {
           const sparkData = kpiIdx < 3 ? [{ v: val * 0.7 }, { v: val * 0.85 }, { v: val * 0.75 }, { v: val * 0.9 }, { v: val * 0.82 }, { v: val * 0.95 }, { v: val }] : null;
 
           return (
-            <div key={def.key} className="bg-white border border-gray-200 rounded-2xl p-3 sm:p-4 shadow-sm hover:shadow-md transition-shadow">
+            <div key={def.key} className="bg-white border border-gray-200 rounded-xl p-3 sm:p-4  hover:shadow-sm transition-shadow">
               <div className="flex items-center gap-3">
                 <div className={`h-10 w-10 rounded-full flex items-center justify-center shrink-0 ${def.bg}`}>
                   <Icon className="h-5 w-5" style={{ color: def.color }} />
                 </div>
                 <div className="min-w-0 flex-1">
-                  <p className="text-[10px] font-bold text-gray-500 uppercase tracking-wider truncate">{def.label}</p>
+                  <p className="text-[10px] font-bold text-gray-500 truncate">{def.label}</p>
                   <div className="flex items-center gap-2">
                     <p className={`text-xl sm:text-2xl font-mono font-extrabold truncate ${valColor}`}>{display}</p>
                     <span className={`text-xs ${change >= 0 ? "text-green-600" : "text-red-500"}`}>
@@ -1181,7 +1173,7 @@ function FinanzasDashboard() {
       {/* ════════ SECCION 2: Ingresos vs Gastos vs Utilidad (ComposedChart) ════════ */}
       <StaggerItem index={1}>
       {monthlyData.length > 0 && (
-        <div className="bg-white border border-gray-200 rounded-2xl p-4 sm:p-6 shadow-sm">
+        <div className="bg-white border border-gray-200 rounded-xl p-4 sm:p-6 ">
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center gap-2">
               <FavStar id="ingresos-vs-gastos" favs={finFavs} />
@@ -1229,7 +1221,7 @@ function FinanzasDashboard() {
       <StaggerItem index={2}>
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         {/* Donut izquierda: Gastos por categoria */}
-        <div className="bg-white border border-gray-200 rounded-2xl p-4 sm:p-6 shadow-sm">
+        <div className="bg-white border border-gray-200 rounded-xl p-4 sm:p-6 ">
           <div className="flex items-center gap-2 mb-4">
             <FavStar id="gastos-categoria" favs={finFavs} />
             <div className="h-2 w-2 rounded-full bg-[#e63946]" />
@@ -1281,7 +1273,7 @@ function FinanzasDashboard() {
         </div>
 
         {/* Donut derecha: Metodos de pago */}
-        <div className="bg-white border border-gray-200 rounded-2xl p-4 sm:p-6 shadow-sm">
+        <div className="bg-white border border-gray-200 rounded-xl p-4 sm:p-6 ">
           <div className="flex items-center gap-2 mb-4">
             <div className="h-2 w-2 rounded-full bg-[#22c55e]" />
             <p className="text-sm font-bold text-gray-700">Ingresos por Metodo de Pago</p>
@@ -1327,7 +1319,7 @@ function FinanzasDashboard() {
       {/* ════════ SECCION 4: Flujo de Caja Diario (AreaChart) ════════ */}
       <StaggerItem index={3}>
       {cashFlow.length > 0 && (
-        <div className="bg-white border border-gray-200 rounded-2xl p-4 sm:p-6 shadow-sm">
+        <div className="bg-white border border-gray-200 rounded-xl p-4 sm:p-6 ">
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center gap-2">
               <FavStar id="flujo-caja" favs={finFavs} />
@@ -1377,7 +1369,7 @@ function FinanzasDashboard() {
       {/* ════════ SECCION 5: Proyeccion del Mes ════════ */}
       <StaggerItem index={4}>
       {projection && (
-        <div className="bg-linear-to-br from-primary/5 via-white to-secondary/5 border border-gray-200 rounded-2xl p-4 sm:p-6 shadow-sm">
+        <div className="bg-linear-to-br from-primary/5 via-white to-secondary/5 border border-gray-200 rounded-xl p-4 sm:p-6 ">
           <div className="flex items-center gap-2 mb-4">
             <TrendingUp className="h-5 w-5 text-primary" />
             <p className="text-sm font-bold text-gray-700">Proyeccion {mesCapitalized}</p>
@@ -1427,7 +1419,7 @@ function FinanzasDashboard() {
       {/* ════════ SECCION 6: Resumen Fiscal Mejorado ════════ */}
       <StaggerItem index={5}>
       {fiscal && (
-        <div className="bg-white border-2 border-secondary/40 rounded-2xl p-4 sm:p-6 shadow-sm">
+        <div className="bg-white border-2 border-secondary/40 rounded-xl p-4 sm:p-6 ">
           <div className="flex items-center gap-2 mb-4">
             <Calculator className="h-5 w-5 text-secondary" />
             <p className="text-sm font-bold text-gray-700">Resumen Fiscal — {mesCapitalized}</p>
@@ -1436,8 +1428,8 @@ function FinanzasDashboard() {
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b border-gray-200">
-                  <th className="text-left py-2 text-[10px] font-bold text-gray-400 uppercase tracking-wider">Concepto</th>
-                  <th className="text-right py-2 text-[10px] font-bold text-gray-400 uppercase tracking-wider">Monto</th>
+                  <th className="text-left py-2 text-[10px] font-bold text-gray-400">Concepto</th>
+                  <th className="text-right py-2 text-[10px] font-bold text-gray-400">Monto</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-100">
@@ -1523,7 +1515,7 @@ function FinanzasDashboard() {
       <StaggerItem index={7}>
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         {/* Debo a proveedores */}
-        <div className="bg-white border border-gray-200 rounded-2xl p-4 sm:p-6 shadow-sm">
+        <div className="bg-white border border-gray-200 rounded-xl p-4 sm:p-6 ">
           <div className="flex items-center gap-2 mb-4">
             <Truck className="h-4 w-4 text-secondary" />
             <p className="text-sm font-bold text-gray-700">Debo a proveedores</p>
@@ -1560,7 +1552,7 @@ function FinanzasDashboard() {
         </div>
 
         {/* Me deben (fiados) */}
-        <div className="bg-white border border-gray-200 rounded-2xl p-4 sm:p-6 shadow-sm">
+        <div className="bg-white border border-gray-200 rounded-xl p-4 sm:p-6 ">
           <div className="flex items-center gap-2 mb-4">
             <CreditCard className="h-4 w-4 text-amber-500" />
             <p className="text-sm font-bold text-gray-700">Me deben (fiados)</p>
@@ -1601,7 +1593,7 @@ function FinanzasDashboard() {
       {/* ════════ SECCION 9: Mejora 19 — Salud del Negocio (gauge 0-100) ════════ */}
       {healthScore && (
         <StaggerItem index={8}>
-          <div className="bg-white border border-gray-200 rounded-2xl p-4 sm:p-6 shadow-sm">
+          <div className="bg-white border border-gray-200 rounded-xl p-4 sm:p-6 ">
             <div className="flex items-center gap-2 mb-4">
               <div className="h-2 w-2 rounded-full" style={{ backgroundColor: healthScore.total > 70 ? "#22c55e" : healthScore.total >= 40 ? "#f59e0b" : "#ef4444" }} />
               <p className="text-sm font-bold text-gray-700">Salud del Negocio</p>
@@ -1659,7 +1651,7 @@ function FinanzasDashboard() {
 
       {/* ════════ SECCION 10: Mejora 20 — Comparativo entre meses ════════ */}
       <StaggerItem index={9}>
-        <div className="bg-white border border-gray-200 rounded-2xl p-4 sm:p-6 shadow-sm">
+        <div className="bg-white border border-gray-200 rounded-xl p-4 sm:p-6 ">
           <div className="flex items-center justify-between mb-4 flex-wrap gap-2">
             <p className="text-sm font-bold text-gray-700">Comparar Meses</p>
             <div className="flex items-center gap-2">
@@ -1792,8 +1784,8 @@ function IntelligenceKPIStrip() {
   return (
     <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
       {cards.map(c => (
-        <div key={c.label} className="bg-white border border-gray-200 rounded-xl p-3 shadow-sm text-center">
-          <p className="text-[10px] uppercase tracking-wider text-gray-500 font-semibold">{c.label}</p>
+        <div key={c.label} className="bg-white border border-gray-200 rounded-xl p-3  text-center">
+          <p className="text-[10px] text-gray-500 font-semibold">{c.label}</p>
           <p className={cn("text-lg font-extrabold mt-0.5", c.color)}>{c.value}</p>
         </div>
       ))}
@@ -1819,7 +1811,7 @@ export default function FinanzasModule() {
   });
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-6">
       <AdminModuleHeader
         title="Mi Plata"
         description="Pérdidas y ganancias, gastos, flujo de caja y reportes financieros"
@@ -1839,7 +1831,7 @@ export default function FinanzasModule() {
         )}
         <button
           onClick={generarReporteBancario}
-          className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-bold text-white bg-primary hover:bg-primary-dark shadow-sm transition-colors"
+          className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-bold text-white bg-primary hover:bg-primary-dark  transition-colors"
         >
           Reporte Bancario
         </button>
@@ -1852,7 +1844,7 @@ export default function FinanzasModule() {
         moduleId="finanzas"
       >
       {sub === "dashboard" && (
-        <div className="space-y-4" key={refreshKey}>
+        <div className="space-y-6" key={refreshKey}>
           <FinanzasDashboard />
           {/* Resumen automático integrado en dashboard */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
@@ -1865,20 +1857,20 @@ export default function FinanzasModule() {
         </div>
       )}
       {sub === "pl" && (
-        <div className="space-y-4">
+        <div className="space-y-6">
           <PLTab />
           <ComparativoMensual />
         </div>
       )}
       {sub === "gastos" && <ExpensesTab />}
       {sub === "rentabilidad" && (
-        <div className="space-y-4">
+        <div className="space-y-6">
           <ProfitabilityTab />
           <BreakEvenDashboard />
         </div>
       )}
       {sub === "presupuesto" && (
-        <div className="space-y-4">
+        <div className="space-y-6">
           <BudgetVsRealTab />
           <PresupuestoMensualTab />
         </div>
@@ -1888,7 +1880,7 @@ export default function FinanzasModule() {
           {/* Nuevo — diferenciador #1 vs Loyverse/Alegra/Vendemás */}
           <CashflowRollingTable />
           <div className="pt-4 border-t border-gray-200 dark:border-white/10">
-            <p className="text-xs font-bold uppercase tracking-wider text-gray-400 mb-3">
+            <p className="text-xs font-bold text-gray-400 mb-3">
               Proyección legacy (30 días)
             </p>
             <div className="space-y-4 opacity-90">
@@ -1912,18 +1904,18 @@ export default function FinanzasModule() {
       )}
       {sub === "inteligencia" && (
         <Suspense fallback={<S />}>
-          <div className="space-y-4">
+          <div className="space-y-6">
             <ComparativeReportsTab />
             <IntelligenceKPIStrip />
-            <div className="bg-white border border-gray-200 rounded-2xl p-5 shadow-sm">
+            <div className="bg-white border border-gray-200 rounded-xl p-5 ">
               <h3 className="text-sm font-bold text-gray-700 mb-3">Análisis de Negocio</h3>
               <BusinessIntelligenceTab />
             </div>
-            <div className="bg-white border border-gray-200 rounded-2xl p-5 shadow-sm">
+            <div className="bg-white border border-gray-200 rounded-xl p-5 ">
               <h3 className="text-sm font-bold text-gray-700 mb-3">KPIs Personalizados</h3>
               <CustomKPITab />
             </div>
-            <div className="bg-white border border-gray-200 rounded-2xl p-5 shadow-sm">
+            <div className="bg-white border border-gray-200 rounded-xl p-5 ">
               <h3 className="text-sm font-bold text-gray-700 mb-3">Precios del Mercado</h3>
               <CompetitorPriceTracker />
             </div>

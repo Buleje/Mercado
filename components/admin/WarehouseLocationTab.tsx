@@ -32,7 +32,7 @@ function ModuleTooltip() {
         <Info className="h-4 w-4" />
       </button>
       {open && (
-        <div className="pointer-events-none absolute left-6 top-0 z-50 w-80 rounded-2xl border border-gray-200 bg-white p-4 text-xs leading-relaxed shadow-xl dark:border-card-border dark:bg-card">
+        <div className="pointer-events-none absolute left-6 top-0 z-50 w-80 rounded-xl border border-gray-200 bg-white p-4 text-xs leading-relaxed dark:border-card-border dark:bg-card">
           <p className="mb-2 text-sm font-extrabold text-gray-900 dark:text-foreground">Ubicaciones de almacen</p>
           <p className="mb-3 text-gray-600 dark:text-muted">Mapea donde esta cada producto dentro del almacen: zona, pasillo, estante y posicion.</p>
           <p className="text-gray-500 dark:text-muted">Ejemplo: una gaseosa puede estar en A - Bebidas, pasillo 1, estante 2, bin 4, con 18 unidades ocupando 60% de capacidad.</p>
@@ -157,40 +157,40 @@ export default function WarehouseLocationTab() {
       </div>
 
       <div className="grid grid-cols-2 gap-2 sm:gap-4 lg:grid-cols-4">
-        <div className="rounded-2xl border border-gray-200 bg-white p-3 sm:p-5 dark:border-card-border dark:bg-card"><p className="text-xs font-semibold uppercase text-gray-500 dark:text-muted">Ubicaciones Ocupadas</p><p className="mt-1 text-xl sm:text-2xl font-extrabold text-gray-900 dark:text-foreground">{occupied}/{totalSlots}</p></div>
-        <div className="rounded-2xl border border-gray-200 bg-white p-3 sm:p-5 dark:border-card-border dark:bg-card"><p className="text-xs font-semibold uppercase text-gray-500 dark:text-muted">Espacios Libres</p><p className="mt-1 text-xl sm:text-2xl font-extrabold text-emerald-600 dark:text-emerald-400">{empty}</p></div>
-        <div className="rounded-2xl border border-gray-200 bg-white p-3 sm:p-5 dark:border-card-border dark:bg-card"><p className="text-xs font-semibold uppercase text-gray-500 dark:text-muted">Ocupacion Promedio</p><p className="mt-1 text-xl sm:text-2xl font-extrabold text-emerald-600 dark:text-emerald-400">{avgOccupancy.toFixed(0)}%</p></div>
-        <div className="rounded-2xl border border-gray-200 bg-white p-3 sm:p-5 dark:border-card-border dark:bg-card"><p className="text-xs font-semibold uppercase text-gray-500 dark:text-muted">Casi Llenos (&gt;90%)</p><p className="mt-1 text-xl sm:text-2xl font-extrabold text-amber-600 dark:text-amber-400">{critical}</p></div>
+        <div className="rounded-xl border border-gray-200 bg-white p-3 sm:p-5 dark:border-card-border dark:bg-card"><p className="text-xs font-semibold uppercase text-gray-500 dark:text-muted">Ubicaciones Ocupadas</p><p className="mt-1 text-xl sm:text-2xl font-extrabold text-gray-900 dark:text-foreground">{occupied}/{totalSlots}</p></div>
+        <div className="rounded-xl border border-gray-200 bg-white p-3 sm:p-5 dark:border-card-border dark:bg-card"><p className="text-xs font-semibold uppercase text-gray-500 dark:text-muted">Espacios Libres</p><p className="mt-1 text-xl sm:text-2xl font-extrabold text-emerald-600 dark:text-emerald-400">{empty}</p></div>
+        <div className="rounded-xl border border-gray-200 bg-white p-3 sm:p-5 dark:border-card-border dark:bg-card"><p className="text-xs font-semibold uppercase text-gray-500 dark:text-muted">Ocupacion Promedio</p><p className="mt-1 text-xl sm:text-2xl font-extrabold text-emerald-600 dark:text-emerald-400">{avgOccupancy.toFixed(0)}%</p></div>
+        <div className="rounded-xl border border-gray-200 bg-white p-3 sm:p-5 dark:border-card-border dark:bg-card"><p className="text-xs font-semibold uppercase text-gray-500 dark:text-muted">Casi Llenos (&gt;90%)</p><p className="mt-1 text-xl sm:text-2xl font-extrabold text-amber-600 dark:text-amber-400">{critical}</p></div>
       </div>
 
-      <div className="rounded-2xl border border-gray-200 bg-white p-3 sm:p-5 dark:border-card-border dark:bg-card">
+      <div className="rounded-xl border border-gray-200 bg-white p-3 sm:p-5 dark:border-card-border dark:bg-card">
         <div className="mb-4 flex flex-wrap items-center gap-2 text-sm font-extrabold text-gray-900 dark:text-foreground"><Plus className="h-4 w-4 text-primary" /> Nueva ubicacion</div>
         <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
-          <input value={form.code} onChange={(event) => setForm((prev) => ({ ...prev, code: event.target.value }))} placeholder="Codigo" className="rounded-xl border border-gray-200 bg-white px-3 py-2.5 text-sm dark:border-card-border dark:bg-surface" />
-          <select value={form.zone} onChange={(event) => setForm((prev) => ({ ...prev, zone: event.target.value }))} className="rounded-xl border border-gray-200 bg-white px-3 py-2.5 text-sm dark:border-card-border dark:bg-surface">{ZONES.map((zone) => <option key={zone} value={zone}>{zone}</option>)}</select>
-          <select value={form.warehouseId} onChange={(event) => setForm((prev) => ({ ...prev, warehouseId: event.target.value }))} className="rounded-xl border border-gray-200 bg-white px-3 py-2.5 text-sm dark:border-card-border dark:bg-surface">{warehouses.map((warehouse) => <option key={warehouse.id} value={warehouse.id}>{warehouse.name}</option>)}</select>
-          <select value={form.productId} onChange={(event) => setForm((prev) => ({ ...prev, productId: event.target.value, category: products.find((product) => String(product.id) === event.target.value)?.category || prev.category }))} className="rounded-xl border border-gray-200 bg-white px-3 py-2.5 text-sm dark:border-card-border dark:bg-surface">
+          <input value={form.code} onChange={(event) => setForm((prev) => ({ ...prev, code: event.target.value }))} placeholder="Codigo" className="rounded-lg border border-gray-200 bg-white px-3 py-2.5 text-sm dark:border-card-border dark:bg-surface" />
+          <select value={form.zone} onChange={(event) => setForm((prev) => ({ ...prev, zone: event.target.value }))} className="rounded-lg border border-gray-200 bg-white px-3 py-2.5 text-sm dark:border-card-border dark:bg-surface">{ZONES.map((zone) => <option key={zone} value={zone}>{zone}</option>)}</select>
+          <select value={form.warehouseId} onChange={(event) => setForm((prev) => ({ ...prev, warehouseId: event.target.value }))} className="rounded-lg border border-gray-200 bg-white px-3 py-2.5 text-sm dark:border-card-border dark:bg-surface">{warehouses.map((warehouse) => <option key={warehouse.id} value={warehouse.id}>{warehouse.name}</option>)}</select>
+          <select value={form.productId} onChange={(event) => setForm((prev) => ({ ...prev, productId: event.target.value, category: products.find((product) => String(product.id) === event.target.value)?.category || prev.category }))} className="rounded-lg border border-gray-200 bg-white px-3 py-2.5 text-sm dark:border-card-border dark:bg-surface">
             <option value="">Sin producto asignado</option>
             {products.map((product) => <option key={product.id} value={product.id}>{product.name}</option>)}
           </select>
-          <input value={form.aisle} onChange={(event) => setForm((prev) => ({ ...prev, aisle: event.target.value }))} placeholder="Pasillo" className="rounded-xl border border-gray-200 bg-white px-3 py-2.5 text-sm dark:border-card-border dark:bg-surface" />
-          <input value={form.shelf} onChange={(event) => setForm((prev) => ({ ...prev, shelf: event.target.value }))} placeholder="Estante" className="rounded-xl border border-gray-200 bg-white px-3 py-2.5 text-sm dark:border-card-border dark:bg-surface" />
-          <input value={form.bin} onChange={(event) => setForm((prev) => ({ ...prev, bin: event.target.value }))} placeholder="Bin" className="rounded-xl border border-gray-200 bg-white px-3 py-2.5 text-sm dark:border-card-border dark:bg-surface" />
+          <input value={form.aisle} onChange={(event) => setForm((prev) => ({ ...prev, aisle: event.target.value }))} placeholder="Pasillo" className="rounded-lg border border-gray-200 bg-white px-3 py-2.5 text-sm dark:border-card-border dark:bg-surface" />
+          <input value={form.shelf} onChange={(event) => setForm((prev) => ({ ...prev, shelf: event.target.value }))} placeholder="Estante" className="rounded-lg border border-gray-200 bg-white px-3 py-2.5 text-sm dark:border-card-border dark:bg-surface" />
+          <input value={form.bin} onChange={(event) => setForm((prev) => ({ ...prev, bin: event.target.value }))} placeholder="Bin" className="rounded-lg border border-gray-200 bg-white px-3 py-2.5 text-sm dark:border-card-border dark:bg-surface" />
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            <input value={form.qty} onChange={(event) => setForm((prev) => ({ ...prev, qty: event.target.value }))} type="number" min={0} placeholder="Qty" className="rounded-xl border border-gray-200 bg-white px-3 py-2.5 text-sm dark:border-card-border dark:bg-surface" />
-            <input value={form.capacity} onChange={(event) => setForm((prev) => ({ ...prev, capacity: event.target.value }))} type="number" min={0} placeholder="Capacidad" className="rounded-xl border border-gray-200 bg-white px-3 py-2.5 text-sm dark:border-card-border dark:bg-surface" />
+            <input value={form.qty} onChange={(event) => setForm((prev) => ({ ...prev, qty: event.target.value }))} type="number" min={0} placeholder="Qty" className="rounded-lg border border-gray-200 bg-white px-3 py-2.5 text-sm dark:border-card-border dark:bg-surface" />
+            <input value={form.capacity} onChange={(event) => setForm((prev) => ({ ...prev, capacity: event.target.value }))} type="number" min={0} placeholder="Capacidad" className="rounded-lg border border-gray-200 bg-white px-3 py-2.5 text-sm dark:border-card-border dark:bg-surface" />
           </div>
         </div>
-        <button onClick={addLocation} disabled={saving} className="mt-4 rounded-xl bg-primary px-2 sm:px-4 py-1.5 sm:py-2.5 text-sm font-bold text-white transition-colors hover:bg-primary/90 disabled:opacity-50">{saving ? "Guardando..." : "Crear ubicacion"}</button>
+        <button onClick={addLocation} disabled={saving} className="mt-4 rounded-lg bg-primary px-2 sm:px-4 py-1.5 sm:py-2.5 text-sm font-bold text-white transition-colors hover:bg-primary/90 disabled:opacity-50">{saving ? "Guardando..." : "Crear ubicacion"}</button>
       </div>
 
-      <div className="rounded-2xl border border-gray-200 bg-white p-3 sm:p-6 dark:border-card-border dark:bg-card">
+      <div className="rounded-xl border border-gray-200 bg-white p-3 sm:p-6 dark:border-card-border dark:bg-card">
         <h3 className="mb-4 text-sm font-extrabold text-gray-900 dark:text-foreground">Mapa de Zonas</h3>
         <div className="grid grid-cols-2 gap-3 md:grid-cols-5">
           {ZONES.map((zone) => {
             const zoneLocs = locs.filter((loc) => loc.zone === zone);
             return (
-              <button key={zone} onClick={() => setZoneFilter(zoneFilter === zone ? "" : zone)} className={cn("rounded-xl border-2 p-4 text-left transition-all hover:shadow-md", zoneFilter === zone ? "border-rose-500 bg-rose-50 dark:bg-rose-950/20" : "border-gray-200 bg-gray-50 dark:border-card-border dark:bg-surface")}>
+              <button key={zone} onClick={() => setZoneFilter(zoneFilter === zone ? "" : zone)} className={cn("rounded-lg border-2 p-4 text-left transition-all hover:shadow-sm", zoneFilter === zone ? "border-rose-500 bg-rose-50 dark:bg-rose-950/20" : "border-gray-200 bg-gray-50 dark:border-card-border dark:bg-surface")}>
                 <p className="text-xs font-extrabold text-gray-900 dark:text-foreground">{zone}</p>
                 <div className="mt-2 flex flex-wrap gap-1">
                   {zoneLocs.map((loc) => (
@@ -206,12 +206,12 @@ export default function WarehouseLocationTab() {
       <div className="flex flex-wrap items-center gap-3">
         <div className="relative max-w-xs flex-1">
           <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
-          <input value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Buscar codigo o producto..." className="w-full rounded-xl border border-gray-200 bg-white py-2.5 pl-10 pr-4 text-sm dark:border-card-border dark:bg-card" />
+          <input value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Buscar codigo o producto..." className="w-full rounded-lg border border-gray-200 bg-white py-2.5 pl-10 pr-4 text-sm dark:border-card-border dark:bg-card" />
         </div>
-        <button onClick={() => setShowEmpty((prev) => !prev)} className={cn("rounded-xl px-2 sm:px-4 py-1.5 sm:py-2.5 text-sm font-bold transition-colors", showEmpty ? "bg-primary text-white" : "border border-gray-200 bg-white text-gray-600 dark:border-card-border dark:bg-card dark:text-muted")}>{showEmpty ? "Mostrando vacios" : "Ocultar vacios"}</button>
+        <button onClick={() => setShowEmpty((prev) => !prev)} className={cn("rounded-lg px-2 sm:px-4 py-1.5 sm:py-2.5 text-sm font-bold transition-colors", showEmpty ? "bg-primary text-white" : "border border-gray-200 bg-white text-gray-600 dark:border-card-border dark:bg-card dark:text-muted")}>{showEmpty ? "Mostrando vacios" : "Ocultar vacios"}</button>
       </div>
 
-      <div className="overflow-hidden rounded-2xl border border-gray-200 bg-white dark:border-card-border dark:bg-card">
+      <div className="overflow-hidden rounded-xl border border-gray-200 bg-white dark:border-card-border dark:bg-card">
         <div className="overflow-x-auto">
           <table className="w-full min-w-[600px] text-sm">
             <thead className="bg-gray-50 dark:bg-surface">

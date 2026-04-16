@@ -75,7 +75,7 @@ function AnalyticsCard({ title, subtitle, icon: Icon, children, className }: {
 }) {
   return (
     <div className={cn(
-      "bg-white rounded-2xl border border-gray-200 p-6 shadow-sm transition-shadow hover:shadow-md",
+      "bg-white rounded-xl border border-gray-200 p-6  transition-shadow hover:shadow-sm",
       className,
     )}>
       <div className="mb-5">
@@ -169,9 +169,9 @@ function InlineKPIStrip() {
       {items.map((item) => (
         <div
           key={item.label}
-          className="rounded-xl border border-gray-200 bg-white px-3 py-2.5 shadow-sm text-center"
+          className="rounded-xl border border-gray-200 bg-white px-3 py-2.5  text-center"
         >
-          <p className="text-[10px] font-bold uppercase tracking-wider text-gray-400 mb-0.5">{item.label}</p>
+          <p className="text-[10px] font-bold text-gray-400 mb-0.5">{item.label}</p>
           <p className={cn("text-lg font-extrabold tabular-nums", item.color)} style={{ fontVariantNumeric: "tabular-nums" }}>{item.value}</p>
         </div>
       ))}
@@ -226,8 +226,8 @@ function SectionKPIStrip({ section }: { section: "ventas" | "productos" | "clien
   return (
     <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 mb-4">
       {items.map((item) => (
-        <div key={item.label} className="rounded-xl border border-gray-200 bg-white px-3 py-2 shadow-sm text-center">
-          <p className="text-[10px] font-bold uppercase tracking-wider text-gray-400 mb-0.5">{item.label}</p>
+        <div key={item.label} className="rounded-xl border border-gray-200 bg-white px-3 py-2  text-center">
+          <p className="text-[10px] font-bold text-gray-400 mb-0.5">{item.label}</p>
           <p className={cn("text-base font-extrabold tabular-nums", item.color)} style={{ fontVariantNumeric: "tabular-nums" }}>{item.value}</p>
         </div>
       ))}
@@ -246,7 +246,7 @@ function TabbedCard({ title, subtitle, icon, tabs, className }: {
   const [activeTab, setActiveTab] = useState(tabs[0]?.id ?? "");
   return (
     <div className={cn(
-      "bg-white rounded-2xl border border-gray-200 p-6 shadow-sm transition-shadow hover:shadow-md",
+      "bg-white rounded-xl border border-gray-200 p-6  transition-shadow hover:shadow-sm",
       className,
     )}>
       <div className="mb-4">
@@ -776,7 +776,7 @@ export default function AnalyticsBIModule() {
   };
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-6">
       <AdminModuleHeader
         title="Analytics BI"
         description="Analítica avanzada de ventas, productos, clientes y predicciones"

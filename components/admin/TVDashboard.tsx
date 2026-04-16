@@ -63,7 +63,7 @@ function KpiCard({ label, value, icon, accent }: KpiCardProps) {
     <div
       className={cn(
         "flex flex-col items-center justify-center rounded-3xl p-10 gap-4",
-        "border-2 shadow-2xl transition-colors",
+        "border-2 transition-colors",
         accent
           ? "border-[#f97316] bg-[#f97316]/10 dark:bg-[#f97316]/5"
           : "border-[#00B4A6] bg-[#00B4A6]/10 dark:bg-[#00B4A6]/5"
@@ -80,7 +80,7 @@ function KpiCard({ label, value, icon, accent }: KpiCardProps) {
       <p className="text-3xl font-bold text-gray-900 dark:text-white tracking-tight text-center">
         {value}
       </p>
-      <p className="text-xl font-semibold text-gray-500 dark:text-gray-400 text-center uppercase tracking-widest">
+      <p className="text-xl font-semibold text-gray-500 dark:text-gray-400 text-center">
         {label}
       </p>
     </div>

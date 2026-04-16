@@ -95,7 +95,7 @@ function ModuleTooltip() {
         <Info className="h-4 w-4" />
       </button>
       {open && (
-        <div className="absolute left-6 top-0 z-50 w-72 bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl shadow-xl p-4 text-xs leading-relaxed pointer-events-none">
+        <div className="absolute left-6 top-0 z-50 w-72 bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl p-4 text-xs leading-relaxed pointer-events-none">
           <p className="font-bold text-gray-900 dark:text-foreground mb-2 text-sm flex items-center gap-1.5"><Calculator className="h-4 w-4 text-primary" /> ¿Qué es Cuadrar la Caja?</p>
           <p className="text-gray-600 dark:text-muted mb-3">Compara el <strong>dinero que debería haber</strong> (fondo + ventas en efectivo) con el <strong>dinero que realmente cuentas</strong> al cerrar cada turno.</p>
           <p className="font-semibold text-gray-700 dark:text-foreground mb-1">Ejemplo:</p>
@@ -156,7 +156,7 @@ function CashCounter({ expectedAmount }: { expectedAmount: number }) {
   }
 
   return (
-    <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl overflow-hidden">
+    <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl overflow-hidden">
       <button
         type="button"
         onClick={() => setOpen(o => !o)}
@@ -174,7 +174,7 @@ function CashCounter({ expectedAmount }: { expectedAmount: number }) {
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
             {/* Billetes */}
             <div>
-              <p className="text-xs font-bold text-gray-500 dark:text-muted uppercase tracking-wide mb-2 flex items-center gap-1">
+              <p className="text-xs font-bold text-gray-500 dark:text-muted mb-2 flex items-center gap-1">
                 <Banknote className="h-3.5 w-3.5" /> Billetes
               </p>
               <table className="w-full text-sm">
@@ -214,7 +214,7 @@ function CashCounter({ expectedAmount }: { expectedAmount: number }) {
 
             {/* Monedas */}
             <div>
-              <p className="text-xs font-bold text-gray-500 dark:text-muted uppercase tracking-wide mb-2 flex items-center gap-1">
+              <p className="text-xs font-bold text-gray-500 dark:text-muted mb-2 flex items-center gap-1">
                 <Coins className="h-3.5 w-3.5" /> Monedas
               </p>
               <table className="w-full text-sm">
@@ -347,14 +347,14 @@ export default function CashAuditTab({ onNavigateToTurnos }: Props) {
         </div>
         <div className="flex flex-wrap items-center gap-2">
           {onNavigateToTurnos && (
-            <button onClick={onNavigateToTurnos} className="flex items-center gap-1.5 px-3 py-2 rounded-xl border border-primary/30 bg-primary/5 text-primary text-sm font-semibold hover:bg-primary/10 transition-colors">
+            <button onClick={onNavigateToTurnos} className="flex items-center gap-1.5 px-3 py-2 rounded-lg border border-primary/30 bg-primary/5 text-primary text-sm font-semibold hover:bg-primary/10 transition-colors">
               <ExternalLink className="h-4 w-4" /> Ir a Turnos
             </button>
           )}
-          <button onClick={() => { startTransition(() => setLoading(true)); loadAudits(); }} disabled={loading} className="p-2 rounded-xl border border-gray-200 dark:border-card-border bg-white dark:bg-surface text-gray-500 hover:text-primary disabled:opacity-40 transition-colors">
+          <button onClick={() => { startTransition(() => setLoading(true)); loadAudits(); }} disabled={loading} className="p-2 rounded-lg border border-gray-200 dark:border-card-border bg-white dark:bg-surface text-gray-500 hover:text-primary disabled:opacity-40 transition-colors">
             <RefreshCw className={cn("h-4 w-4", loading && "animate-spin")} />
           </button>
-          <button onClick={() => exportToCSV(audits.map(a => ({ fecha: a.date, turno: a.shift, cajero: a.cashier, esperado: a.expectedAmount, contado: a.countedAmount, diferencia: a.difference, estado: STATUS_MAP[a.status].label, ventas: a.salesCount, cerrado_por: a.closedBy || "-" })), "arqueo-caja")} className="flex items-center gap-1.5 px-3 py-2 rounded-xl border border-gray-200 dark:border-card-border bg-white dark:bg-surface text-sm font-semibold text-gray-700 dark:text-foreground hover:bg-gray-50 dark:hover:bg-accent transition-colors">
+          <button onClick={() => exportToCSV(audits.map(a => ({ fecha: a.date, turno: a.shift, cajero: a.cashier, esperado: a.expectedAmount, contado: a.countedAmount, diferencia: a.difference, estado: STATUS_MAP[a.status].label, ventas: a.salesCount, cerrado_por: a.closedBy || "-" })), "arqueo-caja")} className="flex items-center gap-1.5 px-3 py-2 rounded-lg border border-gray-200 dark:border-card-border bg-white dark:bg-surface text-sm font-semibold text-gray-700 dark:text-foreground hover:bg-gray-50 dark:hover:bg-accent transition-colors">
             <Download className="h-4 w-4" /> Descargar
           </button>
         </div>
@@ -367,7 +367,7 @@ export default function CashAuditTab({ onNavigateToTurnos }: Props) {
           { label: "Total faltantes", value: fmt(stats.totalShortage), color: "text-red-600", bg: "bg-red-50 dark:bg-red-950/30", icon: TrendingDown },
           { label: "Total sobrantes", value: fmt(stats.totalSurplus), color: "text-emerald-600", bg: "bg-emerald-50 dark:bg-emerald-950/30", icon: TrendingUp },
         ].map(({ label, value, color, bg, icon: Icon }) => (
-          <div key={label} className={cn("rounded-2xl p-4 flex items-start gap-3", bg)}>
+          <div key={label} className={cn("rounded-xl p-4 flex items-start gap-3", bg)}>
             <Icon className={cn("h-5 w-5 mt-0.5", color)} />
             <div>
               <p className="text-xs font-semibold text-gray-500 dark:text-muted">{label}</p>
@@ -381,7 +381,7 @@ export default function CashAuditTab({ onNavigateToTurnos }: Props) {
       <CashCounter expectedAmount={audits.length > 0 ? audits[0].expectedAmount : 0} />
 
       {/* Table */}
-      <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl overflow-hidden">
+      <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl overflow-hidden">
         {loading ? (
           <div className="p-8 flex justify-center"><div className="h-8 w-8 border-4 border-primary border-t-transparent rounded-full animate-spin" /></div>
         ) : audits.length === 0 ? (
@@ -421,7 +421,7 @@ export default function CashAuditTab({ onNavigateToTurnos }: Props) {
       {/* Detail Modal */}
       {detail && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4" onClick={() => setDetail(null)}>
-          <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl shadow-2xl p-3 sm:p-6 w-full max-w-md space-y-4 max-h-[80vh] overflow-auto" onClick={e => e.stopPropagation()}>
+          <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl p-3 sm:p-6 w-full max-w-md space-y-4 max-h-[80vh] overflow-auto" onClick={e => e.stopPropagation()}>
             <div className="flex items-center justify-between">
               <div>
                 <h3 className="font-extrabold text-gray-900 dark:text-foreground">Cuadre — {detail.date} {detail.shift}</h3>

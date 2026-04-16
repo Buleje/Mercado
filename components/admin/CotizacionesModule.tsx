@@ -64,7 +64,7 @@ const PER_PAGE = 10;
 function CotizacionPreview({ cotizacion }: { cotizacion: Cotizacion }) {
   const meta = STATUS_META[cotizacion.status];
   return (
-    <div className="w-[300px] bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl shadow-xl p-4 space-y-2">
+    <div className="w-[300px] bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl p-4 space-y-2">
       <div className="flex items-center justify-between">
         <span className="font-mono text-xs text-gray-500">COT-{String(cotizacion.numero).padStart(4, "0")}</span>
         <span className={cn("inline-flex items-center px-2 py-0.5 rounded-lg text-[10px] font-bold", meta.bg, meta.color)}>{meta.label}</span>
@@ -142,7 +142,7 @@ function CotizacionesDashboard({ cotizaciones, loading: parentLoading }: { cotiz
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
           {[...Array(4)].map((_, i) => <div key={i} className="h-20 bg-gray-200 dark:bg-gray-700 rounded-xl" />)}
         </div>
-        <div className="h-48 bg-gray-200 dark:bg-gray-700 rounded-2xl" />
+        <div className="h-48 bg-gray-200 dark:bg-gray-700 rounded-xl" />
       </div>
     );
   }
@@ -207,8 +207,8 @@ function CotizacionesDashboard({ cotizaciones, loading: parentLoading }: { cotiz
           { label: "Tasa conversion", value: `${tasaConversion.toFixed(1)}%`, border: tasaConversion > 30 ? "border-b-4 border-emerald-500" : "border-b-4 border-amber-500" },
           { label: "Monto cotizado", value: formatCurrency(montoCotizado), border: "border-b-4 border-[#00B4A6]" },
         ].map(k => (
-          <div key={k.label} className={cn("bg-white dark:bg-card rounded-xl border border-gray-200 dark:border-card-border p-4 shadow-sm", k.border)}>
-            <p className="text-[10px] text-gray-500 font-medium uppercase tracking-wider">{k.label}</p>
+          <div key={k.label} className={cn("bg-white dark:bg-card rounded-xl border border-gray-200 dark:border-card-border p-4 ", k.border)}>
+            <p className="text-[10px] text-gray-500 font-medium">{k.label}</p>
             <p className="text-2xl font-mono font-bold mt-1 text-gray-900 dark:text-white">{k.value}</p>
           </div>
         ))}
@@ -217,7 +217,7 @@ function CotizacionesDashboard({ cotizaciones, loading: parentLoading }: { cotiz
 
       {/* Funnel */}
       <m.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 1 * 0.1 }}>
-      <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl p-6 shadow-sm">
+      <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl p-6 ">
         <h3 className="text-sm font-bold text-gray-700 dark:text-foreground mb-4">Funnel de conversion</h3>
         {cotizaciones.length > 0 ? (
           <div className="space-y-2.5">
@@ -242,7 +242,7 @@ function CotizacionesDashboard({ cotizaciones, loading: parentLoading }: { cotiz
       <m.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 2 * 0.1 }}>
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* AreaChart: cotizaciones emitidas por mes */}
-        <div className="bg-white dark:bg-card rounded-2xl border border-gray-200 dark:border-card-border p-6 shadow-sm">
+        <div className="bg-white dark:bg-card rounded-xl border border-gray-200 dark:border-card-border p-6 ">
           <h3 className="text-sm font-bold text-gray-700 dark:text-foreground mb-4">Cotizaciones por mes</h3>
           {monthlyData.some(d => d.count > 0) ? (
             <ResponsiveContainer width="100%" height={220}>
@@ -264,7 +264,7 @@ function CotizacionesDashboard({ cotizaciones, loading: parentLoading }: { cotiz
         </div>
 
         {/* Top 5 clientes */}
-        <div className="bg-white dark:bg-card rounded-2xl border border-gray-200 dark:border-card-border p-6 shadow-sm">
+        <div className="bg-white dark:bg-card rounded-xl border border-gray-200 dark:border-card-border p-6 ">
           <h3 className="text-sm font-bold text-gray-700 dark:text-foreground mb-4">Top 5 clientes por monto</h3>
           {topClientes.length > 0 ? (
             <ResponsiveContainer width="100%" height={220}>
@@ -579,7 +579,7 @@ export default function CotizacionesModule() {
       {/* Header — Mejora 20 */}
       <div className="flex flex-col sm:flex-row sm:items-center gap-3">
         <div className="flex items-center gap-3 flex-1 min-w-0">
-          <div className="h-10 w-10 rounded-xl bg-[#00B4A6] text-white flex items-center justify-center shadow-sm shrink-0">
+          <div className="h-10 w-10 rounded-lg bg-[#00B4A6] text-white flex items-center justify-center  shrink-0">
             <FileText className="h-5 w-5" />
           </div>
           <div>
@@ -607,7 +607,7 @@ export default function CotizacionesModule() {
             className={cn(
               "px-4 py-2 rounded-lg text-sm font-bold transition-colors flex items-center gap-1.5",
               activeTab === id
-                ? "bg-white dark:bg-card text-[#00B4A6] shadow-sm"
+                ? "bg-white dark:bg-card text-[#00B4A6] "
                 : "text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300"
             )}
           >
@@ -693,7 +693,7 @@ export default function CotizacionesModule() {
             ];
             const maxCount = Math.max(...stages.map(s => s.count), 1);
             return (
-              <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl p-4 shadow-sm">
+              <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl p-4 ">
                 <p className="text-[10px] uppercase font-bold text-gray-400 mb-3">Funnel de conversion</p>
                 <div className="space-y-2">
                   {stages.map((stage, i) => {
@@ -730,13 +730,13 @@ export default function CotizacionesModule() {
                   aria-label="Buscar cotizaciones"
                   value={search}
                   onChange={e => setSearch(e.target.value)}
-                  className="w-full pl-9 pr-3 py-2 rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 text-sm text-gray-900 dark:text-white placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#00B4A6]/30"
+                  className="w-full pl-9 pr-3 py-2 rounded-lg border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 text-sm text-gray-900 dark:text-white placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#00B4A6]/30"
                 />
               </div>
               <button
                 type="button"
                 onClick={() => setShowQuickClient(true)}
-                className="shrink-0 h-[38px] w-[38px] flex items-center justify-center rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 hover:bg-[#00B4A6] hover:text-white hover:border-[#00B4A6] text-gray-500 transition-colors"
+                className="shrink-0 h-[38px] w-[38px] flex items-center justify-center rounded-lg border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 hover:bg-[#00B4A6] hover:text-white hover:border-[#00B4A6] text-gray-500 transition-colors"
                 title="Crear cliente rapido"
               >
                 <Plus className="h-4 w-4" />
@@ -822,7 +822,7 @@ export default function CotizacionesModule() {
           </AnimatePresence>
 
           {/* Table */}
-          <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl overflow-hidden shadow-sm">
+          <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl overflow-hidden ">
             {loading ? (
               <div className="flex items-center justify-center py-12">
                 <Loader2 className="h-6 w-6 animate-spin text-[#00B4A6]" />
@@ -835,12 +835,12 @@ export default function CotizacionesModule() {
               </div>
             ) : cotizaciones.length === 0 ? (
               <div className="text-center py-16 px-4">
-                <div className="h-16 w-16 rounded-2xl bg-gray-100 dark:bg-surface flex items-center justify-center mx-auto mb-4">
+                <div className="h-16 w-16 rounded-xl bg-gray-100 dark:bg-surface flex items-center justify-center mx-auto mb-4">
                   <FileText className="h-8 w-8 text-gray-400 dark:text-muted" />
                 </div>
                 <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">Sin cotizaciones</h3>
                 <p className="text-sm text-gray-500 mb-6 max-w-md mx-auto">Envía presupuestos profesionales a tus clientes</p>
-                <button onClick={() => setActiveTab("nueva")} className="bg-[#00B4A6] text-white px-6 py-2.5 rounded-xl font-medium hover:bg-[#009690]">Nueva cotización</button>
+                <button onClick={() => setActiveTab("nueva")} className="bg-[#00B4A6] text-white px-6 py-2.5 rounded-lg font-medium hover:bg-[#009690]">Nueva cotización</button>
               </div>
             ) : (
               <>
@@ -862,7 +862,7 @@ export default function CotizacionesModule() {
                       const headerColor = c.status === "BORRADOR" ? "bg-gray-100 dark:bg-gray-800" : c.status === "ENVIADA" ? "bg-emerald-50 dark:bg-emerald-950/30" : c.status === "ACEPTADA" || c.status === "CONVERTIDA" ? "bg-emerald-50 dark:bg-emerald-950/30" : "bg-red-50 dark:bg-red-950/30";
                       const diasValidez = Math.max(0, Math.ceil((new Date(c.validoHasta).getTime() - Date.now()) / 86400000));
                       return (
-                        <div key={c.id} onClick={() => openDetail(c)} className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl overflow-hidden shadow-sm hover:shadow-lg cursor-pointer transition-all group">
+                        <div key={c.id} onClick={() => openDetail(c)} className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl overflow-hidden  hover:shadow-lg cursor-pointer transition-all group">
                           <div className={cn("px-4 py-2 flex items-center justify-between", headerColor)}>
                             <span className="font-mono text-xs font-bold text-gray-600 dark:text-gray-300">COT-{String(c.numero).padStart(4, "0")}</span>
                             <span className={cn("inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold", meta.bg, meta.color)}>{meta.label}</span>
@@ -957,7 +957,7 @@ export default function CotizacionesModule() {
 
       {/* ── TAB: NUEVA COTIZACIÓN (multi-step) ──────────────────────────── */}
       {activeTab === "nueva" && (
-        <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl shadow-sm p-5 space-y-5">
+        <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl  p-5 space-y-5">
           {/* Step indicators */}
           <div className="flex items-center gap-2">
             {[1, 2, 3].map(s => (
@@ -988,7 +988,7 @@ export default function CotizacionesModule() {
                     value={clienteNombre}
                     onChange={e => setClienteNombre(e.target.value)}
                     placeholder="Nombre o razón social"
-                    className="w-full pl-9 pr-3 py-2 rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 text-sm text-gray-900 dark:text-white placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#00B4A6]/30"
+                    className="w-full pl-9 pr-3 py-2 rounded-lg border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 text-sm text-gray-900 dark:text-white placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#00B4A6]/30"
                   />
                 </div>
               </div>
@@ -1002,14 +1002,14 @@ export default function CotizacionesModule() {
                     onChange={e => setClienteRuc(e.target.value)}
                     placeholder="20XXXXXXXXX"
                     maxLength={20}
-                    className="w-full pl-9 pr-3 py-2 rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 text-sm text-gray-900 dark:text-white placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#00B4A6]/30"
+                    className="w-full pl-9 pr-3 py-2 rounded-lg border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 text-sm text-gray-900 dark:text-white placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#00B4A6]/30"
                   />
                 </div>
               </div>
               <div className="flex justify-end pt-2">
                 <button
                   onClick={() => { if (clienteNombre.trim()) setStep(2); else setCreateError("Nombre del cliente requerido"); }}
-                  className="px-5 py-2.5 rounded-xl text-sm font-bold text-white bg-[#00B4A6] hover:bg-[#009690] shadow-sm transition-colors"
+                  className="px-5 py-2.5 rounded-lg text-sm font-bold text-white bg-[#00B4A6] hover:bg-[#009690]  transition-colors"
                 >
                   Siguiente
                 </button>
@@ -1067,7 +1067,7 @@ export default function CotizacionesModule() {
                               className="w-full px-2 py-1.5 rounded-lg border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 text-sm text-gray-900 dark:text-white placeholder:text-gray-400 focus:outline-none focus:ring-1 focus:ring-[#00B4A6]/30"
                             />
                             {activeItemIdx === idx && productResults.length > 0 && (
-                              <div className="absolute top-full left-0 right-0 z-10 mt-1 bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl shadow-lg max-h-40 overflow-y-auto">
+                              <div className="absolute top-full left-0 right-0 z-10 mt-1 bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl max-h-40 overflow-y-auto">
                                 {productResults.map(p => (
                                   <button
                                     key={p.id}
@@ -1126,10 +1126,10 @@ export default function CotizacionesModule() {
               </div>
 
               <div className="flex gap-2 justify-between pt-2">
-                <button onClick={() => setStep(1)} className="px-4 py-2.5 rounded-xl text-sm font-bold text-gray-600 dark:text-gray-400 bg-gray-100 dark:bg-white/5 hover:bg-gray-200 dark:hover:bg-white/10 transition-colors">
+                <button onClick={() => setStep(1)} className="px-4 py-2.5 rounded-lg text-sm font-bold text-gray-600 dark:text-gray-400 bg-gray-100 dark:bg-white/5 hover:bg-gray-200 dark:hover:bg-white/10 transition-colors">
                   Atrás
                 </button>
-                <button onClick={() => setStep(3)} className="px-5 py-2.5 rounded-xl text-sm font-bold text-white bg-[#00B4A6] hover:bg-[#009690] shadow-sm transition-colors">
+                <button onClick={() => setStep(3)} className="px-5 py-2.5 rounded-lg text-sm font-bold text-white bg-[#00B4A6] hover:bg-[#009690]  transition-colors">
                   Siguiente
                 </button>
               </div>
@@ -1138,7 +1138,7 @@ export default function CotizacionesModule() {
 
           {/* Step 3: Confirmar */}
           {step === 3 && (
-            <div className="space-y-4">
+            <div className="space-y-6">
               <div className="bg-gray-50 dark:bg-white/5 rounded-xl p-4 space-y-2">
                 <p className="text-sm"><span className="font-bold text-gray-700 dark:text-gray-300">Cliente:</span> {clienteNombre} {clienteRuc ? `(RUC: ${clienteRuc})` : ""}</p>
                 <p className="text-sm"><span className="font-bold text-gray-700 dark:text-gray-300">Items:</span> {items.filter(i => i.descripcion.trim()).length}</p>
@@ -1152,7 +1152,7 @@ export default function CotizacionesModule() {
                     type="date"
                     value={validoHasta}
                     onChange={e => setValidoHasta(e.target.value)}
-                    className="w-full pl-9 pr-3 py-2 rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 text-sm text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-[#00B4A6]/30"
+                    className="w-full pl-9 pr-3 py-2 rounded-lg border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 text-sm text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-[#00B4A6]/30"
                   />
                 </div>
               </div>
@@ -1163,20 +1163,20 @@ export default function CotizacionesModule() {
                   onChange={e => setNotas(e.target.value)}
                   placeholder="Condiciones, observaciones..."
                   rows={2}
-                  className="w-full px-3 py-2 rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 text-sm text-gray-900 dark:text-white placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#00B4A6]/30 resize-none"
+                  className="w-full px-3 py-2 rounded-lg border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 text-sm text-gray-900 dark:text-white placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#00B4A6]/30 resize-none"
                 />
               </div>
 
               {createError && <p className="text-xs text-red-600 dark:text-red-400 font-semibold">{createError}</p>}
 
               <div className="flex gap-2 justify-between pt-1">
-                <button onClick={() => setStep(2)} className="px-4 py-2.5 rounded-xl text-sm font-bold text-gray-600 dark:text-gray-400 bg-gray-100 dark:bg-white/5 hover:bg-gray-200 dark:hover:bg-white/10 transition-colors">
+                <button onClick={() => setStep(2)} className="px-4 py-2.5 rounded-lg text-sm font-bold text-gray-600 dark:text-gray-400 bg-gray-100 dark:bg-white/5 hover:bg-gray-200 dark:hover:bg-white/10 transition-colors">
                   Atrás
                 </button>
                 <button
                   onClick={handleCreate}
                   disabled={creating}
-                  className="flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-bold text-white bg-[#00B4A6] hover:bg-[#009690] disabled:opacity-50 shadow-sm transition-colors"
+                  className="flex items-center gap-2 px-5 py-2.5 rounded-lg text-sm font-bold text-white bg-[#00B4A6] hover:bg-[#009690] disabled:opacity-50  transition-colors"
                 >
                   {creating ? <Loader2 className="h-4 w-4 animate-spin" /> : <Check className="h-4 w-4" />}
                   Crear Cotización
@@ -1205,12 +1205,12 @@ export default function CotizacionesModule() {
               animate={{ x: 0 }}
               exit={{ x: "100%" }}
               transition={{ type: "spring", damping: 25, stiffness: 250 }}
-              className="fixed inset-y-0 right-0 z-50 w-full max-w-lg bg-white dark:bg-card border-l border-gray-200 dark:border-card-border shadow-2xl overflow-y-auto"
+              className="fixed inset-y-0 right-0 z-50 w-full max-w-lg bg-white dark:bg-card border-l border-gray-200 dark:border-card-border overflow-y-auto"
             >
               <div className="p-4 sm:p-6 space-y-5">
                 <div className="flex items-center justify-between">
                   <h3 className="text-lg font-bold text-gray-900 dark:text-white">Cotización #{String(selected.numero).padStart(4, "0")}</h3>
-                  <button onClick={() => setSelected(null)} className="p-2 rounded-xl hover:bg-gray-100 dark:hover:bg-white/5 transition-colors">
+                  <button onClick={() => setSelected(null)} className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-white/5 transition-colors">
                     <X className="h-5 w-5 text-gray-500" />
                   </button>
                 </div>
@@ -1344,7 +1344,7 @@ export default function CotizacionesModule() {
                   {selected.status === "BORRADOR" && (
                     <>
                       <button onClick={() => updateStatus("ENVIADA")} disabled={actionLoading}
-                        className="flex items-center gap-1.5 px-4 py-2 rounded-xl text-sm font-bold text-white bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 transition-colors">
+                        className="flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-bold text-white bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 transition-colors">
                         <Send className="h-4 w-4" /> Enviar
                       </button>
                     </>
@@ -1352,18 +1352,18 @@ export default function CotizacionesModule() {
                   {selected.status === "ENVIADA" && (
                     <>
                       <button onClick={() => updateStatus("ACEPTADA")} disabled={actionLoading}
-                        className="flex items-center gap-1.5 px-4 py-2 rounded-xl text-sm font-bold text-white bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 transition-colors">
+                        className="flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-bold text-white bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 transition-colors">
                         <Check className="h-4 w-4" /> Aceptada
                       </button>
                       <button onClick={() => updateStatus("RECHAZADA")} disabled={actionLoading}
-                        className="flex items-center gap-1.5 px-4 py-2 rounded-xl text-sm font-bold text-white bg-red-600 hover:bg-red-700 disabled:opacity-50 transition-colors">
+                        className="flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-bold text-white bg-red-600 hover:bg-red-700 disabled:opacity-50 transition-colors">
                         <XCircle className="h-4 w-4" /> Rechazada
                       </button>
                     </>
                   )}
                   {selected.status === "ACEPTADA" && (
                     <button onClick={convertirAOrden} disabled={actionLoading}
-                      className="flex items-center gap-1.5 px-4 py-2 rounded-xl text-sm font-bold text-white bg-purple-600 hover:bg-purple-700 disabled:opacity-50 transition-colors">
+                      className="flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-bold text-white bg-purple-600 hover:bg-purple-700 disabled:opacity-50 transition-colors">
                       <ShoppingCart className="h-4 w-4" /> Convertir a Orden
                     </button>
                   )}
@@ -1394,7 +1394,7 @@ export default function CotizacionesModule() {
                       const url = phone ? `https://wa.me/${phone}?text=${encodedText}` : `https://wa.me/?text=${encodedText}`;
                       window.open(url, "_blank");
                     }}
-                    className="flex items-center gap-1.5 px-4 py-2 rounded-xl text-sm font-bold text-white bg-[#25D366] hover:bg-[#1da851] transition-colors"
+                    className="flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-bold text-white bg-[#25D366] hover:bg-[#1da851] transition-colors"
                   >
                     <MessageCircle className="h-4 w-4" /> WhatsApp
                   </button>
@@ -1411,17 +1411,17 @@ export default function CotizacionesModule() {
                       setActiveTab("nueva");
                       setStep(2);
                     }}
-                    className="flex items-center gap-1.5 px-4 py-2 rounded-xl text-sm font-bold text-[#f97316] bg-[#f97316]/10 hover:bg-[#f97316]/20 transition-colors"
+                    className="flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-bold text-[#f97316] bg-[#f97316]/10 hover:bg-[#f97316]/20 transition-colors"
                   >
                     <Copy className="h-4 w-4" /> Duplicar
                   </button>
                   <button onClick={handlePrint}
-                    className="flex items-center gap-1.5 px-4 py-2 rounded-xl text-sm font-bold text-gray-600 dark:text-gray-300 bg-gray-100 dark:bg-white/5 hover:bg-gray-200 dark:hover:bg-white/10 transition-colors">
+                    className="flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-bold text-gray-600 dark:text-gray-300 bg-gray-100 dark:bg-white/5 hover:bg-gray-200 dark:hover:bg-white/10 transition-colors">
                     <Printer className="h-4 w-4" /> Imprimir PDF
                   </button>
                   <button
                     onClick={() => { setShowSaveTemplate(true); setTemplateName(""); }}
-                    className="flex items-center gap-1.5 px-4 py-2 rounded-xl text-sm font-bold text-[#00B4A6] bg-[#00B4A6]/10 hover:bg-[#00B4A6]/20 transition-colors"
+                    className="flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-bold text-[#00B4A6] bg-[#00B4A6]/10 hover:bg-[#00B4A6]/20 transition-colors"
                   >
                     <Bookmark className="h-4 w-4" /> Guardar como plantilla
                   </button>
@@ -1437,20 +1437,20 @@ export default function CotizacionesModule() {
                       onChange={e => setTemplateName(e.target.value)}
                       placeholder="Nombre de la plantilla..."
                       maxLength={60}
-                      className="w-full px-3 py-2 rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 text-sm text-gray-900 dark:text-white placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#00B4A6]/30"
+                      className="w-full px-3 py-2 rounded-lg border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 text-sm text-gray-900 dark:text-white placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#00B4A6]/30"
                       onKeyDown={e => e.key === "Enter" && handleSaveTemplate()}
                     />
                     <div className="flex gap-2">
                       <button
                         onClick={() => setShowSaveTemplate(false)}
-                        className="flex-1 px-3 py-2 rounded-xl text-xs font-bold text-gray-600 dark:text-gray-400 bg-gray-100 dark:bg-white/5 hover:bg-gray-200 dark:hover:bg-white/10 transition-colors"
+                        className="flex-1 px-3 py-2 rounded-lg text-xs font-bold text-gray-600 dark:text-gray-400 bg-gray-100 dark:bg-white/5 hover:bg-gray-200 dark:hover:bg-white/10 transition-colors"
                       >
                         Cancelar
                       </button>
                       <button
                         onClick={handleSaveTemplate}
                         disabled={!templateName.trim()}
-                        className="flex-1 px-3 py-2 rounded-xl text-xs font-bold text-white bg-[#00B4A6] hover:bg-[#009690] disabled:opacity-50 transition-colors"
+                        className="flex-1 px-3 py-2 rounded-lg text-xs font-bold text-white bg-[#00B4A6] hover:bg-[#009690] disabled:opacity-50 transition-colors"
                       >
                         Guardar
                       </button>
@@ -1483,7 +1483,7 @@ export default function CotizacionesModule() {
               className="fixed inset-0 z-[60] flex items-center justify-center p-4"
               onClick={e => e.target === e.currentTarget && setShowTemplateModal(false)}
             >
-              <div className="w-full max-w-md bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl shadow-2xl p-5 space-y-4 max-h-[80vh] overflow-y-auto">
+              <div className="w-full max-w-md bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl p-5 space-y-4 max-h-[80vh] overflow-y-auto">
                 <div className="flex items-center justify-between">
                   <h3 className="text-lg font-bold text-gray-900 dark:text-white">Seleccionar plantilla</h3>
                   <button onClick={() => setShowTemplateModal(false)} className="p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-white/5">
@@ -1498,7 +1498,7 @@ export default function CotizacionesModule() {
                       <button
                         key={tpl.id}
                         onClick={() => handleLoadTemplate(tpl)}
-                        className="w-full text-left p-3 bg-gray-50 dark:bg-white/5 rounded-xl hover:bg-[#00B4A6]/5 dark:hover:bg-[#00B4A6]/10 hover:border-[#00B4A6]/20 border border-transparent transition-all"
+                        className="w-full text-left p-3 bg-gray-50 dark:bg-white/5 rounded-lg hover:bg-[#00B4A6]/5 dark:hover:bg-[#00B4A6]/10 hover:border-[#00B4A6]/20 border border-transparent transition-all"
                       >
                         <div className="flex items-center gap-3">
                           <div className="h-8 w-8 rounded-lg bg-[#00B4A6]/10 flex items-center justify-center shrink-0">
@@ -1541,7 +1541,7 @@ export default function CotizacionesModule() {
               className="fixed inset-0 z-[60] flex items-center justify-center p-4"
               onClick={e => e.target === e.currentTarget && setShowTemplateList(false)}
             >
-              <div className="w-full max-w-md bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl shadow-2xl p-5 space-y-4 max-h-[80vh] overflow-y-auto">
+              <div className="w-full max-w-md bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl p-5 space-y-4 max-h-[80vh] overflow-y-auto">
                 <div className="flex items-center justify-between">
                   <h3 className="text-lg font-bold text-gray-900 dark:text-white">Plantillas guardadas</h3>
                   <button onClick={() => setShowTemplateList(false)} className="p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-white/5">

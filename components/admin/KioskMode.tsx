@@ -178,7 +178,7 @@ export default function KioskMode() {
       className="relative flex flex-col h-screen bg-gray-50 dark:bg-gray-950 overflow-hidden select-none"
     >
       {/* ── Top bar ── */}
-      <header className="flex items-center justify-between px-6 py-4 bg-white dark:bg-card border-b border-gray-200 dark:border-card-border shadow-sm">
+      <header className="flex items-center justify-between px-6 py-4 bg-white dark:bg-card border-b border-gray-200 dark:border-card-border ">
         <div className="flex items-center gap-3">
           <div className="w-8 h-8 rounded-xl bg-primary flex items-center justify-center">
             <Package className="h-4 w-4 text-white" />
@@ -225,7 +225,7 @@ export default function KioskMode() {
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
                 placeholder="Busca un producto..."
-                className="w-full pl-12 pr-4 py-4 text-lg rounded-2xl border-2 border-gray-200 dark:border-card-border bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-foreground focus:outline-none focus:border-primary transition-colors"
+                className="w-full pl-12 pr-4 py-4 text-lg rounded-xl border-2 border-gray-200 dark:border-card-border bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-foreground focus:outline-none focus:border-primary transition-colors"
               />
               {search && (
                 <button type="button" onClick={() => setSearch("")} className="absolute right-4 top-1/2 -translate-y-1/2">
@@ -256,8 +256,8 @@ export default function KioskMode() {
                       type="button"
                       onClick={() => addToCart(product)}
                       className={cn(
-                        "flex flex-col items-center rounded-2xl border-2 p-3 bg-white dark:bg-card text-left transition-all hover:shadow-md hover:border-primary active:scale-95 focus:outline-none focus:border-primary",
-                        inCart ? "border-primary shadow-md shadow-primary/10" : "border-gray-100 dark:border-card-border"
+                        "flex flex-col items-center rounded-xl border-2 p-3 bg-white dark:bg-card text-left transition-all hover:shadow-sm hover:border-primary active:scale-95 focus:outline-none focus:border-primary",
+                        inCart ? "border-primary" : "border-gray-100 dark:border-card-border"
                       )}
                     >
                       <div className="relative w-full aspect-square rounded-xl overflow-hidden bg-gray-50 dark:bg-gray-900 mb-2">
@@ -369,7 +369,7 @@ export default function KioskMode() {
                 type="button"
                 onClick={handlePayment}
                 disabled={processingPayment}
-                className="w-full py-3 rounded-2xl bg-primary text-white font-bold text-base hover:bg-primary/90 transition-colors disabled:opacity-60 flex items-center justify-center gap-2"
+                className="w-full py-3 rounded-xl bg-primary text-white font-bold text-base hover:bg-primary/90 transition-colors disabled:opacity-60 flex items-center justify-center gap-2"
               >
                 {processingPayment ? <Loader2 className="h-5 w-5 animate-spin" /> : null}
                 Pagar {fmt(cartTotal)}

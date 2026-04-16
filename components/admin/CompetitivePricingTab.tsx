@@ -85,7 +85,7 @@ function PriceComparisonChart({ products }: { products: PricingProduct[] }) {
   const maxVal = Math.max(...allValues) * 1.1;
 
   return (
-    <div className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-2xl p-4 shadow-sm">
+    <div className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-xl p-4 ">
       <div className="flex items-center gap-2 mb-4">
         <BarChart2 className="h-4 w-4 text-[#00B4A6]" />
         <h3 className="text-sm font-bold text-gray-900 dark:text-white">
@@ -205,17 +205,17 @@ export default function CompetitivePricingTab() {
       <div className="space-y-4 animate-pulse">
         <div className="grid grid-cols-3 gap-3">
           {[1, 2, 3].map((i) => (
-            <div key={i} className="h-20 bg-gray-200 dark:bg-gray-800 rounded-2xl" />
+            <div key={i} className="h-20 bg-gray-200 dark:bg-gray-800 rounded-xl" />
           ))}
         </div>
-        <div className="h-64 bg-gray-200 dark:bg-gray-800 rounded-2xl" />
+        <div className="h-64 bg-gray-200 dark:bg-gray-800 rounded-xl" />
       </div>
     );
   }
 
   if (error) {
     return (
-      <div className="flex items-center gap-2 p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-2xl text-sm text-red-700 dark:text-red-400">
+      <div className="flex items-center gap-2 p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-xl text-sm text-red-700 dark:text-red-400">
         <AlertCircle className="h-4 w-4 shrink-0" />
         {error}
         <button type="button" onClick={load} className="ml-auto text-xs underline font-bold">
@@ -239,8 +239,8 @@ export default function CompetitivePricingTab() {
     <div className="space-y-5">
       {/* KPIs */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-        <div className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-2xl p-4 shadow-sm">
-          <p className="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wide">
+        <div className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-xl p-4 ">
+          <p className="text-xs font-bold text-gray-500 dark:text-gray-400">
             Por debajo del mercado
           </p>
           <p className="text-3xl font-extrabold text-emerald-600 dark:text-emerald-400 mt-1">
@@ -250,8 +250,8 @@ export default function CompetitivePricingTab() {
             productos con precio bajo
           </p>
         </div>
-        <div className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-2xl p-4 shadow-sm">
-          <p className="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wide">
+        <div className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-xl p-4 ">
+          <p className="text-xs font-bold text-gray-500 dark:text-gray-400">
             Por encima del mercado
           </p>
           <p className="text-3xl font-extrabold text-red-600 dark:text-red-400 mt-1">
@@ -261,8 +261,8 @@ export default function CompetitivePricingTab() {
             productos con precio alto
           </p>
         </div>
-        <div className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-2xl p-4 shadow-sm">
-          <p className="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wide">
+        <div className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-xl p-4 ">
+          <p className="text-xs font-bold text-gray-500 dark:text-gray-400">
             Oportunidad estimada
           </p>
           <p className="text-3xl font-extrabold text-[#00B4A6] font-mono mt-1">
@@ -292,33 +292,33 @@ export default function CompetitivePricingTab() {
         </button>
       </div>
 
-      <div className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-2xl shadow-sm overflow-hidden">
+      <div className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-xl  overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead className="bg-gray-50 dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700">
               <tr>
-                <th className="text-left px-4 py-3 text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wide">
+                <th className="text-left px-4 py-3 text-xs font-bold text-gray-500 dark:text-gray-400">
                   Producto
                 </th>
-                <th className="text-right px-4 py-3 text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wide whitespace-nowrap">
+                <th className="text-right px-4 py-3 text-xs font-bold text-gray-500 dark:text-gray-400 whitespace-nowrap">
                   Mi precio
                 </th>
-                <th className="text-right px-4 py-3 text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wide hidden sm:table-cell">
+                <th className="text-right px-4 py-3 text-xs font-bold text-gray-500 dark:text-gray-400 hidden sm:table-cell">
                   Promedio
                 </th>
-                <th className="text-right px-4 py-3 text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wide hidden md:table-cell">
+                <th className="text-right px-4 py-3 text-xs font-bold text-gray-500 dark:text-gray-400 hidden md:table-cell">
                   Mín
                 </th>
-                <th className="text-right px-4 py-3 text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wide hidden md:table-cell">
+                <th className="text-right px-4 py-3 text-xs font-bold text-gray-500 dark:text-gray-400 hidden md:table-cell">
                   Máx
                 </th>
-                <th className="text-center px-4 py-3 text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wide hidden sm:table-cell">
+                <th className="text-center px-4 py-3 text-xs font-bold text-gray-500 dark:text-gray-400 hidden sm:table-cell">
                   Competidores
                 </th>
-                <th className="text-center px-4 py-3 text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wide">
+                <th className="text-center px-4 py-3 text-xs font-bold text-gray-500 dark:text-gray-400">
                   Sugerencia
                 </th>
-                <th className="text-center px-4 py-3 text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wide">
+                <th className="text-center px-4 py-3 text-xs font-bold text-gray-500 dark:text-gray-400">
                   Acción
                 </th>
               </tr>

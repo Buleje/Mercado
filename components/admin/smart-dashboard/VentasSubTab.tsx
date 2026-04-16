@@ -169,7 +169,7 @@ export function VentasSubTab(props: VentasSubTabProps) {
                 Agregar grafico
               </button>
               {showChartPicker && (
-                <div className="absolute right-0 top-full mt-1 z-20 bg-white dark:bg-zinc-800 border border-gray-200 dark:border-zinc-700 rounded-xl shadow-xl p-2 w-64">
+                <div className="absolute right-0 top-full mt-1 z-20 bg-white dark:bg-zinc-800 border border-gray-200 dark:border-zinc-700 rounded-xl p-2 w-64">
                   {CHART_OPTIONS.filter(o => !activeCharts.includes(o.id)).map(option => (
                     <button
                       key={option.id}
@@ -271,7 +271,7 @@ export function VentasSubTab(props: VentasSubTabProps) {
         try { const stored = localStorage.getItem("daily-goal"); if (stored) dailyGoal = Number(stored) || 800; } catch { /* ignore */ }
         const dailyGoalPct = dailyGoal > 0 ? (revenueToday / dailyGoal) * 100 : 0;
         return (
-          <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl p-5">
+          <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl p-5">
             <div className="flex items-center justify-between mb-2">
               <p className="text-sm font-bold text-gray-900 dark:text-white flex items-center gap-2">
                 <Target className="h-4 w-4 text-primary" /> Meta del dia

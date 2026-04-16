@@ -550,9 +550,9 @@ export default function AIBusinessHealthScore({ data }: Props) {
   return (
     <div className="space-y-5">
       {/* ── Main Health Score Card ─────────────────────────────────────────── */}
-      <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 p-5 shadow-sm">
+      <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 p-5 ">
         <div className="flex items-center justify-between mb-4">
-          <h2 className="text-sm font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wide">
+          <h2 className="text-sm font-semibold text-gray-700 dark:text-gray-300">
             Salud del Negocio
           </h2>
           <button
@@ -643,8 +643,8 @@ export default function AIBusinessHealthScore({ data }: Props) {
 
       {/* ── Quick Priority Chips ───────────────────────────────────────────── */}
       {priorities.length > 0 && (
-        <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 p-5 shadow-sm">
-          <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3 uppercase tracking-wide">
+        <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 p-5 ">
+          <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3">
             Prioridades Inmediatas
           </h3>
           <div className="space-y-2.5">
@@ -671,9 +671,9 @@ export default function AIBusinessHealthScore({ data }: Props) {
 
       {/* ── Tendencia historica ────────────────────────────────────────────── */}
       {history.length > 1 && (
-        <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 p-5 shadow-sm">
+        <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 p-5 ">
           <div className="flex items-center justify-between mb-3">
-            <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wide">
+            <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300">
               Tendencia de Salud
             </h3>
             {totalTrendDelta !== 0 && (
@@ -716,7 +716,7 @@ export default function AIBusinessHealthScore({ data }: Props) {
                     onMouseLeave={() => setHoveredBar(null)}
                   >
                     {hoveredBar === i && (
-                      <div className="absolute -top-10 bg-gray-900 dark:bg-gray-100 text-white dark:text-gray-900 text-xs px-2.5 py-1.5 rounded-lg shadow-lg whitespace-nowrap z-20 pointer-events-none">
+                      <div className="absolute -top-10 bg-gray-900 dark:bg-gray-100 text-white dark:text-gray-900 text-xs px-2.5 py-1.5 rounded-lg whitespace-nowrap z-20 pointer-events-none">
                         <div className="font-medium">{weekLabel}: {h.score}/100</div>
                         {h.desglose && (
                           <div className="text-[10px] opacity-80 mt-0.5">
@@ -741,8 +741,8 @@ export default function AIBusinessHealthScore({ data }: Props) {
       )}
 
       {/* ── Riesgo de Fiado ───────────────────────────────────────────────── */}
-      <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 p-5 shadow-sm">
-        <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3 uppercase tracking-wide">
+      <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 p-5 ">
+        <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3">
           Riesgo de Fiado
         </h3>
         {fiadoLoading ? (
@@ -799,12 +799,12 @@ export default function AIBusinessHealthScore({ data }: Props) {
 
       {/* ── Dias de Inventario ─────────────────────────────────────────────── */}
       {inventoryDays.length > 0 && (
-        <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 p-5 shadow-sm">
+        <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 p-5 ">
           <button
             onClick={() => setExpandedSection(expandedSection === "inventory" ? null : "inventory")}
             className="w-full flex items-center justify-between mb-3"
           >
-            <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wide">
+            <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300">
               Dias de Inventario
             </h3>
             <span className="text-xs text-gray-400">
@@ -903,12 +903,12 @@ export default function AIBusinessHealthScore({ data }: Props) {
 
       {/* ── Rotacion de Productos ──────────────────────────────────────────── */}
       {rotation && (
-        <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 p-5 shadow-sm">
+        <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 p-5 ">
           <button
             onClick={() => setExpandedSection(expandedSection === "rotation" ? null : "rotation")}
             className="w-full flex items-center justify-between mb-3"
           >
-            <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wide">
+            <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300">
               Rotacion de Productos
             </h3>
             <span className="text-xs text-gray-400">

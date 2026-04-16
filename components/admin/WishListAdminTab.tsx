@@ -158,7 +158,7 @@ export default function WishListAdminTab() {
       </div>
 
       {/* Ingreso potencial destacado */}
-      <div className="bg-gradient-to-r from-primary/10 to-secondary/10 dark:from-primary/20 dark:to-secondary/20 border border-primary/20 rounded-2xl p-4 flex items-center justify-between">
+      <div className="bg-gradient-to-r from-primary/10 to-secondary/10 dark:from-primary/20 dark:to-secondary/20 border border-primary/20 rounded-xl p-4 flex items-center justify-between">
         <div>
           <p className="text-xs font-bold text-primary">Ingreso potencial total en wishlists</p>
           <p className="text-2xl font-extrabold text-gray-900 dark:text-foreground">{fmt(potentialRevenue)}</p>
@@ -168,7 +168,7 @@ export default function WishListAdminTab() {
 
       {/* Ranking de productos más deseados */}
       {productCounts.length > 0 && (
-        <div className="bg-white dark:bg-card rounded-2xl border border-gray-200 dark:border-card-border p-4 sm:p-5">
+        <div className="bg-white dark:bg-card rounded-xl border border-gray-200 dark:border-card-border p-4 sm:p-5">
           <h3 className="font-bold text-sm text-gray-900 dark:text-foreground mb-4 flex items-center gap-2">
             <TrendingUp className="h-4 w-4 text-primary" /> Productos más deseados
           </h3>
@@ -213,7 +213,7 @@ export default function WishListAdminTab() {
       <div className="flex flex-col sm:flex-row gap-2">
         <div className="relative flex-1">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
-          <input value={search} onChange={e => setSearch(e.target.value)} className="w-full pl-9 pr-3 py-2 rounded-xl border border-gray-200 dark:border-card-border bg-white dark:bg-surface text-sm" placeholder="Buscar cliente o producto..." />
+          <input value={search} onChange={e => setSearch(e.target.value)} className="w-full pl-9 pr-3 py-2 rounded-lg border border-gray-200 dark:border-card-border bg-white dark:bg-surface text-sm" placeholder="Buscar cliente o producto..." />
         </div>
         <div className="flex items-center gap-2">
           <button onClick={() => setFilterType("all")} className={cn("px-3 py-1.5 rounded-lg text-xs font-bold transition-colors", filterType === "all" ? "bg-primary text-white" : "bg-gray-100 dark:bg-surface text-gray-600 dark:text-muted")}>Todas</button>
@@ -225,7 +225,7 @@ export default function WishListAdminTab() {
 
       {/* Lista de wishlists */}
       {filtered.length === 0 ? (
-        <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl flex flex-col items-center py-12 gap-2 text-gray-400 dark:text-muted">
+        <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl flex flex-col items-center py-12 gap-2 text-gray-400 dark:text-muted">
           <Heart className="h-10 w-10 opacity-30" />
           <p className="text-sm">Sin listas de deseos</p>
         </div>
@@ -235,7 +235,7 @@ export default function WishListAdminTab() {
             const totalValue = l.items.reduce((s, i) => s + i.price, 0);
             const convRate = l.items.length > 0 ? ((l.convertedItems / l.items.length) * 100).toFixed(0) : "0";
             return (
-              <div key={l.id} className="bg-white dark:bg-card rounded-2xl border border-gray-200 dark:border-card-border overflow-hidden">
+              <div key={l.id} className="bg-white dark:bg-card rounded-xl border border-gray-200 dark:border-card-border overflow-hidden">
                 <button onClick={() => setExpandedId(expandedId === l.id ? null : l.id)} className="w-full flex items-center justify-between px-4 sm:px-5 py-4 hover:bg-gray-50 dark:hover:bg-surface/50 transition-colors">
                   <div className="flex items-center gap-3">
                     <div className="h-10 w-10 rounded-xl bg-pink-100 dark:bg-pink-900/20 flex items-center justify-center shrink-0">

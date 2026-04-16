@@ -214,7 +214,7 @@ export function MeteringCardClient({ snapshot, onUpgrade }: MeteringCardClientPr
   return (
     <section
       aria-label="Uso facturable del mes"
-      className="rounded-2xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 p-6 flex flex-col gap-5"
+      className="rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 p-6 flex flex-col gap-5"
     >
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">

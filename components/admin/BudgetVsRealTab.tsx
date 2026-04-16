@@ -189,7 +189,7 @@ function CategoryChart({
 }) {
   const max = Math.max(...categories.flatMap((c) => [c.budgeted, c.actual]), 1);
   return (
-    <div className="space-y-4">
+    <div className="space-y-6">
       {categories.map((c) => {
         const variance = c.budgeted > 0 ? ((c.actual - c.budgeted) / c.budgeted) * 100 : 0;
         const isOver = variance > 10;
@@ -406,7 +406,7 @@ export default function BudgetVsRealTab() {
         <p className="text-gray-500 dark:text-muted text-sm">Error cargando datos</p>
         <button
           onClick={load}
-          className="flex items-center gap-2 px-4 py-2 rounded-xl bg-[#00B4A6] text-white text-sm font-semibold"
+          className="flex items-center gap-2 px-4 py-2 rounded-lg bg-[#00B4A6] text-white text-sm font-semibold"
         >
           <RefreshCw className="h-4 w-4" /> Reintentar
         </button>
@@ -445,14 +445,14 @@ export default function BudgetVsRealTab() {
               "meta-vs-real"
             )
           }
-          className="flex items-center gap-2 px-4 py-2 rounded-xl bg-[#00B4A6] text-white text-sm font-bold hover:bg-[#00B4A6]/90 transition-colors shadow-md shadow-[#00B4A6]/20 min-h-[44px]"
+          className="flex items-center gap-2 px-4 py-2 rounded-lg bg-[#00B4A6] text-white text-sm font-bold hover:bg-[#00B4A6]/90 transition-colors min-h-[44px]"
         >
           <Download className="h-4 w-4" /> Exportar
         </button>
       </div>
 
       {/* ── 1. Configurador de metas mensuales ── */}
-      <div className="bg-white dark:bg-card rounded-2xl border border-gray-200 dark:border-card-border p-4 shadow-sm">
+      <div className="bg-white dark:bg-card rounded-xl border border-gray-200 dark:border-card-border p-4 ">
         <div className="flex items-center gap-2 mb-3">
           <Target className="h-4 w-4 text-[#00B4A6]" />
           <h3 className="text-sm font-bold text-gray-700 dark:text-foreground">
@@ -505,7 +505,7 @@ export default function BudgetVsRealTab() {
       {(budgetConfig.salesGoal > 0 || budgetConfig.expensesGoal > 0) && (
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           {budgetConfig.salesGoal > 0 && (
-            <div className="bg-white dark:bg-card rounded-2xl border border-gray-200 dark:border-card-border p-4 shadow-sm">
+            <div className="bg-white dark:bg-card rounded-xl border border-gray-200 dark:border-card-border p-4 ">
               <ProgressBar
                 label="Ventas del mes"
                 current={currentMonthSales}
@@ -515,7 +515,7 @@ export default function BudgetVsRealTab() {
             </div>
           )}
           {budgetConfig.expensesGoal > 0 && (
-            <div className="bg-white dark:bg-card rounded-2xl border border-gray-200 dark:border-card-border p-4 shadow-sm">
+            <div className="bg-white dark:bg-card rounded-xl border border-gray-200 dark:border-card-border p-4 ">
               <ProgressBar
                 label="Gastos del mes"
                 current={currentMonthExpenses}
@@ -529,7 +529,7 @@ export default function BudgetVsRealTab() {
 
       {/* ── 4. Proyección fin de mes ── */}
       {(currentMonthSales > 0 || currentMonthExpenses > 0) && (
-        <div className="bg-white dark:bg-card rounded-2xl border border-gray-200 dark:border-card-border p-4 shadow-sm">
+        <div className="bg-white dark:bg-card rounded-xl border border-gray-200 dark:border-card-border p-4 ">
           <h3 className="text-sm font-bold text-gray-700 dark:text-foreground mb-3">
             Proyeccion al {totalDays} de {monthName}
           </h3>
@@ -585,20 +585,20 @@ export default function BudgetVsRealTab() {
 
       {/* KPIs de gastos */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-4">
-        <div className="bg-white dark:bg-card rounded-2xl border border-gray-200 dark:border-card-border p-4 shadow-sm">
+        <div className="bg-white dark:bg-card rounded-xl border border-gray-200 dark:border-card-border p-4 ">
           <p className="text-xs text-gray-500 dark:text-muted font-semibold">Total presupuestado</p>
           <p className="text-xl font-extrabold text-gray-900 dark:text-foreground mt-1">
             {fmt(totals.budgeted)}
           </p>
         </div>
-        <div className="bg-white dark:bg-card rounded-2xl border border-gray-200 dark:border-card-border p-4 shadow-sm">
+        <div className="bg-white dark:bg-card rounded-xl border border-gray-200 dark:border-card-border p-4 ">
           <p className="text-xs text-gray-500 dark:text-muted font-semibold">Total ejecutado</p>
           <p className="text-xl font-extrabold text-gray-900 dark:text-foreground mt-1">
             {fmt(totals.actual)}
           </p>
         </div>
         <div className={cn(
-          "bg-white dark:bg-card rounded-2xl border p-4 shadow-sm",
+          "bg-white dark:bg-card rounded-xl border p-4 ",
           totals.variance > 0 ? "border-red-200 dark:border-red-800" : "border-emerald-200 dark:border-emerald-800"
         )}>
           <p className="text-xs text-gray-500 dark:text-muted font-semibold">Desviación gastos</p>
@@ -609,7 +609,7 @@ export default function BudgetVsRealTab() {
             {fmtPct(totals.pct)}
           </p>
         </div>
-        <div className="bg-white dark:bg-card rounded-2xl border border-gray-200 dark:border-card-border p-4 shadow-sm">
+        <div className="bg-white dark:bg-card rounded-xl border border-gray-200 dark:border-card-border p-4 ">
           <p className="text-xs text-gray-500 dark:text-muted font-semibold">Alertas</p>
           <div className="flex items-center gap-3 mt-1">
             <span className="text-red-600 font-extrabold text-lg">{overBudgetCount}</span>
@@ -621,7 +621,7 @@ export default function BudgetVsRealTab() {
       </div>
 
       {/* ── 3. Gráfico de barras por categoría principal ── */}
-      <div className="bg-white dark:bg-card rounded-2xl border border-gray-200 dark:border-card-border p-4 shadow-sm">
+      <div className="bg-white dark:bg-card rounded-xl border border-gray-200 dark:border-card-border p-4 ">
         <h3 className="text-sm font-bold text-gray-700 dark:text-foreground mb-4">
           Ventas · Gastos · Ganancia · Por departamento
         </h3>
@@ -689,7 +689,7 @@ export default function BudgetVsRealTab() {
       </div>
 
       {/* Tabla de detalle por categoría */}
-      <div className="bg-white dark:bg-card rounded-2xl border border-gray-200 dark:border-card-border shadow-sm overflow-hidden">
+      <div className="bg-white dark:bg-card rounded-xl border border-gray-200 dark:border-card-border  overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full min-w-[600px] text-sm">
             <thead>

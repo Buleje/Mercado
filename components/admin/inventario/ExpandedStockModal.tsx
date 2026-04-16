@@ -118,7 +118,7 @@ export default function ExpandedStockModal({ products, movements, onClose }: Pro
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm" onClick={e => e.target === e.currentTarget && onClose()}>
-      <div className="bg-white dark:bg-card w-[95vw] max-w-7xl h-[90vh] rounded-2xl shadow-2xl flex flex-col overflow-hidden">
+      <div className="bg-white dark:bg-card w-[95vw] max-w-7xl h-[90vh] rounded-xl flex flex-col overflow-hidden">
         {/* Header */}
         <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200 dark:border-card-border shrink-0">
           <div>
@@ -147,27 +147,27 @@ export default function ExpandedStockModal({ products, movements, onClose }: Pro
           <table className="w-full text-sm">
             <thead className="sticky top-0 bg-gray-50 dark:bg-surface z-10">
               <tr className="text-left">
-                <th className="px-4 py-3 text-xs font-bold text-gray-500 dark:text-muted uppercase tracking-wider w-12">#</th>
-                <th className="px-4 py-3 text-xs font-bold text-gray-500 dark:text-muted uppercase tracking-wider cursor-pointer select-none" onClick={() => toggleSort("name")}>
+                <th className="px-4 py-3 text-xs font-bold text-gray-500 dark:text-muted w-12">#</th>
+                <th className="px-4 py-3 text-xs font-bold text-gray-500 dark:text-muted cursor-pointer select-none" onClick={() => toggleSort("name")}>
                   <span className="inline-flex items-center gap-1">Producto <SortIcon col="name" sortKey={sortKey} sortDir={sortDir} /></span>
                 </th>
-                <th className="px-4 py-3 text-xs font-bold text-gray-500 dark:text-muted uppercase tracking-wider">Categoría</th>
-                <th className="px-4 py-3 text-xs font-bold text-gray-500 dark:text-muted uppercase tracking-wider cursor-pointer select-none" onClick={() => toggleSort("stock")}>
+                <th className="px-4 py-3 text-xs font-bold text-gray-500 dark:text-muted">Categoría</th>
+                <th className="px-4 py-3 text-xs font-bold text-gray-500 dark:text-muted cursor-pointer select-none" onClick={() => toggleSort("stock")}>
                   <span className="inline-flex items-center gap-1">Stock <SortIcon col="stock" sortKey={sortKey} sortDir={sortDir} /></span>
                 </th>
-                <th className="px-4 py-3 text-xs font-bold text-gray-500 dark:text-muted uppercase tracking-wider cursor-pointer select-none" onClick={() => toggleSort("cost")}>
+                <th className="px-4 py-3 text-xs font-bold text-gray-500 dark:text-muted cursor-pointer select-none" onClick={() => toggleSort("cost")}>
                   <span className="inline-flex items-center gap-1">Costo <SortIcon col="cost" sortKey={sortKey} sortDir={sortDir} /></span>
                 </th>
-                <th className="px-4 py-3 text-xs font-bold text-gray-500 dark:text-muted uppercase tracking-wider cursor-pointer select-none" onClick={() => toggleSort("price")}>
+                <th className="px-4 py-3 text-xs font-bold text-gray-500 dark:text-muted cursor-pointer select-none" onClick={() => toggleSort("price")}>
                   <span className="inline-flex items-center gap-1">Precio <SortIcon col="price" sortKey={sortKey} sortDir={sortDir} /></span>
                 </th>
-                <th className="px-4 py-3 text-xs font-bold text-gray-500 dark:text-muted uppercase tracking-wider cursor-pointer select-none" onClick={() => toggleSort("margin")}>
+                <th className="px-4 py-3 text-xs font-bold text-gray-500 dark:text-muted cursor-pointer select-none" onClick={() => toggleSort("margin")}>
                   <span className="inline-flex items-center gap-1">Margen <SortIcon col="margin" sortKey={sortKey} sortDir={sortDir} /></span>
                 </th>
-                <th className="px-4 py-3 text-xs font-bold text-gray-500 dark:text-muted uppercase tracking-wider cursor-pointer select-none" onClick={() => toggleSort("movement")}>
+                <th className="px-4 py-3 text-xs font-bold text-gray-500 dark:text-muted cursor-pointer select-none" onClick={() => toggleSort("movement")}>
                   <span className="inline-flex items-center gap-1">Movimiento <SortIcon col="movement" sortKey={sortKey} sortDir={sortDir} /></span>
                 </th>
-                <th className="px-4 py-3 text-xs font-bold text-gray-500 dark:text-muted uppercase tracking-wider">Rotación</th>
+                <th className="px-4 py-3 text-xs font-bold text-gray-500 dark:text-muted">Rotación</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-50 dark:divide-gray-800/50">

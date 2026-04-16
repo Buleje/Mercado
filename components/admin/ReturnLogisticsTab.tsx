@@ -181,7 +181,7 @@ export default function ReturnLogisticsTab() {
 
           <div className="space-y-3">
             {filtered.map(r => (
-              <div key={r.id} className="bg-white dark:bg-card rounded-2xl border border-gray-200 dark:border-card-border overflow-hidden">
+              <div key={r.id} className="bg-white dark:bg-card rounded-xl border border-gray-200 dark:border-card-border overflow-hidden">
                 {/* Summary row */}
                 <button
                   onClick={() => setExpandedId(expandedId === r.id ? null : r.id)}
@@ -282,7 +282,7 @@ export default function ReturnLogisticsTab() {
       )}
 
       {view === "reasons" && (
-        <div className="bg-white dark:bg-card rounded-2xl border border-gray-200 dark:border-card-border p-4 sm:p-6 space-y-4">
+        <div className="bg-white dark:bg-card rounded-xl border border-gray-200 dark:border-card-border p-4 sm:p-6 space-y-4">
           <h3 className="font-bold text-sm text-gray-700 dark:text-foreground">Motivos más frecuentes de devolución</h3>
           {reasonFreq.length === 0 ? (
             <p className="text-sm text-gray-400 text-center py-6">Sin datos todavía</p>

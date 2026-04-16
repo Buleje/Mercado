@@ -47,7 +47,7 @@ export function SidebarFlyout({
         zIndex: 100,
       }}
       className={cn(
-        "bg-white dark:bg-zinc-900 shadow-2xl rounded-xl border border-gray-100 dark:border-zinc-800 min-w-[220px] overflow-hidden",
+        "bg-white dark:bg-zinc-900 rounded-xl border border-gray-100 dark:border-zinc-800 min-w-[220px] overflow-hidden",
         "transition-all duration-150",
         visible
           ? "opacity-100 translate-x-0"

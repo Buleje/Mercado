@@ -100,10 +100,10 @@ export default function ScenarioSimulatorTab() {
           <p className="text-sm text-gray-500 dark:text-muted mt-1">Modifica variables y visualiza el impacto financiero en tiempo real</p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
-          <button onClick={handleReset} className="flex flex-wrap items-center gap-2 px-2 sm:px-4 py-1.5 sm:py-2.5 rounded-xl text-sm font-semibold text-gray-600 dark:text-muted hover:bg-gray-100 dark:hover:bg-accent transition-colors border border-gray-200 dark:border-card-border">
+          <button onClick={handleReset} className="flex flex-wrap items-center gap-2 px-2 sm:px-4 py-1.5 sm:py-2.5 rounded-lg text-sm font-semibold text-gray-600 dark:text-muted hover:bg-gray-100 dark:hover:bg-accent transition-colors border border-gray-200 dark:border-card-border">
             <RotateCcw className="h-4 w-4" /> Reset
           </button>
-          <button onClick={() => setShowSaveModal(true)} className="flex flex-wrap items-center gap-2 px-2 sm:px-4 py-1.5 sm:py-2.5 rounded-xl bg-primary text-white text-sm font-bold hover:bg-primary/90 transition-colors shadow-md shadow-primary/20">
+          <button onClick={() => setShowSaveModal(true)} className="flex flex-wrap items-center gap-2 px-2 sm:px-4 py-1.5 sm:py-2.5 rounded-lg bg-primary text-white text-sm font-bold hover:bg-primary/90 transition-colors">
             <Save className="h-4 w-4" /> Guardar escenario
           </button>
         </div>
@@ -121,7 +121,7 @@ export default function ScenarioSimulatorTab() {
         ].map(kpi => {
           const d = diff(kpi.value, kpi.base);
           return (
-            <div key={kpi.label} className="bg-white dark:bg-card rounded-2xl border border-gray-200 dark:border-card-border p-4 shadow-sm">
+            <div key={kpi.label} className="bg-white dark:bg-card rounded-xl border border-gray-200 dark:border-card-border p-4 ">
               <p className="text-xs text-gray-500 dark:text-muted font-semibold">{kpi.label}</p>
               <p className={cn("text-lg font-extrabold mt-1", kpi.value < 0 ? "text-red-600" : "text-gray-900 dark:text-foreground")}>{kpi.format(kpi.value)}</p>
               {d !== 0 && (
@@ -136,7 +136,7 @@ export default function ScenarioSimulatorTab() {
       </div>
 
       {/* Variables sliders */}
-      <div className="bg-white dark:bg-card rounded-2xl border border-gray-200 dark:border-card-border p-3 sm:p-6 shadow-sm">
+      <div className="bg-white dark:bg-card rounded-xl border border-gray-200 dark:border-card-border p-3 sm:p-6 ">
         <h3 className="text-lg font-extrabold text-gray-900 dark:text-foreground mb-4">Variables del negocio</h3>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
           {BASE_VARIABLES.map(v => {
@@ -172,7 +172,7 @@ export default function ScenarioSimulatorTab() {
 
       {/* Comparison vs saved */}
       {compareResult && (
-        <div className="bg-white dark:bg-card rounded-2xl border border-gray-200 dark:border-card-border p-3 sm:p-6 shadow-sm">
+        <div className="bg-white dark:bg-card rounded-xl border border-gray-200 dark:border-card-border p-3 sm:p-6 ">
           <div className="flex items-center justify-between mb-4">
             <h3 className="text-lg font-extrabold text-gray-900 dark:text-foreground">Comparación con: {saved.find(s => s.id === compareId)?.name}</h3>
             <button onClick={() => setCompareId(null)} className="text-sm text-gray-500 dark:text-muted hover:text-red-500">Cerrar</button>
@@ -210,7 +210,7 @@ export default function ScenarioSimulatorTab() {
       )}
 
       {/* Saved scenarios */}
-      <div className="bg-white dark:bg-card rounded-2xl border border-gray-200 dark:border-card-border p-3 sm:p-6 shadow-sm">
+      <div className="bg-white dark:bg-card rounded-xl border border-gray-200 dark:border-card-border p-3 sm:p-6 ">
         <h3 className="text-lg font-extrabold text-gray-900 dark:text-foreground mb-4">Escenarios guardados</h3>
         {saved.length === 0 ? (
           <p className="text-sm text-gray-400 dark:text-muted text-center py-8">No hay escenarios guardados</p>
@@ -248,7 +248,7 @@ export default function ScenarioSimulatorTab() {
 
       {/* Impact alert */}
       {currentResult.profit < 0 && (
-        <div className="bg-red-50 dark:bg-red-950/20 border border-red-200 dark:border-red-800 rounded-2xl p-4 flex flex-wrap items-start gap-3">
+        <div className="bg-red-50 dark:bg-red-950/20 border border-red-200 dark:border-red-800 rounded-xl p-4 flex flex-wrap items-start gap-3">
           <AlertTriangle className="h-5 w-5 text-red-500 shrink-0 mt-0.5" />
           <div>
             <h4 className="font-bold text-red-700 dark:text-red-400 text-sm">Escenario con pérdidas</h4>
@@ -260,7 +260,7 @@ export default function ScenarioSimulatorTab() {
       {/* Save modal */}
       {showSaveModal && (
         <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4" onClick={() => setShowSaveModal(false)}>
-          <div className="bg-white dark:bg-card rounded-2xl shadow-xl w-full max-w-md" onClick={e => e.stopPropagation()}>
+          <div className="bg-white dark:bg-card rounded-xl w-full max-w-md" onClick={e => e.stopPropagation()}>
             <div className="flex items-center justify-between px-3 sm:px-6 py-4 border-b border-gray-100 dark:border-card-border">
               <h3 className="font-extrabold text-gray-900 dark:text-foreground">Guardar escenario</h3>
               <button onClick={() => setShowSaveModal(false)} className="p-1.5 rounded-lg text-gray-400 hover:bg-gray-100 dark:hover:bg-accent"><X className="h-5 w-5" /></button>
@@ -279,8 +279,8 @@ export default function ScenarioSimulatorTab() {
               </div>
               <p className="text-xs text-gray-400 dark:text-muted">{Object.keys(overrides).length} variables modificadas</p>
               <div className="flex flex-wrap justify-end gap-3">
-                <button onClick={() => setShowSaveModal(false)} className="px-2 sm:px-4 py-1.5 sm:py-2.5 rounded-xl text-sm font-semibold text-gray-600 dark:text-muted hover:bg-gray-100 dark:hover:bg-accent transition-colors">Cancelar</button>
-                <button onClick={handleSave} disabled={!saveName.trim()} className="px-5 py-2.5 rounded-xl bg-primary text-white text-sm font-bold hover:bg-primary/90 transition-colors disabled:opacity-50">Guardar</button>
+                <button onClick={() => setShowSaveModal(false)} className="px-2 sm:px-4 py-1.5 sm:py-2.5 rounded-lg text-sm font-semibold text-gray-600 dark:text-muted hover:bg-gray-100 dark:hover:bg-accent transition-colors">Cancelar</button>
+                <button onClick={handleSave} disabled={!saveName.trim()} className="px-5 py-2.5 rounded-lg bg-primary text-white text-sm font-bold hover:bg-primary/90 transition-colors disabled:opacity-50">Guardar</button>
               </div>
             </div>
           </div>

@@ -25,7 +25,7 @@ function AdminKPI({ label, value, icon: Icon, iconColor = "#6b7280", trend, load
           </div>
         )}
 
-        <p className="text-xs text-gray-500 dark:text-zinc-400 uppercase tracking-wide font-medium">
+        <p className="text-xs text-gray-500 dark:text-zinc-400 font-medium">
           {label}
         </p>
 

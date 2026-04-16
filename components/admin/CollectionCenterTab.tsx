@@ -166,7 +166,7 @@ export default function CollectionCenterTab() {
         <p className="text-gray-500 dark:text-muted text-sm">Error cargando datos</p>
         <button
           onClick={load}
-          className="flex items-center gap-2 px-4 py-2 rounded-xl bg-primary text-white text-sm font-semibold"
+          className="flex items-center gap-2 px-4 py-2 rounded-lg bg-primary text-white text-sm font-semibold"
         >
           <RefreshCw className="h-4 w-4" /> Reintentar
         </button>
@@ -202,7 +202,7 @@ export default function CollectionCenterTab() {
               "centro-cobros"
             )
           }
-          className="flex items-center gap-1.5 px-3 py-2 rounded-xl border border-gray-200 dark:border-card-border bg-white dark:bg-surface text-sm font-semibold text-gray-700 dark:text-foreground hover:bg-gray-50 dark:hover:bg-accent transition-colors"
+          className="flex items-center gap-1.5 px-3 py-2 rounded-lg border border-gray-200 dark:border-card-border bg-white dark:bg-surface text-sm font-semibold text-gray-700 dark:text-foreground hover:bg-gray-50 dark:hover:bg-accent transition-colors"
         >
           <Download className="h-4 w-4" /> Exportar
         </button>
@@ -216,7 +216,7 @@ export default function CollectionCenterTab() {
           { label: "Cobrado hoy", value: fmt(stats.collectedToday), color: "text-emerald-600", bg: "bg-emerald-50 dark:bg-emerald-950/30", icon: CheckCircle },
           { label: "Crítico (+90d)", value: String(stats.critical), color: stats.critical > 0 ? "text-red-600" : "text-emerald-600", bg: stats.critical > 0 ? "bg-red-50 dark:bg-red-950/30" : "bg-emerald-50 dark:bg-emerald-950/30", icon: ShieldAlert },
         ].map(({ label, value, color, bg, icon: Icon }) => (
-          <div key={label} className={cn("rounded-2xl p-4 flex items-start gap-3", bg)}>
+          <div key={label} className={cn("rounded-xl p-4 flex items-start gap-3", bg)}>
             <Icon className={cn("h-5 w-5 mt-0.5", color)} />
             <div>
               <p className="text-xs font-semibold text-gray-500 dark:text-muted">{label}</p>
@@ -227,7 +227,7 @@ export default function CollectionCenterTab() {
       </div>
 
       {/* Gráfico de antigüedad */}
-      <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl p-4">
+      <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl p-4">
         <h3 className="text-sm font-bold text-gray-700 dark:text-foreground mb-4">
           Antigüedad de cartera
         </h3>
@@ -303,7 +303,7 @@ export default function CollectionCenterTab() {
       </div>
 
       {/* Tabla */}
-      <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl overflow-hidden">
+      <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full min-w-[600px] text-sm">
             <thead>
@@ -405,7 +405,7 @@ export default function CollectionCenterTab() {
           onClick={() => setDetail(null)}
         >
           <div
-            className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl shadow-2xl p-6 w-full max-w-md space-y-4"
+            className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl p-6 w-full max-w-md space-y-4"
             onClick={(e) => e.stopPropagation()}
           >
             <div className="flex items-center justify-between">
@@ -453,14 +453,14 @@ export default function CollectionCenterTab() {
                   href={`https://wa.me/51${detail.phone.replace(/\D/g, "")}?text=Hola%20${encodeURIComponent(detail.customer)}%2C%20le%20recordamos%20su%20deuda%20pendiente%20de%20${fmt(detail.amount - detail.paid)}`}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-emerald-500 text-white text-xs font-bold hover:bg-emerald-600 transition-colors"
+                  className="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-emerald-500 text-white text-xs font-bold hover:bg-emerald-600 transition-colors"
                 >
                   <Phone className="h-3.5 w-3.5" /> WhatsApp
                 </a>
               )}
               <a
                 href={`tel:${detail.phone}`}
-                className="flex items-center gap-1.5 px-3 py-2 rounded-xl border border-gray-200 dark:border-card-border text-xs font-bold text-gray-700 dark:text-foreground hover:bg-gray-50 dark:hover:bg-surface transition-colors"
+                className="flex items-center gap-1.5 px-3 py-2 rounded-lg border border-gray-200 dark:border-card-border text-xs font-bold text-gray-700 dark:text-foreground hover:bg-gray-50 dark:hover:bg-surface transition-colors"
               >
                 <Phone className="h-3.5 w-3.5" /> Llamar
               </a>

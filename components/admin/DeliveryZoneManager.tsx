@@ -107,7 +107,7 @@ function ZoneMap({ zones }: { zones: DeliveryZone[] }) {
 
       {/* Store dot */}
       <div className="absolute inset-0 flex items-center justify-center">
-        <div className="w-5 h-5 rounded-full bg-[#00B4A6] border-2 border-white dark:border-gray-900 shadow-md flex items-center justify-center">
+        <div className="w-5 h-5 rounded-full bg-[#00B4A6] border-2 border-white dark:border-gray-900 flex items-center justify-center">
           <MapPin size={10} className="text-white" />
         </div>
       </div>

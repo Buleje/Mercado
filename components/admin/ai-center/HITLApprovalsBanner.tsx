@@ -145,7 +145,7 @@ export default function HITLApprovalsBanner() {
                   ? "1 acción del agente esperando aprobación"
                   : `${approvals.length} acciones del agente esperando aprobación`}
               </h3>
-              <span className="text-[10px] px-2 py-0.5 rounded-full bg-amber-200/60 dark:bg-amber-900/40 text-amber-900 dark:text-amber-200 font-semibold uppercase tracking-wide">
+              <span className="text-[10px] px-2 py-0.5 rounded-full bg-amber-200/60 dark:bg-amber-900/40 text-amber-900 dark:text-amber-200 font-semibold">
                 HITL
               </span>
             </div>
@@ -186,7 +186,7 @@ export default function HITLApprovalsBanner() {
           role="dialog"
           aria-modal="true"
         >
-          <div className="bg-white dark:bg-gray-950 border border-gray-200 dark:border-gray-800 rounded-2xl max-w-lg w-full p-6 shadow-2xl">
+          <div className="bg-white dark:bg-gray-950 border border-gray-200 dark:border-gray-800 rounded-xl max-w-lg w-full p-6">
             <div className="flex items-start gap-3 mb-4">
               <div className="w-10 h-10 rounded-xl bg-amber-100 dark:bg-amber-900/40 flex items-center justify-center shrink-0">
                 <AlertTriangle className="w-5 h-5 text-amber-600 dark:text-amber-400" />
@@ -256,7 +256,7 @@ export default function HITLApprovalsBanner() {
         <div
           role="status"
           className={[
-            "fixed bottom-6 right-6 z-50 px-4 py-3 rounded-xl shadow-lg flex items-center gap-2 text-sm font-semibold",
+            "fixed bottom-6 right-6 z-50 px-4 py-3 rounded-xl flex items-center gap-2 text-sm font-semibold",
             toast.type === "success"
               ? "bg-emerald-600 text-white"
               : "bg-red-600 text-white",

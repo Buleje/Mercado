@@ -251,7 +251,7 @@ export default function InvoiceScannerModal({ open, onClose, onConfirm }: Props)
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
-      <div className="relative w-full max-w-lg max-h-[90vh] overflow-y-auto bg-white dark:bg-gray-900 rounded-2xl shadow-2xl border border-gray-200 dark:border-gray-700">
+      <div className="relative w-full max-w-lg max-h-[90vh] overflow-y-auto bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-700">
         {/* Header */}
         <div className="sticky top-0 z-10 flex items-center justify-between px-5 py-4 border-b border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 rounded-t-2xl">
           <div className="flex items-center gap-2">
@@ -282,7 +282,7 @@ export default function InvoiceScannerModal({ open, onClose, onConfirm }: Props)
                 <button
                   type="button"
                   onClick={startCamera}
-                  className="flex flex-col items-center gap-2 p-6 rounded-xl border-2 border-dashed border-gray-300 dark:border-gray-600 hover:border-primary dark:hover:border-primary hover:bg-emerald-50 dark:hover:bg-emerald-950/20 transition-colors group"
+                  className="flex flex-col items-center gap-2 p-6 rounded-lg border-2 border-dashed border-gray-300 dark:border-gray-600 hover:border-primary dark:hover:border-primary hover:bg-emerald-50 dark:hover:bg-emerald-950/20 transition-colors group"
                 >
                   <Camera className="h-8 w-8 text-gray-400 group-hover:text-primary transition-colors" />
                   <span className="text-sm font-medium text-gray-600 dark:text-gray-400 group-hover:text-primary">
@@ -292,7 +292,7 @@ export default function InvoiceScannerModal({ open, onClose, onConfirm }: Props)
                 <button
                   type="button"
                   onClick={() => fileInputRef.current?.click()}
-                  className="flex flex-col items-center gap-2 p-6 rounded-xl border-2 border-dashed border-gray-300 dark:border-gray-600 hover:border-primary dark:hover:border-primary hover:bg-emerald-50 dark:hover:bg-emerald-950/20 transition-colors group"
+                  className="flex flex-col items-center gap-2 p-6 rounded-lg border-2 border-dashed border-gray-300 dark:border-gray-600 hover:border-primary dark:hover:border-primary hover:bg-emerald-50 dark:hover:bg-emerald-950/20 transition-colors group"
                 >
                   <Upload className="h-8 w-8 text-gray-400 group-hover:text-primary transition-colors" />
                   <span className="text-sm font-medium text-gray-600 dark:text-gray-400 group-hover:text-primary">
@@ -329,14 +329,14 @@ export default function InvoiceScannerModal({ open, onClose, onConfirm }: Props)
                 <button
                   type="button"
                   onClick={reset}
-                  className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl border border-gray-300 dark:border-gray-600 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
+                  className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg border border-gray-300 dark:border-gray-600 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
                 >
                   <X className="h-4 w-4" /> Cancelar
                 </button>
                 <button
                   type="button"
                   onClick={capturePhoto}
-                  className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-primary text-white text-sm font-medium hover:bg-primary-dark transition-colors"
+                  className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg bg-primary text-white text-sm font-medium hover:bg-primary-dark transition-colors"
                 >
                   <Camera className="h-4 w-4" /> Capturar
                 </button>
@@ -376,7 +376,7 @@ export default function InvoiceScannerModal({ open, onClose, onConfirm }: Props)
               <button
                 type="button"
                 onClick={reset}
-                className="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl border border-gray-300 dark:border-gray-600 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
+                className="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg border border-gray-300 dark:border-gray-600 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
               >
                 <RotateCcw className="h-4 w-4" /> Intentar de nuevo
               </button>
@@ -385,7 +385,7 @@ export default function InvoiceScannerModal({ open, onClose, onConfirm }: Props)
 
           {/* ── Results: editable table ──────────────────────────────── */}
           {state === "results" && invoiceData && (
-            <div className="space-y-4">
+            <div className="space-y-6">
               {/* Proveedor info */}
               <div className="p-3 rounded-xl bg-emerald-50 dark:bg-emerald-950/20 border border-emerald-200 dark:border-emerald-800">
                 <p className="text-sm font-medium text-emerald-800 dark:text-emerald-300">
@@ -518,7 +518,7 @@ export default function InvoiceScannerModal({ open, onClose, onConfirm }: Props)
           <button
             type="button"
             onClick={reset}
-            className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl border border-gray-300 dark:border-gray-600 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
+            className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg border border-gray-300 dark:border-gray-600 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
           >
             <RotateCcw className="h-4 w-4" /> Otra foto
           </button>
@@ -526,7 +526,7 @@ export default function InvoiceScannerModal({ open, onClose, onConfirm }: Props)
             type="button"
             onClick={handleConfirm}
             disabled={editItems.filter((i) => i.nombre.trim() && i.cantidad > 0).length === 0}
-            className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-primary text-white text-sm font-medium hover:bg-primary-dark disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg bg-primary text-white text-sm font-medium hover:bg-primary-dark disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
           >
             <ShoppingCart className="h-4 w-4" /> Agregar al carrito
           </button>

@@ -22,7 +22,7 @@ function predictFutureCLV(c: CLVCustomer): number {
 
 function KPI({ label, value, sub, icon: Icon, color }: { label: string; value: string; sub?: string; icon: React.ElementType; color: string }) {
   return (
-    <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl p-4">
+    <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl p-4">
       <div className={cn("w-9 h-9 rounded-xl flex items-center justify-center mb-3", color)}>
         <Icon className="h-4 w-4 text-white" />
       </div>
@@ -106,14 +106,14 @@ export default function CLVAnalyticsTab() {
         {view === "customers" && (
           <div className="relative ml-auto">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
-            <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Buscar cliente..." className="pl-9 pr-4 py-1.5 border border-gray-200 dark:border-card-border rounded-xl bg-white dark:bg-surface text-sm w-48" />
+            <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Buscar cliente..." className="pl-9 pr-4 py-1.5 border border-gray-200 dark:border-card-border rounded-lg bg-white dark:bg-surface text-sm w-48" />
           </div>
         )}
       </div>
 
       {/* Top 10 vista */}
       {view === "top10" && (
-        <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl p-4 sm:p-5">
+        <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl p-4 sm:p-5">
           <h3 className="text-sm font-bold text-gray-900 dark:text-foreground mb-4 flex items-center gap-2">
             <Medal className="h-4 w-4 text-yellow-500" /> Top 10 Clientes más valiosos
           </h3>
@@ -153,10 +153,10 @@ export default function CLVAnalyticsTab() {
 
       {/* Cohortes con gráfico de barras */}
       {view === "cohorts" && (
-        <div className="space-y-4">
+        <div className="space-y-6">
           {/* Gráfico visual de CLV por cohorte */}
           {data.cohorts.length > 0 && (
-            <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl p-4 sm:p-5">
+            <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl p-4 sm:p-5">
               <h3 className="text-sm font-bold text-gray-900 dark:text-foreground mb-4 flex items-center gap-2">
                 <TrendingUp className="h-4 w-4 text-primary" /> CLV promedio por cohorte
               </h3>
@@ -186,16 +186,16 @@ export default function CLVAnalyticsTab() {
           )}
 
           {/* Tabla de cohortes */}
-          <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl overflow-hidden shadow-sm">
+          <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl overflow-hidden ">
             <div className="overflow-x-auto">
               <table className="w-full min-w-[600px] text-sm">
                 <thead>
                   <tr className="border-b border-gray-100 dark:border-card-border text-left">
-                    <th className="px-4 py-3 text-xs font-bold text-gray-500 dark:text-muted uppercase tracking-wide">Cohorte</th>
-                    <th className="px-4 py-3 text-xs font-bold text-gray-500 dark:text-muted uppercase tracking-wide text-right">Clientes</th>
-                    <th className="px-4 py-3 text-xs font-bold text-gray-500 dark:text-muted uppercase tracking-wide text-right">Ingresos totales</th>
-                    <th className="px-4 py-3 text-xs font-bold text-gray-500 dark:text-muted uppercase tracking-wide text-right">CLV promedio</th>
-                    <th className="px-4 py-3 text-xs font-bold text-gray-500 dark:text-muted uppercase tracking-wide text-right">Pedidos prom.</th>
+                    <th className="px-4 py-3 text-xs font-bold text-gray-500 dark:text-muted">Cohorte</th>
+                    <th className="px-4 py-3 text-xs font-bold text-gray-500 dark:text-muted text-right">Clientes</th>
+                    <th className="px-4 py-3 text-xs font-bold text-gray-500 dark:text-muted text-right">Ingresos totales</th>
+                    <th className="px-4 py-3 text-xs font-bold text-gray-500 dark:text-muted text-right">CLV promedio</th>
+                    <th className="px-4 py-3 text-xs font-bold text-gray-500 dark:text-muted text-right">Pedidos prom.</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-50 dark:divide-card-border">
@@ -229,19 +229,19 @@ export default function CLVAnalyticsTab() {
 
       {/* Vista clientes */}
       {view === "customers" && (
-        <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl overflow-hidden shadow-sm">
+        <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl overflow-hidden ">
           <div className="overflow-x-auto">
             <table className="w-full min-w-[600px] text-sm">
               <thead>
                 <tr className="border-b border-gray-100 dark:border-card-border text-left">
-                  <th className="px-4 py-3 text-xs font-bold text-gray-500 dark:text-muted uppercase tracking-wide">#</th>
-                  <th className="px-4 py-3 text-xs font-bold text-gray-500 dark:text-muted uppercase tracking-wide">Cliente</th>
-                  <th className="px-4 py-3 text-xs font-bold text-gray-500 dark:text-muted uppercase tracking-wide text-right">CLV Total</th>
-                  <th className="px-4 py-3 text-xs font-bold text-gray-500 dark:text-muted uppercase tracking-wide text-right hidden sm:table-cell">Pedidos</th>
-                  <th className="px-4 py-3 text-xs font-bold text-gray-500 dark:text-muted uppercase tracking-wide text-right hidden md:table-cell">Ticket prom.</th>
-                  <th className="px-4 py-3 text-xs font-bold text-gray-500 dark:text-muted uppercase tracking-wide text-right hidden md:table-cell">Proy. 6m</th>
-                  <th className="px-4 py-3 text-xs font-bold text-gray-500 dark:text-muted uppercase tracking-wide hidden lg:table-cell">Cohorte</th>
-                  <th className="px-4 py-3 text-xs font-bold text-gray-500 dark:text-muted uppercase tracking-wide text-right hidden md:table-cell">Últ. pedido</th>
+                  <th className="px-4 py-3 text-xs font-bold text-gray-500 dark:text-muted">#</th>
+                  <th className="px-4 py-3 text-xs font-bold text-gray-500 dark:text-muted">Cliente</th>
+                  <th className="px-4 py-3 text-xs font-bold text-gray-500 dark:text-muted text-right">CLV Total</th>
+                  <th className="px-4 py-3 text-xs font-bold text-gray-500 dark:text-muted text-right hidden sm:table-cell">Pedidos</th>
+                  <th className="px-4 py-3 text-xs font-bold text-gray-500 dark:text-muted text-right hidden md:table-cell">Ticket prom.</th>
+                  <th className="px-4 py-3 text-xs font-bold text-gray-500 dark:text-muted text-right hidden md:table-cell">Proy. 6m</th>
+                  <th className="px-4 py-3 text-xs font-bold text-gray-500 dark:text-muted hidden lg:table-cell">Cohorte</th>
+                  <th className="px-4 py-3 text-xs font-bold text-gray-500 dark:text-muted text-right hidden md:table-cell">Últ. pedido</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-50 dark:divide-card-border">

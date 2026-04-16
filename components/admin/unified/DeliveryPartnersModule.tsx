@@ -167,7 +167,7 @@ function PartnerModal({
       onClick={onClose}
     >
       <div
-        className="bg-white rounded-2xl shadow-2xl w-full max-w-md"
+        className="bg-white rounded-xl w-full max-w-md"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100">
@@ -197,7 +197,7 @@ function PartnerModal({
                 value={form.name}
                 onChange={(e) => setForm((p) => ({ ...p, name: e.target.value }))}
                 placeholder="Juan Pérez"
-                className="w-full px-3 py-2.5 rounded-xl border border-gray-200 bg-white text-sm text-gray-900 outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all"
+                className="w-full px-3 py-2.5 rounded-lg border border-gray-200 bg-white text-sm text-gray-900 outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all"
                 autoFocus
               />
             </div>
@@ -209,7 +209,7 @@ function PartnerModal({
                 value={form.phone}
                 onChange={(e) => setForm((p) => ({ ...p, phone: e.target.value }))}
                 placeholder="987654321"
-                className="w-full px-3 py-2.5 rounded-xl border border-gray-200 bg-white text-sm text-gray-900 outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all"
+                className="w-full px-3 py-2.5 rounded-lg border border-gray-200 bg-white text-sm text-gray-900 outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all"
               />
             </div>
 
@@ -221,7 +221,7 @@ function PartnerModal({
                 step={0.5}
                 value={form.fee}
                 onChange={(e) => setForm((p) => ({ ...p, fee: parseFloat(e.target.value) || 0 }))}
-                className="w-full px-3 py-2.5 rounded-xl border border-gray-200 bg-white text-sm text-gray-900 outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all"
+                className="w-full px-3 py-2.5 rounded-lg border border-gray-200 bg-white text-sm text-gray-900 outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all"
               />
             </div>
 
@@ -231,7 +231,7 @@ function PartnerModal({
                 <select
                   value={form.zone}
                   onChange={(e) => setForm((p) => ({ ...p, zone: e.target.value }))}
-                  className="w-full px-3 py-2.5 rounded-xl border border-gray-200 bg-white text-sm text-gray-900 outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary appearance-none transition-all"
+                  className="w-full px-3 py-2.5 rounded-lg border border-gray-200 bg-white text-sm text-gray-900 outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary appearance-none transition-all"
                 >
                   {ZONAS.map((z) => <option key={z} value={z}>{z}</option>)}
                 </select>
@@ -245,7 +245,7 @@ function PartnerModal({
                 <select
                   value={form.vehicleType}
                   onChange={(e) => setForm((p) => ({ ...p, vehicleType: e.target.value }))}
-                  className="w-full px-3 py-2.5 rounded-xl border border-gray-200 bg-white text-sm text-gray-900 outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary appearance-none transition-all"
+                  className="w-full px-3 py-2.5 rounded-lg border border-gray-200 bg-white text-sm text-gray-900 outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary appearance-none transition-all"
                 >
                   {VEHICLE_TYPES.map((v) => <option key={v} value={v}>{v}</option>)}
                 </select>
@@ -266,7 +266,7 @@ function PartnerModal({
               )}
             >
               <span className={cn(
-                "inline-block h-4 w-4 transform rounded-full bg-white shadow-sm transition-transform",
+                "inline-block h-4 w-4 transform rounded-full bg-white  transition-transform",
                 form.isActive ? "translate-x-6" : "translate-x-1"
               )} />
             </button>
@@ -276,14 +276,14 @@ function PartnerModal({
             <button
               type="button"
               onClick={onClose}
-              className="flex-1 py-2.5 rounded-xl text-sm font-semibold text-gray-700 bg-gray-100 hover:bg-gray-200 transition-colors"
+              className="flex-1 py-2.5 rounded-lg text-sm font-semibold text-gray-700 bg-gray-100 hover:bg-gray-200 transition-colors"
             >
               Cancelar
             </button>
             <button
               type="submit"
               disabled={saving}
-              className="flex-1 inline-flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-bold text-white bg-primary hover:bg-primary-dark transition-colors disabled:opacity-50"
+              className="flex-1 inline-flex items-center justify-center gap-2 py-2.5 rounded-lg text-sm font-bold text-white bg-primary hover:bg-primary-dark transition-colors disabled:opacity-50"
             >
               {saving ? (
                 <div className="h-4 w-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
@@ -355,7 +355,7 @@ function RepartidoresTab() {
   if (loading) return <TableSkeleton />;
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-6">
       {error && (
         <div className="flex items-center gap-2 p-3 bg-red-50 border border-red-200 rounded-xl text-sm text-red-700">
           <AlertCircle className="h-4 w-4 shrink-0" />
@@ -368,7 +368,7 @@ function RepartidoresTab() {
         <p className="text-sm font-semibold text-gray-600">{partners.length} repartidor{partners.length !== 1 ? "es" : ""}</p>
         <button
           onClick={() => setModal({ open: true, partner: null })}
-          className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-primary text-white text-sm font-bold hover:bg-primary-dark transition-colors"
+          className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-primary text-white text-sm font-bold hover:bg-primary-dark transition-colors"
         >
           <Plus className="h-4 w-4" />
           Nuevo repartidor
@@ -378,17 +378,17 @@ function RepartidoresTab() {
       {partners.length === 0 && !error ? (
         <EmptyState icon={Truck} title="Sin repartidores registrados" description="Agrega tu primer repartidor para empezar a gestionar entregas." />
       ) : (
-        <div className="bg-white border border-gray-200 rounded-2xl shadow-sm overflow-hidden">
+        <div className="bg-white border border-gray-200 rounded-xl  overflow-hidden">
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead className="bg-gray-50 border-b border-gray-200">
                 <tr>
-                  <th className="text-left px-4 py-3 text-xs font-bold text-gray-500 uppercase tracking-wide">Repartidor</th>
-                  <th className="text-left px-4 py-3 text-xs font-bold text-gray-500 uppercase tracking-wide hidden sm:table-cell">Zona / Vehículo</th>
-                  <th className="text-right px-4 py-3 text-xs font-bold text-gray-500 uppercase tracking-wide">Tarifa</th>
-                  <th className="text-center px-4 py-3 text-xs font-bold text-gray-500 uppercase tracking-wide">Rating</th>
-                  <th className="text-center px-4 py-3 text-xs font-bold text-gray-500 uppercase tracking-wide">Estado</th>
-                  <th className="text-right px-4 py-3 text-xs font-bold text-gray-500 uppercase tracking-wide">Acciones</th>
+                  <th className="text-left px-4 py-3 text-xs font-bold text-gray-500">Repartidor</th>
+                  <th className="text-left px-4 py-3 text-xs font-bold text-gray-500 hidden sm:table-cell">Zona / Vehículo</th>
+                  <th className="text-right px-4 py-3 text-xs font-bold text-gray-500">Tarifa</th>
+                  <th className="text-center px-4 py-3 text-xs font-bold text-gray-500">Rating</th>
+                  <th className="text-center px-4 py-3 text-xs font-bold text-gray-500">Estado</th>
+                  <th className="text-right px-4 py-3 text-xs font-bold text-gray-500">Acciones</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-100">
@@ -469,7 +469,7 @@ function RepartidoresTab() {
           onClick={() => setConfirmDelete(null)}
         >
           <div
-            className="bg-white rounded-2xl shadow-2xl w-full max-w-sm p-6"
+            className="bg-white rounded-xl w-full max-w-sm p-6"
             onClick={(e) => e.stopPropagation()}
           >
             <div className="flex items-center gap-3 mb-4">
@@ -484,14 +484,14 @@ function RepartidoresTab() {
             <div className="flex gap-3">
               <button
                 onClick={() => setConfirmDelete(null)}
-                className="flex-1 py-2.5 rounded-xl text-sm font-semibold text-gray-700 bg-gray-100 hover:bg-gray-200 transition-colors"
+                className="flex-1 py-2.5 rounded-lg text-sm font-semibold text-gray-700 bg-gray-100 hover:bg-gray-200 transition-colors"
               >
                 Cancelar
               </button>
               <button
                 onClick={() => handleDelete(confirmDelete)}
                 disabled={!!deleting}
-                className="flex-1 py-2.5 rounded-xl text-sm font-semibold text-white bg-red-500 hover:bg-red-600 transition-colors disabled:opacity-50"
+                className="flex-1 py-2.5 rounded-lg text-sm font-semibold text-white bg-red-500 hover:bg-red-600 transition-colors disabled:opacity-50"
               >
                 {deleting ? "Eliminando..." : "Sí, eliminar"}
               </button>
@@ -556,7 +556,7 @@ function AsignacionesTab() {
   if (loading) return <TableSkeleton />;
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-6">
       {error && (
         <div className="flex items-center gap-2 p-3 bg-red-50 border border-red-200 rounded-xl text-sm text-red-700">
           <AlertCircle className="h-4 w-4 shrink-0" />
@@ -569,7 +569,7 @@ function AsignacionesTab() {
         <p className="text-sm font-semibold text-gray-600">{assignments.length} asignación{assignments.length !== 1 ? "es" : ""}</p>
         <button
           onClick={() => setAssignModal({ open: true })}
-          className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-primary text-white text-sm font-bold hover:bg-primary-dark transition-colors"
+          className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-primary text-white text-sm font-bold hover:bg-primary-dark transition-colors"
         >
           <Plus className="h-4 w-4" />
           Asignar
@@ -579,16 +579,16 @@ function AsignacionesTab() {
       {assignments.length === 0 && !error ? (
         <EmptyState icon={ClipboardList} title="Sin asignaciones registradas" description="Asigna repartidores a ordenes pendientes." />
       ) : (
-        <div className="bg-white border border-gray-200 rounded-2xl shadow-sm overflow-hidden">
+        <div className="bg-white border border-gray-200 rounded-xl  overflow-hidden">
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead className="bg-gray-50 border-b border-gray-200">
                 <tr>
-                  <th className="text-left px-4 py-3 text-xs font-bold text-gray-500 uppercase tracking-wide">Orden</th>
-                  <th className="text-left px-4 py-3 text-xs font-bold text-gray-500 uppercase tracking-wide">Repartidor</th>
-                  <th className="text-right px-4 py-3 text-xs font-bold text-gray-500 uppercase tracking-wide">Tarifa</th>
-                  <th className="text-center px-4 py-3 text-xs font-bold text-gray-500 uppercase tracking-wide">Estado</th>
-                  <th className="text-right px-4 py-3 text-xs font-bold text-gray-500 uppercase tracking-wide hidden sm:table-cell">Asignado</th>
+                  <th className="text-left px-4 py-3 text-xs font-bold text-gray-500">Orden</th>
+                  <th className="text-left px-4 py-3 text-xs font-bold text-gray-500">Repartidor</th>
+                  <th className="text-right px-4 py-3 text-xs font-bold text-gray-500">Tarifa</th>
+                  <th className="text-center px-4 py-3 text-xs font-bold text-gray-500">Estado</th>
+                  <th className="text-right px-4 py-3 text-xs font-bold text-gray-500 hidden sm:table-cell">Asignado</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-100">
@@ -634,7 +634,7 @@ function AsignacionesTab() {
           onClick={() => setAssignModal({ open: false })}
         >
           <div
-            className="bg-white rounded-2xl shadow-2xl w-full max-w-sm p-5 space-y-4"
+            className="bg-white rounded-xl w-full max-w-sm p-5 space-y-4"
             onClick={(e) => e.stopPropagation()}
           >
             <div className="flex items-center justify-between">
@@ -651,7 +651,7 @@ function AsignacionesTab() {
                 value={assignModal.orderId ?? ""}
                 onChange={(e) => setAssignModal((p) => ({ ...p, orderId: e.target.value }))}
                 placeholder="Ej: ORD-12345"
-                className="w-full px-3 py-2.5 rounded-xl border border-gray-200 bg-white text-sm text-gray-900 outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all"
+                className="w-full px-3 py-2.5 rounded-lg border border-gray-200 bg-white text-sm text-gray-900 outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all"
               />
             </div>
 
@@ -661,7 +661,7 @@ function AsignacionesTab() {
                 <select
                   value={selectedPartner}
                   onChange={(e) => setSelectedPartner(e.target.value)}
-                  className="w-full px-3 py-2.5 rounded-xl border border-gray-200 bg-white text-sm text-gray-900 outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary appearance-none transition-all"
+                  className="w-full px-3 py-2.5 rounded-lg border border-gray-200 bg-white text-sm text-gray-900 outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary appearance-none transition-all"
                 >
                   <option value="">Seleccionar repartidor...</option>
                   {partners.map((p) => (
@@ -677,14 +677,14 @@ function AsignacionesTab() {
             <div className="flex gap-3 pt-2">
               <button
                 onClick={() => setAssignModal({ open: false })}
-                className="flex-1 py-2.5 rounded-xl text-sm font-semibold text-gray-700 bg-gray-100 hover:bg-gray-200 transition-colors"
+                className="flex-1 py-2.5 rounded-lg text-sm font-semibold text-gray-700 bg-gray-100 hover:bg-gray-200 transition-colors"
               >
                 Cancelar
               </button>
               <button
                 onClick={handleAssign}
                 disabled={assigning || !selectedPartner}
-                className="flex-1 inline-flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-bold text-white bg-primary hover:bg-primary-dark transition-colors disabled:opacity-50"
+                className="flex-1 inline-flex items-center justify-center gap-2 py-2.5 rounded-lg text-sm font-bold text-white bg-primary hover:bg-primary-dark transition-colors disabled:opacity-50"
               >
                 {assigning ? (
                   <div className="h-4 w-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
@@ -751,7 +751,7 @@ function PermisosTab() {
   if (loading) return <TableSkeleton />;
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-6">
       {error && (
         <div className="flex items-center gap-2 p-3 bg-red-50 border border-red-200 rounded-xl text-sm text-red-700">
           <AlertCircle className="h-4 w-4 shrink-0" />
@@ -763,15 +763,15 @@ function PermisosTab() {
       {permissions.length === 0 && !error ? (
         <EmptyState icon={Shield} title="Sin permisos configurados" description="Los permisos de acceso a la tienda apareceran aqui." />
       ) : (
-        <div className="bg-white border border-gray-200 rounded-2xl shadow-sm overflow-hidden">
+        <div className="bg-white border border-gray-200 rounded-xl  overflow-hidden">
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead className="bg-gray-50 border-b border-gray-200">
                 <tr>
-                  <th className="text-left px-4 py-3 text-xs font-bold text-gray-500 uppercase tracking-wide">Usuario</th>
-                  <th className="text-left px-4 py-3 text-xs font-bold text-gray-500 uppercase tracking-wide hidden sm:table-cell">Tipo</th>
+                  <th className="text-left px-4 py-3 text-xs font-bold text-gray-500">Usuario</th>
+                  <th className="text-left px-4 py-3 text-xs font-bold text-gray-500 hidden sm:table-cell">Tipo</th>
                   {PERMISSION_TYPES.map((p) => (
-                    <th key={p} className="text-center px-3 py-3 text-xs font-bold text-gray-500 uppercase tracking-wide">
+                    <th key={p} className="text-center px-3 py-3 text-xs font-bold text-gray-500">
                       {p}
                     </th>
                   ))}
@@ -905,7 +905,7 @@ function RankingTab() {
   ];
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-6">
       {/* Period selector */}
       <div className="flex items-center gap-2">
         {PERIODS.map((p) => (
@@ -935,7 +935,7 @@ function RankingTab() {
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
-              <tr className="border-b border-gray-100 text-left text-xs text-gray-500 uppercase tracking-wider">
+              <tr className="border-b border-gray-100 text-left text-xs text-gray-500">
                 <th className="pb-2 pr-2">#</th>
                 <th className="pb-2 pr-3">Repartidor</th>
                 <th className="pb-2 pr-3">Zona</th>
@@ -1069,7 +1069,7 @@ function SolicitudesTab() {
   const pendingCount = apps.filter((a) => !a.readAt).length;
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-6">
       {/* Filter bar */}
       <div className="flex items-center gap-2">
         <button
@@ -1122,7 +1122,7 @@ function SolicitudesTab() {
               <div
                 key={app.id}
                 className={cn(
-                  "bg-white border rounded-2xl p-4 shadow-sm transition-all",
+                  "bg-white border rounded-xl p-4  transition-all",
                   isPending ? "border-amber-200 bg-amber-50/30" : "border-gray-200 opacity-70"
                 )}
               >
@@ -1219,7 +1219,7 @@ export default function DeliveryPartnersModule() {
   useEffect(() => { refreshKpis(); }, [refreshKpis]);
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-6">
       <AdminModuleHeader
         title="Delivery"
         description="Gestiona repartidores, asignaciones y permisos"
@@ -1243,7 +1243,7 @@ export default function DeliveryPartnersModule() {
         ].map(({ label, value, color }) => (
           <div
             key={label}
-            className="bg-white border border-gray-200 rounded-2xl p-3 sm:p-4 shadow-sm text-center"
+            className="bg-white border border-gray-200 rounded-xl p-3 sm:p-4  text-center"
           >
             {kpisLoading ? (
               <div className="h-7 w-12 mx-auto bg-gray-200 rounded animate-pulse" />

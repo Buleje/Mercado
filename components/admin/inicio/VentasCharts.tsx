@@ -25,7 +25,7 @@ function ChartTooltip({ active, payload, label, prefix = "S/" }: {
 }) {
   if (!active || !payload?.length) return null;
   return (
-    <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl px-3 py-2 shadow-xl text-xs">
+    <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl px-3 py-2 text-xs">
       {label && <p className="font-semibold text-gray-700 dark:text-foreground mb-1">{label}</p>}
       {payload.map((p, i) => (
         <div key={i} className="flex items-center gap-2">
@@ -45,7 +45,7 @@ function ChartCard({ title, Icon, children, className, badge }: {
   badge?: React.ReactNode;
 }) {
   return (
-    <div className={cn("bg-white dark:bg-card border border-gray-100 dark:border-card-border rounded-2xl p-5 shadow-sm", className)}>
+    <div className={cn("bg-white dark:bg-card border border-gray-100 dark:border-card-border rounded-xl p-5 ", className)}>
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center gap-2">
           <Icon className="h-4 w-4 text-gray-400 dark:text-muted" />

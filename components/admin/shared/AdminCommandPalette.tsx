@@ -176,7 +176,7 @@ export default function AdminCommandPalette({ items }: AdminCommandPaletteProps)
       aria-label="Busqueda global"
     >
       <div
-        className="bg-white dark:bg-gray-900 rounded-2xl shadow-2xl w-full max-w-lg mx-4 overflow-hidden border border-gray-200 dark:border-gray-700"
+        className="bg-white dark:bg-gray-900 rounded-xl w-full max-w-lg mx-4 overflow-hidden border border-gray-200 dark:border-gray-700"
         onClick={e => e.stopPropagation()}
       >
         {/* Search input */}
@@ -211,7 +211,7 @@ export default function AdminCommandPalette({ items }: AdminCommandPaletteProps)
                 {/* Category separator */}
                 <div className="flex items-center gap-2 px-4 pt-3 pb-1.5">
                   <span className="h-px flex-1 bg-gray-100 dark:bg-gray-800" />
-                  <span className="text-[10px] font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider flex items-center gap-1.5">
+                  <span className="text-[10px] font-semibold text-gray-400 dark:text-gray-500 flex items-center gap-1.5">
                     {DYN_ICONS[category]}
                     {category}
                   </span>

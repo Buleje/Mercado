@@ -131,7 +131,7 @@ export default function PayablesTab() {
           </p>
         </div>
         <div className="flex flex-wrap gap-2">
-          <button onClick={() => setShowAdd(v => !v)} className="flex items-center gap-1.5 text-sm font-bold text-white bg-primary hover:bg-primary-dark px-2 sm:px-4 py-1.5 sm:py-2 rounded-lg transition-colors shadow-sm">
+          <button onClick={() => setShowAdd(v => !v)} className="flex items-center gap-1.5 text-sm font-bold text-white bg-primary hover:bg-primary-dark px-2 sm:px-4 py-1.5 sm:py-2 rounded-lg transition-colors ">
             <Plus className="h-4 w-4" /> Nueva cuenta
           </button>
         </div>
@@ -164,13 +164,13 @@ export default function PayablesTab() {
 
       {/* Payables list */}
       {loading ? (
-        <TableSkeleton rows={4} cols={4} className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl" />
+        <TableSkeleton rows={4} cols={4} className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl" />
       ) : filtered.length === 0 ? (
         <EmptyState
           icon={CreditCard}
           title={filterSupplier ? "Sin cuentas para este proveedor" : "Sin cuentas por pagar"}
           description={filterSupplier ? "Este proveedor no tiene deudas registradas." : "No tienes deudas con proveedores. ¡Excelente!"}
-          className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl"
+          className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl"
         />
       ) : (
         <div className="space-y-3">
@@ -178,7 +178,7 @@ export default function PayablesTab() {
             const remaining = p.amount - p.paidAmount;
             const pct = p.amount > 0 ? (p.paidAmount / p.amount) * 100 : 0;
             return (
-              <div key={p.id} className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl shadow-sm overflow-hidden">
+              <div key={p.id} className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl  overflow-hidden">
                 <div className="p-4 flex flex-col sm:flex-row sm:items-center gap-3">
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 flex-wrap">
@@ -266,7 +266,7 @@ export default function PayablesTab() {
                 {/* Payment history */}
                 {expanded === p.id && (
                   <div className="border-t border-gray-100 dark:border-card-border px-2 sm:px-4 py-2 sm:py-3 bg-gray-50 dark:bg-surface">
-                    <p className="text-xs font-bold text-gray-400 dark:text-muted uppercase tracking-wide mb-2">Historial de pagos</p>
+                    <p className="text-xs font-bold text-gray-400 dark:text-muted mb-2">Historial de pagos</p>
                     {p.payments.length === 0 ? (
                       <p className="text-sm text-gray-400 dark:text-muted">Sin pagos registrados</p>
                     ) : (
@@ -294,7 +294,7 @@ export default function PayablesTab() {
       {/* ── Add payable modal ── */}
       {showAdd && (
       <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/50" onClick={(e) => e.target === e.currentTarget && setShowAdd(false)}>
-        <div className="bg-white dark:bg-card w-full sm:max-w-lg sm:rounded-2xl rounded-t-2xl shadow-2xl overflow-y-auto max-h-[90dvh]">
+        <div className="bg-white dark:bg-card w-full sm:max-w-lg sm:rounded-xl rounded-t-2xl overflow-y-auto max-h-[90dvh]">
           <div className="flex items-center justify-between px-5 py-4 border-b sticky top-0 bg-white dark:bg-card z-10">
             <h3 className="font-extrabold text-gray-900 dark:text-foreground flex flex-wrap items-center gap-2"><CreditCard className="h-5 w-5 text-primary" /> Nueva cuenta por pagar</h3>
             <button onClick={() => setShowAdd(false)} className="p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-accent transition-colors"><X className="h-5 w-5 text-gray-500 dark:text-muted" /></button>
@@ -322,8 +322,8 @@ export default function PayablesTab() {
               </div>
             </div>
             <div className="flex flex-wrap gap-3">
-              <button type="button" onClick={() => setShowAdd(false)} className="flex-1 py-2.5 rounded-xl border border-gray-200 dark:border-card-border text-sm font-semibold text-gray-600 dark:text-muted hover:bg-gray-50 dark:hover:bg-surface transition-colors">Cancelar</button>
-              <button type="submit" disabled={saving} className="flex-1 py-2.5 rounded-xl bg-primary text-white text-sm font-bold hover:bg-primary-dark transition-colors disabled:opacity-60">
+              <button type="button" onClick={() => setShowAdd(false)} className="flex-1 py-2.5 rounded-lg border border-gray-200 dark:border-card-border text-sm font-semibold text-gray-600 dark:text-muted hover:bg-gray-50 dark:hover:bg-surface transition-colors">Cancelar</button>
+              <button type="submit" disabled={saving} className="flex-1 py-2.5 rounded-lg bg-primary text-white text-sm font-bold hover:bg-primary-dark transition-colors disabled:opacity-60">
                 {saving ? "Guardando…" : "Crear cuenta"}
               </button>
             </div>

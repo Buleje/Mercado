@@ -20,7 +20,7 @@ export function ModuleSkeleton() {
       {/* KPIs skeleton */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         {[...Array(4)].map((_, i) => (
-          <div key={i} className="h-24 bg-gray-100 dark:bg-zinc-800 rounded-2xl" />
+          <div key={i} className="h-24 bg-gray-100 dark:bg-zinc-800 rounded-xl" />
         ))}
       </div>
       {/* Content skeleton */}

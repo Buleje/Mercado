@@ -77,7 +77,7 @@ export default function ChangelogModal({ open, onClose }: ChangelogModalProps) {
     <div className="fixed inset-0 z-100 overflow-y-auto">
       <div className="fixed inset-0 bg-black/40 backdrop-blur-sm" onClick={onClose} />
       <div className="relative z-10 min-h-screen flex items-center justify-center p-4">
-        <div className="bg-white dark:bg-card rounded-2xl shadow-2xl border border-gray-200 dark:border-card-border w-full max-w-lg max-h-[85vh] flex flex-col">
+        <div className="bg-white dark:bg-card rounded-xl border border-gray-200 dark:border-card-border w-full max-w-lg max-h-[85vh] flex flex-col">
           {/* Header */}
           <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200 dark:border-card-border">
             <div className="flex items-center gap-2">
@@ -86,7 +86,7 @@ export default function ChangelogModal({ open, onClose }: ChangelogModalProps) {
             </div>
             <button
               onClick={onClose}
-              className="p-2 rounded-xl hover:bg-gray-100 dark:hover:bg-accent transition-colors"
+              className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-accent transition-colors"
             >
               <X className="h-5 w-5 text-gray-500" />
             </button>

@@ -107,7 +107,7 @@ export default function KardexModal({ productId, productName, onClose }: Props) 
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-      <div className="bg-white dark:bg-card rounded-2xl shadow-2xl max-w-3xl w-full max-h-[90vh] flex flex-col">
+      <div className="bg-white dark:bg-card rounded-xl max-w-3xl w-full max-h-[90vh] flex flex-col">
         {/* Header */}
         <div className="flex items-center justify-between p-4 border-b border-gray-100 dark:border-card-border shrink-0">
           <div className="flex items-center gap-2">
@@ -145,7 +145,7 @@ export default function KardexModal({ productId, productName, onClose }: Props) 
           <button
             onClick={handleExport}
             disabled={!data || data.movimientos.length === 0}
-            className="ml-auto flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-emerald-600 text-white text-xs font-bold hover:bg-emerald-700 transition-colors disabled:opacity-50"
+            className="ml-auto flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-emerald-600 text-white text-xs font-bold hover:bg-emerald-700 transition-colors disabled:opacity-50"
           >
             <Download className="h-3.5 w-3.5" /> Exportar Excel
           </button>
@@ -195,12 +195,12 @@ export default function KardexModal({ productId, productName, onClose }: Props) 
                   <table className="w-full min-w-[600px] text-xs">
                     <thead>
                       <tr className="border-b border-gray-200 dark:border-card-border">
-                        <th className="text-left py-2 font-bold text-gray-400 uppercase tracking-wide">Fecha</th>
-                        <th className="text-left py-2 font-bold text-gray-400 uppercase tracking-wide">Tipo</th>
-                        <th className="text-left py-2 font-bold text-gray-400 uppercase tracking-wide">Referencia</th>
-                        <th className="text-right py-2 font-bold text-gray-400 uppercase tracking-wide">Entrada</th>
-                        <th className="text-right py-2 font-bold text-gray-400 uppercase tracking-wide">Salida</th>
-                        <th className="text-right py-2 font-bold text-gray-400 uppercase tracking-wide">Saldo</th>
+                        <th className="text-left py-2 font-bold text-gray-400">Fecha</th>
+                        <th className="text-left py-2 font-bold text-gray-400">Tipo</th>
+                        <th className="text-left py-2 font-bold text-gray-400">Referencia</th>
+                        <th className="text-right py-2 font-bold text-gray-400">Entrada</th>
+                        <th className="text-right py-2 font-bold text-gray-400">Salida</th>
+                        <th className="text-right py-2 font-bold text-gray-400">Saldo</th>
                       </tr>
                     </thead>
                     <tbody>

@@ -40,7 +40,7 @@ function MiniWidget({ stats }: { stats: DailyStats }) {
   const pct = Math.min(100, (stats.salesTotal / stats.dailyGoal) * 100);
 
   return (
-    <div className="w-full rounded-2xl bg-gradient-to-br from-[#00B4A6] to-[#007A72] p-4 text-white shadow-lg">
+    <div className="w-full rounded-xl bg-gradient-to-br from-[#00B4A6] to-[#007A72] p-4 text-white">
       <div className="mb-3 flex items-center justify-between">
         <span className="text-xs font-medium text-green-200">Buleje</span>
         <span className="text-xs text-green-300">hoy</span>
@@ -78,7 +78,7 @@ function PhoneMockup({ stats }: { stats: DailyStats }) {
   const timeStr = now.toLocaleTimeString("es-PE", { hour: "2-digit", minute: "2-digit" });
 
   return (
-    <div className="relative mx-auto w-56 overflow-hidden rounded-[2.5rem] border-[5px] border-gray-800 bg-gray-900 shadow-2xl dark:border-gray-600">
+    <div className="relative mx-auto w-56 overflow-hidden rounded-[2.5rem] border-[5px] border-gray-800 bg-gray-900 dark:border-gray-600">
       {/* Notch */}
       <div className="flex items-center justify-between bg-black px-4 py-1.5">
         <span className="text-xs font-semibold text-white">{timeStr}</span>
@@ -106,7 +106,7 @@ function PhoneMockup({ stats }: { stats: DailyStats }) {
             <div
               key={i}
               className={cn(
-                "flex h-10 w-10 items-center justify-center rounded-2xl",
+                "flex h-10 w-10 items-center justify-center rounded-xl",
                 color
               )}
             >
@@ -342,7 +342,7 @@ export default function SalesWidgetPreview() {
 
           {/* Quick action */}
           <button
-            className="flex items-center justify-center gap-2 rounded-xl bg-[#00B4A6] px-6 py-3 text-sm font-semibold text-white transition hover:bg-[#245a40]"
+            className="flex items-center justify-center gap-2 rounded-lg bg-[#00B4A6] px-6 py-3 text-sm font-semibold text-white transition hover:bg-[#245a40]"
             onClick={() => {
               if (typeof window !== "undefined") {
                 window.open(window.location.origin, "_blank");
@@ -357,7 +357,7 @@ export default function SalesWidgetPreview() {
 
       {/* Widget preview standalone */}
       <div className="rounded-xl border border-gray-200 bg-white p-5 dark:border-gray-700 dark:bg-gray-900">
-        <p className="mb-3 text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">
+        <p className="mb-3 text-xs font-semibold text-gray-500 dark:text-gray-400">
           Widget de resumen (vista directa)
         </p>
         <div className="max-w-sm">

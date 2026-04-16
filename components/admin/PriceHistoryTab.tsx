@@ -128,7 +128,7 @@ export default function PriceHistoryTab({ productId }: PriceHistoryTabProps) {
               "historial-precios"
             )
           }
-          className="flex items-center gap-1.5 px-3 py-2 rounded-xl border border-gray-200 dark:border-card-border bg-white dark:bg-surface text-sm font-semibold text-gray-700 dark:text-foreground hover:bg-gray-50 dark:hover:bg-accent transition-colors"
+          className="flex items-center gap-1.5 px-3 py-2 rounded-lg border border-gray-200 dark:border-card-border bg-white dark:bg-surface text-sm font-semibold text-gray-700 dark:text-foreground hover:bg-gray-50 dark:hover:bg-accent transition-colors"
         >
           <Download className="h-4 w-4" /> Exportar
         </button>
@@ -143,7 +143,7 @@ export default function PriceHistoryTab({ productId }: PriceHistoryTabProps) {
               value={search}
               onChange={e => setSearch(e.target.value)}
               placeholder="Producto o usuario…"
-              className="w-full pl-9 pr-9 py-2 text-sm border border-gray-200 dark:border-card-border rounded-xl bg-white dark:bg-surface text-gray-700 dark:text-foreground placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-primary/30"
+              className="w-full pl-9 pr-9 py-2 text-sm border border-gray-200 dark:border-card-border rounded-lg bg-white dark:bg-surface text-gray-700 dark:text-foreground placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-primary/30"
             />
             {search && (
               <button onClick={() => setSearch("")} className="absolute right-3 top-1/2 -translate-y-1/2">
@@ -175,21 +175,21 @@ export default function PriceHistoryTab({ productId }: PriceHistoryTabProps) {
 
       {/* Table */}
       {filtered.length > 0 && (
-        <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl overflow-hidden">
+        <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl overflow-hidden">
           <div className="overflow-x-auto">
             <table className="w-full min-w-[600px] text-sm">
               <thead className="bg-gray-50 dark:bg-surface border-b border-gray-200 dark:border-card-border">
                 <tr>
-                  <th className="text-left px-4 py-3 text-[10px] font-bold text-gray-400 uppercase tracking-wide">
+                  <th className="text-left px-4 py-3 text-[10px] font-bold text-gray-400">
                     <span className="flex items-center gap-1"><Calendar className="h-3 w-3" /> Fecha</span>
                   </th>
                   {productId == null && (
-                    <th className="text-left px-4 py-3 text-[10px] font-bold text-gray-400 uppercase tracking-wide">Producto</th>
+                    <th className="text-left px-4 py-3 text-[10px] font-bold text-gray-400">Producto</th>
                   )}
-                  <th className="text-right px-4 py-3 text-[10px] font-bold text-gray-400 uppercase tracking-wide">Precio anterior</th>
-                  <th className="text-right px-4 py-3 text-[10px] font-bold text-gray-400 uppercase tracking-wide">Precio nuevo</th>
-                  <th className="text-right px-4 py-3 text-[10px] font-bold text-gray-400 uppercase tracking-wide">% Cambio</th>
-                  <th className="text-left px-4 py-3 text-[10px] font-bold text-gray-400 uppercase tracking-wide hidden sm:table-cell">
+                  <th className="text-right px-4 py-3 text-[10px] font-bold text-gray-400">Precio anterior</th>
+                  <th className="text-right px-4 py-3 text-[10px] font-bold text-gray-400">Precio nuevo</th>
+                  <th className="text-right px-4 py-3 text-[10px] font-bold text-gray-400">% Cambio</th>
+                  <th className="text-left px-4 py-3 text-[10px] font-bold text-gray-400 hidden sm:table-cell">
                     <span className="flex items-center gap-1"><User className="h-3 w-3" /> Modificado por</span>
                   </th>
                 </tr>

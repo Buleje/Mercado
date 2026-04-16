@@ -615,7 +615,7 @@ export default function AIActionPlan({ data }: { data: BusinessData }) {
             className={cn(
               "flex items-center gap-1 text-xs px-2 py-1 rounded-md transition-all",
               focusMode
-                ? "bg-[#00B4A6] text-white shadow-sm"
+                ? "bg-[#00B4A6] text-white "
                 : "text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800"
             )}
             title="Modo enfoque: muestra solo las tareas más importantes"
@@ -628,7 +628,7 @@ export default function AIActionPlan({ data }: { data: BusinessData }) {
             className={cn(
               "flex items-center gap-1 text-xs px-2 py-1 rounded-md transition-all",
               showDelegation
-                ? "bg-purple-600 text-white shadow-sm"
+                ? "bg-purple-600 text-white "
                 : "text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800"
             )}
             title="Mostrar sugerencias de delegación"
@@ -842,7 +842,7 @@ function TaskRow({
       )}
     >
       {isPriorityNow && !task.done && (
-        <span className="absolute -top-2 -right-1 flex items-center gap-0.5 text-[10px] font-bold uppercase px-1.5 py-0.5 rounded-full bg-[#f97316] text-white shadow-sm animate-pulse">
+        <span className="absolute -top-2 -right-1 flex items-center gap-0.5 text-[10px] font-bold uppercase px-1.5 py-0.5 rounded-full bg-[#f97316] text-white">
           <Zap className="w-2.5 h-2.5" />
           Ahora
         </span>

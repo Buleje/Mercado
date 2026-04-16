@@ -74,7 +74,7 @@ function KPISkeleton() {
   return (
     <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
       {Array.from({ length: 4 }).map((_, i) => (
-        <div key={i} className="bg-gray-100 rounded-2xl h-28 animate-pulse" />
+        <div key={i} className="bg-gray-100 rounded-xl h-28 animate-pulse" />
       ))}
     </div>
   );
@@ -82,7 +82,7 @@ function KPISkeleton() {
 
 function CardSkeleton({ rows = 3 }: { rows?: number }) {
   return (
-    <div className="bg-white border border-gray-200 rounded-2xl p-6 shadow-sm space-y-3">
+    <div className="bg-white border border-gray-200 rounded-xl p-6  space-y-3">
       <div className="h-4 bg-gray-100 rounded w-1/3 animate-pulse" />
       {Array.from({ length: rows }).map((_, i) => (
         <div key={i} className="h-10 bg-gray-100 rounded-xl animate-pulse" />
@@ -152,7 +152,7 @@ export default function VendorDashboardModule() {
 
   return (
     <DashboardDataProvider>
-    <div className="space-y-4">
+    <div className="space-y-6">
       <AdminModuleHeader
         title="Inicio"
         description={TAB_DESCRIPTIONS[tab]}
@@ -185,7 +185,7 @@ export default function VendorDashboardModule() {
         {tab === "clientes" && <ClientesDashboard dateRange={dateRange} />}
 
         {tab === "marketplace" && (
-          <div className="space-y-4">
+          <div className="space-y-6">
             <AdminMarketplaceOverview />
 
             {error && !data && (
@@ -194,7 +194,7 @@ export default function VendorDashboardModule() {
                 <p className="text-sm font-medium text-gray-700 text-center">{error}</p>
                 <button
                   onClick={() => void fetchDashboard(false)}
-                  className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-primary text-white text-sm font-bold hover:bg-emerald-600 transition-colors"
+                  className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-primary text-white text-sm font-bold hover:bg-emerald-600 transition-colors"
                 >
                   <RefreshCw className="h-4 w-4" /> Reintentar
                 </button>
@@ -202,7 +202,7 @@ export default function VendorDashboardModule() {
             )}
 
             {loading && !data && (
-              <div className="space-y-4">
+              <div className="space-y-6">
                 <KPISkeleton />
                 <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
                   <CardSkeleton rows={4} />
@@ -213,7 +213,7 @@ export default function VendorDashboardModule() {
             )}
 
             {!loading && data && (
-              <div className="space-y-4">
+              <div className="space-y-6">
                 <SalesAnomalyAlert storeSlug={storeSlug} />
                 <VendorKPICards kpis={data.kpis} />
                 <VendorQuickActions />

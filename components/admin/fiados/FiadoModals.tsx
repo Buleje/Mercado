@@ -122,7 +122,7 @@ export default function FiadoModals({
               className="fixed inset-0 z-[60] flex items-center justify-center p-4"
               onClick={e => e.target === e.currentTarget && setShowPago(false)}
             >
-              <div className="w-full max-w-sm bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl shadow-2xl p-5 space-y-4">
+              <div className="w-full max-w-sm bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl p-5 space-y-4">
                 <h3 className="text-lg font-bold text-gray-900 dark:text-white">Registrar Pago</h3>
                 <p className="text-sm text-gray-500 dark:text-gray-400">
                   Saldo pendiente: <span className="font-bold text-red-600 dark:text-red-400">{formatCurrency(selected.saldo)}</span>
@@ -139,7 +139,7 @@ export default function FiadoModals({
                       value={pagoMonto}
                       onChange={e => setPagoMonto(e.target.value)}
                       placeholder="0.00"
-                      className="w-full px-3 py-2 rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 text-sm text-gray-900 dark:text-white placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#00B4A6]/30"
+                      className="w-full px-3 py-2 rounded-lg border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 text-sm text-gray-900 dark:text-white placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#00B4A6]/30"
                     />
                   </div>
                   <div>
@@ -149,7 +149,7 @@ export default function FiadoModals({
                       value={pagoNotas}
                       onChange={e => setPagoNotas(e.target.value)}
                       placeholder="Ej: Pagó con Yape"
-                      className="w-full px-3 py-2 rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 text-sm text-gray-900 dark:text-white placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#00B4A6]/30"
+                      className="w-full px-3 py-2 rounded-lg border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 text-sm text-gray-900 dark:text-white placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#00B4A6]/30"
                     />
                   </div>
                 </div>
@@ -161,14 +161,14 @@ export default function FiadoModals({
                 <div className="flex gap-2">
                   <button
                     onClick={() => setShowPago(false)}
-                    className="flex-1 px-4 py-2.5 rounded-xl text-sm font-bold text-gray-600 dark:text-gray-400 bg-gray-100 dark:bg-white/5 hover:bg-gray-200 dark:hover:bg-white/10 transition-colors"
+                    className="flex-1 px-4 py-2.5 rounded-lg text-sm font-bold text-gray-600 dark:text-gray-400 bg-gray-100 dark:bg-white/5 hover:bg-gray-200 dark:hover:bg-white/10 transition-colors"
                   >
                     Cancelar
                   </button>
                   <button
                     onClick={handlePago}
                     disabled={paying}
-                    className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-sm font-bold text-white bg-[#00B4A6] hover:bg-[#009690] disabled:opacity-50 shadow-sm transition-colors"
+                    className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg text-sm font-bold text-white bg-[#00B4A6] hover:bg-[#009690] disabled:opacity-50  transition-colors"
                   >
                     {paying ? <Loader2 className="h-4 w-4 animate-spin" /> : <DollarSign className="h-4 w-4" />}
                     Pagar
@@ -182,7 +182,7 @@ export default function FiadoModals({
 
       {/* Mejora 3: Cobro masivo sticky bar */}
       {selectedIds.size > 0 && (
-        <div className="fixed bottom-0 left-0 right-0 z-30 bg-white dark:bg-card border-t border-gray-200 dark:border-card-border shadow-lg px-4 py-3">
+        <div className="fixed bottom-0 left-0 right-0 z-30 bg-white dark:bg-card border-t border-gray-200 dark:border-card-border px-4 py-3">
           <div className="max-w-5xl mx-auto flex items-center justify-between gap-3">
             <div className="flex items-center gap-3">
               <span className="text-sm font-bold text-gray-900 dark:text-foreground">
@@ -195,13 +195,13 @@ export default function FiadoModals({
             <div className="flex gap-2">
               <button
                 onClick={() => setSelectedIds(new Set())}
-                className="px-3 py-2 rounded-xl text-xs font-bold text-gray-500 bg-gray-100 hover:bg-gray-200 transition-colors"
+                className="px-3 py-2 rounded-lg text-xs font-bold text-gray-500 bg-gray-100 hover:bg-gray-200 transition-colors"
               >
                 Deseleccionar
               </button>
               <button
                 onClick={() => { setCobroError(null); setCobroMonto(selectedTotal.toFixed(2)); setShowCobroMasivo(true); }}
-                className="px-4 py-2 rounded-xl text-xs font-bold text-white bg-[#00B4A6] hover:bg-[#009690] transition-colors"
+                className="px-4 py-2 rounded-lg text-xs font-bold text-white bg-[#00B4A6] hover:bg-[#009690] transition-colors"
               >
                 Cobrar seleccionados
               </button>
@@ -230,7 +230,7 @@ export default function FiadoModals({
               className="fixed inset-0 z-[60] flex items-center justify-center p-4"
               onClick={e => e.target === e.currentTarget && setShowCobroMasivo(false)}
             >
-              <div className="w-full max-w-md bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl shadow-2xl p-5 space-y-4 max-h-[80vh] overflow-y-auto">
+              <div className="w-full max-w-md bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl p-5 space-y-4 max-h-[80vh] overflow-y-auto">
                 <div className="flex items-center justify-between">
                   <h3 className="text-lg font-bold text-gray-900 dark:text-white">Cobro Masivo</h3>
                   <button onClick={() => setShowCobroMasivo(false)} className="p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-white/5">
@@ -262,14 +262,14 @@ export default function FiadoModals({
                     value={cobroMonto}
                     onChange={e => setCobroMonto(e.target.value)}
                     placeholder="0.00"
-                    className="w-full px-3 py-2 rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 text-sm text-gray-900 dark:text-white placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#00B4A6]/30"
+                    className="w-full px-3 py-2 rounded-lg border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 text-sm text-gray-900 dark:text-white placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#00B4A6]/30"
                   />
                 </div>
 
                 {/* Distribution preview */}
                 {cobroMonto && parseFloat(cobroMonto) > 0 && (
                   <div className="bg-[#00B4A6]/5 rounded-xl p-3 space-y-1.5">
-                    <p className="text-[10px] font-bold text-gray-500 uppercase tracking-wide">Distribucion (antiguo primero)</p>
+                    <p className="text-[10px] font-bold text-gray-500">Distribucion (antiguo primero)</p>
                     {computeDistribution(parseFloat(cobroMonto)).map((d, i) => (
                       <div key={i} className="flex items-center justify-between text-xs">
                         <span className="text-gray-700 dark:text-gray-300">{d.customerName}</span>
@@ -289,14 +289,14 @@ export default function FiadoModals({
                 <div className="flex gap-2">
                   <button
                     onClick={() => setShowCobroMasivo(false)}
-                    className="flex-1 px-4 py-2.5 rounded-xl text-sm font-bold text-gray-600 dark:text-gray-400 bg-gray-100 dark:bg-white/5 hover:bg-gray-200 dark:hover:bg-white/10 transition-colors"
+                    className="flex-1 px-4 py-2.5 rounded-lg text-sm font-bold text-gray-600 dark:text-gray-400 bg-gray-100 dark:bg-white/5 hover:bg-gray-200 dark:hover:bg-white/10 transition-colors"
                   >
                     Cancelar
                   </button>
                   <button
                     onClick={handleCobroMasivo}
                     disabled={cobroPaying || !cobroMonto || parseFloat(cobroMonto) <= 0}
-                    className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-sm font-bold text-white bg-[#00B4A6] hover:bg-[#009690] disabled:opacity-50 shadow-sm transition-colors"
+                    className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg text-sm font-bold text-white bg-[#00B4A6] hover:bg-[#009690] disabled:opacity-50  transition-colors"
                   >
                     {cobroPaying ? <Loader2 className="h-4 w-4 animate-spin" /> : <DollarSign className="h-4 w-4" />}
                     Confirmar cobro
@@ -328,7 +328,7 @@ export default function FiadoModals({
               className="fixed inset-0 z-[70] flex items-center justify-center p-4"
               onClick={e => e.target === e.currentTarget && setShowRecibo(false)}
             >
-              <div className="w-full max-w-sm bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl shadow-2xl p-5 space-y-4 print:shadow-none print:border-0">
+              <div className="w-full max-w-sm bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl p-5 space-y-4 print:shadow-none print:border-0">
                 {/* Mejora 18 (ronda 3): Recibo imprimible mejorado */}
                 <div className="text-center print:mb-2">
                   <div className="h-12 w-12 rounded-full bg-emerald-50 dark:bg-emerald-900/20 flex items-center justify-center mx-auto mb-2 print:hidden">
@@ -385,7 +385,7 @@ export default function FiadoModals({
                 <div className="flex flex-col gap-2 print:hidden">
                   <button
                     onClick={() => window.print()}
-                    className="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-sm font-bold text-gray-700 dark:text-foreground border border-gray-200 dark:border-card-border hover:bg-gray-50 dark:hover:bg-white/5 transition-colors"
+                    className="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg text-sm font-bold text-gray-700 dark:text-foreground border border-gray-200 dark:border-card-border hover:bg-gray-50 dark:hover:bg-white/5 transition-colors"
                   >
                     <Printer className="h-4 w-4" />
                     Imprimir
@@ -396,14 +396,14 @@ export default function FiadoModals({
                     )}`}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-sm font-bold text-white bg-[#25D366] hover:bg-[#1da851] transition-colors"
+                    className="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg text-sm font-bold text-white bg-[#25D366] hover:bg-[#1da851] transition-colors"
                   >
                     <MessageCircle className="h-4 w-4" />
                     WhatsApp
                   </a>
                   <button
                     onClick={() => setShowRecibo(false)}
-                    className="w-full px-4 py-2.5 rounded-xl text-sm font-bold text-gray-500 dark:text-gray-400 bg-gray-100 dark:bg-white/5 hover:bg-gray-200 dark:hover:bg-white/10 transition-colors"
+                    className="w-full px-4 py-2.5 rounded-lg text-sm font-bold text-gray-500 dark:text-gray-400 bg-gray-100 dark:bg-white/5 hover:bg-gray-200 dark:hover:bg-white/10 transition-colors"
                   >
                     Cerrar
                   </button>
@@ -434,7 +434,7 @@ export default function FiadoModals({
               className="fixed inset-0 z-[70] flex items-center justify-center p-4"
               onClick={e => e.target === e.currentTarget && setShowCompromiso(false)}
             >
-              <div id="compromiso-printable" className="w-full max-w-md bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl shadow-2xl p-5 space-y-4 max-h-[90vh] overflow-y-auto print:shadow-none print:border print:max-h-none">
+              <div id="compromiso-printable" className="w-full max-w-md bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl p-5 space-y-4 max-h-[90vh] overflow-y-auto print:shadow-none print:border print:max-h-none">
                 <div className="flex items-center justify-between print:hidden">
                   <h3 className="text-lg font-bold text-gray-900 dark:text-white flex items-center gap-2">
                     <PenTool className="h-5 w-5 text-[#00B4A6]" /> Compromiso de Pago
@@ -453,7 +453,7 @@ export default function FiadoModals({
                       step="0.01"
                       value={compromisoMonto}
                       onChange={e => setCompromisoMonto(e.target.value)}
-                      className="w-full px-3 py-2 rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 text-sm text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-[#00B4A6]/30"
+                      className="w-full px-3 py-2 rounded-lg border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 text-sm text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-[#00B4A6]/30"
                     />
                   </div>
                   <div>
@@ -462,7 +462,7 @@ export default function FiadoModals({
                       type="date"
                       value={compromisoFecha}
                       onChange={e => setCompromisoFecha(e.target.value)}
-                      className="w-full px-3 py-2 rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 text-sm text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-[#00B4A6]/30"
+                      className="w-full px-3 py-2 rounded-lg border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 text-sm text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-[#00B4A6]/30"
                     />
                   </div>
                   <div>
@@ -557,7 +557,7 @@ export default function FiadoModals({
                 {/* Printable document */}
                 <div className="border border-gray-200 dark:border-white/10 rounded-xl p-4 text-sm space-y-3">
                   <div className="text-center border-b border-gray-200 dark:border-white/10 pb-3">
-                    <p className="text-base font-extrabold text-gray-900 dark:text-white uppercase tracking-wider">Compromiso de Pago</p>
+                    <p className="text-base font-extrabold text-gray-900 dark:text-white">Compromiso de Pago</p>
                     <p className="text-xs text-gray-400 mt-0.5">Buleje — Pucallpa</p>
                   </div>
                   <p className="text-gray-700 dark:text-gray-300 leading-relaxed">
@@ -582,7 +582,7 @@ export default function FiadoModals({
                 <div className="flex gap-2 print:hidden">
                   <button
                     onClick={() => setShowCompromiso(false)}
-                    className="flex-1 px-4 py-2.5 rounded-xl text-sm font-bold text-gray-600 dark:text-gray-400 bg-gray-100 dark:bg-white/5 hover:bg-gray-200 transition-colors"
+                    className="flex-1 px-4 py-2.5 rounded-lg text-sm font-bold text-gray-600 dark:text-gray-400 bg-gray-100 dark:bg-white/5 hover:bg-gray-200 transition-colors"
                   >
                     Cancelar
                   </button>
@@ -600,7 +600,7 @@ export default function FiadoModals({
                       } catch { /* ignore */ }
                       window.print();
                     }}
-                    className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-sm font-bold text-white bg-[#00B4A6] hover:bg-[#009690] transition-colors"
+                    className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg text-sm font-bold text-white bg-[#00B4A6] hover:bg-[#009690] transition-colors"
                   >
                     <Printer className="h-4 w-4" />
                     Confirmar e Imprimir
@@ -632,7 +632,7 @@ export default function FiadoModals({
               className="fixed inset-0 z-[70] flex items-center justify-center p-4"
               onClick={e => e.target === e.currentTarget && setShowDebtorsMap(false)}
             >
-              <div className="w-full max-w-lg bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl shadow-2xl max-h-[85vh] flex flex-col">
+              <div className="w-full max-w-lg bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl max-h-[85vh] flex flex-col">
                 <div className="px-5 py-4 border-b border-gray-200 dark:border-card-border flex items-center justify-between">
                   <h3 className="text-lg font-bold text-gray-900 dark:text-white flex items-center gap-2">
                     <MapPin className="h-5 w-5 text-[#00B4A6]" /> Mapa de deudores

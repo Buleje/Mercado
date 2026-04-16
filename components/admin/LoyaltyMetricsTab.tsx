@@ -124,7 +124,7 @@ export default function LoyaltyMetricsTab() {
           >
             <div className="flex items-center gap-2">
               <k.icon className={cn("h-4 w-4", k.color)} />
-              <span className="text-[10px] sm:text-xs text-gray-500 font-medium uppercase tracking-wider">
+              <span className="text-[10px] sm:text-xs text-gray-500 font-medium">
                 {k.label}
               </span>
             </div>
@@ -183,7 +183,7 @@ export default function LoyaltyMetricsTab() {
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
-                <tr className="border-b border-gray-100 text-left text-xs text-gray-500 uppercase tracking-wider">
+                <tr className="border-b border-gray-100 text-left text-xs text-gray-500">
                   <th className="pb-2 pr-3">#</th>
                   <th className="pb-2 pr-3">Cliente</th>
                   <th className="pb-2 pr-3 text-center">Nivel</th>

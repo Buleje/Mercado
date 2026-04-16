@@ -39,7 +39,7 @@ export default function DashboardProductosSection({ st, expandAll, _products }: 
   const topMax = topList.length>0?Math.max(...topList.map((p: any)=>topTab==="units"?p.units:topTab==="profit"?p.profit:p.revenue)):1;
 
   return (
-        <div className={cn("space-y-4", expandAll && "bg-white dark:bg-card rounded-2xl border border-gray-100 dark:border-card-border p-4")}>
+        <div className={cn("space-y-4", expandAll && "bg-white dark:bg-card rounded-xl border border-gray-100 dark:border-card-border p-4")}>
           {expandAll && (
             <div className="flex flex-wrap items-center gap-2 mb-4 pb-3 border-b border-gray-100 dark:border-card-border">
               <div className="w-7 h-7 rounded-lg bg-violet-50 dark:bg-violet-900/30 flex items-center justify-center">
@@ -60,7 +60,7 @@ export default function DashboardProductosSection({ st, expandAll, _products }: 
                 {(["revenue","profit","units"] as const).map(t => (
                   <button key={t} onClick={()=>setTopTab(t)}
                     className={cn("px-2 py-0.5 rounded text-xs font-semibold transition-all",
-                      topTab===t?"bg-white dark:bg-card text-gray-800 dark:text-foreground shadow-sm":"text-gray-400 dark:text-muted"
+                      topTab===t?"bg-white dark:bg-card text-gray-800 dark:text-foreground ":"text-gray-400 dark:text-muted"
                     )}>{t==="revenue"?"Ingreso":t==="profit"?"Utilidad":"Uds."}</button>
                 ))}
               </div>
@@ -94,7 +94,7 @@ export default function DashboardProductosSection({ st, expandAll, _products }: 
 
           {/* Pareto ABC Analysis */}
           <Card title="Análisis Pareto (80/20)" icon={Target}>
-            <div className="space-y-4">
+            <div className="space-y-6">
               {/* ABC Summary Cards */}
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
                 <div className="bg-emerald-50 dark:bg-emerald-950/30 rounded-lg p-3">

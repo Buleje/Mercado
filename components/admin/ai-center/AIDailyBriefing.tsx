@@ -740,7 +740,7 @@ export default function AIDailyBriefing({ data }: Props) {
               </p>
               {topDeudores.length > 0 && (
                 <div className="flex flex-col gap-0.5">
-                  <span className="text-[10px] uppercase tracking-wider text-gray-500 dark:text-gray-400 font-semibold">Top deudores</span>
+                  <span className="text-[10px] text-gray-500 dark:text-gray-400 font-semibold">Top deudores</span>
                   {topDeudores.map((d, i) => (
                     <div key={d.id ?? i} className="flex items-center justify-between text-xs text-gray-700 dark:text-gray-300">
                       <span>{d.customerName ?? "Cliente"}</span>
@@ -770,15 +770,15 @@ export default function AIDailyBriefing({ data }: Props) {
           </p>
           <div className="grid grid-cols-3 gap-2 text-center">
             <div className="bg-emerald-50 dark:bg-emerald-950/20 rounded-md p-1.5">
-              <p className="text-[10px] uppercase tracking-wider text-gray-500 dark:text-gray-400 font-semibold">Efectivo</p>
+              <p className="text-[10px] text-gray-500 dark:text-gray-400 font-semibold">Efectivo</p>
               <p className="text-sm font-bold text-emerald-700 dark:text-emerald-300">{fmt(analysis.cashSales)}</p>
             </div>
             <div className="bg-amber-50 dark:bg-amber-950/20 rounded-md p-1.5">
-              <p className="text-[10px] uppercase tracking-wider text-gray-500 dark:text-gray-400 font-semibold">Por cobrar</p>
+              <p className="text-[10px] text-gray-500 dark:text-gray-400 font-semibold">Por cobrar</p>
               <p className="text-sm font-bold text-amber-700 dark:text-amber-300">{fmt(fiadosTotal)}</p>
             </div>
             <div className="bg-red-50 dark:bg-red-950/20 rounded-md p-1.5">
-              <p className="text-[10px] uppercase tracking-wider text-gray-500 dark:text-gray-400 font-semibold">Gastos</p>
+              <p className="text-[10px] text-gray-500 dark:text-gray-400 font-semibold">Gastos</p>
               <p className="text-sm font-bold text-red-700 dark:text-red-300">{fmt(analysis.expensesToday)}</p>
             </div>
           </div>
@@ -829,14 +829,14 @@ export default function AIDailyBriefing({ data }: Props) {
           <div className="flex flex-col gap-1.5">
             <div className="flex items-center gap-2">
               <DayContextIcon className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
-              <span className="inline-flex items-center rounded-full bg-emerald-100 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300">
+              <span className="inline-flex items-center rounded-full bg-emerald-100 px-1.5 py-0.5 text-[10px] font-semibold text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300">
                 {dayContextLabel}
               </span>
               <span className="text-sm text-gray-700 dark:text-gray-300">{calendar.dayTip}</span>
             </div>
             <div className="flex items-center gap-2">
               <SeasonStatusIcon className="h-4 w-4 text-emerald-500 dark:text-emerald-300" />
-              <span className="inline-flex items-center rounded-full bg-white/70 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300">
+              <span className="inline-flex items-center rounded-full bg-white/70 px-1.5 py-0.5 text-[10px] font-semibold text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300">
                 {seasonBadge}
               </span>
               <span className="text-xs text-gray-600 dark:text-gray-400">{calendar.seasonLabel}</span>
@@ -854,7 +854,7 @@ export default function AIDailyBriefing({ data }: Props) {
             )}
             {calendarApi?.eventos && calendarApi.eventos.length > 0 && (
               <div className="flex flex-col gap-1 mt-1 pt-1.5 border-t border-emerald-200/50 dark:border-emerald-800/30">
-                <span className="text-[10px] uppercase tracking-wider text-emerald-500 dark:text-emerald-400 font-semibold">Proximos eventos</span>
+                <span className="text-[10px] text-emerald-500 dark:text-emerald-400 font-semibold">Proximos eventos</span>
                 {calendarApi.eventos.slice(0, 3).map((ev, i) => (
                   <div key={i} className="flex items-center gap-2 text-xs text-gray-600 dark:text-gray-400">
                     <span className="text-[10px] font-medium bg-emerald-100 dark:bg-emerald-900/40 text-emerald-700 dark:text-emerald-300 px-1.5 py-0.5 rounded">
@@ -978,14 +978,14 @@ export default function AIDailyBriefing({ data }: Props) {
           >
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
               <div className="rounded-lg bg-gray-50 dark:bg-gray-800/50 p-2.5 text-center">
-                <p className="text-[10px] uppercase tracking-wider text-gray-500 dark:text-gray-400 font-semibold">Ventas</p>
+                <p className="text-[10px] text-gray-500 dark:text-gray-400 font-semibold">Ventas</p>
                 <p className="text-sm font-bold text-gray-900 dark:text-gray-50">{fmt(thisMonth)}</p>
                 <p className={cn("text-xs font-semibold", isUp ? "text-emerald-600 dark:text-emerald-400" : "text-red-500 dark:text-red-400")}>
                   {isUp ? "+" : ""}{delta}% {isUp ? "↑" : "↓"} vs {fmt(prevMonth)}
                 </p>
               </div>
               <div className="rounded-lg bg-gray-50 dark:bg-gray-800/50 p-2.5 text-center">
-                <p className="text-[10px] uppercase tracking-wider text-gray-500 dark:text-gray-400 font-semibold">Clientes</p>
+                <p className="text-[10px] text-gray-500 dark:text-gray-400 font-semibold">Clientes</p>
                 {(() => {
                   const thisC = new Set([...data.orders.filter(o => o.status !== "cancelado" && (o.createdAt?.slice(0, 10) ?? "") >= thisMonthStart).map(o => o.customer?.phone).filter(Boolean)]).size;
                   const prevC = new Set([...data.orders.filter(o => o.status !== "cancelado" && (o.createdAt?.slice(0, 10) ?? "") >= prevMonthStart && (o.createdAt?.slice(0, 10) ?? "") <= prevMonthCutoff).map(o => o.customer?.phone).filter(Boolean)]).size;
@@ -997,7 +997,7 @@ export default function AIDailyBriefing({ data }: Props) {
                 })()}
               </div>
               <div className="rounded-lg bg-gray-50 dark:bg-gray-800/50 p-2.5 text-center">
-                <p className="text-[10px] uppercase tracking-wider text-gray-500 dark:text-gray-400 font-semibold">Transacciones</p>
+                <p className="text-[10px] text-gray-500 dark:text-gray-400 font-semibold">Transacciones</p>
                 {(() => {
                   const thisT = data.orders.filter(o => o.status !== "cancelado" && (o.createdAt?.slice(0, 10) ?? "") >= thisMonthStart).length + data.sales.filter(s => (s.createdAt?.slice(0, 10) ?? "") >= thisMonthStart).length;
                   const prevT = data.orders.filter(o => o.status !== "cancelado" && (o.createdAt?.slice(0, 10) ?? "") >= prevMonthStart && (o.createdAt?.slice(0, 10) ?? "") <= prevMonthCutoff).length + data.sales.filter(s => (s.createdAt?.slice(0, 10) ?? "") >= prevMonthStart && (s.createdAt?.slice(0, 10) ?? "") <= prevMonthCutoff).length;
@@ -1108,7 +1108,7 @@ function DailyTaskCard() {
 
 function BriefingCard({ children }: { children: React.ReactNode }) {
   return (
-    <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 p-5 shadow-sm">
+    <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 p-5 ">
       {children}
     </div>
   );
@@ -1117,7 +1117,7 @@ function BriefingCard({ children }: { children: React.ReactNode }) {
 function Section({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <div className="mb-4">
-      <h3 className="text-xs font-semibold uppercase tracking-wider text-[#00B4A6] dark:text-[#2dd4bf] mb-1.5">{label}</h3>
+      <h3 className="text-xs font-semibold text-[#00B4A6] dark:text-[#2dd4bf] mb-1.5">{label}</h3>
       {children}
     </div>
   );
@@ -1146,7 +1146,7 @@ function CollapsibleSection({
         className="w-full flex items-center justify-between group mb-1.5"
       >
         <div className="flex items-center gap-2">
-          <h3 className="text-xs font-semibold uppercase tracking-wider text-[#00B4A6] dark:text-[#2dd4bf]">{label}</h3>
+          <h3 className="text-xs font-semibold text-[#00B4A6] dark:text-[#2dd4bf]">{label}</h3>
           {badge && (
             <span className={cn("text-[10px] font-bold px-1.5 py-0.5 rounded-full", colors[badgeColor ?? "green"])}>
               {badge}

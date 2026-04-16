@@ -166,12 +166,12 @@ export function AdminSidebar({
 
   // ── Sidebar theme (persisted in localStorage) ──
   const [sidebarTheme, setSidebarTheme] = React.useState<SidebarTheme>(() => {
-    if (typeof window === "undefined") return "light";
+    if (typeof window === "undefined") return "dark";
     try {
       const stored = localStorage.getItem("admin-sidebar-theme");
       if (stored === "light" || stored === "shaded" || stored === "dark") return stored;
     } catch { /* ignore */ }
-    return "light";
+    return "dark";
   });
 
   const updateTheme = React.useCallback((theme: SidebarTheme) => {
@@ -452,7 +452,7 @@ export function AdminSidebar({
               className="h-9 w-9 rounded-xl object-cover ring-2 ring-gray-100 dark:ring-card-border shrink-0"
             />
           ) : (
-            <div className="h-9 w-9 rounded-xl bg-gradient-to-br from-emerald-500 to-emerald-700 text-white flex items-center justify-center shrink-0 shadow-sm">
+            <div className="h-9 w-9 rounded-lg bg-gradient-to-br from-emerald-500 to-emerald-700 text-white flex items-center justify-center shrink-0 ">
               <ShoppingBasket className="h-4.5 w-4.5" />
             </div>
           )}
@@ -517,7 +517,7 @@ export function AdminSidebar({
                         "h-3 w-3 text-gray-300 dark:text-gray-600 transition-transform duration-200",
                         isSectionCollapsed && "-rotate-90"
                       )} />
-                      <span className="text-[10px] font-semibold uppercase tracking-widest text-gray-300 dark:text-gray-600 group-hover/section:text-gray-400 dark:group-hover/section:text-gray-500 transition-colors">
+                      <span className="text-[10px] font-semibold text-gray-300 dark:text-gray-600 group-hover/section:text-gray-400 dark:group-hover/section:text-gray-500 transition-colors">
                         {sectionLabel}
                       </span>
                     </button>
@@ -598,7 +598,7 @@ export function AdminSidebar({
                       if (!tipText) return null;
                       return (
                         <div className="absolute left-full top-1/2 -translate-y-1/2 ml-2 opacity-0 pointer-events-none group-hover/cat:opacity-100 transition-opacity delay-500 z-50">
-                          <div className="relative bg-gray-900 dark:bg-zinc-700 text-white text-xs rounded-lg px-3 py-2 shadow-lg max-w-[200px] leading-relaxed">
+                          <div className="relative bg-gray-900 dark:bg-zinc-700 text-white text-xs rounded-lg px-3 py-2 max-w-[200px] leading-relaxed">
                             <div className="absolute right-full top-1/2 -translate-y-1/2 border-[5px] border-transparent border-r-gray-900 dark:border-r-zinc-700" />
                             {tipText}
                           </div>
@@ -712,7 +712,7 @@ export function AdminSidebar({
                   )}
                 </button>
                 {/* Tooltip on hover in compact mode */}
-                <div className="absolute left-full top-1/2 -translate-y-1/2 ml-2 px-2 py-1 bg-gray-900 dark:bg-zinc-700 text-white text-xs rounded shadow-lg whitespace-nowrap opacity-0 pointer-events-none group-hover/tip:opacity-100 transition-opacity z-50">
+                <div className="absolute left-full top-1/2 -translate-y-1/2 ml-2 px-2 py-1 bg-gray-900 dark:bg-zinc-700 text-white text-xs rounded whitespace-nowrap opacity-0 pointer-events-none group-hover/tip:opacity-100 transition-opacity z-50">
                   {label}
                 </div>
               </div>
@@ -737,7 +737,7 @@ export function AdminSidebar({
                 isEasyMode ? "bg-primary" : "bg-emerald-500"
               )}>
                 <div className={cn(
-                  "absolute top-0.5 h-4 w-4 rounded-full bg-white shadow-sm transition-transform",
+                  "absolute top-0.5 h-4 w-4 rounded-full bg-white  transition-transform",
                   isEasyMode ? "left-0.5" : "left-[18px]"
                 )} />
               </div>
@@ -757,7 +757,7 @@ export function AdminSidebar({
                 isEasyMode ? "bg-primary" : "bg-emerald-500"
               )}>
                 <div className={cn(
-                  "absolute top-1/2 -translate-y-1/2 h-4 w-4 rounded-full bg-white shadow-sm transition-transform",
+                  "absolute top-1/2 -translate-y-1/2 h-4 w-4 rounded-full bg-white  transition-transform",
                   isEasyMode ? "left-[calc(50%-14px)]" : "left-[calc(50%+2px)]"
                 )} />
               </div>
@@ -859,7 +859,7 @@ export function AdminSidebar({
             style={{ position: "fixed", top: sidebarFlyout.top, left: 264, zIndex: 50 }}
             onMouseEnter={() => { if (flyoutTimerRef.current) clearTimeout(flyoutTimerRef.current); }}
             onMouseLeave={() => { flyoutTimerRef.current = setTimeout(() => onSidebarFlyoutChange(null), 150); }}
-            className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl shadow-2xl py-2 w-60 max-h-[80vh] overflow-y-auto"
+            className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl py-2 w-60 max-h-[80vh] overflow-y-auto"
           >
             {catTabs.map(tabId => {
               const tabInfo = allTabs.find(t => t.id === tabId);

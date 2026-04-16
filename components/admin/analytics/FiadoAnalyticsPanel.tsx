@@ -74,7 +74,7 @@ function daysBetween(from: string, to: Date): number {
 function DonutTooltip({ active, payload }: { active?: boolean; payload?: Array<{ name: string; value: number }> }) {
   if (!active || !payload?.[0]) return null;
   return (
-    <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg border border-gray-100 dark:border-gray-700 px-4 py-3 min-w-[160px]">
+    <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-100 dark:border-gray-700 px-4 py-3 min-w-[160px]">
       <p className="text-xs font-semibold text-gray-900 dark:text-white mb-1.5">{payload[0].name}</p>
       <p className="text-xs text-gray-500 flex justify-between gap-4">
         <span>Monto</span>
@@ -91,7 +91,7 @@ function TrendTooltip({ active, payload }: { active?: boolean; payload?: Array<{
   const d = payload[0].payload;
   const neto = d.cobrados - d.nuevos;
   return (
-    <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg border border-gray-100 dark:border-gray-700 px-4 py-3 min-w-[180px]">
+    <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-100 dark:border-gray-700 px-4 py-3 min-w-[180px]">
       <p className="text-xs font-semibold text-gray-900 dark:text-white mb-1.5">{d.mes}</p>
       <p className="text-xs text-gray-500 flex justify-between gap-4">
         <span>Cobrados</span>
@@ -280,11 +280,11 @@ export default function FiadoAnalyticsPanel() {
           return (
             <div
               key={kpi.label}
-              className="rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/50 p-3 shadow-sm"
+              className="rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/50 p-3 "
             >
               <div className="flex items-center gap-1.5 mb-1">
                 <Icon className="h-3.5 w-3.5 text-gray-400" />
-                <span className="text-[10px] text-gray-500 dark:text-gray-400 uppercase tracking-wider font-medium">
+                <span className="text-[10px] text-gray-500 dark:text-gray-400 font-medium">
                   {kpi.label}
                 </span>
               </div>

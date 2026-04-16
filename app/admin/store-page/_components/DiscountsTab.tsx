@@ -56,7 +56,7 @@ export default function DiscountsTab() {
         </div>
         <button
           onClick={() => setShowForm(true)}
-          className="flex items-center gap-2 px-4 py-2 bg-primary text-white rounded-xl text-sm font-semibold hover:bg-primary/90 transition-colors"
+          className="flex items-center gap-2 px-4 py-2 bg-primary text-white rounded-lg text-sm font-semibold hover:bg-primary/90 transition-colors"
         >
           <Plus className="h-4 w-4" />
           Nuevo descuento
@@ -83,7 +83,7 @@ export default function DiscountsTab() {
       {/* Discount list */}
       {discounts.length === 0 && !showForm && (
         <div className="flex flex-col items-center justify-center py-16 text-center">
-          <div className="h-14 w-14 rounded-2xl bg-primary/10 flex items-center justify-center mb-4">
+          <div className="h-14 w-14 rounded-xl bg-primary/10 flex items-center justify-center mb-4">
             <Percent className="h-7 w-7 text-primary" />
           </div>
           <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1">Sin descuentos creados</h3>

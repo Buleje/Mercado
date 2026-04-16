@@ -174,7 +174,7 @@ Responde en español, directo, sin rodeos.`,
     .reduce((acc, s) => acc + (s.suggestedPrice - s.currentPrice), 0);
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-6">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
@@ -190,7 +190,7 @@ Responde en español, directo, sin rodeos.`,
           <button
             onClick={askAIPricing}
             disabled={loading}
-            className="flex items-center gap-2 px-4 py-2 rounded-xl bg-primary text-white font-bold text-sm hover:bg-primary/90 transition-colors disabled:opacity-50"
+            className="flex items-center gap-2 px-4 py-2 rounded-lg bg-primary text-white font-bold text-sm hover:bg-primary/90 transition-colors disabled:opacity-50"
           >
             {loading ? <RefreshCw className="w-4 h-4 animate-spin" /> : <Zap className="w-4 h-4" />}
             {loading ? "Analizando..." : "Consultar IA"}
@@ -238,7 +238,7 @@ Responde en español, directo, sin rodeos.`,
           const priceDiff = s.suggestedPrice - s.currentPrice;
 
           return (
-            <div key={`price-${s.productId}`} className="rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 p-4 hover:shadow-md transition-shadow">
+            <div key={`price-${s.productId}`} className="rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 p-4 hover:shadow-sm transition-shadow">
               <div className="flex items-start gap-3">
                 <div className={cn("shrink-0 w-9 h-9 rounded-lg flex items-center justify-center border", config.color)}>
                   <Icon className="w-4 h-4" />

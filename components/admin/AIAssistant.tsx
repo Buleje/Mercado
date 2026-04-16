@@ -795,7 +795,7 @@ export default function AIAssistant({ onNavigate, embedded, moduleContext }: AIA
           )}
           <div className="max-w-[85%]">
             <div className={cn(
-              "rounded-2xl px-3 py-2 text-xs leading-relaxed",
+              "rounded-xl px-3 py-2 text-xs leading-relaxed",
               msg.role === "user" ? "bg-primary text-white rounded-br-md" : "bg-gray-50 dark:bg-accent/50 text-gray-700 dark:text-gray-300 rounded-bl-md border border-gray-100 dark:border-card-border"
             )}>
               {msg.role === "assistant" ? renderContent(msg.content) : msg.content}
@@ -826,7 +826,7 @@ export default function AIAssistant({ onNavigate, embedded, moduleContext }: AIA
           <div className="w-6 h-6 rounded-lg bg-linear-to-br from-violet-500 to-indigo-500 flex items-center justify-center shrink-0">
             <Bot className="h-3 w-3 text-white" />
           </div>
-          <div className="bg-gray-50 dark:bg-accent/50 rounded-2xl rounded-bl-md px-3 py-2 border border-gray-100 dark:border-card-border">
+          <div className="bg-gray-50 dark:bg-accent/50 rounded-xl rounded-bl-md px-3 py-2 border border-gray-100 dark:border-card-border">
             <div className="flex items-center gap-2 text-xs text-gray-400">
               <Loader2 className="h-3.5 w-3.5 animate-spin" />
               Analizando…
@@ -856,7 +856,7 @@ export default function AIAssistant({ onNavigate, embedded, moduleContext }: AIA
             placeholder={isListening ? "Escuchando..." : isOffline ? "Modo offline..." : "Pregunta algo... (/ para comandos)"}
             rows={1}
             className={cn(
-              "w-full resize-none rounded-xl border px-3 py-2 text-xs bg-gray-50 dark:bg-surface text-gray-800 dark:text-foreground placeholder:text-gray-400 dark:placeholder:text-muted focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-colors",
+              "w-full resize-none rounded-lg border px-3 py-2 text-xs bg-gray-50 dark:bg-surface text-gray-800 dark:text-foreground placeholder:text-gray-400 dark:placeholder:text-muted focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-colors",
               isListening ? "border-red-300 dark:border-red-800 bg-red-50/30 dark:bg-red-950/10" : "border-gray-200 dark:border-card-border"
             )}
             style={{ maxHeight: compact ? 60 : 80 }}
@@ -873,7 +873,7 @@ export default function AIAssistant({ onNavigate, embedded, moduleContext }: AIA
         <button onClick={() => sendMessage()} disabled={!input.trim() || loading}
           className={cn("h-9 w-9 rounded-xl flex items-center justify-center transition-all shrink-0",
             input.trim() && !loading
-              ? "bg-linear-to-r from-violet-600 to-indigo-600 text-white hover:from-violet-700 hover:to-indigo-700 shadow-sm"
+              ? "bg-linear-to-r from-violet-600 to-indigo-600 text-white hover:from-violet-700 hover:to-indigo-700 "
               : "bg-gray-100 dark:bg-surface text-gray-300 dark:text-muted cursor-not-allowed"
           )}>
           <Send className="h-3.5 w-3.5" />
@@ -896,7 +896,7 @@ export default function AIAssistant({ onNavigate, embedded, moduleContext }: AIA
     if (!showCmdPalette) return null;
     return (
       <div className="absolute bottom-full left-0 right-0 mb-1 z-10">
-        <div className="mx-3 bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl shadow-xl overflow-hidden">
+        <div className="mx-3 bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl overflow-hidden">
           <div className="flex items-center gap-2 px-3 py-2 border-b border-gray-100 dark:border-card-border">
             <Command className="h-3.5 w-3.5 text-gray-400" />
             <input autoFocus type="text" value={cmdSearch} onChange={e => setCmdSearch(e.target.value)} placeholder="Buscar comando…"
@@ -957,7 +957,7 @@ export default function AIAssistant({ onNavigate, embedded, moduleContext }: AIA
           <div className="px-4 py-2.5 border-b border-gray-100 dark:border-card-border shrink-0 space-y-2">
             {Object.entries(groupedActions).map(([category, actions]) => (
               <div key={category}>
-                <p className="text-[9px] font-bold text-gray-400 uppercase tracking-wider mb-1">{category}</p>
+                <p className="text-[9px] font-bold text-gray-400 mb-1">{category}</p>
                 <div className="grid grid-cols-2 gap-1.5">
                   {actions.slice(0, 2).map(action => (
                     <button key={action.label} onClick={() => sendMessage(action.prompt)}
@@ -993,7 +993,7 @@ export default function AIAssistant({ onNavigate, embedded, moduleContext }: AIA
       {!open && (
         <button onClick={() => setOpen(true)}
           className={cn(
-            "fixed bottom-20 right-4 sm:bottom-6 sm:right-6 z-50 h-14 w-14 rounded-2xl shadow-2xl flex items-center justify-center transition-all duration-300",
+            "fixed bottom-20 right-4 sm:bottom-6 sm:right-6 z-50 h-14 w-14 rounded-xl flex items-center justify-center transition-all duration-300",
             "bg-linear-to-br from-violet-600 to-indigo-600 hover:from-violet-700 hover:to-indigo-700 hover:shadow-violet-500/30 hover:scale-105",
             "text-white",
             pulse && "animate-bounce shadow-violet-500/40"
@@ -1016,7 +1016,7 @@ export default function AIAssistant({ onNavigate, embedded, moduleContext }: AIA
           )}
           {/* Mejora 33: Mini health score label */}
           {healthScore !== null && notifications.length === 0 && (
-            <span className="absolute -bottom-1 left-1/2 -translate-x-1/2 text-[8px] font-bold bg-white dark:bg-card text-gray-700 dark:text-gray-300 px-1.5 rounded-full border border-gray-200 dark:border-card-border shadow-sm">
+            <span className="absolute -bottom-1 left-1/2 -translate-x-1/2 text-[8px] font-bold bg-white dark:bg-card text-gray-700 dark:text-gray-300 px-1.5 rounded-full border border-gray-200 dark:border-card-border ">
               {healthScore}%
             </span>
           )}
@@ -1028,7 +1028,7 @@ export default function AIAssistant({ onNavigate, embedded, moduleContext }: AIA
         <>
           <div className="fixed inset-0 z-50 bg-black/30 backdrop-blur-sm" onClick={() => { setShowCmdPalette(false); setCmdSearch(""); }} />
           <div className="fixed top-1/4 left-1/2 -translate-x-1/2 z-50 w-full max-w-md mx-4">
-            <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl shadow-2xl overflow-hidden">
+            <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl overflow-hidden">
               <div className="flex items-center gap-3 px-4 py-3 border-b border-gray-100 dark:border-card-border">
                 <Search className="h-4 w-4 text-gray-400" />
                 <input autoFocus type="text" value={cmdSearch} onChange={e => setCmdSearch(e.target.value)} placeholder="¿Qué quieres hacer?"
@@ -1063,11 +1063,11 @@ export default function AIAssistant({ onNavigate, embedded, moduleContext }: AIA
       {/* Mejora 28: Chat panel with 3 sizes */}
       {open && (
         <div className={cn(
-          "fixed z-50 flex flex-col bg-white dark:bg-card border border-gray-200 dark:border-card-border shadow-2xl transition-all duration-300",
-          expanded ? "inset-4 rounded-2xl" :
-          widgetSize === "mini" ? "bottom-20 right-4 sm:bottom-6 sm:right-6 w-80 h-96 max-h-[70vh] rounded-2xl" :
-          widgetSize === "large" ? "bottom-20 right-4 sm:bottom-6 sm:right-6 w-[480px] h-[700px] max-h-[90vh] rounded-2xl" :
-          "bottom-20 right-4 sm:bottom-6 sm:right-6 w-95 sm:w-105 h-150 max-h-[85vh] rounded-2xl"
+          "fixed z-50 flex flex-col bg-white dark:bg-card border border-gray-200 dark:border-card-border transition-all duration-300",
+          expanded ? "inset-4 rounded-xl" :
+          widgetSize === "mini" ? "bottom-20 right-4 sm:bottom-6 sm:right-6 w-80 h-96 max-h-[70vh] rounded-xl" :
+          widgetSize === "large" ? "bottom-20 right-4 sm:bottom-6 sm:right-6 w-[480px] h-[700px] max-h-[90vh] rounded-xl" :
+          "bottom-20 right-4 sm:bottom-6 sm:right-6 w-95 sm:w-105 h-150 max-h-[85vh] rounded-xl"
         )}>
           {/* Header */}
           <div className="flex flex-wrap items-center gap-3 px-2 sm:px-4 py-2 sm:py-3 border-b border-gray-100 dark:border-card-border bg-linear-to-r from-violet-600 to-indigo-600 text-white rounded-t-2xl shrink-0">
@@ -1118,7 +1118,7 @@ export default function AIAssistant({ onNavigate, embedded, moduleContext }: AIA
             <div className="px-3 py-2 bg-red-50 dark:bg-red-950/20 border-b border-red-200 dark:border-red-800/40 shrink-0">
               <div className="flex items-center gap-2 mb-1">
                 <Bell className="h-3.5 w-3.5 text-red-500" />
-                <span className="text-[10px] font-bold text-red-700 dark:text-red-400 uppercase tracking-wider">Alertas ({notifications.length})</span>
+                <span className="text-[10px] font-bold text-red-700 dark:text-red-400">Alertas ({notifications.length})</span>
                 <button onClick={() => setNotifications([])} className="ml-auto text-[9px] text-red-400 hover:underline">Cerrar</button>
               </div>
               {notifications.map((n, i) => (
@@ -1212,7 +1212,7 @@ export default function AIAssistant({ onNavigate, embedded, moduleContext }: AIA
                 <div className="px-4 pb-2 shrink-0">
                   {Object.entries(groupedActions).map(([category, actions]) => (
                     <div key={category} className="mb-2">
-                      <p className="text-[9px] font-bold text-gray-400 dark:text-muted uppercase tracking-wider mb-1">{category}</p>
+                      <p className="text-[9px] font-bold text-gray-400 dark:text-muted mb-1">{category}</p>
                       <div className="grid grid-cols-2 gap-1.5">
                         {actions.map(action => (
                           <button key={action.label} onClick={() => sendMessage(action.prompt)}

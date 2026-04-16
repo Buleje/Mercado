@@ -566,7 +566,7 @@ export default function GlobalSearch({ open, onClose, onOpen, onNavigate }: Prop
       onClick={onClose}
     >
       <div
-        className="bg-white dark:bg-card rounded-2xl shadow-2xl w-full max-w-2xl mx-4 overflow-hidden border border-gray-200 dark:border-card-border"
+        className="bg-white dark:bg-card rounded-xl w-full max-w-2xl mx-4 overflow-hidden border border-gray-200 dark:border-card-border"
         onClick={e => e.stopPropagation()}
       >
         {/* ── Input de búsqueda ── */}
@@ -621,7 +621,7 @@ export default function GlobalSearch({ open, onClose, onOpen, onNavigate }: Prop
                   {/* Cabecera de grupo */}
                   <div className="flex items-center gap-2 px-4 py-2 bg-gray-50 dark:bg-surface border-b border-gray-100 dark:border-card-border">
                     <GroupIcon className={cn("h-3.5 w-3.5", meta.color)} />
-                    <span className="text-[10px] font-bold uppercase tracking-wider text-gray-500 dark:text-muted">
+                    <span className="text-[10px] font-bold text-gray-500 dark:text-muted">
                       {meta.label}
                     </span>
                   </div>
@@ -689,7 +689,7 @@ export default function GlobalSearch({ open, onClose, onOpen, onNavigate }: Prop
         {/* ── Acceso rápido (estado vacío) ── */}
         {!isSearching && (
           <div className="px-4 py-3">
-            <p className="text-[10px] font-bold text-gray-400 dark:text-muted uppercase tracking-wide mb-2">
+            <p className="text-[10px] font-bold text-gray-400 dark:text-muted mb-2">
               Acceso rápido
             </p>
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
@@ -699,7 +699,7 @@ export default function GlobalSearch({ open, onClose, onOpen, onNavigate }: Prop
                   <button
                     key={item.tab}
                     onClick={() => { onNavigate(item.tab); onClose(); }}
-                    className="flex items-center gap-2.5 p-2.5 rounded-xl border border-gray-100 dark:border-card-border hover:border-gray-200 dark:hover:border-card-border/80 hover:bg-gray-50 dark:hover:bg-surface transition-colors text-left"
+                    className="flex items-center gap-2.5 p-2.5 rounded-lg border border-gray-100 dark:border-card-border hover:border-gray-200 dark:hover:border-card-border/80 hover:bg-gray-50 dark:hover:bg-surface transition-colors text-left"
                   >
                     <div className={cn("w-7 h-7 rounded-lg flex items-center justify-center shrink-0", item.color)}>
                       <Icon className="h-3.5 w-3.5" />

@@ -245,7 +245,7 @@ export default function VentasHeatmap() {
                   <div
                     key={hour}
                     className={cn(
-                      "w-9 h-9 rounded-md transition-all cursor-default hover:ring-2 hover:ring-[#00B4A6] hover:shadow-md",
+                      "w-9 h-9 rounded-md transition-all cursor-default hover:ring-2 hover:ring-[#00B4A6] hover:shadow-sm",
                       getColor(avgTotal, maxValue)
                     )}
                     onMouseEnter={(e) => {
@@ -268,7 +268,7 @@ export default function VentasHeatmap() {
               className="fixed z-50 pointer-events-none"
               style={{ left: hoveredCell.x, top: hoveredCell.y - 8, transform: "translate(-50%, -100%)" }}
             >
-              <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg border border-gray-100 dark:border-gray-700 px-4 py-3 min-w-[160px]">
+              <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-100 dark:border-gray-700 px-4 py-3 min-w-[160px]">
                 <p className="text-xs font-semibold text-gray-900 dark:text-white mb-1.5">
                   {DOW_LABELS[hoveredCell.dow]} {formatHour(hoveredCell.hour)}
                 </p>

@@ -89,7 +89,7 @@ function genSparkData(base: number): { v: number }[] {
 function EmptyChartPrestamos({ message }: { message: string }) {
   return (
     <div className="flex flex-col items-center justify-center py-12 text-center">
-      <div className="h-12 w-12 rounded-2xl bg-primary/10 flex items-center justify-center mb-3"><BarChart3 className="h-6 w-6 text-primary" /></div>
+      <div className="h-12 w-12 rounded-xl bg-primary/10 flex items-center justify-center mb-3"><BarChart3 className="h-6 w-6 text-primary" /></div>
       <p className="text-sm font-medium text-gray-500 dark:text-gray-400">{message}</p>
       <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">Los datos aparecerán cuando registres préstamos</p>
     </div>
@@ -105,7 +105,7 @@ function SparklineKPICard({
   const gradId = `sp-${title.replace(/\W+/g, "")}`;
   return (
     <div
-      className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl shadow-sm p-3 relative overflow-hidden"
+      className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl  p-3 relative overflow-hidden"
       style={{ borderBottomColor: accentColor, borderBottomWidth: 4 }}
     >
       <div className="flex items-center gap-1.5 mb-1">
@@ -206,8 +206,8 @@ export function PrestamosDashboard({ prestamos, resumen }: Props) {
 
       {moraAcumulada > 0 && (
         <m.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.05 }}>
-          <div className="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-700 rounded-2xl p-4 flex items-center gap-4">
-            <div className="h-12 w-12 rounded-xl bg-amber-500 flex items-center justify-center shrink-0 shadow-md">
+          <div className="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-700 rounded-xl p-4 flex items-center gap-4">
+            <div className="h-12 w-12 rounded-xl bg-amber-500 flex items-center justify-center shrink-0">
               <AlertTriangle className="h-6 w-6 text-white" />
             </div>
             <div className="flex-1 min-w-0">
@@ -226,7 +226,7 @@ export function PrestamosDashboard({ prestamos, resumen }: Props) {
       )}
 
       <m.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}>
-        <div className="bg-white dark:bg-card rounded-2xl border border-gray-200 dark:border-card-border p-6 shadow-sm">
+        <div className="bg-white dark:bg-card rounded-xl border border-gray-200 dark:border-card-border p-6 ">
           <h3 className="text-sm font-bold text-gray-700 dark:text-foreground mb-4">Cobros vs Nuevos préstamos (6 meses)</h3>
           {areaData.some(d => d.cobrado > 0 || d.nuevos > 0) ? (
             <ResponsiveContainer width="100%" height={250}>
@@ -258,7 +258,7 @@ export function PrestamosDashboard({ prestamos, resumen }: Props) {
 
       <m.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}>
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          <div className="bg-white dark:bg-card rounded-2xl border border-gray-200 dark:border-card-border p-6 shadow-sm">
+          <div className="bg-white dark:bg-card rounded-xl border border-gray-200 dark:border-card-border p-6 ">
             <h3 className="text-sm font-bold text-gray-700 dark:text-foreground mb-4 flex items-center gap-2">
               <User className="h-4 w-4 text-[#f97316]" /> Top 5 deudores
             </h3>
@@ -281,7 +281,7 @@ export function PrestamosDashboard({ prestamos, resumen }: Props) {
             )}
           </div>
 
-          <div className="bg-white dark:bg-card rounded-2xl border border-gray-200 dark:border-card-border p-6 shadow-sm">
+          <div className="bg-white dark:bg-card rounded-xl border border-gray-200 dark:border-card-border p-6 ">
             <h3 className="text-sm font-bold text-gray-700 dark:text-foreground mb-2 flex items-center gap-2">
               <Shield className="h-4 w-4 text-purple-500" /> Distribución por estado
             </h3>
@@ -309,11 +309,11 @@ export function PrestamosDashboard({ prestamos, resumen }: Props) {
             )}
           </div>
 
-          <div className="bg-white dark:bg-card rounded-2xl border border-gray-200 dark:border-card-border p-6 shadow-sm">
+          <div className="bg-white dark:bg-card rounded-xl border border-gray-200 dark:border-card-border p-6 ">
             <h3 className="text-sm font-bold text-gray-700 dark:text-foreground mb-4 flex items-center gap-2">
               <Scale className="h-4 w-4 text-emerald-500" /> Dado vs Recibido
             </h3>
-            <div className="space-y-4">
+            <div className="space-y-6">
               <div>
                 <div className="flex justify-between items-center mb-1">
                   <div className="flex items-center gap-1.5">

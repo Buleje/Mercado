@@ -68,7 +68,7 @@ export function MessageComposer({
           rows={1}
           maxLength={4000}
           className={cn(
-            "flex-1 resize-none rounded-2xl border border-slate-200 bg-slate-50 px-4 py-2 text-sm",
+            "flex-1 resize-none rounded-xl border border-slate-200 bg-slate-50 px-4 py-2 text-sm",
             "focus:border-[#00B4A6] focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#00B4A6]/20",
             "dark:border-slate-700 dark:bg-slate-800 dark:focus:bg-slate-900",
             "disabled:cursor-not-allowed disabled:opacity-60",

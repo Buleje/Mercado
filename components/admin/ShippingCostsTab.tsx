@@ -167,13 +167,13 @@ export default function ShippingCostsTab() {
       {view === "rules" && (
         <div className="space-y-3">
           {!loading && rules.length === 0 && (
-            <div className="text-center py-12 bg-white dark:bg-card border border-dashed border-gray-200 dark:border-card-border rounded-2xl">
+            <div className="text-center py-12 bg-white dark:bg-card border border-dashed border-gray-200 dark:border-card-border rounded-xl">
               <MapPin className="h-10 w-10 text-gray-300 mx-auto mb-2" />
               <p className="text-sm text-gray-500 dark:text-muted">Sin tarifas configuradas. Crea la primera zona.</p>
             </div>
           )}
           {rules.map(r => (
-            <div key={r.id} className={cn("bg-white dark:bg-card rounded-2xl border border-gray-200 dark:border-card-border p-4 sm:p-5 transition-all", !r.active && "opacity-60")}>
+            <div key={r.id} className={cn("bg-white dark:bg-card rounded-xl border border-gray-200 dark:border-card-border p-4 sm:p-5 transition-all", !r.active && "opacity-60")}>
               <div className="flex flex-wrap items-start justify-between gap-3">
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2 mb-3 flex-wrap">
@@ -231,7 +231,7 @@ export default function ShippingCostsTab() {
 
       {/* View: Zone stats */}
       {view === "stats" && (
-        <div className="bg-white dark:bg-card rounded-2xl border border-gray-200 dark:border-card-border overflow-hidden">
+        <div className="bg-white dark:bg-card rounded-xl border border-gray-200 dark:border-card-border overflow-hidden">
           <div className="flex items-center justify-between px-4 py-3 bg-gray-50 dark:bg-surface border-b border-gray-100 dark:border-card-border">
             <h3 className="font-bold text-sm text-gray-700 dark:text-foreground">Estadísticas por zona — este mes</h3>
             <button
@@ -277,7 +277,7 @@ export default function ShippingCostsTab() {
 
       {/* View: History */}
       {view === "history" && (
-        <div className="bg-white dark:bg-card rounded-2xl border border-gray-200 dark:border-card-border overflow-hidden">
+        <div className="bg-white dark:bg-card rounded-xl border border-gray-200 dark:border-card-border overflow-hidden">
           <div className="flex items-center justify-between px-4 py-3 bg-gray-50 dark:bg-surface border-b border-gray-100 dark:border-card-border">
             <h3 className="font-bold text-sm text-gray-700 dark:text-foreground">Histórico mensual de costos</h3>
             <button
@@ -319,7 +319,7 @@ export default function ShippingCostsTab() {
       {showModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4" onClick={() => setShowModal(false)}>
           <div
-            className="bg-white dark:bg-card rounded-2xl shadow-2xl p-4 sm:p-6 max-w-md w-full border border-gray-200 dark:border-card-border"
+            className="bg-white dark:bg-card rounded-xl p-4 sm:p-6 max-w-md w-full border border-gray-200 dark:border-card-border"
             onClick={e => e.stopPropagation()}
           >
             <div className="flex items-center justify-between mb-4">
@@ -337,7 +337,7 @@ export default function ShippingCostsTab() {
                   value={form.zone}
                   onChange={e => setForm({ ...form, zone: e.target.value })}
                   placeholder="Ej: Yarinacocha, Callería..."
-                  className="w-full mt-1 px-3 py-2 rounded-xl border border-gray-200 dark:border-card-border bg-white dark:bg-surface text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
+                  className="w-full mt-1 px-3 py-2 rounded-lg border border-gray-200 dark:border-card-border bg-white dark:bg-surface text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
                 />
               </div>
               <div className="grid grid-cols-2 gap-3">
@@ -368,8 +368,8 @@ export default function ShippingCostsTab() {
               </div>
             </div>
             <div className="flex justify-end gap-2 mt-5">
-              <button onClick={() => setShowModal(false)} className="px-4 py-2 rounded-xl text-sm font-bold text-gray-500 hover:bg-gray-100 dark:hover:bg-accent">Cancelar</button>
-              <button onClick={save} className="px-4 py-2 rounded-xl text-sm font-bold bg-primary text-white hover:bg-primary/90 flex items-center gap-1.5">
+              <button onClick={() => setShowModal(false)} className="px-4 py-2 rounded-lg text-sm font-bold text-gray-500 hover:bg-gray-100 dark:hover:bg-accent">Cancelar</button>
+              <button onClick={save} className="px-4 py-2 rounded-lg text-sm font-bold bg-primary text-white hover:bg-primary/90 flex items-center gap-1.5">
                 <Check className="h-4 w-4" /> Guardar
               </button>
             </div>

@@ -87,7 +87,7 @@ export default function TagManager() {
   const filtered = tags.filter(t => t.entity === entity);
 
   return (
-    <div className="bg-white dark:bg-card rounded-2xl border border-gray-200 dark:border-card-border p-5 space-y-4">
+    <div className="bg-white dark:bg-card rounded-xl border border-gray-200 dark:border-card-border p-5 space-y-4">
       {/* Header */}
       <div className="flex items-center gap-2">
         <TagIcon className="h-5 w-5 text-[#00B4A6]" />
@@ -104,7 +104,7 @@ export default function TagManager() {
             className={cn(
               "flex-1 flex items-center justify-center gap-1.5 py-1.5 px-2 rounded-lg text-xs font-semibold transition-colors min-h-[36px]",
               entity === tab.id
-                ? "bg-white dark:bg-card text-[#00B4A6] shadow-sm"
+                ? "bg-white dark:bg-card text-[#00B4A6] "
                 : "text-gray-500 dark:text-muted hover:text-gray-700 dark:hover:text-gray-300"
             )}
           >
@@ -123,7 +123,7 @@ export default function TagManager() {
           onKeyDown={e => { if (e.key === "Enter") handleCreate(); }}
           placeholder="Nueva etiqueta..."
           maxLength={30}
-          className="flex-1 px-3 py-2 rounded-xl border border-gray-200 dark:border-card-border bg-white dark:bg-surface text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-[#00B4A6]/30 focus:border-[#00B4A6]"
+          className="flex-1 px-3 py-2 rounded-lg border border-gray-200 dark:border-card-border bg-white dark:bg-surface text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-[#00B4A6]/30 focus:border-[#00B4A6]"
         />
         {/* Color picker */}
         <div className="flex items-center gap-1 flex-wrap">
@@ -145,7 +145,7 @@ export default function TagManager() {
           type="button"
           onClick={handleCreate}
           disabled={creating || !newName.trim()}
-          className="flex items-center gap-1.5 px-3 py-2 bg-[#00B4A6] text-white rounded-xl text-sm font-semibold hover:bg-[#009690] disabled:opacity-50 transition-colors min-h-[44px]"
+          className="flex items-center gap-1.5 px-3 py-2 bg-[#00B4A6] text-white rounded-lg text-sm font-semibold hover:bg-[#009690] disabled:opacity-50 transition-colors min-h-[44px]"
         >
           {creating ? <Loader2 className="h-4 w-4 animate-spin" /> : <Plus className="h-4 w-4" />}
           Crear
@@ -173,7 +173,7 @@ export default function TagManager() {
           {filtered.map(tag => (
             <div
               key={`${tag.entity}-${tag.name}`}
-              className="flex items-center gap-2 px-3 py-2 rounded-xl hover:bg-gray-50 dark:hover:bg-surface/50 transition-colors group"
+              className="flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-gray-50 dark:hover:bg-surface/50 transition-colors group"
             >
               <TagBadge tag={{ name: tag.name, color: tag.color }} />
               <span className="flex-1 text-xs text-gray-400 dark:text-muted">

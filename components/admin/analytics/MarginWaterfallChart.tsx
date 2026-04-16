@@ -56,7 +56,7 @@ function WaterfallTooltip({ active, payload }: { active?: boolean; payload?: Arr
   if (!active || !payload?.[0]) return null;
   const d = payload[0].payload;
   return (
-    <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg border border-gray-100 dark:border-gray-700 px-4 py-3 min-w-[160px]">
+    <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-100 dark:border-gray-700 px-4 py-3 min-w-[160px]">
       <p className="text-xs font-semibold text-gray-900 dark:text-white mb-1.5">{d.name}</p>
       <p className="text-xs text-gray-500 flex justify-between gap-4">
         <span>Monto</span>

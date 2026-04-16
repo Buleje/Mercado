@@ -40,11 +40,11 @@ export default memo(function PuntoCompraProductCard({
       disabled={isOutOfStock}
       aria-label={isOutOfStock ? `${displayName} — agotado` : `Agregar ${displayName} al carrito — cantidad sugerida: ${suggestedQty}`}
       className={cn(
-        "relative border border-gray-200 dark:border-card-border rounded-2xl p-3 transition-all bg-white dark:bg-card",
+        "relative border border-gray-200 dark:border-card-border rounded-xl p-3 transition-all bg-white dark:bg-card",
         "text-left w-full focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#00B4A6]",
         isOutOfStock
           ? "opacity-60 cursor-not-allowed"
-          : "cursor-pointer hover:shadow-md hover:border-[#00B4A6]/50 hover:scale-[1.02]",
+          : "cursor-pointer hover:shadow-sm hover:border-[#00B4A6]/50 hover:scale-[1.02]",
       )}
     >
       {/* Badge AGOTADO / REPONER */}

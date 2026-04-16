@@ -108,7 +108,7 @@ export default function HeatMapTab() {
       </div>
 
       {/* Heatmap */}
-      <div className="bg-white dark:bg-card rounded-2xl border border-gray-200 dark:border-card-border p-3 sm:p-5 overflow-x-auto relative">
+      <div className="bg-white dark:bg-card rounded-xl border border-gray-200 dark:border-card-border p-3 sm:p-5 overflow-x-auto relative">
         <h3 className="font-bold text-sm text-gray-900 dark:text-foreground mb-4">
           Transacciones por hora y día de la semana
         </h3>
@@ -172,7 +172,7 @@ export default function HeatMapTab() {
         {/* Tooltip flotante */}
         {tooltip && (
           <div
-            className="fixed z-50 pointer-events-none bg-gray-900 text-white text-xs rounded-xl px-3 py-2 shadow-xl"
+            className="fixed z-50 pointer-events-none bg-gray-900 text-white text-xs rounded-lg px-3 py-2"
             style={{ left: tooltip.x + 8, top: tooltip.y - 56 }}
           >
             <p className="font-bold">{tooltip.day} {tooltip.hour}:00</p>
@@ -184,7 +184,7 @@ export default function HeatMapTab() {
 
       {/* Resumen por día */}
       {!loading && !error && cells.length > 0 && (
-        <div className="bg-white dark:bg-card rounded-2xl border border-gray-200 dark:border-card-border p-3 sm:p-5">
+        <div className="bg-white dark:bg-card rounded-xl border border-gray-200 dark:border-card-border p-3 sm:p-5">
           <h3 className="font-bold text-sm text-gray-900 dark:text-foreground mb-3">Resumen por día</h3>
           <div className="space-y-2">
             {DAYS.map(day => {

@@ -115,7 +115,7 @@ export default function OnboardingWizard({ onNavigate, onDismiss }: OnboardingWi
   };
 
   return (
-    <div className="mb-6 rounded-2xl border border-emerald-200 dark:border-emerald-900/50 bg-gradient-to-r from-emerald-50 to-emerald-50 dark:from-emerald-950/20 dark:to-emerald-950/20 p-5 relative overflow-hidden">
+    <div className="mb-6 rounded-xl border border-emerald-200 dark:border-emerald-900/50 bg-gradient-to-r from-emerald-50 to-emerald-50 dark:from-emerald-950/20 dark:to-emerald-950/20 p-5 relative overflow-hidden">
       {/* Dismiss button */}
       <button
         onClick={handleDismiss}
@@ -157,7 +157,7 @@ export default function OnboardingWizard({ onNavigate, onDismiss }: OnboardingWi
                 "flex items-start gap-3 p-3 rounded-xl text-left transition-all",
                 step.completed
                   ? "bg-white/50 dark:bg-white/5 opacity-60"
-                  : "bg-white dark:bg-card hover:shadow-md border border-gray-100 dark:border-card-border"
+                  : "bg-white dark:bg-card hover:shadow-sm border border-gray-100 dark:border-card-border"
               )}
             >
               <div className={cn("h-9 w-9 rounded-lg flex items-center justify-center shrink-0", step.color)}>

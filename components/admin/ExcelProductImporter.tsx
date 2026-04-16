@@ -368,7 +368,7 @@ export default function ExcelProductImporter() {
           onDrop={onDrop}
           onClick={() => fileRef.current?.click()}
           className={cn(
-            "flex flex-col items-center justify-center gap-3 rounded-xl border-2 border-dashed p-12 cursor-pointer transition-colors",
+            "flex flex-col items-center justify-center gap-3 rounded-lg border-2 border-dashed p-12 cursor-pointer transition-colors",
             dragging
               ? "border-[#00B4A6] bg-[#00B4A6]/5"
               : "border-gray-200 dark:border-gray-700 hover:border-[#00B4A6] dark:hover:border-[#00B4A6]"
@@ -454,7 +454,7 @@ export default function ExcelProductImporter() {
 
       {/* Preview step */}
       {step === "preview" && (
-        <div className="space-y-4">
+        <div className="space-y-6">
           <div className="flex items-center gap-4 text-sm">
             <span className="flex items-center gap-1 text-green-600 dark:text-green-400">
               <CheckCircle className="h-4 w-4" />

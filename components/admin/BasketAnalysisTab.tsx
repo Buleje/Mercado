@@ -103,7 +103,7 @@ export default function BasketAnalysisTab() {
 
       {/* Cross-sell suggestions */}
       {!loading && crossSell.length > 0 && (
-        <div className="bg-amber-50 dark:bg-amber-900/10 border border-amber-200 dark:border-amber-900/30 rounded-2xl p-3 sm:p-5">
+        <div className="bg-amber-50 dark:bg-amber-900/10 border border-amber-200 dark:border-amber-900/30 rounded-xl p-3 sm:p-5">
           <h3 className="font-bold text-sm text-amber-700 dark:text-amber-400 mb-3 flex items-center gap-2">
             <Lightbulb className="h-4 w-4" /> Sugerencias de Cross-sell (lift &gt; 1.8x)
           </h3>
@@ -127,7 +127,7 @@ export default function BasketAnalysisTab() {
 
       {/* Top combos */}
       {!loading && topCombos.length > 0 && (
-        <div className="bg-white dark:bg-card rounded-2xl border border-gray-200 dark:border-card-border p-3 sm:p-5">
+        <div className="bg-white dark:bg-card rounded-xl border border-gray-200 dark:border-card-border p-3 sm:p-5">
           <h3 className="font-bold text-sm text-gray-900 dark:text-foreground mb-3 flex items-center gap-2">
             <Package className="h-4 w-4 text-primary" /> Combos más frecuentes
           </h3>
@@ -156,7 +156,7 @@ export default function BasketAnalysisTab() {
       )}
 
       {/* Tabla reglas de asociación */}
-      <div className="bg-white dark:bg-card rounded-2xl border border-gray-200 dark:border-card-border overflow-hidden">
+      <div className="bg-white dark:bg-card rounded-xl border border-gray-200 dark:border-card-border overflow-hidden">
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between px-5 py-3 bg-gray-50 dark:bg-surface gap-2 flex-wrap">
           <h3 className="font-bold text-sm text-gray-700 dark:text-foreground flex items-center gap-2">
             <Link2 className="h-4 w-4 text-primary" /> Reglas de asociación

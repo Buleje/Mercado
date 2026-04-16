@@ -180,7 +180,7 @@ export default function RolePermissionsTab() {
           <table className="w-full min-w-[600px]">
             <thead>
               <tr className="border-b border-white/10">
-                <th className="sticky left-0 z-10 bg-gray-900 px-3 py-2.5 text-left text-[10px] font-bold text-gray-400 uppercase tracking-wider w-36">
+                <th className="sticky left-0 z-10 bg-gray-900 px-3 py-2.5 text-left text-[10px] font-bold text-gray-400 w-36">
                   Modulo
                 </th>
                 {roles.map(role => (

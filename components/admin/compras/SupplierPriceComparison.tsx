@@ -100,7 +100,7 @@ export function QuotationComparator({ orders, suppliers }: {
 
   return (
     <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4" onClick={() => setOpen(false)}>
-      <div className="bg-white dark:bg-card rounded-2xl shadow-xl w-full max-w-3xl max-h-[85vh] overflow-y-auto p-5 space-y-4" onClick={e => e.stopPropagation()}>
+      <div className="bg-white dark:bg-card rounded-xl w-full max-w-3xl max-h-[85vh] overflow-y-auto p-5 space-y-4" onClick={e => e.stopPropagation()}>
         <div className="flex items-center justify-between">
           <h3 className="text-lg font-extrabold text-gray-900 dark:text-foreground flex items-center gap-2">
             <BarChart3 className="h-5 w-5 text-indigo-600" /> Comparar cotizaciones completas
@@ -269,7 +269,7 @@ export default function SupplierPriceComparison({ productId, productName }: Supp
 
   return (
     <div className="space-y-2">
-      <h4 className="text-xs font-bold text-gray-500 dark:text-muted uppercase tracking-wide">
+      <h4 className="text-xs font-bold text-gray-500 dark:text-muted">
         Comparacion de precios: {productName}
       </h4>
 

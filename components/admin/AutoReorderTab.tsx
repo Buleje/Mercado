@@ -211,7 +211,7 @@ export default function AutoReorderTab() {
           { label: "En alerta",        value: kpis.warning,  color: "text-yellow-600", bg: "bg-yellow-50 dark:bg-yellow-900/20", icon: Package },
           { label: "Auto-reorden ON",  value: kpis.autoOn,   color: "text-emerald-600",bg: "bg-emerald-50 dark:bg-emerald-900/20", icon: RefreshCw },
         ].map(({ label, value, color, bg, icon: Icon }) => (
-          <div key={label} className={cn("rounded-2xl p-4 flex items-start gap-3", bg)}>
+          <div key={label} className={cn("rounded-xl p-4 flex items-start gap-3", bg)}>
             <Icon className={cn("h-5 w-5 mt-0.5 shrink-0", color)} />
             <div>
               <p className="text-xs font-semibold text-gray-500 dark:text-muted">{label}</p>
@@ -234,7 +234,7 @@ export default function AutoReorderTab() {
       {view === "products" && (
         <>
           {products.length === 0 ? (
-            <div className="text-center py-12 bg-white dark:bg-card border border-dashed border-gray-200 dark:border-card-border rounded-2xl">
+            <div className="text-center py-12 bg-white dark:bg-card border border-dashed border-gray-200 dark:border-card-border rounded-xl">
               <CheckCircle2 className="h-12 w-12 text-emerald-400 mx-auto mb-3" />
               <p className="font-bold text-gray-900 dark:text-foreground">Inventario en buen estado</p>
               <p className="text-sm text-gray-400 mt-1">No hay productos con stock bajo en este momento</p>
@@ -261,7 +261,7 @@ export default function AutoReorderTab() {
               </div>
 
               {/* Generate PO bar */}
-              <div className="flex items-center gap-3 bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl p-4 flex-wrap">
+              <div className="flex items-center gap-3 bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl p-4 flex-wrap">
                 <label className="flex items-center gap-2 text-sm cursor-pointer">
                   <input type="checkbox" checked={selected.size === filtered.length && filtered.length > 0} onChange={toggleAll} className="rounded" />
                   <span className="font-bold text-gray-700 dark:text-foreground">{selected.size} seleccionados</span>
@@ -275,7 +275,7 @@ export default function AutoReorderTab() {
                 <button
                   onClick={generatePO}
                   disabled={selected.size === 0 || !supplierId || creating}
-                  className="px-4 py-2 bg-primary text-white rounded-xl text-sm font-bold hover:bg-primary/90 transition disabled:opacity-50 flex items-center gap-2"
+                  className="px-4 py-2 bg-primary text-white rounded-lg text-sm font-bold hover:bg-primary/90 transition disabled:opacity-50 flex items-center gap-2"
                 >
                   {creating ? <Loader2 className="h-4 w-4 animate-spin" /> : <ShoppingCart className="h-4 w-4" />}
                   Generar Orden
@@ -283,7 +283,7 @@ export default function AutoReorderTab() {
               </div>
 
               {/* Products table */}
-              <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl overflow-hidden">
+              <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl overflow-hidden">
                 <div className="overflow-x-auto">
                   <table className="w-full min-w-[700px] text-sm">
                     <thead>
@@ -364,7 +364,7 @@ export default function AutoReorderTab() {
 
       {/* History view */}
       {view === "history" && (
-        <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl overflow-hidden">
+        <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl overflow-hidden">
           <div className="overflow-x-auto">
             <table className="w-full min-w-[600px] text-sm">
               <thead>
@@ -402,7 +402,7 @@ export default function AutoReorderTab() {
       {/* Edit thresholds modal */}
       {editThresholds && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4" onClick={() => setEditThresholds(null)}>
-          <div className="bg-white dark:bg-card rounded-2xl p-4 sm:p-6 w-full max-w-sm border border-gray-200 dark:border-card-border shadow-2xl space-y-4" onClick={e => e.stopPropagation()}>
+          <div className="bg-white dark:bg-card rounded-xl p-4 sm:p-6 w-full max-w-sm border border-gray-200 dark:border-card-border space-y-4" onClick={e => e.stopPropagation()}>
             <div className="flex items-center justify-between">
               <h3 className="font-extrabold text-gray-900 dark:text-foreground">Umbrales — {editThresholds.name}</h3>
               <button onClick={() => setEditThresholds(null)}><X className="h-4 w-4 text-gray-400" /></button>
@@ -429,8 +429,8 @@ export default function AutoReorderTab() {
               </div>
             </div>
             <div className="flex justify-end gap-2">
-              <button onClick={() => setEditThresholds(null)} className="px-4 py-2 rounded-xl text-sm font-bold text-gray-500 hover:bg-gray-100 dark:hover:bg-accent">Cancelar</button>
-              <button onClick={saveThresholds} className="px-4 py-2 rounded-xl text-sm font-bold bg-primary text-white hover:bg-primary/90">
+              <button onClick={() => setEditThresholds(null)} className="px-4 py-2 rounded-lg text-sm font-bold text-gray-500 hover:bg-gray-100 dark:hover:bg-accent">Cancelar</button>
+              <button onClick={saveThresholds} className="px-4 py-2 rounded-lg text-sm font-bold bg-primary text-white hover:bg-primary/90">
                 Guardar
               </button>
             </div>

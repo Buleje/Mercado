@@ -92,7 +92,7 @@ export default function MultiBranchDashboard() {
   }
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
           <Building2 className="h-5 w-5 text-primary" />
@@ -126,14 +126,14 @@ export default function MultiBranchDashboard() {
       {/* Branch comparison */}
       {branches.length > 1 && (
         <div className="space-y-2">
-          <p className="text-xs font-bold text-gray-400 dark:text-muted uppercase tracking-wide">Comparador de sucursales</p>
+          <p className="text-xs font-bold text-gray-400 dark:text-muted">Comparador de sucursales</p>
           {branches.map(branch => {
             const pct = totals.sales > 0 ? (branch.salesTotal / totals.sales) * 100 : 0;
             const isBest = bestBranch?.id === branch.id;
             return (
               <div key={branch.id} className={cn(
                 "bg-white dark:bg-card border rounded-xl p-3.5",
-                isBest ? "border-primary/30 shadow-sm" : "border-gray-100 dark:border-card-border"
+                isBest ? "border-primary/30 " : "border-gray-100 dark:border-card-border"
               )}>
                 <div className="flex items-center justify-between mb-2">
                   <div className="flex items-center gap-2">

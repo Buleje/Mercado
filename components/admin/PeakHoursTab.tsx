@@ -98,7 +98,7 @@ export default function PeakHoursTab({ period }: { period?: AnalyticsPeriod }) {
   const isEmpty = byHour.every(h => h.count === 0) && byDay.every(d => d.count === 0);
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-6">
       {/* Header */}
       <div className="flex items-center justify-between flex-wrap gap-3">
         <h3 className="text-sm font-extrabold text-gray-900 dark:text-foreground flex items-center gap-2">
@@ -110,7 +110,7 @@ export default function PeakHoursTab({ period }: { period?: AnalyticsPeriod }) {
             className={cn(
               "px-3 py-1.5 rounded-md text-xs font-bold transition-all",
               viewTab === "horas"
-                ? "bg-white dark:bg-card text-gray-900 dark:text-foreground shadow-sm"
+                ? "bg-white dark:bg-card text-gray-900 dark:text-foreground "
                 : "text-gray-500 dark:text-muted"
             )}
           >
@@ -121,7 +121,7 @@ export default function PeakHoursTab({ period }: { period?: AnalyticsPeriod }) {
             className={cn(
               "px-3 py-1.5 rounded-md text-xs font-bold transition-all",
               viewTab === "dias"
-                ? "bg-white dark:bg-card text-gray-900 dark:text-foreground shadow-sm"
+                ? "bg-white dark:bg-card text-gray-900 dark:text-foreground "
                 : "text-gray-500 dark:text-muted"
             )}
           >
@@ -146,8 +146,8 @@ export default function PeakHoursTab({ period }: { period?: AnalyticsPeriod }) {
 
       {/* By Hour Chart */}
       {viewTab === "horas" && !isEmpty && (
-        <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl p-4 sm:p-5">
-          <p className="text-[10px] font-semibold text-gray-400 dark:text-muted uppercase tracking-wider mb-4">
+        <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl p-4 sm:p-5">
+          <p className="text-[10px] font-semibold text-gray-400 dark:text-muted mb-4">
             Ventas por hora del dia (0-23h)
           </p>
           <div className="flex items-end gap-1 sm:gap-1.5" style={{ height: 350 }}>
@@ -165,7 +165,7 @@ export default function PeakHoursTab({ period }: { period?: AnalyticsPeriod }) {
                   style={{ minWidth: 16 }}
                 >
                   {/* Tooltip */}
-                  <div className="absolute -top-8 left-1/2 -translate-x-1/2 hidden group-hover:block bg-white dark:bg-gray-800 text-gray-900 dark:text-white text-[10px] font-bold px-3 py-1.5 rounded-xl shadow-lg border border-gray-100 dark:border-gray-700 whitespace-nowrap z-10">
+                  <div className="absolute -top-8 left-1/2 -translate-x-1/2 hidden group-hover:block bg-white dark:bg-gray-800 text-gray-900 dark:text-white text-[10px] font-bold px-3 py-1.5 rounded-lg border border-gray-100 dark:border-gray-700 whitespace-nowrap z-10">
                     {h.hour}:00 -- S/ {h.count} ventas
                   </div>
                   {/* Bar */}
@@ -207,8 +207,8 @@ export default function PeakHoursTab({ period }: { period?: AnalyticsPeriod }) {
 
       {/* By Day Chart */}
       {viewTab === "dias" && !isEmpty && (
-        <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl p-4 sm:p-5">
-          <p className="text-[10px] font-semibold text-gray-400 dark:text-muted uppercase tracking-wider mb-4">
+        <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl p-4 sm:p-5">
+          <p className="text-[10px] font-semibold text-gray-400 dark:text-muted mb-4">
             Ventas por dia de la semana
           </p>
           <div className="space-y-3">

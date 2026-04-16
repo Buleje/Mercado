@@ -24,7 +24,7 @@ const TABS = [
 export default function FacturacionModule() {
   const [sub, setSub] = useState(TABS[0].id);
   return (
-    <div className="space-y-4">
+    <div className="space-y-6">
       <AdminModuleHeader
         title="Facturación"
         description="Facturación electrónica, impuestos y cuentas por pagar"

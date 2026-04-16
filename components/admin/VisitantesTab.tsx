@@ -96,7 +96,7 @@ export default function VisitantesTab() {
       </div>
 
       {/* Table */}
-      <div className="bg-card border border-border rounded-2xl overflow-hidden">
+      <div className="bg-card border border-border rounded-xl overflow-hidden">
         {loading ? (
           <div className="flex items-center justify-center py-16">
             <div className="w-6 h-6 border-2 border-primary border-t-transparent rounded-full animate-spin" />
@@ -110,7 +110,7 @@ export default function VisitantesTab() {
           <div className="overflow-x-auto">
             <table className="w-full min-w-[600px] text-sm">
               <thead>
-                <tr className="border-b border-border bg-gray-50 dark:bg-surface text-left text-xs text-muted uppercase tracking-wide">
+                <tr className="border-b border-border bg-gray-50 dark:bg-surface text-left text-xs text-muted">
                   <th className="px-2 sm:px-4 py-2 sm:py-3">Nombre</th>
                   <th className="px-2 sm:px-4 py-2 sm:py-3">Dispositivos</th>
                   <th className="px-2 sm:px-4 py-2 sm:py-3 hidden md:table-cell">Navegador</th>

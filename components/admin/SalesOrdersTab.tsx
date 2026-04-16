@@ -9,7 +9,6 @@ import {
 } from "lucide-react";
 import EmptyState from "@/components/admin/shared/EmptyState";
 import { AdminCard, AdminKPI, StatusBadge } from "@/components/admin/shared";
-import { StaggerContainer, StaggerItem } from "@/components/admin/shared/StaggerContainer";
 import type { BadgeVariant } from "@/components/admin/shared";
 import {
   PieChart, Pie, Cell, BarChart, Bar,
@@ -486,7 +485,7 @@ export default function SalesOrdersTab() {
     return (
       <div className="flex flex-col items-center justify-center py-16 gap-3 text-center">
         <p className="text-sm text-red-600 dark:text-red-400">{error}</p>
-        <button onClick={load} className="flex items-center gap-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2.5 text-sm font-medium transition-colors">
+        <button onClick={load} className="flex items-center gap-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2.5 text-sm font-medium transition-colors">
           <RefreshCw className="h-4 w-4" /> Reintentar
         </button>
       </div>
@@ -505,10 +504,10 @@ export default function SalesOrdersTab() {
           <p className="text-sm text-gray-500 dark:text-zinc-400 mt-0.5">Pedidos, caja y punto de venta</p>
         </div>
         <div className="flex items-center gap-2 shrink-0">
-          <button onClick={exportCSV} className="p-2 rounded-xl bg-gray-100 dark:bg-surface hover:bg-gray-200 dark:hover:bg-accent transition-colors" title="Exportar CSV">
+          <button onClick={exportCSV} className="p-2 rounded-lg bg-gray-100 dark:bg-surface hover:bg-gray-200 dark:hover:bg-accent transition-colors" title="Exportar CSV">
             <Download className="h-4 w-4 text-gray-500" />
           </button>
-          <button onClick={exportExcel} className="p-2 rounded-xl bg-emerald-50 dark:bg-emerald-950/30 hover:bg-emerald-100 dark:hover:bg-emerald-900/30 transition-colors" title="Exportar Excel">
+          <button onClick={exportExcel} className="p-2 rounded-lg bg-emerald-50 dark:bg-emerald-950/30 hover:bg-emerald-100 dark:hover:bg-emerald-900/30 transition-colors" title="Exportar Excel">
             <FileSpreadsheet className="h-4 w-4 text-emerald-600" />
           </button>
           <button
@@ -535,19 +534,19 @@ export default function SalesOrdersTab() {
       <div className="flex items-center gap-1 p-1 bg-gray-100 dark:bg-zinc-800 rounded-xl w-fit">
         <button
           onClick={() => { setViewMode("list"); try { localStorage.setItem("orders-view-mode", "list"); } catch {} }}
-          className={cn("px-4 py-2 text-sm font-medium rounded-lg transition-all", viewMode === "list" ? "bg-white dark:bg-zinc-700 text-gray-900 dark:text-white shadow-sm" : "text-gray-500 dark:text-zinc-400 hover:text-gray-700")}
+          className={cn("px-4 py-2 text-sm font-medium rounded-lg transition-all", viewMode === "list" ? "bg-white dark:bg-zinc-700 text-gray-900 dark:text-white " : "text-gray-500 dark:text-zinc-400 hover:text-gray-700")}
         >
           Lista
         </button>
         <button
           onClick={() => { setViewMode("kanban"); try { localStorage.setItem("orders-view-mode", "kanban"); } catch {} }}
-          className={cn("px-4 py-2 text-sm font-medium rounded-lg transition-all", viewMode === "kanban" ? "bg-white dark:bg-zinc-700 text-gray-900 dark:text-white shadow-sm" : "text-gray-500 dark:text-zinc-400 hover:text-gray-700")}
+          className={cn("px-4 py-2 text-sm font-medium rounded-lg transition-all", viewMode === "kanban" ? "bg-white dark:bg-zinc-700 text-gray-900 dark:text-white " : "text-gray-500 dark:text-zinc-400 hover:text-gray-700")}
         >
           Kanban
         </button>
         <button
           onClick={() => { setViewMode("historial"); try { localStorage.setItem("orders-view-mode", "historial"); } catch {} }}
-          className={cn("px-4 py-2 text-sm font-medium rounded-lg transition-all", viewMode === "historial" ? "bg-white dark:bg-zinc-700 text-gray-900 dark:text-white shadow-sm" : "text-gray-500 dark:text-zinc-400 hover:text-gray-700")}
+          className={cn("px-4 py-2 text-sm font-medium rounded-lg transition-all", viewMode === "historial" ? "bg-white dark:bg-zinc-700 text-gray-900 dark:text-white " : "text-gray-500 dark:text-zinc-400 hover:text-gray-700")}
         >
           Historial
         </button>
@@ -564,7 +563,7 @@ export default function SalesOrdersTab() {
             onChange={e => { setSearch(e.target.value); setPage(1); }}
             placeholder="Buscar cliente o ID..."
             aria-label="Buscar pedidos"
-            className="w-full pl-10 pr-4 py-2.5 text-sm rounded-xl border border-gray-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 outline-none transition-all"
+            className="w-full pl-10 pr-4 py-2.5 text-sm rounded-lg border border-gray-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500/20 outline-none transition-all"
           />
         </div>
 
@@ -574,7 +573,7 @@ export default function SalesOrdersTab() {
             key={opt.id}
             onClick={() => { setFilter(opt.id); setPage(1); }}
             className={cn(
-              "inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-sm font-medium border transition-all",
+              "inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-sm font-medium border transition-all",
               filter === opt.id
                 ? "bg-emerald-50 dark:bg-emerald-900/20 border-emerald-200 dark:border-emerald-800 text-emerald-700 dark:text-emerald-400"
                 : "border-gray-200 dark:border-zinc-700 text-gray-600 dark:text-zinc-400 bg-white dark:bg-zinc-900 hover:bg-gray-50 dark:hover:bg-zinc-800"
@@ -590,7 +589,7 @@ export default function SalesOrdersTab() {
             key={opt.id}
             onClick={() => { setDateFilter(opt.id); setPage(1); }}
             className={cn(
-              "inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-sm font-medium border transition-all",
+              "inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-sm font-medium border transition-all",
               dateFilter === opt.id
                 ? "bg-emerald-50 dark:bg-emerald-900/20 border-emerald-200 dark:border-emerald-800 text-emerald-700 dark:text-emerald-400"
                 : "border-gray-200 dark:border-zinc-700 text-gray-600 dark:text-zinc-400 bg-white dark:bg-zinc-900 hover:bg-gray-50 dark:hover:bg-zinc-800"
@@ -610,7 +609,7 @@ export default function SalesOrdersTab() {
         </span>
 
         {/* Acciones */}
-        <button onClick={load} className="p-2 rounded-xl bg-gray-100 dark:bg-surface hover:bg-gray-200 dark:hover:bg-accent transition-colors" title="Actualizar">
+        <button onClick={load} className="p-2 rounded-lg bg-gray-100 dark:bg-surface hover:bg-gray-200 dark:hover:bg-accent transition-colors" title="Actualizar">
           <RefreshCw className="h-4 w-4 text-gray-500" />
         </button>
 
@@ -643,7 +642,7 @@ export default function SalesOrdersTab() {
             key={opt.id}
             onClick={() => { setUrgencyFilter(opt.id); setPage(1); }}
             className={cn(
-              "inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-sm font-medium border transition-all",
+              "inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-sm font-medium border transition-all",
               urgencyFilter === opt.id
                 ? "bg-emerald-50 dark:bg-emerald-900/20 border-emerald-200 dark:border-emerald-800 text-emerald-700 dark:text-emerald-400"
                 : "border-gray-200 dark:border-zinc-700 text-gray-600 dark:text-zinc-400 bg-white dark:bg-zinc-900 hover:bg-gray-50 dark:hover:bg-zinc-800"
@@ -676,33 +675,31 @@ export default function SalesOrdersTab() {
       {showDashboard && <OrdersDashboard orders={orders} />}
 
       {/* ── KPIs estandar ────────────────────────────────────────────── */}
-      <StaggerContainer className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        <StaggerItem><AdminKPI label="Vendido hoy" value={fmt(todayStats.total)} icon={DollarSign} iconColor="var(--color-primary)" /></StaggerItem>
-        <StaggerItem><AdminKPI label="Pedidos hoy" value={todayStats.count} icon={ShoppingBag} iconColor="#3B82F6" /></StaggerItem>
-        <StaggerItem>
-          <AdminCard padding="md" className="relative">
-            <div className="flex flex-col gap-2">
-              <div className="h-6 w-6 flex items-center justify-center">
-                <Target className="h-6 w-6" style={{ color: "#f59e0b" }} />
-              </div>
-              <p className="text-xs text-gray-500 dark:text-zinc-400 uppercase tracking-wide font-medium">Activos</p>
-              <p className="text-2xl font-bold text-gray-900 dark:text-white">{todayStats.active}</p>
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+        <AdminKPI label="Vendido hoy" value={fmt(todayStats.total)} icon={DollarSign} iconColor="var(--color-primary)" />
+        <AdminKPI label="Pedidos hoy" value={todayStats.count} icon={ShoppingBag} iconColor="#3B82F6" />
+        <AdminCard padding="md" className="relative">
+          <div className="flex flex-col gap-2">
+            <div className="h-6 w-6 flex items-center justify-center">
+              <Target className="h-6 w-6" style={{ color: "#f59e0b" }} />
             </div>
-            {newCount > 0 && (
-              <button
-                onClick={() => setNewCount(0)}
-                className="absolute top-2 right-2 h-5 min-w-5 px-1.5 rounded-full bg-red-500 text-white text-[10px] font-bold flex items-center justify-center"
-                title="Nuevos pedidos"
-              >
-                +{newCount}
-              </button>
-            )}
-          </AdminCard>
-        </StaggerItem>
+            <p className="text-xs text-gray-500 dark:text-zinc-400 font-medium">Activos</p>
+            <p className="text-2xl font-bold text-gray-900 dark:text-white">{todayStats.active}</p>
+          </div>
+          {newCount > 0 && (
+            <button
+              onClick={() => setNewCount(0)}
+              className="absolute top-2 right-2 h-5 min-w-5 px-1.5 rounded-full bg-red-500 text-white text-[10px] font-bold flex items-center justify-center"
+              title="Nuevos pedidos"
+            >
+              +{newCount}
+            </button>
+          )}
+        </AdminCard>
         {avgDeliveryTime !== null && (
-          <StaggerItem><AdminKPI label="Entrega promedio" value={`${avgDeliveryTime} min`} icon={Truck} iconColor="#06b6d4" /></StaggerItem>
+          <AdminKPI label="Entrega promedio" value={`${avgDeliveryTime} min`} icon={Truck} iconColor="#06b6d4" />
         )}
-      </StaggerContainer>
+      </div>
 
       {/* ── Mejora 13: Kanban view ─────────────────────────────────────── */}
       {viewMode === "kanban" && (() => {
@@ -730,7 +727,7 @@ export default function SalesOrdersTab() {
                       const cfg = STATUS_CONFIG[order.status];
                       const nextStatus = cfg?.next;
                       return (
-                        <div key={order.id} className="bg-white dark:bg-card rounded-lg border border-gray-200 dark:border-card-border p-2.5 shadow-sm hover:shadow-md transition-shadow">
+                        <div key={order.id} className="bg-white dark:bg-card rounded-lg border border-gray-200 dark:border-card-border p-2.5  hover:shadow-sm transition-shadow">
                           <div className="flex items-center justify-between mb-1">
                             <p className="text-xs font-bold text-gray-900 dark:text-foreground truncate">{order.customerName ?? "Sin nombre"}</p>
                             {/* Mejora 14: Time badge */}
@@ -783,12 +780,12 @@ export default function SalesOrdersTab() {
               <table className="w-full text-sm">
                 <thead>
                   <tr className="bg-gray-50 dark:bg-surface border-b border-gray-200 dark:border-card-border">
-                    <th className="text-left px-4 py-3 text-[10px] font-bold text-gray-500 dark:text-muted uppercase tracking-wider">#</th>
-                    <th className="text-left px-4 py-3 text-[10px] font-bold text-gray-500 dark:text-muted uppercase tracking-wider">Fecha</th>
-                    <th className="text-left px-4 py-3 text-[10px] font-bold text-gray-500 dark:text-muted uppercase tracking-wider">Cliente</th>
-                    <th className="text-right px-4 py-3 text-[10px] font-bold text-gray-500 dark:text-muted uppercase tracking-wider">Total</th>
-                    <th className="text-center px-4 py-3 text-[10px] font-bold text-gray-500 dark:text-muted uppercase tracking-wider">Estado</th>
-                    <th className="text-center px-4 py-3 text-[10px] font-bold text-gray-500 dark:text-muted uppercase tracking-wider">Acciones</th>
+                    <th className="text-left px-4 py-3 text-[10px] font-bold text-gray-500 dark:text-muted">#</th>
+                    <th className="text-left px-4 py-3 text-[10px] font-bold text-gray-500 dark:text-muted">Fecha</th>
+                    <th className="text-left px-4 py-3 text-[10px] font-bold text-gray-500 dark:text-muted">Cliente</th>
+                    <th className="text-right px-4 py-3 text-[10px] font-bold text-gray-500 dark:text-muted">Total</th>
+                    <th className="text-center px-4 py-3 text-[10px] font-bold text-gray-500 dark:text-muted">Estado</th>
+                    <th className="text-center px-4 py-3 text-[10px] font-bold text-gray-500 dark:text-muted">Acciones</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -819,7 +816,7 @@ export default function SalesOrdersTab() {
             </div>
             <p className="text-xs text-gray-400 dark:text-muted text-center">{histFiltered.length} pedido{histFiltered.length !== 1 ? "s" : ""} en total</p>
             {hasMoreHist && (
-              <button onClick={() => setPage(p => p + 1)} className="w-full py-3 rounded-xl border border-gray-200 dark:border-card-border text-sm font-bold text-gray-500 dark:text-muted hover:bg-gray-50 dark:hover:bg-surface transition-colors">
+              <button onClick={() => setPage(p => p + 1)} className="w-full py-3 rounded-lg border border-gray-200 dark:border-card-border text-sm font-bold text-gray-500 dark:text-muted hover:bg-gray-50 dark:hover:bg-surface transition-colors">
                 Cargar más ({histFiltered.length - histPaged.length} restantes)
               </button>
             )}
@@ -857,7 +854,7 @@ export default function SalesOrdersTab() {
                 "bg-white dark:bg-card border rounded-xl overflow-hidden transition-all",
                 isTerminal
                   ? "border-gray-100 dark:border-card-border opacity-70"
-                  : "border-gray-200 dark:border-card-border shadow-sm"
+                  : "border-gray-200 dark:border-card-border "
               )}
             >
               {/* Main row — clickable to expand */}
@@ -910,7 +907,7 @@ export default function SalesOrdersTab() {
                     <div className="px-4 pb-4 pt-3 space-y-3">
                     {/* Timeline visual (Mejora 2) */}
                     <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl p-5">
-                      <p className="text-[10px] font-bold text-primary uppercase tracking-wider mb-2 flex items-center gap-1.5">
+                      <p className="text-[10px] font-bold text-primary mb-2 flex items-center gap-1.5">
                         <Clock className="h-3 w-3" /> Progreso del pedido
                       </p>
                       <OrderTimeline
@@ -923,7 +920,7 @@ export default function SalesOrdersTab() {
 
                     {/* Meta info — card style */}
                     <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl p-5">
-                      <p className="text-[10px] font-bold text-primary uppercase tracking-wider mb-2 flex items-center gap-1.5">
+                      <p className="text-[10px] font-bold text-primary mb-2 flex items-center gap-1.5">
                         <Receipt className="h-3 w-3" /> Información del pedido
                       </p>
                       <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 text-xs">
@@ -947,7 +944,7 @@ export default function SalesOrdersTab() {
                     {/* Items list — card style */}
                     {order.items && order.items.length > 0 && (
                       <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl p-5">
-                        <p className="text-[10px] font-bold text-primary uppercase tracking-wider mb-2 flex items-center gap-1.5">
+                        <p className="text-[10px] font-bold text-primary mb-2 flex items-center gap-1.5">
                           <Package className="h-3 w-3" /> Productos ({order.items.length})
                         </p>
                         <div className="space-y-1.5">
@@ -1055,7 +1052,7 @@ export default function SalesOrdersTab() {
                     <div className="flex gap-2 pt-1 flex-wrap">
                       <button
                         onClick={() => setTicketOrder(order)}
-                        className="flex items-center gap-1.5 px-4 py-2.5 rounded-xl bg-primary/10 text-primary text-xs font-bold hover:bg-primary/20 transition-colors border border-primary/20"
+                        className="flex items-center gap-1.5 px-4 py-2.5 rounded-lg bg-primary/10 text-primary text-xs font-bold hover:bg-primary/20 transition-colors border border-primary/20"
                       >
                         <Receipt className="h-3.5 w-3.5" /> Ver Ticket
                       </button>
@@ -1079,7 +1076,7 @@ export default function SalesOrdersTab() {
                           ) : (
                             <button
                               onClick={() => setAssigningDelivery(order.id)}
-                              className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-amber-50 dark:bg-amber-950/30 text-amber-700 dark:text-amber-400 text-xs font-bold hover:bg-amber-100 dark:hover:bg-amber-900/30 transition-colors"
+                              className="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-amber-50 dark:bg-amber-950/30 text-amber-700 dark:text-amber-400 text-xs font-bold hover:bg-amber-100 dark:hover:bg-amber-900/30 transition-colors"
                             >
                               <Truck className="h-3 w-3" /> Asignar repartidor
                             </button>
@@ -1118,7 +1115,7 @@ export default function SalesOrdersTab() {
                             } catch { /* ignore */ }
                             setCreatingGrr(null);
                           }}
-                          className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-cyan-50 dark:bg-cyan-950/30 text-cyan-700 dark:text-cyan-400 text-xs font-bold hover:bg-cyan-100 dark:hover:bg-cyan-900/30 disabled:opacity-50 transition-colors"
+                          className="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-cyan-50 dark:bg-cyan-950/30 text-cyan-700 dark:text-cyan-400 text-xs font-bold hover:bg-cyan-100 dark:hover:bg-cyan-900/30 disabled:opacity-50 transition-colors"
                         >
                           <Truck className="h-3 w-3" />
                           {creatingGrr === order.id ? "Creando..." : "Crear Guía Remisión"}
@@ -1151,7 +1148,7 @@ export default function SalesOrdersTab() {
               zones.get(zone)!.push(o);
             }
             return (
-              <div className="space-y-4">
+              <div className="space-y-6">
                 {Array.from(zones.entries()).map(([zone, zoneOrders]) => (
                   <div key={zone}>
                     <div className="flex items-center gap-2 mb-2">
@@ -1165,7 +1162,7 @@ export default function SalesOrdersTab() {
                   </div>
                 ))}
                 {hasMore && (
-                  <button onClick={() => setPage(p => p + 1)} className="w-full py-3 rounded-xl border border-gray-200 dark:border-card-border text-sm font-bold text-gray-500 dark:text-muted hover:bg-gray-50 dark:hover:bg-surface transition-colors">
+                  <button onClick={() => setPage(p => p + 1)} className="w-full py-3 rounded-lg border border-gray-200 dark:border-card-border text-sm font-bold text-gray-500 dark:text-muted hover:bg-gray-50 dark:hover:bg-surface transition-colors">
                     Cargar mas ({filtered.length - paginated.length} restantes)
                   </button>
                 )}
@@ -1177,7 +1174,7 @@ export default function SalesOrdersTab() {
             <div className="space-y-2">
               {paginated.map(renderOrder)}
               {hasMore && (
-                <button onClick={() => setPage(p => p + 1)} className="w-full py-3 rounded-xl border border-gray-200 dark:border-card-border text-sm font-bold text-gray-500 dark:text-muted hover:bg-gray-50 dark:hover:bg-surface transition-colors">
+                <button onClick={() => setPage(p => p + 1)} className="w-full py-3 rounded-lg border border-gray-200 dark:border-card-border text-sm font-bold text-gray-500 dark:text-muted hover:bg-gray-50 dark:hover:bg-surface transition-colors">
                   Cargar mas ({filtered.length - paginated.length} restantes)
                 </button>
               )}
@@ -1246,7 +1243,7 @@ export default function SalesOrdersTab() {
         if (!order) return null;
         return (
           <div className="fixed inset-0 z-50 bg-black/40 flex items-center justify-center p-4" onClick={() => setAssigningDelivery(null)}>
-            <div className="bg-white dark:bg-card rounded-2xl shadow-xl max-w-sm w-full p-4" onClick={e => e.stopPropagation()}>
+            <div className="bg-white dark:bg-card rounded-xl max-w-sm w-full p-4" onClick={e => e.stopPropagation()}>
               <p className="text-sm font-bold text-gray-900 dark:text-foreground mb-3">Asignar repartidor a #{order.id.slice(-6).toUpperCase()}</p>
               <div className="space-y-2">
                 {deliveryPeople.filter(p => p.activo).map(p => (
@@ -1274,7 +1271,7 @@ export default function SalesOrdersTab() {
 
       {/* Mejora 9: WhatsApp toast notification */}
       {whatsappToast && (
-        <div className="fixed bottom-4 right-4 z-50 bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl shadow-2xl p-4 max-w-sm animate-in slide-in-from-bottom-5">
+        <div className="fixed bottom-4 right-4 z-50 bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl p-4 max-w-sm animate-in slide-in-from-bottom-5">
           <p className="text-xs font-bold text-gray-900 dark:text-foreground mb-2">
             Notificar a {whatsappToast.name}
           </p>
@@ -1284,13 +1281,13 @@ export default function SalesOrdersTab() {
               href={`https://wa.me/${whatsappToast.phone.replace(/\D/g, "").startsWith("51") ? whatsappToast.phone.replace(/\D/g, "") : "51" + whatsappToast.phone.replace(/\D/g, "")}?text=${encodeURIComponent(whatsappToast.message + "\n\nBuleje - Pucallpa")}`}
               target="_blank"
               rel="noopener noreferrer"
-              className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl bg-[#25D366] text-white text-xs font-bold hover:bg-[#1da851] transition-colors"
+              className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg bg-[#25D366] text-white text-xs font-bold hover:bg-[#1da851] transition-colors"
             >
               Enviar por WhatsApp
             </a>
             <button
               onClick={() => setWhatsappToast(null)}
-              className="px-3 py-2 rounded-xl text-xs font-bold text-gray-500 bg-gray-100 hover:bg-gray-200 transition-colors"
+              className="px-3 py-2 rounded-lg text-xs font-bold text-gray-500 bg-gray-100 hover:bg-gray-200 transition-colors"
             >
               Cerrar
             </button>
@@ -1300,7 +1297,7 @@ export default function SalesOrdersTab() {
 
       {/* Mejora 7: GRR created toast */}
       {grrToast && (
-        <div className="fixed bottom-4 left-4 z-50 bg-white dark:bg-card border border-cyan-200 dark:border-cyan-800 rounded-2xl shadow-2xl p-4 max-w-xs animate-in slide-in-from-bottom-5">
+        <div className="fixed bottom-4 left-4 z-50 bg-white dark:bg-card border border-cyan-200 dark:border-cyan-800 rounded-xl p-4 max-w-xs animate-in slide-in-from-bottom-5">
           <div className="flex items-center gap-3">
             <div className="h-10 w-10 rounded-full bg-cyan-100 dark:bg-cyan-900/30 flex items-center justify-center shrink-0">
               <Truck className="h-5 w-5 text-cyan-600" />
@@ -1317,7 +1314,7 @@ export default function SalesOrdersTab() {
 
       {/* Mejora 20: New order toast */}
       {newOrderToast && (
-        <div className="fixed top-4 right-4 z-50 bg-white dark:bg-card border border-emerald-200 dark:border-emerald-800 rounded-2xl shadow-2xl p-4 max-w-xs animate-in slide-in-from-top-5">
+        <div className="fixed top-4 right-4 z-50 bg-white dark:bg-card border border-emerald-200 dark:border-emerald-800 rounded-xl p-4 max-w-xs animate-in slide-in-from-top-5">
           <div className="flex items-center gap-3">
             <div className="h-10 w-10 rounded-full bg-emerald-100 dark:bg-emerald-900/30 flex items-center justify-center shrink-0">
               <Bell className="h-5 w-5 text-emerald-600" />
@@ -1370,7 +1367,7 @@ export default function SalesOrdersTab() {
 function DashTooltip({ active, payload, label }: any) {
   if (!active || !payload?.length) return null;
   return (
-    <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg px-3 py-2 shadow-lg">
+    <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg px-3 py-2">
       <p className="text-xs font-semibold text-gray-700 dark:text-gray-200 mb-1">{label}</p>
       {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
       {payload.map((p: any, i: number) => (
@@ -1405,7 +1402,7 @@ const DASH_PAYMENT_LABELS: Record<string, string> = { efectivo: 'Efectivo', yape
 function OrdersEmptyChart({ message }: { message: string }) {
   return (
     <div className="flex flex-col items-center justify-center py-12 text-center">
-      <div className="h-12 w-12 rounded-2xl bg-primary/10 flex items-center justify-center mb-3"><ShoppingCart className="h-6 w-6 text-primary" /></div>
+      <div className="h-12 w-12 rounded-xl bg-primary/10 flex items-center justify-center mb-3"><ShoppingCart className="h-6 w-6 text-primary" /></div>
       <p className="text-sm font-medium text-gray-500 dark:text-gray-400">{message}</p>
       <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">Los datos apareceran cuando registres ventas</p>
     </div>
@@ -1572,9 +1569,9 @@ function OrdersDashboard({ orders }: { orders: Order[] }) {
       </div>
 
       {/* === SECCION 2: Pedidos por Estado (PieChart donut grande) === */}
-      <div className="bg-white dark:bg-card rounded-2xl border border-gray-200 dark:border-card-border p-6 shadow-sm">
+      <div className="bg-white dark:bg-card rounded-xl border border-gray-200 dark:border-card-border p-6 ">
         <div className="flex items-center justify-between mb-4">
-          <h3 className="text-sm font-medium text-gray-500 dark:text-zinc-400 uppercase tracking-wider">Pedidos por Estado</h3>
+          <h3 className="text-sm font-medium text-gray-500 dark:text-zinc-400">Pedidos por Estado</h3>
           <button onClick={() => setExpandedChart("pedidos-estado")} className="p-1 hover:bg-gray-100 dark:hover:bg-gray-800 rounded transition-colors" title="Expandir"><Maximize2 className="h-3.5 w-3.5 text-gray-400" /></button>
         </div>
         <div className="relative">
@@ -1600,7 +1597,7 @@ function OrdersDashboard({ orders }: { orders: Order[] }) {
           <div className="absolute inset-0 flex items-center justify-center pointer-events-none" style={{ marginBottom: 30 }}>
             <div className="text-center">
               <p className="text-3xl font-mono font-bold text-gray-900 dark:text-white">{totalPedidos}</p>
-              <p className="text-[10px] text-gray-500 dark:text-gray-400 uppercase tracking-wider">Total</p>
+              <p className="text-[10px] text-gray-500 dark:text-gray-400">Total</p>
             </div>
           </div>
         </div>
@@ -1609,8 +1606,8 @@ function OrdersDashboard({ orders }: { orders: Order[] }) {
       {/* === SECCION 3: Pedidos por Hora + Metodo de Pago === */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Pedidos por hora */}
-        <div className="bg-white dark:bg-card rounded-2xl border border-gray-200 dark:border-card-border p-6 shadow-sm">
-          <h3 className="text-sm font-medium text-gray-500 dark:text-zinc-400 uppercase tracking-wider mb-4">Pedidos por Hora - Hoy</h3>
+        <div className="bg-white dark:bg-card rounded-xl border border-gray-200 dark:border-card-border p-6 ">
+          <h3 className="text-sm font-medium text-gray-500 dark:text-zinc-400 mb-4">Pedidos por Hora - Hoy</h3>
           <ResponsiveContainer width="100%" height={250}>
             <BarChart data={hourlyData}>
               <CartesianGrid strokeDasharray="3 3" stroke="rgba(107,114,128,0.12)" />
@@ -1627,8 +1624,8 @@ function OrdersDashboard({ orders }: { orders: Order[] }) {
         </div>
 
         {/* Metodo de pago */}
-        <div className="bg-white dark:bg-card rounded-2xl border border-gray-200 dark:border-card-border p-6 shadow-sm">
-          <h3 className="text-sm font-medium text-gray-500 dark:text-zinc-400 uppercase tracking-wider mb-4">Metodo de Pago</h3>
+        <div className="bg-white dark:bg-card rounded-xl border border-gray-200 dark:border-card-border p-6 ">
+          <h3 className="text-sm font-medium text-gray-500 dark:text-zinc-400 mb-4">Metodo de Pago</h3>
           <ResponsiveContainer width="100%" height={250}>
             <PieChart>
               <Pie
@@ -1651,8 +1648,8 @@ function OrdersDashboard({ orders }: { orders: Order[] }) {
       </div>
 
       {/* === SECCION 4: Tendencia 7 Dias (ComposedChart) === */}
-      <div className="bg-white dark:bg-card rounded-2xl border border-gray-200 dark:border-card-border p-6 shadow-sm">
-        <h3 className="text-sm font-medium text-gray-500 dark:text-zinc-400 uppercase tracking-wider mb-4">Tendencia de Pedidos - Ultimos 7 dias</h3>
+      <div className="bg-white dark:bg-card rounded-xl border border-gray-200 dark:border-card-border p-6 ">
+        <h3 className="text-sm font-medium text-gray-500 dark:text-zinc-400 mb-4">Tendencia de Pedidos - Ultimos 7 dias</h3>
         <ResponsiveContainer width="100%" height={280}>
           <ComposedChart data={weeklyData}>
             <defs>
@@ -1676,8 +1673,8 @@ function OrdersDashboard({ orders }: { orders: Order[] }) {
       {/* === SECCION 5: Pedidos por Zona + SECCION 6: Top 5 Clientes === */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Pedidos por zona */}
-        <div className="bg-white dark:bg-card rounded-2xl border border-gray-200 dark:border-card-border p-6 shadow-sm">
-          <h3 className="text-sm font-medium text-gray-500 dark:text-zinc-400 uppercase tracking-wider mb-4">Top 5 Zonas</h3>
+        <div className="bg-white dark:bg-card rounded-xl border border-gray-200 dark:border-card-border p-6 ">
+          <h3 className="text-sm font-medium text-gray-500 dark:text-zinc-400 mb-4">Top 5 Zonas</h3>
           {zonaData.length === 0 ? (
             <OrdersEmptyChart message="Sin datos de zona" />
           ) : (
@@ -1694,8 +1691,8 @@ function OrdersDashboard({ orders }: { orders: Order[] }) {
         </div>
 
         {/* Top 5 clientes */}
-        <div className="bg-white dark:bg-card rounded-2xl border border-gray-200 dark:border-card-border p-6 shadow-sm">
-          <h3 className="text-sm font-medium text-gray-500 dark:text-zinc-400 uppercase tracking-wider mb-4">Top 5 Clientes</h3>
+        <div className="bg-white dark:bg-card rounded-xl border border-gray-200 dark:border-card-border p-6 ">
+          <h3 className="text-sm font-medium text-gray-500 dark:text-zinc-400 mb-4">Top 5 Clientes</h3>
           {topClientes.length === 0 ? (
             <OrdersEmptyChart message="Sin datos de clientes" />
           ) : (
@@ -1730,8 +1727,8 @@ function OrdersDashboard({ orders }: { orders: Order[] }) {
       </div>
 
       {/* === SECCION 7: Tiempo Promedio de Procesamiento === */}
-      <div className="bg-white dark:bg-card rounded-2xl border border-gray-200 dark:border-card-border p-6 shadow-sm">
-        <h3 className="text-sm font-medium text-gray-500 dark:text-zinc-400 uppercase tracking-wider mb-4">Tiempo Promedio de Procesamiento</h3>
+      <div className="bg-white dark:bg-card rounded-xl border border-gray-200 dark:border-card-border p-6 ">
+        <h3 className="text-sm font-medium text-gray-500 dark:text-zinc-400 mb-4">Tiempo Promedio de Procesamiento</h3>
         <div className="flex flex-col items-center justify-center py-4">
           {/* Gauge semicircular */}
           <div className="relative w-48 h-24 overflow-hidden">
@@ -1847,7 +1844,7 @@ function OrdersDashboard({ orders }: { orders: Order[] }) {
         <div className="fixed inset-0 z-50 bg-white dark:bg-gray-900 p-8 overflow-auto">
           <div className="flex items-center justify-between mb-6">
             <h2 className="text-lg font-bold text-gray-900 dark:text-white">Pedidos por Estado</h2>
-            <button onClick={() => setExpandedChart(null)} className="p-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-xl transition-colors"><XIcon2 className="h-5 w-5 text-gray-500" /></button>
+            <button onClick={() => setExpandedChart(null)} className="p-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition-colors"><XIcon2 className="h-5 w-5 text-gray-500" /></button>
           </div>
           <div style={{ height: 500 }}>
             <ResponsiveContainer width="100%" height={500}>
@@ -1870,13 +1867,13 @@ function DashKpi({ icon, iconBg, label, value, border, pulse, sparkColor, sparkV
   // Lazy init so mock delta is computed once per mount, not each render (React Compiler purity rule)
   const [change] = useState(() => Math.round((Math.random() - 0.3) * 30));
   return (
-    <div className={cn("bg-white dark:bg-card rounded-xl border border-gray-200 dark:border-card-border p-5 shadow-sm border-l-4", border)}>
+    <div className={cn("bg-white dark:bg-card rounded-xl border border-gray-200 dark:border-card-border p-5  border-l-4", border)}>
       <div className="flex items-start gap-3">
         <div className={cn("rounded-full p-2 shrink-0", iconBg, pulse && "animate-pulse")}>
           {icon}
         </div>
         <div className="min-w-0">
-          <p className="text-sm font-medium text-gray-500 dark:text-zinc-400 uppercase tracking-wider">{label}</p>
+          <p className="text-sm font-medium text-gray-500 dark:text-zinc-400">{label}</p>
           <div className="flex items-center gap-1.5">
             <p className="text-2xl font-mono font-bold mt-0.5 text-gray-900 dark:text-white truncate">{value}</p>
             <span className={`text-xs ${change >= 0 ? "text-green-600" : "text-red-500"}`}>{change >= 0 ? "\u2191" : "\u2193"} {Math.abs(change)}%</span>

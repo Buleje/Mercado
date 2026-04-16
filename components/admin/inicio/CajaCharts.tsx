@@ -14,7 +14,7 @@ const AXIS_TICK = { fill: "#9ca3af", fontSize: 11 };
 function ChartTooltip({ active, payload, label }: any) {
   if (!active || !payload?.length) return null;
   return (
-    <div className="rounded-xl border border-gray-700 bg-gray-900 px-3 py-2 text-xs shadow-lg">
+    <div className="rounded-xl border border-gray-700 bg-gray-900 px-3 py-2 text-xs">
       <p className="mb-1 font-medium text-gray-300">{label}</p>
       {payload.map((p: any, i: number) => (
         <p key={i} style={{ color: p.color ?? "#fff" }} className="font-bold">
@@ -130,7 +130,7 @@ export default function CajaCharts({ data }: { data: CajaData }) {
 
 function ChartCard({ title, subtitle, children, span }: { title: string; subtitle?: string; children: React.ReactNode; span?: string }) {
   return (
-    <div className={`bg-white dark:bg-card border border-gray-100 dark:border-card-border rounded-2xl p-5 ${span ?? ""}`}>
+    <div className={`bg-white dark:bg-card border border-gray-100 dark:border-card-border rounded-xl p-5 ${span ?? ""}`}>
       <div className="mb-4">
         <h3 className="text-sm font-bold text-gray-900 dark:text-foreground">{title}</h3>
         {subtitle && <p className="text-[11px] text-gray-400 dark:text-muted">{subtitle}</p>}

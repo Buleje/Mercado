@@ -216,7 +216,7 @@ export default function InventarioDashboard({ dateRange }: InventarioDashboardPr
     <div className="flex flex-col items-center justify-center gap-4 py-16">
       <AlertTriangle className="h-10 w-10 text-amber-500" />
       <p className="text-sm text-gray-600 dark:text-gray-400">{error}</p>
-      <button onClick={() => void refresh()} className="px-4 py-2 rounded-xl bg-[var(--brand-primary)] text-white text-sm font-bold hover:opacity-90 transition-opacity">Reintentar</button>
+      <button onClick={() => void refresh()} className="px-4 py-2 rounded-lg bg-[var(--brand-primary)] text-white text-sm font-bold hover:opacity-90 transition-opacity">Reintentar</button>
     </div>
   );
   if (!data) return null;
@@ -235,7 +235,7 @@ export default function InventarioDashboard({ dateRange }: InventarioDashboardPr
 
       {/* ── Alert bar (critical) ── */}
       {(data.agotados > 0 || data.stockCritico > 0) && (
-        <div className="flex items-center gap-3 bg-red-50 dark:bg-red-950/20 border border-red-100 dark:border-red-900/30 rounded-2xl px-5 py-3">
+        <div className="flex items-center gap-3 bg-red-50 dark:bg-red-950/20 border border-red-100 dark:border-red-900/30 rounded-xl px-5 py-3">
           <AlertTriangle className="h-4 w-4 text-red-500 shrink-0" />
           <p className="text-xs text-red-700 dark:text-red-400 font-medium">
             {data.agotados > 0 && <span>{data.agotados} producto{data.agotados > 1 ? "s" : ""} agotado{data.agotados > 1 ? "s" : ""}</span>}
@@ -271,7 +271,7 @@ function KPICard({ label, value, Icon, delta, accent }: {
   const c = colorMap[accent];
 
   return (
-    <div className="bg-white dark:bg-card border border-gray-100 dark:border-card-border rounded-2xl p-4 hover:shadow-md transition-shadow">
+    <div className="bg-white dark:bg-card border border-gray-100 dark:border-card-border rounded-xl p-4 hover:shadow-sm transition-shadow">
       <div className="flex items-start justify-between mb-3">
         <div className={cn("w-9 h-9 rounded-xl flex items-center justify-center", c.bg)}>
           <Icon className={cn("h-4.5 w-4.5", c.icon)} />
@@ -297,10 +297,10 @@ function DashboardSkeleton() {
   return (
     <div className="space-y-5">
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
-        {Array.from({ length: 6 }).map((_, i) => <div key={i} className="bg-gray-100 dark:bg-gray-800 rounded-2xl h-28 animate-pulse" />)}
+        {Array.from({ length: 6 }).map((_, i) => <div key={i} className="bg-gray-100 dark:bg-gray-800 rounded-xl h-28 animate-pulse" />)}
       </div>
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
-        {Array.from({ length: 4 }).map((_, i) => <div key={i} className="bg-gray-100 dark:bg-gray-800 rounded-2xl h-64 animate-pulse" />)}
+        {Array.from({ length: 4 }).map((_, i) => <div key={i} className="bg-gray-100 dark:bg-gray-800 rounded-xl h-64 animate-pulse" />)}
       </div>
     </div>
   );

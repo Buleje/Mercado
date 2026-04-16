@@ -75,7 +75,7 @@ export default function WeeklyGoalCard({ sales }: WeeklyGoalCardProps) {
             <Target className="w-4 h-4 text-primary" />
           </span>
           <div>
-            <span className="text-xs font-medium text-gray-500 dark:text-zinc-400 uppercase tracking-wide">
+            <span className="text-xs font-medium text-gray-500 dark:text-zinc-400">
               Meta de la semana
             </span>
           </div>

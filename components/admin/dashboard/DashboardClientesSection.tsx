@@ -48,7 +48,7 @@ function _DBadge({ children, color }: { children: React.ReactNode; color: "green
 export default function DashboardClientesSection({ st, expandAll, orders, customers, _products, showCohortRetention, setShowCohortRetention, _showCrossSell, _setShowCrossSell, _selectedProductForCrossSell, _setSelectedProductForCrossSell, reviewFilter, setReviewFilter, reviews, period }: any) {
   const [selectedClientPhone, setSelectedClientPhone] = useState<string | null>(null);
   return (
-        <div className={cn("space-y-4", expandAll && "bg-white dark:bg-card rounded-2xl border border-gray-100 dark:border-card-border p-4")}>
+        <div className={cn("space-y-4", expandAll && "bg-white dark:bg-card rounded-xl border border-gray-100 dark:border-card-border p-4")}>
           {expandAll && (
             <div className="flex flex-wrap items-center gap-2 mb-4 pb-3 border-b border-gray-100 dark:border-card-border">
               <div className="w-7 h-7 rounded-lg bg-indigo-50 dark:bg-indigo-900/30 flex items-center justify-center">
@@ -205,7 +205,7 @@ export default function DashboardClientesSection({ st, expandAll, orders, custom
             }>
             {showCohortRetention ? (
               st.cohortData.length === 0 ? <Empty text="No hay datos suficientes para análisis de cohortes" /> : (
-                <div className="space-y-4">
+                <div className="space-y-6">
                   {/* Retention metrics summary */}
                   <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
                     <div className="bg-linear-to-br from-emerald-50 to-emerald-100 dark:from-emerald-950/30 dark:to-emerald-900/20 rounded-lg p-3 text-center">
@@ -280,7 +280,7 @@ export default function DashboardClientesSection({ st, expandAll, orders, custom
               <div className="space-y-3">
                 {st.atRiskClients.length > 0 && (
                   <div>
-                    <div className="text-[10px] font-semibold text-red-600 dark:text-red-400 uppercase tracking-wider mb-2">
+                    <div className="text-[10px] font-semibold text-red-600 dark:text-red-400 mb-2">
                       Sin compras recientes ({st.atRiskClients.length})
                     </div>
                     <div className="space-y-1.5">
@@ -317,7 +317,7 @@ export default function DashboardClientesSection({ st, expandAll, orders, custom
                 )}
                 {st.decliningClients.length > 0 && (
                   <div>
-                    <div className="text-[10px] font-semibold text-amber-600 dark:text-amber-400 uppercase tracking-wider mb-2">
+                    <div className="text-[10px] font-semibold text-amber-600 dark:text-amber-400 mb-2">
                       Frecuencia en declive ({st.decliningClients.length})
                     </div>
                     <div className="space-y-1.5">
@@ -357,7 +357,7 @@ export default function DashboardClientesSection({ st, expandAll, orders, custom
                 {([0,5,4,3,2,1] as const).map(r => (
                   <button key={r} onClick={() => setReviewFilter(r)}
                     className={cn("px-2 py-0.5 rounded text-xs font-semibold transition-all",
-                      reviewFilter === r ? "bg-white dark:bg-card text-gray-800 dark:text-foreground shadow-sm" : "text-gray-400 dark:text-muted"
+                      reviewFilter === r ? "bg-white dark:bg-card text-gray-800 dark:text-foreground " : "text-gray-400 dark:text-muted"
                     )}>
                     {r === 0 ? "Todas" : `${r}★`}
                   </button>

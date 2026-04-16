@@ -79,7 +79,7 @@ export default function MorningSummaryModal() {
 
   return (
     <div className="fixed inset-0 z-[9000] flex items-center justify-center bg-black/50 backdrop-blur-sm">
-      <div className="relative bg-white dark:bg-card rounded-2xl shadow-2xl max-w-md w-full mx-4 overflow-hidden animate-[scaleIn_0.3s_ease-out]">
+      <div className="relative bg-white dark:bg-card rounded-xl max-w-md w-full mx-4 overflow-hidden">
         {/* Header */}
         <div className="relative bg-gradient-to-br from-amber-400 via-orange-400 to-yellow-300 p-6 text-white">
           <button
@@ -146,7 +146,7 @@ export default function MorningSummaryModal() {
 
               <button
                 onClick={handleClose}
-                className="w-full flex items-center justify-center gap-2 bg-[#00B4A6] text-white rounded-xl px-5 py-3 font-bold shadow-md hover:bg-[#009690] transition-all"
+                className="w-full flex items-center justify-center gap-2 bg-[#00B4A6] text-white rounded-lg px-5 py-3 font-bold hover:bg-[#009690] transition-all"
               >
                 <Sun className="h-4 w-4" />
                 Comenzar el dia

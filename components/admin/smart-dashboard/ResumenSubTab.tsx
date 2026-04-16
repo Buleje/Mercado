@@ -378,7 +378,7 @@ export function ResumenSubTab(props: ResumenSubTabProps) {
 
       {/* Combo del dia */}
       {!loading && comboData.products.some(p => p.found) && (
-        <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl p-4 flex items-center justify-between">
+        <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl p-4 flex items-center justify-between">
           <div className="flex items-center gap-3">
             <div className="h-10 w-10 rounded-xl bg-amber-100 dark:bg-amber-900/30 flex items-center justify-center">
               <Lightbulb className="h-5 w-5 text-amber-600" />
@@ -393,10 +393,10 @@ export function ResumenSubTab(props: ResumenSubTabProps) {
 
       {/* Logro desbloqueado */}
       {showLogro && logro && (
-        <div className="relative border-2 border-yellow-400 bg-gradient-to-r from-yellow-50 to-amber-50 dark:from-yellow-900/20 dark:to-amber-900/20 rounded-xl p-4 flex items-center gap-3 animate-[scaleIn_0.3s_ease-out]">
+        <div className="relative border-2 border-yellow-400 bg-gradient-to-r from-yellow-50 to-amber-50 dark:from-yellow-900/20 dark:to-amber-900/20 rounded-xl p-4 flex items-center gap-3">
           <TrendingUp className="w-8 h-8 text-yellow-500" />
           <div className="flex-1">
-            <p className="text-xs font-extrabold uppercase tracking-wider text-yellow-700 dark:text-yellow-400">Logro desbloqueado!</p>
+            <p className="text-xs font-extrabold text-yellow-700 dark:text-yellow-400">Logro desbloqueado!</p>
             <p className="text-sm font-bold text-gray-900 dark:text-zinc-100">{logro.texto}</p>
           </div>
           <button onClick={() => setShowLogro(false)} className="text-gray-400 hover:text-gray-600 p-1 shrink-0"><span className="text-lg">&times;</span></button>
@@ -612,7 +612,7 @@ export function ResumenSubTab(props: ResumenSubTabProps) {
             )}
             {noClosedYesterday && !ignoredClose && revenueYesterday > 0 && (
               <div className="rounded-xl border border-amber-200 dark:border-amber-800/30 bg-amber-50 dark:bg-amber-900/20 p-4">
-                <span className="text-xs font-bold text-amber-600 dark:text-amber-400 uppercase tracking-wide">No cerraste ayer</span>
+                <span className="text-xs font-bold text-amber-600 dark:text-amber-400">No cerraste ayer</span>
                 <p className="text-sm text-amber-700 dark:text-amber-300 mt-1">
                   Ventas: <span className="font-bold">{fmtR(revenueYesterday)}</span> &middot; {salesYesterdayCount} transacciones
                 </p>
@@ -639,7 +639,7 @@ export function ResumenSubTab(props: ResumenSubTabProps) {
             )}
             {decliningProduct && (
               <div className="rounded-xl border border-orange-200 dark:border-orange-800/30 bg-orange-50 dark:bg-orange-900/20 p-4">
-                <span className="text-xs font-bold text-orange-600 dark:text-orange-400 uppercase tracking-wide">En declive</span>
+                <span className="text-xs font-bold text-orange-600 dark:text-orange-400">En declive</span>
                 <p className="text-sm text-orange-800 dark:text-orange-300 mt-1 font-medium">
                   {decliningProduct.name} (-{decliningProduct.pct}% vs semana pasada)
                 </p>
@@ -652,7 +652,7 @@ export function ResumenSubTab(props: ResumenSubTabProps) {
 
         {/* Clientes + Alertas section */}
         <div key="clientes-alertas" className="col-span-1 md:col-span-2">
-          <div className="space-y-4">
+          <div className="space-y-6">
             {abandonedCartCount > 0 && (
               <div className="rounded-xl border border-amber-200 dark:border-amber-800 bg-amber-50 dark:bg-amber-900/20 p-4">
                 <div className="flex items-center gap-3">
@@ -738,7 +738,7 @@ export function ResumenSubTab(props: ResumenSubTabProps) {
 
         {/* Logros y Streaks */}
         <div key="logros" className="col-span-1 md:col-span-2">
-          <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl p-4 flex items-center justify-between">
+          <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl p-4 flex items-center justify-between">
             <div className="flex items-center gap-3">
               <div className="h-10 w-10 rounded-xl bg-amber-100 dark:bg-amber-900/30 flex items-center justify-center"><Target className="h-5 w-5 text-amber-600" /></div>
               <div>

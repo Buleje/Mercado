@@ -97,7 +97,7 @@ function WidgetCard({
     <div
       className={cn(
         "rounded-xl border border-gray-200 bg-white dark:border-gray-700 dark:bg-card",
-        "shadow-sm flex flex-col overflow-hidden",
+        " flex flex-col overflow-hidden",
         className
       )}
     >

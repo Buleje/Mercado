@@ -163,7 +163,7 @@ function FavoriteProductsSection({ phone }: { phone: string }) {
 
   if (loading) {
     return (
-      <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl p-4 sm:p-5">
+      <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl p-4 sm:p-5">
         <h3 className="font-bold text-sm text-gray-900 dark:text-foreground mb-3 flex items-center gap-2">
           <Award className="h-4 w-4 text-amber-500" /> Productos Favoritos
         </h3>
@@ -178,7 +178,7 @@ function FavoriteProductsSection({ phone }: { phone: string }) {
 
   if (totalPurchases < 3) {
     return (
-      <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl p-4 sm:p-5">
+      <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl p-4 sm:p-5">
         <h3 className="font-bold text-sm text-gray-900 dark:text-foreground mb-3 flex items-center gap-2">
           <Award className="h-4 w-4 text-amber-500" /> Productos Favoritos
         </h3>
@@ -196,7 +196,7 @@ function FavoriteProductsSection({ phone }: { phone: string }) {
   }
 
   return (
-    <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl p-4 sm:p-5">
+    <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl p-4 sm:p-5">
       <h3 className="font-bold text-sm text-gray-900 dark:text-foreground mb-3 flex items-center gap-2">
         <Award className="h-4 w-4 text-amber-500" /> Productos Favoritos
       </h3>
@@ -278,7 +278,7 @@ function HealthBadge({ score }: { score?: HealthScore }) {
         {cfg.label}
       </span>
       {showTip && (
-        <div className="absolute left-0 top-full mt-1 z-50 w-64 bg-gray-900 text-white text-[10px] leading-relaxed rounded-lg px-3 py-2 shadow-lg pointer-events-none">
+        <div className="absolute left-0 top-full mt-1 z-50 w-64 bg-gray-900 text-white text-[10px] leading-relaxed rounded-lg px-3 py-2 pointer-events-none">
           <p className="font-bold mb-1">Salud del cliente</p>
           <p>Activo: compra en últimos 30 días</p>
           <p>En riesgo: 31-90 días sin comprar</p>
@@ -300,7 +300,7 @@ const HOURS_DISPLAY = Array.from({ length: 9 }, (_, i) => {
 function PurchaseHeatmap({ orders }: { orders: Order[] }) {
   if (orders.length < 5) {
     return (
-      <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl p-4 sm:p-5">
+      <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl p-4 sm:p-5">
         <h3 className="font-bold text-sm text-gray-900 dark:text-foreground mb-3 flex items-center gap-2">
           <Clock className="h-4 w-4" style={{ color: "#00B4A6" }} /> Cuando compra?
         </h3>
@@ -347,7 +347,7 @@ function PurchaseHeatmap({ orders }: { orders: Order[] }) {
   const peakHourStr = peakHour < 12 ? `${peakHour}am` : peakHour === 12 ? "12pm" : `${peakHour - 12}pm`;
 
   return (
-    <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl p-4 sm:p-5">
+    <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl p-4 sm:p-5">
       <h3 className="font-bold text-sm text-gray-900 dark:text-foreground mb-3 flex items-center gap-2">
         <Clock className="h-4 w-4" style={{ color: "#00B4A6" }} /> Cuando compra?
       </h3>
@@ -428,7 +428,7 @@ function FamilyAccountSection({ phone, customer }: { phone: string; customer: Cu
   };
 
   return (
-    <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl p-4 sm:p-5">
+    <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl p-4 sm:p-5">
       <div className="flex items-center justify-between mb-3">
         <h3 className="font-bold text-sm text-gray-900 dark:text-foreground flex items-center gap-2">
           <Users className="h-4 w-4 text-emerald-500" /> Cuenta Familiar
@@ -724,12 +724,12 @@ export default function Customer360Tab({ phone, onClose }: Props) {
       <m.div
         initial={{ opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
-        className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl p-4 sm:p-6"
+        className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl p-4 sm:p-6"
       >
         <div className="flex flex-col sm:flex-row sm:items-center gap-4">
           {/* Avatar with auto-generated color */}
           <div
-            className="h-16 w-16 rounded-2xl flex items-center justify-center text-2xl font-extrabold text-white shrink-0 select-none shadow-sm"
+            className="h-16 w-16 rounded-xl flex items-center justify-center text-2xl font-extrabold text-white shrink-0 select-none "
             style={{ backgroundColor: getAvatarColor(customer.name) }}
           >
             {getInitials(customer.name)}
@@ -767,14 +767,14 @@ export default function Customer360Tab({ phone, onClose }: Props) {
           <div className="flex gap-2 shrink-0 flex-wrap">
             <button
               onClick={() => setShowEditModal(true)}
-              className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl border-2 border-primary text-primary hover:bg-primary hover:text-white text-sm font-bold transition-colors"
+              className="inline-flex items-center gap-2 px-4 py-2.5 rounded-lg border-2 border-primary text-primary hover:bg-primary hover:text-white text-sm font-bold transition-colors"
             >
               <FileText className="h-4 w-4" />
               Editar ficha
             </button>
             <button
               onClick={() => setShowEstadoCuenta(true)}
-              className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-primary hover:bg-primary/90 text-white text-sm font-bold transition-colors"
+              className="inline-flex items-center gap-2 px-4 py-2.5 rounded-lg bg-primary hover:bg-primary/90 text-white text-sm font-bold transition-colors"
             >
               <FileText className="h-4 w-4" />
               Estado de Cuenta
@@ -783,7 +783,7 @@ export default function Customer360Tab({ phone, onClose }: Props) {
               href={`https://wa.me/${customer.phone.replace(/\D/g, "")}`}
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-[#25D366] hover:bg-[#1ebe5d] text-white text-sm font-bold transition-colors"
+              className="inline-flex items-center gap-2 px-4 py-2.5 rounded-lg bg-[#25D366] hover:bg-[#1ebe5d] text-white text-sm font-bold transition-colors"
             >
               <MessageCircle className="h-4 w-4" />
               WhatsApp
@@ -793,7 +793,7 @@ export default function Customer360Tab({ phone, onClose }: Props) {
       </m.div>
 
       {/* Mejora 10R2: Notas rapidas (observaciones) */}
-      <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl overflow-hidden">
+      <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl overflow-hidden">
         <button
           onClick={() => setObsExpanded(!obsExpanded)}
           className="w-full px-4 sm:px-5 py-3 flex items-center justify-between hover:bg-gray-50 dark:hover:bg-surface transition-colors"
@@ -812,7 +812,7 @@ export default function Customer360Tab({ phone, onClose }: Props) {
               onChange={e => handleObservacionesChange(e.target.value)}
               placeholder="Prefiere delivery lunes, Alergico al mani, etc."
               rows={3}
-              className="w-full text-sm border border-gray-200 dark:border-card-border rounded-xl px-3 py-2 bg-gray-50 dark:bg-surface text-gray-700 dark:text-foreground placeholder:text-gray-400 dark:placeholder:text-muted resize-none focus:outline-none focus:ring-2 focus:ring-primary/30"
+              className="w-full text-sm border border-gray-200 dark:border-card-border rounded-lg px-3 py-2 bg-gray-50 dark:bg-surface text-gray-700 dark:text-foreground placeholder:text-gray-400 dark:placeholder:text-muted resize-none focus:outline-none focus:ring-2 focus:ring-primary/30"
             />
             <div className="flex items-center gap-2 text-xs">
               {savingObs && <span className="text-gray-400 flex items-center gap-1"><Loader2 className="h-3 w-3 animate-spin" /> Guardando...</span>}
@@ -825,7 +825,7 @@ export default function Customer360Tab({ phone, onClose }: Props) {
 
       {/* Mejora 9: Purchase chart mini (last 6 months) */}
       {orders.length > 0 && (
-        <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl p-4 sm:p-5">
+        <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl p-4 sm:p-5">
           <h3 className="font-bold text-sm text-gray-900 dark:text-foreground mb-3 flex items-center gap-2">
             <TrendingUp className="h-4 w-4" style={{ color: "#00B4A6" }} /> Compras ultimos 6 meses
           </h3>
@@ -869,7 +869,7 @@ export default function Customer360Tab({ phone, onClose }: Props) {
 
       {/* Ficha completa del cliente */}
       {(customer.documento || customer.categoria || customer.departamento || customer.email || customer.observaciones) && (
-        <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl p-4 sm:p-5">
+        <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl p-4 sm:p-5">
           <h3 className="font-bold text-sm text-gray-900 dark:text-foreground mb-3">Datos de la ficha</h3>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-x-6 gap-y-2 text-sm">
             {customer.tipoPersona && (
@@ -934,7 +934,7 @@ export default function Customer360Tab({ phone, onClose }: Props) {
       {/* Crédito + Etiquetas */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         {/* Límite de crédito */}
-        <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl p-4 sm:p-5">
+        <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl p-4 sm:p-5">
           <h3 className="font-bold text-sm text-gray-900 dark:text-foreground mb-3 flex items-center gap-2">
             <CreditCard className="h-4 w-4 text-amber-500" /> Límite de crédito
           </h3>
@@ -947,13 +947,13 @@ export default function Customer360Tab({ phone, onClose }: Props) {
                 step={0.01}
                 value={creditLimitInput}
                 onChange={e => setCreditLimitInput(e.target.value)}
-                className="w-32 text-sm border border-gray-200 dark:border-card-border rounded-xl px-3 py-1.5 bg-white dark:bg-surface text-gray-900 dark:text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30"
+                className="w-32 text-sm border border-gray-200 dark:border-card-border rounded-lg px-3 py-1.5 bg-white dark:bg-surface text-gray-900 dark:text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30"
                 placeholder="0.00"
               />
               <button
                 onClick={handleSaveCreditLimit}
                 disabled={savingCreditLimit}
-                className="px-3 py-1.5 rounded-xl bg-primary text-white text-xs font-bold hover:bg-primary/90 disabled:opacity-50"
+                className="px-3 py-1.5 rounded-lg bg-primary text-white text-xs font-bold hover:bg-primary/90 disabled:opacity-50"
               >
                 {savingCreditLimit ? "..." : "Guardar"}
               </button>
@@ -1004,7 +1004,7 @@ export default function Customer360Tab({ phone, onClose }: Props) {
         </div>
 
         {/* Etiquetas */}
-        <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl p-4 sm:p-5">
+        <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl p-4 sm:p-5">
           <h3 className="font-bold text-sm text-gray-900 dark:text-foreground mb-3 flex items-center gap-2">
             <Star className="h-4 w-4 text-violet-500" /> Etiquetas
             {savingTags && <Loader2 className="h-3 w-3 animate-spin text-gray-400 ml-1" />}
@@ -1045,7 +1045,7 @@ export default function Customer360Tab({ phone, onClose }: Props) {
               onChange={e => setNewTag(e.target.value)}
               onKeyDown={e => { if (e.key === "Enter") { e.preventDefault(); handleAddTag(newTag); } }}
               placeholder="Nueva etiqueta (Enter para agregar)"
-              className="flex-1 text-xs border border-gray-200 dark:border-card-border rounded-xl px-3 py-1.5 bg-gray-50 dark:bg-surface text-gray-700 dark:text-foreground placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-primary/30"
+              className="flex-1 text-xs border border-gray-200 dark:border-card-border rounded-lg px-3 py-1.5 bg-gray-50 dark:bg-surface text-gray-700 dark:text-foreground placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-primary/30"
             />
           </div>
           <div className="flex flex-wrap gap-1 mt-2">
@@ -1083,7 +1083,7 @@ export default function Customer360Tab({ phone, onClose }: Props) {
           >
             <div className="flex items-center gap-1.5 mb-1.5">
               <k.icon className={cn("h-3.5 w-3.5", k.color)} />
-              <p className="text-[10px] font-semibold text-gray-500 dark:text-muted uppercase tracking-wide">{k.label}</p>
+              <p className="text-[10px] font-semibold text-gray-500 dark:text-muted">{k.label}</p>
             </div>
             <p className="text-sm sm:text-base font-extrabold text-gray-900 dark:text-foreground">{k.value}</p>
           </m.div>
@@ -1096,7 +1096,7 @@ export default function Customer360Tab({ phone, onClose }: Props) {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
 
         {/* Productos favoritos (local, basado en pedidos cargados) */}
-        <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl p-4 sm:p-5">
+        <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl p-4 sm:p-5">
           <h3 className="font-bold text-sm text-gray-900 dark:text-foreground mb-3 flex items-center gap-2">
             <Heart className="h-4 w-4 text-pink-500" /> Top productos (pedidos)
           </h3>
@@ -1122,7 +1122,7 @@ export default function Customer360Tab({ phone, onClose }: Props) {
         </div>
 
         {/* Timeline */}
-        <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl p-4 sm:p-5">
+        <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl p-4 sm:p-5">
           <h3 className="font-bold text-sm text-gray-900 dark:text-foreground mb-3 flex items-center gap-2">
             <Clock className="h-4 w-4 text-primary" /> Actividad reciente
           </h3>
@@ -1151,7 +1151,7 @@ export default function Customer360Tab({ phone, onClose }: Props) {
       </div>
 
       {/* Historial de pedidos */}
-      <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl p-4 sm:p-5">
+      <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl p-4 sm:p-5">
         <h3 className="font-bold text-sm text-gray-900 dark:text-foreground mb-3 flex items-center gap-2">
           <Package className="h-4 w-4 text-primary" /> Historial de pedidos
           <span className="text-[10px] text-gray-400 font-normal ml-auto">{orders.length} total</span>
@@ -1163,11 +1163,11 @@ export default function Customer360Tab({ phone, onClose }: Props) {
             <table className="w-full min-w-[500px] text-sm">
               <thead>
                 <tr className="text-left border-b border-gray-100 dark:border-card-border">
-                  <th className="pb-2 text-[10px] font-bold text-gray-400 uppercase tracking-wide">Pedido</th>
-                  <th className="pb-2 text-[10px] font-bold text-gray-400 uppercase tracking-wide">Fecha</th>
-                  <th className="pb-2 text-[10px] font-bold text-gray-400 uppercase tracking-wide">Items</th>
-                  <th className="pb-2 text-[10px] font-bold text-gray-400 uppercase tracking-wide text-right">Total</th>
-                  <th className="pb-2 text-[10px] font-bold text-gray-400 uppercase tracking-wide">Estado</th>
+                  <th className="pb-2 text-[10px] font-bold text-gray-400">Pedido</th>
+                  <th className="pb-2 text-[10px] font-bold text-gray-400">Fecha</th>
+                  <th className="pb-2 text-[10px] font-bold text-gray-400">Items</th>
+                  <th className="pb-2 text-[10px] font-bold text-gray-400 text-right">Total</th>
+                  <th className="pb-2 text-[10px] font-bold text-gray-400">Estado</th>
                 </tr>
               </thead>
               <tbody>
@@ -1201,7 +1201,7 @@ export default function Customer360Tab({ phone, onClose }: Props) {
       <PurchaseHeatmap orders={orders} />
 
       {/* Mejora 16: Historial de Puntos de Lealtad */}
-      <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl p-4 sm:p-5">
+      <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl p-4 sm:p-5">
         <h3 className="font-bold text-sm text-gray-900 dark:text-foreground mb-3 flex items-center gap-2">
           <Star className="h-4 w-4 text-yellow-500" /> Historial de Puntos
         </h3>
@@ -1262,7 +1262,7 @@ export default function Customer360Tab({ phone, onClose }: Props) {
       </div>
 
       {/* Notas del vendedor */}
-      <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl p-4 sm:p-5">
+      <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl p-4 sm:p-5">
         <h3 className="font-bold text-sm text-gray-900 dark:text-foreground mb-3 flex items-center gap-2">
           <MessageSquare className="h-4 w-4 text-primary" /> Notas del vendedor
         </h3>
@@ -1271,7 +1271,7 @@ export default function Customer360Tab({ phone, onClose }: Props) {
           onChange={e => setNotes(e.target.value)}
           placeholder="Ej: Cliente prefiere pago con Yape. Pide factura."
           rows={3}
-          className="w-full text-sm border border-gray-200 dark:border-card-border rounded-xl px-3 py-2 bg-gray-50 dark:bg-surface text-gray-700 dark:text-foreground placeholder:text-gray-400 dark:placeholder:text-muted resize-none focus:outline-none focus:ring-2 focus:ring-primary/30"
+          className="w-full text-sm border border-gray-200 dark:border-card-border rounded-lg px-3 py-2 bg-gray-50 dark:bg-surface text-gray-700 dark:text-foreground placeholder:text-gray-400 dark:placeholder:text-muted resize-none focus:outline-none focus:ring-2 focus:ring-primary/30"
         />
         <div className="flex items-center justify-between mt-2">
           <AnimatePresence>
@@ -1284,7 +1284,7 @@ export default function Customer360Tab({ phone, onClose }: Props) {
           <button
             onClick={handleSaveNotes}
             disabled={savingNotes || !notes.trim()}
-            className="ml-auto flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-primary text-white text-xs font-bold hover:bg-primary/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            className="ml-auto flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-primary text-white text-xs font-bold hover:bg-primary/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {savingNotes ? <Loader2 className="h-3 w-3 animate-spin" /> : <Save className="h-3 w-3" />}
             Guardar nota

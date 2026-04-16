@@ -184,7 +184,7 @@ export default function DataExportImport() {
             onDrop={handleDrop}
             onClick={() => fileInputRef.current?.click()}
             className={cn(
-              "border-2 border-dashed rounded-xl p-8 text-center cursor-pointer transition-colors",
+              "border-2 border-dashed rounded-lg p-8 text-center cursor-pointer transition-colors",
               dragOver
                 ? "border-emerald-400 bg-emerald-50 dark:bg-emerald-900/10"
                 : "border-gray-300 dark:border-gray-600 hover:border-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-900/10",

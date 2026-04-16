@@ -138,7 +138,7 @@ export default function NPSTab() {
       </div>
 
       {/* Gauge + KPIs principales */}
-      <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl p-4 sm:p-6">
+      <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl p-4 sm:p-6">
         <div className="flex flex-col sm:flex-row items-center gap-6">
           {/* Gauge grande */}
           <div className="flex flex-col items-center shrink-0">
@@ -183,7 +183,7 @@ export default function NPSTab() {
           </div>
 
           {/* Score promedio */}
-          <div className="flex flex-col items-center shrink-0 bg-gray-50 dark:bg-surface rounded-2xl p-4 min-w-[80px]">
+          <div className="flex flex-col items-center shrink-0 bg-gray-50 dark:bg-surface rounded-xl p-4 min-w-[80px]">
             <p className="text-xs font-bold text-gray-500 dark:text-muted">Promedio</p>
             <p className="text-3xl font-extrabold text-emerald-500">{avgScore}</p>
             <p className="text-[10px] text-gray-400">/10</p>
@@ -220,7 +220,7 @@ export default function NPSTab() {
               <span className="text-sm">Cargando reseñas...</span>
             </div>
           ) : filtered.length === 0 ? (
-            <div className="text-center py-10 bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl">
+            <div className="text-center py-10 bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl">
               <Star className="h-10 w-10 text-gray-200 dark:text-surface mx-auto mb-2" />
               <p className="text-sm font-semibold text-gray-400">Sin reseñas para este filtro</p>
             </div>
@@ -252,7 +252,7 @@ export default function NPSTab() {
 
       {/* Vista tendencia */}
       {view === "trend" && (
-        <div className="bg-white dark:bg-card rounded-2xl border border-gray-200 dark:border-card-border p-4 sm:p-5">
+        <div className="bg-white dark:bg-card rounded-xl border border-gray-200 dark:border-card-border p-4 sm:p-5">
           <h3 className="font-bold text-sm text-gray-900 dark:text-foreground mb-4 flex items-center gap-2">
             <TrendingUp className="h-4 w-4 text-primary" /> Evolución NPS mensual
           </h3>
@@ -267,7 +267,7 @@ export default function NPSTab() {
               <p className="text-sm">Sin datos históricos suficientes</p>
             </div>
           ) : (
-            <div className="space-y-4">
+            <div className="space-y-6">
               {/* Mini barras de NPS por mes */}
               <div className="flex items-end gap-2 h-24">
                 {trends.map(t => {

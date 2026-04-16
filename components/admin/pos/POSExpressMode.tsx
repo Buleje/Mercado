@@ -110,7 +110,7 @@ export default function POSExpressMode({
     return (
       <button
         onClick={() => setEnabled(true)}
-        className="flex items-center gap-1.5 text-xs font-bold text-amber-600 border border-amber-200 dark:border-amber-800/30 hover:bg-amber-50 dark:hover:bg-amber-950/20 px-3 py-2 rounded-xl transition-colors"
+        className="flex items-center gap-1.5 text-xs font-bold text-amber-600 border border-amber-200 dark:border-amber-800/30 hover:bg-amber-50 dark:hover:bg-amber-950/20 px-3 py-2 rounded-lg transition-colors"
         title="Modo Express - escaneo rapido por codigo"
       >
         <Zap className="h-4 w-4" /> Express

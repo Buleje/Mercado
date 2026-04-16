@@ -108,7 +108,7 @@ export default function DailyReportWhatsApp({ className }: Props) {
     <div className={cn("space-y-4", className)}>
       {/* Número de WhatsApp */}
       <div className="space-y-1.5">
-        <label className="text-xs font-semibold text-gray-600 dark:text-muted uppercase tracking-wide flex items-center gap-1.5">
+        <label className="text-xs font-semibold text-gray-600 dark:text-muted flex items-center gap-1.5">
           <Phone className="h-3.5 w-3.5" />
           Número del dueño
         </label>
@@ -181,8 +181,8 @@ export default function DailyReportWhatsApp({ className }: Props) {
 
       {/* Vista previa del mensaje */}
       {showPreview && previewText && (
-        <div className="rounded-2xl border border-gray-200 dark:border-card-border bg-gray-50 dark:bg-surface p-4 space-y-2">
-          <p className="text-[11px] font-bold text-gray-400 uppercase tracking-wide">Vista previa del mensaje</p>
+        <div className="rounded-xl border border-gray-200 dark:border-card-border bg-gray-50 dark:bg-surface p-4 space-y-2">
+          <p className="text-[11px] font-bold text-gray-400">Vista previa del mensaje</p>
           <textarea
             readOnly
             value={previewText}
@@ -207,7 +207,7 @@ export default function DailyReportWhatsApp({ className }: Props) {
         </button>
 
         {showSchedule && (
-          <div className="mt-3 p-4 rounded-2xl bg-primary/5 dark:bg-primary/10 border border-primary/20 space-y-2">
+          <div className="mt-3 p-4 rounded-xl bg-primary/5 dark:bg-primary/10 border border-primary/20 space-y-2">
             <label className="text-xs font-semibold text-gray-600 dark:text-muted">
               Hora de recordatorio diario
             </label>

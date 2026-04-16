@@ -201,7 +201,7 @@ export default function ExecutiveDashboardTab() {
     <div className="flex flex-col items-center justify-center py-24 gap-2 sm:gap-4">
       <AlertTriangle className="h-8 w-8 text-red-500" />
       <p className="text-sm text-red-600 dark:text-red-400 font-medium">Error cargando datos</p>
-      <button onClick={load} className="px-2 sm:px-4 py-1.5 sm:py-2 rounded-xl bg-primary text-white text-sm font-bold hover:bg-primary/90 transition-colors">
+      <button onClick={load} className="px-2 sm:px-4 py-1.5 sm:py-2 rounded-lg bg-primary text-white text-sm font-bold hover:bg-primary/90 transition-colors">
         Reintentar
       </button>
     </div>
@@ -258,7 +258,7 @@ export default function ExecutiveDashboardTab() {
             { label: "Clientes",      value: String(kpis.clients),    delta: kpis.cliDelta,  icon: Users,       color: "text-violet-500", bgColor: "bg-violet-50 dark:bg-violet-900/20",    spark: kpis.clientSpark, sparkColor: "#8b5cf6" },
             { label: "Utilidad",      value: fmtShort(kpis.utilidad), delta: kpis.utilDelta, icon: TrendingUp,  color: "text-amber-500",  bgColor: "bg-amber-50 dark:bg-amber-900/20",      spark: kpis.utilSpark,   sparkColor: "#f59e0b" },
           ].map(kpi => (
-            <div key={kpi.label} className="bg-white dark:bg-card rounded-2xl border border-gray-200 dark:border-card-border p-4">
+            <div key={kpi.label} className="bg-white dark:bg-card rounded-xl border border-gray-200 dark:border-card-border p-4">
               <div className="flex flex-wrap items-center gap-2 mb-3">
                 <div className={cn("h-9 w-9 rounded-xl flex items-center justify-center shrink-0", kpi.bgColor)}>
                   <kpi.icon className={cn("h-4.5 w-4.5", kpi.color)} />
@@ -279,7 +279,7 @@ export default function ExecutiveDashboardTab() {
       )}
 
       {/* ── Revenue bar chart ── */}
-      <div className="bg-white dark:bg-card rounded-2xl border border-gray-200 dark:border-card-border p-3 sm:p-5">
+      <div className="bg-white dark:bg-card rounded-xl border border-gray-200 dark:border-card-border p-3 sm:p-5">
         <div className="flex items-center justify-between mb-4">
           <h3 className="font-bold text-gray-900 dark:text-foreground flex flex-wrap items-center gap-2">
             <BarChart3 className="h-4 w-4 text-primary" /> Ingresos — {PERIOD_LABELS[period]}
@@ -327,9 +327,9 @@ export default function ExecutiveDashboardTab() {
                 key={h.module}
                 onClick={() => setExpanded(expandedModule === h.module ? null : h.module)}
                 className={cn(
-                  "bg-white dark:bg-card rounded-xl border p-4 text-left transition-all duration-200 hover:shadow-md",
+                  "bg-white dark:bg-card rounded-xl border p-4 text-left transition-all duration-200 hover:shadow-sm",
                   h.status === "critical" ? "border-red-300 dark:border-red-800" : h.status === "warning" ? "border-amber-300 dark:border-amber-800" : "border-gray-200 dark:border-card-border",
-                  expandedModule === h.module && "sm:col-span-2 shadow-md ring-1 ring-primary/20"
+                  expandedModule === h.module && "sm:col-span-2 ring-1 ring-primary/20"
                 )}
               >
                 <div className="flex items-center justify-between mb-2">
@@ -372,7 +372,7 @@ export default function ExecutiveDashboardTab() {
       </div>
 
       {/* ── Recommendations ── */}
-      <div className="bg-white dark:bg-card rounded-2xl border border-gray-200 dark:border-card-border p-3 sm:p-5">
+      <div className="bg-white dark:bg-card rounded-xl border border-gray-200 dark:border-card-border p-3 sm:p-5">
         <h3 className="font-bold text-gray-900 dark:text-foreground mb-3 flex flex-wrap items-center gap-2">
           <AlertTriangle className="h-4 w-4 text-amber-500" /> Acciones recomendadas
         </h3>
@@ -408,7 +408,7 @@ function MiniSparkline({ data, color }: { data: number[]; color: string }) {
       <svg width={w} height={h} viewBox={`0 0 ${w} ${h}`} className="overflow-visible opacity-70 group-hover:opacity-100 transition-opacity">
         <polyline points={pts} fill="none" stroke={color} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
       </svg>
-      <div className="absolute bottom-full right-0 mb-1 hidden group-hover:block bg-gray-900 text-white text-[9px] font-semibold px-2 py-1 rounded-md whitespace-nowrap z-20 shadow-lg">
+      <div className="absolute bottom-full right-0 mb-1 hidden group-hover:block bg-gray-900 text-white text-[9px] font-semibold px-2 py-1 rounded-md whitespace-nowrap z-20">
         7 días {trend} hoy: {typeof lastVal === 'number' && lastVal >= 1000 ? `${(lastVal/1000).toFixed(1)}k` : lastVal}
       </div>
     </div>

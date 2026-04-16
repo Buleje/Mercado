@@ -55,7 +55,7 @@ export default function SidebarReorderPanel({ categories, onSave }: SidebarReord
   };
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
           <h3 className="text-sm font-bold text-gray-900 dark:text-foreground">Ordenar categorías de la barra lateral</h3>
@@ -93,7 +93,7 @@ export default function SidebarReorderPanel({ categories, onSave }: SidebarReord
             onDragEnd={handleDragEnd}
             className={cn(
               "flex items-center gap-2 px-3 py-2.5 rounded-lg bg-white dark:bg-card border border-gray-200 dark:border-card-border transition-all cursor-grab active:cursor-grabbing",
-              dragIdx === idx && "opacity-50 scale-[0.98] shadow-lg ring-2 ring-primary/30"
+              dragIdx === idx && "opacity-50 scale-[0.98] ring-2 ring-primary/30"
             )}
           >
             <GripVertical className="h-4 w-4 text-gray-300 dark:text-muted shrink-0" />

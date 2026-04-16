@@ -67,11 +67,11 @@ export default function ForecastCard({ className }: Props) {
 
   return (
     <div className={cn(
-      "bg-white dark:bg-card rounded-2xl border border-gray-200 dark:border-card-border p-5",
+      "bg-white dark:bg-card rounded-xl border border-gray-200 dark:border-card-border p-5",
       className,
     )}>
       <div className="flex items-center justify-between mb-4">
-        <h3 className="text-xs font-bold text-gray-500 dark:text-muted uppercase tracking-wide">
+        <h3 className="text-xs font-bold text-gray-500 dark:text-muted">
           Prediccion de la semana
         </h3>
         {result && (
@@ -100,7 +100,7 @@ export default function ForecastCard({ className }: Props) {
 
       {/* Result */}
       {!loading && result && (
-        <div className="space-y-4">
+        <div className="space-y-6">
           {/* Revenue headline */}
           <div>
             <p className="text-2xl font-extrabold text-gray-900 dark:text-foreground">

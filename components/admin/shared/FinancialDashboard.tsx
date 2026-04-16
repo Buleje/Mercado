@@ -173,7 +173,7 @@ function buildMetrics(sales: Sale[]): FinancialMetrics {
 
 function SkeletonCard() {
   return (
-    <div className="bg-white dark:bg-card rounded-2xl border border-gray-100 dark:border-card-border p-5 animate-pulse">
+    <div className="bg-white dark:bg-card rounded-xl border border-gray-100 dark:border-card-border p-5 animate-pulse">
       <div className="flex items-start justify-between mb-3">
         <div className="h-8 w-8 rounded-xl bg-gray-200 dark:bg-gray-700" />
         <div className="h-4 w-12 rounded bg-gray-200 dark:bg-gray-700" />
@@ -186,7 +186,7 @@ function SkeletonCard() {
 
 function SkeletonChart() {
   return (
-    <div className="bg-white dark:bg-card rounded-2xl border border-gray-100 dark:border-card-border p-5 animate-pulse">
+    <div className="bg-white dark:bg-card rounded-xl border border-gray-100 dark:border-card-border p-5 animate-pulse">
       <div className="h-5 w-40 rounded bg-gray-200 dark:bg-gray-700 mb-4" />
       <div className="flex items-end gap-[3px] h-28">
         {Array.from({ length: 30 }).map((_, i) => (
@@ -216,7 +216,7 @@ interface PLCardProps {
 function PLCard({ label, value, icon: Icon, accent, iconColor, borderColor, badge }: PLCardProps) {
   return (
     <div
-      className="bg-white dark:bg-card rounded-2xl border border-gray-100 dark:border-card-border p-5 border-l-[3px] flex flex-col gap-3 shadow-sm"
+      className="bg-white dark:bg-card rounded-xl border border-gray-100 dark:border-card-border p-5 border-l-[3px] flex flex-col gap-3 "
       style={{ borderLeftColor: borderColor }}
     >
       <div className="flex items-center justify-between">
@@ -224,13 +224,13 @@ function PLCard({ label, value, icon: Icon, accent, iconColor, borderColor, badg
           <Icon className={cn("h-4 w-4", iconColor)} />
         </div>
         {badge && (
-          <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400 uppercase tracking-wide">
+          <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400">
             {badge}
           </span>
         )}
       </div>
       <div>
-        <p className="text-[11px] font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider leading-none mb-1">
+        <p className="text-[11px] font-medium text-gray-500 dark:text-gray-400 leading-none mb-1">
           {label}
         </p>
         <p className="text-2xl font-black font-mono text-gray-900 dark:text-white leading-tight">
@@ -291,7 +291,7 @@ function RevenueBarChart({ dias }: { dias: DayBucket[] }) {
 
       {tooltip && (
         <div
-          className="absolute z-20 pointer-events-none bg-gray-900 dark:bg-gray-700 text-white text-[11px] rounded-lg px-2.5 py-1.5 shadow-xl whitespace-nowrap"
+          className="absolute z-20 pointer-events-none bg-gray-900 dark:bg-gray-700 text-white text-[11px] rounded-lg px-2.5 py-1.5 whitespace-nowrap"
           style={{
             left: tooltip.x,
             top: tooltip.y - 52,
@@ -377,7 +377,7 @@ function QuickStat({ icon: Icon, label, value }: QuickStatProps) {
         <Icon className="h-4 w-4 text-primary" />
       </div>
       <div className="min-w-0">
-        <p className="text-[10px] text-gray-400 dark:text-gray-500 uppercase tracking-wider font-medium truncate">
+        <p className="text-[10px] text-gray-400 dark:text-gray-500 font-medium truncate">
           {label}
         </p>
         <p className="text-sm font-black font-mono text-gray-900 dark:text-white truncate">
@@ -432,7 +432,7 @@ export default function FinancialDashboard() {
           ))}
         </div>
         <SkeletonChart />
-        <div className="bg-white dark:bg-card rounded-2xl border border-gray-100 dark:border-card-border p-5 animate-pulse">
+        <div className="bg-white dark:bg-card rounded-xl border border-gray-100 dark:border-card-border p-5 animate-pulse">
           <div className="h-5 w-32 rounded bg-gray-200 dark:bg-gray-700 mb-4" />
           <div className="space-y-3">
             {Array.from({ length: 5 }).map((_, i) => (
@@ -448,7 +448,7 @@ export default function FinancialDashboard() {
   if (error) {
     return (
       <div className="flex flex-col items-center justify-center py-16 text-center">
-        <div className="h-14 w-14 rounded-2xl bg-red-50 dark:bg-red-950/30 flex items-center justify-center mb-4">
+        <div className="h-14 w-14 rounded-xl bg-red-50 dark:bg-red-950/30 flex items-center justify-center mb-4">
           <BarChart3 className="h-7 w-7 text-red-500" />
         </div>
         <p className="text-base font-semibold text-gray-800 dark:text-gray-200 mb-1">
@@ -481,7 +481,7 @@ export default function FinancialDashboard() {
   if (!metrics || metrics.ventasBrutas === 0) {
     return (
       <div className="flex flex-col items-center justify-center py-16 text-center">
-        <div className="h-14 w-14 rounded-2xl bg-primary/10 flex items-center justify-center mb-4">
+        <div className="h-14 w-14 rounded-xl bg-primary/10 flex items-center justify-center mb-4">
           <DollarSign className="h-7 w-7 text-primary" />
         </div>
         <p className="text-base font-semibold text-gray-800 dark:text-gray-200 mb-1">
@@ -538,7 +538,7 @@ export default function FinancialDashboard() {
       </div>
 
       {/* Trend Chart */}
-      <div className="bg-white dark:bg-card rounded-2xl border border-gray-100 dark:border-card-border p-5 shadow-sm">
+      <div className="bg-white dark:bg-card rounded-xl border border-gray-100 dark:border-card-border p-5 ">
         <div className="flex items-center justify-between mb-4">
           <div>
             <h3 className="text-sm font-bold text-gray-900 dark:text-white">
@@ -570,7 +570,7 @@ export default function FinancialDashboard() {
       </div>
 
       {/* Top 5 Products */}
-      <div className="bg-white dark:bg-card rounded-2xl border border-gray-100 dark:border-card-border p-5 shadow-sm">
+      <div className="bg-white dark:bg-card rounded-xl border border-gray-100 dark:border-card-border p-5 ">
         <div className="flex items-center justify-between mb-4">
           <div>
             <h3 className="text-sm font-bold text-gray-900 dark:text-white">

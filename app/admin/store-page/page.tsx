@@ -66,7 +66,7 @@ export default function StorePageAdminPage() {
           href={`/t/${slug}`}
           target="_blank"
           rel="noopener"
-          className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-semibold text-sm transition-colors"
+          className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white font-semibold text-sm transition-colors"
         >
           Ver página pública
           <ExternalLink className="w-4 h-4" />

@@ -226,7 +226,7 @@ export default function AIFiadoDashboard() {
 
   if (loading) {
     return (
-      <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 p-6 shadow-sm">
+      <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 p-6 ">
         <div className="animate-pulse space-y-4">
           <div className="h-5 w-48 bg-gray-200 dark:bg-gray-700 rounded" />
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
@@ -241,8 +241,8 @@ export default function AIFiadoDashboard() {
 
   if (error && fiados.length === 0) {
     return (
-      <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 p-6 shadow-sm">
-        <h2 className="text-sm font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wide mb-3">
+      <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 p-6 ">
+        <h2 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3">
           Dashboard de Fiados
         </h2>
         <div className="flex flex-col items-center justify-center py-12 text-center">
@@ -261,12 +261,12 @@ export default function AIFiadoDashboard() {
   const daysSince = (dateStr: string) => Math.floor((Date.now() - new Date(dateStr).getTime()) / 86_400_000);
 
   return (
-    <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 p-5 shadow-sm">
+    <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 p-5 ">
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center gap-2">
           <CreditCard className="w-4 h-4 text-gray-500 dark:text-gray-400" />
           <div>
-            <h2 className="text-sm font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wide">
+            <h2 className="text-sm font-semibold text-gray-700 dark:text-gray-300">
               Dashboard de Fiados
             </h2>
             <p className="text-xs text-gray-400 dark:text-gray-500">

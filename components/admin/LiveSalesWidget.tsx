@@ -56,7 +56,7 @@ export default function LiveSalesWidget() {
 
   return (
     <div className={cn(
-      "bg-white dark:bg-card rounded-2xl border border-gray-100 dark:border-card-border p-4 transition-all",
+      "bg-white dark:bg-card rounded-xl border border-gray-100 dark:border-card-border p-4 transition-all",
       flash && "ring-2 ring-emerald-400 ring-offset-2"
     )}>
       <div className="flex items-center gap-4">

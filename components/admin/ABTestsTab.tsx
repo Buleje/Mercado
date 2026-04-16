@@ -81,7 +81,7 @@ export default function ABTestsTab() {
         <h2 className="text-xl font-extrabold text-gray-900 dark:text-foreground flex flex-wrap items-center gap-2">
           <FlaskConical className="h-6 w-6 text-primary" />A/B Testing
         </h2>
-        <button onClick={() => setShowCreate(true)} className="flex items-center gap-1.5 px-2 sm:px-4 py-1.5 sm:py-2 bg-primary text-white rounded-xl text-sm font-bold hover:bg-primary/90 transition">
+        <button onClick={() => setShowCreate(true)} className="flex items-center gap-1.5 px-2 sm:px-4 py-1.5 sm:py-2 bg-primary text-white rounded-lg text-sm font-bold hover:bg-primary/90 transition">
           <Plus className="w-4 h-4" />Nuevo Test
         </button>
       </div>
@@ -90,7 +90,7 @@ export default function ABTestsTab() {
       {tests.length === 0 && <p className="text-center text-gray-400 dark:text-muted py-12">No hay A/B tests creados aún.</p>}
       <div className="space-y-3">
         {tests.map(t => (
-          <div key={t.id} className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl p-4">
+          <div key={t.id} className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl p-4">
             <div className="flex flex-wrap items-start justify-between gap-3">
               <div className="flex-1">
                 <div className="flex flex-wrap items-center gap-2">
@@ -162,14 +162,14 @@ export default function ABTestsTab() {
       {/* Create modal */}
       {showCreate && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40" onClick={() => setShowCreate(false)}>
-          <div className="bg-white dark:bg-card rounded-2xl shadow-2xl p-3 sm:p-6 max-w-md w-full mx-4 border border-gray-200 dark:border-card-border" onClick={e => e.stopPropagation()}>
+          <div className="bg-white dark:bg-card rounded-xl p-3 sm:p-6 max-w-md w-full mx-4 border border-gray-200 dark:border-card-border" onClick={e => e.stopPropagation()}>
             <div className="flex items-center justify-between mb-4">
               <h3 className="text-lg font-extrabold text-foreground">Nuevo A/B Test</h3>
               <button onClick={() => setShowCreate(false)} className="p-1 rounded-lg hover:bg-gray-100 dark:hover:bg-surface"><X className="w-4 h-4" /></button>
             </div>
             <div className="space-y-3">
-              <input value={name} onChange={e => setName(e.target.value)} placeholder="Nombre del test" className="w-full px-3 py-2 border rounded-xl text-sm bg-white dark:bg-surface dark:border-card-border" />
-              <input value={desc} onChange={e => setDesc(e.target.value)} placeholder="Descripción (opcional)" className="w-full px-3 py-2 border rounded-xl text-sm bg-white dark:bg-surface dark:border-card-border" />
+              <input value={name} onChange={e => setName(e.target.value)} placeholder="Nombre del test" className="w-full px-3 py-2 border rounded-lg text-sm bg-white dark:bg-surface dark:border-card-border" />
+              <input value={desc} onChange={e => setDesc(e.target.value)} placeholder="Descripción (opcional)" className="w-full px-3 py-2 border rounded-lg text-sm bg-white dark:bg-surface dark:border-card-border" />
 
               <div>
                 <p className="text-sm font-bold mb-2">Variantes</p>
@@ -186,7 +186,7 @@ export default function ABTestsTab() {
                 <button onClick={addVariant} className="text-xs text-primary hover:underline">+ Agregar variante</button>
               </div>
             </div>
-            <button onClick={create} disabled={!name.trim()} className="w-full mt-4 px-2 sm:px-4 py-1.5 sm:py-2.5 bg-primary text-white rounded-xl text-sm font-bold hover:bg-primary/90 transition disabled:opacity-50">
+            <button onClick={create} disabled={!name.trim()} className="w-full mt-4 px-2 sm:px-4 py-1.5 sm:py-2.5 bg-primary text-white rounded-lg text-sm font-bold hover:bg-primary/90 transition disabled:opacity-50">
               Crear Test
             </button>
           </div>

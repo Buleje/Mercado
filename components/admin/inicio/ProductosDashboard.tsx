@@ -221,7 +221,7 @@ export default function ProductosDashboard({ dateRange }: { dateRange: DateRange
     <div className="flex flex-col items-center justify-center gap-4 py-16">
       <AlertTriangle className="h-10 w-10 text-amber-500" />
       <p className="text-sm text-gray-600 dark:text-gray-400">{error}</p>
-      <button onClick={() => void refresh()} className="px-4 py-2 rounded-xl bg-[var(--brand-primary)] text-white text-sm font-bold hover:opacity-90 transition-opacity">Reintentar</button>
+      <button onClick={() => void refresh()} className="px-4 py-2 rounded-lg bg-[var(--brand-primary)] text-white text-sm font-bold hover:opacity-90 transition-opacity">Reintentar</button>
     </div>
   );
   if (!data) return null;
@@ -239,7 +239,7 @@ export default function ProductosDashboard({ dateRange }: { dateRange: DateRange
       </div>
 
       {/* ── Rotación indicator ── */}
-      <div className="flex items-center gap-3 bg-white dark:bg-card border border-gray-100 dark:border-card-border rounded-2xl px-5 py-3">
+      <div className="flex items-center gap-3 bg-white dark:bg-card border border-gray-100 dark:border-card-border rounded-xl px-5 py-3">
         <RefreshCw className={cn("h-4 w-4", refreshing ? "animate-spin text-gray-400" : "text-gray-400")} />
         <div className="flex-1 flex items-center gap-4 text-sm">
           <span className="text-gray-500 dark:text-muted">Rotación promedio:</span>
@@ -281,7 +281,7 @@ function KPICard({ label, value, Icon, delta, accent }: {
   const c = colorMap[accent];
 
   return (
-    <div className="relative bg-white dark:bg-card border border-gray-100 dark:border-card-border rounded-2xl p-4 overflow-hidden hover:shadow-md transition-shadow">
+    <div className="relative bg-white dark:bg-card border border-gray-100 dark:border-card-border rounded-xl p-4 overflow-hidden hover:shadow-sm transition-shadow">
       <div className="flex items-start justify-between mb-3">
         <div className={cn("w-9 h-9 rounded-xl flex items-center justify-center", c.bg)}>
           <Icon className={cn("h-4.5 w-4.5", c.icon)} />
@@ -308,13 +308,13 @@ function DashboardSkeleton() {
     <div className="space-y-5 animate-pulse">
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
         {Array.from({ length: 6 }).map((_, i) => (
-          <div key={i} className="bg-gray-100 dark:bg-gray-800 rounded-2xl h-28" />
+          <div key={i} className="bg-gray-100 dark:bg-gray-800 rounded-xl h-28" />
         ))}
       </div>
-      <div className="bg-gray-100 dark:bg-gray-800 rounded-2xl h-12" />
+      <div className="bg-gray-100 dark:bg-gray-800 rounded-xl h-12" />
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
-        <div className="bg-gray-100 dark:bg-gray-800 rounded-2xl h-72" />
-        <div className="bg-gray-100 dark:bg-gray-800 rounded-2xl h-72" />
+        <div className="bg-gray-100 dark:bg-gray-800 rounded-xl h-72" />
+        <div className="bg-gray-100 dark:bg-gray-800 rounded-xl h-72" />
       </div>
     </div>
   );

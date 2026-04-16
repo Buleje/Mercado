@@ -241,7 +241,7 @@ export default function ProductQRGenerator() {
               />
             </div>
             {search && (
-              <div className="mt-1 max-h-48 overflow-y-auto rounded-lg border border-gray-200 bg-white shadow-lg dark:border-gray-700 dark:bg-gray-900">
+              <div className="mt-1 max-h-48 overflow-y-auto rounded-lg border border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-900">
                 {loading ? (
                   <p className="p-3 text-sm text-gray-500">Cargando...</p>
                 ) : filtered.length === 0 ? (

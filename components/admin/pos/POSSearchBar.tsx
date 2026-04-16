@@ -173,7 +173,7 @@ export default function POSSearchBar({
 
       {/* Search results dropdown */}
       {showResults && debouncedQuery.trim() && (
-        <div className="absolute z-30 left-0 right-0 mx-3 bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl shadow-lg max-h-80 overflow-y-auto">
+        <div className="absolute z-30 left-0 right-0 mx-3 bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl max-h-80 overflow-y-auto">
           {results.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-6 text-gray-400 dark:text-muted">
               <Package className="h-5 w-5 mb-1" />

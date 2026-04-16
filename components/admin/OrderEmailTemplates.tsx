@@ -385,7 +385,7 @@ export default function OrderEmailTemplates() {
   };
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-6">
       {/* Header */}
       <div className="flex items-center gap-3">
         <Mail className="w-5 h-5 text-[#00B4A6] dark:text-[#4ade80]" />

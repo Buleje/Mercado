@@ -93,7 +93,7 @@ export default function ComplianceTab() {
 
       {/* Alertas críticas */}
       {!loading && alertas.length > 0 && (
-        <div className="bg-red-50 dark:bg-red-950/20 border border-red-200 dark:border-red-900/30 rounded-2xl p-4">
+        <div className="bg-red-50 dark:bg-red-950/20 border border-red-200 dark:border-red-900/30 rounded-xl p-4">
           <div className="flex items-center gap-2 mb-2">
             <Bell className="h-4 w-4 text-red-500" />
             <span className="font-bold text-sm text-red-700 dark:text-red-400">Atención requerida ({alertas.length})</span>
@@ -159,7 +159,7 @@ export default function ComplianceTab() {
       {loading ? (
         <div className="space-y-3">
           {Array.from({ length: 4 }).map((_, i) => (
-            <div key={i} className="h-24 bg-white dark:bg-card rounded-2xl border border-gray-200 dark:border-card-border animate-pulse" />
+            <div key={i} className="h-24 bg-white dark:bg-card rounded-xl border border-gray-200 dark:border-card-border animate-pulse" />
           ))}
         </div>
       ) : filtered.length === 0 ? (
@@ -174,7 +174,7 @@ export default function ComplianceTab() {
             const SIcon = S.icon;
             const days = daysUntil(o.nextDue);
             return (
-              <div key={o.id} className={cn("bg-white dark:bg-card rounded-2xl border p-4 sm:p-5", S.border)}>
+              <div key={o.id} className={cn("bg-white dark:bg-card rounded-xl border p-4 sm:p-5", S.border)}>
                 <div className="flex flex-wrap items-start justify-between gap-3">
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 flex-wrap mb-1">

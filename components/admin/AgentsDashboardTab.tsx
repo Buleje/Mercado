@@ -310,7 +310,7 @@ export default function AgentsDashboardTab() {
             fetchRecentTasks();
             fetchHistory(historyPage, historyDomain);
           }}
-          className="flex items-center gap-1.5 px-3 py-2 rounded-xl border border-gray-200 dark:border-card-border bg-white dark:bg-surface text-sm font-semibold text-gray-700 dark:text-foreground hover:bg-gray-50 dark:hover:bg-accent transition-colors"
+          className="flex items-center gap-1.5 px-3 py-2 rounded-lg border border-gray-200 dark:border-card-border bg-white dark:bg-surface text-sm font-semibold text-gray-700 dark:text-foreground hover:bg-gray-50 dark:hover:bg-accent transition-colors"
         >
           <RefreshCw className="h-4 w-4" />
           Actualizar
@@ -319,7 +319,7 @@ export default function AgentsDashboardTab() {
 
       {/* ── Section 1: System Health ───────────────────────────────────── */}
       <div className="space-y-3">
-        <h2 className="text-sm font-bold text-gray-500 dark:text-muted uppercase tracking-wide">
+        <h2 className="text-sm font-bold text-gray-500 dark:text-muted">
           Estado del Sistema
         </h2>
 
@@ -331,7 +331,7 @@ export default function AgentsDashboardTab() {
         )}
 
         {healthError && !healthLoading && (
-          <div className="bg-red-50 dark:bg-red-950/20 border border-red-200 dark:border-red-800 rounded-2xl p-4 flex items-start gap-3">
+          <div className="bg-red-50 dark:bg-red-950/20 border border-red-200 dark:border-red-800 rounded-xl p-4 flex items-start gap-3">
             <AlertTriangle className="h-5 w-5 text-red-500 shrink-0 mt-0.5" />
             <div>
               <p className="font-bold text-red-700 dark:text-red-400 text-sm">Error de conexión</p>
@@ -345,7 +345,7 @@ export default function AgentsDashboardTab() {
             {/* KPI bar */}
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
               <div className={cn(
-                "rounded-2xl p-4",
+                "rounded-xl p-4",
                 health.status === "healthy"
                   ? "bg-emerald-50 dark:bg-emerald-950/30"
                   : "bg-red-50 dark:bg-red-950/30"
@@ -365,15 +365,15 @@ export default function AgentsDashboardTab() {
                   </span>
                 </div>
               </div>
-              <div className="rounded-2xl p-4 bg-emerald-50 dark:bg-emerald-950/30">
+              <div className="rounded-xl p-4 bg-emerald-50 dark:bg-emerald-950/30">
                 <p className="text-xs font-semibold text-gray-500 dark:text-muted mb-1">Agentes</p>
                 <p className="text-xl font-extrabold text-emerald-600">{health.agents.length}</p>
               </div>
-              <div className="rounded-2xl p-4 bg-violet-50 dark:bg-violet-950/30">
+              <div className="rounded-xl p-4 bg-violet-50 dark:bg-violet-950/30">
                 <p className="text-xs font-semibold text-gray-500 dark:text-muted mb-1">Tareas Activas</p>
                 <p className="text-xl font-extrabold text-violet-600">{health.activeTasks}</p>
               </div>
-              <div className="rounded-2xl p-4 bg-gray-50 dark:bg-gray-800/50">
+              <div className="rounded-xl p-4 bg-gray-50 dark:bg-gray-800/50">
                 <p className="text-xs font-semibold text-gray-500 dark:text-muted mb-1">Uptime</p>
                 <p className="text-xl font-extrabold text-gray-700 dark:text-gray-200">
                   {fmtUptime(health.uptime)}
@@ -388,7 +388,7 @@ export default function AgentsDashboardTab() {
                 return (
                   <div
                     key={agent.domain}
-                    className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl p-4 space-y-3"
+                    className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl p-4 space-y-3"
                   >
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-2">
@@ -433,10 +433,10 @@ export default function AgentsDashboardTab() {
 
       {/* ── Section 2: Execute Task ────────────────────────────────────── */}
       <div className="space-y-3">
-        <h2 className="text-sm font-bold text-gray-500 dark:text-muted uppercase tracking-wide">
+        <h2 className="text-sm font-bold text-gray-500 dark:text-muted">
           Ejecutar Tarea
         </h2>
-        <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl p-4 space-y-4">
+        <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl p-4 space-y-4">
           <div className="flex flex-col sm:flex-row gap-3">
             {/* Domain selector */}
             <div className="flex-1">
@@ -480,7 +480,7 @@ export default function AgentsDashboardTab() {
                 onClick={handleExecute}
                 disabled={executing}
                 className={cn(
-                  "flex items-center gap-2 px-5 py-2 rounded-xl text-sm font-bold text-white transition-colors disabled:opacity-50",
+                  "flex items-center gap-2 px-5 py-2 rounded-lg text-sm font-bold text-white transition-colors disabled:opacity-50",
                   "bg-[#00B4A6] hover:bg-[#009690] dark:bg-[#00B4A6] dark:hover:bg-[#3a7d5e]"
                 )}
               >
@@ -558,7 +558,7 @@ export default function AgentsDashboardTab() {
       {/* ── Section 3: Recent Tasks ────────────────────────────────────── */}
       <div className="space-y-3">
         <div className="flex items-center justify-between">
-          <h2 className="text-sm font-bold text-gray-500 dark:text-muted uppercase tracking-wide">
+          <h2 className="text-sm font-bold text-gray-500 dark:text-muted">
             Tareas Recientes
           </h2>
           {recentTasks.some((t) => t.status === "running" || t.status === "pending") && (
@@ -577,7 +577,7 @@ export default function AgentsDashboardTab() {
         )}
 
         {!recentLoading && recentTasks.length === 0 && (
-          <div className="bg-white dark:bg-card border-2 border-dashed border-gray-200 dark:border-card-border rounded-2xl p-10 text-center text-gray-400 dark:text-muted">
+          <div className="bg-white dark:bg-card border-2 border-dashed border-gray-200 dark:border-card-border rounded-xl p-10 text-center text-gray-400 dark:text-muted">
             <Clock className="h-10 w-10 mx-auto mb-3" />
             <p className="font-semibold">Sin tareas recientes</p>
             <p className="text-xs mt-1">
@@ -587,30 +587,30 @@ export default function AgentsDashboardTab() {
         )}
 
         {!recentLoading && recentTasks.length > 0 && (
-          <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl overflow-hidden shadow-sm">
+          <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl overflow-hidden ">
             <div className="overflow-x-auto">
               <table className="w-full min-w-[700px] text-sm">
                 <thead>
                   <tr className="border-b border-gray-100 dark:border-card-border text-left">
-                    <th className="px-2 sm:px-4 py-2 sm:py-3 text-xs font-bold text-gray-500 dark:text-muted uppercase tracking-wide">
+                    <th className="px-2 sm:px-4 py-2 sm:py-3 text-xs font-bold text-gray-500 dark:text-muted">
                       ID
                     </th>
-                    <th className="px-2 sm:px-4 py-2 sm:py-3 text-xs font-bold text-gray-500 dark:text-muted uppercase tracking-wide">
+                    <th className="px-2 sm:px-4 py-2 sm:py-3 text-xs font-bold text-gray-500 dark:text-muted">
                       Dominio
                     </th>
-                    <th className="px-2 sm:px-4 py-2 sm:py-3 text-xs font-bold text-gray-500 dark:text-muted uppercase tracking-wide">
+                    <th className="px-2 sm:px-4 py-2 sm:py-3 text-xs font-bold text-gray-500 dark:text-muted">
                       Acción
                     </th>
-                    <th className="px-2 sm:px-4 py-2 sm:py-3 text-xs font-bold text-gray-500 dark:text-muted uppercase tracking-wide">
+                    <th className="px-2 sm:px-4 py-2 sm:py-3 text-xs font-bold text-gray-500 dark:text-muted">
                       Estado
                     </th>
-                    <th className="px-2 sm:px-4 py-2 sm:py-3 text-xs font-bold text-gray-500 dark:text-muted uppercase tracking-wide hidden md:table-cell">
+                    <th className="px-2 sm:px-4 py-2 sm:py-3 text-xs font-bold text-gray-500 dark:text-muted hidden md:table-cell">
                       Prioridad
                     </th>
-                    <th className="px-2 sm:px-4 py-2 sm:py-3 text-xs font-bold text-gray-500 dark:text-muted uppercase tracking-wide hidden md:table-cell">
+                    <th className="px-2 sm:px-4 py-2 sm:py-3 text-xs font-bold text-gray-500 dark:text-muted hidden md:table-cell">
                       Creado
                     </th>
-                    <th className="px-2 sm:px-4 py-2 sm:py-3 text-xs font-bold text-gray-500 dark:text-muted uppercase tracking-wide hidden sm:table-cell">
+                    <th className="px-2 sm:px-4 py-2 sm:py-3 text-xs font-bold text-gray-500 dark:text-muted hidden sm:table-cell">
                       Duración
                     </th>
                   </tr>
@@ -629,7 +629,7 @@ export default function AgentsDashboardTab() {
       {/* ── Section 4: Task History ────────────────────────────────────── */}
       <div className="space-y-3">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-          <h2 className="text-sm font-bold text-gray-500 dark:text-muted uppercase tracking-wide">
+          <h2 className="text-sm font-bold text-gray-500 dark:text-muted">
             Historial de Tareas
           </h2>
           <select
@@ -656,7 +656,7 @@ export default function AgentsDashboardTab() {
         )}
 
         {!historyLoading && historyTasks.length === 0 && (
-          <div className="bg-white dark:bg-card border-2 border-dashed border-gray-200 dark:border-card-border rounded-2xl p-10 text-center text-gray-400 dark:text-muted">
+          <div className="bg-white dark:bg-card border-2 border-dashed border-gray-200 dark:border-card-border rounded-xl p-10 text-center text-gray-400 dark:text-muted">
             <Zap className="h-10 w-10 mx-auto mb-3" />
             <p className="font-semibold">Sin historial</p>
             <p className="text-xs mt-1">
@@ -667,30 +667,30 @@ export default function AgentsDashboardTab() {
 
         {!historyLoading && historyTasks.length > 0 && (
           <>
-            <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl overflow-hidden shadow-sm">
+            <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl overflow-hidden ">
               <div className="overflow-x-auto">
                 <table className="w-full min-w-[700px] text-sm">
                   <thead>
                     <tr className="border-b border-gray-100 dark:border-card-border text-left">
-                      <th className="px-2 sm:px-4 py-2 sm:py-3 text-xs font-bold text-gray-500 dark:text-muted uppercase tracking-wide">
+                      <th className="px-2 sm:px-4 py-2 sm:py-3 text-xs font-bold text-gray-500 dark:text-muted">
                         ID
                       </th>
-                      <th className="px-2 sm:px-4 py-2 sm:py-3 text-xs font-bold text-gray-500 dark:text-muted uppercase tracking-wide">
+                      <th className="px-2 sm:px-4 py-2 sm:py-3 text-xs font-bold text-gray-500 dark:text-muted">
                         Dominio
                       </th>
-                      <th className="px-2 sm:px-4 py-2 sm:py-3 text-xs font-bold text-gray-500 dark:text-muted uppercase tracking-wide">
+                      <th className="px-2 sm:px-4 py-2 sm:py-3 text-xs font-bold text-gray-500 dark:text-muted">
                         Acción
                       </th>
-                      <th className="px-2 sm:px-4 py-2 sm:py-3 text-xs font-bold text-gray-500 dark:text-muted uppercase tracking-wide">
+                      <th className="px-2 sm:px-4 py-2 sm:py-3 text-xs font-bold text-gray-500 dark:text-muted">
                         Estado
                       </th>
-                      <th className="px-2 sm:px-4 py-2 sm:py-3 text-xs font-bold text-gray-500 dark:text-muted uppercase tracking-wide hidden md:table-cell">
+                      <th className="px-2 sm:px-4 py-2 sm:py-3 text-xs font-bold text-gray-500 dark:text-muted hidden md:table-cell">
                         Prioridad
                       </th>
-                      <th className="px-2 sm:px-4 py-2 sm:py-3 text-xs font-bold text-gray-500 dark:text-muted uppercase tracking-wide hidden md:table-cell">
+                      <th className="px-2 sm:px-4 py-2 sm:py-3 text-xs font-bold text-gray-500 dark:text-muted hidden md:table-cell">
                         Creado
                       </th>
-                      <th className="px-2 sm:px-4 py-2 sm:py-3 text-xs font-bold text-gray-500 dark:text-muted uppercase tracking-wide hidden sm:table-cell">
+                      <th className="px-2 sm:px-4 py-2 sm:py-3 text-xs font-bold text-gray-500 dark:text-muted hidden sm:table-cell">
                         Duración
                       </th>
                     </tr>
@@ -709,7 +709,7 @@ export default function AgentsDashboardTab() {
               <button
                 onClick={() => handleHistoryPageChange(historyPage - 1)}
                 disabled={historyPage <= 1}
-                className="flex items-center gap-1 px-3 py-1.5 rounded-xl border border-gray-200 dark:border-card-border text-sm font-semibold text-gray-600 dark:text-muted hover:bg-gray-50 dark:hover:bg-surface/50 disabled:opacity-40 transition-colors"
+                className="flex items-center gap-1 px-3 py-1.5 rounded-lg border border-gray-200 dark:border-card-border text-sm font-semibold text-gray-600 dark:text-muted hover:bg-gray-50 dark:hover:bg-surface/50 disabled:opacity-40 transition-colors"
               >
                 <ChevronLeft className="h-4 w-4" />
                 Anterior
@@ -720,7 +720,7 @@ export default function AgentsDashboardTab() {
               <button
                 onClick={() => handleHistoryPageChange(historyPage + 1)}
                 disabled={historyPage >= totalHistoryPages}
-                className="flex items-center gap-1 px-3 py-1.5 rounded-xl border border-gray-200 dark:border-card-border text-sm font-semibold text-gray-600 dark:text-muted hover:bg-gray-50 dark:hover:bg-surface/50 disabled:opacity-40 transition-colors"
+                className="flex items-center gap-1 px-3 py-1.5 rounded-lg border border-gray-200 dark:border-card-border text-sm font-semibold text-gray-600 dark:text-muted hover:bg-gray-50 dark:hover:bg-surface/50 disabled:opacity-40 transition-colors"
               >
                 Siguiente
                 <ChevronRight className="h-4 w-4" />

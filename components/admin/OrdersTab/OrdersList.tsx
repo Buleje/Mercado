@@ -58,7 +58,7 @@ export function OrdersList({
     return (
       <div className="space-y-3 animate-pulse">
         {[1, 2, 3, 4].map(i => (
-          <div key={i} className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl p-4 flex items-center gap-4">
+          <div key={i} className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl p-4 flex items-center gap-4">
             <div className="h-5 w-5 bg-gray-200 dark:bg-surface rounded shrink-0" />
             <div className="flex-1 space-y-2">
               <div className="h-4 bg-gray-200 dark:bg-surface rounded w-1/4" />
@@ -101,7 +101,7 @@ export function OrdersList({
             <div
               key={o.id}
               className={cn(
-                "bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl shadow-sm overflow-hidden",
+                "bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl  overflow-hidden",
                 urgencyBorder,
                 selectedOrderIds.has(o.id) && "ring-2 ring-primary"
               )}

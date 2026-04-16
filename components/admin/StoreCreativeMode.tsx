@@ -74,7 +74,7 @@ interface StoreCreativeModeProps {
 const INPUT_CLASS =
   "rounded-lg bg-gray-800 border border-gray-700 text-white text-sm px-3 py-2.5 w-full focus:outline-none focus:border-emerald-500 transition-colors placeholder:text-gray-600";
 const LABEL_CLASS =
-  "block text-[11px] font-semibold text-gray-400 uppercase tracking-wider mb-1";
+  "block text-[11px] font-semibold text-gray-400 mb-1";
 
 const VIEWPORTS: { id: Viewport; icon: typeof Monitor; width: string; label: string }[] = [
   { id: "desktop", icon: Monitor, width: "100%", label: "Escritorio" },
@@ -216,10 +216,10 @@ function PreviewCard({ title, price, primaryColor, borderRadius, styleVariant }:
     styleVariant === "minimal"
       ? "border border-gray-200 shadow-none"
       : styleVariant === "border"
-        ? "border-2 border-gray-300 shadow-sm"
+        ? "border-2 border-gray-300 "
         : styleVariant === "glass"
-          ? "border border-white/40 bg-white/70 backdrop-blur-md shadow-lg"
-          : "border border-gray-200 shadow-lg";
+          ? "border border-white/40 bg-white/70 backdrop-blur-md"
+          : "border border-gray-200";
 
   return (
     <div className={cn("p-3 bg-white", cardClass)} style={{ borderRadius }}>
@@ -551,7 +551,7 @@ export default function StoreCreativeMode({ tenantSlug, initialTheme, onClose, o
           <div className="p-3 border-t border-gray-800 mt-2 space-y-4">
             {panel === "plantillas" && (
               <>
-                <p className="text-[10px] font-bold text-gray-500 uppercase tracking-wider">Plantillas rapidas</p>
+                <p className="text-[10px] font-bold text-gray-500">Plantillas rapidas</p>
                 {QUICK_TEMPLATES.map((tpl) => (
                   <button
                     key={tpl.id}
@@ -633,9 +633,9 @@ export default function StoreCreativeMode({ tenantSlug, initialTheme, onClose, o
             )}
 
             {panel === "secciones" && (
-              <div className="space-y-4">
+              <div className="space-y-6">
                 <div className="space-y-2">
-                  <p className="text-[10px] font-bold text-gray-500 uppercase tracking-wider">Pagina principal</p>
+                  <p className="text-[10px] font-bold text-gray-500">Pagina principal</p>
                   {SECTION_ITEMS.map((section) => {
                     const enabled = draft.sections.includes(section.key);
                     return (
@@ -647,7 +647,7 @@ export default function StoreCreativeMode({ tenantSlug, initialTheme, onClose, o
                   })}
                 </div>
                 <div className="space-y-2">
-                  <p className="text-[10px] font-bold text-gray-500 uppercase tracking-wider">Tienda online</p>
+                  <p className="text-[10px] font-bold text-gray-500">Tienda online</p>
                   {tiendaSectionOrder.map((key, idx) => {
                     const enabled = tiendaSectionsEnabled.includes(key);
                     const count = sectionContentCounts[key] ?? 0;
@@ -800,7 +800,7 @@ export default function StoreCreativeMode({ tenantSlug, initialTheme, onClose, o
                   <input className={INPUT_CLASS} value={draft.address} onChange={(e) => patch("address", e.target.value)} />
                 </div>
                 <div className="space-y-2">
-                  <p className="text-[10px] font-bold text-gray-500 uppercase tracking-wider">Horario</p>
+                  <p className="text-[10px] font-bold text-gray-500">Horario</p>
                   {DAYS.map((day) => (
                     <div key={day} className="grid grid-cols-[1fr,1fr,1fr] gap-2 items-center rounded-lg bg-gray-800 border border-gray-700 p-2">
                       <span className="text-[11px] font-semibold text-gray-300 capitalize">{day}</span>
@@ -860,7 +860,7 @@ export default function StoreCreativeMode({ tenantSlug, initialTheme, onClose, o
 
             {panel === "historial" && (
               <div className="space-y-3">
-                <p className="text-[10px] font-bold text-gray-500 uppercase tracking-wider">Versiones guardadas</p>
+                <p className="text-[10px] font-bold text-gray-500">Versiones guardadas</p>
                 {savedSnapshots.length === 0 ? (
                   <p className="text-xs text-gray-500">Aún no hay versiones. Guarda cambios para crear una.</p>
                 ) : (
@@ -903,7 +903,7 @@ export default function StoreCreativeMode({ tenantSlug, initialTheme, onClose, o
                 <div className="flex flex-col items-center gap-1 shrink-0">
                   <span className="text-[10px] font-bold text-gray-500 uppercase">Guardado</span>
                   <div
-                    className="bg-white rounded-lg shadow-2xl overflow-hidden"
+                    className="bg-white rounded-lg overflow-hidden"
                     style={{ width: viewport === "mobile" ? "320px" : "48%", maxWidth: "50%", height: "calc(100vh - 100px)" }}
                   >
                     <iframe
@@ -917,7 +917,7 @@ export default function StoreCreativeMode({ tenantSlug, initialTheme, onClose, o
               <div className={cn("flex flex-col items-center gap-1", splitPreview && "shrink-0")}>
                 {splitPreview && <span className="text-[10px] font-bold text-emerald-400 uppercase">Borrador</span>}
                 <div
-                  className="bg-white rounded-lg shadow-2xl overflow-hidden transition-all duration-300"
+                  className="bg-white rounded-lg overflow-hidden transition-all duration-300"
                   style={{
                     width: splitPreview ? (viewport === "mobile" ? "320px" : "48%") : activeViewport.width,
                     maxWidth: splitPreview ? "50%" : "100%",
@@ -935,7 +935,7 @@ export default function StoreCreativeMode({ tenantSlug, initialTheme, onClose, o
             </div>
           ) : (
           <div
-            className="bg-white rounded-lg shadow-2xl overflow-hidden transition-all duration-300"
+            className="bg-white rounded-lg overflow-hidden transition-all duration-300"
             style={{ width: activeViewport.width, maxWidth: "100%", minHeight: "calc(100vh - 80px)", fontFamily }}
           >
             <div className={cn("min-h-full", draft.darkModeDefault ? "bg-gray-950 text-white" : "bg-gray-50 text-gray-900")}>
@@ -968,7 +968,7 @@ export default function StoreCreativeMode({ tenantSlug, initialTheme, onClose, o
                   }}
                 >
                   <div className="max-w-xl">
-                    <p className="inline-flex items-center gap-1 text-[10px] font-bold uppercase tracking-wider bg-white/25 text-white px-2 py-1 rounded-full">
+                    <p className="inline-flex items-center gap-1 text-[10px] font-bold bg-white/25 text-white px-2 py-1 rounded-full">
                       <Sparkles className="h-3 w-3" />
                       {draft.heroBadge || "Oferta"}
                     </p>
@@ -1009,7 +1009,7 @@ export default function StoreCreativeMode({ tenantSlug, initialTheme, onClose, o
                 {/* Tienda sections preview */}
                 {tiendaSectionsEnabled.length > 0 && (
                   <div className="space-y-2">
-                    <p className="text-[10px] font-bold text-gray-500 uppercase tracking-wider">Secciones de tienda</p>
+                    <p className="text-[10px] font-bold text-gray-500">Secciones de tienda</p>
                     {tiendaSectionsEnabled.map((key) => (
                       <div
                         key={key}

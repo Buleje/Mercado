@@ -269,13 +269,13 @@ export default function AccountsReceivableTab() {
           <p className="text-sm text-gray-500 dark:text-muted mt-0.5">Créditos otorgados a clientes y gestión de cobranza</p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
-          <button onClick={load} className="p-2 rounded-xl border border-gray-200 dark:border-card-border bg-white dark:bg-surface hover:bg-gray-50 dark:hover:bg-accent transition-colors">
+          <button onClick={load} className="p-2 rounded-lg border border-gray-200 dark:border-card-border bg-white dark:bg-surface hover:bg-gray-50 dark:hover:bg-accent transition-colors">
             <RefreshCw className="h-4 w-4 text-gray-500 dark:text-muted" />
           </button>
-          <button onClick={() => exportToCSV(filtered.map(r => ({ cliente: r.customerName, telefono: r.customerPhone, descripcion: r.description, total: r.totalAmount, pagado: r.paidAmount, saldo: r.totalAmount - r.paidAmount, vencimiento: r.dueDate, estado: r.status })), "cuentas-por-cobrar")} className="flex items-center gap-1.5 px-3 py-2 rounded-xl border border-gray-200 dark:border-card-border bg-white dark:bg-surface text-sm font-semibold text-gray-700 dark:text-foreground hover:bg-gray-50 dark:hover:bg-accent transition-colors">
+          <button onClick={() => exportToCSV(filtered.map(r => ({ cliente: r.customerName, telefono: r.customerPhone, descripcion: r.description, total: r.totalAmount, pagado: r.paidAmount, saldo: r.totalAmount - r.paidAmount, vencimiento: r.dueDate, estado: r.status })), "cuentas-por-cobrar")} className="flex items-center gap-1.5 px-3 py-2 rounded-lg border border-gray-200 dark:border-card-border bg-white dark:bg-surface text-sm font-semibold text-gray-700 dark:text-foreground hover:bg-gray-50 dark:hover:bg-accent transition-colors">
             <Download className="h-4 w-4" /> Exportar
           </button>
-          <button onClick={() => setShowForm(v => !v)} className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-primary text-white text-sm font-semibold hover:bg-primary/90 transition-colors">
+          <button onClick={() => setShowForm(v => !v)} className="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-primary text-white text-sm font-semibold hover:bg-primary/90 transition-colors">
             <Plus className="h-4 w-4" /> Nueva cuenta
           </button>
         </div>
@@ -289,7 +289,7 @@ export default function AccountsReceivableTab() {
           { label: "Clientes en mora", value: String(countOverdue), icon: Clock, color: "text-amber-600", bg: "bg-amber-50 dark:bg-amber-950/30" },
           { label: "Cuentas pagadas", value: String(records.filter(r => r.status === "pagado").length), icon: CheckCircle, color: "text-emerald-600", bg: "bg-emerald-50 dark:bg-emerald-950/30" },
         ].map(({ label, value, icon: Icon, color, bg }) => (
-          <div key={label} className={cn("rounded-2xl p-4", bg)}>
+          <div key={label} className={cn("rounded-xl p-4", bg)}>
             <Icon className={cn("h-5 w-5 mb-2", color)} />
             <p className="text-xs font-semibold text-gray-500 dark:text-muted mb-1">{label}</p>
             <p className={cn("text-xl font-extrabold", color)}>{value}</p>
@@ -299,7 +299,7 @@ export default function AccountsReceivableTab() {
 
       {/* New form */}
       {showForm && (
-        <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl p-3 sm:p-5 space-y-4">
+        <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl p-3 sm:p-5 space-y-4">
           <div className="flex items-center justify-between">
             <h3 className="font-bold text-gray-900 dark:text-foreground text-sm">Nueva cuenta por cobrar</h3>
             <button onClick={() => setShowForm(false)}><X className="h-4 w-4 text-gray-400" /></button>
@@ -320,8 +320,8 @@ export default function AccountsReceivableTab() {
             ))}
           </div>
           <div className="flex flex-wrap gap-2 justify-end">
-            <button onClick={() => setShowForm(false)} className="px-2 sm:px-4 py-1.5 sm:py-2 text-sm rounded-xl border border-gray-200 dark:border-card-border text-gray-600 dark:text-muted hover:bg-gray-50 dark:hover:bg-surface">Cancelar</button>
-            <button onClick={handleCreate} disabled={saving} className="px-2 sm:px-4 py-1.5 sm:py-2 text-sm rounded-xl bg-primary text-white font-semibold hover:bg-primary/90 disabled:opacity-60">
+            <button onClick={() => setShowForm(false)} className="px-2 sm:px-4 py-1.5 sm:py-2 text-sm rounded-lg border border-gray-200 dark:border-card-border text-gray-600 dark:text-muted hover:bg-gray-50 dark:hover:bg-surface">Cancelar</button>
+            <button onClick={handleCreate} disabled={saving} className="px-2 sm:px-4 py-1.5 sm:py-2 text-sm rounded-lg bg-primary text-white font-semibold hover:bg-primary/90 disabled:opacity-60">
               {saving ? "Guardando..." : "Crear"}
             </button>
           </div>
@@ -332,7 +332,7 @@ export default function AccountsReceivableTab() {
       <div className="flex items-center gap-3 flex-wrap">
         <div className="relative flex-1 min-w-48">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
-          <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Buscar cliente..." className="w-full pl-9 pr-3 py-2 text-sm border border-gray-200 dark:border-card-border rounded-xl bg-white dark:bg-surface text-gray-700 dark:text-foreground" />
+          <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Buscar cliente..." className="w-full pl-9 pr-3 py-2 text-sm border border-gray-200 dark:border-card-border rounded-lg bg-white dark:bg-surface text-gray-700 dark:text-foreground" />
         </div>
         <div className="flex items-center gap-1">
           {(["all", "pendiente", "parcial", "vencido", "pagado"] as const).map(s => (
@@ -344,7 +344,7 @@ export default function AccountsReceivableTab() {
       </div>
 
       {loading ? (
-        <TableSkeleton rows={5} cols={4} className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl" />
+        <TableSkeleton rows={5} cols={4} className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl" />
       ) : (
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-2 sm:gap-4">
           {/* List */}
@@ -363,7 +363,7 @@ export default function AccountsReceivableTab() {
                 <div
                   key={ar.id}
                   onClick={() => setSelected(ar)}
-                  className={cn("bg-white dark:bg-card border rounded-2xl p-4 cursor-pointer hover:border-primary/40 transition-all", selected?.id === ar.id ? "border-primary shadow-sm" : "border-gray-200 dark:border-card-border")}
+                  className={cn("bg-white dark:bg-card border rounded-xl p-4 cursor-pointer hover:border-primary/40 transition-all", selected?.id === ar.id ? "border-primary " : "border-gray-200 dark:border-card-border")}
                 >
                   <div className="flex flex-wrap items-start justify-between gap-2 mb-2">
                     <div>
@@ -392,7 +392,7 @@ export default function AccountsReceivableTab() {
           {/* Detail panel */}
           <div>
             {selected ? (
-              <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl p-3 sm:p-5 space-y-4 sticky top-20">
+              <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl p-3 sm:p-5 space-y-4 sticky top-20">
                 <div className="flex items-center justify-between">
                   <h3 className="font-bold text-gray-900 dark:text-foreground text-sm">{selected.customerName}</h3>
                   <button onClick={() => setSelected(null)}><X className="h-4 w-4 text-gray-400" /></button>
@@ -410,7 +410,7 @@ export default function AccountsReceivableTab() {
 
                 {selected.status !== "pagado" && (
                   <div className="border-t border-gray-100 dark:border-card-border pt-4 space-y-3">
-                    <p className="text-xs font-bold text-gray-600 dark:text-muted uppercase tracking-wide">Registrar pago</p>
+                    <p className="text-xs font-bold text-gray-600 dark:text-muted">Registrar pago</p>
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                       <div>
                         <label className="text-xs text-gray-500 dark:text-muted block mb-1">Monto</label>
@@ -427,14 +427,14 @@ export default function AccountsReceivableTab() {
                         {["efectivo","transferencia","yape","plin","otro"].map(m => <option key={m} value={m} className="capitalize">{m.charAt(0).toUpperCase() + m.slice(1)}</option>)}
                       </select>
                     </div>
-                    <button onClick={handleRegisterPayment} className="w-full py-2.5 rounded-xl bg-emerald-500 text-white text-sm font-bold hover:bg-emerald-600 transition-colors">Registrar pago</button>
+                    <button onClick={handleRegisterPayment} className="w-full py-2.5 rounded-lg bg-emerald-500 text-white text-sm font-bold hover:bg-emerald-600 transition-colors">Registrar pago</button>
                   </div>
                 )}
 
                 {/* Payment history */}
                 {payments.filter(p => p.arId === selected.id).length > 0 && (
                   <div className="border-t border-gray-100 dark:border-card-border pt-3 space-y-2">
-                    <p className="text-xs font-bold text-gray-600 dark:text-muted uppercase tracking-wide">Pagos registrados</p>
+                    <p className="text-xs font-bold text-gray-600 dark:text-muted">Pagos registrados</p>
                     {payments.filter(p => p.arId === selected.id).map(p => (
                       <div key={p.id} className="flex items-center justify-between text-xs">
                         <span className="text-gray-500 dark:text-muted">{fmtDate(p.date)} · {p.method}</span>
@@ -444,10 +444,10 @@ export default function AccountsReceivableTab() {
                   </div>
                 )}
 
-                <button onClick={() => handleDelete(selected.id)} className="w-full py-2 rounded-xl border border-red-200 dark:border-red-900/40 text-red-500 text-xs font-semibold hover:bg-red-50 dark:hover:bg-red-950/20 transition-colors">Eliminar registro</button>
+                <button onClick={() => handleDelete(selected.id)} className="w-full py-2 rounded-lg border border-red-200 dark:border-red-900/40 text-red-500 text-xs font-semibold hover:bg-red-50 dark:hover:bg-red-950/20 transition-colors">Eliminar registro</button>
               </div>
             ) : (
-              <div className="bg-gray-50 dark:bg-surface rounded-2xl p-8 text-center text-gray-400 dark:text-muted text-sm">
+              <div className="bg-gray-50 dark:bg-surface rounded-xl p-8 text-center text-gray-400 dark:text-muted text-sm">
                 Selecciona una cuenta para ver detalles y registrar pagos
               </div>
             )}

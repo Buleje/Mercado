@@ -105,9 +105,9 @@ export default function DashboardWidgets({ onNavigate }: DashboardWidgetsProps) 
             key={w.label}
             onClick={() => onNavigate?.(w.tab)}
             className={cn(
-              "relative flex items-center gap-3 p-4 rounded-2xl border transition-all text-left",
+              "relative flex items-center gap-3 p-4 rounded-xl border transition-all text-left",
               "bg-white dark:bg-card border-gray-100 dark:border-card-border",
-              "hover:shadow-md hover:border-gray-200 dark:hover:border-gray-600",
+              "hover:shadow-sm hover:border-gray-200 dark:hover:border-gray-600",
               loading && "animate-pulse"
             )}
           >

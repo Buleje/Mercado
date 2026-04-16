@@ -267,13 +267,13 @@ export default function AnalyticsKPIBarV2() {
           <div
             key={card.key}
             className={cn(
-              "rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 p-3 flex flex-col justify-between border-l-[3px] transition-shadow hover:shadow-md",
+              "rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 p-3 flex flex-col justify-between border-l-[3px] transition-shadow hover:shadow-sm",
               "min-h-[96px]",
               borderColor[card.color]
             )}
           >
             <div className="flex items-center justify-between">
-              <span className="text-[10px] text-gray-400 dark:text-gray-500 font-medium uppercase tracking-wider truncate">
+              <span className="text-[10px] text-gray-400 dark:text-gray-500 font-medium truncate">
                 {card.label}
               </span>
               <Icon className="h-3.5 w-3.5 text-gray-400 dark:text-gray-500 shrink-0" />

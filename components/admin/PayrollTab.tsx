@@ -101,11 +101,11 @@ export default function PayrollTab() {
           <p className="text-sm text-gray-500 dark:text-muted mt-0.5">Planilla mensual, descuentos AFP/ONP y control de pagos</p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
-          <button onClick={() => exportToCSV(monthPayroll.map(p => ({ empleado: p.employeeName, cargo: p.role, departamento: p.department, mes: MONTH_LABELS[p.month] ?? p.month, salario_base: p.baseSalary, horas_extra: p.overtime, bonificaciones: p.bonuses, bruto: p.grossSalary, afp_snp: p.snpOrAfp, renta_5ta: p.incomeTax, neto: p.netSalary, estado: p.status, fecha_pago: p.paymentDate ?? "" })), `nomina-${selectedMonth}`)} className="flex items-center gap-1.5 px-3 py-2 rounded-xl border border-gray-200 dark:border-card-border bg-white dark:bg-surface text-sm font-semibold text-gray-700 dark:text-foreground hover:bg-gray-50 dark:hover:bg-accent transition-colors">
+          <button onClick={() => exportToCSV(monthPayroll.map(p => ({ empleado: p.employeeName, cargo: p.role, departamento: p.department, mes: MONTH_LABELS[p.month] ?? p.month, salario_base: p.baseSalary, horas_extra: p.overtime, bonificaciones: p.bonuses, bruto: p.grossSalary, afp_snp: p.snpOrAfp, renta_5ta: p.incomeTax, neto: p.netSalary, estado: p.status, fecha_pago: p.paymentDate ?? "" })), `nomina-${selectedMonth}`)} className="flex items-center gap-1.5 px-3 py-2 rounded-lg border border-gray-200 dark:border-card-border bg-white dark:bg-surface text-sm font-semibold text-gray-700 dark:text-foreground hover:bg-gray-50 dark:hover:bg-accent transition-colors">
             <Download className="h-4 w-4" /> Exportar
           </button>
           {totals.pending > 0 && (
-            <button onClick={markAllPaid} className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-emerald-500 text-white text-sm font-semibold hover:bg-emerald-600 transition-colors">
+            <button onClick={markAllPaid} className="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-emerald-500 text-white text-sm font-semibold hover:bg-emerald-600 transition-colors">
               <CheckCircle className="h-4 w-4" /> Pagar todos ({totals.pending})
             </button>
           )}
@@ -115,7 +115,7 @@ export default function PayrollTab() {
       {/* Month selector */}
       <div className="flex items-center gap-2 flex-wrap">
         {MONTHS.map(m => (
-          <button key={m} onClick={() => setSelectedMonth(m)} className={cn("px-2 sm:px-4 py-1.5 sm:py-2 text-sm font-semibold rounded-xl transition-colors", selectedMonth === m ? "bg-primary text-white" : "bg-white dark:bg-card border border-gray-200 dark:border-card-border text-gray-600 dark:text-muted hover:bg-gray-50 dark:hover:bg-accent")}>
+          <button key={m} onClick={() => setSelectedMonth(m)} className={cn("px-2 sm:px-4 py-1.5 sm:py-2 text-sm font-semibold rounded-lg transition-colors", selectedMonth === m ? "bg-primary text-white" : "bg-white dark:bg-card border border-gray-200 dark:border-card-border text-gray-600 dark:text-muted hover:bg-gray-50 dark:hover:bg-accent")}>
             {MONTH_LABELS[m] ?? m}
           </button>
         ))}
@@ -123,19 +123,19 @@ export default function PayrollTab() {
 
       {/* KPIs */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-4">
-        <div className="rounded-2xl bg-emerald-50 dark:bg-emerald-950/30 p-4">
+        <div className="rounded-xl bg-emerald-50 dark:bg-emerald-950/30 p-4">
           <p className="text-xs font-semibold text-gray-500 dark:text-muted mb-1">Total bruto</p>
           <p className="text-lg font-extrabold text-emerald-600">{fmt(totals.gross)}</p>
         </div>
-        <div className="rounded-2xl bg-amber-50 dark:bg-amber-950/30 p-4">
+        <div className="rounded-xl bg-amber-50 dark:bg-amber-950/30 p-4">
           <p className="text-xs font-semibold text-gray-500 dark:text-muted mb-1">Descuentos (AFP+IR)</p>
           <p className="text-lg font-extrabold text-amber-600">{fmt(totals.afp + totals.tax)}</p>
         </div>
-        <div className="rounded-2xl bg-emerald-50 dark:bg-emerald-950/30 p-4">
+        <div className="rounded-xl bg-emerald-50 dark:bg-emerald-950/30 p-4">
           <p className="text-xs font-semibold text-gray-500 dark:text-muted mb-1">Total neto a pagar</p>
           <p className="text-lg font-extrabold text-emerald-600">{fmt(totals.net)}</p>
         </div>
-        <div className={cn("rounded-2xl p-4", totals.pending > 0 ? "bg-amber-50 dark:bg-amber-950/30" : "bg-emerald-50 dark:bg-emerald-950/30")}>
+        <div className={cn("rounded-xl p-4", totals.pending > 0 ? "bg-amber-50 dark:bg-amber-950/30" : "bg-emerald-50 dark:bg-emerald-950/30")}>
           <p className="text-xs font-semibold text-gray-500 dark:text-muted mb-1">{totals.pending > 0 ? "Pagos pendientes" : "Todo pagado"}</p>
           <p className={cn("text-lg font-extrabold", totals.pending > 0 ? "text-amber-600" : "text-emerald-600")}>{totals.pending > 0 ? `${totals.pending} empleado(s)` : `${totals.paid} pagados`}</p>
         </div>
@@ -145,27 +145,27 @@ export default function PayrollTab() {
       <div className="flex flex-col sm:flex-row gap-3">
         <div className="relative flex-1 max-w-xs">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
-          <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Buscar empleado..." className="w-full pl-9 pr-3 py-2 text-sm border border-gray-200 dark:border-card-border rounded-xl bg-white dark:bg-surface text-gray-700 dark:text-foreground" />
+          <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Buscar empleado..." className="w-full pl-9 pr-3 py-2 text-sm border border-gray-200 dark:border-card-border rounded-lg bg-white dark:bg-surface text-gray-700 dark:text-foreground" />
         </div>
-        <select value={filterStatus} onChange={e => setFilterStatus(e.target.value as PayrollStatus | "todos")} className="text-sm border border-gray-200 dark:border-card-border rounded-xl px-3 py-2 bg-white dark:bg-surface text-gray-700 dark:text-foreground">
+        <select value={filterStatus} onChange={e => setFilterStatus(e.target.value as PayrollStatus | "todos")} className="text-sm border border-gray-200 dark:border-card-border rounded-lg px-3 py-2 bg-white dark:bg-surface text-gray-700 dark:text-foreground">
           <option value="todos">Todos los estados</option>
           {(Object.keys(STATUS_META) as PayrollStatus[]).map(s => <option key={s} value={s}>{STATUS_META[s].label}</option>)}
         </select>
       </div>
 
       {/* Table */}
-      <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl overflow-hidden">
+      <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full min-w-[600px] text-sm">
             <thead className="bg-gray-50 dark:bg-surface/50 border-b border-gray-200 dark:border-card-border">
               <tr>
-                <th className="px-2 sm:px-4 py-2 sm:py-3 text-left text-xs font-bold text-gray-500 dark:text-muted uppercase tracking-wide">Empleado</th>
-                <th className="px-2 sm:px-4 py-2 sm:py-3 text-right text-xs font-bold text-gray-500 dark:text-muted uppercase tracking-wide">Bruto</th>
-                <th className="px-2 sm:px-4 py-2 sm:py-3 text-right text-xs font-bold text-amber-500 uppercase tracking-wide">AFP/ONP</th>
-                <th className="px-2 sm:px-4 py-2 sm:py-3 text-right text-xs font-bold text-amber-500 uppercase tracking-wide">Renta 5ta</th>
-                <th className="px-2 sm:px-4 py-2 sm:py-3 text-right text-xs font-bold text-emerald-600 uppercase tracking-wide">Neto</th>
-                <th className="px-2 sm:px-4 py-2 sm:py-3 text-center text-xs font-bold text-gray-500 dark:text-muted uppercase tracking-wide">Estado</th>
-                <th className="px-2 sm:px-4 py-2 sm:py-3 text-center text-xs font-bold text-gray-500 dark:text-muted uppercase tracking-wide">Acciones</th>
+                <th className="px-2 sm:px-4 py-2 sm:py-3 text-left text-xs font-bold text-gray-500 dark:text-muted">Empleado</th>
+                <th className="px-2 sm:px-4 py-2 sm:py-3 text-right text-xs font-bold text-gray-500 dark:text-muted">Bruto</th>
+                <th className="px-2 sm:px-4 py-2 sm:py-3 text-right text-xs font-bold text-amber-500">AFP/ONP</th>
+                <th className="px-2 sm:px-4 py-2 sm:py-3 text-right text-xs font-bold text-amber-500">Renta 5ta</th>
+                <th className="px-2 sm:px-4 py-2 sm:py-3 text-right text-xs font-bold text-emerald-600">Neto</th>
+                <th className="px-2 sm:px-4 py-2 sm:py-3 text-center text-xs font-bold text-gray-500 dark:text-muted">Estado</th>
+                <th className="px-2 sm:px-4 py-2 sm:py-3 text-center text-xs font-bold text-gray-500 dark:text-muted">Acciones</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-100 dark:divide-card-border">
@@ -220,7 +220,7 @@ export default function PayrollTab() {
       {/* Payslip detail modal */}
       {detail && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4" onClick={() => setDetail(null)}>
-          <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl shadow-2xl p-3 sm:p-6 w-full max-w-sm space-y-4" onClick={e => e.stopPropagation()}>
+          <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl p-3 sm:p-6 w-full max-w-sm space-y-4" onClick={e => e.stopPropagation()}>
             <div className="flex items-center justify-between">
               <h3 className="font-extrabold text-gray-900 dark:text-foreground">Boleta de pago</h3>
               <button onClick={() => setDetail(null)}><X className="h-4 w-4 text-gray-400" /></button>
@@ -245,7 +245,7 @@ export default function PayrollTab() {
             </div>
             <div className="flex flex-wrap items-center gap-3">
               {detail.status === "pendiente" && (
-                <button onClick={() => markPaid(detail.id)} className="flex-1 py-2.5 text-sm rounded-xl bg-emerald-500 text-white font-semibold hover:bg-emerald-600">Marcar como pagado</button>
+                <button onClick={() => markPaid(detail.id)} className="flex-1 py-2.5 text-sm rounded-lg bg-emerald-500 text-white font-semibold hover:bg-emerald-600">Marcar como pagado</button>
               )}
               {detail.status === "pagado" && (
                 <p className="text-xs text-emerald-600 font-semibold text-center w-full">Pagado el {detail.paymentDate}</p>

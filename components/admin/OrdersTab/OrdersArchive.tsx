@@ -40,7 +40,7 @@ export function OrdersArchive({
       onClick={onClose}
     >
       <div
-        className="bg-white dark:bg-card rounded-2xl shadow-2xl w-full max-w-3xl max-h-[90vh] flex flex-col"
+        className="bg-white dark:bg-card rounded-xl w-full max-w-3xl max-h-[90vh] flex flex-col"
         onClick={e => e.stopPropagation()}
       >
         {/* Header */}
@@ -152,7 +152,7 @@ export function OrdersArchive({
                 {filteredArchive.map(o => (
                   <div
                     key={o.id}
-                    className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl p-4 shadow-sm cursor-pointer hover:bg-gray-50 dark:hover:bg-surface transition-colors"
+                    className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl p-4  cursor-pointer hover:bg-gray-50 dark:hover:bg-surface transition-colors"
                     onClick={() => { onSelectOrder(o); onClose(); }}
                   >
                     <div className="flex justify-between items-start gap-3">

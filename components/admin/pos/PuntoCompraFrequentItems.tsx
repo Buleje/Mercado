@@ -84,7 +84,7 @@ export default function PuntoCompraFrequentItems({ onAddToCart }: Props) {
     <div className="space-y-1.5 p-1 max-h-72 overflow-y-auto">
       <div className="flex items-center gap-1.5 mb-2">
         <TrendingUp className="h-3 w-3 text-[#00B4A6]" />
-        <span className="text-[10px] font-semibold text-gray-400 uppercase tracking-wider">
+        <span className="text-[10px] font-semibold text-gray-400">
           Top {items.length} productos (90 dias)
         </span>
       </div>

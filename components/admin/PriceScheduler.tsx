@@ -132,7 +132,7 @@ function ProductSearchInput({
           value={query}
           onChange={e => handleChange(e.target.value)}
           placeholder="Buscar producto..."
-          className="w-full pl-9 pr-3 py-2 rounded-xl border border-gray-200 dark:border-card-border bg-white dark:bg-card text-gray-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-[#00B4A6]/40"
+          className="w-full pl-9 pr-3 py-2 rounded-lg border border-gray-200 dark:border-card-border bg-white dark:bg-card text-gray-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-[#00B4A6]/40"
         />
         {loading && (
           <div className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 border-2 border-[#00B4A6] border-t-transparent rounded-full animate-spin" />
@@ -140,7 +140,7 @@ function ProductSearchInput({
       </div>
 
       {open && results.length > 0 && (
-        <div className="absolute z-20 top-full mt-1 w-full bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl shadow-lg overflow-hidden">
+        <div className="absolute z-20 top-full mt-1 w-full bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl overflow-hidden">
           {results.map(p => (
             <button
               key={p.id}
@@ -155,7 +155,7 @@ function ProductSearchInput({
       )}
 
       {open && results.length === 0 && !loading && query.length >= 2 && (
-        <div className="absolute z-20 top-full mt-1 w-full bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl shadow-lg px-4 py-3 text-sm text-gray-400 dark:text-gray-500">
+        <div className="absolute z-20 top-full mt-1 w-full bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl px-4 py-3 text-sm text-gray-400 dark:text-gray-500">
           Sin resultados para &ldquo;{query}&rdquo;
         </div>
       )}
@@ -208,7 +208,7 @@ function AddForm({ onSave, onCancel }: { onSave: (s: PriceSchedule) => void; onC
     : null;
 
   return (
-    <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl p-5 shadow-sm space-y-4">
+    <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl p-5  space-y-4">
       <p className="text-sm font-semibold text-gray-700 dark:text-gray-300">Nuevo cambio programado</p>
 
       {/* Product search */}
@@ -236,7 +236,7 @@ function AddForm({ onSave, onCancel }: { onSave: (s: PriceSchedule) => void; onC
             onChange={e => setForm(f => ({ ...f, newPrice: e.target.value }))}
             placeholder="0.00"
             className={cn(
-              "w-full px-3 py-2 rounded-xl border bg-white dark:bg-card text-gray-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-[#00B4A6]/40",
+              "w-full px-3 py-2 rounded-lg border bg-white dark:bg-card text-gray-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-[#00B4A6]/40",
               errors.newPrice ? "border-red-400 dark:border-red-500" : "border-gray-200 dark:border-card-border"
             )}
           />
@@ -265,7 +265,7 @@ function AddForm({ onSave, onCancel }: { onSave: (s: PriceSchedule) => void; onC
             value={form.startDate}
             onChange={e => setForm(f => ({ ...f, startDate: e.target.value }))}
             className={cn(
-              "w-full px-3 py-2 rounded-xl border bg-white dark:bg-card text-gray-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-[#00B4A6]/40",
+              "w-full px-3 py-2 rounded-lg border bg-white dark:bg-card text-gray-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-[#00B4A6]/40",
               errors.startDate ? "border-red-400 dark:border-red-500" : "border-gray-200 dark:border-card-border"
             )}
           />
@@ -278,7 +278,7 @@ function AddForm({ onSave, onCancel }: { onSave: (s: PriceSchedule) => void; onC
             value={form.endDate}
             onChange={e => setForm(f => ({ ...f, endDate: e.target.value }))}
             className={cn(
-              "w-full px-3 py-2 rounded-xl border bg-white dark:bg-card text-gray-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-[#00B4A6]/40",
+              "w-full px-3 py-2 rounded-lg border bg-white dark:bg-card text-gray-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-[#00B4A6]/40",
               errors.endDate ? "border-red-400 dark:border-red-500" : "border-gray-200 dark:border-card-border"
             )}
           />
@@ -289,13 +289,13 @@ function AddForm({ onSave, onCancel }: { onSave: (s: PriceSchedule) => void; onC
       <div className="flex justify-end gap-2 pt-1">
         <button
           onClick={onCancel}
-          className="px-4 py-2 rounded-xl text-sm font-medium text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+          className="px-4 py-2 rounded-lg text-sm font-medium text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
         >
           Cancelar
         </button>
         <button
           onClick={handleSave}
-          className="px-4 py-2 rounded-xl text-sm font-medium bg-[#00B4A6] text-white hover:bg-[#245a41] transition-colors"
+          className="px-4 py-2 rounded-lg text-sm font-medium bg-[#00B4A6] text-white hover:bg-[#245a41] transition-colors"
         >
           Programar cambio
         </button>
@@ -410,7 +410,7 @@ export default function PriceScheduler() {
             <div
               key={schedule.id}
               className={cn(
-                "bg-white dark:bg-card border rounded-2xl p-4 shadow-sm transition-opacity",
+                "bg-white dark:bg-card border rounded-xl p-4  transition-opacity",
                 status === "expirado" ? "border-gray-100 dark:border-card-border/50 opacity-70" : "border-gray-200 dark:border-card-border"
               )}
             >

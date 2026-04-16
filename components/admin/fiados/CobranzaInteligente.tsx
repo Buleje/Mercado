@@ -175,7 +175,7 @@ function KpiCard({
   colorClass: string;
 }) {
   return (
-    <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl p-4 shadow-sm flex items-center gap-3">
+    <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl p-4  flex items-center gap-3">
       <div
         className={cn(
           "w-10 h-10 rounded-xl flex items-center justify-center shrink-0",
@@ -217,7 +217,7 @@ function ModalDescuento({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
-      <div className="bg-white dark:bg-card rounded-2xl shadow-2xl w-full max-w-sm border border-gray-200 dark:border-card-border overflow-hidden">
+      <div className="bg-white dark:bg-card rounded-xl w-full max-w-sm border border-gray-200 dark:border-card-border overflow-hidden">
         {/* Header */}
         <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100 dark:border-card-border">
           <div className="flex items-center gap-2">
@@ -279,7 +279,7 @@ function ModalDescuento({
                     abrirWhatsApp(fiado, msg);
                     onClose();
                   }}
-                  className="w-full flex items-center justify-center gap-2 py-2 rounded-xl text-xs font-bold text-white bg-[#25D366] hover:bg-[#1da851] transition-colors"
+                  className="w-full flex items-center justify-center gap-2 py-2 rounded-lg text-xs font-bold text-white bg-[#25D366] hover:bg-[#1da851] transition-colors"
                 >
                   <MessageCircle className="h-3.5 w-3.5" />
                   Enviar por WhatsApp
@@ -410,7 +410,7 @@ export default function CobranzaInteligente() {
         </div>
         <button
           onClick={fetchFiados}
-          className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold text-[#00B4A6] border border-[#00B4A6]/30 hover:bg-[#00B4A6]/10 transition-colors"
+          className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-bold text-[#00B4A6] border border-[#00B4A6]/30 hover:bg-[#00B4A6]/10 transition-colors"
         >
           <RefreshCw className="h-3.5 w-3.5" />
           Actualizar
@@ -450,8 +450,8 @@ export default function CobranzaInteligente() {
       </div>
 
       {/* Acciones masivas por nivel */}
-      <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl p-4 shadow-sm">
-        <p className="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-3">
+      <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl p-4 ">
+        <p className="text-xs font-bold text-gray-500 dark:text-gray-400 mb-3">
           Envío masivo por nivel
         </p>
         <div className="flex flex-wrap gap-2">
@@ -483,7 +483,7 @@ export default function CobranzaInteligente() {
 
       {/* Filtro por nivel */}
       <div className="flex items-center gap-2 flex-wrap">
-        <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">
+        <span className="text-[10px] font-bold text-gray-400">
           Filtrar:
         </span>
         <button
@@ -519,7 +519,7 @@ export default function CobranzaInteligente() {
 
       {/* Tabla de cobranza */}
       {fiadosFiltrados.length === 0 ? (
-        <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl p-10 text-center">
+        <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl p-10 text-center">
           <TrendingUp className="h-10 w-10 text-[#00B4A6]/40 mx-auto mb-2" />
           <p className="text-sm font-bold text-gray-500 dark:text-gray-400">
             {fiados.length === 0
@@ -528,27 +528,27 @@ export default function CobranzaInteligente() {
           </p>
         </div>
       ) : (
-        <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl overflow-hidden shadow-sm">
+        <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl overflow-hidden ">
           <div className="overflow-x-auto">
             <table className="w-full min-w-[680px] text-sm">
               <thead className="sticky top-0 bg-white dark:bg-card z-10 border-b border-gray-100 dark:border-white/5">
                 <tr className="text-left">
-                  <th className="px-4 py-3 font-semibold text-gray-500 dark:text-gray-400 text-xs uppercase tracking-wider">
+                  <th className="px-4 py-3 font-semibold text-gray-500 dark:text-gray-400 text-xs">
                     Cliente
                   </th>
-                  <th className="px-4 py-3 font-semibold text-gray-500 dark:text-gray-400 text-xs uppercase tracking-wider text-right">
+                  <th className="px-4 py-3 font-semibold text-gray-500 dark:text-gray-400 text-xs text-right">
                     Monto
                   </th>
-                  <th className="px-4 py-3 font-semibold text-gray-500 dark:text-gray-400 text-xs uppercase tracking-wider text-center">
+                  <th className="px-4 py-3 font-semibold text-gray-500 dark:text-gray-400 text-xs text-center">
                     Días vencido
                   </th>
-                  <th className="px-4 py-3 font-semibold text-gray-500 dark:text-gray-400 text-xs uppercase tracking-wider">
+                  <th className="px-4 py-3 font-semibold text-gray-500 dark:text-gray-400 text-xs">
                     Nivel
                   </th>
-                  <th className="px-4 py-3 font-semibold text-gray-500 dark:text-gray-400 text-xs uppercase tracking-wider hidden md:table-cell">
+                  <th className="px-4 py-3 font-semibold text-gray-500 dark:text-gray-400 text-xs hidden md:table-cell">
                     Acción sugerida
                   </th>
-                  <th className="px-4 py-3 font-semibold text-gray-500 dark:text-gray-400 text-xs uppercase tracking-wider text-right">
+                  <th className="px-4 py-3 font-semibold text-gray-500 dark:text-gray-400 text-xs text-right">
                     Acciones
                   </th>
                 </tr>

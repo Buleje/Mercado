@@ -195,7 +195,7 @@ export default function CategoriesEditorTab() {
         <div className="flex flex-wrap items-center gap-2">
           <button
             onClick={bulkGenerateSeo}
-            className="inline-flex items-center gap-1.5 px-2 sm:px-4 py-1.5 sm:py-2 rounded-xl text-xs font-bold text-primary bg-primary/10 hover:bg-primary/20 transition-all"
+            className="inline-flex items-center gap-1.5 px-2 sm:px-4 py-1.5 sm:py-2 rounded-lg text-xs font-bold text-primary bg-primary/10 hover:bg-primary/20 transition-all"
           >
             <Sparkles className="h-3.5 w-3.5" />
             Auto-generar SEO
@@ -204,7 +204,7 @@ export default function CategoriesEditorTab() {
             onClick={handleSave}
             disabled={!hasChanges || saving}
             className={cn(
-              "inline-flex items-center gap-1.5 px-2 sm:px-4 py-1.5 sm:py-2 rounded-xl text-xs font-bold text-white shadow-md transition-all",
+              "inline-flex items-center gap-1.5 px-2 sm:px-4 py-1.5 sm:py-2 rounded-lg text-xs font-bold text-white transition-all",
               saved ? "bg-emerald-500" : "bg-primary hover:bg-primary-dark disabled:opacity-40 disabled:cursor-not-allowed"
             )}
           >

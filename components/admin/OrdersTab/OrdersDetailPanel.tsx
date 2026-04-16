@@ -57,7 +57,7 @@ export function OrdersDetailPanel({
       onClick={onClose}
     >
       <div
-        className="bg-white dark:bg-card rounded-2xl shadow-2xl w-full max-w-lg max-h-[90vh] flex flex-col"
+        className="bg-white dark:bg-card rounded-xl w-full max-w-lg max-h-[90vh] flex flex-col"
         onClick={e => e.stopPropagation()}
       >
         {/* Header */}
@@ -88,7 +88,7 @@ export function OrdersDetailPanel({
         <div className="overflow-y-auto px-5 py-4 space-y-4 flex-1">
           {/* Visual Timeline */}
           <div className="bg-linear-to-br from-emerald-50 to-indigo-50 dark:from-emerald-950/20 dark:to-indigo-950/20 rounded-xl p-4 border border-emerald-100 dark:border-emerald-900/30">
-            <p className="text-xs font-bold text-emerald-700 dark:text-emerald-400 uppercase tracking-wide mb-3">Estado del Pedido</p>
+            <p className="text-xs font-bold text-emerald-700 dark:text-emerald-400 mb-3">Estado del Pedido</p>
             <div className="flex items-center justify-between gap-2 relative">
               <div className="absolute top-5 left-0 right-0 h-0.5 bg-gray-200 dark:bg-gray-700" style={{ zIndex: 0 }} />
               {getOrderTimeline(order).map((step) => {
@@ -137,7 +137,7 @@ export function OrdersDetailPanel({
 
           {/* Delivery Driver Assignment */}
           <div className="bg-linear-to-br from-purple-50 to-pink-50 dark:from-purple-950/20 dark:to-pink-950/20 rounded-xl p-4 border border-purple-100 dark:border-purple-900/30">
-            <p className="text-xs font-bold text-purple-700 dark:text-purple-400 uppercase tracking-wide mb-3">Asignar Delivery</p>
+            <p className="text-xs font-bold text-purple-700 dark:text-purple-400 mb-3">Asignar Delivery</p>
             {currentDriver && (
               <div className="flex items-center gap-2 mb-3">
                 <span
@@ -186,7 +186,7 @@ export function OrdersDetailPanel({
 
           {/* Customer */}
           <div className="space-y-1">
-            <p className="text-xs font-bold text-gray-400 dark:text-muted uppercase tracking-wide">Cliente</p>
+            <p className="text-xs font-bold text-gray-400 dark:text-muted">Cliente</p>
             <p className="font-bold text-gray-900 dark:text-foreground">{order.customer.name}</p>
             {order.customer.phone && (
               <p className="text-sm text-gray-500 dark:text-muted flex items-center gap-1.5">
@@ -197,7 +197,7 @@ export function OrdersDetailPanel({
 
           {/* Location */}
           <div className="space-y-1">
-            <p className="text-xs font-bold text-gray-400 dark:text-muted uppercase tracking-wide">Dirección</p>
+            <p className="text-xs font-bold text-gray-400 dark:text-muted">Dirección</p>
             <div className="flex items-start gap-2">
               <p className="text-sm text-gray-700 dark:text-foreground flex-1">{order.customer.location}</p>
               <a
@@ -218,7 +218,7 @@ export function OrdersDetailPanel({
           {/* Payment */}
           {order.paymentMethod && (
             <div className="space-y-1">
-              <p className="text-xs font-bold text-gray-400 dark:text-muted uppercase tracking-wide">Pago</p>
+              <p className="text-xs font-bold text-gray-400 dark:text-muted">Pago</p>
               <div className="flex items-center gap-2 flex-wrap">
                 <span className={cn(
                   "inline-flex px-2 py-0.5 rounded-full text-xs font-bold",
@@ -270,14 +270,14 @@ export function OrdersDetailPanel({
           {/* Customer Notes */}
           {order.notes && (
             <div className="space-y-1">
-              <p className="text-xs font-bold text-gray-400 dark:text-muted uppercase tracking-wide">Notas del cliente</p>
+              <p className="text-xs font-bold text-gray-400 dark:text-muted">Notas del cliente</p>
               <p className="text-sm text-gray-600 dark:text-muted italic">{order.notes}</p>
             </div>
           )}
 
           {/* Admin Internal Notes */}
           <div className="space-y-2">
-            <p className="text-xs font-bold text-gray-400 dark:text-muted uppercase tracking-wide">Notas internas del equipo</p>
+            <p className="text-xs font-bold text-gray-400 dark:text-muted">Notas internas del equipo</p>
             {adminNotes && (
               <div className="bg-amber-50 dark:bg-amber-900/10 border border-amber-200 dark:border-amber-800 rounded-xl p-3">
                 <pre className="text-xs text-amber-800 dark:text-amber-300 whitespace-pre-wrap font-sans">{adminNotes}</pre>
@@ -305,7 +305,7 @@ export function OrdersDetailPanel({
           {order.status !== "cancelado" && order.status !== "entregado" && (
             <button
               onClick={() => onShowRejectModal(order.id)}
-              className="w-full flex items-center justify-center gap-2 py-2 rounded-xl bg-red-50 text-red-600 text-sm font-bold hover:bg-red-100 transition-colors border border-red-200"
+              className="w-full flex items-center justify-center gap-2 py-2 rounded-lg bg-red-50 text-red-600 text-sm font-bold hover:bg-red-100 transition-colors border border-red-200"
             >
               <X className="h-4 w-4" />
               Rechazar pedido (con motivo)
@@ -314,7 +314,7 @@ export function OrdersDetailPanel({
 
           {/* Items */}
           <div className="space-y-2">
-            <p className="text-xs font-bold text-gray-400 dark:text-muted uppercase tracking-wide">Productos</p>
+            <p className="text-xs font-bold text-gray-400 dark:text-muted">Productos</p>
             <div className="rounded-xl border border-gray-100 dark:border-card-border divide-y divide-gray-100 overflow-hidden">
               {order.items.map((item, i) => (
                 <div key={i} className="flex justify-between items-center px-3 py-2 text-sm">
@@ -373,7 +373,7 @@ export function OrdersDetailPanel({
           {/* Invoice */}
           <button
             onClick={() => window.open(`/api/invoices/${order.id}`, "_blank", "noopener,noreferrer")}
-            className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl bg-primary/10 text-primary text-sm font-bold hover:bg-primary/20 transition-colors"
+            className="w-full flex items-center justify-center gap-2 py-2.5 rounded-lg bg-primary/10 text-primary text-sm font-bold hover:bg-primary/20 transition-colors"
           >
             <FileText className="h-4 w-4" />
             Generar Boleta

@@ -73,7 +73,7 @@ function CircularGauge({
           <span className="text-[8px] text-gray-400 uppercase">{unit}</span>
         </div>
       </div>
-      <span className="text-[10px] font-semibold text-gray-600 dark:text-zinc-400 uppercase tracking-wide">
+      <span className="text-[10px] font-semibold text-gray-600 dark:text-zinc-400">
         {label}
       </span>
       <span className={cn("text-[9px] font-bold px-1.5 py-0.5 rounded-full", grade.color, grade.color.replace("text-", "bg-").replace("-600", "-50"), "dark:" + grade.color.replace("text-", "bg-").replace("-600", "-900/20"))}>

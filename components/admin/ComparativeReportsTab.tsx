@@ -197,11 +197,11 @@ export default function ComparativeReportsTab() {
   }
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-6">
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center gap-3 justify-between">
         <div className="flex items-center gap-3">
-          <div className="h-10 w-10 rounded-xl bg-[#00B4A6] text-white flex items-center justify-center shadow-sm shrink-0">
+          <div className="h-10 w-10 rounded-lg bg-[#00B4A6] text-white flex items-center justify-center  shrink-0">
             <BarChart3 className="h-5 w-5" />
           </div>
           <div>
@@ -219,7 +219,7 @@ export default function ComparativeReportsTab() {
                 className={cn(
                   "px-3 py-1.5 rounded-lg text-xs font-bold transition-all",
                   comparison === opt
-                    ? "bg-white dark:bg-card text-[#00B4A6] shadow-sm"
+                    ? "bg-white dark:bg-card text-[#00B4A6] "
                     : "text-gray-500 dark:text-muted hover:text-gray-700 dark:hover:text-foreground",
                 )}
               >
@@ -229,7 +229,7 @@ export default function ComparativeReportsTab() {
           </div>
           <button
             onClick={fetchData}
-            className="p-2 rounded-xl hover:bg-gray-100 dark:hover:bg-white/5 transition-colors min-h-[40px] min-w-[40px] flex items-center justify-center"
+            className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-white/5 transition-colors min-h-[40px] min-w-[40px] flex items-center justify-center"
             title="Actualizar"
           >
             <RefreshCw className="h-4 w-4 text-gray-400" />

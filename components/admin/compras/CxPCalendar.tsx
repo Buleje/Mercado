@@ -121,7 +121,7 @@ export default function CxPCalendar() {
   if (loading) return <SkeletonGrid />;
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-6">
       {/* Summary strip */}
       {data?.resumen && (
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">

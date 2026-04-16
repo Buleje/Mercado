@@ -59,7 +59,7 @@ function MenuOverlay({ items, position, onClose }: MenuOverlayProps) {
     <div
       ref={menuRef}
       className={cn(
-        "fixed z-[9999] bg-white dark:bg-zinc-900 rounded-xl shadow-2xl",
+        "fixed z-[9999] bg-white dark:bg-zinc-900 rounded-xl",
         "border border-gray-100 dark:border-zinc-800 min-w-[180px] py-1",
         "animate-in fade-in zoom-in-95 duration-150",
       )}

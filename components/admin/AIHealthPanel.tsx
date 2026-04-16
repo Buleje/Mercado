@@ -163,7 +163,7 @@ export default function AIHealthPanel() {
             >
               {data.score}%
             </span>
-            <span className="text-[10px] font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">
+            <span className="text-[10px] font-medium text-gray-500 dark:text-gray-400">
               Salud IA
             </span>
           </div>

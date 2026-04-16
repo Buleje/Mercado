@@ -64,9 +64,9 @@ interface PopularPanelProps {
 
 function PopularPanel({ products, loading, onAdd, onClose }: PopularPanelProps) {
   return (
-    <div className="absolute top-full left-0 mt-2 z-50 bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl shadow-xl w-72 overflow-hidden">
+    <div className="absolute top-full left-0 mt-2 z-50 bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl w-72 overflow-hidden">
       <div className="px-3 py-2 bg-gray-50 dark:bg-surface border-b border-gray-100 dark:border-card-border flex items-center justify-between">
-        <span className="text-[10px] font-bold uppercase tracking-wider text-gray-500 dark:text-muted">
+        <span className="text-[10px] font-bold text-gray-500 dark:text-muted">
           Top 5 productos
         </span>
         <button
@@ -134,9 +134,9 @@ interface CustomerPanelProps {
 
 function CustomerPanel({ customers, loading, onSelect, onClose }: CustomerPanelProps) {
   return (
-    <div className="absolute top-full left-0 mt-2 z-50 bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl shadow-xl w-64 overflow-hidden">
+    <div className="absolute top-full left-0 mt-2 z-50 bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl w-64 overflow-hidden">
       <div className="px-3 py-2 bg-gray-50 dark:bg-surface border-b border-gray-100 dark:border-card-border flex items-center justify-between">
-        <span className="text-[10px] font-bold uppercase tracking-wider text-gray-500 dark:text-muted">
+        <span className="text-[10px] font-bold text-gray-500 dark:text-muted">
           Clientes frecuentes
         </span>
         <button
@@ -354,7 +354,7 @@ export default function QuickActionsBar({
     >
       {/* ── Botón: Ultima venta ── */}
       <div className="relative">
-        <div className="flex items-stretch rounded-xl overflow-hidden border border-gray-200 dark:border-card-border bg-white dark:bg-card shadow-sm">
+        <div className="flex items-stretch rounded-xl overflow-hidden border border-gray-200 dark:border-card-border bg-white dark:bg-card ">
           <button
             onClick={handleRepeatSale}
             disabled={lastSaleLoading || !lastSale || !onRepeatSale || repeatLoading}
@@ -393,7 +393,7 @@ export default function QuickActionsBar({
         <button
           onClick={toggleCustomers}
           className={cn(
-            "flex items-center gap-2 px-3 py-2 rounded-xl border text-sm font-semibold transition-colors shadow-sm",
+            "flex items-center gap-2 px-3 py-2 rounded-xl border text-sm font-semibold transition-colors ",
             activePanel === "customers"
               ? "bg-violet-50 dark:bg-violet-900/20 border-violet-300 dark:border-violet-700 text-violet-700 dark:text-violet-300"
               : "bg-white dark:bg-card border-gray-200 dark:border-card-border text-gray-700 dark:text-foreground hover:bg-gray-50 dark:hover:bg-surface"
@@ -418,7 +418,7 @@ export default function QuickActionsBar({
         <button
           onClick={toggleProducts}
           className={cn(
-            "flex items-center gap-2 px-3 py-2 rounded-xl border text-sm font-semibold transition-colors shadow-sm",
+            "flex items-center gap-2 px-3 py-2 rounded-xl border text-sm font-semibold transition-colors ",
             activePanel === "products"
               ? "bg-primary/10 dark:bg-primary/20 border-primary/40 dark:border-primary/40 text-primary"
               : "bg-white dark:bg-card border-gray-200 dark:border-card-border text-gray-700 dark:text-foreground hover:bg-gray-50 dark:hover:bg-surface"

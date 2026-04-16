@@ -217,7 +217,7 @@ export default function SuppliersTab() {
         <div className="flex flex-wrap gap-2">
           <button
             onClick={() => { setEditingSupplier(null); setShowProveedorModal(true); }}
-            className="flex items-center gap-1.5 text-sm font-bold text-white bg-primary hover:bg-primary-dark px-2 sm:px-4 py-1.5 sm:py-2 rounded-lg transition-colors shadow-sm"
+            className="flex items-center gap-1.5 text-sm font-bold text-white bg-primary hover:bg-primary-dark px-2 sm:px-4 py-1.5 sm:py-2 rounded-lg transition-colors "
           >
             <Plus className="h-4 w-4" /> Nuevo proveedor
           </button>
@@ -226,7 +226,7 @@ export default function SuppliersTab() {
 
       {/* Payment Alerts Banner */}
       {(overduePayables.length > 0 || approachingPayables.length > 0) && (
-        <div className="bg-linear-to-r from-red-50 to-amber-50 dark:from-red-950/20 dark:to-amber-950/20 border-l-4 border-red-500 dark:border-red-600 rounded-xl p-4 shadow-sm">
+        <div className="bg-linear-to-r from-red-50 to-amber-50 dark:from-red-950/20 dark:to-amber-950/20 border-l-4 border-red-500 dark:border-red-600 rounded-xl p-4 ">
           <div className="flex flex-wrap items-start justify-between gap-2 sm:gap-4">
             <div className="flex-1">
               <div className="flex flex-wrap items-center gap-2 mb-2">
@@ -318,19 +318,19 @@ export default function SuppliersTab() {
 
       {/* Suppliers list */}
       {loading ? (
-        <TableSkeleton rows={4} cols={4} className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl" />
+        <TableSkeleton rows={4} cols={4} className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl" />
       ) : suppliers.length === 0 ? (
         <EmptyState
           icon={Plus}
           title="Sin proveedores registrados"
           description="No hay proveedores registrados. Agrega tu primer proveedor."
           action={{ label: "Nuevo proveedor", onClick: () => { setEditingSupplier(null); setShowProveedorModal(true); } }}
-          className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl"
+          className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl"
         />
       ) : (
         <div className="space-y-3">
           {suppliers.map((s) => (
-            <div key={s.id} className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl p-4 shadow-sm">
+            <div key={s.id} className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl p-4 ">
               {editingId === s.id ? (
                 <div className="space-y-3">
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -422,7 +422,7 @@ export default function SuppliersTab() {
                       const maxVal = Math.max(...history.map((h) => h.total), 1);
                       return (
                         <div className="mt-3 pt-3 border-t border-gray-100 dark:border-card-border">
-                          <p className="text-[10px] font-bold text-gray-400 dark:text-muted mb-1.5 uppercase tracking-wide">Compras últimos 6 meses</p>
+                          <p className="text-[10px] font-bold text-gray-400 dark:text-muted mb-1.5">Compras últimos 6 meses</p>
                           <div className="flex flex-wrap items-end gap-1 h-10">
                             {history.map((h, i) => (
                               <div key={i} className="flex flex-col items-center gap-0.5 flex-1">
@@ -505,7 +505,7 @@ export default function SuppliersTab() {
 
       {showAdd && (
         <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/50" onClick={(e) => e.target === e.currentTarget && setShowAdd(false)}>
-          <div className="bg-white dark:bg-card w-full sm:max-w-lg sm:rounded-2xl rounded-t-2xl shadow-2xl overflow-y-auto max-h-[90dvh]">
+          <div className="bg-white dark:bg-card w-full sm:max-w-lg sm:rounded-xl rounded-t-2xl overflow-y-auto max-h-[90dvh]">
             <div className="flex items-center justify-between px-5 py-4 border-b sticky top-0 bg-white dark:bg-card z-10">
               <h3 className="font-extrabold text-gray-900 dark:text-foreground">Nuevo proveedor</h3>
               <button onClick={() => setShowAdd(false)} className="p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-accent transition-colors"><X className="h-5 w-5 text-gray-500 dark:text-muted" /></button>
@@ -538,8 +538,8 @@ export default function SuppliersTab() {
                 </div>
               </div>
               <div className="flex flex-wrap gap-3">
-                <button type="button" onClick={() => setShowAdd(false)} className="flex-1 py-2.5 rounded-xl border border-gray-200 dark:border-card-border text-sm font-semibold text-gray-600 dark:text-muted hover:bg-gray-50 dark:hover:bg-surface transition-colors">Cancelar</button>
-                <button type="submit" disabled={saving} className="flex-1 py-2.5 rounded-xl bg-primary text-white text-sm font-bold hover:bg-primary-dark transition-colors disabled:opacity-60">
+                <button type="button" onClick={() => setShowAdd(false)} className="flex-1 py-2.5 rounded-lg border border-gray-200 dark:border-card-border text-sm font-semibold text-gray-600 dark:text-muted hover:bg-gray-50 dark:hover:bg-surface transition-colors">Cancelar</button>
+                <button type="submit" disabled={saving} className="flex-1 py-2.5 rounded-lg bg-primary text-white text-sm font-bold hover:bg-primary-dark transition-colors disabled:opacity-60">
                   {saving ? "Guardando..." : "Agregar proveedor"}
                 </button>
               </div>

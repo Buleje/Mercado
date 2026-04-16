@@ -164,10 +164,10 @@ export default function AutoSegmentsTab() {
           <p className="text-sm text-gray-500 dark:text-muted mt-0.5">Reglas dinámicas que se actualizan con datos reales</p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
-          <button onClick={reload} className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-sm font-bold text-gray-600 dark:text-muted bg-gray-100 dark:bg-surface hover:bg-gray-200 dark:hover:bg-card">
+          <button onClick={reload} className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-bold text-gray-600 dark:text-muted bg-gray-100 dark:bg-surface hover:bg-gray-200 dark:hover:bg-card">
             <RefreshCw className="h-4 w-4" />
           </button>
-          <button onClick={openCreate} className="flex items-center gap-1.5 px-3 sm:px-4 py-1.5 sm:py-2 rounded-xl text-sm font-bold bg-primary text-white hover:bg-primary/90">
+          <button onClick={openCreate} className="flex items-center gap-1.5 px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg text-sm font-bold bg-primary text-white hover:bg-primary/90">
             <Plus className="h-4 w-4" /> Nuevo segmento
           </button>
         </div>
@@ -193,7 +193,7 @@ export default function AutoSegmentsTab() {
         {segments.map(sg => {
           const isExpanded = expandedId === sg.id;
           return (
-            <div key={sg.id} className={cn("bg-white dark:bg-card rounded-2xl border border-gray-200 dark:border-card-border overflow-hidden transition-opacity", !sg.active && "opacity-50")}>
+            <div key={sg.id} className={cn("bg-white dark:bg-card rounded-xl border border-gray-200 dark:border-card-border overflow-hidden transition-opacity", !sg.active && "opacity-50")}>
               {/* Card header */}
               <div className="p-3 sm:p-5">
                 <div className="flex items-start justify-between gap-2">
@@ -251,7 +251,7 @@ export default function AutoSegmentsTab() {
               {/* Preview de clientes */}
               {isExpanded && sg.matchedCustomers.length > 0 && (
                 <div className="border-t border-gray-100 dark:border-card-border px-3 sm:px-5 py-3 bg-gray-50/50 dark:bg-surface/30">
-                  <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wide mb-2">Clientes en este segmento</p>
+                  <p className="text-[10px] font-bold text-gray-400 mb-2">Clientes en este segmento</p>
                   <div className="space-y-1.5">
                     {sg.matchedCustomers.slice(0, 5).map(c => (
                       <div key={c.phone} className="flex items-center justify-between text-xs">
@@ -287,10 +287,10 @@ export default function AutoSegmentsTab() {
         })}
 
         {segments.length === 0 && (
-          <div className="col-span-2 bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl flex flex-col items-center py-12 gap-3 text-gray-400 dark:text-muted">
+          <div className="col-span-2 bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl flex flex-col items-center py-12 gap-3 text-gray-400 dark:text-muted">
             <Users className="h-10 w-10 opacity-30" />
             <p className="text-sm">No hay segmentos definidos</p>
-            <button onClick={openCreate} className="flex items-center gap-1.5 px-4 py-2 rounded-xl text-sm font-bold bg-primary text-white hover:bg-primary/90">
+            <button onClick={openCreate} className="flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-bold bg-primary text-white hover:bg-primary/90">
               <Plus className="h-4 w-4" />Crear primer segmento
             </button>
           </div>
@@ -300,16 +300,16 @@ export default function AutoSegmentsTab() {
       {/* Modal crear/editar */}
       {showModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4" onClick={() => setShowModal(false)}>
-          <div className="bg-white dark:bg-card rounded-2xl shadow-2xl p-4 sm:p-6 max-w-lg w-full border border-gray-200 dark:border-card-border max-h-[85vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
+          <div className="bg-white dark:bg-card rounded-xl p-4 sm:p-6 max-w-lg w-full border border-gray-200 dark:border-card-border max-h-[85vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
             <h3 className="text-lg font-extrabold text-gray-900 dark:text-foreground mb-4">{editSegment ? "Editar segmento" : "Nuevo segmento"}</h3>
-            <div className="space-y-4">
+            <div className="space-y-6">
               <div>
                 <label className="text-xs font-bold text-gray-500 dark:text-muted">Nombre</label>
-                <input value={formName} onChange={e => setFormName(e.target.value)} className="w-full mt-1 px-3 py-2 rounded-xl border border-gray-200 dark:border-card-border bg-white dark:bg-surface text-sm" placeholder="ej. Clientes inactivos" />
+                <input value={formName} onChange={e => setFormName(e.target.value)} className="w-full mt-1 px-3 py-2 rounded-lg border border-gray-200 dark:border-card-border bg-white dark:bg-surface text-sm" placeholder="ej. Clientes inactivos" />
               </div>
               <div>
                 <label className="text-xs font-bold text-gray-500 dark:text-muted">Descripción</label>
-                <input value={formDesc} onChange={e => setFormDesc(e.target.value)} className="w-full mt-1 px-3 py-2 rounded-xl border border-gray-200 dark:border-card-border bg-white dark:bg-surface text-sm" placeholder="ej. Sin comprar en más de 30 días" />
+                <input value={formDesc} onChange={e => setFormDesc(e.target.value)} className="w-full mt-1 px-3 py-2 rounded-lg border border-gray-200 dark:border-card-border bg-white dark:bg-surface text-sm" placeholder="ej. Sin comprar en más de 30 días" />
               </div>
               <div>
                 <label className="text-xs font-bold text-gray-500 dark:text-muted block mb-1.5">Color</label>
@@ -346,8 +346,8 @@ export default function AutoSegmentsTab() {
               </div>
             </div>
             <div className="flex justify-end gap-2 mt-5">
-              <button onClick={() => setShowModal(false)} className="px-4 py-2 rounded-xl text-sm font-bold text-gray-500 hover:bg-gray-100 dark:hover:bg-accent">Cancelar</button>
-              <button onClick={save} disabled={!formName.trim()} className="px-4 py-2 rounded-xl text-sm font-bold bg-primary text-white hover:bg-primary/90 disabled:opacity-50 flex items-center gap-1">
+              <button onClick={() => setShowModal(false)} className="px-4 py-2 rounded-lg text-sm font-bold text-gray-500 hover:bg-gray-100 dark:hover:bg-accent">Cancelar</button>
+              <button onClick={save} disabled={!formName.trim()} className="px-4 py-2 rounded-lg text-sm font-bold bg-primary text-white hover:bg-primary/90 disabled:opacity-50 flex items-center gap-1">
                 <Check className="h-4 w-4" />Guardar
               </button>
             </div>

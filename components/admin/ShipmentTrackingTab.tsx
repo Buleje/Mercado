@@ -153,7 +153,7 @@ function OrderCard({
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, y: -8 }}
       transition={{ duration: 0.25 }}
-      className="bg-white dark:bg-card rounded-2xl border border-gray-200 dark:border-card-border overflow-hidden"
+      className="bg-white dark:bg-card rounded-xl border border-gray-200 dark:border-card-border overflow-hidden"
     >
       {/* Header */}
       <div className="p-3 sm:p-5">

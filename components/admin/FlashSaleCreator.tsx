@@ -91,12 +91,12 @@ function FlashSalePreview({ product, salePrice, duration, endIso }: PreviewProps
   const pct = discountPct(product.price, salePrice);
 
   return (
-    <div className="rounded-xl border-2 border-[#f97316] bg-white dark:bg-gray-900 overflow-hidden shadow-md">
+    <div className="rounded-xl border-2 border-[#f97316] bg-white dark:bg-gray-900 overflow-hidden">
       {/* Cabecera oferta */}
       <div className="flex items-center justify-between bg-[#f97316] px-3 py-2">
         <div className="flex items-center gap-1.5">
           <Zap className="h-4 w-4 text-white" aria-hidden="true" />
-          <span className="text-sm font-bold text-white uppercase tracking-wide">Oferta Relampago</span>
+          <span className="text-sm font-bold text-white">Oferta Relampago</span>
         </div>
         <CountdownDisplay endIso={endIso} />
       </div>
@@ -232,7 +232,7 @@ export function FlashSaleCreator({ className }: { className?: string }) {
       className={cn(
         "rounded-xl border bg-white dark:bg-gray-900",
         "border-gray-200 dark:border-gray-700",
-        "p-5 shadow-sm",
+        "p-5 ",
         className
       )}
       role="region"
@@ -291,7 +291,7 @@ export function FlashSaleCreator({ className }: { className?: string }) {
           {/* Resultados de busqueda */}
           {products.length > 0 && !selected && (
             <ul
-              className="mt-1 max-h-48 overflow-y-auto rounded-lg border border-gray-200 bg-white shadow-lg dark:border-gray-700 dark:bg-gray-800"
+              className="mt-1 max-h-48 overflow-y-auto rounded-lg border border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-800"
               role="listbox"
               aria-label="Resultados de busqueda"
             >
@@ -449,7 +449,7 @@ export function FlashSaleCreator({ className }: { className?: string }) {
       {/* Preview */}
       {showPreview && canPreview && selected && (
         <div className="mt-4">
-          <p className="mb-2 text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">
+          <p className="mb-2 text-xs font-medium text-gray-500 dark:text-gray-400">
             Asi se vera la oferta
           </p>
           <FlashSalePreview

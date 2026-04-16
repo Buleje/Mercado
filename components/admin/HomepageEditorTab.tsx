@@ -42,7 +42,7 @@ function SectionEditor({
   onToggle: () => void;
 }) {
   return (
-    <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl overflow-hidden shadow-sm hover:shadow-md transition-shadow">
+    <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl overflow-hidden  hover:shadow-sm transition-shadow">
       <button
         onClick={onToggle}
         className="w-full flex flex-wrap items-center gap-3 px-5 py-4 text-left group"
@@ -89,7 +89,7 @@ function SectionEditor({
                     onChange={(e) => onChange(field.key, e.target.value)}
                     placeholder={field.placeholder}
                     rows={3}
-                    className="w-full rounded-xl border border-gray-200 dark:border-card-border bg-gray-50 dark:bg-background px-3.5 py-2.5 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all resize-none"
+                    className="w-full rounded-lg border border-gray-200 dark:border-card-border bg-gray-50 dark:bg-background px-3.5 py-2.5 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all resize-none"
                   />
                 ) : (
                   <input
@@ -97,7 +97,7 @@ function SectionEditor({
                     value={String(value)}
                     onChange={(e) => onChange(field.key, e.target.value)}
                     placeholder={field.placeholder}
-                    className="w-full rounded-xl border border-gray-200 dark:border-card-border bg-gray-50 dark:bg-background px-3.5 py-2.5 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
+                    className="w-full rounded-lg border border-gray-200 dark:border-card-border bg-gray-50 dark:bg-background px-3.5 py-2.5 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
                   />
                 )}
               </div>
@@ -308,14 +308,14 @@ export default function HomepageEditorTab() {
             href="/"
             target="_blank"
             rel="noopener noreferrer"
-            className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold text-gray-600 dark:text-foreground bg-gray-100 dark:bg-accent hover:bg-gray-200 transition-colors"
+            className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-bold text-gray-600 dark:text-foreground bg-gray-100 dark:bg-accent hover:bg-gray-200 transition-colors"
           >
             <Eye className="h-3.5 w-3.5" /> Vista previa
           </a>
           <button
             onClick={handleReset}
             disabled={!hasChanges}
-            className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold text-gray-600 dark:text-foreground bg-gray-100 dark:bg-accent hover:bg-gray-200 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+            className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-bold text-gray-600 dark:text-foreground bg-gray-100 dark:bg-accent hover:bg-gray-200 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
           >
             <RotateCcw className="h-3.5 w-3.5" /> Restaurar
           </button>
@@ -323,7 +323,7 @@ export default function HomepageEditorTab() {
             onClick={handleSave}
             disabled={!hasChanges || saving}
             className={cn(
-              "inline-flex items-center gap-1.5 px-2 sm:px-4 py-1.5 sm:py-2 rounded-xl text-xs font-bold text-white shadow-md transition-all",
+              "inline-flex items-center gap-1.5 px-2 sm:px-4 py-1.5 sm:py-2 rounded-lg text-xs font-bold text-white transition-all",
               saved
                 ? "bg-emerald-500"
                 : "bg-primary hover:bg-primary-dark disabled:opacity-40 disabled:cursor-not-allowed"
@@ -342,7 +342,7 @@ export default function HomepageEditorTab() {
       </div>
 
       {/* Info banner */}
-      <div className="flex flex-wrap items-start gap-3 bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-100 dark:border-emerald-700/30 rounded-2xl px-2 sm:px-4 py-2 sm:py-3">
+      <div className="flex flex-wrap items-start gap-3 bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-100 dark:border-emerald-700/30 rounded-xl px-2 sm:px-4 py-2 sm:py-3">
         <Sparkles className="h-4 w-4 text-emerald-500 mt-0.5 shrink-0" />
         <p className="text-xs text-emerald-700 dark:text-emerald-300 leading-relaxed">
           Los cambios se guardan en la configuración del sistema. Haz clic en <strong>Guardar cambios</strong> y luego refresca la página de inicio para ver los cambios aplicados.
@@ -363,7 +363,7 @@ export default function HomepageEditorTab() {
         ))}
 
         {/* FAQ Editor */}
-        <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl overflow-hidden shadow-sm">
+        <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl overflow-hidden ">
           <button onClick={() => toggleSection("faq")} className="w-full flex flex-wrap items-center gap-3 px-5 py-4 text-left group">
             <div className="w-11 h-11 rounded-xl flex items-center justify-center shrink-0 bg-amber-50 dark:bg-amber-900/20">
               <HelpCircle className="h-6 w-6 text-amber-500" />
@@ -391,7 +391,7 @@ export default function HomepageEditorTab() {
         </div>
 
         {/* Benefits Editor */}
-        <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl overflow-hidden shadow-sm">
+        <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl overflow-hidden ">
           <button onClick={() => toggleSection("benefits")} className="w-full flex flex-wrap items-center gap-3 px-5 py-4 text-left group">
             <div className="w-11 h-11 rounded-xl flex items-center justify-center shrink-0 bg-green-50 dark:bg-green-900/20">
               <Heart className="h-6 w-6 text-green-500" />
@@ -419,7 +419,7 @@ export default function HomepageEditorTab() {
         </div>
 
         {/* Testimonials Editor */}
-        <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl overflow-hidden shadow-sm">
+        <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl overflow-hidden ">
           <button onClick={() => toggleSection("testimonials")} className="w-full flex flex-wrap items-center gap-3 px-5 py-4 text-left group">
             <div className="w-11 h-11 rounded-xl flex items-center justify-center shrink-0 bg-cyan-50 dark:bg-cyan-900/20">
               <MessageSquare className="h-6 w-6 text-cyan-500" />

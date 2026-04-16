@@ -306,7 +306,7 @@ export default function PriceTagGenerator() {
 
         {/* Format selector */}
         <div className="rounded-xl border border-gray-200 bg-white p-4 dark:border-gray-700 dark:bg-gray-900">
-          <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">
+          <p className="mb-2 text-xs font-semibold text-gray-500 dark:text-gray-400">
             Formato de etiqueta
           </p>
           <div className="flex gap-2">
@@ -409,7 +409,7 @@ export default function PriceTagGenerator() {
 
             {/* Preview */}
             <div className="rounded-xl border border-gray-200 bg-gray-50 p-4 dark:border-gray-700 dark:bg-gray-800/50">
-              <p className="mb-3 text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">
+              <p className="mb-3 text-xs font-semibold text-gray-500 dark:text-gray-400">
                 Vista previa
               </p>
               <div className="flex flex-wrap gap-2">
@@ -432,7 +432,7 @@ export default function PriceTagGenerator() {
 
             <button
               onClick={handlePrint}
-              className="flex items-center justify-center gap-2 rounded-xl bg-[#00B4A6] px-6 py-3 text-sm font-semibold text-white transition hover:bg-[#245a40]"
+              className="flex items-center justify-center gap-2 rounded-lg bg-[#00B4A6] px-6 py-3 text-sm font-semibold text-white transition hover:bg-[#245a40]"
             >
               <Printer className="h-4 w-4" />
               Imprimir {totalLabels} etiqueta{totalLabels !== 1 ? "s" : ""}

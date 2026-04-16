@@ -252,7 +252,7 @@ export default function VentasDashboard({ dateRange }: { dateRange: DateRange })
     <div className="flex flex-col items-center justify-center gap-4 py-16">
       <AlertTriangle className="h-10 w-10 text-amber-500" />
       <p className="text-sm text-gray-600 dark:text-gray-400">{error}</p>
-      <button onClick={() => void refresh()} className="px-4 py-2 rounded-xl bg-[var(--brand-primary)] text-white text-sm font-bold hover:opacity-90 transition-opacity">Reintentar</button>
+      <button onClick={() => void refresh()} className="px-4 py-2 rounded-lg bg-[var(--brand-primary)] text-white text-sm font-bold hover:opacity-90 transition-opacity">Reintentar</button>
     </div>
   );
   if (!data) return null;
@@ -270,7 +270,7 @@ export default function VentasDashboard({ dateRange }: { dateRange: DateRange })
       </div>
 
       {/* ── Today vs Yesterday mini bar ── */}
-      <div className="flex items-center gap-3 bg-white dark:bg-card border border-gray-100 dark:border-card-border rounded-2xl px-5 py-3">
+      <div className="flex items-center gap-3 bg-white dark:bg-card border border-gray-100 dark:border-card-border rounded-xl px-5 py-3">
         <Clock className="h-4 w-4 text-gray-400" />
         <div className="flex-1 flex items-center gap-4 text-sm">
           <span className="text-gray-500 dark:text-muted">Hoy:</span>
@@ -314,7 +314,7 @@ function KPICard({ label, value, Icon, delta, sparkline, accent, invertTrend }: 
   const c = colorMap[accent];
 
   return (
-    <div className="relative bg-white dark:bg-card border border-gray-100 dark:border-card-border rounded-2xl p-4 overflow-hidden hover:shadow-md transition-shadow">
+    <div className="relative bg-white dark:bg-card border border-gray-100 dark:border-card-border rounded-xl p-4 overflow-hidden hover:shadow-sm transition-shadow">
       {delta != null && Math.abs(delta) >= 10 && (
         <div className={cn("absolute top-0 left-0 right-0 h-1", isPositive ? "bg-emerald-500" : "bg-red-500")} />
       )}
@@ -363,13 +363,13 @@ function DashboardSkeleton() {
     <div className="space-y-5 animate-pulse">
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
         {Array.from({ length: 6 }).map((_, i) => (
-          <div key={i} className="bg-gray-100 dark:bg-gray-800 rounded-2xl h-32" />
+          <div key={i} className="bg-gray-100 dark:bg-gray-800 rounded-xl h-32" />
         ))}
       </div>
-      <div className="bg-gray-100 dark:bg-gray-800 rounded-2xl h-12" />
+      <div className="bg-gray-100 dark:bg-gray-800 rounded-xl h-12" />
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-5">
-        <div className="lg:col-span-3 bg-gray-100 dark:bg-gray-800 rounded-2xl h-72" />
-        <div className="lg:col-span-2 bg-gray-100 dark:bg-gray-800 rounded-2xl h-72" />
+        <div className="lg:col-span-3 bg-gray-100 dark:bg-gray-800 rounded-xl h-72" />
+        <div className="lg:col-span-2 bg-gray-100 dark:bg-gray-800 rounded-xl h-72" />
       </div>
     </div>
   );

@@ -260,7 +260,7 @@ export function FinanzasSubTab(props: FinanzasSubTabProps) {
             <AdminCard padding="sm">
               <div className="flex items-center gap-2 mb-3">
                 <BarChart3 className="w-4 h-4" style={{ color: "#f97316" }} />
-                <span className="text-xs font-semibold text-gray-500 dark:text-zinc-400 uppercase tracking-wide">Este mes vs anterior</span>
+                <span className="text-xs font-semibold text-gray-500 dark:text-zinc-400">Este mes vs anterior</span>
               </div>
               <div className="flex items-end gap-3">
                 <div>

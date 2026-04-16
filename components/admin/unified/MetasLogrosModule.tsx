@@ -66,7 +66,7 @@ const LS_MONTHLY_GOAL = "monthly-goal";
 function Confetti() {
   const colors = ["var(--color-primary)", "#f97316", "#2dd4bf", "#f4d03f", "#e76f51"];
   return (
-    <div className="pointer-events-none absolute inset-0 overflow-hidden rounded-2xl z-10">
+    <div className="pointer-events-none absolute inset-0 overflow-hidden rounded-xl z-10">
       {Array.from({ length: 24 }).map((_, i) => {
         const color = colors[i % colors.length];
         return (
@@ -168,18 +168,18 @@ function SemaMesTab() {
   }, []);
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-6">
       {/* WeeklyGoalCard necesita prop sales — se pasa array vacío como fallback */}
       <WeeklyGoalCard sales={[]} />
 
       {/* Card mensual */}
-      <div className="rounded-2xl border border-gray-200 bg-white p-5 space-y-4">
+      <div className="rounded-xl border border-gray-200 bg-white p-5 space-y-4">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
             <span className="flex items-center justify-center w-8 h-8 rounded-lg bg-primary/10">
               <Calendar className="w-4 h-4 text-primary" />
             </span>
-            <span className="text-xs font-semibold text-gray-500 uppercase tracking-wide">
+            <span className="text-xs font-semibold text-gray-500">
               Meta del mes
             </span>
           </div>
@@ -234,7 +234,7 @@ function SemaMesTab() {
 
         {/* Mini-calendario */}
         <div>
-          <p className="text-xs font-semibold text-gray-500 mb-2 uppercase tracking-wide">
+          <p className="text-xs font-semibold text-gray-500 mb-2">
             Días con meta alcanzada
           </p>
           <div className="grid grid-cols-7 gap-1">
@@ -335,7 +335,7 @@ function LogrosTab() {
   const totalUnlocked = Object.keys(unlocked).length;
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-6">
       {/* Resumen */}
       <div className="flex items-center justify-between">
         <p className="text-sm text-gray-500">
@@ -362,15 +362,15 @@ function LogrosTab() {
               <div
                 key={a.id}
                 className={cn(
-                  "relative rounded-2xl border p-4 flex flex-col items-center text-center gap-2 transition-all duration-300",
+                  "relative rounded-xl border p-4 flex flex-col items-center text-center gap-2 transition-all duration-300",
                   isUnlocked
-                    ? "border-primary/40 bg-gradient-to-b from-primary/5 to-primary/10 shadow-sm"
+                    ? "border-primary/40 bg-gradient-to-b from-primary/5 to-primary/10 "
                     : "border-gray-200 bg-gray-50 opacity-40"
                 )}
               >
                 {/* Efecto brillo si desbloqueado */}
                 {isUnlocked && (
-                  <div className="absolute inset-0 rounded-2xl overflow-hidden pointer-events-none">
+                  <div className="absolute inset-0 rounded-xl overflow-hidden pointer-events-none">
                     <div className="absolute -inset-full animate-[spin_4s_linear_infinite] bg-gradient-conic from-transparent via-primary/10 to-transparent" />
                   </div>
                 )}
@@ -391,7 +391,7 @@ function LogrosTab() {
                     {unlocked[a.id]}
                   </span>
                 ) : (
-                  <span className="text-[9px] font-semibold text-gray-400 uppercase tracking-wide">
+                  <span className="text-[9px] font-semibold text-gray-400">
                     Bloqueado
                   </span>
                 )}
@@ -455,7 +455,7 @@ export default function MetasLogrosModule({ tenantId: _tenantId }: Props) {
   ] as const;
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-6">
       <AdminModuleHeader
         title="Metas y Logros"
         description="Seguimiento de objetivos, racha diaria y logros desbloqueados"

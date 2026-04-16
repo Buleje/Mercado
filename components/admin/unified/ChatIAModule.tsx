@@ -16,13 +16,13 @@ const AIAssistant = dynamic(
 export default function ChatIAModule() {
   void MODULE_ID;
   return (
-    <div className="space-y-4">
+    <div className="space-y-6">
       <AdminModuleHeader
         title="Chat IA"
         description="Pregúntale cualquier cosa a tu asistente inteligente"
         icon={MessageSquare}
       />
-      <div className="bg-white rounded-2xl border border-gray-200 min-h-[600px] h-[calc(100vh-220px)]">
+      <div className="bg-white rounded-xl border border-gray-200 min-h-[600px] h-[calc(100vh-220px)]">
         <AIAssistant embedded />
       </div>
     </div>

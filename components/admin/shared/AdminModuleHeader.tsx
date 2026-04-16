@@ -33,28 +33,16 @@ export default function AdminModuleHeader({
   title,
   description,
   icon: Icon,
-  iconColor,
-  bgTint,
-  iconColorClass,
+  // Kept for backward compatibility — props accepted but no longer rendered
+  iconColor: _iconColor,
+  bgTint: _bgTint,
+  iconColorClass: _iconColorClass,
   children,
   className,
 }: AdminModuleHeaderProps) {
-  // Si se pasan las nuevas props, usarlas; si no, fallback al estilo legacy
-  const useTint = !!(bgTint || iconColorClass);
-
   return (
     <div className={cn("flex items-center gap-4 mb-6", className)}>
-      <div
-        className={cn(
-          "flex items-center justify-center w-11 h-11 rounded-xl shrink-0",
-          useTint
-            ? bgTint
-            : "text-white shadow-sm",
-        )}
-        style={useTint ? undefined : { backgroundColor: iconColor ?? "var(--color-primary)" }}
-      >
-        <Icon className={cn("w-5 h-5", useTint && iconColorClass)} />
-      </div>
+      <Icon className="w-6 h-6 text-gray-400 dark:text-zinc-500 shrink-0" />
       <div className="flex-1 min-w-0">
         <h1 className="text-xl font-bold text-gray-900 dark:text-white truncate">
           {title}

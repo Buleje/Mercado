@@ -112,7 +112,7 @@ export default function ActivityLogTab() {
   };
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-6">
       {/* Header */}
       <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3">
         <div className="flex flex-wrap items-center gap-2">
@@ -149,7 +149,7 @@ export default function ActivityLogTab() {
             value={filter}
             onChange={e => { setFilter(e.target.value); setLogPage(1); }}
             placeholder="Buscar en el log..."
-            className="w-full pl-9 pr-3 py-2 text-sm bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl focus:ring-2 focus:ring-primary/30 focus:border-primary outline-none transition-all"
+            className="w-full pl-9 pr-3 py-2 text-sm bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-lg focus:ring-2 focus:ring-primary/30 focus:border-primary outline-none transition-all"
           />
         </div>
         <div className="flex items-center gap-1">
@@ -157,7 +157,7 @@ export default function ActivityLogTab() {
           <select
             value={entityFilter}
             onChange={e => { setEntityFilter(e.target.value); setLogPage(1); }}
-            className="text-sm bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl px-3 py-2 focus:ring-2 focus:ring-primary/30 outline-none"
+            className="text-sm bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-lg px-3 py-2 focus:ring-2 focus:ring-primary/30 outline-none"
           >
             {entities.map(e => (
               <option key={e} value={e}>{e === "todos" ? "Todas las entidades" : e.charAt(0).toUpperCase() + e.slice(1)}</option>
@@ -167,7 +167,7 @@ export default function ActivityLogTab() {
       </div>
 
       {/* Log entries */}
-      <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl divide-y divide-gray-100 dark:divide-card-border overflow-hidden">
+      <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl divide-y divide-gray-100 dark:divide-card-border overflow-hidden">
         {loading && entries.length === 0 ? (
           <div className="p-8 text-center text-muted text-sm">Cargando...</div>
         ) : filtered.length === 0 ? (

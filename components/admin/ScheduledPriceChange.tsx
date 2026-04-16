@@ -169,7 +169,7 @@ function AddForm({ onAdd, onCancel }: AddFormProps) {
           )}
         </div>
         {showDropdown && products.length > 0 && !selected && (
-          <div className="absolute z-20 left-0 right-0 mt-1 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 shadow-xl overflow-hidden">
+          <div className="absolute z-20 left-0 right-0 mt-1 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 overflow-hidden">
             {products.map((p) => (
               <button
                 key={p.id}

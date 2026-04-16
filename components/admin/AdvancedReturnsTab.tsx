@@ -104,7 +104,7 @@ export default function AdvancedReturnsTab() {
           </h1>
           <p className="text-sm text-gray-500 dark:text-muted mt-0.5">RMA, inspección, decisiones y estadísticas por motivo</p>
         </div>
-        <button onClick={() => exportToCSV(records.map(r => ({ fecha: r.date, pedido: r.orderRef, cliente: r.clientName, producto: r.product, cantidad: r.quantity, valor: r.totalValue, motivo: REASON_META[r.reason].label, decision: DECISION_META[r.decision].label, inspeccion: INSPECTION_META[r.inspection].label, restock: r.restocked ? "Sí" : "No" })), "devoluciones")} className="flex items-center gap-1.5 px-3 py-2 rounded-xl border border-gray-200 dark:border-card-border bg-white dark:bg-surface text-sm font-semibold text-gray-700 dark:text-foreground hover:bg-gray-50 dark:hover:bg-accent transition-colors">
+        <button onClick={() => exportToCSV(records.map(r => ({ fecha: r.date, pedido: r.orderRef, cliente: r.clientName, producto: r.product, cantidad: r.quantity, valor: r.totalValue, motivo: REASON_META[r.reason].label, decision: DECISION_META[r.decision].label, inspeccion: INSPECTION_META[r.inspection].label, restock: r.restocked ? "Sí" : "No" })), "devoluciones")} className="flex items-center gap-1.5 px-3 py-2 rounded-lg border border-gray-200 dark:border-card-border bg-white dark:bg-surface text-sm font-semibold text-gray-700 dark:text-foreground hover:bg-gray-50 dark:hover:bg-accent transition-colors">
           <Download className="h-4 w-4" /> Exportar
         </button>
       </div>
@@ -116,7 +116,7 @@ export default function AdvancedReturnsTab() {
           { label: "Restockeados", value: String(stats.restocked), color: "text-emerald-600", bg: "bg-emerald-50 dark:bg-emerald-950/30" },
           { label: "Pendientes", value: String(stats.pending), color: "text-emerald-600", bg: "bg-emerald-50 dark:bg-emerald-950/30" },
         ].map(({ label, value, color, bg }) => (
-          <div key={label} className={cn("rounded-2xl p-4", bg)}>
+          <div key={label} className={cn("rounded-xl p-4", bg)}>
             <p className="text-xs font-semibold text-gray-500 dark:text-muted mb-1">{label}</p>
             <p className={cn("text-xl font-extrabold", color)}>{value}</p>
           </div>
@@ -124,7 +124,7 @@ export default function AdvancedReturnsTab() {
       </div>
 
       {/* Reason distribution */}
-      <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl p-3 sm:p-5">
+      <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl p-3 sm:p-5">
         <h3 className="font-extrabold text-sm text-gray-900 dark:text-foreground flex flex-wrap items-center gap-2 mb-3"><AlertTriangle className="h-4 w-4 text-amber-500" /> Motivos de devolución</h3>
         <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
           {(Object.keys(REASON_META) as ReturnReason[]).map(reason => {
@@ -144,19 +144,19 @@ export default function AdvancedReturnsTab() {
       <div className="flex flex-col sm:flex-row gap-3 flex-wrap">
         <div className="relative flex-1 max-w-sm">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
-          <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Cliente, producto, pedido..." className="w-full pl-9 pr-3 py-2 text-sm border border-gray-200 dark:border-card-border rounded-xl bg-white dark:bg-surface text-gray-700 dark:text-foreground" />
+          <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Cliente, producto, pedido..." className="w-full pl-9 pr-3 py-2 text-sm border border-gray-200 dark:border-card-border rounded-lg bg-white dark:bg-surface text-gray-700 dark:text-foreground" />
         </div>
-        <select value={filterReason} onChange={e => setFilterReason(e.target.value as ReturnReason | "todos")} className="text-sm border border-gray-200 dark:border-card-border rounded-xl px-3 py-2 bg-white dark:bg-surface text-gray-700 dark:text-foreground">
+        <select value={filterReason} onChange={e => setFilterReason(e.target.value as ReturnReason | "todos")} className="text-sm border border-gray-200 dark:border-card-border rounded-lg px-3 py-2 bg-white dark:bg-surface text-gray-700 dark:text-foreground">
           <option value="todos">Todos los motivos</option>
           {(Object.keys(REASON_META) as ReturnReason[]).map(r => <option key={r} value={r}>{REASON_META[r].label}</option>)}
         </select>
-        <select value={filterDecision} onChange={e => setFilterDecision(e.target.value as ReturnDecision | "todos")} className="text-sm border border-gray-200 dark:border-card-border rounded-xl px-3 py-2 bg-white dark:bg-surface text-gray-700 dark:text-foreground">
+        <select value={filterDecision} onChange={e => setFilterDecision(e.target.value as ReturnDecision | "todos")} className="text-sm border border-gray-200 dark:border-card-border rounded-lg px-3 py-2 bg-white dark:bg-surface text-gray-700 dark:text-foreground">
           <option value="todos">Todas las decisiones</option>
           {(Object.keys(DECISION_META) as ReturnDecision[]).map(d => <option key={d} value={d}>{DECISION_META[d].label}</option>)}
         </select>
       </div>
 
-      <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl overflow-hidden">
+      <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full min-w-[600px] text-sm">
             <thead><tr className="text-left text-xs font-bold text-gray-400 bg-gray-50 dark:bg-surface"><th className="px-2 sm:px-4 py-2 sm:py-3">Fecha</th><th className="px-2 sm:px-4 py-2 sm:py-3">Pedido</th><th className="px-2 sm:px-4 py-2 sm:py-3">Producto</th><th className="px-2 sm:px-4 py-2 sm:py-3">Valor</th><th className="px-2 sm:px-4 py-2 sm:py-3">Motivo</th><th className="px-2 sm:px-4 py-2 sm:py-3">Decisión</th><th className="px-2 sm:px-4 py-2 sm:py-3"></th></tr></thead>
@@ -179,7 +179,7 @@ export default function AdvancedReturnsTab() {
 
       {detail && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4" onClick={() => setDetail(null)}>
-          <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl shadow-2xl p-3 sm:p-6 w-full max-w-lg space-y-4 max-h-[90vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
+          <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl p-3 sm:p-6 w-full max-w-lg space-y-4 max-h-[90vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
             <div className="flex items-center justify-between">
               <h3 className="font-extrabold text-gray-900 dark:text-foreground">{detail.product}</h3>
               <button onClick={() => setDetail(null)}><X className="h-4 w-4 text-gray-400" /></button>

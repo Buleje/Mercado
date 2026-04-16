@@ -78,15 +78,15 @@ export default function NotificationsTab() {
 
       {/* Stats */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2 sm:gap-4">
-        <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl p-4 text-center">
+        <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl p-4 text-center">
           <p className="text-xl sm:text-2xl font-extrabold text-gray-900 dark:text-foreground">{logs.length}</p>
           <p className="text-xs text-gray-400">Total enviados</p>
         </div>
-        <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl p-4 text-center">
+        <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl p-4 text-center">
           <p className="text-xl sm:text-2xl font-extrabold text-emerald-600">{sentCount}</p>
           <p className="text-xs text-gray-400">Exitosos</p>
         </div>
-        <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl p-4 text-center">
+        <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl p-4 text-center">
           <p className="text-xl sm:text-2xl font-extrabold text-primary">{todayCount}</p>
           <p className="text-xs text-gray-400">Hoy</p>
         </div>
@@ -94,13 +94,13 @@ export default function NotificationsTab() {
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Send notification */}
-        <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl p-3 sm:p-5 space-y-4">
+        <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl p-3 sm:p-5 space-y-4">
           <h3 className="font-extrabold flex flex-wrap items-center gap-2"><MessageCircle className="h-5 w-5 text-emerald-500" />Enviar Notificación</h3>
 
           {/* Order picker */}
           <div className="relative">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
-            <input value={orderSearch} onChange={e => { setOrderSearch(e.target.value); setSelectedOrder(null); setWaUrl(null); }} placeholder="Buscar pedido por nombre, teléfono o ID..." className="w-full pl-9 pr-3 py-2 border border-gray-200 dark:border-card-border rounded-xl bg-white dark:bg-surface text-sm" />
+            <input value={orderSearch} onChange={e => { setOrderSearch(e.target.value); setSelectedOrder(null); setWaUrl(null); }} placeholder="Buscar pedido por nombre, teléfono o ID..." className="w-full pl-9 pr-3 py-2 border border-gray-200 dark:border-card-border rounded-lg bg-white dark:bg-surface text-sm" />
           </div>
 
           {!selectedOrder && filteredOrders.length > 0 && (
@@ -147,13 +147,13 @@ export default function NotificationsTab() {
           {waUrl && (
             <div className="bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-200 dark:border-emerald-800 rounded-xl px-2 sm:px-4 py-2 sm:py-3 space-y-2">
               <p className="text-sm text-emerald-700 dark:text-emerald-400 flex flex-wrap items-center gap-2"><CheckCircle2 className="h-4 w-4" />Notificación registrada</p>
-              <a href={waUrl} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-2 px-2 sm:px-4 py-1.5 sm:py-2 bg-emerald-600 text-white rounded-xl text-sm font-bold hover:bg-emerald-700 transition">
+              <a href={waUrl} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-2 px-2 sm:px-4 py-1.5 sm:py-2 bg-emerald-600 text-white rounded-lg text-sm font-bold hover:bg-emerald-700 transition">
                 <ExternalLink className="h-4 w-4" />Abrir WhatsApp
               </a>
             </div>
           )}
 
-          <button onClick={sendNotification} disabled={!selectedOrder || sending} className="w-full py-2.5 bg-emerald-500 text-white rounded-xl font-bold text-sm hover:bg-emerald-600 transition disabled:opacity-50 flex flex-wrap items-center justify-center gap-2">
+          <button onClick={sendNotification} disabled={!selectedOrder || sending} className="w-full py-2.5 bg-emerald-500 text-white rounded-lg font-bold text-sm hover:bg-emerald-600 transition disabled:opacity-50 flex flex-wrap items-center justify-center gap-2">
             {sending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}Enviar por WhatsApp
           </button>
         </div>
@@ -162,7 +162,7 @@ export default function NotificationsTab() {
         <div className="space-y-3">
           <h3 className="font-extrabold flex flex-wrap items-center gap-2"><Clock className="h-5 w-5 text-gray-400" />Historial de Envíos</h3>
           {logs.length === 0 ? (
-            <div className="text-center py-12 bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl">
+            <div className="text-center py-12 bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl">
               <Bell className="h-12 w-12 text-gray-300 mx-auto mb-3" />
               <p className="text-sm text-gray-400">Sin notificaciones enviadas</p>
             </div>

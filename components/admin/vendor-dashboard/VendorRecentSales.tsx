@@ -20,7 +20,7 @@ function paymentLabel(method?: string): string {
 export function VendorRecentSales({ sales }: Props) {
   if (sales.length === 0) {
     return (
-      <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl p-6 shadow-sm">
+      <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl p-6 ">
         <h3 className="font-bold text-gray-900 dark:text-foreground mb-4 flex items-center gap-2">
           <Receipt className="h-5 w-5 text-[#00B4A6]" />
           Ventas recientes de hoy
@@ -36,7 +36,7 @@ export function VendorRecentSales({ sales }: Props) {
   }
 
   return (
-    <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl p-6 shadow-sm">
+    <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl p-6 ">
       <h3 className="font-bold text-gray-900 dark:text-foreground mb-4 flex items-center gap-2">
         <Receipt className="h-5 w-5 text-[#00B4A6]" />
         Ventas recientes de hoy

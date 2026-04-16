@@ -18,7 +18,7 @@ export function DeleteConfirmModal({ onConfirm, onCancel }: DeleteConfirmModalPr
       onClick={onCancel}
     >
       <div
-        className="bg-white dark:bg-card rounded-2xl shadow-2xl w-full max-w-sm p-6"
+        className="bg-white dark:bg-card rounded-xl w-full max-w-sm p-6"
         onClick={e => e.stopPropagation()}
       >
         <div className="flex items-center gap-3 mb-4">
@@ -33,13 +33,13 @@ export function DeleteConfirmModal({ onConfirm, onCancel }: DeleteConfirmModalPr
         <div className="flex gap-3">
           <button
             onClick={onCancel}
-            className="flex-1 py-2.5 rounded-xl text-sm font-semibold text-gray-700 dark:text-foreground bg-gray-100 dark:bg-accent hover:bg-gray-200 transition-colors"
+            className="flex-1 py-2.5 rounded-lg text-sm font-semibold text-gray-700 dark:text-foreground bg-gray-100 dark:bg-accent hover:bg-gray-200 transition-colors"
           >
             Cancelar
           </button>
           <button
             onClick={onConfirm}
-            className="flex-1 py-2.5 rounded-xl text-sm font-semibold text-white bg-red-500 hover:bg-red-600 transition-colors"
+            className="flex-1 py-2.5 rounded-lg text-sm font-semibold text-white bg-red-500 hover:bg-red-600 transition-colors"
           >
             Sí, eliminar
           </button>
@@ -64,7 +64,7 @@ export function RejectModal({ rejectReason, onReasonChange, onConfirm, onCancel 
       onClick={onCancel}
     >
       <div
-        className="bg-white dark:bg-card rounded-2xl shadow-2xl w-full max-w-md"
+        className="bg-white dark:bg-card rounded-xl w-full max-w-md"
         onClick={e => e.stopPropagation()}
       >
         <div className="px-5 py-4 border-b border-gray-100 dark:border-card-border">
@@ -97,14 +97,14 @@ export function RejectModal({ rejectReason, onReasonChange, onConfirm, onCancel 
           <div className="flex gap-2 pt-1">
             <button
               onClick={onCancel}
-              className="flex-1 py-2.5 rounded-xl border border-gray-200 dark:border-card-border text-sm font-bold text-gray-600 dark:text-muted hover:bg-gray-50 dark:hover:bg-surface"
+              className="flex-1 py-2.5 rounded-lg border border-gray-200 dark:border-card-border text-sm font-bold text-gray-600 dark:text-muted hover:bg-gray-50 dark:hover:bg-surface"
             >
               Cancelar
             </button>
             <button
               onClick={onConfirm}
               disabled={!rejectReason.trim()}
-              className="flex-1 py-2.5 rounded-xl bg-red-500 text-white text-sm font-bold hover:bg-red-600 transition-colors disabled:opacity-50"
+              className="flex-1 py-2.5 rounded-lg bg-red-500 text-white text-sm font-bold hover:bg-red-600 transition-colors disabled:opacity-50"
             >
               Rechazar pedido
             </button>

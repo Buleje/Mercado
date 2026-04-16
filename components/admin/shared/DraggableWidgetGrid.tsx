@@ -185,7 +185,7 @@ export function DraggableWidgetGrid({
       </SortableContext>
       <DragOverlay>
         {activeId ? (
-          <div className="opacity-80 scale-[1.02] shadow-xl rounded-xl pointer-events-none">
+          <div className="opacity-80 scale-[1.02] rounded-xl pointer-events-none">
             {childMap.get(activeId)}
           </div>
         ) : null}

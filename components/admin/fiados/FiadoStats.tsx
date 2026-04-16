@@ -121,7 +121,7 @@ export default function FiadoStats({ fiados, loading, totalSaldo, tendenciaMoros
         const bloqueadoC = activos.filter(f => { if (!f.fechaVence) return false; return new Date(f.fechaVence).getTime() < now.getTime() - 60 * 86400000; }).length;
 
         return (
-          <div className="flex flex-col lg:flex-row lg:items-center gap-4 bg-gray-50 dark:bg-gray-800/50 rounded-2xl p-4">
+          <div className="flex flex-col lg:flex-row lg:items-center gap-4 bg-gray-50 dark:bg-gray-800/50 rounded-xl p-4">
             {/* KPI inline */}
             <div className="flex gap-4 overflow-x-auto flex-1 scrollbar-hide">
               <div className="flex items-center gap-1.5 shrink-0">
@@ -186,10 +186,10 @@ export default function FiadoStats({ fiados, loading, totalSaldo, tendenciaMoros
 
       {/* Mejora 19 (ronda 3): Proyeccion de cobro */}
       {!loading && fiados.length > 0 && (
-        <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl p-4 shadow-sm">
+        <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl p-4 ">
           <div className="flex items-center gap-2 mb-3">
             <TrendingUp className="h-4 w-4 text-[#00B4A6]" />
-            <p className="text-xs font-bold text-gray-600 dark:text-gray-400 uppercase tracking-wider">Proyeccion de cobro</p>
+            <p className="text-xs font-bold text-gray-600 dark:text-gray-400">Proyeccion de cobro</p>
           </div>
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-3">
             <div className="text-center">
@@ -292,7 +292,7 @@ export default function FiadoStats({ fiados, loading, totalSaldo, tendenciaMoros
       {fiadoMasAntiguo && (
         <div className="rounded-xl border border-red-200 dark:border-red-800/30 bg-red-50 dark:bg-red-900/20 p-3 flex flex-col sm:flex-row sm:items-center gap-2">
           <div className="flex-1 min-w-0">
-            <p className="text-xs font-bold text-red-700 dark:text-red-400 uppercase tracking-wider">Fiado mas antiguo</p>
+            <p className="text-xs font-bold text-red-700 dark:text-red-400">Fiado mas antiguo</p>
             <p className="text-sm text-red-800 dark:text-red-300 mt-0.5 truncate">
               <span className="font-bold">{fiadoMasAntiguo.customerName || fiadoMasAntiguo.customerId}</span>
               {" · "}<span className="font-bold">{formatCurrency(fiadoMasAntiguo.saldo)}</span>
@@ -330,13 +330,13 @@ export default function FiadoStats({ fiados, loading, totalSaldo, tendenciaMoros
               aria-label="Buscar fiados"
               value={search}
               onChange={e => setSearch(e.target.value)}
-              className="w-full pl-9 pr-3 py-2 rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 text-sm text-gray-900 dark:text-white placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#00B4A6]/30"
+              className="w-full pl-9 pr-3 py-2 rounded-lg border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 text-sm text-gray-900 dark:text-white placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#00B4A6]/30"
             />
           </div>
           <button
             type="button"
             onClick={() => setShowQuickClient?.(true)}
-            className="shrink-0 h-[38px] w-[38px] flex items-center justify-center rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 hover:bg-[#00B4A6] hover:text-white hover:border-[#00B4A6] text-gray-500 transition-colors"
+            className="shrink-0 h-[38px] w-[38px] flex items-center justify-center rounded-lg border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 hover:bg-[#00B4A6] hover:text-white hover:border-[#00B4A6] text-gray-500 transition-colors"
             title="Crear cliente rapido"
           >
             <Plus className="h-4 w-4" />
@@ -368,7 +368,7 @@ export default function FiadoStats({ fiados, loading, totalSaldo, tendenciaMoros
         const activos = fiados.filter(f => (f.status === "ACTIVO" || f.status === "VENCIDO") && f.saldo > 0);
         if (activos.length === 0) {
           return (
-            <div className="bg-emerald-50 dark:bg-emerald-950/20 border border-emerald-200 dark:border-emerald-800 rounded-2xl p-4 text-center">
+            <div className="bg-emerald-50 dark:bg-emerald-950/20 border border-emerald-200 dark:border-emerald-800 rounded-xl p-4 text-center">
               <p className="text-sm font-bold text-emerald-700 dark:text-emerald-400">Sin deudores pendientes — Excelente!</p>
             </div>
           );
@@ -395,7 +395,7 @@ export default function FiadoStats({ fiados, loading, totalSaldo, tendenciaMoros
 
         return (
           <div className="space-y-2">
-            <p className="text-xs font-bold text-gray-600 dark:text-gray-400 uppercase tracking-wider flex items-center gap-1.5">
+            <p className="text-xs font-bold text-gray-600 dark:text-gray-400 flex items-center gap-1.5">
               <Shield className="h-3.5 w-3.5 text-red-500" /> Top Deudores por Riesgo
             </p>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-2">
@@ -404,7 +404,7 @@ export default function FiadoStats({ fiados, loading, totalSaldo, tendenciaMoros
                 return (
                   <div
                     key={f.id}
-                    className={cn("rounded-xl border p-3 cursor-pointer hover:shadow-md transition-shadow", colors.bg, colors.border)}
+                    className={cn("rounded-lg border p-3 cursor-pointer hover:shadow-sm transition-shadow", colors.bg, colors.border)}
                     onClick={() => openDetail(f)}
                   >
                     <div className="flex items-center justify-between mb-1.5">
@@ -518,14 +518,14 @@ export default function FiadoStats({ fiados, loading, totalSaldo, tendenciaMoros
         return (
           <div className="space-y-2">
             <div className="flex items-center justify-between">
-              <p className="text-xs font-bold text-gray-600 dark:text-gray-400 uppercase tracking-wider flex items-center gap-1.5">
+              <p className="text-xs font-bold text-gray-600 dark:text-gray-400 flex items-center gap-1.5">
                 <Calendar className="h-3.5 w-3.5 text-[#00B4A6]" /> Calendario de Vencimientos
               </p>
               <p className="text-xs text-gray-500">
                 Este mes: {countMes} fiados vencen · Total: {formatCurrency(totalMes)}
               </p>
             </div>
-            <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl shadow-sm overflow-hidden p-3">
+            <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl  overflow-hidden p-3">
               {/* Nav */}
               <div className="flex items-center justify-between mb-2">
                 <button onClick={() => setCalMes(p => { const d = new Date(p.year, p.month - 1); return { year: d.getFullYear(), month: d.getMonth() }; })} className="p-1 rounded-lg hover:bg-gray-100 dark:hover:bg-white/5">

@@ -626,7 +626,7 @@ export default function AIWhatIfSimulator({ data }: Props) {
   const diffCfg = DIFFICULTY_CONFIG[scenario.difficulty];
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-6">
       {/* Recommendation banner */}
       {recommendation && activeScenario !== recommendation.scenarioId && (
         <button
@@ -642,9 +642,9 @@ export default function AIWhatIfSimulator({ data }: Props) {
 
       {/* Saved scenarios */}
       {savedScenarios.length > 0 && (
-        <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 p-5 shadow-sm">
+        <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 p-5 ">
           <div className="flex items-center justify-between mb-3">
-            <h3 className="text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wide">
+            <h3 className="text-xs font-semibold text-gray-600 dark:text-gray-400">
               Guardados ({savedScenarios.length}/{MAX_SAVED})
             </h3>
             {compareIds.length >= 2 && (
@@ -723,10 +723,10 @@ export default function AIWhatIfSimulator({ data }: Props) {
       )}
 
       {/* Main simulator */}
-      <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 p-5 shadow-sm">
+      <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 p-5 ">
         <div className="flex items-center justify-between mb-4">
           <div>
-            <h2 className="text-sm font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wide">
+            <h2 className="text-sm font-semibold text-gray-700 dark:text-gray-300">
               Simulador de Escenarios
             </h2>
             <p className="text-xs text-gray-400 dark:text-gray-500 mt-0.5">
@@ -750,7 +750,7 @@ export default function AIWhatIfSimulator({ data }: Props) {
               className={cn(
                 "p-2.5 rounded-lg border text-xs font-medium text-left transition-all",
                 activeScenario === s.id
-                  ? "bg-[#00B4A6] text-white border-[#00B4A6] shadow-sm"
+                  ? "bg-[#00B4A6] text-white border-[#00B4A6] "
                   : "bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 border-gray-200 dark:border-gray-700 hover:border-[#00B4A6]/50"
               )}
             >

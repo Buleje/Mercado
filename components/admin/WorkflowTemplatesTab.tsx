@@ -149,7 +149,7 @@ export default function WorkflowTemplatesTab({ onNavigate }: Props) {
 
       {/* Active flow */}
       {running && (
-        <div className="bg-white dark:bg-card border-2 border-primary/30 rounded-2xl overflow-hidden shadow-sm">
+        <div className="bg-white dark:bg-card border-2 border-primary/30 rounded-xl overflow-hidden ">
           <div className="px-5 py-4 border-b border-gray-100 dark:border-card-border flex flex-wrap items-center justify-between gap-3">
             <div className="flex flex-wrap items-center gap-3">
               <div className={cn("w-9 h-9 rounded-xl flex items-center justify-center shrink-0", running.template.bg)}>
@@ -200,11 +200,11 @@ export default function WorkflowTemplatesTab({ onNavigate }: Props) {
             ))}
 
             {allDone && (
-              <div className="rounded-2xl bg-emerald-500 text-white p-4 text-center">
+              <div className="rounded-xl bg-emerald-500 text-white p-4 text-center">
                 <CheckCircle2 className="h-8 w-8 mx-auto mb-2" />
                 <p className="font-extrabold text-base">¡Flujo completado!</p>
                 <p className="text-emerald-100 text-sm mt-0.5">Todos los pasos de &ldquo;{running.template.name}&rdquo; están listos.</p>
-                <button onClick={() => setRunning(null)} className="mt-3 px-5 py-2 rounded-xl bg-white text-emerald-600 font-bold text-sm hover:bg-emerald-50 transition-colors">
+                <button onClick={() => setRunning(null)} className="mt-3 px-5 py-2 rounded-lg bg-white text-emerald-600 font-bold text-sm hover:bg-emerald-50 transition-colors">
                   Cerrar
                 </button>
               </div>
@@ -216,7 +216,7 @@ export default function WorkflowTemplatesTab({ onNavigate }: Props) {
       {/* Templates grid */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2 sm:gap-4">
         {TEMPLATES.map(t => (
-          <div key={t.id} className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl p-3 sm:p-5 space-y-3 hover:shadow-md transition-shadow flex flex-col">
+          <div key={t.id} className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl p-3 sm:p-5 space-y-3 hover:shadow-sm transition-shadow flex flex-col">
             <div className="flex flex-wrap items-start gap-3">
               <div className={cn("w-10 h-10 rounded-xl flex items-center justify-center shrink-0", t.bg)}>
                 <t.icon className={cn("h-5 w-5", t.color)} />

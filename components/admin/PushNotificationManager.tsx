@@ -84,7 +84,7 @@ const SEED_HISTORY: NotificationRecord[] = [
 
 function NotifPreview({ title, body, url }: { title: string; body: string; url?: string }) {
   return (
-    <div className="flex items-start gap-3 rounded-xl border border-gray-200 bg-white p-3 shadow-md dark:border-gray-700 dark:bg-gray-800">
+    <div className="flex items-start gap-3 rounded-xl border border-gray-200 bg-white p-3 dark:border-gray-700 dark:bg-gray-800">
       <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-[#00B4A6]">
         <Bell className="h-4 w-4 text-white" />
       </div>
@@ -174,7 +174,7 @@ export default function PushNotificationManager() {
             className={cn(
               "flex flex-1 items-center justify-center gap-2 rounded-lg py-2 text-sm font-medium transition",
               activeTab === tab
-                ? "bg-white text-gray-800 shadow-sm dark:bg-gray-700 dark:text-gray-100"
+                ? "bg-white text-gray-800  dark:bg-gray-700 dark:text-gray-100"
                 : "text-gray-500 hover:text-gray-700 dark:text-gray-400"
             )}
           >
@@ -295,7 +295,7 @@ export default function PushNotificationManager() {
               onClick={handleSend}
               disabled={!isValid || sendState === "sending"}
               className={cn(
-                "flex items-center justify-center gap-2 rounded-xl py-3 text-sm font-semibold text-white transition",
+                "flex items-center justify-center gap-2 rounded-lg py-3 text-sm font-semibold text-white transition",
                 sendState === "sent"
                   ? "bg-green-600"
                   : sendState === "error"
@@ -337,7 +337,7 @@ export default function PushNotificationManager() {
                     <div className="h-1.5 w-12 rounded-full bg-gray-700" />
                     <div className="h-2 w-2 rounded-full bg-gray-700" />
                   </div>
-                  <div className="rounded-2xl bg-gray-800 p-2">
+                  <div className="rounded-xl bg-gray-800 p-2">
                     <NotifPreview title={title} body={body} url={url} />
                   </div>
                   <div className="mt-3 space-y-1.5">

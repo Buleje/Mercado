@@ -37,7 +37,7 @@ export default function DashboardComprasCajaSection({ st, expandAll, section }: 
   return (
     <>
       {(expandAll || section === "compras") && (
-        <div className={cn("space-y-4", expandAll && "bg-white dark:bg-card rounded-2xl border border-gray-100 dark:border-card-border p-4")}>
+        <div className={cn("space-y-4", expandAll && "bg-white dark:bg-card rounded-xl border border-gray-100 dark:border-card-border p-4")}>
           {expandAll && (
             <div className="flex flex-wrap items-center gap-2 mb-4 pb-3 border-b border-gray-100 dark:border-card-border">
               <div className="w-7 h-7 rounded-lg bg-sky-50 dark:bg-sky-900/30 flex items-center justify-center">
@@ -116,7 +116,7 @@ export default function DashboardComprasCajaSection({ st, expandAll, section }: 
       )}
 
       {(expandAll || section === "caja") && (
-        <div className={cn("space-y-4", expandAll && "bg-white dark:bg-card rounded-2xl border border-gray-100 dark:border-card-border p-4")}>
+        <div className={cn("space-y-4", expandAll && "bg-white dark:bg-card rounded-xl border border-gray-100 dark:border-card-border p-4")}>
           {expandAll && (
             <div className="flex flex-wrap items-center gap-2 mb-4 pb-3 border-b border-gray-100 dark:border-card-border">
               <div className="w-7 h-7 rounded-lg bg-emerald-50 dark:bg-emerald-900/30 flex items-center justify-center">
@@ -170,7 +170,7 @@ export default function DashboardComprasCajaSection({ st, expandAll, section }: 
 
           {/* Sprint 3: Cash Flow Forecast (7 days) */}
           <Card title="Proyección de Flujo de Caja (7 días)" icon={TrendingUp}>
-            <div className="space-y-4">
+            <div className="space-y-6">
               {/* Summary row */}
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
                 <div className="bg-emerald-50 dark:bg-emerald-950/30 rounded-lg p-3 text-center">

@@ -329,7 +329,7 @@ export default function EmployeePerformanceChart() {
       : null;
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-6">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
@@ -450,7 +450,7 @@ export default function EmployeePerformanceChart() {
           </div>
 
           {/* Grafico de barras comparativo */}
-          <div className="rounded-2xl border border-gray-100 dark:border-gray-700 bg-white dark:bg-gray-800 p-4">
+          <div className="rounded-xl border border-gray-100 dark:border-gray-700 bg-white dark:bg-gray-800 p-4">
             <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-4">
               Ventas por dia (esta semana vs anterior)
             </h3>
@@ -461,7 +461,7 @@ export default function EmployeePerformanceChart() {
           </div>
 
           {/* Top 5 productos */}
-          <div className="rounded-2xl border border-gray-100 dark:border-gray-700 bg-white dark:bg-gray-800 p-4">
+          <div className="rounded-xl border border-gray-100 dark:border-gray-700 bg-white dark:bg-gray-800 p-4">
             <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-4">
               Productos mas vendidos (esta semana)
             </h3>

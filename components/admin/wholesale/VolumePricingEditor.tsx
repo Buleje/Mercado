@@ -119,7 +119,7 @@ export default function VolumePricingEditor({
   }
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-6">
       {/* Encabezado */}
       <div className="flex items-start justify-between gap-3">
         <div>
@@ -159,7 +159,7 @@ export default function VolumePricingEditor({
         <div className="overflow-x-auto rounded-lg border border-gray-200 dark:border-gray-700">
           <table className="w-full text-sm">
             <thead>
-              <tr className="bg-gray-50 dark:bg-gray-800 text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">
+              <tr className="bg-gray-50 dark:bg-gray-800 text-xs font-medium text-gray-500 dark:text-gray-400">
                 <th className="px-4 py-2.5 text-left">Cantidad mínima</th>
                 <th className="px-4 py-2.5 text-left">Descuento %</th>
                 <th className="px-4 py-2.5 text-left">Precio resultante</th>

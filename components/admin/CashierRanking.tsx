@@ -82,7 +82,7 @@ function groupSalesByCashier(sales: Sale[]): CashierStats[] {
 function RankBadge({ rank }: { rank: number }) {
   if (rank === 1) {
     return (
-      <div className="w-10 h-10 rounded-full bg-gradient-to-b from-yellow-300 to-yellow-500 flex items-center justify-center shadow-md flex-shrink-0">
+      <div className="w-10 h-10 rounded-full bg-gradient-to-b from-yellow-300 to-yellow-500 flex items-center justify-center flex-shrink-0">
         <span className="text-lg" role="img" aria-label="primer lugar">&#x1F451;</span>
       </div>
     );
@@ -247,7 +247,7 @@ export default function CashierRanking() {
   const totalIngresos = ranking.reduce((s, c) => s + c.totalRevenue, 0);
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-6">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">

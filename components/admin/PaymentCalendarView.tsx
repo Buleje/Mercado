@@ -215,7 +215,7 @@ export default function PaymentCalendarView() {
   }
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-6">
       {/* KPIs */}
       <div className="grid grid-cols-3 gap-3">
         <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl p-3 border-b-4 border-b-emerald-500">

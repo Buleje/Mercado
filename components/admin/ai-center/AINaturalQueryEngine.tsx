@@ -456,11 +456,11 @@ export default function AINaturalQueryEngine({ data }: Props) {
   };
 
   return (
-    <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 p-5 shadow-sm flex flex-col gap-3">
+    <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 p-5  flex flex-col gap-3">
       <div className="flex items-center gap-2">
         <Search className="w-4 h-4 text-gray-500 dark:text-gray-400" />
         <div>
-          <h2 className="text-sm font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wide">
+          <h2 className="text-sm font-semibold text-gray-700 dark:text-gray-300">
             Consulta Natural
           </h2>
           <p className="text-xs text-gray-400 dark:text-gray-500">
@@ -499,7 +499,7 @@ export default function AINaturalQueryEngine({ data }: Props) {
         <div className="flex flex-wrap gap-1.5">
           <div className="flex items-center gap-1 w-full mb-1">
             <Lightbulb className="w-3 h-3 text-gray-400" />
-            <span className="text-[10px] text-gray-400 uppercase tracking-wider">Sugerencias</span>
+            <span className="text-[10px] text-gray-400">Sugerencias</span>
           </div>
           {SUGGESTIONS.map((s) => (
             <button

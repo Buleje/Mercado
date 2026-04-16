@@ -147,7 +147,7 @@ function DeliveryMap({ routes, onStatusChange }: DeliveryMapProps) {
     <div
       ref={containerRef}
       style={{ height: 280, width: "100%" }}
-      className="rounded-xl overflow-hidden border border-gray-200 dark:border-card-border shadow-sm bg-gray-100"
+      className="rounded-xl overflow-hidden border border-gray-200 dark:border-card-border  bg-gray-100"
     />
   );
 }
@@ -339,7 +339,7 @@ export default function DeliveryRoutesTab() {
           <p className="text-sm text-gray-500 dark:text-muted mt-0.5">Gestión de zonas, rutas y asignación de repartidores</p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
-          <button onClick={() => { setLoadingData(true); loadRoutes(); }} disabled={loadingData} title="Actualizar rutas" className="p-2 rounded-xl border border-gray-200 dark:border-card-border bg-white dark:bg-surface text-gray-500 hover:text-primary disabled:opacity-40 transition-colors"><RefreshCw className={cn("h-4 w-4", loadingData && "animate-spin")} /></button>
+          <button onClick={() => { setLoadingData(true); loadRoutes(); }} disabled={loadingData} title="Actualizar rutas" className="p-2 rounded-lg border border-gray-200 dark:border-card-border bg-white dark:bg-surface text-gray-500 hover:text-primary disabled:opacity-40 transition-colors"><RefreshCw className={cn("h-4 w-4", loadingData && "animate-spin")} /></button>
           <button onClick={() => setView("routes")} className={cn("px-3 py-1.5 rounded-lg text-xs font-bold transition-colors", view === "routes" ? "bg-primary text-white" : "bg-gray-100 dark:bg-surface text-gray-600 dark:text-muted")}>Rutas</button>
           <button onClick={() => setView("zones")} className={cn("px-3 py-1.5 rounded-lg text-xs font-bold transition-colors", view === "zones" ? "bg-primary text-white" : "bg-gray-100 dark:bg-surface text-gray-600 dark:text-muted")}>Zonas</button>
         </div>
@@ -348,7 +348,7 @@ export default function DeliveryRoutesTab() {
       {/* Toggle mapa (mobile) + mapa interactivo */}
       <div className="space-y-2">
         <div className="flex items-center justify-between">
-          <span className="text-xs font-bold text-gray-500 dark:text-muted uppercase tracking-wide flex items-center gap-1.5">
+          <span className="text-xs font-bold text-gray-500 dark:text-muted flex items-center gap-1.5">
             <MapIcon className="h-3.5 w-3.5" /> Mapa de pedidos activos
           </span>
           <button
@@ -447,7 +447,7 @@ export default function DeliveryRoutesTab() {
       {riderKpis.length > 0 && (
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
           {riderKpis.map(rk => (
-            <button key={rk.name} onClick={() => setFilterRider(prev => prev === rk.name ? "all" : rk.name)} className={cn("text-left bg-white dark:bg-card rounded-xl border p-3 transition-all", filterRider === rk.name ? "border-primary ring-1 ring-primary" : "border-gray-200 dark:border-card-border hover:border-primary/50")}>
+            <button key={rk.name} onClick={() => setFilterRider(prev => prev === rk.name ? "all" : rk.name)} className={cn("text-left bg-white dark:bg-card rounded-lg border p-3 transition-all", filterRider === rk.name ? "border-primary ring-1 ring-primary" : "border-gray-200 dark:border-card-border hover:border-primary/50")}>
               <div className="flex items-center gap-1.5 mb-1">
                 <Users className="h-3.5 w-3.5 text-indigo-500 shrink-0" />
                 <p className="text-xs font-bold text-gray-800 dark:text-foreground truncate">{rk.name}</p>
@@ -566,7 +566,7 @@ export default function DeliveryRoutesTab() {
       {view === "zones" && !loadingData && (
         <div className="space-y-3">
           {zones.map(z => (
-            <div key={z.id} className="bg-white dark:bg-card rounded-2xl border border-gray-200 dark:border-card-border overflow-hidden">
+            <div key={z.id} className="bg-white dark:bg-card rounded-xl border border-gray-200 dark:border-card-border overflow-hidden">
               <button onClick={() => setExpandedZone(expandedZone === z.id ? null : z.id)} className="w-full flex items-center justify-between px-5 py-4 hover:bg-gray-50 dark:hover:bg-surface/50 transition-colors">
                 <div className="flex flex-wrap items-center gap-3">
                   <div className={cn("h-4 w-4 rounded-full", z.color)} />

@@ -148,7 +148,7 @@ export default function RFMSegmentationPanel({ customers, sales }: RFMSegmentati
               key={seg}
               onClick={() => setFilterSegment(filterSegment === seg ? "Todos" : seg)}
               className={cn(
-                "rounded-xl border-2 p-3 text-left transition-all hover:shadow-md",
+                "rounded-xl border-2 p-3 text-left transition-all hover:shadow-sm",
                 style.bg,
                 style.border,
                 filterSegment === seg && "ring-2 ring-offset-1 ring-[#00B4A6] dark:ring-offset-gray-900"
@@ -192,7 +192,7 @@ export default function RFMSegmentationPanel({ customers, sales }: RFMSegmentati
       </div>
 
       {/* Table */}
-      <div className="overflow-auto max-h-80 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm">
+      <div className="overflow-auto max-h-80 rounded-xl border border-gray-200 dark:border-gray-700 ">
         <table className="w-full text-xs">
           <thead>
             <tr className="bg-gray-50 dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700">

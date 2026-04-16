@@ -80,7 +80,7 @@ export default function MiNegocioHoyCard({ onNavigate }: MiNegocioHoyCardProps) 
     return (
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 animate-pulse">
         {[1, 2, 3, 4].map((i) => (
-          <div key={i} className="h-28 bg-gray-200 dark:bg-gray-700/50 rounded-2xl" />
+          <div key={i} className="h-28 bg-gray-200 dark:bg-gray-700/50 rounded-xl" />
         ))}
       </div>
     );
@@ -100,7 +100,7 @@ export default function MiNegocioHoyCard({ onNavigate }: MiNegocioHoyCardProps) 
     return (
       <button
         onClick={() => setCollapsed(false)}
-        className="w-full flex items-center gap-3 px-4 py-2.5 rounded-2xl bg-white/80 dark:bg-card/80 border border-gray-200 dark:border-card-border backdrop-blur-sm text-sm hover:bg-gray-50 dark:hover:bg-card transition-colors"
+        className="w-full flex items-center gap-3 px-4 py-2.5 rounded-xl bg-white/80 dark:bg-card/80 border border-gray-200 dark:border-card-border backdrop-blur-sm text-sm hover:bg-gray-50 dark:hover:bg-card transition-colors"
       >
         <Star className="h-4 w-4 text-primary" />
         <span className="font-semibold text-gray-700 dark:text-white">Hoy:</span>
@@ -157,7 +157,7 @@ export default function MiNegocioHoyCard({ onNavigate }: MiNegocioHoyCardProps) 
         {/* Card 1: Ventas del día */}
         <button
           onClick={() => onNavigate?.("analytics-pro")}
-          className="group relative overflow-hidden rounded-2xl bg-white dark:bg-card border border-gray-200 dark:border-card-border p-4 text-left hover:border-primary/30 transition-colors"
+          className="group relative overflow-hidden rounded-xl bg-white dark:bg-card border border-gray-200 dark:border-card-border p-4 text-left hover:border-primary/30 transition-colors"
         >
           <div className="flex items-center justify-between mb-2">
             <div className="w-9 h-9 rounded-xl bg-emerald-50 dark:bg-emerald-900/20 flex items-center justify-center">
@@ -201,7 +201,7 @@ export default function MiNegocioHoyCard({ onNavigate }: MiNegocioHoyCardProps) 
         {/* Card 2: Pedidos */}
         <button
           onClick={() => onNavigate?.("pedidos")}
-          className="group relative overflow-hidden rounded-2xl bg-white dark:bg-card border border-gray-200 dark:border-card-border p-4 text-left hover:border-primary/30 transition-colors"
+          className="group relative overflow-hidden rounded-xl bg-white dark:bg-card border border-gray-200 dark:border-card-border p-4 text-left hover:border-primary/30 transition-colors"
         >
           <div className="flex items-center justify-between mb-2">
             <div className="w-9 h-9 rounded-xl bg-emerald-50 dark:bg-emerald-900/20 flex items-center justify-center">
@@ -230,7 +230,7 @@ export default function MiNegocioHoyCard({ onNavigate }: MiNegocioHoyCardProps) 
         {/* Card 3: Alertas */}
         <button
           onClick={() => onNavigate?.("inventario")}
-          className="group relative overflow-hidden rounded-2xl bg-white dark:bg-card border border-gray-200 dark:border-card-border p-4 text-left hover:border-primary/30 transition-colors"
+          className="group relative overflow-hidden rounded-xl bg-white dark:bg-card border border-gray-200 dark:border-card-border p-4 text-left hover:border-primary/30 transition-colors"
         >
           <div className="flex items-center justify-between mb-2">
             <div
@@ -270,7 +270,7 @@ export default function MiNegocioHoyCard({ onNavigate }: MiNegocioHoyCardProps) 
         </button>
 
         {/* Card 4: Top producto */}
-        <div className="relative overflow-hidden rounded-2xl bg-white dark:bg-card border border-gray-200 dark:border-card-border p-4">
+        <div className="relative overflow-hidden rounded-xl bg-white dark:bg-card border border-gray-200 dark:border-card-border p-4">
           <div className="flex items-center mb-2">
             <div className="w-9 h-9 rounded-xl bg-purple-50 dark:bg-purple-900/20 flex items-center justify-center">
               <Star className="h-5 w-5 text-purple-600 dark:text-purple-400" />

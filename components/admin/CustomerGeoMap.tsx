@@ -469,7 +469,7 @@ export default function CustomerGeoMap({ className }: Props) {
       ) : (
         <div
           ref={containerRef}
-          className="rounded-xl border border-gray-200 shadow-sm dark:border-gray-700"
+          className="rounded-xl border border-gray-200  dark:border-gray-700"
           style={{ height: 480, width: "100%" }}
         />
       )}

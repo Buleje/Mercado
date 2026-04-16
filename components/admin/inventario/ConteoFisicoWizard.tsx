@@ -191,7 +191,7 @@ export default function ConteoFisicoWizard() {
   const selected = items[selectedIdx] ?? null;
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-6">
       {error && (
         <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 text-red-700 dark:text-red-400 px-4 py-3 rounded-lg text-sm">
           {error}
@@ -204,7 +204,7 @@ export default function ConteoFisicoWizard() {
           <div className="bg-white dark:bg-card rounded-xl border border-gray-200 dark:border-card-border p-6">
             <h3 className="text-lg font-bold text-gray-900 dark:text-foreground mb-4">Nuevo Conteo Fisico</h3>
 
-            <div className="space-y-4">
+            <div className="space-y-6">
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-muted mb-2">Tipo de conteo</label>
                 <div className="flex gap-3">
@@ -287,7 +287,7 @@ export default function ConteoFisicoWizard() {
 
       {/* ═══ PASO 2: Contar Productos ═══ */}
       {paso === 2 && (
-        <div className="space-y-4">
+        <div className="space-y-6">
           {/* Progress bar */}
           <div className="bg-white dark:bg-card rounded-xl border border-gray-200 dark:border-card-border p-4">
             <div className="flex items-center justify-between mb-2">
@@ -357,7 +357,7 @@ export default function ConteoFisicoWizard() {
             {/* RIGHT: Selected product detail */}
             <div className="bg-white dark:bg-card rounded-xl border border-gray-200 dark:border-card-border p-4">
               {selected ? (
-                <div className="space-y-4">
+                <div className="space-y-6">
                   {selected.product?.image && (
                     <div className="relative w-20 h-20 rounded-lg bg-gray-100 dark:bg-gray-800 overflow-hidden mx-auto">
                       <Image src={selected.product.image} alt={selected.product.name} fill className="object-cover" sizes="80px" />
@@ -387,7 +387,7 @@ export default function ConteoFisicoWizard() {
                       onKeyDown={e => { if (e.key === 'Enter') guardarConteo(); }}
                       min={0}
                       placeholder="Ingresa cantidad..."
-                      className="w-full px-4 py-3 border-2 border-gray-300 dark:border-card-border rounded-xl bg-white dark:bg-card text-gray-900 dark:text-foreground text-2xl text-center font-bold focus:border-[#00B4A6] focus:outline-none"
+                      className="w-full px-4 py-3 border-2 border-gray-300 dark:border-card-border rounded-lg bg-white dark:bg-card text-gray-900 dark:text-foreground text-2xl text-center font-bold focus:border-[#00B4A6] focus:outline-none"
                       autoFocus
                     />
                   </div>
@@ -436,7 +436,7 @@ export default function ConteoFisicoWizard() {
 
       {/* ═══ PASO 3: Revisar Diferencias ═══ */}
       {paso === 3 && (
-        <div className="space-y-4">
+        <div className="space-y-6">
           <div className="bg-white dark:bg-card rounded-xl border border-gray-200 dark:border-card-border p-4">
             <div className="flex items-center justify-between mb-4">
               <h3 className="text-lg font-bold text-gray-900 dark:text-foreground">Diferencias encontradas</h3>

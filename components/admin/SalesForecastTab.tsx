@@ -59,7 +59,7 @@ export default function SalesForecastTab() {
               </button>
             ))}
           </div>
-          <button onClick={() => exportToCSV(filteredForecast.map(p => ({ Fecha: p.date, Prediccion: p.predicted, Min: p.lower, Max: p.upper })), "forecast")} className="flex flex-wrap items-center gap-2 px-2 sm:px-4 py-1.5 sm:py-2.5 rounded-xl bg-primary text-white text-sm font-bold hover:bg-primary/90 transition-colors">
+          <button onClick={() => exportToCSV(filteredForecast.map(p => ({ Fecha: p.date, Prediccion: p.predicted, Min: p.lower, Max: p.upper })), "forecast")} className="flex flex-wrap items-center gap-2 px-2 sm:px-4 py-1.5 sm:py-2.5 rounded-lg bg-primary text-white text-sm font-bold hover:bg-primary/90 transition-colors">
             <Download className="h-4 w-4" /> Exportar
           </button>
         </div>
@@ -82,8 +82,8 @@ export default function SalesForecastTab() {
           { label: "Crecimiento", value: `${Number(growthPct) > 0 ? "+" : ""}${growthPct}%`, sub: "vs periodo anterior", color: Number(growthPct) >= 0 ? "text-emerald-600 dark:text-emerald-400" : "text-red-600 dark:text-red-400" },
           { label: "Rango Confianza", value: `${fmt(totalLower)} — ${fmt(totalUpper)}`, sub: "intervalo 95%", color: "text-purple-600 dark:text-purple-400" },
         ].map(kpi => (
-          <div key={kpi.label} className="bg-white dark:bg-card rounded-2xl border border-gray-200 dark:border-card-border p-3 sm:p-5">
-            <p className="text-xs font-semibold text-gray-500 dark:text-muted uppercase tracking-wider">{kpi.label}</p>
+          <div key={kpi.label} className="bg-white dark:bg-card rounded-xl border border-gray-200 dark:border-card-border p-3 sm:p-5">
+            <p className="text-xs font-semibold text-gray-500 dark:text-muted">{kpi.label}</p>
             <p className={cn("text-lg font-extrabold mt-1", kpi.color)}>{kpi.value}</p>
             <p className="text-xs text-gray-400 dark:text-muted mt-1">{kpi.sub}</p>
           </div>
@@ -93,7 +93,7 @@ export default function SalesForecastTab() {
       {view === "general" ? (
         <>
           {/* Chart visualization */}
-          <div className="bg-white dark:bg-card rounded-2xl border border-gray-200 dark:border-card-border p-3 sm:p-6">
+          <div className="bg-white dark:bg-card rounded-xl border border-gray-200 dark:border-card-border p-3 sm:p-6">
             <h3 className="font-bold text-gray-900 dark:text-foreground mb-4 flex flex-wrap items-center gap-2">
               <BarChart3 className="h-5 w-5 text-primary" /> Gráfico de Proyección
             </h3>
@@ -128,7 +128,7 @@ export default function SalesForecastTab() {
           </div>
 
           {/* Daily forecast table */}
-          <div className="bg-white dark:bg-card rounded-2xl border border-gray-200 dark:border-card-border overflow-hidden">
+          <div className="bg-white dark:bg-card rounded-xl border border-gray-200 dark:border-card-border overflow-hidden">
             <div className="px-3 sm:px-6 py-4 border-b border-gray-100 dark:border-card-border">
               <h3 className="font-bold text-gray-900 dark:text-foreground">Detalle Diario</h3>
             </div>
@@ -166,7 +166,7 @@ export default function SalesForecastTab() {
         <>
           {/* Alerts */}
           {alertProducts.length > 0 && (
-            <div className="bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-800 rounded-2xl p-4">
+            <div className="bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-800 rounded-xl p-4">
               <div className="flex flex-wrap items-center gap-2 mb-2">
                 <AlertTriangle className="h-5 w-5 text-amber-500" />
                 <h3 className="font-bold text-amber-800 dark:text-amber-300">{alertProducts.length} productos con riesgo de quiebre</h3>
@@ -176,7 +176,7 @@ export default function SalesForecastTab() {
           )}
 
           {/* Product forecast table */}
-          <div className="bg-white dark:bg-card rounded-2xl border border-gray-200 dark:border-card-border overflow-hidden">
+          <div className="bg-white dark:bg-card rounded-xl border border-gray-200 dark:border-card-border overflow-hidden">
             <div className="px-3 sm:px-6 py-4 border-b border-gray-100 dark:border-card-border">
               <h3 className="font-bold text-gray-900 dark:text-foreground">Pronóstico por Producto</h3>
             </div>

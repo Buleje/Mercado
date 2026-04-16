@@ -79,7 +79,7 @@ function AreaForm({ initial, onSave, onCancel }: AreaFormProps) {
   const valid = name.trim().length > 0 && sqm > 0 && cats.length > 0;
 
   return (
-    <div className="p-4 rounded-2xl border-2 border-[#00B4A6]/30 bg-[#00B4A6]/5 dark:bg-[#00B4A6]/10 space-y-3">
+    <div className="p-4 rounded-xl border-2 border-[#00B4A6]/30 bg-[#00B4A6]/5 dark:bg-[#00B4A6]/10 space-y-3">
       <div className="grid grid-cols-2 gap-3">
         <div className="col-span-2">
           <label className="block text-xs font-semibold text-gray-600 dark:text-gray-400 mb-1">
@@ -89,7 +89,7 @@ function AreaForm({ initial, onSave, onCancel }: AreaFormProps) {
             value={name}
             onChange={(e) => setName(e.target.value)}
             placeholder="Ej: Pasillo A - Abarrotes"
-            className="w-full rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 px-3 py-2 text-sm text-gray-900 dark:text-white outline-none focus:border-[#00B4A6]"
+            className="w-full rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 px-3 py-2 text-sm text-gray-900 dark:text-white outline-none focus:border-[#00B4A6]"
           />
         </div>
         <div>
@@ -102,7 +102,7 @@ function AreaForm({ initial, onSave, onCancel }: AreaFormProps) {
             step={0.5}
             value={sqm}
             onChange={(e) => setSqm(Number(e.target.value))}
-            className="w-full rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 px-3 py-2 text-sm text-gray-900 dark:text-white outline-none focus:border-[#00B4A6]"
+            className="w-full rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 px-3 py-2 text-sm text-gray-900 dark:text-white outline-none focus:border-[#00B4A6]"
           />
         </div>
         <div>
@@ -114,7 +114,7 @@ function AreaForm({ initial, onSave, onCancel }: AreaFormProps) {
             min={0}
             value={revenue}
             onChange={(e) => setRevenue(Number(e.target.value))}
-            className="w-full rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 px-3 py-2 text-sm text-gray-900 dark:text-white outline-none focus:border-[#00B4A6]"
+            className="w-full rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 px-3 py-2 text-sm text-gray-900 dark:text-white outline-none focus:border-[#00B4A6]"
           />
         </div>
         <div className="col-span-2">
@@ -143,7 +143,7 @@ function AreaForm({ initial, onSave, onCancel }: AreaFormProps) {
         <button
           onClick={() => valid && onSave({ name: name.trim(), sqm, revenue, categories: cats })}
           disabled={!valid}
-          className="flex-1 py-2.5 rounded-xl bg-[#00B4A6] text-white text-sm font-semibold flex items-center justify-center gap-2 disabled:opacity-50"
+          className="flex-1 py-2.5 rounded-lg bg-[#00B4A6] text-white text-sm font-semibold flex items-center justify-center gap-2 disabled:opacity-50"
         >
           <Save className="w-4 h-4" />
           Guardar area
@@ -206,7 +206,7 @@ export default function RevenuePerSquareMeter() {
   const bottomArea = ranked[ranked.length - 1];
 
   return (
-    <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-700 overflow-hidden shadow-sm">
+    <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-700 overflow-hidden ">
       {/* Header */}
       <div className="p-5 border-b border-gray-100 dark:border-gray-800 flex items-center justify-between">
         <div className="flex items-center gap-3">
@@ -225,7 +225,7 @@ export default function RevenuePerSquareMeter() {
         {!showForm && !editingId && (
           <button
             onClick={() => setShowForm(true)}
-            className="flex items-center gap-2 px-3 py-2 rounded-xl bg-[#00B4A6] text-white text-sm font-semibold"
+            className="flex items-center gap-2 px-3 py-2 rounded-lg bg-[#00B4A6] text-white text-sm font-semibold"
           >
             <Plus className="w-4 h-4" />
             Nueva area
@@ -270,7 +270,7 @@ export default function RevenuePerSquareMeter() {
               <div
                 key={area.id}
                 className={cn(
-                  "p-4 rounded-2xl border",
+                  "p-4 rounded-xl border",
                   index === 0
                     ? "border-[#00B4A6]/30 bg-[#00B4A6]/5 dark:bg-[#00B4A6]/10"
                     : "border-gray-100 dark:border-gray-800 bg-gray-50 dark:bg-gray-800/50"
@@ -300,14 +300,14 @@ export default function RevenuePerSquareMeter() {
                   <div className="flex items-center gap-1 flex-shrink-0">
                     <button
                       onClick={() => setEditingId(area.id)}
-                      className="p-1.5 rounded-xl hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
+                      className="p-1.5 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
                       aria-label="Editar"
                     >
                       <Edit3 className="w-3.5 h-3.5 text-gray-500" />
                     </button>
                     <button
                       onClick={() => deleteArea(area.id)}
-                      className="p-1.5 rounded-xl hover:bg-red-50 dark:hover:bg-red-950/30 transition-colors"
+                      className="p-1.5 rounded-lg hover:bg-red-50 dark:hover:bg-red-950/30 transition-colors"
                       aria-label="Eliminar"
                     >
                       <Trash2 className="w-3.5 h-3.5 text-red-400" />

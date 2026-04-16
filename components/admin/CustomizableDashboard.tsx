@@ -229,7 +229,7 @@ export function CustomizableDashboard({ tenantId = "main" }: CustomizableDashboa
   const visibleWidgets = widgets.filter((w) => w.visible);
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-6">
       {/* Barra de herramientas */}
       <div className="flex items-center justify-between">
         <h2 className="text-lg font-semibold text-gray-800 dark:text-gray-100">
@@ -258,14 +258,14 @@ export function CustomizableDashboard({ tenantId = "main" }: CustomizableDashboa
 
       {/* Lista de todos los widgets en modo edicion */}
       {editMode && (
-        <div className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-2xl p-4 space-y-2">
+        <div className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl p-4 space-y-2">
           <p className="text-xs text-gray-500 dark:text-gray-400 mb-3">
             Usa las flechas para reordenar. Usa el ojo para mostrar u ocultar.
           </p>
           {widgets.map((widget, index) => (
             <div
               key={widget.id}
-              className="flex items-center gap-3 p-2 rounded-xl hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
+              className="flex items-center gap-3 p-2 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
             >
               <div className="flex flex-col gap-0.5">
                 <button
@@ -310,11 +310,11 @@ export function CustomizableDashboard({ tenantId = "main" }: CustomizableDashboa
         {visibleWidgets.slice(0, 4).map((widget) => (
           <div
             key={widget.id}
-            className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-2xl p-4 shadow-sm"
+            className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl p-4 "
           >
             <div className="flex items-center gap-2 mb-3">
               <span className="text-gray-500 dark:text-gray-400">{widget.icon}</span>
-              <span className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">
+              <span className="text-xs font-medium text-gray-500 dark:text-gray-400">
                 {widget.label}
               </span>
             </div>
@@ -329,11 +329,11 @@ export function CustomizableDashboard({ tenantId = "main" }: CustomizableDashboa
           {visibleWidgets.slice(4).map((widget) => (
             <div
               key={widget.id}
-              className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-2xl p-4 shadow-sm"
+              className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl p-4 "
             >
               <div className="flex items-center gap-2 mb-3">
                 <span className="text-gray-500 dark:text-gray-400">{widget.icon}</span>
-                <span className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">
+                <span className="text-xs font-medium text-gray-500 dark:text-gray-400">
                   {widget.label}
                 </span>
               </div>

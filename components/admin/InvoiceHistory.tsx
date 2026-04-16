@@ -119,7 +119,7 @@ export default function InvoiceHistory() {
   const paginatedRecords = records.slice(0, ITEMS_PER_PAGE);
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-6">
       {/* ── Header ───────────────────────────────────────────────────────── */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
         <div>
@@ -133,7 +133,7 @@ export default function InvoiceHistory() {
         <button
           onClick={fetchRecords}
           disabled={loading}
-          className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-gray-100 dark:bg-surface text-sm font-bold text-gray-600 dark:text-muted hover:bg-gray-200 dark:hover:bg-surface/80 disabled:opacity-50 transition-colors"
+          className="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-gray-100 dark:bg-surface text-sm font-bold text-gray-600 dark:text-muted hover:bg-gray-200 dark:hover:bg-surface/80 disabled:opacity-50 transition-colors"
         >
           <RefreshCw className={`h-4 w-4 ${loading ? "animate-spin" : ""}`} />
           Actualizar
@@ -150,7 +150,7 @@ export default function InvoiceHistory() {
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             placeholder="Buscar por cliente, número..."
-            className="w-full pl-9 pr-3 py-2 rounded-xl border border-gray-200 dark:border-card-border bg-white dark:bg-card text-sm text-gray-900 dark:text-foreground placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-colors"
+            className="w-full pl-9 pr-3 py-2 rounded-lg border border-gray-200 dark:border-card-border bg-white dark:bg-card text-sm text-gray-900 dark:text-foreground placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-colors"
           />
         </div>
 
@@ -162,7 +162,7 @@ export default function InvoiceHistory() {
               onClick={() => setTipoFilter(t)}
               className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
                 tipoFilter === t
-                  ? "bg-white dark:bg-card text-primary shadow-sm"
+                  ? "bg-white dark:bg-card text-primary "
                   : "text-gray-500 dark:text-muted hover:text-gray-700"
               }`}
             >
@@ -179,7 +179,7 @@ export default function InvoiceHistory() {
               onClick={() => setEstadoFilter(e)}
               className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
                 estadoFilter === e
-                  ? "bg-white dark:bg-card text-primary shadow-sm"
+                  ? "bg-white dark:bg-card text-primary "
                   : "text-gray-500 dark:text-muted hover:text-gray-700"
               }`}
             >
@@ -280,7 +280,7 @@ export default function InvoiceHistory() {
             {paginatedRecords.map((record) => (
               <div
                 key={record.id}
-                className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl p-3 space-y-2"
+                className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl p-3 space-y-2"
               >
                 <div className="flex items-center justify-between">
                   <span

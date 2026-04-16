@@ -24,7 +24,7 @@ export function OrdersFilters({ filters, dispatch, onClose }: OrdersFiltersProps
       onClick={onClose}
     >
       <div
-        className="bg-white dark:bg-card rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] flex flex-col"
+        className="bg-white dark:bg-card rounded-xl w-full max-w-2xl max-h-[90vh] flex flex-col"
         onClick={e => e.stopPropagation()}
       >
         {/* Header */}
@@ -197,13 +197,13 @@ export function OrdersFilters({ filters, dispatch, onClose }: OrdersFiltersProps
         <div className="px-5 py-4 border-t border-gray-100 dark:border-card-border shrink-0 flex gap-3">
           <button
             onClick={handleClearAndClose}
-            className="flex-1 py-2.5 rounded-xl text-sm font-bold text-gray-600 dark:text-muted border border-gray-200 dark:border-card-border hover:bg-gray-50 dark:hover:bg-surface transition-colors"
+            className="flex-1 py-2.5 rounded-lg text-sm font-bold text-gray-600 dark:text-muted border border-gray-200 dark:border-card-border hover:bg-gray-50 dark:hover:bg-surface transition-colors"
           >
             Limpiar filtros
           </button>
           <button
             onClick={onClose}
-            className="flex-1 py-2.5 rounded-xl text-sm font-bold text-white bg-primary hover:bg-primary/90 transition-colors"
+            className="flex-1 py-2.5 rounded-lg text-sm font-bold text-white bg-primary hover:bg-primary/90 transition-colors"
           >
             Aplicar filtros
           </button>

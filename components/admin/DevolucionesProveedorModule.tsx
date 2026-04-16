@@ -269,7 +269,7 @@ export default function DevolucionesProveedorModule() {
   // ── Render ────────────────────────────────────────────────────────────────
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-6">
       <AdminModuleHeader
         title="Devoluciones a Proveedores"
         description="Registra y da seguimiento a devoluciones de mercadería"
@@ -281,13 +281,13 @@ export default function DevolucionesProveedorModule() {
             onClick={fetchDevoluciones}
             disabled={loading}
             aria-label="Recargar devoluciones"
-            className="h-9 w-9 flex items-center justify-center rounded-xl border border-gray-200 dark:border-gray-700 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors disabled:opacity-50"
+            className="h-9 w-9 flex items-center justify-center rounded-lg border border-gray-200 dark:border-gray-700 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors disabled:opacity-50"
           >
             <RefreshCw className={cn("h-4 w-4 text-gray-500", loading && "animate-spin")} />
           </button>
           <button
             onClick={() => { setMostrarFormulario(true); resetFormulario(); }}
-            className="flex items-center gap-2 px-4 py-2 bg-[#00B4A6] hover:bg-[#009690] text-white rounded-xl text-sm font-medium transition-colors min-h-[44px]"
+            className="flex items-center gap-2 px-4 py-2 bg-[#00B4A6] hover:bg-[#009690] text-white rounded-lg text-sm font-medium transition-colors min-h-[44px]"
           >
             <Plus className="h-4 w-4" />
             Nueva devolución
@@ -315,7 +315,7 @@ export default function DevolucionesProveedorModule() {
 
       {/* Formulario nueva devolución */}
       {mostrarFormulario && (
-        <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl p-4 space-y-4">
+        <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl p-4 space-y-4">
           <div className="flex items-center justify-between">
             <h3 className="font-semibold text-gray-900 dark:text-white text-sm">Nueva devolución</h3>
             <button
@@ -336,7 +336,7 @@ export default function DevolucionesProveedorModule() {
                 <select
                   value={proveedorId}
                   onChange={e => setProveedorId(e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-200 dark:border-card-border rounded-xl text-sm bg-white dark:bg-gray-900 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-[#f97316]/40"
+                  className="w-full px-3 py-2 border border-gray-200 dark:border-card-border rounded-lg text-sm bg-white dark:bg-gray-900 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-[#f97316]/40"
                 >
                   <option value="">Seleccionar proveedor...</option>
                   {proveedores.map(p => (
@@ -350,7 +350,7 @@ export default function DevolucionesProveedorModule() {
               <select
                 value={motivo}
                 onChange={e => setMotivo(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-200 dark:border-card-border rounded-xl text-sm bg-white dark:bg-gray-900 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-[#f97316]/40"
+                className="w-full px-3 py-2 border border-gray-200 dark:border-card-border rounded-lg text-sm bg-white dark:bg-gray-900 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-[#f97316]/40"
               >
                 {MOTIVOS.map(m => <option key={m} value={m}>{m}</option>)}
               </select>
@@ -375,19 +375,19 @@ export default function DevolucionesProveedorModule() {
                   placeholder="Nombre del producto"
                   value={item.nombre}
                   onChange={e => actualizarItem(index, "nombre", e.target.value)}
-                  className="flex-1 px-3 py-2 border border-gray-200 dark:border-card-border rounded-xl text-sm bg-white dark:bg-gray-900 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-[#f97316]/40"
+                  className="flex-1 px-3 py-2 border border-gray-200 dark:border-card-border rounded-lg text-sm bg-white dark:bg-gray-900 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-[#f97316]/40"
                 />
                 <input
                   type="number"
                   min={1}
                   value={item.cantidad}
                   onChange={e => actualizarItem(index, "cantidad", Number(e.target.value))}
-                  className="w-16 px-2 py-2 border border-gray-200 dark:border-card-border rounded-xl text-sm bg-white dark:bg-gray-900 text-gray-900 dark:text-white text-center focus:outline-none focus:ring-2 focus:ring-[#f97316]/40"
+                  className="w-16 px-2 py-2 border border-gray-200 dark:border-card-border rounded-lg text-sm bg-white dark:bg-gray-900 text-gray-900 dark:text-white text-center focus:outline-none focus:ring-2 focus:ring-[#f97316]/40"
                 />
                 <select
                   value={item.unidad}
                   onChange={e => actualizarItem(index, "unidad", e.target.value)}
-                  className="w-20 px-2 py-2 border border-gray-200 dark:border-card-border rounded-xl text-sm bg-white dark:bg-gray-900 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-[#f97316]/40"
+                  className="w-20 px-2 py-2 border border-gray-200 dark:border-card-border rounded-lg text-sm bg-white dark:bg-gray-900 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-[#f97316]/40"
                 >
                   <option value="und">und</option>
                   <option value="kg">kg</option>
@@ -415,7 +415,7 @@ export default function DevolucionesProveedorModule() {
               onChange={e => setNotas(e.target.value)}
               rows={2}
               placeholder="Información adicional sobre la devolución..."
-              className="w-full px-3 py-2 border border-gray-200 dark:border-card-border rounded-xl text-sm bg-white dark:bg-gray-900 text-gray-900 dark:text-white resize-none focus:outline-none focus:ring-2 focus:ring-[#f97316]/40"
+              className="w-full px-3 py-2 border border-gray-200 dark:border-card-border rounded-lg text-sm bg-white dark:bg-gray-900 text-gray-900 dark:text-white resize-none focus:outline-none focus:ring-2 focus:ring-[#f97316]/40"
             />
           </div>
 
@@ -423,14 +423,14 @@ export default function DevolucionesProveedorModule() {
           <div className="flex justify-end gap-2 pt-1">
             <button
               onClick={() => setMostrarFormulario(false)}
-              className="px-4 py-2 text-sm text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-xl transition-colors min-h-[44px]"
+              className="px-4 py-2 text-sm text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition-colors min-h-[44px]"
             >
               Cancelar
             </button>
             <button
               onClick={handleGuardar}
               disabled={guardando || !proveedorId || items.every(i => !i.nombre.trim())}
-              className="px-4 py-2 bg-[#f97316] hover:bg-[#e8924f] disabled:opacity-50 text-white rounded-xl text-sm font-medium transition-colors min-h-[44px] flex items-center gap-2"
+              className="px-4 py-2 bg-[#f97316] hover:bg-[#e8924f] disabled:opacity-50 text-white rounded-lg text-sm font-medium transition-colors min-h-[44px] flex items-center gap-2"
             >
               {guardando && <Loader2 className="h-3.5 w-3.5 animate-spin" />}
               {guardando ? "Guardando..." : "Registrar devolución"}
@@ -447,7 +447,7 @@ export default function DevolucionesProveedorModule() {
       ) : (
         <div className="space-y-2">
           {devolucionesFiltradas.length === 0 ? (
-            <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl p-8 text-center">
+            <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl p-8 text-center">
               <RotateCcw className="h-8 w-8 mx-auto mb-2 text-gray-300 dark:text-gray-600" />
               <p className="text-sm text-gray-400">
                 {filtroEstado ? `No hay devoluciones con estado ${filtroEstado}` : "No hay devoluciones registradas"}
@@ -465,7 +465,7 @@ export default function DevolucionesProveedorModule() {
             devolucionesFiltradas.map(dev => (
               <div
                 key={dev.id}
-                className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl overflow-hidden"
+                className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl overflow-hidden"
               >
                 {/* Cabecera de la tarjeta */}
                 <div className="flex items-center gap-3 p-3">
@@ -562,7 +562,7 @@ export default function DevolucionesProveedorModule() {
       )}
 
       {/* ── Panel de Reportes ─────────────────────────────────────────── */}
-      <div className="mt-6 border border-gray-200 dark:border-card-border rounded-2xl overflow-hidden">
+      <div className="mt-6 border border-gray-200 dark:border-card-border rounded-xl overflow-hidden">
         <button
           type="button"
           onClick={() => setShowReportes(v => !v)}
@@ -610,7 +610,7 @@ export default function DevolucionesProveedorModule() {
             {/* Gráfico mensual */}
             {reportesPorMes.length > 0 && (
               <div>
-                <p className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-3">
+                <p className="text-xs font-semibold text-gray-500 dark:text-gray-400 mb-3">
                   Devoluciones por mes
                 </p>
                 <ResponsiveContainer width="100%" height={180}>
@@ -631,7 +631,7 @@ export default function DevolucionesProveedorModule() {
             {/* Top motivos + proveedores */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
-                <p className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-2">
+                <p className="text-xs font-semibold text-gray-500 dark:text-gray-400 mb-2">
                   Top motivos
                 </p>
                 <div className="space-y-1.5">
@@ -657,7 +657,7 @@ export default function DevolucionesProveedorModule() {
                 </div>
               </div>
               <div>
-                <p className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-2">
+                <p className="text-xs font-semibold text-gray-500 dark:text-gray-400 mb-2">
                   Top proveedores
                 </p>
                 <div className="space-y-1.5">

@@ -151,7 +151,7 @@ export default function CashFlowProjection() {
   // ── Render ──────────────────────────────────────────────────────────────────
 
   return (
-    <div className="rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 shadow-sm overflow-hidden">
+    <div className="rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900  overflow-hidden">
       {/* Header */}
       <div className="bg-[#00B4A6] px-5 py-4 flex items-center justify-between">
         <div className="flex items-center gap-2">
@@ -182,7 +182,7 @@ export default function CashFlowProjection() {
         ) : error ? (
           <p className="text-sm text-red-500 dark:text-red-400 text-center py-6">{error}</p>
         ) : projData ? (
-          <div className="space-y-4">
+          <div className="space-y-6">
             {/* Alerta si proyeccion es negativa */}
             {projData.isNegative && (
               <div className="flex items-start gap-2 rounded-lg bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-700 px-3 py-2.5">

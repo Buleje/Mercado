@@ -149,7 +149,7 @@ export default function BackupRestoreTab() {
           {/* Botón crear backup */}
           <div className="flex justify-end">
             <button onClick={handleCreateBackup} disabled={creating}
-              className="flex items-center gap-1.5 px-4 py-2 rounded-xl text-sm font-bold bg-primary text-white hover:bg-primary/90 disabled:opacity-60">
+              className="flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-bold bg-primary text-white hover:bg-primary/90 disabled:opacity-60">
               {creating ? <RefreshCw className="h-4 w-4 animate-spin" /> : <Play className="h-4 w-4" />}
               {creating ? "Creando backup…" : "Crear backup ahora"}
             </button>
@@ -163,7 +163,7 @@ export default function BackupRestoreTab() {
               ))}
             </div>
           ) : backups.length === 0 ? (
-            <div className="flex flex-col items-center justify-center py-12 text-gray-400 bg-white dark:bg-card rounded-2xl border border-dashed border-gray-300 dark:border-card-border">
+            <div className="flex flex-col items-center justify-center py-12 text-gray-400 bg-white dark:bg-card rounded-xl border border-dashed border-gray-300 dark:border-card-border">
               <Database className="h-12 w-12 mb-3 text-gray-300" />
               <p className="font-bold text-gray-500 dark:text-muted">Sin backups registrados</p>
               <p className="text-sm mt-1">Crea el primer backup manual</p>
@@ -223,7 +223,7 @@ export default function BackupRestoreTab() {
           )}
         </>
       ) : (
-        <div className="bg-white dark:bg-card rounded-2xl border border-gray-200 dark:border-card-border p-4 sm:p-6 space-y-5">
+        <div className="bg-white dark:bg-card rounded-xl border border-gray-200 dark:border-card-border p-4 sm:p-6 space-y-5">
           <h3 className="font-extrabold text-gray-900 dark:text-foreground">Configuración de backup automático</h3>
 
           <div className="flex items-center justify-between py-3 border-b border-gray-100 dark:border-card-border">

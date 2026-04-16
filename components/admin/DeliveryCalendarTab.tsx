@@ -149,7 +149,7 @@ export default function DeliveryCalendarTab() {
       <div className="flex items-center gap-2">
         <button
           onClick={() => setWeekOffset(w => w - 1)}
-          className="p-2 rounded-xl border border-gray-200 dark:border-card-border hover:bg-gray-50 dark:hover:bg-surface transition"
+          className="p-2 rounded-lg border border-gray-200 dark:border-card-border hover:bg-gray-50 dark:hover:bg-surface transition"
         >
           <ChevronLeft className="h-4 w-4 text-gray-500" />
         </button>
@@ -166,7 +166,7 @@ export default function DeliveryCalendarTab() {
                 className={cn(
                   "flex flex-col items-center min-w-[52px] px-2 py-2 rounded-xl text-xs font-bold transition flex-1",
                   isSelected
-                    ? "bg-primary text-white shadow-md"
+                    ? "bg-primary text-white"
                     : isToday
                     ? "bg-primary/10 text-primary border border-primary/30"
                     : "bg-white dark:bg-card border border-gray-200 dark:border-card-border text-gray-600 dark:text-muted hover:bg-gray-50 dark:hover:bg-surface"
@@ -186,7 +186,7 @@ export default function DeliveryCalendarTab() {
         </div>
         <button
           onClick={() => setWeekOffset(w => w + 1)}
-          className="p-2 rounded-xl border border-gray-200 dark:border-card-border hover:bg-gray-50 dark:hover:bg-surface transition"
+          className="p-2 rounded-lg border border-gray-200 dark:border-card-border hover:bg-gray-50 dark:hover:bg-surface transition"
         >
           <ChevronRight className="h-4 w-4 text-gray-500" />
         </button>
@@ -218,7 +218,7 @@ export default function DeliveryCalendarTab() {
             const Icon = cfg.icon;
             const slotOrders = daySlots.filter(s => s.slot === key);
             return (
-              <div key={key} className={cn("bg-white dark:bg-card border rounded-2xl overflow-hidden", cfg.border)}>
+              <div key={key} className={cn("bg-white dark:bg-card border rounded-xl overflow-hidden", cfg.border)}>
                 {/* Slot header */}
                 <div className={cn("flex items-center gap-2 px-4 py-3", cfg.color)}>
                   <Icon className="h-4 w-4 shrink-0" />
@@ -285,7 +285,7 @@ export default function DeliveryCalendarTab() {
                 <div className="px-3 pb-3">
                   <button
                     onClick={() => setAssigningSlot(key)}
-                    className="w-full py-2 rounded-xl text-xs font-bold text-primary border border-dashed border-primary/30 hover:bg-primary/5 transition flex items-center justify-center gap-1"
+                    className="w-full py-2 rounded-lg text-xs font-bold text-primary border border-dashed border-primary/30 hover:bg-primary/5 transition flex items-center justify-center gap-1"
                   >
                     <Clock className="h-3 w-3" />
                     Asignar pedido
@@ -304,7 +304,7 @@ export default function DeliveryCalendarTab() {
           onClick={() => setAssigningSlot(null)}
         >
           <div
-            className="bg-white dark:bg-card rounded-2xl p-4 sm:p-6 w-full max-w-md space-y-4 border border-gray-200 dark:border-card-border shadow-2xl"
+            className="bg-white dark:bg-card rounded-xl p-4 sm:p-6 w-full max-w-md space-y-4 border border-gray-200 dark:border-card-border"
             onClick={e => e.stopPropagation()}
           >
             <div className="flex items-center justify-between">
@@ -326,7 +326,7 @@ export default function DeliveryCalendarTab() {
                   <button
                     key={o.id}
                     onClick={() => assignSlot(o.id)}
-                    className="w-full text-left p-3 border border-gray-200 dark:border-card-border rounded-xl hover:border-primary/40 hover:bg-primary/5 transition text-sm group"
+                    className="w-full text-left p-3 border border-gray-200 dark:border-card-border rounded-lg hover:border-primary/40 hover:bg-primary/5 transition text-sm group"
                   >
                     <div className="flex items-center justify-between">
                       <span className="font-bold text-gray-800 dark:text-foreground">#{o.id.slice(-6)}</span>

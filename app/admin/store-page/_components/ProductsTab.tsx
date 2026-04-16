@@ -102,7 +102,7 @@ export default function ProductsTab() {
     .slice(0, 50);
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-6">
       {/* Toolbar */}
       <div className="flex items-center gap-3 flex-wrap">
         <div className="relative flex-1 min-w-[200px]">
@@ -120,7 +120,7 @@ export default function ProductsTab() {
             if (catalog.length === 0) await loadCatalog();
             setShowPicker((v) => !v);
           }}
-          className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-semibold text-sm"
+          className="inline-flex items-center gap-2 px-4 py-2.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white font-semibold text-sm"
         >
           <Plus className="w-4 h-4" />
           Agregar producto

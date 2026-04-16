@@ -76,7 +76,7 @@ export default function POSSplitPayment({
             <button
               key={n}
               onClick={() => setupSplit(n)}
-              className="flex-1 min-w-16 py-3 rounded-xl border border-gray-200 dark:border-card-border text-sm font-bold text-gray-700 dark:text-foreground hover:border-primary hover:bg-primary/5 transition-colors"
+              className="flex-1 min-w-16 py-3 rounded-lg border border-gray-200 dark:border-card-border text-sm font-bold text-gray-700 dark:text-foreground hover:border-primary hover:bg-primary/5 transition-colors"
             >
               {n}
             </button>

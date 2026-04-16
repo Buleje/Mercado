@@ -198,7 +198,7 @@ function ModuleTooltip() {
         <Info className="h-4 w-4" />
       </button>
       {open && (
-        <div className="absolute left-6 top-0 z-50 w-80 bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl shadow-xl p-4 text-xs leading-relaxed pointer-events-none">
+        <div className="absolute left-6 top-0 z-50 w-80 bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl p-4 text-xs leading-relaxed pointer-events-none">
           <p className="font-extrabold text-gray-900 dark:text-foreground text-sm mb-2">🛍️ Punto de Venta (POS)</p>
           <p className="text-gray-600 dark:text-muted mb-3">Registra ventas en mostrador: busca productos, agrégalos al carrito, elige cómo cobrar y confirma la venta.</p>
           <div className="space-y-1.5">
@@ -508,7 +508,7 @@ function SaleCompleteModal({
 
   return (
     <div className="fixed inset-0 z-50 bg-black/40 flex items-center justify-center p-4">
-      <div className="bg-white dark:bg-card rounded-2xl shadow-xl max-w-sm w-full p-3 sm:p-6 text-center relative overflow-hidden">
+      <div className="bg-white dark:bg-card rounded-xl max-w-sm w-full p-3 sm:p-6 text-center relative overflow-hidden">
         {/* Confetti */}
         <SaleConfetti />
 
@@ -528,7 +528,7 @@ function SaleCompleteModal({
               initial={{ scale: 0, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
               transition={{ type: "spring", stiffness: 300, damping: 15, delay: 0.05 }}
-              className={cn("w-20 h-20 rounded-2xl flex flex-col items-center justify-center mx-auto mb-2 relative z-20", info.bg)}
+              className={cn("w-20 h-20 rounded-xl flex flex-col items-center justify-center mx-auto mb-2 relative z-20", info.bg)}
             >
               <span className="text-4xl leading-none">{info.emoji}</span>
               <span className="text-[9px] font-bold text-gray-500 dark:text-muted mt-1 capitalize">{method || "efectivo"}</span>
@@ -572,7 +572,7 @@ function SaleCompleteModal({
               </p>
               {lastSaleDetails.comprobanteNumero ? (
                 <div className="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-xl p-3 mt-1.5">
-                  <p className="text-[10px] text-green-600 dark:text-green-400 font-bold uppercase tracking-wider">Documento generado</p>
+                  <p className="text-[10px] text-green-600 dark:text-green-400 font-bold">Documento generado</p>
                   <p className="text-base font-mono font-bold text-green-700 dark:text-green-300">
                     {lastSaleDetails.comprobanteTipo === "boleta" ? "Boleta"
                       : lastSaleDetails.comprobanteTipo === "factura" ? "Factura"
@@ -591,12 +591,12 @@ function SaleCompleteModal({
         {/* Change */}
         {saleComplete.change === -1 ? (
           <div className="bg-amber-50 rounded-lg p-3 mb-4">
-            <p className="text-[10px] font-bold text-amber-600 uppercase tracking-wider">Fiado registrado</p>
+            <p className="text-[10px] font-bold text-amber-600">Fiado registrado</p>
             <p className="text-sm text-amber-600 font-semibold">Deuda pendiente del cliente</p>
           </div>
         ) : saleComplete.change > 0 ? (
           <div className="bg-amber-50 rounded-lg p-3 mb-4">
-            <p className="text-[10px] font-bold text-amber-600 uppercase tracking-wider">Vuelto</p>
+            <p className="text-[10px] font-bold text-amber-600">Vuelto</p>
             <p className="text-xl sm:text-2xl font-extrabold text-amber-600">{fmt(saleComplete.change)}</p>
           </div>
         ) : null}
@@ -606,7 +606,7 @@ function SaleCompleteModal({
 
         {/* WhatsApp section */}
         <div className="border-t border-gray-100 dark:border-card-border pt-3 mb-3">
-          <p className="text-[10px] font-bold text-gray-500 dark:text-muted uppercase tracking-wider mb-2.5">
+          <p className="text-[10px] font-bold text-gray-500 dark:text-muted mb-2.5">
             Enviar comprobante
           </p>
 
@@ -660,7 +660,7 @@ function SaleCompleteModal({
         {/* Documento generado automaticamente */}
         {lastSaleDetails?.comprobanteNumero ? (
           <div className="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-xl p-4 text-center mb-3">
-            <p className="text-xs text-green-600 dark:text-green-400 font-bold uppercase tracking-wider">Documento generado</p>
+            <p className="text-xs text-green-600 dark:text-green-400 font-bold">Documento generado</p>
             <p className="text-lg font-mono font-bold text-green-700 dark:text-green-300">
               {lastSaleDetails.comprobanteTipo === "boleta" ? "Boleta"
                 : lastSaleDetails.comprobanteTipo === "factura" ? "Factura"
@@ -759,7 +759,7 @@ function ShiftSummaryWidget() {
     <m.div
       layout
       onClick={() => setExpanded(e => !e)}
-      className="fixed bottom-4 left-4 z-40 bg-white dark:bg-gray-800 shadow-lg border border-gray-200 dark:border-card-border cursor-pointer select-none transition-all"
+      className="fixed bottom-4 left-4 z-40 bg-white dark:bg-gray-800 border border-gray-200 dark:border-card-border cursor-pointer select-none transition-all"
       style={{ borderRadius: expanded ? 16 : 9999 }}
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
@@ -1616,12 +1616,12 @@ export default function POSView() {
           />
           <button
             onClick={() => setShowScanner(true)}
-            className="flex items-center gap-1.5 text-xs sm:text-sm font-bold text-primary border border-primary/30 hover:bg-primary/5 px-3 py-2 rounded-xl transition-colors"
+            className="flex items-center gap-1.5 text-xs sm:text-sm font-bold text-primary border border-primary/30 hover:bg-primary/5 px-3 py-2 rounded-lg transition-colors"
           >
             <ScanBarcode className="h-4 w-4" /> <span className="hidden sm:inline">Escanear</span>
           </button>
           <label
-            className="flex items-center gap-1.5 text-xs sm:text-sm font-bold text-primary border border-primary/30 hover:bg-primary/5 px-3 py-2 rounded-xl transition-colors cursor-pointer"
+            className="flex items-center gap-1.5 text-xs sm:text-sm font-bold text-primary border border-primary/30 hover:bg-primary/5 px-3 py-2 rounded-lg transition-colors cursor-pointer"
             title="Escanear producto con camara"
           >
             &#128247; <span className="hidden sm:inline">Foto</span>
@@ -1658,7 +1658,7 @@ export default function POSView() {
           {/* ── Grupo 2: Acciones ── */}
           <button
             onClick={() => setShowWhatsAppOrder(true)}
-            className="flex items-center gap-1.5 text-xs sm:text-sm font-bold text-emerald-700 border border-emerald-300 hover:bg-emerald-50 px-3 py-2 rounded-xl transition-colors"
+            className="flex items-center gap-1.5 text-xs sm:text-sm font-bold text-emerald-700 border border-emerald-300 hover:bg-emerald-50 px-3 py-2 rounded-lg transition-colors"
           >
             <MessageCircle className="h-4 w-4" /> <span className="hidden sm:inline">Pedido WA</span>
           </button>
@@ -1684,7 +1684,7 @@ export default function POSView() {
                     if (skipped.length > 0) setSaleError(`Sin stock: ${skipped.join(", ")}`);
                   } catch { /* ignore */ }
                 }}
-                className="flex items-center gap-1.5 text-xs sm:text-sm font-bold text-primary border border-primary/30 hover:bg-primary/5 px-3 py-2 rounded-xl transition-colors"
+                className="flex items-center gap-1.5 text-xs sm:text-sm font-bold text-primary border border-primary/30 hover:bg-primary/5 px-3 py-2 rounded-lg transition-colors"
               >
                 <RotateCcw className="h-4 w-4" /> <span className="hidden sm:inline">Repetir</span>
               </button>
@@ -1697,7 +1697,7 @@ export default function POSView() {
           {/* ── Grupo 3: Vista ── */}
           <button
             onClick={() => setShowHistory(!showHistory)}
-            className="flex items-center gap-1.5 text-xs sm:text-sm font-bold text-gray-700 dark:text-foreground border border-gray-200 dark:border-card-border hover:bg-gray-50 dark:hover:bg-accent px-3 py-2 rounded-xl transition-colors"
+            className="flex items-center gap-1.5 text-xs sm:text-sm font-bold text-gray-700 dark:text-foreground border border-gray-200 dark:border-card-border hover:bg-gray-50 dark:hover:bg-accent px-3 py-2 rounded-lg transition-colors"
             title="Atajos de teclado: F1=Buscar, F2=Cobrar, F3=Vaciar, F4=Historial"
           >
             <History className="h-4 w-4" />
@@ -1709,7 +1709,7 @@ export default function POSView() {
           <div className="relative">
             <button
               onClick={() => setShowMoreTools(v => !v)}
-              className="flex items-center gap-1 text-xs sm:text-sm font-bold text-gray-500 dark:text-muted border border-gray-200 dark:border-card-border hover:bg-gray-50 dark:hover:bg-accent px-2.5 py-2 rounded-xl transition-colors"
+              className="flex items-center gap-1 text-xs sm:text-sm font-bold text-gray-500 dark:text-muted border border-gray-200 dark:border-card-border hover:bg-gray-50 dark:hover:bg-accent px-2.5 py-2 rounded-lg transition-colors"
               title="Mas herramientas"
             >
               &#8943; <span className="hidden sm:inline">Mas</span>
@@ -1717,7 +1717,7 @@ export default function POSView() {
             {showMoreTools && (
               <>
                 <div className="fixed inset-0 z-10" onClick={() => setShowMoreTools(false)} />
-                <div className="absolute right-0 top-full mt-1 bg-white dark:bg-card border border-gray-200 dark:border-card-border shadow-lg rounded-xl p-2 z-20 min-w-[180px] space-y-1">
+                <div className="absolute right-0 top-full mt-1 bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl p-2 z-20 min-w-[180px] space-y-1">
                   <button
                     onClick={() => { setShowReturn(true); setShowMoreTools(false); }}
                     className="w-full flex items-center gap-2 text-xs font-bold text-[#f97316] hover:bg-[#f97316]/5 px-3 py-2 rounded-lg transition-colors"
@@ -1725,7 +1725,7 @@ export default function POSView() {
                     <History className="h-4 w-4 rotate-180" /> Devolucion
                   </button>
                   <div className="w-full flex items-center gap-2 text-xs font-bold text-gray-600 dark:text-muted px-3 py-1.5">
-                    <span className="text-[10px] text-gray-400 uppercase tracking-wider">Tamano fuente</span>
+                    <span className="text-[10px] text-gray-400">Tamano fuente</span>
                   </div>
                   <div className="flex bg-gray-100 dark:bg-accent rounded-lg p-0.5 mx-2">
                     {(["normal", "large", "xlarge"] as const).map(size => (
@@ -1734,7 +1734,7 @@ export default function POSView() {
                         onClick={() => changeFontSize(size)}
                         className={cn(
                           "flex-1 px-1.5 py-1 rounded-md text-xs font-bold transition-colors",
-                          fontSize === size ? "bg-white dark:bg-card text-primary shadow-sm" : "text-gray-400 dark:text-muted hover:text-gray-600"
+                          fontSize === size ? "bg-white dark:bg-card text-primary " : "text-gray-400 dark:text-muted hover:text-gray-600"
                         )}
                         title={size === "normal" ? "Fuente normal" : size === "large" ? "Fuente grande" : "Fuente extra grande"}
                       >
@@ -1759,7 +1759,7 @@ export default function POSView() {
 
           <button
             onClick={() => setExpanded(!expanded)}
-            className="flex items-center gap-1.5 text-xs sm:text-sm font-bold text-white bg-primary hover:bg-primary-dark px-3 py-2 rounded-xl transition-colors shadow-sm"
+            className="flex items-center gap-1.5 text-xs sm:text-sm font-bold text-white bg-primary hover:bg-primary-dark px-3 py-2 rounded-lg transition-colors "
             title={expanded ? "Reducir" : "Expandir"}
           >
             {expanded ? <Minimize2 className="h-4 w-4" /> : <Maximize2 className="h-4 w-4" />}
@@ -1772,7 +1772,7 @@ export default function POSView() {
       <div className="flex flex-col lg:flex-row gap-2 sm:gap-4">
         {/* Left: Products */}
         <div className={cn(
-          "flex-1 bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl shadow-sm overflow-hidden flex flex-col",
+          "flex-1 bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl  overflow-hidden flex flex-col",
           expanded ? "min-h-[calc(100vh-12rem)]" : ""
         )} style={expanded ? undefined : { minHeight: "28rem", maxHeight: "calc(100vh - 14rem)" }}>
           {/* Search + Categories (Upgrade 2) */}
@@ -1798,7 +1798,7 @@ export default function POSView() {
                   className={cn(
                     "snap-start shrink-0 px-3 py-1.5 rounded-full text-xs font-medium whitespace-nowrap transition-all",
                     category === c.id
-                      ? "bg-primary text-white shadow-sm"
+                      ? "bg-primary text-white "
                       : "bg-gray-50 dark:bg-surface text-gray-500 dark:text-muted hover:bg-gray-100 dark:hover:bg-accent"
                   )}
                 >
@@ -2007,7 +2007,7 @@ export default function POSView() {
 
         {/* Right: Cart */}
         <div className={cn(
-          "bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl shadow-sm flex flex-col shrink-0 min-h-0",
+          "bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl  flex flex-col shrink-0 min-h-0",
           expanded ? "lg:w-96 xl:w-md" : "lg:w-80 xl:w-96"
         )} style={expanded ? undefined : { minHeight: "28rem", maxHeight: "calc(100vh - 14rem)" }}>
           {/* Cart header */}
@@ -2039,7 +2039,7 @@ export default function POSView() {
                       Cola: {clientQueues.length}
                     </button>
                     {showQueueDropdown && (
-                      <div className="absolute right-0 top-7 z-50 w-56 bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl shadow-xl p-2 space-y-1">
+                      <div className="absolute right-0 top-7 z-50 w-56 bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl p-2 space-y-1">
                         {clientQueues.map((q, idx) => {
                           const qTotal = q.reduce((s, i) => s + i.product.price * i.quantity, 0);
                           const qItems = q.reduce((s, i) => s + i.quantity, 0);
@@ -2253,13 +2253,13 @@ export default function POSView() {
 
       {/* Mejora 2: Mobile cart summary bar */}
       {cart.length > 0 && (
-        <div className="fixed bottom-0 left-0 right-0 bg-white dark:bg-gray-900 border-t border-gray-200 dark:border-gray-700 px-4 py-3 z-40 sm:hidden shadow-lg">
+        <div className="fixed bottom-0 left-0 right-0 bg-white dark:bg-gray-900 border-t border-gray-200 dark:border-gray-700 px-4 py-3 z-40 sm:hidden">
           <div className="flex items-center justify-between">
             <div>
               <span className="text-sm font-medium text-gray-700 dark:text-foreground">{cartCount} items</span>
               <span className="text-lg font-bold font-mono ml-2 text-gray-900 dark:text-foreground">S/ {cartTotal.toFixed(2)}</span>
             </div>
-            <button onClick={() => setShowPayment(true)} className="bg-[#00B4A6] text-white px-6 py-2.5 rounded-xl font-semibold text-sm">
+            <button onClick={() => setShowPayment(true)} className="bg-[#00B4A6] text-white px-6 py-2.5 rounded-lg font-semibold text-sm">
               Cobrar
             </button>
           </div>
@@ -2269,7 +2269,7 @@ export default function POSView() {
       {/* IDEA 6: Modal Pedido WhatsApp */}
       {showWhatsAppOrder && (
         <div className="fixed inset-0 z-50 bg-black/40 flex items-center justify-center p-4" onClick={() => setShowWhatsAppOrder(false)}>
-          <div className="bg-white dark:bg-card rounded-2xl shadow-xl max-w-md w-full max-h-[80vh] overflow-y-auto p-5" onClick={e => e.stopPropagation()}>
+          <div className="bg-white dark:bg-card rounded-xl max-w-md w-full max-h-[80vh] overflow-y-auto p-5" onClick={e => e.stopPropagation()}>
             <div className="flex items-center justify-between mb-4">
               <div className="flex items-center gap-2">
                 <MessageCircle className="h-5 w-5 text-emerald-600" />
@@ -2285,13 +2285,13 @@ export default function POSView() {
               onChange={e => { setWaText(e.target.value); parseWhatsAppOrder(e.target.value); }}
               placeholder={"Ej: 2 arroz, 3 leche gloria, 1 aceite\no: dame 5 huevos y 2 gaseosas"}
               rows={4}
-              className="w-full px-3 py-2.5 rounded-xl border border-gray-200 dark:border-card-border bg-gray-50 dark:bg-surface text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500/40 resize-none font-mono"
+              className="w-full px-3 py-2.5 rounded-lg border border-gray-200 dark:border-card-border bg-gray-50 dark:bg-surface text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500/40 resize-none font-mono"
               autoFocus
             />
 
             {waParsedItems.length > 0 && (
               <div className="mt-4 space-y-2">
-                <p className="text-xs font-bold text-gray-600 uppercase tracking-wider">Productos encontrados</p>
+                <p className="text-xs font-bold text-gray-600">Productos encontrados</p>
                 {waParsedItems.map((item, idx) => (
                   <div key={idx} className="p-2.5 rounded-lg bg-gray-50 dark:bg-surface border border-gray-100 dark:border-card-border">
                     {item.selected || item.matches.length === 1 ? (
@@ -2347,7 +2347,7 @@ export default function POSView() {
                           setWaParsedItems([]);
                         }}
                         disabled={resolved.length === 0}
-                        className="w-full py-3 rounded-xl bg-[#00B4A6] text-white text-sm font-bold hover:bg-[#245a41] transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
+                        className="w-full py-3 rounded-lg bg-[#00B4A6] text-white text-sm font-bold hover:bg-[#245a41] transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
                       >
                         <ShoppingBasket className="h-4 w-4" /> Agregar todo al carrito
                       </button>
@@ -2367,7 +2367,7 @@ export default function POSView() {
 
       {/* ── Sales History Sidebar ──────────────────────────────────────────── */}
       {showHistory && (
-        <div className="fixed inset-y-0 right-0 z-40 w-80 bg-white dark:bg-card border-l border-gray-200 dark:border-card-border shadow-2xl flex flex-col">
+        <div className="fixed inset-y-0 right-0 z-40 w-80 bg-white dark:bg-card border-l border-gray-200 dark:border-card-border flex flex-col">
           {/* Header */}
           <div className="px-2 sm:px-4 py-2 sm:py-3 border-b border-gray-100 dark:border-card-border flex items-center justify-between">
             <div className="flex flex-wrap items-center gap-2">
@@ -2385,7 +2385,7 @@ export default function POSView() {
           {/* Total */}
           {!loadingHistory && salesHistory.length > 0 && (
             <div className="px-2 sm:px-4 py-2 sm:py-3 bg-emerald-50 dark:bg-emerald-900/10 border-b border-emerald-100 dark:border-emerald-900/20">
-              <p className="text-xs font-bold text-emerald-600 uppercase tracking-wider">Total Ventas del Turno</p>
+              <p className="text-xs font-bold text-emerald-600">Total Ventas del Turno</p>
               <p className="text-xl sm:text-2xl font-extrabold text-emerald-700 dark:text-emerald-500">
                 {fmt(salesHistory.reduce((sum, s) => sum + s.total, 0))}
               </p>
@@ -2416,7 +2416,7 @@ export default function POSView() {
       {/* ── Idea 12: Trueque Digital ──────────────────────────────────────── */}
       {showTrueque && (
         <div className="fixed inset-0 z-50 bg-black/40 flex items-center justify-center p-4" onClick={() => setShowTrueque(false)}>
-          <div className="bg-white dark:bg-card rounded-2xl shadow-xl max-w-sm w-full p-5" onClick={e => e.stopPropagation()}>
+          <div className="bg-white dark:bg-card rounded-xl max-w-sm w-full p-5" onClick={e => e.stopPropagation()}>
             <div className="flex items-center gap-2 mb-4">
               <span className="text-2xl">&#128260;</span>
               <h3 className="text-lg font-extrabold text-gray-900 dark:text-foreground">Trueque Digital</h3>
@@ -2430,7 +2430,7 @@ export default function POSView() {
                   onChange={e => setTruequeDesc(e.target.value)}
                   placeholder="Ej: 5 kg de platano, 2 gallinas..."
                   rows={2}
-                  className="w-full text-sm border border-gray-200 dark:border-card-border rounded-xl px-3 py-2 bg-gray-50 dark:bg-surface text-gray-700 dark:text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 resize-none"
+                  className="w-full text-sm border border-gray-200 dark:border-card-border rounded-lg px-3 py-2 bg-gray-50 dark:bg-surface text-gray-700 dark:text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 resize-none"
                 />
               </div>
               <div>
@@ -2442,7 +2442,7 @@ export default function POSView() {
                   value={truequeValor}
                   onChange={e => setTruequeValor(e.target.value)}
                   placeholder="0.00"
-                  className="w-32 text-sm border border-gray-200 dark:border-card-border rounded-xl px-3 py-2 bg-gray-50 dark:bg-surface text-gray-700 dark:text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30"
+                  className="w-32 text-sm border border-gray-200 dark:border-card-border rounded-lg px-3 py-2 bg-gray-50 dark:bg-surface text-gray-700 dark:text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30"
                 />
               </div>
               {Number(truequeValor) > 0 && cartTotal > 0 && (
@@ -2471,11 +2471,11 @@ export default function POSView() {
                     setTruequeDesc("");
                     setTruequeValor("");
                   }}
-                  className="flex-1 py-2.5 rounded-xl bg-primary text-white font-bold text-sm hover:bg-primary/90 disabled:opacity-50 transition-colors"
+                  className="flex-1 py-2.5 rounded-lg bg-primary text-white font-bold text-sm hover:bg-primary/90 disabled:opacity-50 transition-colors"
                 >
                   Confirmar trueque
                 </button>
-                <button onClick={() => setShowTrueque(false)} className="px-4 py-2.5 rounded-xl border border-gray-200 dark:border-card-border text-sm font-bold text-gray-500 hover:bg-gray-50 transition-colors">
+                <button onClick={() => setShowTrueque(false)} className="px-4 py-2.5 rounded-lg border border-gray-200 dark:border-card-border text-sm font-bold text-gray-500 hover:bg-gray-50 transition-colors">
                   Cancelar
                 </button>
               </div>
@@ -2525,7 +2525,7 @@ export default function POSView() {
       {stockAlert && (
         <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 animate-in slide-in-from-bottom-4 fade-in duration-300">
           <div className={cn(
-            "px-4 py-2.5 rounded-xl shadow-lg text-xs font-bold flex items-center gap-2",
+            "px-4 py-2.5 rounded-xl text-xs font-bold flex items-center gap-2",
             stockAlert.type === "warning"
               ? "bg-amber-500 text-white"
               : "bg-red-500 text-white"
@@ -2546,7 +2546,7 @@ export default function POSView() {
       {/* ── Mejora 7: Zero Stock Confirmation ────────────────────────────────── */}
       {showZeroStockConfirm && (
         <div className="fixed inset-0 z-50 bg-black/40 flex items-center justify-center p-4">
-          <div className="bg-white dark:bg-card rounded-2xl shadow-xl max-w-xs w-full p-4 sm:p-6 text-center">
+          <div className="bg-white dark:bg-card rounded-xl max-w-xs w-full p-4 sm:p-6 text-center">
             <div className="h-10 w-10 rounded-full bg-red-50 flex items-center justify-center mx-auto mb-3">
               <Package className="h-5 w-5 text-red-500" />
             </div>

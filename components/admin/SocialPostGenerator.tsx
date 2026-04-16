@@ -225,7 +225,7 @@ export default function SocialPostGenerator() {
                 />
               </div>
               {search && (
-                <div className="mt-1 max-h-40 overflow-y-auto rounded-lg border border-gray-200 bg-white shadow-lg dark:border-gray-700 dark:bg-gray-900">
+                <div className="mt-1 max-h-40 overflow-y-auto rounded-lg border border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-900">
                   {loadingProducts ? (
                     <p className="p-3 text-sm text-gray-500">Cargando...</p>
                   ) : filteredProducts.length === 0 ? (
@@ -302,7 +302,7 @@ export default function SocialPostGenerator() {
         </div>
 
         {/* Right: Preview */}
-        <div className="space-y-4">
+        <div className="space-y-6">
           <div className="rounded-xl border border-gray-200 bg-white p-5 dark:border-gray-700 dark:bg-gray-900">
             <div className="mb-3 flex items-center gap-2">
               <Eye className="h-4 w-4 text-gray-400" />

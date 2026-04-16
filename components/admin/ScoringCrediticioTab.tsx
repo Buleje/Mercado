@@ -316,7 +316,7 @@ export default function ScoringCrediticioTab() {
           value={search}
           onChange={e => setSearch(e.target.value)}
           placeholder="Buscar cliente..."
-          className="w-full pl-9 pr-4 h-10 rounded-xl text-sm border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 text-gray-800 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#00B4A6]/40 focus:border-[#00B4A6]"
+          className="w-full pl-9 pr-4 h-10 rounded-lg text-sm border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 text-gray-800 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#00B4A6]/40 focus:border-[#00B4A6]"
         />
       </div>
 
@@ -340,16 +340,16 @@ export default function ScoringCrediticioTab() {
       ) : (
         <>
           {/* Desktop table */}
-          <div className="hidden sm:block bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 rounded-2xl overflow-hidden shadow-sm">
+          <div className="hidden sm:block bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 rounded-xl overflow-hidden ">
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b border-gray-100 dark:border-gray-800 bg-gray-50/50 dark:bg-gray-800/30">
-                  <th className="text-left px-4 py-3 text-xs text-gray-500 dark:text-gray-400 font-medium uppercase tracking-wider">Cliente</th>
-                  <th className="text-center px-4 py-3 text-xs text-gray-500 dark:text-gray-400 font-medium uppercase tracking-wider">Nivel</th>
-                  <th className="px-4 py-3 text-xs text-gray-500 dark:text-gray-400 font-medium uppercase tracking-wider">Score</th>
-                  <th className="text-right px-4 py-3 text-xs text-gray-500 dark:text-gray-400 font-medium uppercase tracking-wider">Fiado actual</th>
-                  <th className="text-right px-4 py-3 text-xs text-gray-500 dark:text-gray-400 font-medium uppercase tracking-wider">Límite recom.</th>
-                  <th className="text-right px-4 py-3 text-xs text-gray-500 dark:text-gray-400 font-medium uppercase tracking-wider">Pago a tiempo</th>
+                  <th className="text-left px-4 py-3 text-xs text-gray-500 dark:text-gray-400 font-medium">Cliente</th>
+                  <th className="text-center px-4 py-3 text-xs text-gray-500 dark:text-gray-400 font-medium">Nivel</th>
+                  <th className="px-4 py-3 text-xs text-gray-500 dark:text-gray-400 font-medium">Score</th>
+                  <th className="text-right px-4 py-3 text-xs text-gray-500 dark:text-gray-400 font-medium">Fiado actual</th>
+                  <th className="text-right px-4 py-3 text-xs text-gray-500 dark:text-gray-400 font-medium">Límite recom.</th>
+                  <th className="text-right px-4 py-3 text-xs text-gray-500 dark:text-gray-400 font-medium">Pago a tiempo</th>
                 </tr>
               </thead>
               <tbody>
@@ -421,7 +421,7 @@ export default function ScoringCrediticioTab() {
               return (
                 <div
                   key={c.customerId}
-                  className="bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 rounded-xl p-4 shadow-sm"
+                  className="bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 rounded-xl p-4 "
                 >
                   <div className="flex items-start justify-between mb-3">
                     <div className="min-w-0">

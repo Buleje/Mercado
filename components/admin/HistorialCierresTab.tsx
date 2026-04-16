@@ -93,7 +93,7 @@ export default function HistorialCierresTab() {
   const totalPages = data ? Math.ceil(data.total / LIMIT) : 1;
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-6">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
@@ -107,7 +107,7 @@ export default function HistorialCierresTab() {
         <button
           onClick={handleExport}
           disabled={!data?.items.length}
-          className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold bg-primary text-white hover:bg-primary/90 transition-colors disabled:opacity-50"
+          className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold bg-primary text-white hover:bg-primary/90 transition-colors disabled:opacity-50"
         >
           <Download className="h-4 w-4" />
           Descargar Excel
@@ -116,7 +116,7 @@ export default function HistorialCierresTab() {
 
       {/* Table */}
       {loading ? (
-        <TableSkeleton rows={5} cols={4} className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl" />
+        <TableSkeleton rows={5} cols={4} className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl" />
       ) : !data?.items.length ? (
         <EmptyState
           icon={CalendarOff}
@@ -124,7 +124,7 @@ export default function HistorialCierresTab() {
           description="No hay cierres de caja registrados aún. Usa el botón «Cerrar día» en la barra superior para crear el primer cierre."
         />
       ) : (
-        <div className="bg-white dark:bg-card rounded-2xl border border-gray-200 dark:border-card-border overflow-hidden">
+        <div className="bg-white dark:bg-card rounded-xl border border-gray-200 dark:border-card-border overflow-hidden">
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
@@ -216,7 +216,7 @@ export default function HistorialCierresTab() {
               initial={{ scale: 0.9, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
               exit={{ scale: 0.9, opacity: 0 }}
-              className="relative bg-white dark:bg-card rounded-2xl shadow-2xl border border-gray-200 dark:border-card-border w-full max-w-lg max-h-[85vh] overflow-y-auto z-10 mx-4"
+              className="relative bg-white dark:bg-card rounded-xl border border-gray-200 dark:border-card-border w-full max-w-lg max-h-[85vh] overflow-y-auto z-10 mx-4"
             >
               <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200 dark:border-card-border sticky top-0 bg-white dark:bg-card">
                 <h3 className="text-lg font-bold text-gray-900 dark:text-foreground">
@@ -232,7 +232,7 @@ export default function HistorialCierresTab() {
               <div className="px-6 py-5 space-y-4">
                 {/* Ventas */}
                 <div className="space-y-2">
-                  <p className="text-xs font-bold uppercase tracking-wider text-primary">Ventas</p>
+                  <p className="text-xs font-bold text-primary">Ventas</p>
                   <div className="grid grid-cols-2 gap-3">
                     <div>
                       <p className="text-xs text-gray-500 dark:text-muted">Total vendido</p>
@@ -262,7 +262,7 @@ export default function HistorialCierresTab() {
 
                 {/* Caja */}
                 <div className="space-y-2">
-                  <p className="text-xs font-bold uppercase tracking-wider text-emerald-600 dark:text-emerald-400">Caja</p>
+                  <p className="text-xs font-bold text-emerald-600 dark:text-emerald-400">Caja</p>
                   <div className="grid grid-cols-3 gap-3">
                     <div>
                       <p className="text-xs text-gray-500 dark:text-muted">Contado</p>
@@ -291,7 +291,7 @@ export default function HistorialCierresTab() {
 
                 {/* Fiados */}
                 <div className="space-y-2">
-                  <p className="text-xs font-bold uppercase tracking-wider text-amber-600 dark:text-amber-400">Fiados</p>
+                  <p className="text-xs font-bold text-amber-600 dark:text-amber-400">Fiados</p>
                   <div className="grid grid-cols-3 gap-3">
                     <div>
                       <p className="text-xs text-gray-500 dark:text-muted">Cobrados</p>
@@ -315,7 +315,7 @@ export default function HistorialCierresTab() {
                   <>
                     <div className="h-px bg-gray-100 dark:bg-card-border" />
                     <div className="space-y-2">
-                      <p className="text-xs font-bold uppercase tracking-wider text-red-600 dark:text-red-400">Alertas de stock</p>
+                      <p className="text-xs font-bold text-red-600 dark:text-red-400">Alertas de stock</p>
                       <div className="text-sm text-gray-600 dark:text-muted space-y-1">
                         {(() => {
                           try {
@@ -340,7 +340,7 @@ export default function HistorialCierresTab() {
                   <>
                     <div className="h-px bg-gray-100 dark:bg-card-border" />
                     <div>
-                      <p className="text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-muted mb-1">Notas</p>
+                      <p className="text-xs font-bold text-gray-500 dark:text-muted mb-1">Notas</p>
                       <p className="text-sm text-gray-700 dark:text-foreground whitespace-pre-wrap">{detail.notas}</p>
                     </div>
                   </>

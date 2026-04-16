@@ -165,7 +165,7 @@ export default function LoyaltyRedeemTab() {
       {toast && (
         <div
           className={cn(
-            "fixed right-4 top-4 z-50 flex items-center gap-2 rounded-xl px-4 py-3 text-sm font-medium shadow-lg transition",
+            "fixed right-4 top-4 z-50 flex items-center gap-2 rounded-xl px-4 py-3 text-sm font-medium transition",
             toast.type === "ok"
               ? "bg-[#00B4A6] text-white"
               : "bg-red-600 text-white",
@@ -194,12 +194,12 @@ export default function LoyaltyRedeemTab() {
             onChange={(e) => setPhone(e.target.value)}
             onKeyDown={handleKeyDown}
             maxLength={12}
-            className="min-h-[44px] flex-1 rounded-xl border border-gray-200 px-4 text-sm text-gray-800 outline-none transition focus:border-[#00B4A6] focus:ring-1 focus:ring-[#00B4A6] dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100"
+            className="min-h-[44px] flex-1 rounded-lg border border-gray-200 px-4 text-sm text-gray-800 outline-none transition focus:border-[#00B4A6] focus:ring-1 focus:ring-[#00B4A6] dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100"
           />
           <button
             onClick={searchCustomer}
             disabled={searching || phone.replace(/\D/g, "").length < 9}
-            className="flex min-h-[44px] min-w-[44px] items-center justify-center rounded-xl bg-[#00B4A6] px-4 text-sm font-medium text-white transition hover:bg-[#009690] disabled:opacity-50"
+            className="flex min-h-[44px] min-w-[44px] items-center justify-center rounded-lg bg-[#00B4A6] px-4 text-sm font-medium text-white transition hover:bg-[#009690] disabled:opacity-50"
           >
             {searching ? <Loader2 className="h-4 w-4 animate-spin" /> : "Buscar"}
           </button>

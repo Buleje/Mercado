@@ -88,7 +88,7 @@ export function NavDefaultTabsConfig() {
   };
 
   return (
-    <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl p-5 shadow-sm">
+    <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl p-5 ">
       <div className="space-y-1">
         {NAV_MODULES.map((mod) => (
           <div

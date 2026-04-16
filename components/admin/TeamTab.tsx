@@ -169,7 +169,7 @@ export default function TeamTab() {
       {toast && (
         <div
           className={cn(
-            "fixed top-4 right-4 z-50 flex items-center gap-2 px-2 sm:px-4 py-2 sm:py-3 rounded-xl shadow-lg text-sm font-medium",
+            "fixed top-4 right-4 z-50 flex items-center gap-2 px-2 sm:px-4 py-2 sm:py-3 rounded-xl text-sm font-medium",
             toast.ok
               ? "bg-emerald-600 text-white"
               : "bg-red-600 text-white"
@@ -191,7 +191,7 @@ export default function TeamTab() {
         </div>
         <button
           onClick={openCreate}
-          className="flex items-center gap-1.5 bg-primary hover:opacity-90 text-white text-sm font-semibold px-3 py-1.5 rounded-xl"
+          className="flex items-center gap-1.5 bg-primary hover:opacity-90 text-white text-sm font-semibold px-3 py-1.5 rounded-lg"
         >
           <UserPlus className="w-4 h-4" />
           Agregar
@@ -223,7 +223,7 @@ export default function TeamTab() {
             <div
               key={u.id}
               className={cn(
-                "flex items-center justify-between gap-3 p-4 rounded-2xl border transition-opacity",
+                "flex items-center justify-between gap-3 p-4 rounded-xl border transition-opacity",
                 u.active
                   ? "bg-(--color-card) border-(--color-card-border)"
                   : "opacity-50 bg-(--color-surface) border-(--color-card-border)"
@@ -275,7 +275,7 @@ export default function TeamTab() {
       {/* Create / Edit form modal */}
       {showForm && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50">
-          <div className="bg-(--color-card) rounded-2xl shadow-2xl w-full max-w-md p-3 sm:p-6 space-y-4">
+          <div className="bg-(--color-card) rounded-xl w-full max-w-md p-3 sm:p-6 space-y-4">
             {/* Modal header */}
             <div className="flex items-center justify-between">
               <h3 className="font-bold text-base">
@@ -366,14 +366,14 @@ export default function TeamTab() {
             <div className="flex flex-wrap gap-2 pt-1">
               <button
                 onClick={() => setShowForm(false)}
-                className="flex-1 py-2 rounded-xl border border-(--color-card-border) text-sm font-medium hover:bg-(--color-surface)"
+                className="flex-1 py-2 rounded-lg border border-(--color-card-border) text-sm font-medium hover:bg-(--color-surface)"
               >
                 Cancelar
               </button>
               <button
                 onClick={handleSave}
                 disabled={saving}
-                className="flex-1 py-2 rounded-xl bg-primary text-white text-sm font-semibold hover:opacity-90 disabled:opacity-50 flex items-center justify-center gap-1"
+                className="flex-1 py-2 rounded-lg bg-primary text-white text-sm font-semibold hover:opacity-90 disabled:opacity-50 flex items-center justify-center gap-1"
               >
                 {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : null}
                 {editingId ? "Guardar cambios" : "Crear usuario"}

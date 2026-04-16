@@ -197,7 +197,7 @@ export default function BulkWeightCalculator() {
           <button
             onClick={handleAddToCart}
             disabled={w <= 0 || ppkg <= 0 || !product.trim()}
-            className="flex items-center gap-2 rounded-xl bg-[#f97316] px-5 py-3 font-semibold text-white transition hover:bg-[#e08c4a] disabled:opacity-40"
+            className="flex items-center gap-2 rounded-lg bg-[#f97316] px-5 py-3 font-semibold text-white transition hover:bg-[#e08c4a] disabled:opacity-40"
           >
             <Plus className="h-5 w-5" />
             Agregar

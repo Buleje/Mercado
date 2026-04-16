@@ -70,7 +70,7 @@ export default function AlertCenter({ pendingOrders, lowStock, todayRevenue, ove
         className={cn(
           "relative flex items-center justify-center h-8 w-8 rounded-lg transition-colors",
           urgent > 0
-            ? "text-red-500 hover:bg-red-50 dark:hover:bg-red-950/30 animate-pulse"
+            ? "text-red-500 hover:bg-red-50 dark:hover:bg-red-950/30"
             : unread > 0
             ? "text-amber-500 hover:bg-amber-50 dark:hover:bg-amber-950/30"
             : "text-gray-400 dark:text-muted hover:bg-gray-100 dark:hover:bg-accent"
@@ -89,7 +89,7 @@ export default function AlertCenter({ pendingOrders, lowStock, todayRevenue, ove
       {open && (
         <>
           <div className="fixed inset-0 z-40" onClick={() => setOpen(false)} />
-          <div className="absolute right-0 top-full mt-2 w-80 bg-white dark:bg-card rounded-2xl shadow-2xl border border-gray-200 dark:border-card-border z-50 overflow-hidden">
+          <div className="absolute right-0 top-full mt-2 w-80 bg-white dark:bg-card rounded-xl border border-gray-200 dark:border-card-border z-50 overflow-hidden">
             {/* Header */}
             <div className="flex items-center justify-between px-2 sm:px-4 py-2 sm:py-3 border-b border-gray-100 dark:border-card-border">
               <div className="flex flex-wrap items-center gap-2">

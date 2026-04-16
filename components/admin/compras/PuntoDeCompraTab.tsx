@@ -132,7 +132,7 @@ function ProductCard({
     <button
       onClick={onAdd}
       className={cn(
-        "group relative bg-white dark:bg-card border rounded-xl p-3 text-left transition-all hover:shadow-md hover:border-primary/40",
+        "group relative bg-white dark:bg-card border rounded-xl p-3 text-left transition-all hover:shadow-sm hover:border-primary/40",
         inCart
           ? "border-primary/60 ring-1 ring-primary/20 bg-primary/5 dark:bg-primary/10"
           : "border-gray-200 dark:border-card-border",
@@ -596,7 +596,7 @@ export default function PuntoDeCompraTab() {
       {/* ════════════════════════════════════════════════════════════════════
          LEFT PANEL — Product Catalog
          ════════════════════════════════════════════════════════════════════ */}
-      <div className="flex-1 flex flex-col min-w-0 bg-white dark:bg-card rounded-2xl border border-gray-200 dark:border-card-border overflow-hidden">
+      <div className="flex-1 flex flex-col min-w-0 bg-white dark:bg-card rounded-xl border border-gray-200 dark:border-card-border overflow-hidden">
         {/* Toolbar */}
         <div className="p-3 border-b border-gray-100 dark:border-gray-800 space-y-2">
           {/* Search + Actions row */}
@@ -609,7 +609,7 @@ export default function PuntoDeCompraTab() {
                 placeholder="Buscar producto, código de barras... (Ctrl+K)"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full pl-9 pr-3 py-2 text-sm bg-gray-50 dark:bg-white/5 border border-gray-200 dark:border-gray-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary"
+                className="w-full pl-9 pr-3 py-2 text-sm bg-gray-50 dark:bg-white/5 border border-gray-200 dark:border-gray-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary"
               />
               {searchQuery && (
                 <button
@@ -622,7 +622,7 @@ export default function PuntoDeCompraTab() {
             </div>
             <button
               onClick={() => setShowBarcode(true)}
-              className="p-2.5 rounded-xl border border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-white/5 transition-colors"
+              className="p-2.5 rounded-lg border border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-white/5 transition-colors"
               title="Escanear código de barras"
             >
               <ScanBarcode className="h-4 w-4 text-gray-500" />
@@ -641,7 +641,7 @@ export default function PuntoDeCompraTab() {
             </button>
             <button
               onClick={() => setShowHistory(true)}
-              className="p-2.5 rounded-xl border border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-white/5 transition-colors"
+              className="p-2.5 rounded-lg border border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-white/5 transition-colors"
               title="Historial de compras"
             >
               <History className="h-4 w-4 text-gray-500" />
@@ -718,7 +718,7 @@ export default function PuntoDeCompraTab() {
             {/* Mobile cart toggle */}
             <button
               onClick={() => setShowCartMobile(true)}
-              className="lg:hidden flex items-center gap-1.5 px-3 py-1.5 bg-primary text-white rounded-xl text-xs font-medium"
+              className="lg:hidden flex items-center gap-1.5 px-3 py-1.5 bg-primary text-white rounded-lg text-xs font-medium"
             >
               <ShoppingCart className="h-3.5 w-3.5" />
               {cart.length > 0 && <span className="bg-white/20 rounded-full px-1.5">{totalItems}</span>}
@@ -757,7 +757,7 @@ export default function PuntoDeCompraTab() {
          ════════════════════════════════════════════════════════════════════ */}
       <div
         className={cn(
-          "w-full lg:w-[420px] xl:w-[460px] flex flex-col bg-white dark:bg-card rounded-2xl border border-gray-200 dark:border-card-border overflow-hidden",
+          "w-full lg:w-[420px] xl:w-[460px] flex flex-col bg-white dark:bg-card rounded-xl border border-gray-200 dark:border-card-border overflow-hidden",
           "max-lg:fixed max-lg:inset-0 max-lg:z-50 max-lg:rounded-none",
           !showCartMobile && "max-lg:hidden",
         )}
@@ -780,7 +780,7 @@ export default function PuntoDeCompraTab() {
               {cart.length > 0 && (
                 <button
                   onClick={clearCart}
-                  className="p-2 rounded-xl hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
+                  className="p-2 rounded-lg hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
                   title="Limpiar todo"
                 >
                   <RotateCcw className="h-4 w-4 text-red-400" />
@@ -788,7 +788,7 @@ export default function PuntoDeCompraTab() {
               )}
               <button
                 onClick={() => setShowCartMobile(false)}
-                className="p-2 rounded-xl hover:bg-gray-100 dark:hover:bg-white/5 lg:hidden transition-colors"
+                className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-white/5 lg:hidden transition-colors"
               >
                 <X className="h-4 w-4 text-gray-500" />
               </button>
@@ -797,7 +797,7 @@ export default function PuntoDeCompraTab() {
 
           {/* Supplier Selector */}
           <div className="relative">
-            <label className="text-[10px] font-semibold text-gray-500 uppercase tracking-wider mb-1 block">
+            <label className="text-[10px] font-semibold text-gray-500 mb-1 block">
               Proveedor
             </label>
             <div className="flex gap-1.5">
@@ -816,7 +816,7 @@ export default function PuntoDeCompraTab() {
                   onFocus={() => setShowSupplierDropdown(true)}
                   onBlur={() => setTimeout(() => setShowSupplierDropdown(false), 200)}
                   className={cn(
-                    "w-full pl-8 pr-3 py-2 text-sm border rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/30",
+                    "w-full pl-8 pr-3 py-2 text-sm border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/30",
                     selectedSupplier
                       ? "border-primary/40 bg-primary/5 dark:bg-primary/10"
                       : "border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-white/5",
@@ -841,7 +841,7 @@ export default function PuntoDeCompraTab() {
                       initial={{ opacity: 0, y: -4 }}
                       animate={{ opacity: 1, y: 0 }}
                       exit={{ opacity: 0, y: -4 }}
-                      className="absolute top-full left-0 right-0 mt-1 z-30 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl shadow-xl max-h-48 overflow-y-auto"
+                      className="absolute top-full left-0 right-0 mt-1 z-30 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl max-h-48 overflow-y-auto"
                     >
                       {filteredSuppliers.length === 0 ? (
                         <div className="p-3 text-center text-xs text-gray-400">
@@ -881,7 +881,7 @@ export default function PuntoDeCompraTab() {
               {/* New supplier button */}
               <button
                 onClick={() => setShowSupplierForm(true)}
-                className="px-3 py-2 rounded-xl border border-dashed border-gray-300 dark:border-gray-600 hover:border-primary hover:bg-primary/5 transition-colors"
+                className="px-3 py-2 rounded-lg border border-dashed border-gray-300 dark:border-gray-600 hover:border-primary hover:bg-primary/5 transition-colors"
                 title="Nuevo proveedor"
               >
                 <Plus className="h-4 w-4 text-gray-400" />
@@ -1070,7 +1070,7 @@ export default function PuntoDeCompraTab() {
             <button
               onClick={() => setShowConfirm(true)}
               disabled={submitting}
-              className="w-full flex items-center justify-center gap-2 py-3 bg-primary hover:bg-primary/90 text-white font-bold rounded-xl transition-colors disabled:opacity-50"
+              className="w-full flex items-center justify-center gap-2 py-3 bg-primary hover:bg-primary/90 text-white font-bold rounded-lg transition-colors disabled:opacity-50"
             >
               {submitting ? (
                 <Loader2 className="h-4 w-4 animate-spin" />
@@ -1102,11 +1102,11 @@ export default function PuntoDeCompraTab() {
               animate={{ scale: 1, opacity: 1 }}
               exit={{ scale: 0.9, opacity: 0 }}
               onClick={(e) => e.stopPropagation()}
-              className="bg-white dark:bg-card rounded-2xl p-6 w-full max-w-md"
+              className="bg-white dark:bg-card rounded-xl p-6 w-full max-w-md"
             >
               <div className="flex items-center justify-between mb-4">
                 <h3 className="text-sm font-bold">Escanear Código</h3>
-                <button onClick={() => setShowBarcode(false)} className="p-1.5 rounded-xl hover:bg-gray-100 dark:hover:bg-white/5">
+                <button onClick={() => setShowBarcode(false)} className="p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-white/5">
                   <X className="h-4 w-4" />
                 </button>
               </div>
@@ -1131,14 +1131,14 @@ export default function PuntoDeCompraTab() {
               animate={{ scale: 1, opacity: 1 }}
               exit={{ scale: 0.95, opacity: 0 }}
               onClick={(e) => e.stopPropagation()}
-              className="bg-white dark:bg-card rounded-2xl w-full max-w-2xl max-h-[80vh] overflow-hidden flex flex-col"
+              className="bg-white dark:bg-card rounded-xl w-full max-w-2xl max-h-[80vh] overflow-hidden flex flex-col"
             >
               <div className="flex items-center justify-between p-4 border-b border-gray-100 dark:border-gray-800">
                 <div className="flex items-center gap-2">
                   <History className="h-5 w-5 text-primary" />
                   <h3 className="text-sm font-bold text-gray-900 dark:text-white">Historial de Compras</h3>
                 </div>
-                <button onClick={() => setShowHistory(false)} className="p-1.5 rounded-xl hover:bg-gray-100 dark:hover:bg-white/5">
+                <button onClick={() => setShowHistory(false)} className="p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-white/5">
                   <X className="h-4 w-4 text-gray-500" />
                 </button>
               </div>
@@ -1281,7 +1281,7 @@ export default function PuntoDeCompraTab() {
               animate={{ scale: 1, opacity: 1 }}
               exit={{ scale: 0.95, opacity: 0 }}
               onClick={(e) => e.stopPropagation()}
-              className="bg-white dark:bg-card rounded-2xl w-full max-w-md p-5"
+              className="bg-white dark:bg-card rounded-xl w-full max-w-md p-5"
             >
               <div className="flex items-center justify-between mb-4">
                 <div className="flex items-center gap-2">
@@ -1292,7 +1292,7 @@ export default function PuntoDeCompraTab() {
                 </div>
                 <button
                   onClick={() => setShowSupplierForm(false)}
-                  className="p-1.5 rounded-xl hover:bg-gray-100 dark:hover:bg-white/5"
+                  className="p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-white/5"
                 >
                   <X className="h-4 w-4 text-gray-500" />
                 </button>
@@ -1308,7 +1308,7 @@ export default function PuntoDeCompraTab() {
                     required
                     value={newSupName}
                     onChange={(e) => setNewSupName(e.target.value)}
-                    className="w-full px-3 py-2 text-sm border border-gray-200 dark:border-gray-700 rounded-xl bg-gray-50 dark:bg-white/5 focus:outline-none focus:ring-2 focus:ring-primary/30"
+                    className="w-full px-3 py-2 text-sm border border-gray-200 dark:border-gray-700 rounded-lg bg-gray-50 dark:bg-white/5 focus:outline-none focus:ring-2 focus:ring-primary/30"
                     placeholder="Distribuidora Lima SAC"
                   />
                 </div>
@@ -1319,7 +1319,7 @@ export default function PuntoDeCompraTab() {
                       type="text"
                       value={newSupRuc}
                       onChange={(e) => setNewSupRuc(e.target.value)}
-                      className="w-full px-3 py-2 text-sm border border-gray-200 dark:border-gray-700 rounded-xl bg-gray-50 dark:bg-white/5 focus:outline-none focus:ring-2 focus:ring-primary/30"
+                      className="w-full px-3 py-2 text-sm border border-gray-200 dark:border-gray-700 rounded-lg bg-gray-50 dark:bg-white/5 focus:outline-none focus:ring-2 focus:ring-primary/30"
                       placeholder="20123456789"
                       maxLength={11}
                     />
@@ -1330,7 +1330,7 @@ export default function PuntoDeCompraTab() {
                       type="tel"
                       value={newSupPhone}
                       onChange={(e) => setNewSupPhone(e.target.value)}
-                      className="w-full px-3 py-2 text-sm border border-gray-200 dark:border-gray-700 rounded-xl bg-gray-50 dark:bg-white/5 focus:outline-none focus:ring-2 focus:ring-primary/30"
+                      className="w-full px-3 py-2 text-sm border border-gray-200 dark:border-gray-700 rounded-lg bg-gray-50 dark:bg-white/5 focus:outline-none focus:ring-2 focus:ring-primary/30"
                       placeholder="961234567"
                     />
                   </div>
@@ -1341,7 +1341,7 @@ export default function PuntoDeCompraTab() {
                     type="email"
                     value={newSupEmail}
                     onChange={(e) => setNewSupEmail(e.target.value)}
-                    className="w-full px-3 py-2 text-sm border border-gray-200 dark:border-gray-700 rounded-xl bg-gray-50 dark:bg-white/5 focus:outline-none focus:ring-2 focus:ring-primary/30"
+                    className="w-full px-3 py-2 text-sm border border-gray-200 dark:border-gray-700 rounded-lg bg-gray-50 dark:bg-white/5 focus:outline-none focus:ring-2 focus:ring-primary/30"
                     placeholder="ventas@proveedor.com"
                   />
                 </div>
@@ -1351,7 +1351,7 @@ export default function PuntoDeCompraTab() {
                     type="text"
                     value={newSupAddress}
                     onChange={(e) => setNewSupAddress(e.target.value)}
-                    className="w-full px-3 py-2 text-sm border border-gray-200 dark:border-gray-700 rounded-xl bg-gray-50 dark:bg-white/5 focus:outline-none focus:ring-2 focus:ring-primary/30"
+                    className="w-full px-3 py-2 text-sm border border-gray-200 dark:border-gray-700 rounded-lg bg-gray-50 dark:bg-white/5 focus:outline-none focus:ring-2 focus:ring-primary/30"
                     placeholder="Av. Industrial 456, Lima"
                   />
                 </div>
@@ -1360,7 +1360,7 @@ export default function PuntoDeCompraTab() {
                   <select
                     value={newSupCategoria}
                     onChange={(e) => setNewSupCategoria(e.target.value)}
-                    className="w-full px-3 py-2 text-sm border border-gray-200 dark:border-gray-700 rounded-xl bg-gray-50 dark:bg-white/5 focus:outline-none"
+                    className="w-full px-3 py-2 text-sm border border-gray-200 dark:border-gray-700 rounded-lg bg-gray-50 dark:bg-white/5 focus:outline-none"
                   >
                     <option value="mayorista">Mayorista</option>
                     <option value="fabricante">Fabricante</option>
@@ -1371,7 +1371,7 @@ export default function PuntoDeCompraTab() {
                 <button
                   type="submit"
                   disabled={creatingSup || !newSupName.trim()}
-                  className="w-full flex items-center justify-center gap-2 py-2.5 bg-primary text-white font-bold rounded-xl hover:bg-primary/90 transition-colors disabled:opacity-50"
+                  className="w-full flex items-center justify-center gap-2 py-2.5 bg-primary text-white font-bold rounded-lg hover:bg-primary/90 transition-colors disabled:opacity-50"
                 >
                   {creatingSup ? (
                     <Loader2 className="h-4 w-4 animate-spin" />
@@ -1401,7 +1401,7 @@ export default function PuntoDeCompraTab() {
               animate={{ scale: 1, opacity: 1 }}
               exit={{ scale: 0.95, opacity: 0 }}
               onClick={(e) => e.stopPropagation()}
-              className="bg-white dark:bg-card rounded-2xl w-full max-w-md p-5"
+              className="bg-white dark:bg-card rounded-xl w-full max-w-md p-5"
             >
               <div className="flex items-center gap-3 mb-4">
                 <div className="p-3 bg-primary/10 rounded-xl">
@@ -1483,14 +1483,14 @@ export default function PuntoDeCompraTab() {
                 <button
                   onClick={() => setShowConfirm(false)}
                   disabled={submitting}
-                  className="flex-1 py-2.5 text-sm font-medium text-gray-600 dark:text-gray-400 bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 rounded-xl transition-colors disabled:opacity-50"
+                  className="flex-1 py-2.5 text-sm font-medium text-gray-600 dark:text-gray-400 bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 rounded-lg transition-colors disabled:opacity-50"
                 >
                   Cancelar
                 </button>
                 <button
                   onClick={handleSubmitOrder}
                   disabled={submitting}
-                  className="flex-1 flex items-center justify-center gap-2 py-2.5 text-sm font-bold text-white bg-primary hover:bg-primary/90 rounded-xl transition-colors disabled:opacity-50"
+                  className="flex-1 flex items-center justify-center gap-2 py-2.5 text-sm font-bold text-white bg-primary hover:bg-primary/90 rounded-lg transition-colors disabled:opacity-50"
                 >
                   {submitting ? (
                     <Loader2 className="h-4 w-4 animate-spin" />
@@ -1520,7 +1520,7 @@ export default function PuntoDeCompraTab() {
               animate={{ scale: 1, opacity: 1 }}
               exit={{ scale: 0.8, opacity: 0 }}
               onClick={(e) => e.stopPropagation()}
-              className="bg-white dark:bg-card rounded-2xl w-full max-w-sm p-6 text-center"
+              className="bg-white dark:bg-card rounded-xl w-full max-w-sm p-6 text-center"
             >
               <m.div
                 initial={{ scale: 0 }}
@@ -1543,7 +1543,7 @@ export default function PuntoDeCompraTab() {
               )}
               <button
                 onClick={() => setShowSuccess(false)}
-                className="w-full py-2.5 text-sm font-bold text-white bg-primary hover:bg-primary/90 rounded-xl transition-colors"
+                className="w-full py-2.5 text-sm font-bold text-white bg-primary hover:bg-primary/90 rounded-lg transition-colors"
               >
                 Continuar
               </button>

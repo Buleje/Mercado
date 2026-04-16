@@ -124,7 +124,7 @@ function MiniToast({
   return (
     <div
       className={cn(
-        "flex items-start gap-3 px-4 py-3 rounded-xl shadow-lg border min-w-[260px] max-w-xs",
+        "flex items-start gap-3 px-4 py-3 rounded-xl border min-w-[260px] max-w-xs",
         cfg.bg,
         cfg.border,
         "animate-in slide-in-from-right-4 fade-in duration-300"
@@ -222,7 +222,7 @@ export default function LiveNotificationBell() {
 
           {/* Unread badge */}
           {unreadCount > 0 && (
-            <span className="absolute -top-1 -right-1 min-w-[18px] h-[18px] px-1 rounded-full bg-red-500 text-white text-[10px] font-bold flex items-center justify-center leading-none shadow-sm">
+            <span className="absolute -top-1 -right-1 min-w-[18px] h-[18px] px-1 rounded-full bg-red-500 text-white text-[10px] font-bold flex items-center justify-center leading-none ">
               {unreadCount > 9 ? "9+" : unreadCount}
             </span>
           )}
@@ -238,7 +238,7 @@ export default function LiveNotificationBell() {
 
         {/* ── Dropdown ─────────────────────────────────────────────── */}
         {open && (
-          <div className="absolute right-0 mt-2 w-80 rounded-2xl shadow-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 z-50 overflow-hidden animate-in slide-in-from-top-2 fade-in duration-150">
+          <div className="absolute right-0 mt-2 w-80 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 z-50 overflow-hidden animate-in slide-in-from-top-2 fade-in duration-150">
             {/* Header */}
             <div className="flex items-center justify-between px-4 py-3 border-b border-gray-100 dark:border-gray-800 bg-gray-50 dark:bg-gray-800/50">
               <div className="flex items-center gap-2">

@@ -323,7 +323,7 @@ export default function SidebarConfigurator({
 
       {/* Theme selector */}
       <div className="px-5 py-3 border-t border-zinc-700">
-        <label className="block text-[12px] font-semibold text-zinc-400 uppercase tracking-wide mb-2">
+        <label className="block text-[12px] font-semibold text-zinc-400 mb-2">
           Tema
         </label>
         <select
@@ -341,13 +341,13 @@ export default function SidebarConfigurator({
       <div className="px-5 py-4 space-y-2 border-t border-zinc-700">
         <button
           onClick={handleSave}
-          className="bg-emerald-500 hover:bg-emerald-600 text-white rounded-xl py-3 w-full font-semibold text-[14px] transition-colors"
+          className="bg-emerald-500 hover:bg-emerald-600 text-white rounded-lg py-3 w-full font-semibold text-[14px] transition-colors"
         >
           Guardar
         </button>
         <button
           onClick={onCancel}
-          className="border border-zinc-600 text-zinc-300 hover:bg-zinc-700 rounded-xl py-3 w-full text-[14px] font-medium transition-colors"
+          className="border border-zinc-600 text-zinc-300 hover:bg-zinc-700 rounded-lg py-3 w-full text-[14px] font-medium transition-colors"
         >
           Cancelar
         </button>

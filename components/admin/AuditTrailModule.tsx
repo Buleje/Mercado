@@ -56,7 +56,7 @@ export default function AuditTrailModule() {
   };
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-6">
       <AdminModuleHeader
         title="Auditoría"
         description="Registro de todas las acciones del sistema"
@@ -73,13 +73,13 @@ export default function AuditTrailModule() {
             placeholder="Buscar por usuario..."
             value={search}
             onChange={e => { setSearch(e.target.value); setPage(0); }}
-            className="w-full pl-9 pr-3 py-2 border border-gray-200 dark:border-card-border rounded-xl text-sm bg-white dark:bg-gray-900 text-gray-900 dark:text-white placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#9b5de5]/30"
+            className="w-full pl-9 pr-3 py-2 border border-gray-200 dark:border-card-border rounded-lg text-sm bg-white dark:bg-gray-900 text-gray-900 dark:text-white placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#9b5de5]/30"
           />
         </div>
         <select
           value={entityFilter}
           onChange={e => { setEntityFilter(e.target.value); setPage(0); }}
-          className="px-3 py-2 border border-gray-200 dark:border-card-border rounded-xl text-sm bg-white dark:bg-gray-900 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-[#9b5de5]/30"
+          className="px-3 py-2 border border-gray-200 dark:border-card-border rounded-lg text-sm bg-white dark:bg-gray-900 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-[#9b5de5]/30"
         >
           <option value="">Todas las entidades</option>
           <option value="Sale">Ventas</option>
@@ -92,7 +92,7 @@ export default function AuditTrailModule() {
         </select>
         <button
           onClick={fetchLogs}
-          className="min-h-[44px] min-w-[44px] px-3 py-2 bg-gray-100 dark:bg-gray-800 rounded-xl text-sm hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors flex items-center justify-center"
+          className="min-h-[44px] min-w-[44px] px-3 py-2 bg-gray-100 dark:bg-gray-800 rounded-lg text-sm hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors flex items-center justify-center"
           title="Actualizar"
         >
           <RefreshCw className="h-4 w-4" />
@@ -100,7 +100,7 @@ export default function AuditTrailModule() {
       </div>
 
       {/* Tabla */}
-      <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl overflow-hidden">
+      <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl overflow-hidden">
         {loading ? (
           <div className="p-8 text-center">
             <div className="h-6 w-6 border-2 border-[#9b5de5] border-t-transparent rounded-full animate-spin mx-auto" />

@@ -135,7 +135,7 @@ export function AdminSubSidebar({
             className="sm:hidden fixed inset-0 z-50 bg-black/40 backdrop-blur-sm"
             onClick={onMobileClose}
           />
-          <aside className="sm:hidden fixed left-0 top-0 bottom-0 z-50 w-72 flex flex-col bg-white dark:bg-card shadow-2xl animate-in slide-in-from-left duration-200">
+          <aside className="sm:hidden fixed left-0 top-0 bottom-0 z-50 w-72 flex flex-col bg-white dark:bg-card animate-in slide-in-from-left duration-200">
             {content}
           </aside>
         </>

@@ -404,7 +404,7 @@ export default function ForecastingDashboard() {
       {/* ── Estado inicial: sin datos cargados ───────────────────────────── */}
       {!state.loading && state.forecast === null && state.reorder.length === 0 && state.prices.length === 0 &&
         !state.errors.forecast && !state.errors.reorder && !state.errors.prices && (
-        <div className="rounded-2xl border border-dashed border-slate-300 dark:border-slate-700 p-10 text-center">
+        <div className="rounded-xl border border-dashed border-slate-300 dark:border-slate-700 p-10 text-center">
           <RefreshCw className="w-8 h-8 text-slate-400 dark:text-slate-600 mx-auto mb-3" />
           <p className="text-sm text-slate-500 dark:text-slate-400 font-medium">
             Presiona <span className="text-emerald-600 dark:text-emerald-400 font-bold">Actualizar</span> para cargar las predicciones
@@ -427,7 +427,7 @@ export default function ForecastingDashboard() {
           emptyMsg="Presiona Actualizar para ver la prediccion"
         >
           {state.forecast && (
-            <div className="space-y-4">
+            <div className="space-y-6">
 
               {/* Nota estacional (quincena / feriado) */}
               {state.forecast.seasonalNote && (
@@ -471,7 +471,7 @@ export default function ForecastingDashboard() {
 
               {/* Mini-barras diarias */}
               <div>
-                <p className="text-[10px] font-semibold text-slate-400 dark:text-slate-500 uppercase tracking-wide mb-2">
+                <p className="text-[10px] font-semibold text-slate-400 dark:text-slate-500 mb-2">
                   Proyeccion dia a dia
                 </p>
                 <div className="flex items-end gap-1 h-20" role="img" aria-label="Grafico de barras proyeccion semanal">
@@ -759,7 +759,7 @@ function PanelCard({
   headerExtra,
 }: PanelCardProps) {
   return (
-    <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-4 md:p-5 shadow-sm">
+    <div className="rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-4 md:p-5 ">
       {/* Header */}
       <div className="flex items-center justify-between gap-2 mb-4">
         <div className="flex items-center gap-2">

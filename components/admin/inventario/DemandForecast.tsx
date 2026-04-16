@@ -96,7 +96,7 @@ export default function DemandForecast({ productId, onClose }: DemandForecastPro
   }));
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-6">
       {/* Header */}
       <div className="flex items-center justify-between">
         <h3 className="text-lg font-bold text-gray-900 dark:text-foreground">

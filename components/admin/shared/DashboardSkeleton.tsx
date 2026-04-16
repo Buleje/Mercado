@@ -14,10 +14,10 @@ export default function DashboardSkeleton({ kpis = 6, charts = 2, columns = 2 }:
           <div key={i} className="h-20 bg-gray-200 dark:bg-surface rounded-xl" />
         ))}
       </div>
-      <div className="h-72 bg-gray-200 dark:bg-surface rounded-2xl" />
+      <div className="h-72 bg-gray-200 dark:bg-surface rounded-xl" />
       <div className={`grid grid-cols-${columns} gap-6`}>
         {[...Array(charts)].map((_, i) => (
-          <div key={i} className="h-64 bg-gray-200 dark:bg-surface rounded-2xl" />
+          <div key={i} className="h-64 bg-gray-200 dark:bg-surface rounded-xl" />
         ))}
       </div>
     </div>

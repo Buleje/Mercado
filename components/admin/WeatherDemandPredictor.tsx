@@ -150,7 +150,7 @@ export default function WeatherDemandPredictor() {
   const suggestions = weather ? SUGGESTIONS[weather.condition] : [];
 
   return (
-    <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-700 overflow-hidden shadow-sm">
+    <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-700 overflow-hidden ">
       {/* Header */}
       <div
         className={cn(
@@ -192,7 +192,7 @@ export default function WeatherDemandPredictor() {
         <button
           onClick={fetchWeather}
           disabled={loading}
-          className="p-2 rounded-xl hover:bg-white/50 dark:hover:bg-gray-700/50 transition-colors"
+          className="p-2 rounded-lg hover:bg-white/50 dark:hover:bg-gray-700/50 transition-colors"
           aria-label="Actualizar clima"
         >
           <RefreshCw
@@ -203,7 +203,7 @@ export default function WeatherDemandPredictor() {
 
       {/* Suggestions */}
       <div className="p-4">
-        <p className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-3">
+        <p className="text-xs font-semibold text-gray-500 dark:text-gray-400 mb-3">
           Productos recomendados para stockear
         </p>
         <div className="space-y-2">

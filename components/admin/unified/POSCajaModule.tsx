@@ -318,8 +318,8 @@ function SalesDashboard({ cachedData, onDataLoaded, onNavigate }: { cachedData?:
         // venga un cálculo real de trend vs periodo anterior desde el backend.
         const change = [12, 8, -3, -6, 15, 4][idx] ?? 0;
         return (
-          <div key={k.label} onClick={k.onClick} className={cn("bg-white rounded-xl border border-gray-200 p-4 shadow-sm transition-shadow", k.color, k.onClick && "cursor-pointer hover:shadow-md")}>
-            <p className="text-[10px] text-gray-500 font-medium uppercase tracking-wider">{k.label}</p>
+          <div key={k.label} onClick={k.onClick} className={cn("bg-white rounded-lg border border-gray-200 p-4  transition-shadow", k.color, k.onClick && "cursor-pointer hover:shadow-sm")}>
+            <p className="text-[10px] text-gray-500 font-medium">{k.label}</p>
             <div className="flex items-center gap-1.5">
               <p className="text-2xl font-mono font-bold mt-1 text-gray-900">{k.value}</p>
               <span className={`text-xs ${change >= 0 ? "text-green-600" : "text-red-500"}`}>{change >= 0 ? "\u2191" : "\u2193"} {Math.abs(change)}%</span>
@@ -338,7 +338,7 @@ function SalesDashboard({ cachedData, onDataLoaded, onNavigate }: { cachedData?:
       })}
     </div>,
     // Section 2: Ventas por hora
-    <div key="hourly" className="bg-white rounded-2xl border border-gray-200 p-6 shadow-sm relative">
+    <div key="hourly" className="bg-white rounded-xl border border-gray-200 p-6  relative">
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center gap-1"><FavStar id="ventas-hora" favs={salesFavs} /><h3 className="text-sm font-bold text-gray-700">Ventas por hora</h3></div>
         <button onClick={() => setExpandedChart("hourly")} className="p-1 hover:bg-gray-100 rounded transition-colors" title="Expandir">
@@ -360,7 +360,7 @@ function SalesDashboard({ cachedData, onDataLoaded, onNavigate }: { cachedData?:
     </div>,
     // Section 3: PieChart + Top5
     <div key="charts-row" className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-      <div className="bg-white rounded-2xl border border-gray-200 p-6 shadow-sm">
+      <div className="bg-white rounded-xl border border-gray-200 p-6 ">
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center gap-1"><FavStar id="metodo-pago" favs={salesFavs} /><h3 className="text-sm font-bold text-gray-700">Por metodo de pago</h3></div>
           {pieFilter && (
@@ -383,7 +383,7 @@ function SalesDashboard({ cachedData, onDataLoaded, onNavigate }: { cachedData?:
           </ResponsiveContainer>
         ) : <EmptyState icon={BarChart3} title="Sin ventas en este periodo" description="Los datos apareceran cuando registres ventas" />}
       </div>
-      <div className="bg-white rounded-2xl border border-gray-200 p-6 shadow-sm">
+      <div className="bg-white rounded-xl border border-gray-200 p-6 ">
         <div className="flex items-center gap-1 mb-4"><FavStar id="top-productos" favs={salesFavs} /><h3 className="text-sm font-bold text-gray-700">Top 5 productos</h3></div>
         {topProducts.length > 0 ? (
           <div className="space-y-2.5">
@@ -399,7 +399,7 @@ function SalesDashboard({ cachedData, onDataLoaded, onNavigate }: { cachedData?:
       </div>
     </div>,
     // Section 4: Tendencia semanal
-    <div key="weekly" className="bg-white rounded-2xl border border-gray-200 p-6 shadow-sm relative">
+    <div key="weekly" className="bg-white rounded-xl border border-gray-200 p-6  relative">
       <div className="flex items-center justify-between mb-4">
         <h3 className="text-sm font-bold text-gray-700">Tendencia de ventas &mdash; Ultimos 7 dias</h3>
         <button onClick={() => setExpandedChart("weekly")} className="p-1 hover:bg-gray-100 rounded transition-colors" title="Expandir">
@@ -423,7 +423,7 @@ function SalesDashboard({ cachedData, onDataLoaded, onNavigate }: { cachedData?:
       </ResponsiveContainer>
     </div>,
     // Section 5: Mejora 4 — Comparativo vs semana pasada
-    <div key="comparison" className="bg-white rounded-2xl border border-gray-200 p-6 shadow-sm">
+    <div key="comparison" className="bg-white rounded-xl border border-gray-200 p-6 ">
       <h3 className="text-sm font-bold text-gray-700 mb-4">vs Semana Pasada</h3>
       {comparisonData.some(d => d.estaSemana > 0 || d.semanaPasada > 0) ? (
         <ResponsiveContainer width="100%" height={250}>
@@ -435,7 +435,7 @@ function SalesDashboard({ cachedData, onDataLoaded, onNavigate }: { cachedData?:
               content={({ active, payload, label }) => {
                 if (!active || !payload?.length) return null;
                 return (
-                  <div className="bg-white rounded-xl shadow-lg border border-gray-200 px-4 py-3 text-xs">
+                  <div className="bg-white rounded-xl border border-gray-200 px-4 py-3 text-xs">
                     <p className="font-semibold mb-1">{label}</p>
                     <p className="text-primary font-mono font-bold">Esta semana: S/ {payload[0]?.value?.toLocaleString()}</p>
                     <p className="text-gray-400 font-mono">Semana pasada: S/ {payload[1]?.value?.toLocaleString()}</p>
@@ -451,7 +451,7 @@ function SalesDashboard({ cachedData, onDataLoaded, onNavigate }: { cachedData?:
       ) : <EmptyState icon={BarChart3} title="Sin datos comparativos" description="Los datos apareceran cuando registres ventas" />}
     </div>,
     // Section 6: Mejora 17 — Mapa de calor
-    <div key="heatmap" className="bg-white rounded-2xl border border-gray-200 p-6 shadow-sm">
+    <div key="heatmap" className="bg-white rounded-xl border border-gray-200 p-6 ">
       <div className="flex items-center justify-between mb-4">
         <h3 className="text-sm font-bold text-gray-700">Mapa de Calor de Ventas</h3>
         <button onClick={() => setExpandedChart("heatmap")} className="p-1 hover:bg-gray-100 rounded transition-colors" title="Expandir">
@@ -493,7 +493,7 @@ function SalesDashboard({ cachedData, onDataLoaded, onNavigate }: { cachedData?:
       </div>
     </div>,
     // Section 7: Mejora 18 — Forecast con IA
-    <div key="forecast" className="bg-white rounded-2xl border border-gray-200 p-6 shadow-sm">
+    <div key="forecast" className="bg-white rounded-xl border border-gray-200 p-6 ">
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center gap-2">
           <Brain className="h-4 w-4 text-purple-500" />
@@ -517,7 +517,7 @@ function SalesDashboard({ cachedData, onDataLoaded, onNavigate }: { cachedData?:
       </ResponsiveContainer>
     </div>,
     // Section 8: Mejora 20 — Comparativo entre meses
-    <div key="month-compare" className="bg-white rounded-2xl border border-gray-200 p-6 shadow-sm">
+    <div key="month-compare" className="bg-white rounded-xl border border-gray-200 p-6 ">
       <div className="flex items-center justify-between mb-4 flex-wrap gap-2">
         <h3 className="text-sm font-bold text-gray-700">Comparar Meses</h3>
         <div className="flex items-center gap-2">
@@ -655,7 +655,7 @@ function SalesDashboard({ cachedData, onDataLoaded, onNavigate }: { cachedData?:
       {/* Mejora 11: Drill-down modal para ventas por hora */}
       {drillHour !== null && (
         <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4" onClick={() => setDrillHour(null)}>
-          <div className="bg-white rounded-2xl p-6 max-w-lg w-full max-h-[80vh] overflow-y-auto shadow-2xl" onClick={e => e.stopPropagation()}>
+          <div className="bg-white rounded-xl p-6 max-w-lg w-full max-h-[80vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
             <div className="flex items-center justify-between mb-4">
               <h3 className="text-base font-bold text-gray-900">Ventas de las {drillHour}:00</h3>
               <button onClick={() => setDrillHour(null)} className="p-1 hover:bg-gray-100 rounded-full transition-colors"><X className="h-4 w-4 text-gray-400" /></button>
@@ -802,7 +802,7 @@ function ShiftCloseModal({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4">
-      <div className="bg-white border border-gray-200 rounded-2xl shadow-2xl w-full max-w-md overflow-hidden">
+      <div className="bg-white border border-gray-200 rounded-xl w-full max-w-md overflow-hidden">
         {/* Header */}
         <div className="bg-primary px-6 py-4">
           <h3 className="text-lg font-extrabold text-white">Cerrar Turno</h3>
@@ -824,7 +824,7 @@ function ShiftCloseModal({
             <>
               {/* Big total */}
               <div className="text-center pb-2 border-b border-gray-100">
-                <p className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">Total vendido en el turno</p>
+                <p className="text-xs font-bold text-gray-500 mb-1">Total vendido en el turno</p>
                 <div className="flex items-center justify-center gap-2">
                   <p className="text-4xl font-black text-primary tracking-tight">{fmt(summary.totalVendido)}</p>
                 </div>
@@ -836,10 +836,10 @@ function ShiftCloseModal({
 
               {/* Payment breakdown - Premium Grid */}
               <div className="space-y-3">
-                <p className="text-xs font-extrabold text-gray-400 uppercase tracking-widest pl-1">Desglose de ingresos</p>
+                <p className="text-xs font-extrabold text-gray-400 pl-1">Desglose de ingresos</p>
 
                 <div className="grid grid-cols-2 gap-2 sm:gap-3">
-                  <div className="col-span-2 bg-emerald-50 border border-emerald-100 rounded-2xl p-4 flex items-center justify-between group relative overflow-hidden">
+                  <div className="col-span-2 bg-emerald-50 border border-emerald-100 rounded-xl p-4 flex items-center justify-between group relative overflow-hidden">
                     <div className="absolute -right-4 -top-4 h-16 w-16 bg-emerald-500/10 rounded-full blur-xl group-hover:bg-emerald-500/20 transition-all" />
                     <div className="flex items-center gap-3 relative z-10">
                       <div className="h-10 w-10 bg-emerald-100 rounded-full flex items-center justify-center">
@@ -852,7 +852,7 @@ function ShiftCloseModal({
                     </div>
                   </div>
 
-                  <div className="bg-purple-50 border border-purple-100 rounded-2xl p-3 sm:p-4">
+                  <div className="bg-purple-50 border border-purple-100 rounded-xl p-3 sm:p-4">
                     <div className="flex items-center gap-2 mb-2">
                       <div className="h-2 w-2 rounded-full bg-purple-500" />
                       <p className="text-xs font-bold text-purple-700/80">Yape</p>
@@ -860,7 +860,7 @@ function ShiftCloseModal({
                     <p className="text-base sm:text-lg font-black text-purple-700">{fmt(summary.yape)}</p>
                   </div>
 
-                  <div className="bg-emerald-50 border border-emerald-100 rounded-2xl p-3 sm:p-4">
+                  <div className="bg-emerald-50 border border-emerald-100 rounded-xl p-3 sm:p-4">
                     <div className="flex items-center gap-2 mb-2">
                       <div className="h-2 w-2 rounded-full bg-emerald-500" />
                       <p className="text-xs font-bold text-emerald-700/80">Plin</p>
@@ -868,7 +868,7 @@ function ShiftCloseModal({
                     <p className="text-base sm:text-lg font-black text-emerald-700">{fmt(summary.plin)}</p>
                   </div>
 
-                  <div className="bg-emerald-50 border border-emerald-100 rounded-2xl p-3 sm:p-4">
+                  <div className="bg-emerald-50 border border-emerald-100 rounded-xl p-3 sm:p-4">
                     <div className="flex items-center gap-2 mb-2">
                       <CreditCard className="h-3 w-3 text-emerald-500" />
                       <p className="text-xs font-bold text-emerald-700/80">Tarjeta / POS</p>
@@ -876,7 +876,7 @@ function ShiftCloseModal({
                     <p className="text-base sm:text-lg font-black text-emerald-700">{fmt(summary.tarjeta)}</p>
                   </div>
 
-                  <div className="bg-amber-50 border border-amber-100 rounded-2xl p-3 sm:p-4">
+                  <div className="bg-amber-50 border border-amber-100 rounded-xl p-3 sm:p-4">
                     <div className="flex items-center gap-2 mb-2">
                       <Wallet className="h-3 w-3 text-amber-500" />
                       <p className="text-xs font-bold text-amber-700/80">Fiado</p>
@@ -893,14 +893,14 @@ function ShiftCloseModal({
         <div className="flex gap-3 px-6 pb-6">
           <button
             onClick={onClose}
-            className="flex-1 py-2.5 rounded-xl border border-gray-200 text-sm font-bold text-gray-600 hover:bg-gray-50 transition-colors"
+            className="flex-1 py-2.5 rounded-lg border border-gray-200 text-sm font-bold text-gray-600 hover:bg-gray-50 transition-colors"
           >
             Cancelar
           </button>
           <button
             onClick={handleConfirm}
             disabled={loading || !!error || confirming}
-            className="flex-1 py-2.5 rounded-xl bg-red-600 hover:bg-red-700 disabled:opacity-50 text-sm font-bold text-white transition-colors flex items-center justify-center gap-2"
+            className="flex-1 py-2.5 rounded-lg bg-red-600 hover:bg-red-700 disabled:opacity-50 text-sm font-bold text-white transition-colors flex items-center justify-center gap-2"
           >
             {confirming ? "Cerrando..." : "Confirmar Cierre"}
             {!confirming && <ArrowRight className="h-4 w-4" />}
@@ -949,7 +949,7 @@ export default function POSCajaModule() {
   };
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-6">
       <OfflineIndicator />
 
       <AdminModuleHeader
@@ -969,14 +969,14 @@ export default function POSCajaModule() {
           {turnoAbierto ? (
             <button
               onClick={handleOpenCloseModal}
-              className="px-4 py-2 rounded-xl text-sm font-bold text-red-600 bg-red-50 hover:bg-red-100 border border-red-200 transition-colors"
+              className="px-4 py-2 rounded-lg text-sm font-bold text-red-600 bg-red-50 hover:bg-red-100 border border-red-200 transition-colors"
             >
               Cerrar Turno
             </button>
           ) : (
             <button
               onClick={() => setSub("turnos")}
-              className="px-4 py-2 rounded-xl text-sm font-bold text-white bg-primary hover:bg-primary-dark transition-colors"
+              className="px-4 py-2 rounded-lg text-sm font-bold text-white bg-primary hover:bg-primary-dark transition-colors"
             >
               Abrir Turno
             </button>
@@ -1001,7 +1001,7 @@ export default function POSCajaModule() {
         {turnoAbierto ? (
           <button
             onClick={handleOpenCloseModal}
-            className="px-4 py-2.5 rounded-2xl text-xs font-bold text-white bg-red-600 hover:bg-red-700 shadow-lg shadow-red-600/30 transition-colors flex items-center gap-1.5"
+            className="px-4 py-2.5 rounded-xl text-xs font-bold text-white bg-red-600 hover:bg-red-700 transition-colors flex items-center gap-1.5"
           >
             <span className="h-2 w-2 rounded-full bg-white/70 animate-pulse" />
             Cerrar Turno
@@ -1009,7 +1009,7 @@ export default function POSCajaModule() {
         ) : (
           <button
             onClick={() => setSub("turnos")}
-            className="px-4 py-2.5 rounded-2xl text-xs font-bold text-white bg-primary hover:bg-primary-dark shadow-lg shadow-primary/30 transition-colors flex items-center gap-1.5"
+            className="px-4 py-2.5 rounded-xl text-xs font-bold text-white bg-primary hover:bg-primary-dark transition-colors flex items-center gap-1.5"
           >
             Abrir Turno
           </button>

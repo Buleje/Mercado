@@ -655,7 +655,7 @@ function LegalTooltip({ term, explanation, example }: { term: string; explanatio
     <span className="relative inline-flex items-center">
       <button onClick={() => setOpen(!open)} className="ml-1 w-5 h-5 rounded-full bg-emerald-100 dark:bg-emerald-900/40 text-emerald-600 dark:text-emerald-400 text-xs flex items-center justify-center hover:bg-emerald-200 transition-colors" title="¿Qué significa esto?">?</button>
       {open && (
-        <div className="absolute bottom-7 left-0 z-50 w-72 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl shadow-xl p-3 text-xs">
+        <div className="absolute bottom-7 left-0 z-50 w-72 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl p-3 text-xs">
           <p className="font-bold text-gray-800 dark:text-gray-200 mb-1">{term}</p>
           <p className="text-gray-600 dark:text-gray-400 mb-2">{explanation}</p>
           <div className="bg-amber-50 dark:bg-amber-900/20 rounded-lg p-2">
@@ -1257,7 +1257,7 @@ ${content.split("\n\n").map(p => `<p>${p}</p>`).join("")}
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center gap-3">
         <div className="flex items-center gap-3 flex-1 min-w-0">
-          <div className="h-10 w-10 rounded-xl bg-[#00B4A6] text-white flex items-center justify-center shadow-sm shrink-0">
+          <div className="h-10 w-10 rounded-lg bg-[#00B4A6] text-white flex items-center justify-center  shrink-0">
             <FileSignature className="h-5 w-5" />
           </div>
           <div>
@@ -1270,7 +1270,7 @@ ${content.split("\n\n").map(p => `<p>${p}</p>`).join("")}
         </div>
         <button
           onClick={() => setActiveTab("plantillas")}
-          className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-bold text-white bg-[#00B4A6] hover:bg-[#009690] shadow-sm transition-colors shrink-0"
+          className="inline-flex items-center gap-2 px-4 py-2.5 rounded-lg text-sm font-bold text-white bg-[#00B4A6] hover:bg-[#009690]  transition-colors shrink-0"
         >
           <Plus className="h-4 w-4" />
           Nuevo Contrato
@@ -1288,7 +1288,7 @@ ${content.split("\n\n").map(p => `<p>${p}</p>`).join("")}
               className={cn(
                 "flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold whitespace-nowrap transition-all",
                 activeTab === tab.id
-                  ? "bg-[#00B4A6] text-white shadow-sm"
+                  ? "bg-[#00B4A6] text-white "
                   : "text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-white/5"
               )}
             >
@@ -1336,7 +1336,7 @@ ${content.split("\n\n").map(p => `<p>${p}</p>`).join("")}
                   ].map(kpi => (
                     <div key={kpi.label} className="bg-white dark:bg-white/5 border border-gray-200 dark:border-white/10 rounded-xl p-4">
                       <div className="flex items-center gap-3">
-                        <div className={cn("h-10 w-10 rounded-xl flex items-center justify-center text-white", kpi.color)}>
+                        <div className={cn("h-10 w-10 rounded-lg flex items-center justify-center text-white", kpi.color)}>
                           <kpi.icon className="h-5 w-5" />
                         </div>
                         <div>
@@ -1349,7 +1349,7 @@ ${content.split("\n\n").map(p => `<p>${p}</p>`).join("")}
                 </div>
 
                 {/* Monto Total */}
-                <div className="bg-gradient-to-r from-[#00B4A6] to-[#009690] rounded-xl p-6 text-white">
+                <div className="bg-gradient-to-r from-[#00B4A6] to-[#009690] rounded-lg p-6 text-white">
                   <p className="text-sm opacity-80">Monto Total en Contratos</p>
                   <p className="text-3xl font-bold mt-1">{formatCurrency(stats.montoTotal)}</p>
                 </div>
@@ -1412,18 +1412,18 @@ ${content.split("\n\n").map(p => `<p>${p}</p>`).join("")}
 
             {/* ═══ PLANTILLAS ═══ */}
             {activeTab === "plantillas" && (
-              <div className="space-y-4">
+              <div className="space-y-6">
                 <p className="text-sm text-gray-500">Selecciona una plantilla para crear un contrato con clausulas legales peruanas reales.</p>
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                   {PLANTILLAS.map(tpl => (
                     <m.div
                       key={tpl.id}
                       whileHover={{ scale: 1.02 }}
-                      className="bg-white dark:bg-white/5 border border-gray-200 dark:border-white/10 rounded-xl p-4 cursor-pointer hover:border-[#00B4A6] hover:shadow-lg transition-all group"
+                      className="bg-white dark:bg-white/5 border border-gray-200 dark:border-white/10 rounded-lg p-4 cursor-pointer hover:border-[#00B4A6] hover:shadow-lg transition-all group"
                       onClick={() => startWizard(tpl)}
                     >
                       <div className="flex items-start gap-3">
-                        <div className="h-10 w-10 rounded-xl bg-[#00B4A6]/10 dark:bg-[#00B4A6]/20 flex items-center justify-center shrink-0 group-hover:bg-[#00B4A6] group-hover:text-white transition-colors text-[#00B4A6]">
+                        <div className="h-10 w-10 rounded-lg bg-[#00B4A6]/10 dark:bg-[#00B4A6]/20 flex items-center justify-center shrink-0 group-hover:bg-[#00B4A6] group-hover:text-white transition-colors text-[#00B4A6]">
                           <TemplateIcon icon={tpl.icon} className="h-5 w-5" />
                         </div>
                         <div className="min-w-0 flex-1">
@@ -1445,7 +1445,7 @@ ${content.split("\n\n").map(p => `<p>${p}</p>`).join("")}
 
             {/* ═══ MIS CONTRATOS ═══ */}
             {activeTab === "contratos" && (
-              <div className="space-y-4">
+              <div className="space-y-6">
                 {/* Filters */}
                 <div className="flex flex-col sm:flex-row gap-2">
                   <div className="relative flex-1">
@@ -1455,14 +1455,14 @@ ${content.split("\n\n").map(p => `<p>${p}</p>`).join("")}
                       placeholder="Buscar por cliente, numero..."
                       value={search}
                       onChange={e => setSearch(e.target.value)}
-                      className="w-full pl-9 pr-3 py-2 rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 text-sm text-gray-900 dark:text-white placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#00B4A6]/30"
+                      className="w-full pl-9 pr-3 py-2 rounded-lg border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 text-sm text-gray-900 dark:text-white placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#00B4A6]/30"
                     />
                   </div>
-                  <select value={filterTipo} onChange={e => setFilterTipo(e.target.value)} className="px-3 py-2 rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 text-sm text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-[#00B4A6]/30">
+                  <select value={filterTipo} onChange={e => setFilterTipo(e.target.value)} className="px-3 py-2 rounded-lg border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 text-sm text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-[#00B4A6]/30">
                     <option value="ALL">Todos los tipos</option>
                     {Object.entries(TIPO_LABELS).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
                   </select>
-                  <select value={filterEstado} onChange={e => setFilterEstado(e.target.value)} className="px-3 py-2 rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 text-sm text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-[#00B4A6]/30">
+                  <select value={filterEstado} onChange={e => setFilterEstado(e.target.value)} className="px-3 py-2 rounded-lg border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 text-sm text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-[#00B4A6]/30">
                     <option value="ALL">Todos los estados</option>
                     <option value="VIGENTE">Vigentes</option>
                     <option value="POR_VENCER">Por vencer</option>
@@ -1479,7 +1479,7 @@ ${content.split("\n\n").map(p => `<p>${p}</p>`).join("")}
                     <FileText className="h-12 w-12 text-gray-300 mx-auto mb-3" />
                     <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">Sin contratos</h3>
                     <p className="text-sm text-gray-500 mb-6">Crea tu primer contrato desde una plantilla</p>
-                    <button onClick={() => setActiveTab("plantillas")} className="bg-[#00B4A6] text-white px-6 py-2.5 rounded-xl font-medium hover:bg-[#009690]">Ver Plantillas</button>
+                    <button onClick={() => setActiveTab("plantillas")} className="bg-[#00B4A6] text-white px-6 py-2.5 rounded-lg font-medium hover:bg-[#009690]">Ver Plantillas</button>
                   </div>
                 ) : viewMode === "cards" ? (
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -1491,7 +1491,7 @@ ${content.split("\n\n").map(p => `<p>${p}</p>`).join("")}
                         <div
                           key={c.id}
                           onClick={() => setSelected(c)}
-                          className={cn("bg-white dark:bg-white/5 border border-gray-200 dark:border-white/10 rounded-xl shadow-sm hover:shadow-lg transition-all cursor-pointer border-l-4", borderColor)}
+                          className={cn("bg-white dark:bg-white/5 border border-gray-200 dark:border-white/10 rounded-lg  hover:shadow-lg transition-all cursor-pointer border-l-4", borderColor)}
                         >
                           <div className="p-4 space-y-3">
                             <div className="flex items-start justify-between">
@@ -1527,7 +1527,7 @@ ${content.split("\n\n").map(p => `<p>${p}</p>`).join("")}
                     })}
                   </div>
                 ) : (
-                  <div className="bg-white dark:bg-white/5 border border-gray-200 dark:border-white/10 rounded-xl overflow-hidden shadow-sm">
+                  <div className="bg-white dark:bg-white/5 border border-gray-200 dark:border-white/10 rounded-xl overflow-hidden ">
                     <div className="overflow-x-auto">
                       <table className="w-full text-sm">
                         <thead>
@@ -1595,7 +1595,7 @@ ${content.split("\n\n").map(p => `<p>${p}</p>`).join("")}
                     <BookOpen className="h-12 w-12 text-gray-300 mx-auto mb-3" />
                     <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">Selecciona una plantilla</h3>
                     <p className="text-sm text-gray-500 mb-6">Ve a la pestana &quot;Plantillas&quot; para elegir una plantilla legal</p>
-                    <button onClick={() => setActiveTab("plantillas")} className="bg-[#00B4A6] text-white px-6 py-2.5 rounded-xl font-medium hover:bg-[#009690]">Ver Plantillas</button>
+                    <button onClick={() => setActiveTab("plantillas")} className="bg-[#00B4A6] text-white px-6 py-2.5 rounded-lg font-medium hover:bg-[#009690]">Ver Plantillas</button>
                   </div>
                 ) : (
                   <>
@@ -1703,7 +1703,7 @@ ${content.split("\n\n").map(p => `<p>${p}</p>`).join("")}
                                       }}
                                       placeholder={field.placeholder}
                                       className={cn(
-                                        "flex-1 px-3 py-2 rounded-xl border text-sm text-gray-900 dark:text-white placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#00B4A6]/30",
+                                        "flex-1 px-3 py-2 rounded-lg border text-sm text-gray-900 dark:text-white placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#00B4A6]/30",
                                         isAutoFilled ? "border-emerald-300 dark:border-emerald-700 bg-emerald-50 dark:bg-emerald-900/10" : "border-gray-200 dark:border-white/10 bg-white dark:bg-white/5"
                                       )}
                                     />
@@ -1711,7 +1711,7 @@ ${content.split("\n\n").map(p => `<p>${p}</p>`).join("")}
                                       type="button"
                                       onClick={detectLocation}
                                       disabled={geoLoading}
-                                      className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold text-white bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 transition-colors shrink-0"
+                                      className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-bold text-white bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 transition-colors shrink-0"
                                     >
                                       {geoLoading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <MapPin className="h-3.5 w-3.5" />}
                                       Detectar
@@ -1740,7 +1740,7 @@ ${content.split("\n\n").map(p => `<p>${p}</p>`).join("")}
                                         }
                                         setAutoFilledFields(prev => { const n = new Set(prev); n.delete(field.key); return n; });
                                       }}
-                                      className="w-full px-3 py-2 rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 text-sm text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-[#00B4A6]/30"
+                                      className="w-full px-3 py-2 rounded-lg border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 text-sm text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-[#00B4A6]/30"
                                     >
                                       <option value="">Seleccionar...</option>
                                       {selectOptions?.map(opt => <option key={opt} value={opt}>{opt}</option>)}
@@ -1755,7 +1755,7 @@ ${content.split("\n\n").map(p => `<p>${p}</p>`).join("")}
                                           setWizardData(p => ({ ...p, [field.key]: v || "Otro (escribir)" }));
                                         }}
                                         placeholder="Escriba el valor personalizado..."
-                                        className="w-full mt-2 px-3 py-2 rounded-xl border border-[#f97316]/50 bg-[#f97316]/5 dark:bg-[#f97316]/10 text-sm text-gray-900 dark:text-white placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#f97316]/30"
+                                        className="w-full mt-2 px-3 py-2 rounded-lg border border-[#f97316]/50 bg-[#f97316]/5 dark:bg-[#f97316]/10 text-sm text-gray-900 dark:text-white placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#f97316]/30"
                                       />
                                     )}
                                   </>
@@ -1769,7 +1769,7 @@ ${content.split("\n\n").map(p => `<p>${p}</p>`).join("")}
                                       setWizardData(p => ({ ...p, [field.key]: e.target.value }));
                                       setAutoFilledFields(prev => { const n = new Set(prev); n.delete(field.key); return n; });
                                     }}
-                                    className="w-full px-3 py-2 rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 text-sm text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-[#00B4A6]/30"
+                                    className="w-full px-3 py-2 rounded-lg border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 text-sm text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-[#00B4A6]/30"
                                   >
                                     <option value="">Seleccionar...</option>
                                     {field.options?.map(opt => <option key={opt} value={opt}>{opt}</option>)}
@@ -1786,7 +1786,7 @@ ${content.split("\n\n").map(p => `<p>${p}</p>`).join("")}
                                     }}
                                     placeholder={field.placeholder}
                                     rows={3}
-                                    className="w-full px-3 py-2 rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 text-sm text-gray-900 dark:text-white placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#00B4A6]/30 resize-none"
+                                    className="w-full px-3 py-2 rounded-lg border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 text-sm text-gray-900 dark:text-white placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#00B4A6]/30 resize-none"
                                   />
                                 )}
 
@@ -1821,7 +1821,7 @@ ${content.split("\n\n").map(p => `<p>${p}</p>`).join("")}
                                     placeholder={field.placeholder}
                                     step={field.type === "number" ? "0.01" : undefined}
                                     className={cn(
-                                      "w-full px-3 py-2 rounded-xl border text-sm text-gray-900 dark:text-white placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#00B4A6]/30",
+                                      "w-full px-3 py-2 rounded-lg border text-sm text-gray-900 dark:text-white placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#00B4A6]/30",
                                       isAutoFilled && !isCiudadField ? "border-emerald-300 dark:border-emerald-700 bg-emerald-50 dark:bg-emerald-900/10" : validationError ? "border-red-300 dark:border-red-700 bg-red-50 dark:bg-red-900/10" : "border-gray-200 dark:border-white/10 bg-white dark:bg-white/5"
                                     )}
                                   />
@@ -1849,7 +1849,7 @@ ${content.split("\n\n").map(p => `<p>${p}</p>`).join("")}
 
                     {/* Step 3: Preview */}
                     {wizardStep === 3 && (
-                      <div className="space-y-4">
+                      <div className="space-y-6">
                         {/* Summary Card */}
                         <div className="bg-[#00B4A6]/5 dark:bg-[#00B4A6]/10 border border-[#00B4A6]/20 rounded-xl p-4">
                           <div className="flex items-center gap-2 mb-2">
@@ -1862,7 +1862,7 @@ ${content.split("\n\n").map(p => `<p>${p}</p>`).join("")}
                         {/* Full Document Preview — with highlighted filled fields */}
                         <div className="bg-white dark:bg-white/5 border border-gray-200 dark:border-white/10 rounded-xl p-6 sm:p-8 max-h-[60vh] overflow-y-auto">
                           <div className="max-w-[680px] mx-auto font-serif" ref={printRef}>
-                            <h2 className="text-center text-base font-bold uppercase tracking-wider mb-1">
+                            <h2 className="text-center text-base font-bold mb-1">
                               CONTRATO DE {selectedTemplate.name.toUpperCase()}
                             </h2>
                             <p className="text-center text-xs text-gray-400 mb-6">{selectedTemplate.legalBasis}</p>
@@ -1908,10 +1908,10 @@ ${content.split("\n\n").map(p => `<p>${p}</p>`).join("")}
 
                     {/* Step 4: Confirm */}
                     {wizardStep === 4 && (
-                      <div className="space-y-4">
+                      <div className="space-y-6">
                         <div className="bg-white dark:bg-white/5 border border-gray-200 dark:border-white/10 rounded-xl p-6 space-y-4">
                           <div className="flex items-center gap-3">
-                            <div className="h-12 w-12 rounded-xl bg-[#00B4A6] flex items-center justify-center text-white">
+                            <div className="h-12 w-12 rounded-lg bg-[#00B4A6] flex items-center justify-center text-white">
                               <CheckCircle className="h-6 w-6" />
                             </div>
                             <div>
@@ -1943,7 +1943,7 @@ ${content.split("\n\n").map(p => `<p>${p}</p>`).join("")}
                     <div className="flex items-center justify-between">
                       <button
                         onClick={() => wizardStep > 0 ? setWizardStep(s => s - 1) : setSelectedTemplate(null)}
-                        className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-bold text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-white/5 transition-colors"
+                        className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-bold text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-white/5 transition-colors"
                       >
                         <ArrowLeft className="h-4 w-4" />
                         {wizardStep === 0 ? "Cancelar" : "Anterior"}
@@ -1952,7 +1952,7 @@ ${content.split("\n\n").map(p => `<p>${p}</p>`).join("")}
                         {wizardStep < 4 && (
                           <button
                             onClick={() => setWizardStep(s => s + 1)}
-                            className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-bold text-white bg-[#00B4A6] hover:bg-[#009690] shadow-sm transition-colors"
+                            className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-bold text-white bg-[#00B4A6] hover:bg-[#009690]  transition-colors"
                           >
                             Siguiente
                             <ArrowRight className="h-4 w-4" />
@@ -1962,7 +1962,7 @@ ${content.split("\n\n").map(p => `<p>${p}</p>`).join("")}
                           <button
                             onClick={handleCreate}
                             disabled={creating}
-                            className="flex items-center gap-2 px-6 py-2.5 rounded-xl text-sm font-bold text-white bg-[#00B4A6] hover:bg-[#009690] disabled:opacity-50 shadow-sm transition-colors"
+                            className="flex items-center gap-2 px-6 py-2.5 rounded-lg text-sm font-bold text-white bg-[#00B4A6] hover:bg-[#009690] disabled:opacity-50  transition-colors"
                           >
                             {creating ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
                             Guardar Contrato
@@ -1977,7 +1977,7 @@ ${content.split("\n\n").map(p => `<p>${p}</p>`).join("")}
 
             {/* ═══ EDITOR ═══ */}
             {activeTab === "editor" && (
-              <div className="space-y-4">
+              <div className="space-y-6">
                 <div className="flex items-center gap-3">
                   <h3 className="text-sm font-bold text-gray-900 dark:text-white">Editor de Plantillas</h3>
                   <select
@@ -1990,7 +1990,7 @@ ${content.split("\n\n").map(p => `<p>${p}</p>`).join("")}
                         setEditorPreview(false);
                       }
                     }}
-                    className="px-3 py-1.5 rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 text-sm text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-[#00B4A6]/30"
+                    className="px-3 py-1.5 rounded-lg border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 text-sm text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-[#00B4A6]/30"
                   >
                     <option value="">Seleccionar plantilla...</option>
                     {PLANTILLAS.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
@@ -2033,7 +2033,7 @@ ${content.split("\n\n").map(p => `<p>${p}</p>`).join("")}
                           value={editorText}
                           onChange={e => setEditorText(e.target.value)}
                           rows={20}
-                          className="w-full px-4 py-3 rounded-xl border border-gray-200 dark:border-white/10 bg-gray-50 dark:bg-white/5 text-sm text-gray-900 dark:text-white font-mono leading-relaxed focus:outline-none focus:ring-2 focus:ring-[#00B4A6]/30 resize-none"
+                          className="w-full px-4 py-3 rounded-lg border border-gray-200 dark:border-white/10 bg-gray-50 dark:bg-white/5 text-sm text-gray-900 dark:text-white font-mono leading-relaxed focus:outline-none focus:ring-2 focus:ring-[#00B4A6]/30 resize-none"
                           placeholder="Escribe o edita las clausulas del contrato..."
                         />
                       </div>
@@ -2072,7 +2072,7 @@ ${content.split("\n\n").map(p => `<p>${p}</p>`).join("")}
               animate={{ x: 0 }}
               exit={{ x: "100%" }}
               transition={{ type: "spring", damping: 25, stiffness: 250 }}
-              className="fixed inset-y-0 right-0 z-50 w-full max-w-lg bg-white dark:bg-[#1a1a2e] border-l border-gray-200 dark:border-white/10 shadow-2xl overflow-y-auto"
+              className="fixed inset-y-0 right-0 z-50 w-full max-w-lg bg-white dark:bg-[#1a1a2e] border-l border-gray-200 dark:border-white/10 overflow-y-auto"
             >
               <div className="p-4 sm:p-6 space-y-5">
                 {/* Header */}
@@ -2081,7 +2081,7 @@ ${content.split("\n\n").map(p => `<p>${p}</p>`).join("")}
                     <h3 className="text-lg font-bold text-gray-900 dark:text-white">Contrato {selected.numero}</h3>
                     <p className="text-xs text-gray-400">{TIPO_LABELS[selected.tipo] || selected.tipo}</p>
                   </div>
-                  <button onClick={() => setSelected(null)} className="p-2 rounded-xl hover:bg-gray-100 dark:hover:bg-white/5">
+                  <button onClick={() => setSelected(null)} className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-white/5">
                     <X className="h-5 w-5 text-gray-500" />
                   </button>
                 </div>
@@ -2191,18 +2191,18 @@ ${content.split("\n\n").map(p => `<p>${p}</p>`).join("")}
                 {/* Action Buttons */}
                 <div className="space-y-2">
                   <div className="grid grid-cols-2 gap-2">
-                    <button onClick={() => downloadPDF(selected)} className="flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-sm font-bold text-white bg-[#00B4A6] hover:bg-[#009690] shadow-sm transition-colors">
+                    <button onClick={() => downloadPDF(selected)} className="flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg text-sm font-bold text-white bg-[#00B4A6] hover:bg-[#009690]  transition-colors">
                       <Printer className="h-4 w-4" /> PDF
                     </button>
-                    <button onClick={() => downloadWord(selected)} className="flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-sm font-bold text-emerald-700 bg-emerald-100 dark:bg-emerald-900/30 dark:text-emerald-400 hover:bg-emerald-200 transition-colors">
+                    <button onClick={() => downloadWord(selected)} className="flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg text-sm font-bold text-emerald-700 bg-emerald-100 dark:bg-emerald-900/30 dark:text-emerald-400 hover:bg-emerald-200 transition-colors">
                       <Download className="h-4 w-4" /> Word
                     </button>
                   </div>
                   <div className="grid grid-cols-2 gap-2">
-                    <button onClick={() => downloadTxt(selected)} className="flex items-center justify-center gap-2 px-4 py-2 rounded-xl text-xs font-bold text-gray-600 dark:text-gray-400 bg-gray-100 dark:bg-white/5 hover:bg-gray-200 transition-colors">
+                    <button onClick={() => downloadTxt(selected)} className="flex items-center justify-center gap-2 px-4 py-2 rounded-lg text-xs font-bold text-gray-600 dark:text-gray-400 bg-gray-100 dark:bg-white/5 hover:bg-gray-200 transition-colors">
                       <FileText className="h-3.5 w-3.5" /> Texto (.txt)
                     </button>
-                    <button onClick={() => copyToClipboard(selected)} className="flex items-center justify-center gap-2 px-4 py-2 rounded-xl text-xs font-bold text-gray-600 dark:text-gray-400 bg-gray-100 dark:bg-white/5 hover:bg-gray-200 transition-colors">
+                    <button onClick={() => copyToClipboard(selected)} className="flex items-center justify-center gap-2 px-4 py-2 rounded-lg text-xs font-bold text-gray-600 dark:text-gray-400 bg-gray-100 dark:bg-white/5 hover:bg-gray-200 transition-colors">
                       <ClipboardCopy className="h-3.5 w-3.5" /> Copiar
                     </button>
                   </div>
@@ -2230,7 +2230,7 @@ ${content.split("\n\n").map(p => `<p>${p}</p>`).join("")}
                         setSelected(null);
                       }
                     }}
-                    className="w-full flex items-center justify-center gap-2 px-4 py-2 rounded-xl text-xs font-bold text-[#f97316] bg-[#f97316]/10 hover:bg-[#f97316]/20 transition-colors"
+                    className="w-full flex items-center justify-center gap-2 px-4 py-2 rounded-lg text-xs font-bold text-[#f97316] bg-[#f97316]/10 hover:bg-[#f97316]/20 transition-colors"
                   >
                     <Copy className="h-3.5 w-3.5" /> Duplicar Contrato
                   </button>

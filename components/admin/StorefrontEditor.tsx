@@ -469,7 +469,7 @@ function SectionEditorModal({
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm" onClick={onClose}>
       <div
-        className="bg-white dark:bg-card rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-hidden border border-gray-200 dark:border-card-border animate-[scaleIn_0.2s_ease-out] flex flex-col"
+        className="bg-white dark:bg-card rounded-xl w-full max-w-2xl max-h-[90vh] overflow-hidden border border-gray-200 dark:border-card-border flex flex-col"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
@@ -486,18 +486,18 @@ function SectionEditorModal({
         <div className="flex-1 overflow-y-auto p-6 space-y-5">
           {/* Section title */}
           <div>
-            <label className="text-xs font-bold text-gray-600 dark:text-muted uppercase tracking-wider">Título de la sección</label>
+            <label className="text-xs font-bold text-gray-600 dark:text-muted">Título de la sección</label>
             <input
               value={title}
               onChange={(e) => setTitle(e.target.value)}
               placeholder={sectionLabel}
-              className="mt-1 w-full px-3 py-2.5 rounded-xl border border-gray-200 dark:border-card-border bg-white dark:bg-surface text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary"
+              className="mt-1 w-full px-3 py-2.5 rounded-lg border border-gray-200 dark:border-card-border bg-white dark:bg-surface text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary"
             />
           </div>
 
           {/* Assigned products */}
           <div>
-            <label className="text-xs font-bold text-gray-600 dark:text-muted uppercase tracking-wider">
+            <label className="text-xs font-bold text-gray-600 dark:text-muted">
               Productos en esta sección ({assignedProducts.length})
             </label>
             {assignedProducts.length === 0 ? (
@@ -540,14 +540,14 @@ function SectionEditorModal({
 
           {/* Search and add products */}
           <div>
-            <label className="text-xs font-bold text-gray-600 dark:text-muted uppercase tracking-wider">Agregar productos</label>
+            <label className="text-xs font-bold text-gray-600 dark:text-muted">Agregar productos</label>
             <div className="relative mt-1">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400 pointer-events-none" />
               <input
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 placeholder="Buscar producto para agregar…"
-                className="w-full pl-9 pr-3 py-2.5 rounded-xl border border-gray-200 dark:border-card-border bg-white dark:bg-surface text-sm text-foreground placeholder:text-muted focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary"
+                className="w-full pl-9 pr-3 py-2.5 rounded-lg border border-gray-200 dark:border-card-border bg-white dark:bg-surface text-sm text-foreground placeholder:text-muted focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary"
               />
               {searchQuery && (
                 <button type="button" onClick={() => setSearchQuery("")} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600">
@@ -566,7 +566,7 @@ function SectionEditorModal({
                     key={p.id}
                     type="button"
                     onClick={() => addProduct(p.id)}
-                    className="w-full flex items-center gap-2.5 px-2.5 py-2 rounded-xl hover:bg-primary/5 dark:hover:bg-primary/10 transition-colors text-left"
+                    className="w-full flex items-center gap-2.5 px-2.5 py-2 rounded-lg hover:bg-primary/5 dark:hover:bg-primary/10 transition-colors text-left"
                   >
                     <div className="relative h-8 w-8 rounded-lg overflow-hidden bg-gray-100 shrink-0">
                       {p.image ? (
@@ -596,13 +596,13 @@ function SectionEditorModal({
         <div className="shrink-0 px-6 py-4 border-t border-gray-100 dark:border-card-border flex items-center justify-end gap-2">
           <button
             onClick={onClose}
-            className="px-4 py-2 rounded-xl text-sm font-semibold text-gray-600 dark:text-muted hover:bg-gray-100 dark:hover:bg-surface transition-colors"
+            className="px-4 py-2 rounded-lg text-sm font-semibold text-gray-600 dark:text-muted hover:bg-gray-100 dark:hover:bg-surface transition-colors"
           >
             Cancelar
           </button>
           <button
             onClick={() => onSave({ productIds, title: title.trim() || undefined })}
-            className="flex items-center gap-2 px-5 py-2 rounded-xl bg-primary text-white text-sm font-bold shadow-sm hover:bg-primary/90 active:scale-95 transition-all"
+            className="flex items-center gap-2 px-5 py-2 rounded-lg bg-primary text-white text-sm font-bold  hover:bg-primary/90 active:scale-95 transition-all"
           >
             <Save className="h-4 w-4" />
             Guardar sección
@@ -647,9 +647,9 @@ function SortableRow({
       className={cn(
         "flex items-center gap-3 p-3.5 rounded-xl border transition-all duration-150 select-none",
         section.enabled
-          ? "bg-white dark:bg-card border-gray-200 dark:border-card-border shadow-sm"
+          ? "bg-white dark:bg-card border-gray-200 dark:border-card-border "
           : "bg-gray-50 dark:bg-surface border-gray-100 dark:border-card-border opacity-60",
-        isDragging && "ring-2 ring-primary/40 bg-primary/5 dark:bg-primary/10 shadow-lg"
+        isDragging && "ring-2 ring-primary/40 bg-primary/5 dark:bg-primary/10"
       )}
     >
       {/* Drag handle */}
@@ -855,7 +855,7 @@ export default function StorefrontEditor() {
             href="/tienda"
             target="_blank"
             rel="noopener noreferrer"
-            className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl border border-gray-200 dark:border-card-border text-sm font-semibold text-foreground hover:bg-gray-50 dark:hover:bg-surface transition-colors min-h-[44px]"
+            className="flex items-center gap-1.5 px-3.5 py-2 rounded-lg border border-gray-200 dark:border-card-border text-sm font-semibold text-foreground hover:bg-gray-50 dark:hover:bg-surface transition-colors min-h-[44px]"
           >
             <Eye className="h-4 w-4" />
             <span className="hidden sm:inline">Vista previa</span>
@@ -866,7 +866,7 @@ export default function StorefrontEditor() {
             onClick={handleSave}
             disabled={saving}
             className={cn(
-              "flex items-center gap-1.5 px-4 py-2 rounded-xl text-sm font-bold text-white transition-all min-h-[44px]",
+              "flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-bold text-white transition-all min-h-[44px]",
               saved
                 ? "bg-emerald-500 hover:bg-emerald-600"
                 : "bg-primary hover:bg-primary/90 active:scale-[0.98]",
@@ -893,7 +893,7 @@ export default function StorefrontEditor() {
           className={cn(
             "flex items-center gap-2 flex-1 justify-center px-4 py-2 rounded-lg text-sm font-semibold transition-all",
             activeTab === "tienda"
-              ? "bg-white dark:bg-card text-foreground shadow-sm"
+              ? "bg-white dark:bg-card text-foreground "
               : "text-muted hover:text-foreground"
           )}
         >
@@ -906,7 +906,7 @@ export default function StorefrontEditor() {
           className={cn(
             "flex items-center gap-2 flex-1 justify-center px-4 py-2 rounded-lg text-sm font-semibold transition-all",
             activeTab === "navegacion"
-              ? "bg-white dark:bg-card text-foreground shadow-sm"
+              ? "bg-white dark:bg-card text-foreground "
               : "text-muted hover:text-foreground"
           )}
         >
@@ -961,7 +961,7 @@ export default function StorefrontEditor() {
               className={cn(
                 "flex items-center gap-3 p-3.5 rounded-xl border transition-all duration-150",
                 item.visible
-                  ? "bg-white dark:bg-card border-gray-200 dark:border-card-border shadow-sm"
+                  ? "bg-white dark:bg-card border-gray-200 dark:border-card-border "
                   : "bg-gray-50 dark:bg-surface border-gray-100 dark:border-card-border opacity-60"
               )}
             >

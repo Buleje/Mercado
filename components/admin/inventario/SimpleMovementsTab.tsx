@@ -136,20 +136,20 @@ export default function SimpleMovementsTab() {
   }
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-6">
       {/* Summary cards */}
       <div className="grid grid-cols-3 gap-3">
-        <div className="rounded-2xl bg-emerald-50 dark:bg-emerald-950/30 p-4">
+        <div className="rounded-xl bg-emerald-50 dark:bg-emerald-950/30 p-4">
           <Package className="h-5 w-5 text-emerald-600 mb-1" />
           <p className="text-xs text-gray-500 dark:text-muted font-semibold">Movimientos hoy</p>
           <p className="text-2xl font-extrabold text-emerald-700 dark:text-emerald-400">{stats.todayCount}</p>
         </div>
-        <div className="rounded-2xl bg-emerald-50 dark:bg-emerald-950/30 p-4">
+        <div className="rounded-xl bg-emerald-50 dark:bg-emerald-950/30 p-4">
           <ArrowUpCircle className="h-5 w-5 text-emerald-600 mb-1" />
           <p className="text-xs text-gray-500 dark:text-muted font-semibold">Entradas hoy</p>
           <p className="text-2xl font-extrabold text-emerald-700 dark:text-emerald-400">+{stats.entries}</p>
         </div>
-        <div className="rounded-2xl bg-amber-50 dark:bg-amber-950/30 p-4">
+        <div className="rounded-xl bg-amber-50 dark:bg-amber-950/30 p-4">
           <ArrowDownCircle className="h-5 w-5 text-amber-600 mb-1" />
           <p className="text-xs text-gray-500 dark:text-muted font-semibold">Salidas hoy</p>
           <p className="text-2xl font-extrabold text-amber-700 dark:text-amber-400">−{stats.exits}</p>
@@ -164,7 +164,7 @@ export default function SimpleMovementsTab() {
             value={search}
             onChange={e => setSearch(e.target.value)}
             placeholder="Buscar producto..."
-            className="w-full pl-9 pr-3 py-2 rounded-xl border border-gray-200 dark:border-card-border bg-white dark:bg-surface text-sm focus:outline-none focus:ring-2 focus:ring-primary/20"
+            className="w-full pl-9 pr-3 py-2 rounded-lg border border-gray-200 dark:border-card-border bg-white dark:bg-surface text-sm focus:outline-none focus:ring-2 focus:ring-primary/20"
           />
         </div>
         <div className="flex gap-1 rounded-xl border border-gray-200 dark:border-card-border p-0.5">
@@ -200,7 +200,7 @@ export default function SimpleMovementsTab() {
       </div>
 
       {/* Table */}
-      <div className="rounded-2xl border border-gray-200 dark:border-card-border bg-white dark:bg-card overflow-hidden">
+      <div className="rounded-xl border border-gray-200 dark:border-card-border bg-white dark:bg-card overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead className="bg-gray-50 dark:bg-surface border-b border-gray-200 dark:border-card-border">

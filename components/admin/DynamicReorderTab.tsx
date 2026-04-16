@@ -69,7 +69,7 @@ export default function DynamicReorderTab() {
         </div>
         <button
           onClick={() => exportToCSV(filtered.map(p => ({ Producto: p.name, SKU: p.sku, StockActual: p.currentStock, VentaDiaria: p.avgDailySales, LeadTime: p.leadTimeDays, PuntoReorden: p.dynamicROP, EOQ: p.eoq, DíasAgotamiento: p.daysUntilStockout, Estado: p.status })), "punto-reorden")}
-          className="flex flex-wrap items-center gap-2 px-2 sm:px-4 py-1.5 sm:py-2.5 rounded-xl bg-primary text-white text-sm font-bold hover:bg-primary/90 transition-colors shadow-md shadow-primary/20"
+          className="flex flex-wrap items-center gap-2 px-2 sm:px-4 py-1.5 sm:py-2.5 rounded-lg bg-primary text-white text-sm font-bold hover:bg-primary/90 transition-colors"
         >
           <Download className="h-4 w-4" /> Exportar
         </button>
@@ -77,22 +77,22 @@ export default function DynamicReorderTab() {
 
       {/* KPIs */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-4">
-        <div className="bg-red-50 dark:bg-red-950/20 rounded-2xl border border-red-200 dark:border-red-800 p-4 shadow-sm">
+        <div className="bg-red-50 dark:bg-red-950/20 rounded-xl border border-red-200 dark:border-red-800 p-4 ">
           <p className="text-xs text-red-600 dark:text-red-400 font-semibold">Reorden urgente</p>
           <p className="text-xl sm:text-2xl font-extrabold text-red-700 dark:text-red-400 mt-1">{urgentCount}</p>
           <p className="text-xs text-red-500">productos bajo ROP</p>
         </div>
-        <div className="bg-amber-50 dark:bg-amber-950/20 rounded-2xl border border-amber-200 dark:border-amber-800 p-4 shadow-sm">
+        <div className="bg-amber-50 dark:bg-amber-950/20 rounded-xl border border-amber-200 dark:border-amber-800 p-4 ">
           <p className="text-xs text-amber-600 dark:text-amber-400 font-semibold">Reorden pronto</p>
           <p className="text-xl sm:text-2xl font-extrabold text-amber-700 dark:text-amber-400 mt-1">{prontCount}</p>
           <p className="text-xs text-amber-500">próximos 7 días</p>
         </div>
-        <div className="bg-emerald-50 dark:bg-emerald-950/20 rounded-2xl border border-emerald-200 dark:border-emerald-800 p-4 shadow-sm">
+        <div className="bg-emerald-50 dark:bg-emerald-950/20 rounded-xl border border-emerald-200 dark:border-emerald-800 p-4 ">
           <p className="text-xs text-emerald-600 dark:text-emerald-400 font-semibold">Stock saludable</p>
           <p className="text-xl sm:text-2xl font-extrabold text-emerald-700 dark:text-emerald-400 mt-1">{PRODUCTS.filter(p => p.status === "ok").length}</p>
           <p className="text-xs text-emerald-500">nivel adecuado</p>
         </div>
-        <div className="bg-emerald-50 dark:bg-emerald-950/20 rounded-2xl border border-emerald-200 dark:border-emerald-800 p-4 shadow-sm">
+        <div className="bg-emerald-50 dark:bg-emerald-950/20 rounded-xl border border-emerald-200 dark:border-emerald-800 p-4 ">
           <p className="text-xs text-emerald-600 dark:text-emerald-400 font-semibold">Sobrestock</p>
           <p className="text-xl sm:text-2xl font-extrabold text-emerald-700 dark:text-emerald-400 mt-1">{overstockCount}</p>
           <p className="text-xs text-emerald-500">capital inmovilizado</p>
@@ -101,7 +101,7 @@ export default function DynamicReorderTab() {
 
       {/* Urgent alert */}
       {urgentCount > 0 && (
-        <div className="bg-red-50 dark:bg-red-950/20 border border-red-200 dark:border-red-800 rounded-2xl p-4 flex flex-wrap items-start gap-3">
+        <div className="bg-red-50 dark:bg-red-950/20 border border-red-200 dark:border-red-800 rounded-xl p-4 flex flex-wrap items-start gap-3">
           <AlertTriangle className="h-5 w-5 text-red-500 shrink-0 mt-0.5" />
           <div>
             <h4 className="font-bold text-red-700 dark:text-red-400 text-sm">¡{urgentCount} producto(s) necesitan reorden inmediata!</h4>
@@ -112,19 +112,19 @@ export default function DynamicReorderTab() {
 
       {/* Filters */}
       <div className="flex flex-wrap items-center gap-3">
-        <input type="text" placeholder="Buscar producto o SKU..." value={search} onChange={e => setSearch(e.target.value)} className="px-2 sm:px-4 py-1.5 sm:py-2.5 rounded-xl border-2 border-gray-200 dark:border-card-border bg-white dark:bg-surface text-gray-900 dark:text-foreground text-sm outline-none focus:border-primary w-56" />
-        <select value={statusFilter} onChange={e => setStatusFilter(e.target.value as typeof statusFilter)} className="px-3 py-2.5 rounded-xl border-2 border-gray-200 dark:border-card-border bg-white dark:bg-surface text-sm outline-none focus:border-primary">
+        <input type="text" placeholder="Buscar producto o SKU..." value={search} onChange={e => setSearch(e.target.value)} className="px-2 sm:px-4 py-1.5 sm:py-2.5 rounded-lg border-2 border-gray-200 dark:border-card-border bg-white dark:bg-surface text-gray-900 dark:text-foreground text-sm outline-none focus:border-primary w-56" />
+        <select value={statusFilter} onChange={e => setStatusFilter(e.target.value as typeof statusFilter)} className="px-3 py-2.5 rounded-lg border-2 border-gray-200 dark:border-card-border bg-white dark:bg-surface text-sm outline-none focus:border-primary">
           <option value="all">Todos los estados</option>
           <option value="urgente">Urgente</option>
           <option value="pronto">Pronto</option>
           <option value="ok">OK</option>
           <option value="sobrestock">Sobrestock</option>
         </select>
-        <select value={categoryFilter} onChange={e => setCategoryFilter(e.target.value)} className="px-3 py-2.5 rounded-xl border-2 border-gray-200 dark:border-card-border bg-white dark:bg-surface text-sm outline-none focus:border-primary">
+        <select value={categoryFilter} onChange={e => setCategoryFilter(e.target.value)} className="px-3 py-2.5 rounded-lg border-2 border-gray-200 dark:border-card-border bg-white dark:bg-surface text-sm outline-none focus:border-primary">
           <option value="all">Todas las categorías</option>
           {CATEGORIES.map(c => <option key={c} value={c}>{c}</option>)}
         </select>
-        <select value={sortBy} onChange={e => setSortBy(e.target.value as typeof sortBy)} className="px-3 py-2.5 rounded-xl border-2 border-gray-200 dark:border-card-border bg-white dark:bg-surface text-sm outline-none focus:border-primary">
+        <select value={sortBy} onChange={e => setSortBy(e.target.value as typeof sortBy)} className="px-3 py-2.5 rounded-lg border-2 border-gray-200 dark:border-card-border bg-white dark:bg-surface text-sm outline-none focus:border-primary">
           <option value="stockout">Días agotamiento</option>
           <option value="name">Nombre</option>
           <option value="stock">Stock actual</option>
@@ -132,7 +132,7 @@ export default function DynamicReorderTab() {
       </div>
 
       {/* Table */}
-      <div className="bg-white dark:bg-card rounded-2xl border border-gray-200 dark:border-card-border shadow-sm overflow-hidden">
+      <div className="bg-white dark:bg-card rounded-xl border border-gray-200 dark:border-card-border  overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full min-w-[600px] text-sm">
             <thead>
@@ -185,7 +185,7 @@ export default function DynamicReorderTab() {
       {/* Detail modal */}
       {detail && (
         <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4" onClick={() => setDetail(null)}>
-          <div className="bg-white dark:bg-card rounded-2xl shadow-xl w-full max-w-lg" onClick={e => e.stopPropagation()}>
+          <div className="bg-white dark:bg-card rounded-xl w-full max-w-lg" onClick={e => e.stopPropagation()}>
             <div className="flex items-center justify-between px-3 sm:px-6 py-4 border-b border-gray-100 dark:border-card-border">
               <h3 className="font-extrabold text-gray-900 dark:text-foreground">{detail.name}</h3>
               <button onClick={() => setDetail(null)} className="p-1.5 rounded-lg text-gray-400 hover:bg-gray-100 dark:hover:bg-accent"><X className="h-5 w-5" /></button>
@@ -228,7 +228,7 @@ export default function DynamicReorderTab() {
       )}
 
       {/* Methodology */}
-      <div className="bg-gray-50 dark:bg-surface rounded-2xl border border-gray-200 dark:border-card-border p-3 sm:p-5">
+      <div className="bg-gray-50 dark:bg-surface rounded-xl border border-gray-200 dark:border-card-border p-3 sm:p-5">
         <h3 className="font-extrabold text-gray-700 dark:text-foreground text-sm mb-2">Metodología del cálculo</h3>
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 sm:gap-4 text-xs text-gray-600 dark:text-muted">
           <div><strong>ROP (Punto de Reorden):</strong> Venta diaria × Lead Time + Stock Seguridad. Ajustado dinámicamente según tendencia de ventas.</div>

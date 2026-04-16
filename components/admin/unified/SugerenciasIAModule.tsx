@@ -184,7 +184,7 @@ function TabClientes() {
   }, [selected, recs]);
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-6">
       {/* Buscador */}
       <div className="relative">
         <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400 pointer-events-none" />
@@ -193,7 +193,7 @@ function TabClientes() {
           value={search}
           onChange={(e) => handleSearchChange(e.target.value)}
           placeholder="Buscar cliente por nombre o teléfono..."
-          className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-gray-200 bg-white text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary/40"
+          className="w-full pl-10 pr-4 py-2.5 rounded-lg border border-gray-200 bg-white text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary/40"
         />
         {loadingSearch && (
           <div className="absolute right-3 top-1/2 -translate-y-1/2">
@@ -204,7 +204,7 @@ function TabClientes() {
 
       {/* Resultados de búsqueda */}
       {results.length > 0 && (
-        <ul className="rounded-xl border border-gray-200 bg-white divide-y divide-gray-100 shadow-sm overflow-hidden">
+        <ul className="rounded-xl border border-gray-200 bg-white divide-y divide-gray-100  overflow-hidden">
           {results.map((c) => (
             <li key={String(c.id)}>
               <button
@@ -238,7 +238,7 @@ function TabClientes() {
             {selected.phone && recs.length > 0 && (
               <button
                 onClick={handleWhatsApp}
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-[#25D366] text-white text-xs font-bold hover:bg-[#1fbb58] transition-colors min-h-[36px]"
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#25D366] text-white text-xs font-bold hover:bg-[#1fbb58] transition-colors min-h-[36px]"
               >
                 Sugerir por WhatsApp
               </button>
@@ -248,11 +248,11 @@ function TabClientes() {
           {loadingRecs ? (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
               {Array.from({ length: 6 }).map((_, i) => (
-                <div key={i} className="h-20 rounded-2xl bg-gray-100 animate-pulse" />
+                <div key={i} className="h-20 rounded-xl bg-gray-100 animate-pulse" />
               ))}
             </div>
           ) : recs.length === 0 ? (
-            <div className="rounded-2xl border border-dashed border-gray-200 p-8 text-center">
+            <div className="rounded-xl border border-dashed border-gray-200 p-8 text-center">
               <Lightbulb className="h-8 w-8 text-gray-300 mx-auto mb-2" />
               <p className="text-sm text-gray-500">
                 No hay recomendaciones disponibles para este cliente.
@@ -263,7 +263,7 @@ function TabClientes() {
               {recs.map((r) => (
                 <div
                   key={String(r.productId)}
-                  className="rounded-2xl border border-gray-200 bg-white p-4 space-y-1"
+                  className="rounded-xl border border-gray-200 bg-white p-4 space-y-1"
                 >
                   <p className="text-sm font-semibold text-gray-900 leading-tight">
                     {r.name}
@@ -283,7 +283,7 @@ function TabClientes() {
 
       {/* Estado vacío inicial */}
       {!selected && results.length === 0 && search.trim().length < 2 && (
-        <div className="rounded-2xl border border-dashed border-gray-200 p-10 text-center">
+        <div className="rounded-xl border border-dashed border-gray-200 p-10 text-center">
           <Users className="h-10 w-10 text-gray-300 mx-auto mb-3" />
           <p className="text-sm font-semibold text-gray-500">
             Busca un cliente para ver sus recomendaciones personalizadas
@@ -337,7 +337,7 @@ function TabCrossSell() {
 
   if (error) {
     return (
-      <div className="rounded-2xl border border-red-200 bg-red-50 p-6 text-center">
+      <div className="rounded-xl border border-red-200 bg-red-50 p-6 text-center">
         <p className="text-sm text-red-600 font-semibold">
           No se pudieron cargar las ventas para analizar.
         </p>
@@ -347,7 +347,7 @@ function TabCrossSell() {
 
   if (pairs.length === 0) {
     return (
-      <div className="rounded-2xl border border-dashed border-gray-200 p-10 text-center">
+      <div className="rounded-xl border border-dashed border-gray-200 p-10 text-center">
         <GitMerge className="h-10 w-10 text-gray-300 mx-auto mb-3" />
         <p className="text-sm text-gray-500 font-semibold">
           No hay suficientes ventas con múltiples productos para analizar.
@@ -361,20 +361,20 @@ function TabCrossSell() {
       <p className="text-xs text-gray-500">
         Top 10 pares de productos vendidos juntos con mayor frecuencia — últimas 200 ventas.
       </p>
-      <div className="overflow-x-auto rounded-2xl border border-gray-200">
+      <div className="overflow-x-auto rounded-xl border border-gray-200">
         <table className="w-full text-sm">
           <thead>
             <tr className="border-b border-gray-100 bg-gray-50">
-              <th className="text-left px-4 py-2.5 text-xs font-bold text-gray-500 uppercase tracking-wide">
+              <th className="text-left px-4 py-2.5 text-xs font-bold text-gray-500">
                 Producto A
               </th>
-              <th className="text-left px-4 py-2.5 text-xs font-bold text-gray-500 uppercase tracking-wide">
+              <th className="text-left px-4 py-2.5 text-xs font-bold text-gray-500">
                 Producto B
               </th>
-              <th className="text-right px-4 py-2.5 text-xs font-bold text-gray-500 uppercase tracking-wide">
+              <th className="text-right px-4 py-2.5 text-xs font-bold text-gray-500">
                 Juntos
               </th>
-              <th className="text-right px-4 py-2.5 text-xs font-bold text-gray-500 uppercase tracking-wide">
+              <th className="text-right px-4 py-2.5 text-xs font-bold text-gray-500">
                 Confianza
               </th>
               <th className="px-4 py-2.5" />
@@ -407,7 +407,7 @@ function TabCrossSell() {
                 <td className="px-4 py-3 text-right">
                   <button
                     onClick={() => handleCreateCombo(pair)}
-                    className="px-3 py-1.5 rounded-xl bg-primary text-white text-xs font-bold hover:bg-primary-dark transition-colors min-h-[32px] whitespace-nowrap"
+                    className="px-3 py-1.5 rounded-lg bg-primary text-white text-xs font-bold hover:bg-primary-dark transition-colors min-h-[32px] whitespace-nowrap"
                   >
                     Crear combo
                   </button>
@@ -431,7 +431,7 @@ export default function SugerenciasIAModule({ tenantId: _tenantId }: Props) {
   const [tab, setTab] = useState<TabId>(TABS[0].id);
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-6">
       <AdminModuleHeader
         title="Sugerencias IA"
         description="Recomendaciones inteligentes de combos, compras y estrategias de venta"
@@ -444,26 +444,26 @@ export default function SugerenciasIAModule({ tenantId: _tenantId }: Props) {
         moduleId={MODULE_ID}
       >
         {tab === "combos" && (
-          <div className="rounded-2xl border border-gray-200 overflow-hidden">
+          <div className="rounded-xl border border-gray-200 overflow-hidden">
             <ComboSuggestionCard />
           </div>
         )}
 
         {tab === "clientes" && (
-          <div className="bg-white rounded-2xl border border-gray-200 p-5">
+          <div className="bg-white rounded-xl border border-gray-200 p-5">
             <TabClientes />
           </div>
         )}
 
         {tab === "comprar" && (
-          <div className="space-y-4">
+          <div className="space-y-6">
             <SmartPurchaseAdvisor />
             <SmartReorderCard />
           </div>
         )}
 
         {tab === "crosssell" && (
-          <div className="bg-white rounded-2xl border border-gray-200 p-5">
+          <div className="bg-white rounded-xl border border-gray-200 p-5">
             <TabCrossSell />
           </div>
         )}

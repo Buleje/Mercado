@@ -30,7 +30,7 @@ function ProductCard({
 
   return (
     <div className={cn(
-      "rounded-xl border p-3 transition-all hover:shadow-md group",
+      "rounded-xl border p-3 transition-all hover:shadow-sm group",
       inCart
         ? "border-primary bg-primary/5 dark:bg-primary/10 ring-1 ring-primary/30"
         : "border-gray-200 dark:border-card-border bg-white dark:bg-card hover:border-primary/40"
@@ -39,7 +39,7 @@ function ProductCard({
         <span className="text-3xl">{product.emoji}</span>
         <div className="flex items-center gap-1">
           {product.tags?.includes("popular") && (
-            <span className="text-[8px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400">
+            <span className="text-[8px] font-bold px-1.5 py-0.5 rounded bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400">
               Popular
             </span>
           )}
@@ -302,7 +302,7 @@ export default function CatalogBrowser() {
   const categoryMeta = CATALOG_CATEGORIES.find((c) => c.id === selectedCategory);
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-6">
       {/* Header */}
       <div className="flex items-center justify-between flex-wrap gap-3">
         <div>
@@ -313,17 +313,17 @@ export default function CatalogBrowser() {
           {/* Add all category */}
           <button
             onClick={addCategoryToCart}
-            className="flex items-center gap-1.5 px-3 py-2 rounded-xl border border-primary/30 bg-primary/5 text-xs font-semibold text-primary hover:bg-primary/10 transition-colors"
+            className="flex items-center gap-1.5 px-3 py-2 rounded-lg border border-primary/30 bg-primary/5 text-xs font-semibold text-primary hover:bg-primary/10 transition-colors"
           >
             <CheckCheck className="h-3.5 w-3.5" />
             Agregar {selectedCategory === "all" ? "todos" : categoryMeta?.label ?? "categoria"}
           </button>
           {/* View toggle */}
           <div className="flex items-center gap-0.5 bg-gray-100 dark:bg-gray-800 rounded-lg p-0.5">
-            <button onClick={() => setViewMode("grid")} className={cn("p-1.5 rounded-md transition-all", viewMode === "grid" ? "bg-white dark:bg-card shadow-sm" : "text-muted")}>
+            <button onClick={() => setViewMode("grid")} className={cn("p-1.5 rounded-md transition-all", viewMode === "grid" ? "bg-white dark:bg-card " : "text-muted")}>
               <Grid3x3 className="h-4 w-4" />
             </button>
-            <button onClick={() => setViewMode("list")} className={cn("p-1.5 rounded-md transition-all", viewMode === "list" ? "bg-white dark:bg-card shadow-sm" : "text-muted")}>
+            <button onClick={() => setViewMode("list")} className={cn("p-1.5 rounded-md transition-all", viewMode === "list" ? "bg-white dark:bg-card " : "text-muted")}>
               <List className="h-4 w-4" />
             </button>
           </div>
@@ -335,7 +335,7 @@ export default function CatalogBrowser() {
         <div className="flex-1 relative">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted" />
           <input type="text" value={search} onChange={(e) => { setSearch(e.target.value); setPage(1); }} placeholder="Buscar producto, marca o codigo de barras..."
-            className="w-full pl-9 pr-3 py-2.5 rounded-xl border border-gray-200 dark:border-card-border bg-white dark:bg-surface text-sm placeholder:text-muted focus:outline-none focus:ring-2 focus:ring-primary/40" />
+            className="w-full pl-9 pr-3 py-2.5 rounded-lg border border-gray-200 dark:border-card-border bg-white dark:bg-surface text-sm placeholder:text-muted focus:outline-none focus:ring-2 focus:ring-primary/40" />
         </div>
         <button onClick={() => setShowCategories(!showCategories)}
           className={cn("flex items-center gap-1.5 px-3 py-2.5 rounded-xl border text-xs font-semibold transition-colors",
@@ -389,7 +389,7 @@ export default function CatalogBrowser() {
 
       {hasMore && (
         <button onClick={() => setPage((p) => p + 1)}
-          className="w-full py-2.5 rounded-xl border border-gray-200 dark:border-card-border text-xs font-semibold text-muted hover:text-foreground hover:bg-gray-50 dark:hover:bg-surface transition-colors">
+          className="w-full py-2.5 rounded-lg border border-gray-200 dark:border-card-border text-xs font-semibold text-muted hover:text-foreground hover:bg-gray-50 dark:hover:bg-surface transition-colors">
           Cargar mas ({filtered.length - visibleProducts.length} restantes)
         </button>
       )}
@@ -403,7 +403,7 @@ export default function CatalogBrowser() {
 
       {/* ═══ CARRITO MEJORADO (panel inferior expandible) ═══ */}
       {cart.length > 0 && (
-        <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl shadow-xl overflow-hidden">
+        <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl overflow-hidden">
           {/* Header del carrito */}
           <button
             onClick={() => setCartExpanded(!cartExpanded)}
@@ -478,7 +478,7 @@ export default function CatalogBrowser() {
                   <button
                     onClick={handleImport}
                     disabled={importing}
-                    className="flex items-center gap-2 px-6 py-3 rounded-xl bg-primary text-white font-bold text-sm hover:bg-primary/90 active:scale-[0.98] transition-all disabled:opacity-60 shadow-lg"
+                    className="flex items-center gap-2 px-6 py-3 rounded-lg bg-primary text-white font-bold text-sm hover:bg-primary/90 active:scale-[0.98] transition-all disabled:opacity-60"
                   >
                     {importing ? (
                       <><Loader2 className="h-4 w-4 animate-spin" /> Importando...</>

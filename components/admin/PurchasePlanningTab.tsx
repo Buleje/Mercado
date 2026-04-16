@@ -94,7 +94,7 @@ export default function PurchasePlanningTab() {
           </h1>
           <p className="text-sm text-gray-500 dark:text-muted mt-0.5">Sugerencia inteligente basada en rotación, demanda y stock de seguridad</p>
         </div>
-        <button onClick={() => exportToCSV(filtered.map(i => ({ producto: i.product, categoria: i.category, stock: i.stock, demanda_diaria: i.avgDailyDemand, punto_reorden: i.reorderPoint, sugerido: i.suggestedQty, costo_estimado: i.estimatedCost, dias_agotamiento: i.daysToStockout, tendencia: i.trend })), "plan-compras")} className="flex items-center gap-1.5 px-3 py-2 rounded-xl border border-gray-200 dark:border-card-border bg-white dark:bg-surface text-sm font-semibold text-gray-700 dark:text-foreground hover:bg-gray-50 dark:hover:bg-accent transition-colors">
+        <button onClick={() => exportToCSV(filtered.map(i => ({ producto: i.product, categoria: i.category, stock: i.stock, demanda_diaria: i.avgDailyDemand, punto_reorden: i.reorderPoint, sugerido: i.suggestedQty, costo_estimado: i.estimatedCost, dias_agotamiento: i.daysToStockout, tendencia: i.trend })), "plan-compras")} className="flex items-center gap-1.5 px-3 py-2 rounded-lg border border-gray-200 dark:border-card-border bg-white dark:bg-surface text-sm font-semibold text-gray-700 dark:text-foreground hover:bg-gray-50 dark:hover:bg-accent transition-colors">
           <Download className="h-4 w-4" /> Exportar
         </button>
       </div>
@@ -107,7 +107,7 @@ export default function PurchasePlanningTab() {
           { label: "Urgentes", value: String(stats.urgent), color: "text-red-500", bg: "bg-red-50 dark:bg-red-950/30", icon: AlertTriangle },
           { label: "Inversión sugerida", value: fmt(stats.totalCost), color: "text-emerald-600", bg: "bg-emerald-50 dark:bg-emerald-950/30", icon: TrendingUp },
         ].map(({ label, value, color, bg, icon: Icon }) => (
-          <div key={label} className={cn("rounded-2xl p-4", bg)}>
+          <div key={label} className={cn("rounded-xl p-4", bg)}>
             <div className="flex items-center gap-1.5 mb-1">
               <Icon className={cn("h-3.5 w-3.5", color)} />
               <p className="text-xs font-semibold text-gray-500 dark:text-muted">{label}</p>
@@ -121,20 +121,20 @@ export default function PurchasePlanningTab() {
       <div className="flex flex-col sm:flex-row gap-3 flex-wrap">
         <div className="relative flex-1 max-w-sm">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
-          <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Buscar producto..." className="w-full pl-9 pr-3 py-2 text-sm border border-gray-200 dark:border-card-border rounded-xl bg-white dark:bg-surface text-gray-700 dark:text-foreground" />
+          <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Buscar producto..." className="w-full pl-9 pr-3 py-2 text-sm border border-gray-200 dark:border-card-border rounded-lg bg-white dark:bg-surface text-gray-700 dark:text-foreground" />
         </div>
-        <select value={filterCat} onChange={e => setFilterCat(e.target.value)} className="text-sm border border-gray-200 dark:border-card-border rounded-xl px-3 py-2 bg-white dark:bg-surface text-gray-700 dark:text-foreground">
+        <select value={filterCat} onChange={e => setFilterCat(e.target.value)} className="text-sm border border-gray-200 dark:border-card-border rounded-lg px-3 py-2 bg-white dark:bg-surface text-gray-700 dark:text-foreground">
           <option value="todos">Todas las categorías</option>
           {CATEGORIES.map(c => <option key={c} value={c}>{c}</option>)}
         </select>
-        <select value={filterUrgency} onChange={e => setFilterUrgency(e.target.value as Urgency | "todos")} className="text-sm border border-gray-200 dark:border-card-border rounded-xl px-3 py-2 bg-white dark:bg-surface text-gray-700 dark:text-foreground">
+        <select value={filterUrgency} onChange={e => setFilterUrgency(e.target.value as Urgency | "todos")} className="text-sm border border-gray-200 dark:border-card-border rounded-lg px-3 py-2 bg-white dark:bg-surface text-gray-700 dark:text-foreground">
           <option value="todos">Todas las urgencias</option>
           {(Object.keys(URGENCY_META) as Urgency[]).map(u => <option key={u} value={u}>{URGENCY_META[u].label}</option>)}
         </select>
       </div>
 
       {/* Table */}
-      <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl overflow-hidden">
+      <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full min-w-[600px] text-sm">
             <thead className="bg-gray-50 dark:bg-surface/50 border-b border-gray-200 dark:border-card-border">
@@ -183,7 +183,7 @@ export default function PurchasePlanningTab() {
       </div>
 
       {/* Algorithm note */}
-      <div className="bg-emerald-50 dark:bg-emerald-950/20 border border-emerald-200 dark:border-emerald-800 rounded-2xl p-4 text-xs text-emerald-700 dark:text-emerald-300">
+      <div className="bg-emerald-50 dark:bg-emerald-950/20 border border-emerald-200 dark:border-emerald-800 rounded-xl p-4 text-xs text-emerald-700 dark:text-emerald-300">
         <p className="font-bold mb-1">Algoritmo de sugerencia</p>
         <p>Punto de reorden = demanda_diaria × plazo_entrega × (1 + factor_seguridad)</p>
         <p>Cantidad sugerida = máx(0, punto_reorden − stock_actual)</p>

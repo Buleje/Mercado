@@ -45,7 +45,7 @@ function KpiCard({
   color: string;
 }) {
   return (
-    <div className="bg-white dark:bg-gray-900 rounded-2xl p-4 border border-gray-200 dark:border-gray-800 flex items-center gap-4">
+    <div className="bg-white dark:bg-gray-900 rounded-xl p-4 border border-gray-200 dark:border-gray-800 flex items-center gap-4">
       <div className={cn("w-10 h-10 rounded-xl flex items-center justify-center shrink-0", color)}>
         <Icon className="h-5 w-5 text-white" />
       </div>
@@ -190,7 +190,7 @@ export default function ProductAnalyticsPanel({ productId, productName }: Produc
           </div>
 
           {/* Gráfico de líneas */}
-          <div className="bg-white dark:bg-gray-900 rounded-2xl p-4 border border-gray-200 dark:border-gray-800">
+          <div className="bg-white dark:bg-gray-900 rounded-xl p-4 border border-gray-200 dark:border-gray-800">
             <h4 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-4">
               Tendencia — últimos {days} días
             </h4>
@@ -250,7 +250,7 @@ export default function ProductAnalyticsPanel({ productId, productName }: Produc
 
           {/* Top productos */}
           {data!.topProducts.length > 0 && (
-            <div className="bg-white dark:bg-gray-900 rounded-2xl p-4 border border-gray-200 dark:border-gray-800">
+            <div className="bg-white dark:bg-gray-900 rounded-xl p-4 border border-gray-200 dark:border-gray-800">
               <h4 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3">Top productos</h4>
               <div className="overflow-x-auto">
                 <table className="min-w-full text-sm">

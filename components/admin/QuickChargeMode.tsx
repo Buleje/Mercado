@@ -156,7 +156,7 @@ export default function QuickChargeMode({ className }: QuickChargeModeProps) {
   const dailyCount = history.length;
 
   return (
-    <div className={cn("rounded-2xl border border-gray-200 dark:border-card-border bg-white dark:bg-card overflow-hidden", className)}>
+    <div className={cn("rounded-xl border border-gray-200 dark:border-card-border bg-white dark:bg-card overflow-hidden", className)}>
       {/* Header */}
       <div className="flex items-center gap-2 px-4 py-3 border-b border-gray-100 dark:border-card-border bg-gray-50 dark:bg-gray-900/50">
         <Zap className="h-4 w-4 text-secondary" />
@@ -209,7 +209,7 @@ export default function QuickChargeMode({ className }: QuickChargeModeProps) {
               onChange={(e) => { setAmount(e.target.value); setError(""); }}
               onKeyDown={handleKeyDown}
               placeholder="0.00"
-              className="w-full pl-12 pr-4 py-4 text-3xl font-black rounded-2xl border-2 border-gray-200 dark:border-card-border bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-foreground focus:outline-none focus:border-primary transition-colors text-center"
+              className="w-full pl-12 pr-4 py-4 text-3xl font-black rounded-xl border-2 border-gray-200 dark:border-card-border bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-foreground focus:outline-none focus:border-primary transition-colors text-center"
             />
           </div>
 
@@ -243,7 +243,7 @@ export default function QuickChargeMode({ className }: QuickChargeModeProps) {
             onKeyDown={handleKeyDown}
             placeholder="Ej: agua, pan, cargador..."
             maxLength={80}
-            className="w-full px-3 py-2 text-sm rounded-xl border border-gray-200 dark:border-card-border bg-gray-50 dark:bg-gray-900 text-gray-800 dark:text-foreground focus:outline-none focus:border-primary"
+            className="w-full px-3 py-2 text-sm rounded-lg border border-gray-200 dark:border-card-border bg-gray-50 dark:bg-gray-900 text-gray-800 dark:text-foreground focus:outline-none focus:border-primary"
           />
         </div>
 
@@ -292,11 +292,11 @@ export default function QuickChargeMode({ className }: QuickChargeModeProps) {
           onClick={handleCharge}
           disabled={!validAmount || loading || success}
           className={cn(
-            "w-full py-4 rounded-2xl font-black text-xl transition-all flex items-center justify-center gap-3",
+            "w-full py-4 rounded-xl font-black text-xl transition-all flex items-center justify-center gap-3",
             success
               ? "bg-emerald-500 text-white"
               : validAmount && !loading
-              ? "bg-primary text-white hover:bg-primary/90 shadow-lg shadow-primary/20 active:scale-98"
+              ? "bg-primary text-white hover:bg-primary/90 active:scale-98"
               : "bg-gray-100 dark:bg-gray-800 text-gray-400 cursor-not-allowed"
           )}
         >

@@ -52,7 +52,7 @@ function ModuleTooltip() {
         <Info className="h-4 w-4" />
       </button>
       {open && (
-        <div className="absolute left-6 top-0 z-50 w-80 bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl shadow-xl p-4 text-xs leading-relaxed pointer-events-none">
+        <div className="absolute left-6 top-0 z-50 w-80 bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl p-4 text-xs leading-relaxed pointer-events-none">
           <p className="font-extrabold text-gray-900 dark:text-foreground text-sm mb-2">Caja Registradora</p>
           <p className="text-gray-600 dark:text-muted mb-3">Controla las aperturas y cierres de caja, registra ingresos y egresos manuales, y consulta el historial de sesiones anteriores.</p>
           <div className="space-y-1.5">
@@ -124,11 +124,11 @@ function YapePlinConciliation({ breakdown }: { breakdown: Record<string, number>
       </div>
       <div className="flex items-center gap-3 mb-3">
         <div className="flex-1">
-          <p className="text-[10px] uppercase tracking-wider font-bold text-gray-500 mb-1">Ventas {concilTab} hoy</p>
+          <p className="text-[10px] font-bold text-gray-500 mb-1">Ventas {concilTab} hoy</p>
           <p className={cn("text-xl font-extrabold font-mono", concilTab === "yape" ? "text-purple-700" : "text-cyan-700")}>{fmt(ventasDigital)}</p>
         </div>
         <div className="flex-1">
-          <p className="text-[10px] uppercase tracking-wider font-bold text-gray-500 mb-1">Saldo en tu app</p>
+          <p className="text-[10px] font-bold text-gray-500 mb-1">Saldo en tu app</p>
           <div className="flex items-center gap-1">
             <span className="text-xs text-gray-500">S/</span>
             <input type="number" value={concilAmount} onChange={e => setConcilAmount(e.target.value)} placeholder="0.00" step="0.50"
@@ -494,7 +494,7 @@ export default function CashRegisterTab() {
   }
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-6">
       {/* Header */}
       <div className="flex items-center justify-between flex-wrap gap-3">
         <h2 className="text-lg font-extrabold text-gray-900 dark:text-foreground flex flex-wrap items-center gap-2">
@@ -512,8 +512,8 @@ export default function CashRegisterTab() {
               <Settings className="h-4 w-4 text-gray-500 dark:text-muted" />
             </button>
             {showToleranceConfig && (
-              <div className="absolute right-0 top-10 z-50 bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl shadow-xl p-3 w-56">
-                <p className="text-[10px] font-bold text-gray-500 dark:text-muted uppercase tracking-wide mb-2">Tolerancia de diferencia</p>
+              <div className="absolute right-0 top-10 z-50 bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl p-3 w-56">
+                <p className="text-[10px] font-bold text-gray-500 dark:text-muted mb-2">Tolerancia de diferencia</p>
                 <div className="flex items-center gap-2 mb-2">
                   <span className="text-xs font-bold text-gray-600 dark:text-muted">S/</span>
                   <input
@@ -542,19 +542,19 @@ export default function CashRegisterTab() {
           <div className="flex bg-gray-100 dark:bg-accent rounded-lg p-0.5">
             <button
               onClick={() => setView("current")}
-              className={cn("px-3 py-1.5 rounded-md text-xs font-bold transition-all", view === "current" ? "bg-white dark:bg-card text-gray-900 dark:text-foreground shadow-sm" : "text-gray-500 dark:text-muted")}
+              className={cn("px-3 py-1.5 rounded-md text-xs font-bold transition-all", view === "current" ? "bg-white dark:bg-card text-gray-900 dark:text-foreground " : "text-gray-500 dark:text-muted")}
             >
               Actual
             </button>
             <button
               onClick={() => setView("history")}
-              className={cn("px-3 py-1.5 rounded-md text-xs font-bold transition-all", view === "history" ? "bg-white dark:bg-card text-gray-900 dark:text-foreground shadow-sm" : "text-gray-500 dark:text-muted")}
+              className={cn("px-3 py-1.5 rounded-md text-xs font-bold transition-all", view === "history" ? "bg-white dark:bg-card text-gray-900 dark:text-foreground " : "text-gray-500 dark:text-muted")}
             >
               Historial
             </button>
             <button
               onClick={() => setView("reconcile")}
-              className={cn("px-3 py-1.5 rounded-md text-xs font-bold transition-all", view === "reconcile" ? "bg-white dark:bg-card text-gray-900 dark:text-foreground shadow-sm" : "text-gray-500 dark:text-muted")}
+              className={cn("px-3 py-1.5 rounded-md text-xs font-bold transition-all", view === "reconcile" ? "bg-white dark:bg-card text-gray-900 dark:text-foreground " : "text-gray-500 dark:text-muted")}
             >
               Reconciliación
             </button>
@@ -567,15 +567,15 @@ export default function CashRegisterTab() {
         <>
           {!currentRegister ? (
             /* No open register */
-            <div className="bg-white dark:bg-card rounded-2xl border-2 border-dashed border-gray-200 dark:border-card-border p-8 text-center">
-              <div className="h-14 w-14 rounded-2xl bg-gray-100 dark:bg-accent flex items-center justify-center mx-auto mb-4">
+            <div className="bg-white dark:bg-card rounded-xl border-2 border-dashed border-gray-200 dark:border-card-border p-8 text-center">
+              <div className="h-14 w-14 rounded-xl bg-gray-100 dark:bg-accent flex items-center justify-center mx-auto mb-4">
                 <Lock className="h-7 w-7 text-gray-400 dark:text-muted" />
               </div>
               <h3 className="text-base font-extrabold text-gray-900 dark:text-foreground mb-1">Caja cerrada</h3>
               <p className="text-sm text-gray-500 dark:text-muted mb-6">No hay una caja abierta. Abre una para registrar ventas.</p>
               <button
                 onClick={() => setShowOpen(true)}
-                className="px-3 sm:px-6 py-3 rounded-xl bg-primary text-white font-bold hover:bg-primary-dark transition-colors inline-flex items-center gap-2 shadow-lg shadow-primary/20"
+                className="px-3 sm:px-6 py-3 rounded-lg bg-primary text-white font-bold hover:bg-primary-dark transition-colors inline-flex items-center gap-2"
               >
                 <Unlock className="h-5 w-5" /> Abrir caja
               </button>
@@ -630,26 +630,26 @@ export default function CashRegisterTab() {
               <div className="flex flex-wrap gap-2">
                 <button
                   onClick={() => { setMvType("ingreso"); setShowMovement(true); }}
-                  className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-emerald-50 text-emerald-700 font-bold text-xs hover:bg-emerald-100 transition-colors"
+                  className="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-emerald-50 text-emerald-700 font-bold text-xs hover:bg-emerald-100 transition-colors"
                 >
                   <ArrowUp className="h-3.5 w-3.5" /> Ingreso
                 </button>
                 <button
                   onClick={() => { setMvType("egreso"); setShowMovement(true); }}
-                  className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-red-50 text-red-600 font-bold text-xs hover:bg-red-100 transition-colors"
+                  className="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-red-50 text-red-600 font-bold text-xs hover:bg-red-100 transition-colors"
                 >
                   <ArrowDown className="h-3.5 w-3.5" /> Egreso
                 </button>
                 <button
                   onClick={() => { setArqueoAmount(""); setArqueoDenoms({}); setShowArqueo(true); }}
-                  className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-emerald-50 text-emerald-600 font-bold text-xs hover:bg-emerald-100 transition-colors"
+                  className="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-emerald-50 text-emerald-600 font-bold text-xs hover:bg-emerald-100 transition-colors"
                   title="Conteo físico del efectivo para verificar que cuadra con las ventas"
                 >
                   <Scan className="h-3.5 w-3.5" /> Arqueo Express
                 </button>
                 <button
                   onClick={() => { setGuiadoBilletes({}); setGuiadoMonedas({}); setShowArqueoGuiado(true); }}
-                  className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-violet-50 text-violet-600 font-bold text-xs hover:bg-violet-100 transition-colors"
+                  className="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-violet-50 text-violet-600 font-bold text-xs hover:bg-violet-100 transition-colors"
                 >
                   <Calculator className="h-3.5 w-3.5" /> Arqueo Guiado
                 </button>
@@ -699,14 +699,14 @@ export default function CashRegisterTab() {
                     const w = window.open("", "_blank", "width=420,height=600");
                     if (w) { w.document.write(content); w.document.close(); w.print(); }
                   }}
-                  className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-gray-100 dark:bg-accent text-gray-700 dark:text-foreground font-bold text-xs hover:bg-gray-200 dark:hover:bg-surface transition-colors"
+                  className="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-gray-100 dark:bg-accent text-gray-700 dark:text-foreground font-bold text-xs hover:bg-gray-200 dark:hover:bg-surface transition-colors"
                 >
                   <Printer className="h-3.5 w-3.5" /> Imprimir reporte
                 </button>
                 <div className="ml-auto">
                   <button
                     onClick={() => setShowClose(true)}
-                    className="flex items-center gap-1.5 px-2 sm:px-4 py-1.5 sm:py-2 rounded-xl bg-gray-900 text-white font-bold text-xs hover:bg-gray-800 transition-colors"
+                    className="flex items-center gap-1.5 px-2 sm:px-4 py-1.5 sm:py-2 rounded-lg bg-gray-900 text-white font-bold text-xs hover:bg-gray-800 transition-colors"
                   >
                     <Lock className="h-3.5 w-3.5" /> Cerrar caja
                   </button>
@@ -873,7 +873,7 @@ export default function CashRegisterTab() {
                 const displayHours = hours.slice(startH, endH + 1).map((v, i) => ({ hour: startH + i, value: v }));
                 return (
                   <div className="bg-white dark:bg-card rounded-xl border border-gray-100 dark:border-card-border p-3">
-                    <p className="text-[10px] font-bold text-gray-400 dark:text-muted uppercase tracking-wide mb-2">Ventas por hora</p>
+                    <p className="text-[10px] font-bold text-gray-400 dark:text-muted mb-2">Ventas por hora</p>
                     <div className="flex items-end gap-1 h-16">
                       {displayHours.map(h => (
                         <div key={h.hour} className="flex-1 flex flex-col items-center gap-0.5">
@@ -989,7 +989,7 @@ export default function CashRegisterTab() {
                 value={historySearch}
                 onChange={e => setHistorySearch(e.target.value)}
                 placeholder="Buscar por fecha o notas..."
-                className="w-full pl-9 pr-3 py-2 rounded-xl border border-gray-200 dark:border-card-border bg-white dark:bg-card text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 dark:text-foreground"
+                className="w-full pl-9 pr-3 py-2 rounded-lg border border-gray-200 dark:border-card-border bg-white dark:bg-card text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 dark:text-foreground"
               />
             </div>
           )}
@@ -1006,7 +1006,7 @@ export default function CashRegisterTab() {
                 <button
                   key={r.id}
                   onClick={() => setDetailRegister(r)}
-                  className="w-full bg-white dark:bg-card rounded-xl border border-gray-100 dark:border-card-border p-4 text-left hover:shadow-md transition-all"
+                  className="w-full bg-white dark:bg-card rounded-xl border border-gray-100 dark:border-card-border p-4 text-left hover:shadow-sm transition-all"
                 >
                   <div className="flex items-center justify-between mb-2">
                     <div className="flex flex-wrap items-center gap-2">
@@ -1089,9 +1089,9 @@ export default function CashRegisterTab() {
         const maxBar = Math.max(...weekData.map(d => Math.max(d.income, d.expenses)), 1);
         
         return (
-          <div className="space-y-4">
+          <div className="space-y-6">
             {/* Weekly Cash Flow Chart */}
-            <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl p-4">
+            <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl p-4">
               <div className="flex items-center justify-between mb-3">
                 <h3 className="text-sm font-extrabold text-gray-900 dark:text-foreground flex flex-wrap items-center gap-2">
                   <History className="h-4 w-4 text-primary" />
@@ -1165,15 +1165,15 @@ export default function CashRegisterTab() {
                 <p className="text-sm font-semibold">Sin cajas cerradas</p>
               </div>
             ) : (
-              <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl overflow-y-hidden overflow-x-auto">
+              <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl overflow-y-hidden overflow-x-auto">
                 <table className="w-full min-w-[600px] text-xs">
                   <thead>
                     <tr className="border-b border-gray-100 dark:border-card-border text-left">
-                      <th className="px-2 sm:px-4 py-1.5 sm:py-2.5 font-bold text-gray-500 dark:text-muted uppercase tracking-wide">Fecha</th>
-                      <th className="px-2 sm:px-4 py-1.5 sm:py-2.5 font-bold text-gray-500 dark:text-muted uppercase tracking-wide text-right">Esperado</th>
-                      <th className="px-2 sm:px-4 py-1.5 sm:py-2.5 font-bold text-gray-500 dark:text-muted uppercase tracking-wide text-right">Real</th>
-                      <th className="px-2 sm:px-4 py-1.5 sm:py-2.5 font-bold text-gray-500 dark:text-muted uppercase tracking-wide text-right">Diferencia</th>
-                      <th className="px-2 sm:px-4 py-1.5 sm:py-2.5 font-bold text-gray-500 dark:text-muted uppercase tracking-wide text-center">Estado</th>
+                      <th className="px-2 sm:px-4 py-1.5 sm:py-2.5 font-bold text-gray-500 dark:text-muted">Fecha</th>
+                      <th className="px-2 sm:px-4 py-1.5 sm:py-2.5 font-bold text-gray-500 dark:text-muted text-right">Esperado</th>
+                      <th className="px-2 sm:px-4 py-1.5 sm:py-2.5 font-bold text-gray-500 dark:text-muted text-right">Real</th>
+                      <th className="px-2 sm:px-4 py-1.5 sm:py-2.5 font-bold text-gray-500 dark:text-muted text-right">Diferencia</th>
+                      <th className="px-2 sm:px-4 py-1.5 sm:py-2.5 font-bold text-gray-500 dark:text-muted text-center">Estado</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-gray-50">
@@ -1215,7 +1215,7 @@ export default function CashRegisterTab() {
       {/* Open register modal */}
       {showOpen && (
         <div className="fixed inset-0 z-50 bg-black/40 flex items-center justify-center p-4" onClick={() => setShowOpen(false)}>
-          <div className="bg-white dark:bg-card rounded-2xl shadow-xl max-w-sm w-full p-3 sm:p-6" onClick={e => e.stopPropagation()}>
+          <div className="bg-white dark:bg-card rounded-xl max-w-sm w-full p-3 sm:p-6" onClick={e => e.stopPropagation()}>
             <h3 className="text-sm font-extrabold text-gray-900 dark:text-foreground mb-4 flex flex-wrap items-center gap-2">
               <Unlock className="h-4 w-4 text-primary" /> Abrir caja
             </h3>
@@ -1247,13 +1247,13 @@ export default function CashRegisterTab() {
                 />
               </div>
               <div className="flex flex-wrap gap-2 pt-1">
-                <button onClick={() => setShowOpen(false)} className="flex-1 py-2.5 rounded-xl border-2 border-gray-200 dark:border-card-border text-sm font-bold text-gray-600 dark:text-muted hover:bg-gray-50 dark:hover:bg-surface">
+                <button onClick={() => setShowOpen(false)} className="flex-1 py-2.5 rounded-lg border-2 border-gray-200 dark:border-card-border text-sm font-bold text-gray-600 dark:text-muted hover:bg-gray-50 dark:hover:bg-surface">
                   Cancelar
                 </button>
                 <button
                   onClick={handleOpen}
                   disabled={opening}
-                  className="flex-1 py-2.5 rounded-xl bg-primary text-white text-sm font-bold hover:bg-primary-dark disabled:opacity-50 flex items-center justify-center gap-1"
+                  className="flex-1 py-2.5 rounded-lg bg-primary text-white text-sm font-bold hover:bg-primary-dark disabled:opacity-50 flex items-center justify-center gap-1"
                 >
                   {opening ? <Loader2 className="h-4 w-4 animate-spin" /> : <Unlock className="h-4 w-4" />}
                   Abrir
@@ -1297,7 +1297,7 @@ export default function CashRegisterTab() {
         
         return (
         <div className="fixed inset-0 z-50 bg-black/40 flex items-center justify-center p-4" onClick={() => setShowClose(false)}>
-          <div className="bg-white dark:bg-card rounded-2xl shadow-xl max-w-md w-full max-h-[90vh] overflow-y-auto p-3 sm:p-6" onClick={e => e.stopPropagation()}>
+          <div className="bg-white dark:bg-card rounded-xl max-w-md w-full max-h-[90vh] overflow-y-auto p-3 sm:p-6" onClick={e => e.stopPropagation()}>
             <h3 className="text-sm font-extrabold text-gray-900 dark:text-foreground mb-3 flex flex-wrap items-center gap-2">
               <Lock className="h-4 w-4 text-gray-900 dark:text-foreground" /> Cerrar caja
             </h3>
@@ -1424,13 +1424,13 @@ export default function CashRegisterTab() {
                 />
               </div>
               <div className="flex flex-wrap gap-2 pt-1">
-                <button onClick={() => { setShowClose(false); setDenominations({}); }} className="flex-1 py-2.5 rounded-xl border-2 border-gray-200 dark:border-card-border text-sm font-bold text-gray-600 dark:text-muted hover:bg-gray-50 dark:hover:bg-surface">
+                <button onClick={() => { setShowClose(false); setDenominations({}); }} className="flex-1 py-2.5 rounded-lg border-2 border-gray-200 dark:border-card-border text-sm font-bold text-gray-600 dark:text-muted hover:bg-gray-50 dark:hover:bg-surface">
                   Cancelar
                 </button>
                 <button
                   onClick={handleClose}
                   disabled={closing || !closeAmount}
-                  className="flex-1 py-2.5 rounded-xl bg-gray-900 text-white text-sm font-bold hover:bg-gray-800 disabled:opacity-50 flex items-center justify-center gap-1"
+                  className="flex-1 py-2.5 rounded-lg bg-gray-900 text-white text-sm font-bold hover:bg-gray-800 disabled:opacity-50 flex items-center justify-center gap-1"
                 >
                   {closing ? <Loader2 className="h-4 w-4 animate-spin" /> : <Lock className="h-4 w-4" />}
                   Cerrar
@@ -1445,7 +1445,7 @@ export default function CashRegisterTab() {
       {/* Add movement modal */}
       {showMovement && (
         <div className="fixed inset-0 z-50 bg-black/40 flex items-center justify-center p-4" onClick={() => setShowMovement(false)}>
-          <div className="bg-white dark:bg-card rounded-2xl shadow-xl max-w-sm w-full p-3 sm:p-6" onClick={e => e.stopPropagation()}>
+          <div className="bg-white dark:bg-card rounded-xl max-w-sm w-full p-3 sm:p-6" onClick={e => e.stopPropagation()}>
             <h3 className="text-sm font-extrabold text-gray-900 dark:text-foreground mb-4 flex flex-wrap items-center gap-2">
               {mvType === "ingreso" ? <ArrowUp className="h-4 w-4 text-emerald-600" /> : <ArrowDown className="h-4 w-4 text-red-500" />}
               {mvType === "ingreso" ? "Registrar ingreso" : "Registrar egreso"}
@@ -1502,14 +1502,14 @@ export default function CashRegisterTab() {
                 />
               </div>
               <div className="flex flex-wrap gap-2 pt-1">
-                <button onClick={() => setShowMovement(false)} className="flex-1 py-2.5 rounded-xl border-2 border-gray-200 dark:border-card-border text-sm font-bold text-gray-600 dark:text-muted hover:bg-gray-50 dark:hover:bg-surface">
+                <button onClick={() => setShowMovement(false)} className="flex-1 py-2.5 rounded-lg border-2 border-gray-200 dark:border-card-border text-sm font-bold text-gray-600 dark:text-muted hover:bg-gray-50 dark:hover:bg-surface">
                   Cancelar
                 </button>
                 <button
                   onClick={handleAddMovement}
                   disabled={addingMv || !mvAmount || (mvType === "egreso" && !mvMotivo && !mvDescription.trim())}
                   className={cn(
-                    "flex-1 py-2.5 rounded-xl text-white text-sm font-bold disabled:opacity-50 flex items-center justify-center gap-1",
+                    "flex-1 py-2.5 rounded-lg text-white text-sm font-bold disabled:opacity-50 flex items-center justify-center gap-1",
                     mvType === "ingreso" ? "bg-emerald-600 hover:bg-emerald-700" : "bg-red-500 hover:bg-red-600"
                   )}
                 >
@@ -1541,7 +1541,7 @@ export default function CashRegisterTab() {
         
         return (
           <div className="fixed inset-0 z-50 bg-black/40 flex items-center justify-center p-4" onClick={() => setShowArqueo(false)}>
-            <div className="bg-white dark:bg-card rounded-2xl shadow-xl max-w-md w-full max-h-[90vh] overflow-y-auto p-3 sm:p-6" onClick={e => e.stopPropagation()}>
+            <div className="bg-white dark:bg-card rounded-xl max-w-md w-full max-h-[90vh] overflow-y-auto p-3 sm:p-6" onClick={e => e.stopPropagation()}>
               <h3 className="text-sm font-extrabold text-gray-900 dark:text-foreground mb-3 flex flex-wrap items-center gap-2">
                 <Scan className="h-4 w-4 text-emerald-600" /> Arqueo Express
               </h3>
@@ -1667,13 +1667,13 @@ export default function CashRegisterTab() {
                 </div>
                 
                 <div className="flex flex-wrap gap-2 pt-1">
-                  <button onClick={() => { setShowArqueo(false); setArqueoDenoms({}); }} className="flex-1 py-2.5 rounded-xl border-2 border-gray-200 dark:border-card-border text-sm font-bold text-gray-600 dark:text-muted hover:bg-gray-50 dark:hover:bg-surface">
+                  <button onClick={() => { setShowArqueo(false); setArqueoDenoms({}); }} className="flex-1 py-2.5 rounded-lg border-2 border-gray-200 dark:border-card-border text-sm font-bold text-gray-600 dark:text-muted hover:bg-gray-50 dark:hover:bg-surface">
                     Cancelar
                   </button>
                   <button
                     onClick={handleArqueoExpress}
                     disabled={addingArqueo || !arqueoAmount}
-                    className="flex-1 py-2.5 rounded-xl bg-emerald-600 text-white text-sm font-bold hover:bg-emerald-700 disabled:opacity-50 flex items-center justify-center gap-1"
+                    className="flex-1 py-2.5 rounded-lg bg-emerald-600 text-white text-sm font-bold hover:bg-emerald-700 disabled:opacity-50 flex items-center justify-center gap-1"
                   >
                     {addingArqueo ? <Loader2 className="h-4 w-4 animate-spin" /> : <Check className="h-4 w-4" />}
                     Registrar arqueo
@@ -1688,7 +1688,7 @@ export default function CashRegisterTab() {
       {/* Arqueo Guiado modal */}
       {showArqueoGuiado && currentRegister && (
         <div className="fixed inset-0 z-50 bg-black/40 flex items-center justify-center p-4" onClick={() => setShowArqueoGuiado(false)}>
-          <div className="bg-white dark:bg-card rounded-2xl shadow-xl max-w-md w-full max-h-[90vh] overflow-y-auto p-3 sm:p-6" onClick={e => e.stopPropagation()}>
+          <div className="bg-white dark:bg-card rounded-xl max-w-md w-full max-h-[90vh] overflow-y-auto p-3 sm:p-6" onClick={e => e.stopPropagation()}>
             <h3 className="text-sm font-extrabold text-gray-900 dark:text-foreground mb-3 flex flex-wrap items-center gap-2">
               <Calculator className="h-4 w-4 text-violet-600" /> Arqueo Guiado
             </h3>
@@ -1896,7 +1896,7 @@ export default function CashRegisterTab() {
 
             {/* Total + Difference */}
             <div className="bg-primary/5 dark:bg-primary/10 rounded-xl p-3 border border-primary/20 mb-3 text-center">
-              <p className="text-[10px] font-semibold text-gray-500 dark:text-muted uppercase tracking-wide">Total contado</p>
+              <p className="text-[10px] font-semibold text-gray-500 dark:text-muted">Total contado</p>
               <p className="text-2xl font-extrabold text-primary">{fmt(guiadoTotal + (Number(arqueoYape) || 0) + (Number(arqueoPlin) || 0) + (Number(arqueoTarjeta) || 0))}</p>
               {(Number(arqueoYape) > 0 || Number(arqueoPlin) > 0 || Number(arqueoTarjeta) > 0) && (
                 <p className="text-[10px] text-gray-400 mt-1">Efectivo: {fmt(guiadoTotal)} + Digital: {fmt((Number(arqueoYape) || 0) + (Number(arqueoPlin) || 0) + (Number(arqueoTarjeta) || 0))}</p>
@@ -1937,14 +1937,14 @@ export default function CashRegisterTab() {
             <div className="flex flex-wrap gap-2 pt-1">
               <button
                 onClick={() => { setShowArqueoGuiado(false); setGuiadoBilletes({}); setGuiadoMonedas({}); }}
-                className="flex-1 py-2.5 rounded-xl border-2 border-gray-200 dark:border-card-border text-sm font-bold text-gray-600 dark:text-muted hover:bg-gray-50 dark:hover:bg-surface"
+                className="flex-1 py-2.5 rounded-lg border-2 border-gray-200 dark:border-card-border text-sm font-bold text-gray-600 dark:text-muted hover:bg-gray-50 dark:hover:bg-surface"
               >
                 Cancelar
               </button>
               <button
                 onClick={handleArqueoGuiado}
                 disabled={addingArqueoGuiado || guiadoTotal <= 0}
-                className="flex-1 py-2.5 rounded-xl bg-violet-600 text-white text-sm font-bold hover:bg-violet-700 disabled:opacity-50 flex items-center justify-center gap-1"
+                className="flex-1 py-2.5 rounded-lg bg-violet-600 text-white text-sm font-bold hover:bg-violet-700 disabled:opacity-50 flex items-center justify-center gap-1"
               >
                 {addingArqueoGuiado ? <Loader2 className="h-4 w-4 animate-spin" /> : <Check className="h-4 w-4" />}
                 Confirmar Arqueo
@@ -1957,7 +1957,7 @@ export default function CashRegisterTab() {
       {/* Detail register modal (history) */}
       {detailRegister && (
         <div className="fixed inset-0 z-50 bg-black/40 flex items-center justify-center p-4" onClick={() => setDetailRegister(null)}>
-          <div className="bg-white dark:bg-card rounded-2xl shadow-xl max-w-lg w-full max-h-[80vh] flex flex-col" onClick={e => e.stopPropagation()}>
+          <div className="bg-white dark:bg-card rounded-xl max-w-lg w-full max-h-[80vh] flex flex-col" onClick={e => e.stopPropagation()}>
             <div className="px-2 sm:px-4 py-2 sm:py-3 border-b flex items-center justify-between">
               <div>
                 <h3 className="text-sm font-extrabold text-gray-900 dark:text-foreground">Detalle de caja</h3>

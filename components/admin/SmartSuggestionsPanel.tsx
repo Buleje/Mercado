@@ -53,7 +53,7 @@ export default function SmartSuggestionsPanel({ context = "general", compact = f
   if (visible.length === 0 && !loading) return null;
 
   return (
-    <div className={cn("rounded-2xl border overflow-hidden", compact ? "border-amber-200 dark:border-amber-900/40 bg-amber-50/50 dark:bg-amber-950/10" : "border-gray-200 dark:border-card-border bg-white dark:bg-card")}>
+    <div className={cn("rounded-xl border overflow-hidden", compact ? "border-amber-200 dark:border-amber-900/40 bg-amber-50/50 dark:bg-amber-950/10" : "border-gray-200 dark:border-card-border bg-white dark:bg-card")}>
       <button
         className="w-full flex items-center justify-between px-2 sm:px-4 py-2 sm:py-3 hover:bg-black/[0.02] transition-colors"
         onClick={() => setExpanded(e => !e)}

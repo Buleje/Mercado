@@ -197,7 +197,7 @@ export default function BulkPriceEditor() {
   }
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-6">
       {/* Toast */}
       {toast && (
         <div className="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 text-green-700 dark:text-green-400 px-4 py-3 rounded-lg text-sm">
@@ -306,7 +306,7 @@ export default function BulkPriceEditor() {
 
       {/* Mass actions bar */}
       {selectedCount > 0 && (
-        <div className="sticky bottom-0 bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl p-4 shadow-lg space-y-3">
+        <div className="sticky bottom-0 bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl p-4 space-y-3">
           <div className="flex items-center justify-between">
             <span className="text-sm font-medium text-gray-700 dark:text-muted">
               {selectedCount} seleccionados

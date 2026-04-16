@@ -244,7 +244,7 @@ export default function ContentCalendar() {
   };
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-6">
       {/* Header */}
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
@@ -367,7 +367,7 @@ export default function ContentCalendar() {
       {/* Add entry form */}
       {showForm && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
-          <div className="w-full max-w-md rounded-2xl bg-white shadow-xl dark:bg-gray-900">
+          <div className="w-full max-w-md rounded-xl bg-white dark:bg-gray-900">
             <div className="flex items-center justify-between border-b border-gray-100 p-5 dark:border-gray-800">
               <h3 className="font-semibold text-gray-900 dark:text-white">
                 Nueva entrada

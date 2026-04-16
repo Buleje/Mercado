@@ -82,7 +82,7 @@ export default function DashboardVentasSection({ st, expandAll, orders, sales, p
   }, [orders, sales, period]);
 
   return (
-        <div className={cn("space-y-4", expandAll && "bg-white dark:bg-card rounded-2xl border border-gray-100 dark:border-card-border p-4")}>
+        <div className={cn("space-y-4", expandAll && "bg-white dark:bg-card rounded-xl border border-gray-100 dark:border-card-border p-4")}>
           {expandAll && (
             <div className="flex flex-wrap items-center gap-2 mb-4 pb-3 border-b border-gray-100 dark:border-card-border">
               <div className="w-7 h-7 rounded-lg bg-emerald-50 dark:bg-emerald-900/30 flex items-center justify-center">
@@ -359,7 +359,7 @@ export default function DashboardVentasSection({ st, expandAll, orders, sales, p
                         </div>
                         <div className="relative h-14 mb-3 flex items-center justify-center">
                           <div 
-                            className="h-full transition-all rounded-lg shadow-sm overflow-hidden"
+                            className="h-full transition-all rounded-lg  overflow-hidden"
                             style={{ 
                               width: `${Math.max(widthPct, 15)}%`,
                               background: `linear-gradient(135deg, ${stage.color} 0%, ${stage.color}dd 100%)`,
@@ -387,7 +387,7 @@ export default function DashboardVentasSection({ st, expandAll, orders, sales, p
                   <div className="bg-linear-to-br from-emerald-50 to-emerald-50/50 dark:from-emerald-950/30 dark:to-emerald-950/10 rounded-xl p-3">
                     <div className="flex flex-wrap items-center gap-2 mb-1">
                       <Target className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
-                      <span className="text-[10px] font-semibold text-emerald-700 dark:text-emerald-400 uppercase tracking-wide">Conversión Total</span>
+                      <span className="text-[10px] font-semibold text-emerald-700 dark:text-emerald-400">Conversión Total</span>
                     </div>
                     <div className="text-xl sm:text-2xl font-extrabold text-emerald-700 dark:text-emerald-300">
                       {st.overallConversionRate.toFixed(1)}%
@@ -400,7 +400,7 @@ export default function DashboardVentasSection({ st, expandAll, orders, sales, p
                   <div className="bg-linear-to-br from-amber-50 to-amber-50/50 dark:from-amber-950/30 dark:to-amber-950/10 rounded-xl p-3">
                     <div className="flex flex-wrap items-center gap-2 mb-1">
                       <ShoppingCart className="h-4 w-4 text-amber-600 dark:text-amber-400" />
-                      <span className="text-[10px] font-semibold text-amber-700 dark:text-amber-400 uppercase tracking-wide">Abandono Carrito</span>
+                      <span className="text-[10px] font-semibold text-amber-700 dark:text-amber-400">Abandono Carrito</span>
                     </div>
                     <div className="text-xl sm:text-2xl font-extrabold text-amber-700 dark:text-amber-300">
                       {st.basketAbandonmentRate.toFixed(1)}%
@@ -413,7 +413,7 @@ export default function DashboardVentasSection({ st, expandAll, orders, sales, p
                   <div className="bg-linear-to-br from-emerald-50 to-emerald-50/50 dark:from-emerald-950/30 dark:to-emerald-950/10 rounded-xl p-3">
                     <div className="flex flex-wrap items-center gap-2 mb-1">
                       <CheckCircle2 className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
-                      <span className="text-[10px] font-semibold text-emerald-700 dark:text-emerald-400 uppercase tracking-wide">Checkout</span>
+                      <span className="text-[10px] font-semibold text-emerald-700 dark:text-emerald-400">Checkout</span>
                     </div>
                     <div className="text-xl sm:text-2xl font-extrabold text-emerald-700 dark:text-emerald-300">
                       {st.checkoutCompletionRate.toFixed(1)}%

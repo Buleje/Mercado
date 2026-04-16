@@ -153,7 +153,7 @@ function BadgeCard({
   return (
     <div
       className={cn(
-        "relative rounded-2xl border-2 p-4 transition-all duration-300",
+        "relative rounded-xl border-2 p-4 transition-all duration-300",
         unlocked
           ? definition.colorBg
           : "border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 opacity-70"
@@ -165,7 +165,7 @@ function BadgeCard({
           className={cn(
             "w-16 h-16 rounded-full flex items-center justify-center text-2xl font-black border-4 transition-all duration-300",
             unlocked
-              ? cn(definition.colorBg, definition.colorUnlocked, "border-current shadow-lg scale-105")
+              ? cn(definition.colorBg, definition.colorUnlocked, "border-current scale-105")
               : "border-gray-200 dark:border-gray-600 bg-gray-100 dark:bg-gray-700 text-gray-400 dark:text-gray-500"
           )}
         >
@@ -306,14 +306,14 @@ export default function AchievementBadges({
     return (
       <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
         {BADGE_DEFINITIONS.map((d) => (
-          <div key={d.id} className="h-52 rounded-2xl bg-gray-100 dark:bg-gray-800 animate-pulse" />
+          <div key={d.id} className="h-52 rounded-xl bg-gray-100 dark:bg-gray-800 animate-pulse" />
         ))}
       </div>
     );
   }
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-6">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">

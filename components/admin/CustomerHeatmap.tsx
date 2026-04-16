@@ -166,7 +166,7 @@ export default function CustomerHeatmap() {
               No hay datos suficientes para mostrar zonas.
             </p>
           ) : (
-            <div className="space-y-4">
+            <div className="space-y-6">
               {zones.map((z, idx) => {
                 const pct = total > 0 ? Math.round((z.count / total) * 100) : 0;
                 const colorBar = ZONE_COLORS[idx % ZONE_COLORS.length];
@@ -216,7 +216,7 @@ export default function CustomerHeatmap() {
                         {z.customers.map((name, i) => (
                           <span
                             key={i}
-                            className="rounded-full bg-white px-2.5 py-0.5 text-xs text-gray-700 shadow-sm dark:bg-gray-700 dark:text-gray-300"
+                            className="rounded-full bg-white px-2.5 py-0.5 text-xs text-gray-700  dark:bg-gray-700 dark:text-gray-300"
                           >
                             {name}
                           </span>

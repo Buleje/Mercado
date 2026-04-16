@@ -25,7 +25,7 @@ export default function PuntoCompraLotSelector({ product, open, onClose, onSelec
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-      <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-xl w-full max-w-xs overflow-hidden">
+      <div className="bg-white dark:bg-gray-900 rounded-xl w-full max-w-xs overflow-hidden">
         {/* Header */}
         <div className="flex items-center justify-between p-3 border-b border-gray-200 dark:border-card-border">
           <div className="flex items-center gap-2 min-w-0">

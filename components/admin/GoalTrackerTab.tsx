@@ -51,7 +51,7 @@ export default function GoalTrackerTab() {
         ))}
       </div>
 
-      <div className="space-y-4">
+      <div className="space-y-6">
         {goals.map(g => {
           const inverse = g.title.includes("Agotamiento") || g.title.includes("Tiempo");
           const progress = inverse
@@ -59,7 +59,7 @@ export default function GoalTrackerTab() {
             : Math.min((g.currentValue / g.targetValue) * 100, 100);
 
           return (
-            <div key={g.id} className={cn("bg-white dark:bg-card rounded-2xl border p-3 sm:p-5", g.status === "completado" ? "border-emerald-200 dark:border-emerald-900/30" : "border-gray-200 dark:border-card-border")}>
+            <div key={g.id} className={cn("bg-white dark:bg-card rounded-xl border p-3 sm:p-5", g.status === "completado" ? "border-emerald-200 dark:border-emerald-900/30" : "border-gray-200 dark:border-card-border")}>
               <div className="flex flex-wrap items-start justify-between gap-3 mb-3">
                 <div>
                   <div className="flex items-center gap-2 flex-wrap mb-1">

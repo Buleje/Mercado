@@ -425,7 +425,7 @@ export default function PageBuilder({ params }: { params: { id: string } }) {
 
         {/* Canvas */}
         <div className="flex-1 overflow-y-auto bg-gray-100 p-8">
-          <div className="max-w-6xl mx-auto bg-white shadow-lg">
+          <div className="max-w-6xl mx-auto bg-white">
             {page.blocks.length === 0 ? (
               <div className="p-16 text-center text-gray-500">
                 <p className="text-xl mb-2">No hay bloques</p>

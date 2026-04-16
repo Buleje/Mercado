@@ -58,7 +58,7 @@ export default function BusinessRulesTab() {
           <h2 className="text-xl font-extrabold text-gray-900 dark:text-foreground flex flex-wrap items-center gap-2"><Zap className="h-6 w-6 text-primary" /> Reglas de Negocio</h2>
           <p className="text-sm text-gray-500 dark:text-muted mt-0.5">Automatiza acciones con reglas Si → Entonces</p>
         </div>
-        <button onClick={openCreate} className="flex items-center gap-1.5 px-2 sm:px-4 py-1.5 sm:py-2 rounded-xl text-sm font-bold bg-primary text-white hover:bg-primary/90 transition-colors"><Plus className="h-4 w-4" /> Nueva regla</button>
+        <button onClick={openCreate} className="flex items-center gap-1.5 px-2 sm:px-4 py-1.5 sm:py-2 rounded-lg text-sm font-bold bg-primary text-white hover:bg-primary/90 transition-colors"><Plus className="h-4 w-4" /> Nueva regla</button>
       </div>
 
       {/* KPIs */}
@@ -87,7 +87,7 @@ export default function BusinessRulesTab() {
       {/* Rules */}
       <div className="space-y-3">
         {filtered.map(r => (
-          <div key={r.id} className={cn("bg-white dark:bg-card rounded-2xl border border-gray-200 dark:border-card-border p-3 sm:p-5 transition-all", !r.enabled && "opacity-60")}>
+          <div key={r.id} className={cn("bg-white dark:bg-card rounded-xl border border-gray-200 dark:border-card-border p-3 sm:p-5 transition-all", !r.enabled && "opacity-60")}>
             <div className="flex flex-wrap items-start justify-between gap-3">
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2 mb-1 flex-wrap">
@@ -124,19 +124,19 @@ export default function BusinessRulesTab() {
       {/* Modal */}
       {showModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40" onClick={() => setShowModal(false)}>
-          <div className="bg-white dark:bg-card rounded-2xl shadow-2xl p-3 sm:p-6 max-w-lg w-full mx-4 border border-gray-200 dark:border-card-border" onClick={e => e.stopPropagation()}>
+          <div className="bg-white dark:bg-card rounded-xl p-3 sm:p-6 max-w-lg w-full mx-4 border border-gray-200 dark:border-card-border" onClick={e => e.stopPropagation()}>
             <h3 className="text-lg font-extrabold text-gray-900 dark:text-foreground mb-4">{editRule ? "Editar regla" : "Nueva regla"}</h3>
             <div className="space-y-3">
-              <div><label className="text-xs font-bold text-gray-500 dark:text-muted">Nombre</label><input value={form.name} onChange={e => setForm({ ...form, name: e.target.value })} className="w-full mt-1 px-3 py-2 rounded-xl border border-gray-200 dark:border-card-border bg-white dark:bg-surface text-sm" /></div>
-              <div><label className="text-xs font-bold text-gray-500 dark:text-muted">Descripción</label><textarea value={form.description} onChange={e => setForm({ ...form, description: e.target.value })} className="w-full mt-1 px-3 py-2 rounded-xl border border-gray-200 dark:border-card-border bg-white dark:bg-surface text-sm" rows={2} /></div>
-              <div><label className="text-xs font-bold text-gray-500 dark:text-muted">Categoría</label><select value={form.category} onChange={e => setForm({ ...form, category: e.target.value as Rule["category"] })} className="w-full mt-1 px-3 py-2 rounded-xl border border-gray-200 dark:border-card-border bg-white dark:bg-surface text-sm">{Object.entries(CATEGORIES).map(([k, v]) => <option key={k} value={k}>{v.label}</option>)}</select></div>
-              <div><label className="text-xs font-bold text-gray-500 dark:text-muted">Trigger (evento)</label><input value={form.trigger} onChange={e => setForm({ ...form, trigger: e.target.value })} className="w-full mt-1 px-3 py-2 rounded-xl border border-gray-200 dark:border-card-border bg-white dark:bg-surface text-sm" placeholder="ej: stock_update, daily_check..." /></div>
-              <div><label className="text-xs font-bold text-gray-500 dark:text-muted">Condición (SI…)</label><input value={form.condition} onChange={e => setForm({ ...form, condition: e.target.value })} className="w-full mt-1 px-3 py-2 rounded-xl border border-gray-200 dark:border-card-border bg-white dark:bg-surface text-sm" placeholder="ej: stock_actual < punto_reorden" /></div>
-              <div><label className="text-xs font-bold text-gray-500 dark:text-muted">Acción (ENTONCES…)</label><input value={form.action} onChange={e => setForm({ ...form, action: e.target.value })} className="w-full mt-1 px-3 py-2 rounded-xl border border-gray-200 dark:border-card-border bg-white dark:bg-surface text-sm" placeholder="ej: Crear orden de compra" /></div>
+              <div><label className="text-xs font-bold text-gray-500 dark:text-muted">Nombre</label><input value={form.name} onChange={e => setForm({ ...form, name: e.target.value })} className="w-full mt-1 px-3 py-2 rounded-lg border border-gray-200 dark:border-card-border bg-white dark:bg-surface text-sm" /></div>
+              <div><label className="text-xs font-bold text-gray-500 dark:text-muted">Descripción</label><textarea value={form.description} onChange={e => setForm({ ...form, description: e.target.value })} className="w-full mt-1 px-3 py-2 rounded-lg border border-gray-200 dark:border-card-border bg-white dark:bg-surface text-sm" rows={2} /></div>
+              <div><label className="text-xs font-bold text-gray-500 dark:text-muted">Categoría</label><select value={form.category} onChange={e => setForm({ ...form, category: e.target.value as Rule["category"] })} className="w-full mt-1 px-3 py-2 rounded-lg border border-gray-200 dark:border-card-border bg-white dark:bg-surface text-sm">{Object.entries(CATEGORIES).map(([k, v]) => <option key={k} value={k}>{v.label}</option>)}</select></div>
+              <div><label className="text-xs font-bold text-gray-500 dark:text-muted">Trigger (evento)</label><input value={form.trigger} onChange={e => setForm({ ...form, trigger: e.target.value })} className="w-full mt-1 px-3 py-2 rounded-lg border border-gray-200 dark:border-card-border bg-white dark:bg-surface text-sm" placeholder="ej: stock_update, daily_check..." /></div>
+              <div><label className="text-xs font-bold text-gray-500 dark:text-muted">Condición (SI…)</label><input value={form.condition} onChange={e => setForm({ ...form, condition: e.target.value })} className="w-full mt-1 px-3 py-2 rounded-lg border border-gray-200 dark:border-card-border bg-white dark:bg-surface text-sm" placeholder="ej: stock_actual < punto_reorden" /></div>
+              <div><label className="text-xs font-bold text-gray-500 dark:text-muted">Acción (ENTONCES…)</label><input value={form.action} onChange={e => setForm({ ...form, action: e.target.value })} className="w-full mt-1 px-3 py-2 rounded-lg border border-gray-200 dark:border-card-border bg-white dark:bg-surface text-sm" placeholder="ej: Crear orden de compra" /></div>
             </div>
             <div className="flex flex-wrap justify-end gap-2 mt-5">
-              <button onClick={() => setShowModal(false)} className="px-2 sm:px-4 py-1.5 sm:py-2 rounded-xl text-sm font-bold text-gray-500 hover:bg-gray-100 dark:hover:bg-accent">Cancelar</button>
-              <button onClick={save} className="px-2 sm:px-4 py-1.5 sm:py-2 rounded-xl text-sm font-bold bg-primary text-white hover:bg-primary/90"><Check className="h-4 w-4 inline mr-1" />Guardar</button>
+              <button onClick={() => setShowModal(false)} className="px-2 sm:px-4 py-1.5 sm:py-2 rounded-lg text-sm font-bold text-gray-500 hover:bg-gray-100 dark:hover:bg-accent">Cancelar</button>
+              <button onClick={save} className="px-2 sm:px-4 py-1.5 sm:py-2 rounded-lg text-sm font-bold bg-primary text-white hover:bg-primary/90"><Check className="h-4 w-4 inline mr-1" />Guardar</button>
             </div>
           </div>
         </div>

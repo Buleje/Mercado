@@ -288,11 +288,11 @@ export default function ExpiryAlertsDashboard() {
   }
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-6">
       {/* Header */}
       <div className="flex items-center justify-between gap-3">
         <div className="flex items-center gap-3">
-          <div className="h-10 w-10 rounded-xl bg-amber-500 text-white flex items-center justify-center shadow-sm shrink-0">
+          <div className="h-10 w-10 rounded-lg bg-amber-500 text-white flex items-center justify-center  shrink-0">
             <CalendarClock className="h-5 w-5" />
           </div>
           <div>
@@ -304,14 +304,14 @@ export default function ExpiryAlertsDashboard() {
           <button
             onClick={handleExportAll}
             disabled={batches.length === 0}
-            className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold text-gray-600 dark:text-gray-400 bg-gray-100 dark:bg-white/5 hover:bg-gray-200 dark:hover:bg-white/10 disabled:opacity-30 transition-colors min-h-[40px]"
+            className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-bold text-gray-600 dark:text-gray-400 bg-gray-100 dark:bg-white/5 hover:bg-gray-200 dark:hover:bg-white/10 disabled:opacity-30 transition-colors min-h-[40px]"
             title="Exportar todo a CSV"
           >
             <Download className="h-3.5 w-3.5" /> Exportar
           </button>
           <button
             onClick={fetchData}
-            className="p-2 rounded-xl hover:bg-gray-100 dark:hover:bg-white/5 transition-colors min-h-[40px] min-w-[40px] flex items-center justify-center"
+            className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-white/5 transition-colors min-h-[40px] min-w-[40px] flex items-center justify-center"
             title="Actualizar"
           >
             <RefreshCw className="h-4 w-4 text-gray-400" />

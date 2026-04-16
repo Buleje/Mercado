@@ -125,7 +125,7 @@ export default function EmptyState({
       {Illust ? (
         <Illust />
       ) : Icon ? (
-        <div className="h-14 w-14 rounded-2xl bg-primary/10 dark:bg-primary/20 flex items-center justify-center mb-4">
+        <div className="h-14 w-14 rounded-xl bg-primary/10 dark:bg-primary/20 flex items-center justify-center mb-4">
           <Icon className="h-7 w-7 text-primary" />
         </div>
       ) : null}

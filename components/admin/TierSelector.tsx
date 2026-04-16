@@ -16,17 +16,17 @@ const TIER_ICONS: Record<ModuleTier, React.ElementType> = {
 const TIER_COLORS: Record<ModuleTier, { bg: string; active: string; ring: string }> = {
   principal: {
     bg: "bg-emerald-50 dark:bg-emerald-900/20",
-    active: "bg-emerald-500 text-white shadow-sm",
+    active: "bg-emerald-500 text-white ",
     ring: "ring-emerald-200 dark:ring-emerald-800",
   },
   intermedio: {
     bg: "bg-amber-50 dark:bg-amber-900/20",
-    active: "bg-amber-500 text-white shadow-sm",
+    active: "bg-amber-500 text-white ",
     ring: "ring-amber-200 dark:ring-amber-800",
   },
   avanzado: {
     bg: "bg-emerald-50 dark:bg-emerald-900/20",
-    active: "bg-emerald-500 text-white shadow-sm",
+    active: "bg-emerald-500 text-white ",
     ring: "ring-emerald-200 dark:ring-emerald-800",
   },
 };
@@ -84,7 +84,7 @@ export default function TierSelector({ tier, onTierChange, collapsed, stats, ove
   return (
     <div className="space-y-1.5">
       <div className="flex items-center justify-between px-1">
-        <span className="text-[10px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-wider">
+        <span className="text-[10px] font-bold text-gray-400 dark:text-gray-500">
           Nivel de uso
         </span>
         {stats && (
@@ -180,7 +180,7 @@ export default function TierSelector({ tier, onTierChange, collapsed, stats, ove
       {showCustomize && onModuleTierChange && (
         <div className="mt-1 p-2 bg-gray-50 dark:bg-surface rounded-xl border border-gray-200 dark:border-card-border max-h-52 overflow-y-auto">
           <div className="flex items-center justify-between mb-2">
-            <span className="text-[10px] font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+            <span className="text-[10px] font-bold text-gray-500 dark:text-gray-400">
               Mover módulos entre niveles
             </span>
             {overrides && Object.keys(overrides).length > 0 && onResetOverrides && (

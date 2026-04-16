@@ -1300,7 +1300,7 @@ ${o.notes ? `<hr><p style="font-size:11px">${o.notes}</p>` : ""}
         {/* KPI cards skeleton */}
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
           {[1, 2, 3, 4].map(i => (
-            <div key={i} className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl p-4 space-y-2">
+            <div key={i} className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl p-4 space-y-2">
               <div className="h-3 w-16 bg-gray-200 dark:bg-surface rounded" />
               <div className="h-7 w-24 bg-gray-200 dark:bg-surface rounded" />
               <div className="h-3 w-20 bg-gray-200 dark:bg-surface rounded" />
@@ -1308,7 +1308,7 @@ ${o.notes ? `<hr><p style="font-size:11px">${o.notes}</p>` : ""}
           ))}
         </div>
         {/* Orders list skeleton */}
-        <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl p-3 sm:p-5 space-y-3">
+        <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl p-3 sm:p-5 space-y-3">
           <div className="h-4 w-28 bg-gray-200 dark:bg-surface rounded" />
           {[1, 2, 3, 4, 5].map(i => (
             <div key={i} className="flex flex-wrap items-center gap-2 sm:gap-4">
@@ -1323,7 +1323,7 @@ ${o.notes ? `<hr><p style="font-size:11px">${o.notes}</p>` : ""}
           ))}
         </div>
         {/* Chart skeleton */}
-        <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl p-3 sm:p-5">
+        <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl p-3 sm:p-5">
           <div className="h-4 w-36 bg-gray-200 dark:bg-surface rounded mb-4" />
           <div className="flex flex-wrap items-end gap-2 h-32">
             {[40, 70, 55, 85, 60, 90, 75].map((h, i) => (
@@ -1378,7 +1378,7 @@ ${o.notes ? `<hr><p style="font-size:11px">${o.notes}</p>` : ""}
               <button key={p} onClick={()=>setPeriod(p)}
                 className={cn("px-2.5 py-1 rounded-md font-semibold transition-all",
                   fullscreen ? "text-sm" : "text-xs",
-                  period===p?"text-gray-900 dark:text-foreground shadow-sm":"text-gray-400 dark:text-muted hover:text-gray-600"
+                  period===p?"text-gray-900 dark:text-foreground ":"text-gray-400 dark:text-muted hover:text-gray-600"
                 )}
                 style={period===p?{background:"var(--color-card, white)"}:undefined}>
                 {p==="hoy"?"Hoy":p==="semana"?"7d":p==="mes"?"Mes":"Todo"}
@@ -1388,7 +1388,7 @@ ${o.notes ? `<hr><p style="font-size:11px">${o.notes}</p>` : ""}
           {/* Fullscreen toggle */}
           <button
             onClick={() => setFullscreen(v => !v)}
-            className="flex items-center gap-1.5 text-xs font-bold text-white bg-primary hover:bg-primary/90 px-2.5 py-1.5 rounded-lg transition-colors shadow-sm"
+            className="flex items-center gap-1.5 text-xs font-bold text-white bg-primary hover:bg-primary/90 px-2.5 py-1.5 rounded-lg transition-colors "
             title={fullscreen ? "Salir de pantalla completa" : "Pantalla completa"}
           >
             {fullscreen ? <Minimize2 className="h-3.5 w-3.5" /> : <Maximize2 className="h-3.5 w-3.5" />}
@@ -1401,7 +1401,7 @@ ${o.notes ? `<hr><p style="font-size:11px">${o.notes}</p>` : ""}
               className={cn(
                 "flex items-center gap-1.5 text-xs font-bold px-2.5 py-1.5 rounded-lg transition-colors",
                 expandAll
-                  ? "text-white bg-indigo-600 hover:bg-indigo-700 shadow-sm"
+                  ? "text-white bg-indigo-600 hover:bg-indigo-700 "
                   : "text-indigo-700 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-900/30 hover:bg-indigo-100 dark:hover:bg-indigo-900/50"
               )}
               title={expandAll ? "Colapsar — volver a vista por sección (Esc)" : "Ver todos los gráficos en una vista"}
@@ -1415,7 +1415,7 @@ ${o.notes ? `<hr><p style="font-size:11px">${o.notes}</p>` : ""}
               <Download className="h-3.5 w-3.5" />
             </button>
             {showExport && (
-              <div className="absolute right-0 top-full mt-1 bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-lg shadow-lg py-1 z-50 min-w-40">
+              <div className="absolute right-0 top-full mt-1 bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-lg py-1 z-50 min-w-40">
                 {[
                   { key:"ventas", label:"Ventas CSV" },
                   { key:"pedidos", label:"Pedidos CSV" },
@@ -1550,7 +1550,7 @@ ${o.notes ? `<hr><p style="font-size:11px">${o.notes}</p>` : ""}
               <div className="bg-white dark:bg-card border border-gray-100 dark:border-card-border rounded-xl p-3 shrink-0">
                 <div className="flex items-center gap-1.5 mb-2 pb-1.5 border-b border-gray-100 dark:border-card-border">
                   <DollarSign className="h-3.5 w-3.5 text-emerald-500" />
-                  <span className="text-xs font-bold text-gray-700 dark:text-foreground uppercase tracking-wide">Ventas</span>
+                  <span className="text-xs font-bold text-gray-700 dark:text-foreground">Ventas</span>
                 </div>
                 {st.daily.length > 0 && (
                   <div className="relative h-20 mb-2">
@@ -1583,7 +1583,7 @@ ${o.notes ? `<hr><p style="font-size:11px">${o.notes}</p>` : ""}
               <div className="bg-white dark:bg-card border border-gray-100 dark:border-card-border rounded-xl p-3 shrink-0">
                 <div className="flex items-center gap-1.5 mb-2 pb-1.5 border-b border-gray-100 dark:border-card-border">
                   <Banknote className="h-3.5 w-3.5 text-indigo-500" />
-                  <span className="text-xs font-bold text-gray-700 dark:text-foreground uppercase tracking-wide">Caja</span>
+                  <span className="text-xs font-bold text-gray-700 dark:text-foreground">Caja</span>
                 </div>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mb-3">
                   {[
@@ -1616,7 +1616,7 @@ ${o.notes ? `<hr><p style="font-size:11px">${o.notes}</p>` : ""}
               <div className="bg-white dark:bg-card border border-gray-100 dark:border-card-border rounded-xl p-3 shrink-0">
                 <div className="flex items-center gap-1.5 mb-2 pb-1.5 border-b border-gray-100 dark:border-card-border">
                   <TrendingUp className="h-3.5 w-3.5 text-emerald-500" />
-                  <span className="text-xs font-bold text-gray-700 dark:text-foreground uppercase tracking-wide">Productos (Top ingresos)</span>
+                  <span className="text-xs font-bold text-gray-700 dark:text-foreground">Productos (Top ingresos)</span>
                 </div>
                 {st.topRev.length === 0 ? (
                   <p className="text-xs text-gray-300 dark:text-muted py-2 text-center">Sin ventas registradas</p>
@@ -1656,7 +1656,7 @@ ${o.notes ? `<hr><p style="font-size:11px">${o.notes}</p>` : ""}
               <div className="bg-white dark:bg-card border border-gray-100 dark:border-card-border rounded-xl p-3 shrink-0">
                 <div className="flex items-center gap-1.5 mb-2 pb-1.5 border-b border-gray-100 dark:border-card-border">
                   <Package className="h-3.5 w-3.5 text-amber-500" />
-                  <span className="text-xs font-bold text-gray-700 dark:text-foreground uppercase tracking-wide">Inventario</span>
+                  <span className="text-xs font-bold text-gray-700 dark:text-foreground">Inventario</span>
                 </div>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mb-2.5">
                   <div className="bg-gray-50 dark:bg-surface rounded-lg px-2.5 py-2">
@@ -1696,7 +1696,7 @@ ${o.notes ? `<hr><p style="font-size:11px">${o.notes}</p>` : ""}
               <div className="bg-white dark:bg-card border border-gray-100 dark:border-card-border rounded-xl p-3 shrink-0">
                 <div className="flex items-center gap-1.5 mb-2 pb-1.5 border-b border-gray-100 dark:border-card-border">
                   <Users className="h-3.5 w-3.5 text-violet-500" />
-                  <span className="text-xs font-bold text-gray-700 dark:text-foreground uppercase tracking-wide">Clientes</span>
+                  <span className="text-xs font-bold text-gray-700 dark:text-foreground">Clientes</span>
                 </div>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mb-2.5">
                   <div className="bg-gray-50 dark:bg-surface rounded-lg px-2.5 py-2">
@@ -1741,7 +1741,7 @@ ${o.notes ? `<hr><p style="font-size:11px">${o.notes}</p>` : ""}
               <div className="bg-white dark:bg-card border border-gray-100 dark:border-card-border rounded-xl p-3 shrink-0">
                 <div className="flex items-center gap-1.5 mb-2 pb-1.5 border-b border-gray-100 dark:border-card-border">
                   <Truck className="h-3.5 w-3.5 text-emerald-500" />
-                  <span className="text-xs font-bold text-gray-700 dark:text-foreground uppercase tracking-wide">Compras</span>
+                  <span className="text-xs font-bold text-gray-700 dark:text-foreground">Compras</span>
                 </div>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mb-2.5">
                   <div className="bg-gray-50 dark:bg-surface rounded-lg px-2.5 py-2">
@@ -1823,7 +1823,7 @@ ${o.notes ? `<hr><p style="font-size:11px">${o.notes}</p>` : ""}
           value={dashSearch}
           onChange={e => { setDashSearch(e.target.value); if (section !== "ventas" && e.target.value) setSection("ventas"); }}
           placeholder="Buscar pedido, cliente…"
-          className="w-full pl-8 pr-8 py-2 text-xs rounded-xl border border-gray-200 dark:border-card-border bg-gray-50 dark:bg-accent/50 text-gray-700 dark:text-foreground placeholder-gray-300 focus:outline-none focus:border-primary/40 focus:bg-white dark:focus:bg-card transition-colors"
+          className="w-full pl-8 pr-8 py-2 text-xs rounded-lg border border-gray-200 dark:border-card-border bg-gray-50 dark:bg-accent/50 text-gray-700 dark:text-foreground placeholder-gray-300 focus:outline-none focus:border-primary/40 focus:bg-white dark:focus:bg-card transition-colors"
         />
         {dashSearch && (
           <button onClick={() => setDashSearch("")} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 font-bold text-sm">×</button>
@@ -1869,7 +1869,7 @@ ${o.notes ? `<hr><p style="font-size:11px">${o.notes}</p>` : ""}
         const agotadosCount = products.filter(p => p.stock != null && p.stock <= 0).length;
         const stockBajoCount = products.filter(p => p.stock != null && p.stockMin != null && p.stock > 0 && p.stock <= p.stockMin).length;
         return (
-          <div className="mb-4 rounded-2xl border border-emerald-200 dark:border-emerald-800/40 bg-linear-to-r from-emerald-50 to-teal-50 dark:from-emerald-950/25 dark:to-teal-950/25 px-5 py-4">
+          <div className="mb-4 rounded-xl border border-emerald-200 dark:border-emerald-800/40 bg-linear-to-r from-emerald-50 to-teal-50 dark:from-emerald-950/25 dark:to-teal-950/25 px-5 py-4">
             <div className="flex items-center justify-between mb-3">
               <div className="flex flex-wrap items-center gap-2">
                 <Sun className="h-4.5 w-4.5 text-emerald-600 dark:text-emerald-400" />
@@ -2003,7 +2003,7 @@ ${o.notes ? `<hr><p style="font-size:11px">${o.notes}</p>` : ""}
         <div className={cn("space-y-4", expandAll && "col-span-full")}>
           {/* ── Monthly Goals Card ── */}
           {period === "mes" && (
-            <div className="bg-linear-to-br from-indigo-50 to-purple-50 dark:from-indigo-950/30 dark:to-purple-950/30 rounded-2xl border border-indigo-100 dark:border-indigo-900/30 p-3 sm:p-5">
+            <div className="bg-linear-to-br from-indigo-50 to-purple-50 dark:from-indigo-950/30 dark:to-purple-950/30 rounded-xl border border-indigo-100 dark:border-indigo-900/30 p-3 sm:p-5">
               <div className="flex items-center justify-between mb-4">
                 <div className="flex flex-wrap items-center gap-2.5">
                   <div className="w-10 h-10 rounded-xl bg-linear-to-br from-indigo-500 to-purple-500 flex items-center justify-center">
@@ -2028,7 +2028,7 @@ ${o.notes ? `<hr><p style="font-size:11px">${o.notes}</p>` : ""}
                       setTempGoals(monthlyGoals);
                       setEditingMonthlyGoals(true);
                     }}
-                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold text-white bg-linear-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 transition-colors shadow-sm"
+                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold text-white bg-linear-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 transition-colors "
                   >
                     <Edit3 className="h-3.5 w-3.5" /> Editar metas
                   </button>
@@ -2132,7 +2132,7 @@ ${o.notes ? `<hr><p style="font-size:11px">${o.notes}</p>` : ""}
           {/* Edit Goals Modal */}
           {editingMonthlyGoals && (
             <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4" onClick={() => setEditingMonthlyGoals(false)}>
-              <div className="bg-white dark:bg-card rounded-2xl shadow-2xl w-full max-w-lg" onClick={e => e.stopPropagation()}>
+              <div className="bg-white dark:bg-card rounded-xl w-full max-w-lg" onClick={e => e.stopPropagation()}>
                 <div className="flex items-center justify-between px-3 sm:px-6 py-4 border-b border-gray-100 dark:border-card-border">
                   <div className="flex flex-wrap items-center gap-2.5">
                     <div className="w-9 h-9 rounded-xl bg-linear-to-br from-indigo-500 to-purple-500 flex items-center justify-center">
@@ -2207,8 +2207,8 @@ ${o.notes ? `<hr><p style="font-size:11px">${o.notes}</p>` : ""}
                   </div>
                 </div>
                 <div className="flex flex-wrap justify-end gap-3 px-3 sm:px-6 py-4 border-t border-gray-100 dark:border-card-border">
-                  <button onClick={() => setEditingMonthlyGoals(false)} className="px-2 sm:px-4 py-1.5 sm:py-2.5 rounded-xl text-sm font-semibold text-gray-600 dark:text-muted hover:bg-gray-100 dark:hover:bg-accent transition-colors">Cancelar</button>
-                  <button onClick={saveMonthlyGoals} className="px-2 sm:px-4 py-1.5 sm:py-2.5 rounded-xl text-sm font-bold text-white bg-linear-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 transition-colors shadow-sm">Guardar metas</button>
+                  <button onClick={() => setEditingMonthlyGoals(false)} className="px-2 sm:px-4 py-1.5 sm:py-2.5 rounded-lg text-sm font-semibold text-gray-600 dark:text-muted hover:bg-gray-100 dark:hover:bg-accent transition-colors">Cancelar</button>
+                  <button onClick={saveMonthlyGoals} className="px-2 sm:px-4 py-1.5 sm:py-2.5 rounded-lg text-sm font-bold text-white bg-linear-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 transition-colors ">Guardar metas</button>
                 </div>
               </div>
             </div>
@@ -2217,7 +2217,7 @@ ${o.notes ? `<hr><p style="font-size:11px">${o.notes}</p>` : ""}
           {/* Goal History Modal */}
           {showGoalHistory && (
             <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4" onClick={() => setShowGoalHistory(false)}>
-              <div className="bg-white dark:bg-card rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] flex flex-col" onClick={e => e.stopPropagation()}>
+              <div className="bg-white dark:bg-card rounded-xl w-full max-w-2xl max-h-[90vh] flex flex-col" onClick={e => e.stopPropagation()}>
                 <div className="flex items-center justify-between px-3 sm:px-6 py-4 border-b border-gray-100 dark:border-card-border shrink-0">
                   <div className="flex flex-wrap items-center gap-2.5">
                     <div className="w-9 h-9 rounded-xl bg-linear-to-br from-indigo-500 to-purple-500 flex items-center justify-center">
@@ -2235,7 +2235,7 @@ ${o.notes ? `<hr><p style="font-size:11px">${o.notes}</p>` : ""}
                       return <div className="text-center py-8 text-gray-400 dark:text-muted text-sm">No hay histórico disponible aún</div>;
                     }
                     return (
-                      <div className="space-y-4">
+                      <div className="space-y-6">
                         {entries.map(([monthKey, data]) => {
                           const entry = data as { goals: Record<string, number>; savedAt: string; actual?: Record<string, number> };
                           const date = new Date(monthKey + "-01");
@@ -2309,7 +2309,7 @@ ${o.notes ? `<hr><p style="font-size:11px">${o.notes}</p>` : ""}
           )}
 
           {/* Sprint 3: Morning Briefing Card */}
-          <div className="bg-linear-to-br from-gray-900 to-gray-800 dark:from-gray-800 dark:to-gray-900 rounded-xl p-4 text-white">
+          <div className="bg-linear-to-br from-gray-900 to-gray-800 dark:from-gray-800 dark:to-gray-900 rounded-lg p-4 text-white">
             <div className="flex items-center justify-between mb-3">
               <div className="flex flex-wrap items-center gap-2">
                 <div className="w-8 h-8 rounded-lg bg-white/10 flex items-center justify-center">
@@ -2331,7 +2331,7 @@ ${o.notes ? `<hr><p style="font-size:11px">${o.notes}</p>` : ""}
             {/* Yesterday summary */}
             <div className="flex flex-wrap items-center gap-3 mb-3 px-3 py-2 rounded-lg bg-white/5">
               <div className="flex-1">
-                <span className="text-[10px] text-gray-400 uppercase tracking-wider">Ayer</span>
+                <span className="text-[10px] text-gray-400">Ayer</span>
                 <div className="flex flex-wrap items-center gap-3 mt-0.5">
                   <span className="text-sm font-bold">{fmt(st.yesterdayRevenue)}</span>
                   <span className="text-xs text-gray-400">{st.yesterdayTickets} ticket{st.yesterdayTickets !== 1 ? "s" : ""}</span>
@@ -2349,7 +2349,7 @@ ${o.notes ? `<hr><p style="font-size:11px">${o.notes}</p>` : ""}
             {/* Today's priorities */}
             {st.briefingPriorities.length > 0 && (
               <div>
-                <div className="text-[10px] text-gray-400 uppercase tracking-wider mb-1.5">Prioridades de hoy</div>
+                <div className="text-[10px] text-gray-400 mb-1.5">Prioridades de hoy</div>
                 <div className="space-y-1">
                   {st.briefingPriorities.map((p, i) => (
                     <div key={i} className="text-xs text-gray-200 py-1 px-2 rounded bg-white/5">
@@ -2502,7 +2502,7 @@ ${o.notes ? `<hr><p style="font-size:11px">${o.notes}</p>` : ""}
                 </div>
               );
             })() : (
-              <button onClick={() => setEditingGoal(true)} className="w-full py-3 rounded-xl border-2 border-dashed border-gray-200 dark:border-zinc-700 text-gray-400 text-xs font-medium hover:border-primary hover:text-primary transition-colors">
+              <button onClick={() => setEditingGoal(true)} className="w-full py-3 rounded-lg border-2 border-dashed border-gray-200 dark:border-zinc-700 text-gray-400 text-xs font-medium hover:border-primary hover:text-primary transition-colors">
                 + Definir meta de ventas diaria
               </button>
             )}
@@ -2701,7 +2701,7 @@ ${o.notes ? `<hr><p style="font-size:11px">${o.notes}</p>` : ""}
           {/* A/B Test Modal */}
           {showABTestModal && (
             <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4" onClick={() => setShowABTestModal(false)}>
-              <div className="bg-white dark:bg-card rounded-2xl shadow-2xl w-full max-w-2xl" onClick={e => e.stopPropagation()}>
+              <div className="bg-white dark:bg-card rounded-xl w-full max-w-2xl" onClick={e => e.stopPropagation()}>
                 <div className="flex items-center justify-between px-3 sm:px-6 py-4 border-b border-gray-100 dark:border-card-border">
                   <div className="flex flex-wrap items-center gap-2.5">
                     <div className="w-9 h-9 rounded-xl bg-linear-to-br from-violet-500 to-purple-500 flex items-center justify-center">
@@ -2764,7 +2764,7 @@ ${o.notes ? `<hr><p style="font-size:11px">${o.notes}</p>` : ""}
                   </div>
                 </div>
                 <div className="flex flex-wrap justify-end gap-3 px-3 sm:px-6 py-4 border-t border-gray-100 dark:border-card-border">
-                  <button onClick={() => setShowABTestModal(false)} className="px-2 sm:px-4 py-1.5 sm:py-2.5 rounded-xl text-sm font-semibold text-gray-600 dark:text-muted hover:bg-gray-100 dark:hover:bg-accent transition-colors">Cancelar</button>
+                  <button onClick={() => setShowABTestModal(false)} className="px-2 sm:px-4 py-1.5 sm:py-2.5 rounded-lg text-sm font-semibold text-gray-600 dark:text-muted hover:bg-gray-100 dark:hover:bg-accent transition-colors">Cancelar</button>
                   <button onClick={() => {
                     const newTest: ABTest = {
                       id: Date.now().toString(),
@@ -2784,7 +2784,7 @@ ${o.notes ? `<hr><p style="font-size:11px">${o.notes}</p>` : ""}
                     localStorage.setItem("buleje-ab-tests", JSON.stringify(updated));
                     setShowABTestModal(false);
                     setAbTestForm({ name: "", hypothesis: "", variantA: "Control", variantB: "Variant B", metric: "conversion", startDate: "", endDate: "" });
-                  }} className="px-2 sm:px-4 py-1.5 sm:py-2.5 rounded-xl text-sm font-bold text-white bg-linear-to-r from-violet-600 to-purple-600 hover:from-violet-700 hover:to-purple-700 transition-colors shadow-sm">Crear test</button>
+                  }} className="px-2 sm:px-4 py-1.5 sm:py-2.5 rounded-lg text-sm font-bold text-white bg-linear-to-r from-violet-600 to-purple-600 hover:from-violet-700 hover:to-purple-700 transition-colors ">Crear test</button>
                 </div>
               </div>
             </div>

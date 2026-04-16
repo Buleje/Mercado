@@ -122,7 +122,7 @@ export default function ChangelogModule() {
           href="/about"
           target="_blank"
           rel="noopener noreferrer"
-          className="inline-flex items-center gap-1.5 rounded-xl px-2 sm:px-4 py-1.5 sm:py-2 text-sm font-semibold bg-primary/8 text-primary hover:bg-primary/15 transition-colors border border-primary/20"
+          className="inline-flex items-center gap-1.5 rounded-lg px-2 sm:px-4 py-1.5 sm:py-2 text-sm font-semibold bg-primary/8 text-primary hover:bg-primary/15 transition-colors border border-primary/20"
         >
           <ExternalLink className="h-3.5 w-3.5" />
           Ver página /about
@@ -134,7 +134,7 @@ export default function ChangelogModule() {
         {stats.map((s) => (
           <div
             key={s.label}
-            className="rounded-2xl bg-white dark:bg-card border border-gray-200 dark:border-card-border p-4 flex flex-wrap items-center gap-3"
+            className="rounded-xl bg-white dark:bg-card border border-gray-200 dark:border-card-border p-4 flex flex-wrap items-center gap-3"
           >
             <s.icon className={`h-5 w-5 shrink-0 ${s.color}`} />
             <div>
@@ -150,7 +150,7 @@ export default function ChangelogModule() {
         {RELEASES.map((release) => (
           <div
             key={release.version}
-            className={`rounded-2xl border ${
+            className={`rounded-xl border ${
               release.status === "current"
                 ? "border-indigo-300 dark:border-indigo-700 bg-indigo-50/60 dark:bg-indigo-950/20"
                 : "border-gray-200 dark:border-card-border bg-white dark:bg-card"

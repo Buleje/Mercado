@@ -342,7 +342,7 @@ export default function InicioDashboard({ dateRange }: { dateRange: DateRange })
       <div className="flex flex-col items-center justify-center gap-4 py-20">
         <AlertTriangle className="h-10 w-10 text-amber-500" />
         <p className="text-sm font-medium text-gray-700 dark:text-gray-300">{error}</p>
-        <button onClick={() => void load()} className="px-4 py-2 rounded-xl bg-[var(--brand-primary)] text-white text-sm font-bold hover:opacity-90 transition">
+        <button onClick={() => void load()} className="px-4 py-2 rounded-lg bg-[var(--brand-primary)] text-white text-sm font-bold hover:opacity-90 transition">
           <RefreshCw className="h-4 w-4 inline mr-2" />Reintentar
         </button>
       </div>
@@ -404,9 +404,9 @@ export default function InicioDashboard({ dateRange }: { dateRange: DateRange })
       </div>
 
       {/* ── Margen bar ── */}
-      <div className="bg-white dark:bg-card border border-gray-100 dark:border-card-border rounded-2xl p-4 shadow-sm">
+      <div className="bg-white dark:bg-card border border-gray-100 dark:border-card-border rounded-xl p-4 ">
         <div className="flex items-center justify-between mb-2">
-          <span className="text-xs font-semibold text-gray-500 dark:text-muted uppercase tracking-wide">Margen bruto {periodLabel}</span>
+          <span className="text-xs font-semibold text-gray-500 dark:text-muted">Margen bruto {periodLabel}</span>
           <span className={cn(
             "text-sm font-extrabold",
             data.margenHoy >= 30 ? "text-emerald-600" : data.margenHoy >= 15 ? "text-amber-600" : "text-red-600"
@@ -460,7 +460,7 @@ function KPICard({
 }) {
   const c = COLOR_MAP[color];
   return (
-    <div className="bg-white dark:bg-card border border-gray-100 dark:border-card-border rounded-2xl p-4 shadow-sm flex flex-col gap-2 relative overflow-hidden group hover:shadow-md transition-shadow">
+    <div className="bg-white dark:bg-card border border-gray-100 dark:border-card-border rounded-xl p-4  flex flex-col gap-2 relative overflow-hidden group hover:shadow-sm transition-shadow">
       {/* Sparkline background (decorative) */}
       {spark && spark.length > 1 && (
         <svg className="absolute bottom-0 left-0 right-0 h-10 opacity-10 pointer-events-none" viewBox={`0 0 ${spark.length - 1} 1`} preserveAspectRatio="none" aria-hidden="true">
@@ -525,18 +525,18 @@ function DashboardSkeleton() {
     <div className="space-y-5 animate-pulse">
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
         {Array.from({ length: 6 }).map((_, i) => (
-          <div key={i} className="bg-gray-100 dark:bg-gray-800 rounded-2xl h-32" />
+          <div key={i} className="bg-gray-100 dark:bg-gray-800 rounded-xl h-32" />
         ))}
       </div>
-      <div className="bg-gray-100 dark:bg-gray-800 rounded-2xl h-12" />
+      <div className="bg-gray-100 dark:bg-gray-800 rounded-xl h-12" />
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
-        <div className="bg-gray-100 dark:bg-gray-800 rounded-2xl h-72" />
-        <div className="bg-gray-100 dark:bg-gray-800 rounded-2xl h-72" />
+        <div className="bg-gray-100 dark:bg-gray-800 rounded-xl h-72" />
+        <div className="bg-gray-100 dark:bg-gray-800 rounded-xl h-72" />
       </div>
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
-        <div className="bg-gray-100 dark:bg-gray-800 rounded-2xl h-64" />
-        <div className="bg-gray-100 dark:bg-gray-800 rounded-2xl h-64" />
-        <div className="bg-gray-100 dark:bg-gray-800 rounded-2xl h-64" />
+        <div className="bg-gray-100 dark:bg-gray-800 rounded-xl h-64" />
+        <div className="bg-gray-100 dark:bg-gray-800 rounded-xl h-64" />
+        <div className="bg-gray-100 dark:bg-gray-800 rounded-xl h-64" />
       </div>
     </div>
   );

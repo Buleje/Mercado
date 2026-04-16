@@ -135,11 +135,11 @@ export default function SmartReorderCard({ className }: Props) {
 
   return (
     <div className={cn(
-      "bg-white dark:bg-card rounded-2xl border border-gray-200 dark:border-card-border p-5",
+      "bg-white dark:bg-card rounded-xl border border-gray-200 dark:border-card-border p-5",
       className,
     )}>
       <div className="flex items-center justify-between mb-4">
-        <h3 className="text-xs font-bold text-gray-500 dark:text-muted uppercase tracking-wide">
+        <h3 className="text-xs font-bold text-gray-500 dark:text-muted">
           Sugerencias de compra inteligente
         </h3>
         {!loading && suggestions.length > 0 && (
@@ -181,7 +181,7 @@ export default function SmartReorderCard({ className }: Props) {
       {!loading && !error && visibleSuggestions.length > 0 && (
         <div className="space-y-3">
           {/* Header */}
-          <div className="hidden sm:grid grid-cols-[1fr_auto_auto_auto_auto_auto] gap-2 text-[10px] font-bold text-gray-400 dark:text-muted uppercase tracking-wide px-1">
+          <div className="hidden sm:grid grid-cols-[1fr_auto_auto_auto_auto_auto] gap-2 text-[10px] font-bold text-gray-400 dark:text-muted px-1">
             <span>Producto</span>
             <span className="text-right">Stock</span>
             <span className="text-right">Dias</span>

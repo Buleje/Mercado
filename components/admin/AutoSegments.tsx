@@ -246,7 +246,7 @@ export default function AutoSegments() {
                       <span className={cn("font-semibold", seg.color)}>
                         {seg.label}
                       </span>
-                      <span className="rounded-full bg-white px-2 py-0.5 text-xs font-medium text-gray-600 shadow-sm dark:bg-gray-900 dark:text-gray-300">
+                      <span className="rounded-full bg-white px-2 py-0.5 text-xs font-medium text-gray-600  dark:bg-gray-900 dark:text-gray-300">
                         {seg.customers.length} clientes
                       </span>
                       <span className="text-xs text-gray-400">{pct}%</span>
@@ -280,7 +280,7 @@ export default function AutoSegments() {
                         {seg.customers.map((c) => (
                           <div
                             key={c.phone}
-                            className="flex items-center justify-between rounded-lg bg-white px-3 py-2 shadow-sm dark:bg-gray-900"
+                            className="flex items-center justify-between rounded-lg bg-white px-3 py-2  dark:bg-gray-900"
                           >
                             <div className="min-w-0">
                               <p className="truncate text-sm font-medium text-gray-800 dark:text-gray-200">

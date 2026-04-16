@@ -398,7 +398,7 @@ export default function WhatsAppInbox() {
                       >
                         <div
                           className={cn(
-                            "max-w-[75%] rounded-2xl px-4 py-2 text-sm shadow-sm",
+                            "max-w-[75%] rounded-xl px-4 py-2 text-sm ",
                             isAdmin
                               ? "rounded-br-sm bg-[#00B4A6] text-white"
                               : "rounded-bl-sm bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-100",
@@ -434,13 +434,13 @@ export default function WhatsAppInbox() {
                   placeholder="Escribe un mensaje… (Enter para enviar)"
                   rows={1}
                   maxLength={500}
-                  className="min-h-[44px] flex-1 resize-none rounded-xl border border-gray-200 bg-gray-50 px-4 py-2.5 text-sm text-gray-800 outline-none transition focus:border-[#00B4A6] focus:ring-1 focus:ring-[#00B4A6] dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100 dark:placeholder:text-gray-500"
+                  className="min-h-[44px] flex-1 resize-none rounded-lg border border-gray-200 bg-gray-50 px-4 py-2.5 text-sm text-gray-800 outline-none transition focus:border-[#00B4A6] focus:ring-1 focus:ring-[#00B4A6] dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100 dark:placeholder:text-gray-500"
                   style={{ maxHeight: "120px", overflowY: "auto" }}
                 />
                 <button
                   onClick={sendMessage}
                   disabled={!inputMsg.trim() || sending}
-                  className="flex min-h-[44px] min-w-[44px] items-center justify-center rounded-xl bg-[#00B4A6] text-white transition hover:bg-[#009690] disabled:cursor-not-allowed disabled:opacity-50"
+                  className="flex min-h-[44px] min-w-[44px] items-center justify-center rounded-lg bg-[#00B4A6] text-white transition hover:bg-[#009690] disabled:cursor-not-allowed disabled:opacity-50"
                   aria-label="Enviar mensaje"
                 >
                   {sending ? (

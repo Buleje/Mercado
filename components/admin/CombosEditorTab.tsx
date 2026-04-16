@@ -123,14 +123,14 @@ export default function CombosEditorTab() {
           </p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
-          <button onClick={addCombo} className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold text-gray-600 dark:text-foreground bg-gray-100 dark:bg-accent hover:bg-gray-200 transition-colors">
+          <button onClick={addCombo} className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-bold text-gray-600 dark:text-foreground bg-gray-100 dark:bg-accent hover:bg-gray-200 transition-colors">
             <Plus className="h-3.5 w-3.5" /> Nuevo combo
           </button>
           <button
             onClick={handleSave}
             disabled={!hasChanges || saving}
             className={cn(
-              "inline-flex items-center gap-1.5 px-2 sm:px-4 py-1.5 sm:py-2 rounded-xl text-xs font-bold text-white shadow-md transition-all",
+              "inline-flex items-center gap-1.5 px-2 sm:px-4 py-1.5 sm:py-2 rounded-lg text-xs font-bold text-white transition-all",
               saved ? "bg-emerald-500" : "bg-primary hover:bg-primary-dark disabled:opacity-40 disabled:cursor-not-allowed"
             )}
           >
@@ -143,7 +143,7 @@ export default function CombosEditorTab() {
       {/* Combo list */}
       <div className="space-y-2">
         {combos.map((combo) => (
-          <div key={combo.id} className={cn("bg-white dark:bg-card border rounded-2xl overflow-hidden shadow-sm transition-all", combo.enabled ? "border-gray-200 dark:border-card-border" : "border-gray-100 dark:border-card-border/50 opacity-60")}>
+          <div key={combo.id} className={cn("bg-white dark:bg-card border rounded-xl overflow-hidden  transition-all", combo.enabled ? "border-gray-200 dark:border-card-border" : "border-gray-100 dark:border-card-border/50 opacity-60")}>
             <button onClick={() => setExpanded(expanded === combo.id ? null : combo.id)} className="w-full flex flex-wrap items-center gap-3 px-5 py-4 text-left">
               <span className="text-xl sm:text-2xl">{combo.emoji}</span>
               <div className="flex-1 min-w-0">
@@ -161,25 +161,25 @@ export default function CombosEditorTab() {
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <div>
                     <label className="block text-xs font-semibold text-gray-600 dark:text-muted mb-1">Nombre</label>
-                    <input value={combo.name} onChange={(e) => updateCombo(combo.id, { name: e.target.value })} className="w-full rounded-xl border border-gray-200 dark:border-card-border bg-gray-50 dark:bg-background px-3 py-2 text-sm" />
+                    <input value={combo.name} onChange={(e) => updateCombo(combo.id, { name: e.target.value })} className="w-full rounded-lg border border-gray-200 dark:border-card-border bg-gray-50 dark:bg-background px-3 py-2 text-sm" />
                   </div>
                   <div>
                     <label className="block text-xs font-semibold text-gray-600 dark:text-muted mb-1">Emoji</label>
-                    <input value={combo.emoji} onChange={(e) => updateCombo(combo.id, { emoji: e.target.value })} className="w-full rounded-xl border border-gray-200 dark:border-card-border bg-gray-50 dark:bg-background px-3 py-2 text-sm" maxLength={4} />
+                    <input value={combo.emoji} onChange={(e) => updateCombo(combo.id, { emoji: e.target.value })} className="w-full rounded-lg border border-gray-200 dark:border-card-border bg-gray-50 dark:bg-background px-3 py-2 text-sm" maxLength={4} />
                   </div>
                 </div>
                 <div>
                   <label className="block text-xs font-semibold text-gray-600 dark:text-muted mb-1">Descripción</label>
-                  <textarea value={combo.description} onChange={(e) => updateCombo(combo.id, { description: e.target.value })} rows={2} className="w-full rounded-xl border border-gray-200 dark:border-card-border bg-gray-50 dark:bg-background px-3 py-2 text-sm resize-none" />
+                  <textarea value={combo.description} onChange={(e) => updateCombo(combo.id, { description: e.target.value })} rows={2} className="w-full rounded-lg border border-gray-200 dark:border-card-border bg-gray-50 dark:bg-background px-3 py-2 text-sm resize-none" />
                 </div>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <div>
                     <label className="block text-xs font-semibold text-gray-600 dark:text-muted mb-1">Productos por combo</label>
-                    <input type="number" min={2} max={6} value={combo.size} onChange={(e) => updateCombo(combo.id, { size: parseInt(e.target.value) || 3 })} className="w-full rounded-xl border border-gray-200 dark:border-card-border bg-gray-50 dark:bg-background px-3 py-2 text-sm" />
+                    <input type="number" min={2} max={6} value={combo.size} onChange={(e) => updateCombo(combo.id, { size: parseInt(e.target.value) || 3 })} className="w-full rounded-lg border border-gray-200 dark:border-card-border bg-gray-50 dark:bg-background px-3 py-2 text-sm" />
                   </div>
                   <div>
                     <label className="block text-xs font-semibold text-gray-600 dark:text-muted mb-1 flex items-center gap-1"><Percent className="h-3 w-3" /> Descuento (%)</label>
-                    <input type="number" min={1} max={50} value={combo.discount} onChange={(e) => updateCombo(combo.id, { discount: parseInt(e.target.value) || 10 })} className="w-full rounded-xl border border-gray-200 dark:border-card-border bg-gray-50 dark:bg-background px-3 py-2 text-sm" />
+                    <input type="number" min={1} max={50} value={combo.discount} onChange={(e) => updateCombo(combo.id, { discount: parseInt(e.target.value) || 10 })} className="w-full rounded-lg border border-gray-200 dark:border-card-border bg-gray-50 dark:bg-background px-3 py-2 text-sm" />
                   </div>
                 </div>
                 <div>

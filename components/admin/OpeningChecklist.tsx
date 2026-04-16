@@ -86,7 +86,7 @@ export function OpeningChecklist({ className }: { className?: string }) {
       className={cn(
         "rounded-xl border bg-white dark:bg-gray-900",
         "border-gray-200 dark:border-gray-700",
-        "p-4 shadow-sm",
+        "p-4 ",
         className
       )}
       role="region"

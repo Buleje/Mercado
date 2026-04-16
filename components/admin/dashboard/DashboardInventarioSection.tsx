@@ -36,7 +36,7 @@ export default function DashboardInventarioSection({ st, expandAll, products }: 
   const [showCrossSell, setShowCrossSell] = useState(false);
   const [selectedProductForCrossSell, setSelectedProductForCrossSell] = useState<string | null>(null);
   return (
-        <div className={cn("space-y-4", expandAll && "bg-white dark:bg-card rounded-2xl border border-gray-100 dark:border-card-border p-4")}>
+        <div className={cn("space-y-4", expandAll && "bg-white dark:bg-card rounded-xl border border-gray-100 dark:border-card-border p-4")}>
           {expandAll && (
             <div className="flex flex-wrap items-center gap-2 mb-4 pb-3 border-b border-gray-100 dark:border-card-border">
               <div className="w-7 h-7 rounded-lg bg-amber-50 dark:bg-amber-900/30 flex items-center justify-center">
@@ -160,7 +160,7 @@ export default function DashboardInventarioSection({ st, expandAll, products }: 
                           </button>
                           {isExpanded && (
                             <div className="border-t border-gray-200 dark:border-card-border bg-gray-50 dark:bg-surface p-3 space-y-2">
-                              <div className="text-[10px] font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wider mb-2">Frecuentemente comprado junto con:</div>
+                              <div className="text-[10px] font-semibold text-gray-600 dark:text-gray-400 mb-2">Frecuentemente comprado junto con:</div>
                               {(recommendations as any[]).map((rec: any) => {
                                 const relatedProduct = (products ?? []).find((p: any) => p.id === rec.productId);
                                 if (!relatedProduct) return null;
@@ -219,7 +219,7 @@ export default function DashboardInventarioSection({ st, expandAll, products }: 
             {st.criticalStock.length === 0 && st.needsReorderSoon.length === 0 ? (
               <div className="py-6 text-center text-xs text-emerald-500 font-medium">Stock proyectado saludable</div>
             ) : (
-              <div className="space-y-4">
+              <div className="space-y-6">
                 {/* Critical products (< 7 days) */}
                 {st.criticalStock.length > 0 && (
                   <div>
@@ -342,7 +342,7 @@ export default function DashboardInventarioSection({ st, expandAll, products }: 
                         msg += `----------------\nTotal: ${allReorder.length} productos, ${totalItems} unidades\n\nPor favor confirmar disponibilidad y costo.`;
                         window.open(`https://wa.me/?text=${encodeURIComponent(msg)}`, "_blank", "noopener,noreferrer");
                       }}
-                      className="w-full flex flex-wrap items-center justify-center gap-2 py-3 rounded-xl bg-linear-to-r from-emerald-500 to-emerald-600 hover:from-emerald-600 hover:to-emerald-700 text-white font-bold text-sm transition-all shadow-sm hover:shadow-md"
+                      className="w-full flex flex-wrap items-center justify-center gap-2 py-3 rounded-lg bg-linear-to-r from-emerald-500 to-emerald-600 hover:from-emerald-600 hover:to-emerald-700 text-white font-bold text-sm transition-all  hover:shadow-sm"
                     >
                       <Truck className="h-4 w-4" />
                       Generar Orden Masiva ({st.criticalStock.length + st.needsReorderSoon.length} productos)

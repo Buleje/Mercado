@@ -60,7 +60,7 @@ export default function AdminUserDropdown({ userName, userRole, onNavigate, onLo
         aria-expanded={open}
         aria-haspopup="true"
       >
-        <div className="h-8 w-8 rounded-full bg-primary/90 flex items-center justify-center shrink-0 shadow-sm">
+        <div className="h-8 w-8 rounded-full bg-primary/90 flex items-center justify-center shrink-0 ">
           <span className="text-white text-xs font-bold">{initials}</span>
         </div>
         <ChevronDown className={cn(
@@ -77,7 +77,7 @@ export default function AdminUserDropdown({ userName, userRole, onNavigate, onLo
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: -4, scale: 0.97 }}
             transition={{ duration: 0.15 }}
-            className="absolute right-0 top-full mt-2 w-64 bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl shadow-2xl overflow-hidden z-100"
+            className="absolute right-0 top-full mt-2 w-64 bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl overflow-hidden z-100"
           >
             {/* User info header */}
             <div className="px-4 py-3.5 border-b border-gray-100 dark:border-white/5 bg-gray-50/50 dark:bg-surface/50">
@@ -100,7 +100,7 @@ export default function AdminUserDropdown({ userName, userRole, onNavigate, onLo
                   <button
                     key={item.id}
                     onClick={() => { onNavigate(item.id); setOpen(false); }}
-                    className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-white/5 transition-colors"
+                    className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-white/5 transition-colors"
                   >
                     <Icon className={cn("h-4 w-4 shrink-0", item.color)} />
                     <span>{item.label}</span>
@@ -113,7 +113,7 @@ export default function AdminUserDropdown({ userName, userRole, onNavigate, onLo
             <div className="border-t border-gray-100 dark:border-white/5 py-1.5 px-1.5">
               <button
                 onClick={() => { onLogout(); setOpen(false); }}
-                className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium text-red-500 hover:bg-red-50 dark:hover:bg-red-950/20 transition-colors"
+                className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-red-500 hover:bg-red-50 dark:hover:bg-red-950/20 transition-colors"
               >
                 <LogOut className="h-4 w-4 shrink-0" />
                 <span>Cerrar sesión</span>

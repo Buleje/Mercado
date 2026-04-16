@@ -138,7 +138,7 @@ export default function ModuleLayout({
               className={cn(
                 "px-4 py-2 text-sm font-medium rounded-lg transition-all",
                 activeTab === tab.id
-                  ? "bg-white dark:bg-zinc-700 text-gray-900 dark:text-white shadow-sm"
+                  ? "bg-white dark:bg-zinc-700 text-gray-900 dark:text-white "
                   : "text-gray-500 dark:text-zinc-400 hover:text-gray-700",
               )}
             >

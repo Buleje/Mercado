@@ -428,7 +428,7 @@ export default function PromotionsTab() {
     <div className="space-y-3 sm:space-y-6">
       {/* ── Mejora 13: Resumen de rendimiento ────────────────────────────── */}
       {promos.length > 0 && (
-        <div className="bg-linear-to-br from-emerald-50 to-teal-50 dark:from-emerald-950/30 dark:to-teal-950/30 border border-emerald-200 dark:border-emerald-900/50 rounded-2xl p-3 sm:p-6">
+        <div className="bg-linear-to-br from-emerald-50 to-teal-50 dark:from-emerald-950/30 dark:to-teal-950/30 border border-emerald-200 dark:border-emerald-900/50 rounded-xl p-3 sm:p-6">
           <h3 className="font-extrabold text-gray-900 dark:text-foreground mb-3 flex items-center gap-2">
             <TrendingUp className="h-5 w-5 text-emerald-600" />
             Rendimiento de Promociones
@@ -468,7 +468,7 @@ export default function PromotionsTab() {
       )}
 
       {/* ── Campañas Programadas ───────────────────────────────────────────── */}
-      <div className="bg-linear-to-br from-indigo-50 to-purple-50 dark:from-indigo-950/30 dark:to-purple-950/30 border border-indigo-200 dark:border-indigo-900/50 rounded-2xl p-3 sm:p-6">
+      <div className="bg-linear-to-br from-indigo-50 to-purple-50 dark:from-indigo-950/30 dark:to-purple-950/30 border border-indigo-200 dark:border-indigo-900/50 rounded-xl p-3 sm:p-6">
         <div className="flex items-center justify-between mb-4">
           <div className="flex flex-wrap items-center gap-2">
             <div className="w-10 h-10 rounded-xl bg-linear-to-br from-indigo-500 to-purple-600 flex items-center justify-center">
@@ -481,7 +481,7 @@ export default function PromotionsTab() {
           </div>
           <button
             onClick={openCreateCampaign}
-            className="flex flex-wrap items-center gap-2 bg-linear-to-r from-indigo-600 to-purple-600 text-white px-2 sm:px-4 py-1.5 sm:py-2 rounded-xl text-sm font-bold hover:brightness-110 transition shadow-sm"
+            className="flex flex-wrap items-center gap-2 bg-linear-to-r from-indigo-600 to-purple-600 text-white px-2 sm:px-4 py-1.5 sm:py-2 rounded-lg text-sm font-bold hover:brightness-110 transition "
           >
             <Plus className="h-4 w-4" /> Nueva Campaña
           </button>
@@ -578,20 +578,20 @@ export default function PromotionsTab() {
         <div className="flex flex-wrap items-center gap-2">
           <button
             onClick={() => { setAiContext(""); setShowAiModal(true); requestAiSuggestions(); }}
-            className="inline-flex items-center gap-2 px-2 sm:px-4 py-1.5 sm:py-2 rounded-xl text-sm font-semibold text-white hover:brightness-110 transition-all shadow-sm"
+            className="inline-flex items-center gap-2 px-2 sm:px-4 py-1.5 sm:py-2 rounded-lg text-sm font-semibold text-white hover:brightness-110 transition-all "
             style={{ background: 'linear-gradient(to right, #8b5cf6, #9333ea)' }}
           >
             <MessageCircle className="h-4 w-4" /> Sugerencias IA
           </button>
           <button
             onClick={() => setShowTemplates(true)}
-            className="inline-flex items-center gap-2 px-2 sm:px-4 py-1.5 sm:py-2 rounded-xl text-sm font-semibold text-white bg-amber-500 hover:bg-amber-600 transition-colors shadow-sm"
+            className="inline-flex items-center gap-2 px-2 sm:px-4 py-1.5 sm:py-2 rounded-lg text-sm font-semibold text-white bg-amber-500 hover:bg-amber-600 transition-colors "
           >
             <Calendar className="h-4 w-4" /> Plantillas
           </button>
           <button
             onClick={openCreate}
-            className="inline-flex items-center gap-2 px-2 sm:px-4 py-1.5 sm:py-2 rounded-xl text-sm font-semibold text-white bg-primary hover:bg-primary-dark transition-colors shadow-sm"
+            className="inline-flex items-center gap-2 px-2 sm:px-4 py-1.5 sm:py-2 rounded-lg text-sm font-semibold text-white bg-primary hover:bg-primary-dark transition-colors "
           >
             <Plus className="h-4 w-4" /> Nueva
           </button>
@@ -601,13 +601,13 @@ export default function PromotionsTab() {
       {loading ? (
         <div className="h-40 flex items-center justify-center text-gray-400 dark:text-muted">Cargando…</div>
       ) : promos.length === 0 ? (
-        <div className="h-40 flex items-center justify-center text-gray-400 dark:text-muted bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl">
+        <div className="h-40 flex items-center justify-center text-gray-400 dark:text-muted bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl">
           No hay promociones. Crea una o pide sugerencias a la IA.
         </div>
       ) : (
         <div className="space-y-3">
           {promos.map(p => (
-            <div key={p.id} className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl shadow-sm overflow-hidden">
+            <div key={p.id} className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl  overflow-hidden">
               <div className="flex">
                 {/* Accent strip */}
                 <div className={cn("w-1.5 shrink-0",
@@ -694,7 +694,7 @@ export default function PromotionsTab() {
       {/* ── Create/Edit Modal ─────────────────────────────────────────────── */}
       {showForm && (
         <div className="fixed inset-0 flex items-end sm:items-center justify-center bg-black/50" style={{ zIndex: 100 }} onClick={() => setShowForm(false)}>
-          <div className="bg-white dark:bg-card rounded-t-2xl sm:rounded-2xl shadow-2xl w-full max-w-2xl max-h-[92vh] flex flex-col" onClick={e => e.stopPropagation()}>
+          <div className="bg-white dark:bg-card rounded-t-2xl sm:rounded-xl w-full max-w-2xl max-h-[92vh] flex flex-col" onClick={e => e.stopPropagation()}>
             <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100 dark:border-card-border shrink-0">
               <h3 className="font-extrabold text-gray-900 dark:text-foreground text-lg">{editingId ? "Editar promoción" : "Nueva promoción"}</h3>
               <button onClick={() => setShowForm(false)} className="p-1.5 rounded-lg text-gray-400 dark:text-muted hover:text-gray-700 dark:hover:text-foreground hover:bg-gray-100 dark:hover:bg-accent transition-colors">
@@ -704,32 +704,32 @@ export default function PromotionsTab() {
             <div className="overflow-y-auto flex-1 px-5 py-4 space-y-4">
               {/* Name */}
               <div>
-                <label className="text-xs font-bold text-gray-500 dark:text-muted uppercase tracking-wide">Nombre *</label>
+                <label className="text-xs font-bold text-gray-500 dark:text-muted">Nombre *</label>
                 <input type="text" value={form.name} onChange={e => setForm(f => ({ ...f, name: e.target.value }))}
                   className="w-full mt-1 px-3 py-2 text-sm rounded-xl border border-gray-200 dark:border-card-border outline-none focus:border-primary" placeholder="Ej: 2x1 en arroz" />
               </div>
               {/* Description */}
               <div>
-                <label className="text-xs font-bold text-gray-500 dark:text-muted uppercase tracking-wide">Descripción</label>
+                <label className="text-xs font-bold text-gray-500 dark:text-muted">Descripción</label>
                 <textarea value={form.description} onChange={e => setForm(f => ({ ...f, description: e.target.value }))} rows={2}
                   className="w-full mt-1 px-3 py-2 text-sm rounded-xl border border-gray-200 dark:border-card-border outline-none focus:border-primary resize-none" placeholder="Detalles de la promoción…" />
               </div>
               {/* Discount + Min purchase */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
-                  <label className="text-xs font-bold text-gray-500 dark:text-muted uppercase tracking-wide">Descuento %</label>
+                  <label className="text-xs font-bold text-gray-500 dark:text-muted">Descuento %</label>
                   <input type="number" min={0} max={100} value={form.discountPercent} onChange={e => setForm(f => ({ ...f, discountPercent: Number(e.target.value) }))}
                     className="w-full mt-1 px-3 py-2 text-sm rounded-xl border border-gray-200 dark:border-card-border outline-none focus:border-primary" />
                 </div>
                 <div>
-                  <label className="text-xs font-bold text-gray-500 dark:text-muted uppercase tracking-wide">Compra mín. (S/)</label>
+                  <label className="text-xs font-bold text-gray-500 dark:text-muted">Compra mín. (S/)</label>
                   <input type="number" min={0} step={0.01} value={form.minPurchase} onChange={e => setForm(f => ({ ...f, minPurchase: e.target.value }))}
                     className="w-full mt-1 px-3 py-2 text-sm rounded-xl border border-gray-200 dark:border-card-border outline-none focus:border-primary" placeholder="Opcional" />
                 </div>
               </div>
               {/* Image URL */}
               <div>
-                <label className="text-xs font-bold text-gray-500 dark:text-muted uppercase tracking-wide">URL de imagen</label>
+                <label className="text-xs font-bold text-gray-500 dark:text-muted">URL de imagen</label>
                 <input type="url" value={form.imageUrl} onChange={e => setForm(f => ({ ...f, imageUrl: e.target.value }))}
                   className="w-full mt-1 px-3 py-2 text-sm rounded-xl border border-gray-200 dark:border-card-border outline-none focus:border-primary" placeholder="https://..." />
                 {form.imageUrl && (
@@ -740,14 +740,14 @@ export default function PromotionsTab() {
               </div>
               {/* WhatsApp message */}
               <div>
-                <label className="text-xs font-bold text-gray-500 dark:text-muted uppercase tracking-wide">Mensaje WhatsApp</label>
+                <label className="text-xs font-bold text-gray-500 dark:text-muted">Mensaje WhatsApp</label>
                 <textarea value={form.message} onChange={e => setForm(f => ({ ...f, message: e.target.value }))} rows={3}
                   className="w-full mt-1 px-3 py-2 text-sm rounded-xl border border-gray-200 dark:border-card-border outline-none focus:border-primary resize-none"
                   placeholder="🎉 *Promoción especial*&#10;&#10;Aprovecha el descuento…" />
               </div>
               {/* Target type */}
               <div>
-                <label className="text-xs font-bold text-gray-500 dark:text-muted uppercase tracking-wide">Público objetivo</label>
+                <label className="text-xs font-bold text-gray-500 dark:text-muted">Público objetivo</label>
                 <div className="flex flex-wrap gap-2 mt-1">
                   {[
                     { v: "all", l: "Todos", icon: Users },
@@ -767,7 +767,7 @@ export default function PromotionsTab() {
               {/* Customer selection for group/individual */}
               {form.targetType !== "all" && (
                 <div className="space-y-2">
-                  <label className="text-xs font-bold text-gray-500 dark:text-muted uppercase tracking-wide">Seleccionar clientes</label>
+                  <label className="text-xs font-bold text-gray-500 dark:text-muted">Seleccionar clientes</label>
                   <div className="relative">
                     <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400 dark:text-muted pointer-events-none" />
                     <input type="text" placeholder="Buscar cliente…" value={customerSearch} onChange={e => setCustomerSearch(e.target.value)}
@@ -797,15 +797,15 @@ export default function PromotionsTab() {
               )}
               {/* Expiry */}
               <div>
-                <label className="text-xs font-bold text-gray-500 dark:text-muted uppercase tracking-wide">Fecha de expiración</label>
+                <label className="text-xs font-bold text-gray-500 dark:text-muted">Fecha de expiración</label>
                 <input type="date" value={form.expiresAt} onChange={e => setForm(f => ({ ...f, expiresAt: e.target.value }))}
                   className="w-full mt-1 px-3 py-2 text-sm rounded-xl border border-gray-200 dark:border-card-border outline-none focus:border-primary text-gray-600 dark:text-muted" />
               </div>
             </div>
             <div className="px-5 py-4 border-t border-gray-100 dark:border-card-border flex flex-wrap gap-3 shrink-0">
-              <button onClick={() => setShowForm(false)} className="flex-1 py-2.5 rounded-xl text-sm font-semibold text-gray-700 dark:text-foreground bg-gray-100 dark:bg-accent hover:bg-gray-200 transition-colors">Cancelar</button>
+              <button onClick={() => setShowForm(false)} className="flex-1 py-2.5 rounded-lg text-sm font-semibold text-gray-700 dark:text-foreground bg-gray-100 dark:bg-accent hover:bg-gray-200 transition-colors">Cancelar</button>
               <button onClick={savePromo} disabled={saving || !form.name.trim()}
-                className="flex-1 py-2.5 rounded-xl text-sm font-semibold text-white bg-primary hover:bg-primary-dark transition-colors disabled:opacity-50">
+                className="flex-1 py-2.5 rounded-lg text-sm font-semibold text-white bg-primary hover:bg-primary-dark transition-colors disabled:opacity-50">
                 {saving ? "Guardando…" : editingId ? "Guardar cambios" : "Crear promoción"}
               </button>
             </div>
@@ -816,7 +816,7 @@ export default function PromotionsTab() {
       {/* ── Promo Detail Modal ────────────────────────────────────────────── */}
       {detailPromo && (
         <div className="fixed inset-0 flex items-center justify-center p-4 bg-black/50" style={{ zIndex: 100 }} onClick={() => setDetailPromo(null)}>
-          <div className="bg-white dark:bg-card rounded-2xl shadow-2xl w-full max-w-lg max-h-[90vh] flex flex-col" onClick={e => e.stopPropagation()}>
+          <div className="bg-white dark:bg-card rounded-xl w-full max-w-lg max-h-[90vh] flex flex-col" onClick={e => e.stopPropagation()}>
             <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100 dark:border-card-border shrink-0">
               <h3 className="font-extrabold text-gray-900 dark:text-foreground text-lg">{detailPromo.name}</h3>
               <button onClick={() => setDetailPromo(null)} className="p-1.5 rounded-lg text-gray-400 dark:text-muted hover:text-gray-700 dark:hover:text-foreground hover:bg-gray-100 dark:hover:bg-accent transition-colors">
@@ -844,25 +844,25 @@ export default function PromotionsTab() {
               </div>
               {detailPromo.description && (
                 <div>
-                  <p className="text-xs font-bold text-gray-400 dark:text-muted uppercase tracking-wide">Descripción</p>
+                  <p className="text-xs font-bold text-gray-400 dark:text-muted">Descripción</p>
                   <p className="text-sm text-gray-700 dark:text-foreground mt-1">{detailPromo.description}</p>
                 </div>
               )}
               {detailPromo.minPurchase && (
                 <div>
-                  <p className="text-xs font-bold text-gray-400 dark:text-muted uppercase tracking-wide">Compra mínima</p>
+                  <p className="text-xs font-bold text-gray-400 dark:text-muted">Compra mínima</p>
                   <p className="text-sm font-semibold text-gray-900 dark:text-foreground mt-1">S/{detailPromo.minPurchase}</p>
                 </div>
               )}
               {detailPromo.message && (
                 <div>
-                  <p className="text-xs font-bold text-gray-400 dark:text-muted uppercase tracking-wide">Mensaje WhatsApp</p>
+                  <p className="text-xs font-bold text-gray-400 dark:text-muted">Mensaje WhatsApp</p>
                   <div className="bg-green-50 rounded-xl p-3 mt-1 text-sm text-gray-700 dark:text-foreground whitespace-pre-wrap border border-green-100">{detailPromo.message}</div>
                 </div>
               )}
               {detailPromo.targetPhones && (
                 <div>
-                  <p className="text-xs font-bold text-gray-400 dark:text-muted uppercase tracking-wide">Clientes objetivo</p>
+                  <p className="text-xs font-bold text-gray-400 dark:text-muted">Clientes objetivo</p>
                   <div className="flex flex-wrap gap-1.5 mt-1">
                     {detailPromo.targetPhones.split(",").filter(Boolean).map(ph => {
                       const cust = customers.find(c => c.phone === ph);
@@ -884,13 +884,13 @@ export default function PromotionsTab() {
             <div className="px-5 py-4 border-t border-gray-100 dark:border-card-border flex flex-wrap gap-3 shrink-0">
               <button
                 onClick={() => { setDetailPromo(null); openSendModal(detailPromo); }}
-                className="flex-1 flex flex-wrap items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-semibold text-white bg-green-500 hover:bg-green-600 transition-colors"
+                className="flex-1 flex flex-wrap items-center justify-center gap-2 py-2.5 rounded-lg text-sm font-semibold text-white bg-green-500 hover:bg-green-600 transition-colors"
               >
                 <Send className="h-4 w-4" /> Enviar por WhatsApp
               </button>
               <button
                 onClick={() => { setDetailPromo(null); openEdit(detailPromo); }}
-                className="flex-1 py-2.5 rounded-xl text-sm font-semibold text-gray-700 dark:text-foreground bg-gray-100 dark:bg-accent hover:bg-gray-200 transition-colors"
+                className="flex-1 py-2.5 rounded-lg text-sm font-semibold text-gray-700 dark:text-foreground bg-gray-100 dark:bg-accent hover:bg-gray-200 transition-colors"
               >
                 Editar
               </button>
@@ -902,7 +902,7 @@ export default function PromotionsTab() {
       {/* ── WhatsApp Send Modal ───────────────────────────────────────────── */}
       {sendPromo && (
         <div className="fixed inset-0 flex items-end sm:items-center justify-center bg-black/50" style={{ zIndex: 100 }} onClick={() => setSendPromo(null)}>
-          <div className="bg-white dark:bg-card rounded-t-2xl sm:rounded-2xl shadow-2xl w-full max-w-2xl max-h-[92vh] flex flex-col" onClick={e => e.stopPropagation()}>
+          <div className="bg-white dark:bg-card rounded-t-2xl sm:rounded-xl w-full max-w-2xl max-h-[92vh] flex flex-col" onClick={e => e.stopPropagation()}>
             <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100 dark:border-card-border shrink-0">
               <div>
                 <h3 className="font-extrabold text-gray-900 dark:text-foreground text-lg">Enviar por WhatsApp</h3>
@@ -914,7 +914,7 @@ export default function PromotionsTab() {
             </div>
             {/* Message preview */}
             <div className="px-5 py-3 border-b border-gray-100 dark:border-card-border shrink-0">
-              <p className="text-xs font-bold text-gray-400 dark:text-muted uppercase tracking-wide mb-1">Vista previa del mensaje</p>
+              <p className="text-xs font-bold text-gray-400 dark:text-muted mb-1">Vista previa del mensaje</p>
               <div className="bg-green-50 rounded-xl p-3 text-sm text-gray-700 dark:text-foreground whitespace-pre-wrap border border-green-100 max-h-24 overflow-y-auto">
                 {sendPromo.message || `🎉 *${sendPromo.name}*\n\n${sendPromo.description}\n\n${sendPromo.discountPercent > 0 ? `📢 ${sendPromo.discountPercent}% de descuento` : ""}${sendPromo.minPurchase ? `\nCompra mínima: S/${sendPromo.minPurchase}` : ""}\n\n¡Te esperamos en Buleje! 🛒`}
               </div>
@@ -967,7 +967,7 @@ export default function PromotionsTab() {
               <button
                 onClick={sendToAll}
                 disabled={sendPhones.size === 0}
-                className="w-full py-3 rounded-xl text-sm font-bold text-white bg-green-500 hover:bg-green-600 disabled:opacity-50 transition-colors flex flex-wrap items-center justify-center gap-2"
+                className="w-full py-3 rounded-lg text-sm font-bold text-white bg-green-500 hover:bg-green-600 disabled:opacity-50 transition-colors flex flex-wrap items-center justify-center gap-2"
               >
                 <Send className="h-4 w-4" /> Enviar a todos los seleccionados
               </button>
@@ -979,7 +979,7 @@ export default function PromotionsTab() {
       {/* ── AI Suggestions Modal ──────────────────────────────────────────── */}
       {showAiModal && (
         <div className="fixed inset-0 flex items-center justify-center p-4 bg-black/50" style={{ zIndex: 100 }} onClick={() => setShowAiModal(false)}>
-          <div className="bg-white dark:bg-card rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] flex flex-col" onClick={e => e.stopPropagation()}>
+          <div className="bg-white dark:bg-card rounded-xl w-full max-w-2xl max-h-[90vh] flex flex-col" onClick={e => e.stopPropagation()}>
             <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100 dark:border-card-border shrink-0">
               <div className="flex flex-wrap items-center gap-2">
                 <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ background: 'linear-gradient(to bottom right, #8b5cf6, #9333ea)' }}>
@@ -1010,7 +1010,7 @@ export default function PromotionsTab() {
       {/* ── Delete Confirmation ───────────────────────────────────────────── */}
       {confirmDeleteId && (
         <div className="fixed inset-0 flex items-center justify-center p-4 bg-black/60" style={{ zIndex: 200 }} onClick={() => setConfirmDeleteId(null)}>
-          <div className="bg-white dark:bg-card rounded-2xl shadow-2xl w-full max-w-sm p-3 sm:p-6" onClick={e => e.stopPropagation()}>
+          <div className="bg-white dark:bg-card rounded-xl w-full max-w-sm p-3 sm:p-6" onClick={e => e.stopPropagation()}>
             <div className="flex flex-wrap items-center gap-3 mb-4">
               <div className="w-10 h-10 rounded-full bg-red-100 flex items-center justify-center shrink-0">
                 <AlertTriangle className="h-5 w-5 text-red-500" />
@@ -1021,8 +1021,8 @@ export default function PromotionsTab() {
               </div>
             </div>
             <div className="flex flex-wrap gap-3">
-              <button onClick={() => setConfirmDeleteId(null)} className="flex-1 py-2.5 rounded-xl text-sm font-semibold text-gray-700 dark:text-foreground bg-gray-100 dark:bg-accent hover:bg-gray-200 transition-colors">Cancelar</button>
-              <button onClick={confirmDelete} className="flex-1 py-2.5 rounded-xl text-sm font-semibold text-white bg-red-500 hover:bg-red-600 transition-colors">Sí, eliminar</button>
+              <button onClick={() => setConfirmDeleteId(null)} className="flex-1 py-2.5 rounded-lg text-sm font-semibold text-gray-700 dark:text-foreground bg-gray-100 dark:bg-accent hover:bg-gray-200 transition-colors">Cancelar</button>
+              <button onClick={confirmDelete} className="flex-1 py-2.5 rounded-lg text-sm font-semibold text-white bg-red-500 hover:bg-red-600 transition-colors">Sí, eliminar</button>
             </div>
           </div>
         </div>
@@ -1031,7 +1031,7 @@ export default function PromotionsTab() {
       {/* ── Campaign Templates Modal ── */}
       {showTemplates && (
         <div className="fixed inset-0 flex items-center justify-center bg-black/50 p-4" style={{ zIndex: 100 }} onClick={() => setShowTemplates(false)}>
-          <div className="bg-white dark:bg-card rounded-2xl shadow-2xl w-full max-w-lg max-h-[85vh] flex flex-col" onClick={e => e.stopPropagation()}>
+          <div className="bg-white dark:bg-card rounded-xl w-full max-w-lg max-h-[85vh] flex flex-col" onClick={e => e.stopPropagation()}>
             <div className="flex items-center justify-between px-5 py-4 border-b dark:border-card-border shrink-0">
               <div>
                 <h3 className="font-extrabold text-gray-900 dark:text-foreground text-lg">Plantillas de Campaña</h3>
@@ -1046,7 +1046,7 @@ export default function PromotionsTab() {
                 <button
                   key={tpl.name}
                   onClick={() => applyTemplate(tpl)}
-                  className="w-full flex flex-wrap items-center gap-3 p-3 rounded-xl border border-gray-200 dark:border-card-border bg-gray-50 dark:bg-surface hover:bg-amber-50 dark:hover:bg-amber-900/10 hover:border-amber-300 dark:hover:border-amber-700 transition-all text-left"
+                  className="w-full flex flex-wrap items-center gap-3 p-3 rounded-lg border border-gray-200 dark:border-card-border bg-gray-50 dark:bg-surface hover:bg-amber-50 dark:hover:bg-amber-900/10 hover:border-amber-300 dark:hover:border-amber-700 transition-all text-left"
                 >
                   <span className="text-xl sm:text-2xl shrink-0">{tpl.icon}</span>
                   <div className="flex-1 min-w-0">
@@ -1064,7 +1064,7 @@ export default function PromotionsTab() {
       {/* ── Campaign Form Modal ───────────────────────────────────────────── */}
       {showCampaignForm && (
         <div className="fixed inset-0 flex items-end sm:items-center justify-center bg-black/50" style={{ zIndex: 100 }} onClick={() => setShowCampaignForm(false)}>
-          <div className="bg-white dark:bg-card rounded-t-2xl sm:rounded-2xl shadow-2xl w-full max-w-2xl max-h-[92vh] flex flex-col" onClick={e => e.stopPropagation()}>
+          <div className="bg-white dark:bg-card rounded-t-2xl sm:rounded-xl w-full max-w-2xl max-h-[92vh] flex flex-col" onClick={e => e.stopPropagation()}>
             <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100 dark:border-card-border shrink-0">
               <h3 className="font-extrabold text-gray-900 dark:text-foreground text-lg">{editingCampaignId ? "Editar Campaña" : "Nueva Campaña Programada"}</h3>
               <button onClick={() => setShowCampaignForm(false)} className="p-1.5 rounded-lg text-gray-400 dark:text-muted hover:text-gray-700 dark:hover:text-foreground hover:bg-gray-100 dark:hover:bg-accent transition-colors">
@@ -1074,19 +1074,19 @@ export default function PromotionsTab() {
             <div className="overflow-y-auto flex-1 px-5 py-4 space-y-4">
               {/* Name */}
               <div>
-                <label className="text-xs font-bold text-gray-500 dark:text-muted uppercase tracking-wide">Nombre de campaña *</label>
+                <label className="text-xs font-bold text-gray-500 dark:text-muted">Nombre de campaña *</label>
                 <input type="text" value={campaignForm.name} onChange={e => setCampaignForm(f => ({ ...f, name: e.target.value }))}
                   className="w-full mt-1 px-3 py-2 text-sm rounded-xl border border-gray-200 dark:border-card-border outline-none focus:border-primary" placeholder="Ej: Campaña de Verano" />
               </div>
               {/* Description */}
               <div>
-                <label className="text-xs font-bold text-gray-500 dark:text-muted uppercase tracking-wide">Descripción</label>
+                <label className="text-xs font-bold text-gray-500 dark:text-muted">Descripción</label>
                 <textarea value={campaignForm.description} onChange={e => setCampaignForm(f => ({ ...f, description: e.target.value }))} rows={2}
                   className="w-full mt-1 px-3 py-2 text-sm rounded-xl border border-gray-200 dark:border-card-border outline-none focus:border-primary resize-none" placeholder="Detalles de la campaña…" />
               </div>
               {/* Target Segment */}
               <div>
-                <label className="text-xs font-bold text-gray-500 dark:text-muted uppercase tracking-wide">Segmento objetivo *</label>
+                <label className="text-xs font-bold text-gray-500 dark:text-muted">Segmento objetivo *</label>
                 <select value={campaignForm.targetSegment} onChange={e => setCampaignForm(f => ({ ...f, targetSegment: e.target.value }))}
                   className="w-full mt-1 px-3 py-2 text-sm rounded-xl border border-gray-200 dark:border-card-border outline-none focus:border-primary bg-white dark:bg-surface">
                   <option value="all">Todos</option>
@@ -1101,19 +1101,19 @@ export default function PromotionsTab() {
               {/* Dates */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
-                  <label className="text-xs font-bold text-gray-500 dark:text-muted uppercase tracking-wide">Fecha/hora inicio *</label>
+                  <label className="text-xs font-bold text-gray-500 dark:text-muted">Fecha/hora inicio *</label>
                   <input type="datetime-local" value={campaignForm.startDate ? campaignForm.startDate.slice(0, 16) : ""} onChange={e => setCampaignForm(f => ({ ...f, startDate: e.target.value }))}
                     className="w-full mt-1 px-3 py-2 text-sm rounded-xl border border-gray-200 dark:border-card-border outline-none focus:border-primary text-gray-600 dark:text-muted" />
                 </div>
                 <div>
-                  <label className="text-xs font-bold text-gray-500 dark:text-muted uppercase tracking-wide">Fecha/hora fin</label>
+                  <label className="text-xs font-bold text-gray-500 dark:text-muted">Fecha/hora fin</label>
                   <input type="datetime-local" value={campaignForm.endDate ? campaignForm.endDate.slice(0, 16) : ""} onChange={e => setCampaignForm(f => ({ ...f, endDate: e.target.value }))}
                     className="w-full mt-1 px-3 py-2 text-sm rounded-xl border border-gray-200 dark:border-card-border outline-none focus:border-primary text-gray-600 dark:text-muted" />
                 </div>
               </div>
               {/* Message Template */}
               <div>
-                <label className="text-xs font-bold text-gray-500 dark:text-muted uppercase tracking-wide">Mensaje con placeholders</label>
+                <label className="text-xs font-bold text-gray-500 dark:text-muted">Mensaje con placeholders</label>
                 <textarea value={campaignForm.messageTemplate} onChange={e => setCampaignForm(f => ({ ...f, messageTemplate: e.target.value }))} rows={4}
                   className="w-full mt-1 px-3 py-2 text-sm rounded-xl border border-gray-200 dark:border-card-border outline-none focus:border-primary resize-none font-mono"
                   placeholder="¡Hola {name}! Tenemos un {discount}% de descuento especial para ti..." />
@@ -1121,7 +1121,7 @@ export default function PromotionsTab() {
               </div>
               {/* Discount Code */}
               <div>
-                <label className="text-xs font-bold text-gray-500 dark:text-muted uppercase tracking-wide">Código de descuento</label>
+                <label className="text-xs font-bold text-gray-500 dark:text-muted">Código de descuento</label>
                 <input type="text" value={campaignForm.discountCode} onChange={e => setCampaignForm(f => ({ ...f, discountCode: e.target.value.toUpperCase() }))}
                   className="w-full mt-1 px-3 py-2 text-sm rounded-xl border border-gray-200 dark:border-card-border outline-none focus:border-primary font-mono" placeholder="VERANO20" />
               </div>
@@ -1136,9 +1136,9 @@ export default function PromotionsTab() {
               </div>
             </div>
             <div className="px-5 py-4 border-t border-gray-100 dark:border-card-border flex flex-wrap gap-3 shrink-0">
-              <button onClick={() => setShowCampaignForm(false)} className="flex-1 py-2.5 rounded-xl text-sm font-semibold text-gray-700 dark:text-foreground bg-gray-100 dark:bg-accent hover:bg-gray-200 transition-colors">Cancelar</button>
+              <button onClick={() => setShowCampaignForm(false)} className="flex-1 py-2.5 rounded-lg text-sm font-semibold text-gray-700 dark:text-foreground bg-gray-100 dark:bg-accent hover:bg-gray-200 transition-colors">Cancelar</button>
               <button onClick={saveCampaign} disabled={savingCampaign || !campaignForm.name.trim() || !campaignForm.startDate}
-                className="flex-1 py-2.5 rounded-xl text-sm font-semibold text-white bg-linear-to-r from-indigo-600 to-purple-600 hover:brightness-110 transition disabled:opacity-50">
+                className="flex-1 py-2.5 rounded-lg text-sm font-semibold text-white bg-linear-to-r from-indigo-600 to-purple-600 hover:brightness-110 transition disabled:opacity-50">
                 {savingCampaign ? "Guardando…" : editingCampaignId ? "Guardar cambios" : "Crear campaña"}
               </button>
             </div>

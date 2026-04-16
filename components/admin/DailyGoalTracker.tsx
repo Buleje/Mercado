@@ -66,7 +66,7 @@ function Confetti() {
   const colors = ["#00B4A6", "#f97316", "#2dd4bf", "#f4d03f", "#e76f51"];
 
   return (
-    <div className="pointer-events-none absolute inset-0 overflow-hidden rounded-2xl">
+    <div className="pointer-events-none absolute inset-0 overflow-hidden rounded-xl">
       {Array.from({ length: 24 }).map((_, i) => {
         const color = colors[i % colors.length];
         const left = `${(i * 4.2) % 100}%`;
@@ -241,7 +241,7 @@ export default function DailyGoalTracker({ dailyGoal = DEFAULT_DAILY_GOAL }: Dai
       : "text-red-500 dark:text-red-400";
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-6">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
@@ -273,7 +273,7 @@ export default function DailyGoalTracker({ dailyGoal = DEFAULT_DAILY_GOAL }: Dai
 
       {/* Tarjeta principal */}
       <div className={cn(
-        "relative rounded-2xl border-2 p-6 overflow-hidden transition-all duration-500",
+        "relative rounded-xl border-2 p-6 overflow-hidden transition-all duration-500",
         isGoalMet
           ? "border-emerald-400 dark:border-emerald-600 bg-emerald-50 dark:bg-emerald-900/20"
           : "border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800"
@@ -358,7 +358,7 @@ export default function DailyGoalTracker({ dailyGoal = DEFAULT_DAILY_GOAL }: Dai
 
       {/* Mini grafico por hora */}
       {!loading && hourlyBuckets.length > 0 && (
-        <div className="rounded-2xl border border-gray-100 dark:border-gray-700 bg-white dark:bg-gray-800 p-4">
+        <div className="rounded-xl border border-gray-100 dark:border-gray-700 bg-white dark:bg-gray-800 p-4">
           <div className="flex items-center gap-2 mb-3">
             <TrendingUp className="w-4 h-4 text-[#00B4A6] dark:text-green-400" />
             <span className="text-sm font-medium text-gray-700 dark:text-gray-300">

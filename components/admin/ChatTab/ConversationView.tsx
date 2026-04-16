@@ -96,7 +96,7 @@ function MessageBubble({ message }: { message: ChatMessageView }) {
       <div className={cn("max-w-[70%]", isSeller ? "items-end" : "items-start")}>
         <div
           className={cn(
-            "rounded-2xl px-4 py-2 text-sm leading-relaxed",
+            "rounded-xl px-4 py-2 text-sm leading-relaxed",
             isSeller
               ? "rounded-br-sm bg-[#00B4A6] text-white"
               : "rounded-bl-sm bg-slate-100 text-slate-900 dark:bg-slate-800 dark:text-slate-100",

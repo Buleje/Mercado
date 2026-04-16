@@ -61,7 +61,7 @@ function PredCard({
   children: React.ReactNode;
 }) {
   return (
-    <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-gray-800 p-5 space-y-4">
+    <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-100 dark:border-gray-800 p-5 space-y-4">
       <div className="flex items-center gap-3">
         <div className={cn("w-9 h-9 rounded-xl flex items-center justify-center shrink-0", iconBg)}>
           <Icon className="h-4.5 w-4.5 text-white" />
@@ -135,7 +135,7 @@ export default function PredictiveAnalyticsTab() {
     return (
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 p-4">
         {[1, 2, 3, 4, 5].map(i => (
-          <div key={i} className="h-40 bg-gray-100 dark:bg-gray-800 rounded-2xl animate-pulse" />
+          <div key={i} className="h-40 bg-gray-100 dark:bg-gray-800 rounded-xl animate-pulse" />
         ))}
       </div>
     );
@@ -148,7 +148,7 @@ export default function PredictiveAnalyticsTab() {
         <p className="text-sm text-gray-500 dark:text-gray-400">{error}</p>
         <button
           onClick={load}
-          className="flex items-center gap-2 px-4 py-2 rounded-xl bg-primary text-white text-sm font-semibold"
+          className="flex items-center gap-2 px-4 py-2 rounded-lg bg-primary text-white text-sm font-semibold"
         >
           <RefreshCw className="h-3.5 w-3.5" /> Reintentar
         </button>
@@ -171,7 +171,7 @@ export default function PredictiveAnalyticsTab() {
         </div>
         <button
           onClick={load}
-          className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-300 text-xs font-semibold hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
+          className="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-300 text-xs font-semibold hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
         >
           <RefreshCw className="h-3.5 w-3.5" />
           Actualizar
@@ -260,7 +260,7 @@ export default function PredictiveAnalyticsTab() {
                     href={c.whatsappUrl}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="shrink-0 flex items-center gap-1 px-2.5 py-1.5 rounded-xl bg-green-600 text-white text-[11px] font-bold hover:bg-green-500 transition-colors min-h-[44px]"
+                    className="shrink-0 flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-green-600 text-white text-[11px] font-bold hover:bg-green-500 transition-colors min-h-[44px]"
                   >
                     <ExternalLink className="h-3 w-3" />
                     WhatsApp

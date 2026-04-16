@@ -386,11 +386,11 @@ export default function AIOpportunityFinder({ data, compact = false }: Props) {
   }, [opportunities]);
 
   return (
-    <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 p-5 shadow-sm">
+    <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 p-5 ">
       <div className="flex items-center justify-between mb-3">
         <div className="flex items-center gap-2">
           <Star className="w-4 h-4 text-gray-500 dark:text-gray-400" />
-          <h2 className="text-sm font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wide">
+          <h2 className="text-sm font-semibold text-gray-700 dark:text-gray-300">
             Oportunidades Detectadas
           </h2>
         </div>

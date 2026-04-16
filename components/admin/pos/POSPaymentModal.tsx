@@ -180,7 +180,7 @@ function CustomerListPanel({ onSelect, onClose }: { onSelect: (phone: string, na
     : customers;
 
   return (
-    <div className="absolute inset-0 z-10 bg-white dark:bg-card rounded-2xl flex flex-col">
+    <div className="absolute inset-0 z-10 bg-white dark:bg-card rounded-xl flex flex-col">
       {/* Header */}
       <div className="px-4 py-3 border-b border-gray-100 dark:border-card-border flex items-center justify-between">
         <div className="flex items-center gap-2">
@@ -492,7 +492,7 @@ export default function POSPaymentModal({
       onClick={onCancel}
     >
       <div
-        className="relative bg-white dark:bg-card rounded-2xl shadow-2xl max-w-xl w-full max-h-[90vh] flex flex-col"
+        className="relative bg-white dark:bg-card rounded-xl max-w-xl w-full max-h-[90vh] flex flex-col"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Customer list overlay (Mejora 3) */}
@@ -508,7 +508,7 @@ export default function POSPaymentModal({
 
         {/* Header */}
         <div className="px-3 sm:px-6 py-5 border-b border-gray-100 dark:border-card-border text-center relative">
-          <p className="text-xs font-bold text-gray-400 dark:text-muted uppercase tracking-wider mb-1">
+          <p className="text-xs font-bold text-gray-400 dark:text-muted mb-1">
             Total a cobrar
           </p>
           <p className="text-xl sm:text-3xl font-extrabold text-gray-900 dark:text-foreground">
@@ -568,7 +568,7 @@ export default function POSPaymentModal({
           <div>
             <button
               onClick={() => setShowDiscount(!showDiscount)}
-              className="flex items-center justify-between w-full text-xs font-bold text-gray-500 dark:text-muted uppercase tracking-wider mb-2"
+              className="flex items-center justify-between w-full text-xs font-bold text-gray-500 dark:text-muted mb-2"
             >
               <span className="flex items-center gap-1.5">
                 <Percent className="h-3.5 w-3.5" />
@@ -680,7 +680,7 @@ export default function POSPaymentModal({
 
           {/* Payment lines */}
           <div>
-            <p className="text-xs font-bold text-gray-500 dark:text-muted uppercase tracking-wider mb-2.5">
+            <p className="text-xs font-bold text-gray-500 dark:text-muted mb-2.5">
               {isSinglePayment ? "Metodo de pago" : "Pago mixto"}
             </p>
 
@@ -914,7 +914,7 @@ export default function POSPaymentModal({
                 {isSinglePayment && paymentLines[0].method === "efectivo" && (
                   <div className="mt-2 space-y-1.5">
                     <div className="flex items-center justify-between">
-                      <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Billetes recibidos</span>
+                      <span className="text-[10px] font-bold text-gray-400">Billetes recibidos</span>
                       {billetes.length > 0 && (
                         <button onClick={limpiarBilletes} className="text-[10px] font-bold text-red-500 hover:underline">Limpiar</button>
                       )}
@@ -989,7 +989,7 @@ export default function POSPaymentModal({
           {/* Change display */}
           {vuelto > 0 && (
             <div className="bg-emerald-50 dark:bg-emerald-950/20 border border-emerald-100 dark:border-emerald-800/30 rounded-xl p-3 text-center">
-              <p className="text-[10px] text-emerald-600 font-bold uppercase tracking-wider">
+              <p className="text-[10px] text-emerald-600 font-bold">
                 Vuelto
               </p>
               <p className="text-xl sm:text-2xl font-extrabold text-emerald-700 dark:text-emerald-400 mt-0.5">
@@ -1019,7 +1019,7 @@ export default function POSPaymentModal({
           <div>
             <div className="flex items-center justify-between mb-2">
               <p className={cn(
-                "text-xs font-bold uppercase tracking-wider",
+                "text-xs font-bold",
                 isFiado
                   ? "text-amber-600 dark:text-amber-500"
                   : "text-gray-500 dark:text-muted"
@@ -1051,7 +1051,7 @@ export default function POSPaymentModal({
             {/* Formulario inline para nuevo cliente */}
             {showNewCustomer && (
               <div className="mb-2 p-2.5 rounded-xl bg-emerald-50 dark:bg-emerald-950/20 border border-emerald-100 dark:border-emerald-800/30 space-y-2">
-                <p className="text-[10px] font-bold text-emerald-700 dark:text-emerald-400 uppercase tracking-wider">Nuevo cliente rapido</p>
+                <p className="text-[10px] font-bold text-emerald-700 dark:text-emerald-400">Nuevo cliente rapido</p>
                 <div className="flex gap-2">
                   <input
                     type="text"
@@ -1120,7 +1120,7 @@ export default function POSPaymentModal({
 
           {/* Tipo de comprobante */}
           <div>
-            <p className="text-xs font-bold text-gray-500 dark:text-muted uppercase tracking-wider mb-2">
+            <p className="text-xs font-bold text-gray-500 dark:text-muted mb-2">
               Comprobante
             </p>
             <div className="flex flex-wrap gap-1.5">
@@ -1211,7 +1211,7 @@ export default function POSPaymentModal({
             onClick={handleConfirm}
             disabled={!canConfirm}
             className={cn(
-              "w-full py-3.5 rounded-xl font-bold text-sm transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 text-white",
+              "w-full py-3.5 rounded-lg font-bold text-sm transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 text-white",
               isFiado
                 ? "bg-amber-500 hover:bg-amber-600"
                 : "bg-primary hover:bg-primary-dark"

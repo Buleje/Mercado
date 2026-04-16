@@ -89,7 +89,7 @@ export function AdminModuleManagerModal({
     <div className="fixed inset-0 z-100 overflow-y-auto">
       <div className="fixed inset-0 bg-black/40 backdrop-blur-sm" onClick={onClose} />
       <div className="relative z-10 min-h-screen flex items-center justify-center p-4">
-        <div className="bg-white dark:bg-card rounded-2xl shadow-2xl border border-gray-200 dark:border-card-border w-full max-w-3xl max-h-[90vh] flex flex-col">
+        <div className="bg-white dark:bg-card rounded-xl border border-gray-200 dark:border-card-border w-full max-w-3xl max-h-[90vh] flex flex-col">
           {/* Header */}
           <div className="flex items-center justify-between px-6 py-5 border-b border-gray-200 dark:border-card-border">
             <div>
@@ -100,7 +100,7 @@ export function AdminModuleManagerModal({
             </div>
             <button
               onClick={onClose}
-              className="p-2 rounded-xl hover:bg-gray-100 dark:hover:bg-accent transition-colors"
+              className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-accent transition-colors"
             >
               <X className="h-5 w-5 text-gray-500" />
             </button>
@@ -129,7 +129,7 @@ export function AdminModuleManagerModal({
               </div>
             </div>
             <div className="flex items-center gap-2 flex-wrap">
-              <span className="text-[10px] text-gray-400 font-semibold uppercase tracking-wide mr-1">Prioridad:</span>
+              <span className="text-[10px] text-gray-400 font-semibold mr-1">Prioridad:</span>
               <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-red-100 text-red-600 dark:bg-red-950/40 dark:text-red-400">Esencial</span>
               <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-orange-100 text-orange-600 dark:bg-orange-950/40 dark:text-orange-400">Alta</span>
               <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-amber-100 text-amber-600 dark:bg-amber-950/40 dark:text-amber-400">Media</span>
@@ -146,7 +146,7 @@ export function AdminModuleManagerModal({
 
               return (
                 <div key={category.id} className="mb-1">
-                  <div className="flex items-center gap-2 px-6 py-2 text-[10px] font-bold uppercase tracking-wider text-gray-400 dark:text-muted sticky top-0 bg-white dark:bg-card z-10">
+                  <div className="flex items-center gap-2 px-6 py-2 text-[10px] font-bold text-gray-400 dark:text-muted sticky top-0 bg-white dark:bg-card z-10">
                     <CatIcon className="h-3 w-3" />
                     <span>{category.label}</span>
                   </div>
@@ -201,7 +201,7 @@ export function AdminModuleManagerModal({
                             {pCfg && (
                               <span
                                 className={cn(
-                                  "shrink-0 text-[9px] font-bold px-1.5 py-0.5 rounded-full uppercase tracking-wide",
+                                  "shrink-0 text-[9px] font-bold px-1.5 py-0.5 rounded-full",
                                   pCfg.cls
                                 )}
                               >
@@ -274,7 +274,7 @@ export function AdminModuleManagerModal({
             )}
             <button
               onClick={onClose}
-              className="px-5 py-2 rounded-xl bg-primary text-white text-sm font-semibold hover:bg-primary/90 transition-colors"
+              className="px-5 py-2 rounded-lg bg-primary text-white text-sm font-semibold hover:bg-primary/90 transition-colors"
             >
               Listo
             </button>

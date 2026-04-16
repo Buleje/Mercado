@@ -122,7 +122,7 @@ export default function SecurityLogsTab() {
       </div>
 
       {/* Filtros */}
-      <div className="bg-white dark:bg-card rounded-2xl border border-gray-200 dark:border-card-border p-3 sm:p-4 space-y-3">
+      <div className="bg-white dark:bg-card rounded-xl border border-gray-200 dark:border-card-border p-3 sm:p-4 space-y-3">
         {/* Búsqueda + fechas */}
         <div className="flex flex-col sm:flex-row gap-2">
           <div className="relative flex-1">

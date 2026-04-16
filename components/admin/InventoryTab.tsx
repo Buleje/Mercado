@@ -147,7 +147,7 @@ function InventoryContextMenu({ product, x, y, onClose, onEdit, onView, onDuplic
   return (
     <div
       ref={menuRef}
-      className="fixed z-[9999] bg-white dark:bg-zinc-900 rounded-xl shadow-2xl border border-gray-100 dark:border-zinc-800 min-w-[180px] py-1 animate-in fade-in zoom-in-95 duration-150"
+      className="fixed z-[9999] bg-white dark:bg-zinc-900 rounded-xl border border-gray-100 dark:border-zinc-800 min-w-[180px] py-1 animate-in fade-in zoom-in-95 duration-150"
       style={{ left: x, top: y }}
     >
       {items.map((item, i) => {
@@ -778,7 +778,7 @@ export default function InventoryTab() {
               onClick={() => setView(v)}
               className={cn(
                 "px-3 py-1.5 rounded-md text-xs font-bold transition-colors capitalize whitespace-nowrap",
-                view === v ? "bg-white dark:bg-card text-gray-900 dark:text-foreground shadow-sm" : "text-gray-500 dark:text-muted hover:text-gray-700 dark:hover:text-foreground"
+                view === v ? "bg-white dark:bg-card text-gray-900 dark:text-foreground " : "text-gray-500 dark:text-muted hover:text-gray-700 dark:hover:text-foreground"
               )}
             >
               {v === "productos" ? "Productos" : "Vista rapida"}
@@ -788,14 +788,14 @@ export default function InventoryTab() {
         <button
           onClick={() => setShowScanner(true)}
           disabled={scanLoading}
-          className="flex items-center gap-1.5 text-sm font-medium rounded-xl border border-gray-200 dark:border-zinc-700 hover:bg-gray-50 dark:hover:bg-zinc-800 px-4 py-2.5 transition-colors"
+          className="flex items-center gap-1.5 text-sm font-medium rounded-lg border border-gray-200 dark:border-zinc-700 hover:bg-gray-50 dark:hover:bg-zinc-800 px-4 py-2.5 transition-colors"
         >
           {scanLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <ScanBarcode className="h-4 w-4" />}
           {scanLoading ? "Buscando..." : "Escanear"}
         </button>
         <button
           onClick={() => { setPickerSearch(""); setPickerCat("todos"); setShowPicker(true); }}
-          className="flex items-center gap-1.5 text-sm font-medium text-white rounded-xl bg-emerald-600 hover:bg-emerald-700 px-4 py-2.5 transition-colors"
+          className="flex items-center gap-1.5 text-sm font-medium text-white rounded-lg bg-emerald-600 hover:bg-emerald-700 px-4 py-2.5 transition-colors"
         >
           <Plus className="h-4 w-4" /> Nuevo
         </button>
@@ -879,31 +879,31 @@ export default function InventoryTab() {
 
       {/* KPIs — grid-cols-5 */}
       <div className="grid grid-cols-2 sm:grid-cols-5 gap-4">
-        <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl p-5 shadow-sm">
+        <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl p-5 ">
           <p className="text-xs text-gray-500 dark:text-zinc-400 font-medium">Productos</p>
           <p className="text-2xl font-mono font-bold text-gray-900 dark:text-foreground mt-1">{totalProducts}</p>
           <p className="text-[10px] text-gray-400 dark:text-zinc-500 mt-1">{activeProducts} activos</p>
           <div className="h-1 rounded-full mt-2 bg-primary" />
         </div>
-        <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl p-5 shadow-sm">
+        <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl p-5 ">
           <p className="text-xs text-gray-500 dark:text-zinc-400 font-medium">Activos</p>
           <p className="text-2xl font-mono font-bold text-emerald-600 mt-1">{activeProducts}</p>
           <p className="text-[10px] text-gray-400 dark:text-zinc-500 mt-1">{totalProducts - activeProducts} inactivos</p>
           <div className="h-1 rounded-full mt-2 bg-emerald-500" />
         </div>
-        <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl p-5 shadow-sm">
+        <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl p-5 ">
           <p className="text-xs text-gray-500 dark:text-zinc-400 font-medium">Bajo stock</p>
           <p className={cn("text-2xl font-mono font-bold mt-1", lowStockCount > 0 ? "text-amber-600" : "text-gray-900 dark:text-foreground")}>{lowStockCount}</p>
           <p className="text-[10px] text-gray-400 dark:text-zinc-500 mt-1">{lowStockCount > 0 ? "Requieren reposicion" : "Stock saludable"}</p>
           <div className={cn("h-1 rounded-full mt-2", lowStockCount > 0 ? "bg-amber-500" : "bg-gray-200 dark:bg-zinc-700")} />
         </div>
-        <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl p-5 shadow-sm">
+        <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl p-5 ">
           <p className="text-xs text-gray-500 dark:text-zinc-400 font-medium">Prox. a vencer</p>
           <p className={cn("text-2xl font-mono font-bold mt-1", expiringSoonCount > 0 ? "text-orange-600" : "text-gray-900 dark:text-foreground")}>{expiringSoonCount}</p>
           <p className="text-[10px] text-gray-400 dark:text-zinc-500 mt-1">Proximos 30 dias</p>
           <div className={cn("h-1 rounded-full mt-2", expiringSoonCount > 0 ? "bg-orange-500" : "bg-gray-200 dark:bg-zinc-700")} />
         </div>
-        <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl p-5 shadow-sm">
+        <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl p-5 ">
           <p className="text-xs text-gray-500 dark:text-zinc-400 font-medium">Valor total</p>
           <p className="text-2xl font-mono font-bold text-primary mt-1">{fmt(totalStockValue)}</p>
           <p className="text-[10px] text-gray-400 dark:text-zinc-500 mt-1">En inventario</p>
@@ -944,7 +944,7 @@ export default function InventoryTab() {
 
       {/* OC Alerts Section (IMPROVEMENT 1) */}
       {lowStockProducts.length > 0 && (
-        <div className="bg-linear-to-r from-amber-50 to-red-50 dark:from-amber-950/20 dark:to-red-950/20 border-2 border-amber-300 dark:border-amber-700 rounded-2xl overflow-hidden shadow-sm">
+        <div className="bg-linear-to-r from-amber-50 to-red-50 dark:from-amber-950/20 dark:to-red-950/20 border-2 border-amber-300 dark:border-amber-700 rounded-xl overflow-hidden ">
           <div className="px-5 py-4">
             <div className="flex flex-wrap items-start justify-between gap-3">
               <div className="flex flex-wrap items-center gap-3">
@@ -967,7 +967,7 @@ export default function InventoryTab() {
                 <button
                   onClick={generateBulkOC}
                   disabled={generatingOC}
-                  className="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-amber-600 hover:bg-amber-700 text-white text-xs font-bold transition-colors disabled:opacity-60 shadow-sm"
+                  className="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-amber-600 hover:bg-amber-700 text-white text-xs font-bold transition-colors disabled:opacity-60 "
                 >
                   {generatingOC ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <PackagePlus className="h-3.5 w-3.5" />}
                   Generar OC para todos
@@ -1028,7 +1028,7 @@ export default function InventoryTab() {
         <div className="bg-gray-50 dark:bg-surface rounded-xl p-3 border border-gray-100 dark:border-card-border space-y-3">
           {/* Grupo: Vista */}
           <div>
-            <p className="text-[10px] font-bold uppercase tracking-wider text-gray-400 dark:text-muted mb-2">Vista</p>
+            <p className="text-[10px] font-bold text-gray-400 dark:text-muted mb-2">Vista</p>
             <div className="flex flex-wrap gap-2">
               <button
                 onClick={() => { const next = !showExtendedCols; setShowExtendedCols(next); try { localStorage.setItem("inv-extended-cols", String(next)); } catch {} }}
@@ -1058,7 +1058,7 @@ export default function InventoryTab() {
 
           {/* Grupo: Importar / Exportar */}
           <div>
-            <p className="text-[10px] font-bold uppercase tracking-wider text-gray-400 dark:text-muted mb-2">Importar / Exportar</p>
+            <p className="text-[10px] font-bold text-gray-400 dark:text-muted mb-2">Importar / Exportar</p>
             <div className="flex flex-wrap gap-2">
               <button
                 onClick={() => {
@@ -1161,7 +1161,7 @@ export default function InventoryTab() {
                 <div
                   key={p.id}
                   className={cn(
-                    "bg-white dark:bg-card border rounded-2xl p-4 shadow-sm transition-all relative",
+                    "bg-white dark:bg-card border rounded-xl p-4  transition-all relative",
                     !p.active && "opacity-60 bg-gray-50 dark:bg-gray-900",
                     lowStock ? "border-amber-300" : "border-gray-200 dark:border-card-border"
                   )}
@@ -1194,13 +1194,13 @@ export default function InventoryTab() {
                       </div>
                     </div>
                     <div className="flex flex-col gap-1.5 shrink-0">
-                      <button onClick={() => openEditModal(p)} className="p-2 rounded-xl bg-gray-50 dark:bg-surface text-gray-500 dark:text-muted hover:bg-primary/10 hover:text-primary transition-colors border border-gray-100 dark:border-card-border" title="Editar">
+                      <button onClick={() => openEditModal(p)} className="p-2 rounded-lg bg-gray-50 dark:bg-surface text-gray-500 dark:text-muted hover:bg-primary/10 hover:text-primary transition-colors border border-gray-100 dark:border-card-border" title="Editar">
                         <Pencil className="h-4 w-4" />
                       </button>
-                      <button onClick={() => deleteProduct(p.id)} className="p-2 rounded-xl bg-gray-50 dark:bg-surface text-gray-500 dark:text-muted hover:bg-red-50 hover:text-red-500 transition-colors border border-gray-100 dark:border-card-border" title="Eliminar">
+                      <button onClick={() => deleteProduct(p.id)} className="p-2 rounded-lg bg-gray-50 dark:bg-surface text-gray-500 dark:text-muted hover:bg-red-50 hover:text-red-500 transition-colors border border-gray-100 dark:border-card-border" title="Eliminar">
                         <Trash2 className="h-4 w-4" />
                       </button>
-                      <button onClick={() => setKardexProduct({ id: p.id, name: p.name })} className="p-2 rounded-xl bg-gray-50 dark:bg-surface text-gray-500 dark:text-muted hover:bg-emerald-50 hover:text-emerald-600 transition-colors border border-gray-100 dark:border-card-border" title="Ver Kardex">
+                      <button onClick={() => setKardexProduct({ id: p.id, name: p.name })} className="p-2 rounded-lg bg-gray-50 dark:bg-surface text-gray-500 dark:text-muted hover:bg-emerald-50 hover:text-emerald-600 transition-colors border border-gray-100 dark:border-card-border" title="Ver Kardex">
                         <BookOpen className="h-4 w-4" />
                       </button>
                     </div>
@@ -1244,7 +1244,7 @@ export default function InventoryTab() {
           </div>
 
           {/* Desktop table — UX Mejora 18: Sticky header */}
-          <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl overflow-hidden shadow-sm hidden sm:block">
+          <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl overflow-hidden  hidden sm:block">
             <div className="max-h-[65vh] overflow-y-auto overflow-x-auto">
               <table className="w-full min-w-[600px] text-sm">
                 <thead className="sticky top-0 bg-white dark:bg-card z-10 shadow-[0_1px_0_0_rgba(0,0,0,0.05)]">
@@ -1252,18 +1252,18 @@ export default function InventoryTab() {
                     <th className="px-3 py-3 w-10">
                       <input type="checkbox" checked={filteredProducts.length > 0 && selectedIds.size === filteredProducts.length} onChange={toggleSelectAll} className="rounded border-gray-300 text-primary focus:ring-primary" />
                     </th>
-                    <th className="px-2 sm:px-4 py-2 sm:py-3 text-xs font-bold text-gray-500 dark:text-muted uppercase tracking-wider w-12">Img</th>
-                    <th className="px-2 sm:px-4 py-2 sm:py-3 text-xs font-bold text-gray-500 dark:text-muted uppercase tracking-wider">Producto</th>
-                    <th className="px-2 sm:px-4 py-2 sm:py-3 text-xs font-bold text-gray-500 dark:text-muted uppercase tracking-wider">Categoría</th>
-                    <th className="px-2 sm:px-4 py-2 sm:py-3 text-xs font-bold text-gray-500 dark:text-muted uppercase tracking-wider">Precio</th>
-                    <th className={cn("px-2 sm:px-4 py-2 sm:py-3 text-xs font-bold text-gray-500 dark:text-muted uppercase tracking-wider", !showExtendedCols && "hidden")}>Historial</th>
-                    <th className={cn("px-2 sm:px-4 py-2 sm:py-3 text-xs font-bold text-gray-500 dark:text-muted uppercase tracking-wider", !showExtendedCols && "hidden")}>Badge</th>
-                    <th className="px-2 sm:px-4 py-2 sm:py-3 text-xs font-bold text-gray-500 dark:text-muted uppercase tracking-wider">Stock</th>
-                    <th className={cn("px-2 sm:px-4 py-2 sm:py-3 text-xs font-bold text-gray-500 dark:text-muted uppercase tracking-wider", !showExtendedCols && "hidden")} title="Basado en las ultimas compras">Costo Prom.</th>
-                    <th className={cn("px-2 sm:px-4 py-2 sm:py-3 text-xs font-bold text-gray-500 dark:text-muted uppercase tracking-wider", !showExtendedCols && "hidden")}>Rotacion</th>
-                    <th className={cn("px-2 sm:px-4 py-2 sm:py-3 text-xs font-bold text-gray-500 dark:text-muted uppercase tracking-wider", !showExtendedCols && "hidden")}>Cambio 30d</th>
-                    <th className="px-2 sm:px-4 py-2 sm:py-3 text-xs font-bold text-gray-500 dark:text-muted uppercase tracking-wider">Estado</th>
-                    <th className="px-2 sm:px-4 py-2 sm:py-3 text-xs font-bold text-gray-500 dark:text-muted uppercase tracking-wider">Acciones</th>
+                    <th className="px-2 sm:px-4 py-2 sm:py-3 text-xs font-bold text-gray-500 dark:text-muted w-12">Img</th>
+                    <th className="px-2 sm:px-4 py-2 sm:py-3 text-xs font-bold text-gray-500 dark:text-muted">Producto</th>
+                    <th className="px-2 sm:px-4 py-2 sm:py-3 text-xs font-bold text-gray-500 dark:text-muted">Categoría</th>
+                    <th className="px-2 sm:px-4 py-2 sm:py-3 text-xs font-bold text-gray-500 dark:text-muted">Precio</th>
+                    <th className={cn("px-2 sm:px-4 py-2 sm:py-3 text-xs font-bold text-gray-500 dark:text-muted", !showExtendedCols && "hidden")}>Historial</th>
+                    <th className={cn("px-2 sm:px-4 py-2 sm:py-3 text-xs font-bold text-gray-500 dark:text-muted", !showExtendedCols && "hidden")}>Badge</th>
+                    <th className="px-2 sm:px-4 py-2 sm:py-3 text-xs font-bold text-gray-500 dark:text-muted">Stock</th>
+                    <th className={cn("px-2 sm:px-4 py-2 sm:py-3 text-xs font-bold text-gray-500 dark:text-muted", !showExtendedCols && "hidden")} title="Basado en las ultimas compras">Costo Prom.</th>
+                    <th className={cn("px-2 sm:px-4 py-2 sm:py-3 text-xs font-bold text-gray-500 dark:text-muted", !showExtendedCols && "hidden")}>Rotacion</th>
+                    <th className={cn("px-2 sm:px-4 py-2 sm:py-3 text-xs font-bold text-gray-500 dark:text-muted", !showExtendedCols && "hidden")}>Cambio 30d</th>
+                    <th className="px-2 sm:px-4 py-2 sm:py-3 text-xs font-bold text-gray-500 dark:text-muted">Estado</th>
+                    <th className="px-2 sm:px-4 py-2 sm:py-3 text-xs font-bold text-gray-500 dark:text-muted">Acciones</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-50">
@@ -1489,7 +1489,7 @@ export default function InventoryTab() {
                       {items.length === 0 ? (
                         <p className="text-xs text-gray-400 dark:text-muted text-center py-4">Sin productos</p>
                       ) : items.map(p => (
-                        <div key={p.id} className="bg-white dark:bg-card rounded-lg p-2.5 shadow-sm border border-gray-100 dark:border-border cursor-pointer hover:shadow-md transition-shadow"
+                        <div key={p.id} className="bg-white dark:bg-card rounded-lg p-2.5  border border-gray-100 dark:border-border cursor-pointer hover:shadow-sm transition-shadow"
                           onClick={() => { setEditModalProduct(p); }}>
                           <p className="text-xs font-bold text-gray-800 dark:text-foreground truncate">{p.name}</p>
                           <div className="flex items-center justify-between mt-1">
@@ -1523,7 +1523,7 @@ export default function InventoryTab() {
         });
         return (
           <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/50" onClick={(e) => e.target === e.currentTarget && setShowPicker(false)}>
-            <div className="bg-white dark:bg-card w-full sm:max-w-4xl sm:rounded-2xl rounded-t-2xl shadow-2xl overflow-hidden max-h-[90dvh] flex flex-col">
+            <div className="bg-white dark:bg-card w-full sm:max-w-4xl sm:rounded-xl rounded-t-2xl overflow-hidden max-h-[90dvh] flex flex-col">
               <div className="flex items-center justify-between px-5 py-4 border-b sticky top-0 bg-white dark:bg-card z-10">
                 <h3 className="font-extrabold text-gray-900 dark:text-foreground">Escoger producto</h3>
                 <div className="flex items-center gap-2">
@@ -1577,7 +1577,7 @@ export default function InventoryTab() {
                           setEditModalProduct(p);
                           setEditForm({ ...p });
                         }}
-                        className="flex flex-col items-center gap-2 p-3 rounded-xl border border-gray-200 dark:border-card-border hover:border-primary hover:shadow-md transition-all text-center group"
+                        className="flex flex-col items-center gap-2 p-3 rounded-xl border border-gray-200 dark:border-card-border hover:border-primary hover:shadow-sm transition-all text-center group"
                       >
                         <div className="w-16 h-16 rounded-lg bg-gray-100 dark:bg-accent overflow-hidden flex-shrink-0">
                           {p.image ? (
@@ -1611,7 +1611,7 @@ export default function InventoryTab() {
       {/* ── Add product modal ── */}
       {showAdd && (
         <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/50" onClick={(e) => e.target === e.currentTarget && setShowAdd(false)}>
-          <div className="bg-white dark:bg-card w-full sm:max-w-2xl sm:rounded-2xl rounded-t-2xl shadow-2xl overflow-y-auto max-h-[90dvh]">
+          <div className="bg-white dark:bg-card w-full sm:max-w-2xl sm:rounded-xl rounded-t-2xl overflow-y-auto max-h-[90dvh]">
             <div className="flex items-center justify-between px-5 py-4 border-b sticky top-0 bg-white dark:bg-card z-10">
               <h3 className="font-extrabold text-gray-900 dark:text-foreground">Agregar producto</h3>
               <button onClick={() => setShowAdd(false)} className="p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-accent transition-colors">
@@ -1621,7 +1621,7 @@ export default function InventoryTab() {
             <form onSubmit={addProduct} className="p-5 space-y-5">
               {/* National product DB search */}
               <div className="bg-emerald-50 border border-emerald-100 rounded-xl p-4 space-y-3">
-                <p className="text-xs font-bold text-emerald-700 uppercase tracking-wide flex items-center gap-1.5">
+                <p className="text-xs font-bold text-emerald-700 flex items-center gap-1.5">
                   <Search className="h-3.5 w-3.5" /> Buscar en base nacional de productos
                 </p>
                 <div className="flex flex-wrap gap-2">
@@ -1813,8 +1813,8 @@ export default function InventoryTab() {
                 </div>
               </div>
               <div className="flex flex-wrap gap-3 pt-1">
-                <button type="button" onClick={() => setShowAdd(false)} className="flex-1 py-2.5 rounded-xl border border-gray-200 dark:border-card-border text-sm font-semibold text-gray-600 dark:text-muted hover:bg-gray-50 dark:hover:bg-surface transition-colors">Cancelar</button>
-                <button type="submit" disabled={saving} className="flex-1 py-2.5 rounded-xl bg-primary text-white text-sm font-bold hover:bg-primary-dark transition-colors disabled:opacity-60">
+                <button type="button" onClick={() => setShowAdd(false)} className="flex-1 py-2.5 rounded-lg border border-gray-200 dark:border-card-border text-sm font-semibold text-gray-600 dark:text-muted hover:bg-gray-50 dark:hover:bg-surface transition-colors">Cancelar</button>
+                <button type="submit" disabled={saving} className="flex-1 py-2.5 rounded-lg bg-primary text-white text-sm font-bold hover:bg-primary-dark transition-colors disabled:opacity-60">
                   {saving ? "Guardando…" : "Agregar producto"}
                 </button>
               </div>
@@ -1826,7 +1826,7 @@ export default function InventoryTab() {
       {/* ── Edit product modal ── */}
       {editModalProduct && (
         <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/50" onClick={(e) => e.target === e.currentTarget && closeEditModal()}>
-          <div className="bg-white dark:bg-card w-full sm:max-w-2xl sm:rounded-2xl rounded-t-2xl shadow-2xl overflow-y-auto max-h-[90dvh]">
+          <div className="bg-white dark:bg-card w-full sm:max-w-2xl sm:rounded-xl rounded-t-2xl overflow-y-auto max-h-[90dvh]">
             <div className="flex items-center justify-between px-5 py-4 border-b sticky top-0 bg-white dark:bg-card z-10">
               <h3 className="font-extrabold text-gray-900 dark:text-foreground truncate pr-2">Editar: {editModalProduct.name}</h3>
               <button onClick={closeEditModal} className="p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-accent transition-colors shrink-0">
@@ -2006,8 +2006,8 @@ export default function InventoryTab() {
                 </button>
               </div>
               <div className="flex flex-wrap gap-3">
-                <button type="button" onClick={closeEditModal} className="flex-1 py-2.5 rounded-xl border border-gray-200 dark:border-card-border text-sm font-semibold text-gray-600 dark:text-muted hover:bg-gray-50 dark:hover:bg-surface transition-colors">Cancelar</button>
-                <button type="button" onClick={saveEdit} disabled={saving} className="flex-1 py-2.5 rounded-xl bg-primary text-white text-sm font-bold hover:bg-primary-dark transition-colors disabled:opacity-60">
+                <button type="button" onClick={closeEditModal} className="flex-1 py-2.5 rounded-lg border border-gray-200 dark:border-card-border text-sm font-semibold text-gray-600 dark:text-muted hover:bg-gray-50 dark:hover:bg-surface transition-colors">Cancelar</button>
+                <button type="button" onClick={saveEdit} disabled={saving} className="flex-1 py-2.5 rounded-lg bg-primary text-white text-sm font-bold hover:bg-primary-dark transition-colors disabled:opacity-60">
                   {saving ? "Guardando…" : "Guardar cambios"}
                 </button>
               </div>
@@ -2018,7 +2018,7 @@ export default function InventoryTab() {
 
       {/* Bulk action bar */}
       {selectedIds.size > 0 && (
-        <div className="fixed bottom-4 left-1/2 -translate-x-1/2 z-40 bg-primary text-white rounded-2xl shadow-2xl px-5 py-3 flex flex-wrap items-center gap-2 sm:gap-4 animate-[slideUp_0.2s_ease-out]">
+        <div className="fixed bottom-4 left-1/2 -translate-x-1/2 z-40 bg-primary text-white rounded-xl px-5 py-3 flex flex-wrap items-center gap-2 sm:gap-4 animate-[slideUp_0.2s_ease-out]">
           <CheckSquare className="h-5 w-5 shrink-0" />
           <span className="text-sm font-bold">{selectedIds.size} seleccionado{selectedIds.size > 1 ? "s" : ""}</span>
           <button onClick={() => { setBulkField("active"); setBulkValue("true"); setBulkModal(true); }}
@@ -2072,7 +2072,7 @@ export default function InventoryTab() {
       {/* Bulk delete confirmation modal */}
       {bulkDeleteConfirm && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
-          <div className="bg-white dark:bg-card rounded-2xl shadow-2xl max-w-sm w-full overflow-hidden">
+          <div className="bg-white dark:bg-card rounded-xl max-w-sm w-full overflow-hidden">
             <div className="p-5 space-y-4">
               <div className="flex items-center gap-3">
                 <div className="p-2.5 rounded-xl bg-red-100 dark:bg-red-950/30">
@@ -2089,14 +2089,14 @@ export default function InventoryTab() {
               <div className="flex gap-3">
                 <button
                   onClick={() => setBulkDeleteConfirm(false)}
-                  className="flex-1 py-2.5 rounded-xl border border-gray-200 dark:border-card-border text-sm font-semibold text-gray-600 dark:text-muted hover:bg-gray-100 transition-colors"
+                  className="flex-1 py-2.5 rounded-lg border border-gray-200 dark:border-card-border text-sm font-semibold text-gray-600 dark:text-muted hover:bg-gray-100 transition-colors"
                 >
                   Cancelar
                 </button>
                 <button
                   onClick={executeBulkDelete}
                   disabled={bulkDeleting}
-                  className="flex-1 py-2.5 rounded-xl bg-red-600 hover:bg-red-700 text-white text-sm font-semibold transition-colors disabled:opacity-50"
+                  className="flex-1 py-2.5 rounded-lg bg-red-600 hover:bg-red-700 text-white text-sm font-semibold transition-colors disabled:opacity-50"
                 >
                   {bulkDeleting ? "Eliminando…" : `Sí, eliminar ${selectedIds.size}`}
                 </button>
@@ -2109,7 +2109,7 @@ export default function InventoryTab() {
       {/* Bulk edit modal */}
       {bulkModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
-          <div className="bg-white dark:bg-card rounded-2xl shadow-2xl max-w-sm w-full overflow-hidden">
+          <div className="bg-white dark:bg-card rounded-xl max-w-sm w-full overflow-hidden">
             <div className="flex items-center justify-between px-3 sm:px-6 py-4 border-b border-gray-100 dark:border-card-border">
               <h3 className="text-lg font-bold text-foreground">Edición masiva — {selectedIds.size} producto{selectedIds.size > 1 ? "s" : ""}</h3>
               <button onClick={() => setBulkModal(false)} className="p-2 rounded-lg hover:bg-black/5 dark:hover:bg-white/5"><X className="h-5 w-5" /></button>
@@ -2161,9 +2161,9 @@ export default function InventoryTab() {
               </div>
             </div>
             <div className="px-3 sm:px-6 py-4 bg-gray-50 dark:bg-surface border-t border-gray-100 dark:border-card-border flex flex-wrap gap-3">
-              <button onClick={() => setBulkModal(false)} className="flex-1 py-2.5 rounded-xl border border-gray-200 dark:border-card-border text-sm font-semibold text-gray-600 dark:text-muted hover:bg-gray-100 transition-colors">Cancelar</button>
+              <button onClick={() => setBulkModal(false)} className="flex-1 py-2.5 rounded-lg border border-gray-200 dark:border-card-border text-sm font-semibold text-gray-600 dark:text-muted hover:bg-gray-100 transition-colors">Cancelar</button>
               <button onClick={executeBulk} disabled={bulkSaving || (!bulkValue && bulkField !== "active")}
-                className="flex-1 py-2.5 rounded-xl bg-primary text-white text-sm font-bold hover:bg-primary-dark transition-colors disabled:opacity-60">
+                className="flex-1 py-2.5 rounded-lg bg-primary text-white text-sm font-bold hover:bg-primary-dark transition-colors disabled:opacity-60">
                 {bulkSaving ? "Aplicando…" : "Aplicar"}
               </button>
             </div>
@@ -2185,7 +2185,7 @@ export default function InventoryTab() {
         <>
           <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-sm" onClick={() => setShowQRProduct(null)} />
           <div className="fixed inset-0 z-50 flex items-center justify-center p-4" onClick={e => e.target === e.currentTarget && setShowQRProduct(null)}>
-            <div className="w-full max-w-sm bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl shadow-2xl p-5 space-y-4 text-center">
+            <div className="w-full max-w-sm bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl p-5 space-y-4 text-center">
               <div className="flex items-center justify-between">
                 <h3 className="text-sm font-bold text-gray-900 dark:text-foreground">Codigo QR</h3>
                 <button onClick={() => setShowQRProduct(null)} className="p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-accent">
@@ -2233,7 +2233,7 @@ export default function InventoryTab() {
         <>
           <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-sm" onClick={() => setShowAutoReorder(null)} />
           <div className="fixed inset-0 z-50 flex items-center justify-center p-4" onClick={e => e.target === e.currentTarget && setShowAutoReorder(null)}>
-            <div className="w-full max-w-sm bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl shadow-2xl p-5 space-y-4">
+            <div className="w-full max-w-sm bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl p-5 space-y-4">
               <div className="flex items-center justify-between">
                 <h3 className="text-sm font-bold text-gray-900 dark:text-foreground">Configurar Auto-Reorden</h3>
                 <button onClick={() => setShowAutoReorder(null)} className="p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-accent">
@@ -2244,7 +2244,7 @@ export default function InventoryTab() {
                 <label className="block text-xs font-bold text-gray-600 dark:text-gray-400 mb-1">Reordenar cuando stock sea menor o igual a:</label>
                 <input
                   type="number" min="1" value={arThreshold} onChange={e => setArThreshold(e.target.value)}
-                  className="w-full px-3 py-2 rounded-xl border border-gray-200 dark:border-card-border text-sm outline-none focus:ring-2 focus:ring-primary/30"
+                  className="w-full px-3 py-2 rounded-lg border border-gray-200 dark:border-card-border text-sm outline-none focus:ring-2 focus:ring-primary/30"
                   placeholder="5"
                 />
               </div>
@@ -2252,15 +2252,15 @@ export default function InventoryTab() {
                 <label className="block text-xs font-bold text-gray-600 dark:text-gray-400 mb-1">Cantidad a pedir:</label>
                 <input
                   type="number" min="1" value={arQty} onChange={e => setArQty(e.target.value)}
-                  className="w-full px-3 py-2 rounded-xl border border-gray-200 dark:border-card-border text-sm outline-none focus:ring-2 focus:ring-primary/30"
+                  className="w-full px-3 py-2 rounded-lg border border-gray-200 dark:border-card-border text-sm outline-none focus:ring-2 focus:ring-primary/30"
                   placeholder="10"
                 />
               </div>
               <div className="flex gap-2 pt-1">
-                <button onClick={() => setShowAutoReorder(null)} className="flex-1 px-4 py-2 rounded-xl text-sm font-bold text-gray-600 bg-gray-100 hover:bg-gray-200 transition-colors">
+                <button onClick={() => setShowAutoReorder(null)} className="flex-1 px-4 py-2 rounded-lg text-sm font-bold text-gray-600 bg-gray-100 hover:bg-gray-200 transition-colors">
                   Cancelar
                 </button>
-                <button onClick={() => saveAutoReorder(showAutoReorder)} className="flex-1 px-4 py-2 rounded-xl text-sm font-bold text-white bg-primary hover:bg-primary-dark shadow-sm transition-colors">
+                <button onClick={() => saveAutoReorder(showAutoReorder)} className="flex-1 px-4 py-2 rounded-lg text-sm font-bold text-white bg-primary hover:bg-primary-dark  transition-colors">
                   Guardar
                 </button>
               </div>

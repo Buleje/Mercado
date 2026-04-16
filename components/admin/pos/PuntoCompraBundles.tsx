@@ -94,7 +94,7 @@ export default function PuntoCompraBundles({ onAddBundle }: Props) {
     <div className="space-y-2 p-1 max-h-72 overflow-y-auto">
       <div className="flex items-center gap-1.5 mb-2">
         <Boxes className="h-3 w-3 text-[#f97316]" />
-        <span className="text-[10px] font-semibold text-gray-400 uppercase tracking-wider">
+        <span className="text-[10px] font-semibold text-gray-400">
           {bundles.length} paquete{bundles.length !== 1 ? "s" : ""} disponible{bundles.length !== 1 ? "s" : ""}
         </span>
       </div>

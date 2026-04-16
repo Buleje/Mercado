@@ -49,7 +49,7 @@ export function VendorKPICards({ kpis }: Props) {
   return (
     <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
       {/* Ventas hoy */}
-      <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl p-4 shadow-sm flex flex-col gap-2">
+      <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl p-4  flex flex-col gap-2">
         <div className="flex items-center gap-2 text-gray-500 dark:text-muted text-xs font-medium">
           <ShoppingBag className="h-4 w-4 text-[#00B4A6]" />
           Ventas hoy
@@ -64,7 +64,7 @@ export function VendorKPICards({ kpis }: Props) {
       </div>
 
       {/* Pedidos pendientes */}
-      <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl p-4 shadow-sm flex flex-col gap-2">
+      <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl p-4  flex flex-col gap-2">
         <div className="flex items-center gap-2 text-gray-500 dark:text-muted text-xs font-medium">
           <Package className="h-4 w-4 text-[#f97316]" />
           Sin atender
@@ -76,7 +76,7 @@ export function VendorKPICards({ kpis }: Props) {
       </div>
 
       {/* Stock bajo */}
-      <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl p-4 shadow-sm flex flex-col gap-2">
+      <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl p-4  flex flex-col gap-2">
         <div className="flex items-center gap-2 text-gray-500 dark:text-muted text-xs font-medium">
           <AlertTriangle className="h-4 w-4 text-yellow-500" />
           Stock bajo
@@ -94,7 +94,7 @@ export function VendorKPICards({ kpis }: Props) {
       </div>
 
       {/* Ingreso ayer */}
-      <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl p-4 shadow-sm flex flex-col gap-2">
+      <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl p-4  flex flex-col gap-2">
         <div className="flex items-center gap-2 text-gray-500 dark:text-muted text-xs font-medium">
           <TrendingUp className="h-4 w-4 text-[#00B4A6]" />
           Ayer

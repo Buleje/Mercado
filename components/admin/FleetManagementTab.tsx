@@ -176,7 +176,7 @@ export default function FleetManagementTab() {
           </div>
 
           {!loading && filtered.length === 0 && (
-            <div className="text-center py-12 bg-white dark:bg-card border border-dashed border-gray-200 dark:border-card-border rounded-2xl">
+            <div className="text-center py-12 bg-white dark:bg-card border border-dashed border-gray-200 dark:border-card-border rounded-xl">
               <Truck className="h-10 w-10 text-gray-300 mx-auto mb-2" />
               <p className="text-sm text-gray-500 dark:text-muted">Sin vehículos en esta categoría</p>
             </div>
@@ -184,7 +184,7 @@ export default function FleetManagementTab() {
 
           <div className="space-y-3">
             {filtered.map(v => (
-              <div key={v.id} className="bg-white dark:bg-card rounded-2xl border border-gray-200 dark:border-card-border overflow-hidden">
+              <div key={v.id} className="bg-white dark:bg-card rounded-xl border border-gray-200 dark:border-card-border overflow-hidden">
                 <button
                   onClick={() => setExpandedId(expandedId === v.id ? null : v.id)}
                   className="w-full flex items-center justify-between px-4 py-4 hover:bg-gray-50 dark:hover:bg-surface/50 transition-colors"
@@ -278,7 +278,7 @@ export default function FleetManagementTab() {
 
       {/* Maintenance view */}
       {view === "maintenance" && (
-        <div className="bg-white dark:bg-card rounded-2xl border border-gray-200 dark:border-card-border overflow-hidden">
+        <div className="bg-white dark:bg-card rounded-xl border border-gray-200 dark:border-card-border overflow-hidden">
           <div className="overflow-x-auto">
             <table className="w-full min-w-[640px] text-sm">
               <thead>
@@ -314,7 +314,7 @@ export default function FleetManagementTab() {
       {/* Change status modal */}
       {showStatusModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4" onClick={() => setShowStatusModal(null)}>
-          <div className="bg-white dark:bg-card rounded-2xl p-4 sm:p-6 w-full max-w-sm border border-gray-200 dark:border-card-border shadow-2xl space-y-4" onClick={e => e.stopPropagation()}>
+          <div className="bg-white dark:bg-card rounded-xl p-4 sm:p-6 w-full max-w-sm border border-gray-200 dark:border-card-border space-y-4" onClick={e => e.stopPropagation()}>
             <div className="flex items-center justify-between">
               <h3 className="font-extrabold text-gray-900 dark:text-foreground">Estado — {showStatusModal.name}</h3>
               <button onClick={() => setShowStatusModal(null)}><X className="h-4 w-4 text-gray-400" /></button>
@@ -344,7 +344,7 @@ export default function FleetManagementTab() {
       {/* Register maintenance modal */}
       {showMaintModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4" onClick={() => setShowMaintModal(false)}>
-          <div className="bg-white dark:bg-card rounded-2xl p-4 sm:p-6 w-full max-w-md border border-gray-200 dark:border-card-border shadow-2xl space-y-4" onClick={e => e.stopPropagation()}>
+          <div className="bg-white dark:bg-card rounded-xl p-4 sm:p-6 w-full max-w-md border border-gray-200 dark:border-card-border space-y-4" onClick={e => e.stopPropagation()}>
             <div className="flex items-center justify-between">
               <h3 className="font-extrabold text-gray-900 dark:text-foreground">Registrar mantenimiento</h3>
               <button onClick={() => setShowMaintModal(false)}><X className="h-4 w-4 text-gray-400" /></button>
@@ -388,8 +388,8 @@ export default function FleetManagementTab() {
               </div>
             </div>
             <div className="flex justify-end gap-2">
-              <button onClick={() => setShowMaintModal(false)} className="px-4 py-2 rounded-xl text-sm font-bold text-gray-500 hover:bg-gray-100 dark:hover:bg-accent">Cancelar</button>
-              <button onClick={saveMaintenance} className="px-4 py-2 rounded-xl text-sm font-bold bg-primary text-white hover:bg-primary/90 flex items-center gap-1.5">
+              <button onClick={() => setShowMaintModal(false)} className="px-4 py-2 rounded-lg text-sm font-bold text-gray-500 hover:bg-gray-100 dark:hover:bg-accent">Cancelar</button>
+              <button onClick={saveMaintenance} className="px-4 py-2 rounded-lg text-sm font-bold bg-primary text-white hover:bg-primary/90 flex items-center gap-1.5">
                 <Check className="h-4 w-4" /> Guardar
               </button>
             </div>

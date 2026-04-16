@@ -133,7 +133,7 @@ const PER_PAGE = 10;
 function EmptyChartPrestamos({ message }: { message: string }) {
   return (
     <div className="flex flex-col items-center justify-center py-12 text-center">
-      <div className="h-12 w-12 rounded-2xl bg-primary/10 flex items-center justify-center mb-3">
+      <div className="h-12 w-12 rounded-xl bg-primary/10 flex items-center justify-center mb-3">
         <BarChart3 className="h-6 w-6 text-primary" />
       </div>
       <p className="text-sm font-medium text-gray-500 dark:text-gray-400">{message}</p>
@@ -160,7 +160,7 @@ function SparklineKPICard({
   const gradId = `sp-${title.replace(/\W+/g, "")}`;
   return (
     <div
-      className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl shadow-sm p-3 relative overflow-hidden"
+      className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl  p-3 relative overflow-hidden"
       style={{ borderBottomColor: accentColor, borderBottomWidth: 4 }}
     >
       <div className="flex items-center gap-1.5 mb-1">
@@ -308,8 +308,8 @@ function PrestamosDashboard({ prestamos, resumen }: { prestamos: Prestamo[]; res
       {/* Mejora 5: Indicador de mora destacado */}
       {moraAcumulada > 0 && (
         <m.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.05 }}>
-          <div className="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-700 rounded-2xl p-4 flex items-center gap-4">
-            <div className="h-12 w-12 rounded-xl bg-amber-500 flex items-center justify-center shrink-0 shadow-md">
+          <div className="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-700 rounded-xl p-4 flex items-center gap-4">
+            <div className="h-12 w-12 rounded-xl bg-amber-500 flex items-center justify-center shrink-0">
               <AlertTriangle className="h-6 w-6 text-white" />
             </div>
             <div className="flex-1 min-w-0">
@@ -329,7 +329,7 @@ function PrestamosDashboard({ prestamos, resumen }: { prestamos: Prestamo[]; res
 
       {/* AreaChart: cobros vs nuevos */}
       <m.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}>
-        <div className="bg-white dark:bg-card rounded-2xl border border-gray-200 dark:border-card-border p-6 shadow-sm">
+        <div className="bg-white dark:bg-card rounded-xl border border-gray-200 dark:border-card-border p-6 ">
           <h3 className="text-sm font-bold text-gray-700 dark:text-foreground mb-4">Cobros vs Nuevos préstamos (6 meses)</h3>
           {areaData.some(d => d.cobrado > 0 || d.nuevos > 0) ? (
             <ResponsiveContainer width="100%" height={250}>
@@ -363,7 +363,7 @@ function PrestamosDashboard({ prestamos, resumen }: { prestamos: Prestamo[]; res
       <m.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}>
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* Mejora 3: Top 5 deudores */}
-          <div className="bg-white dark:bg-card rounded-2xl border border-gray-200 dark:border-card-border p-6 shadow-sm">
+          <div className="bg-white dark:bg-card rounded-xl border border-gray-200 dark:border-card-border p-6 ">
             <h3 className="text-sm font-bold text-gray-700 dark:text-foreground mb-4 flex items-center gap-2">
               <User className="h-4 w-4 text-[#f97316]" /> Top 5 deudores
             </h3>
@@ -387,7 +387,7 @@ function PrestamosDashboard({ prestamos, resumen }: { prestamos: Prestamo[]; res
           </div>
 
           {/* Mejora 4: Donut de riesgo con 4 estados semáforo */}
-          <div className="bg-white dark:bg-card rounded-2xl border border-gray-200 dark:border-card-border p-6 shadow-sm">
+          <div className="bg-white dark:bg-card rounded-xl border border-gray-200 dark:border-card-border p-6 ">
             <h3 className="text-sm font-bold text-gray-700 dark:text-foreground mb-2 flex items-center gap-2">
               <Shield className="h-4 w-4 text-purple-500" /> Distribución por estado
             </h3>
@@ -416,11 +416,11 @@ function PrestamosDashboard({ prestamos, resumen }: { prestamos: Prestamo[]; res
           </div>
 
           {/* Mejora 6: Resumen por dirección con barras comparativas */}
-          <div className="bg-white dark:bg-card rounded-2xl border border-gray-200 dark:border-card-border p-6 shadow-sm">
+          <div className="bg-white dark:bg-card rounded-xl border border-gray-200 dark:border-card-border p-6 ">
             <h3 className="text-sm font-bold text-gray-700 dark:text-foreground mb-4 flex items-center gap-2">
               <Scale className="h-4 w-4 text-emerald-500" /> Dado vs Recibido
             </h3>
-            <div className="space-y-4">
+            <div className="space-y-6">
               <div>
                 <div className="flex justify-between items-center mb-1">
                   <div className="flex items-center gap-1.5">
@@ -953,7 +953,7 @@ export default function PrestamosModule() {
       {/* Header — Mejora 20 */}
       <div className="flex flex-col sm:flex-row sm:items-center gap-3">
         <div className="flex items-center gap-3 flex-1 min-w-0">
-          <div className="h-10 w-10 rounded-xl bg-[#2563EB] text-white flex items-center justify-center shadow-sm shrink-0">
+          <div className="h-10 w-10 rounded-lg bg-[#2563EB] text-white flex items-center justify-center  shrink-0">
             <DollarSign className="h-5 w-5" />
           </div>
           <div>
@@ -1034,24 +1034,24 @@ export default function PrestamosModule() {
         }
 
         return (
-          <div className="space-y-4">
+          <div className="space-y-6">
             {/* KPI Cards — mejorado con iconos prominentes */}
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-              <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl shadow-sm hover:shadow-md transition-shadow p-3">
+              <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl  hover:shadow-sm transition-shadow p-3">
                 <div className="flex items-center gap-2 mb-1">
                   <Landmark className="h-4 w-4 text-[#2563EB]" />
                   <p className="text-[10px] uppercase font-bold text-gray-400">Total prestado</p>
                 </div>
                 <p className="text-2xl font-extrabold font-mono text-gray-900 dark:text-white">{formatCurrency(totalPrestado)}</p>
               </div>
-              <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl shadow-sm hover:shadow-md transition-shadow p-3">
+              <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl  hover:shadow-sm transition-shadow p-3">
                 <div className="flex items-center gap-2 mb-1">
                   <DollarSign className="h-4 w-4 text-[#f97316]" />
                   <p className="text-[10px] uppercase font-bold text-gray-400">Por cobrar</p>
                 </div>
                 <p className={cn("text-2xl font-extrabold font-mono", porCobrar > totalPrestado * 0.5 ? "text-[#f97316]" : "text-red-600 dark:text-red-400")}>{formatCurrency(porCobrar)}</p>
               </div>
-              <div className={cn("bg-white dark:bg-card border rounded-xl shadow-sm hover:shadow-md transition-shadow p-3", cuotasVencidas > 3 ? "border-red-200 dark:border-red-800" : "border-gray-200 dark:border-card-border")}>
+              <div className={cn("bg-white dark:bg-card border rounded-xl  hover:shadow-sm transition-shadow p-3", cuotasVencidas > 3 ? "border-red-200 dark:border-red-800" : "border-gray-200 dark:border-card-border")}>
                 <div className="flex items-center gap-2 mb-1">
                   <XCircle className="h-4 w-4 text-red-500" />
                   <p className="text-[10px] uppercase font-bold text-gray-400">Cuotas vencidas</p>
@@ -1060,7 +1060,7 @@ export default function PrestamosModule() {
                   {cuotasVencidas}
                 </p>
               </div>
-              <div className={cn("bg-white dark:bg-card border rounded-xl shadow-sm hover:shadow-md transition-shadow p-3", tasaRecuperacion > 80 ? "border-emerald-200 dark:border-emerald-800" : "border-gray-200 dark:border-card-border")}>
+              <div className={cn("bg-white dark:bg-card border rounded-xl  hover:shadow-sm transition-shadow p-3", tasaRecuperacion > 80 ? "border-emerald-200 dark:border-emerald-800" : "border-gray-200 dark:border-card-border")}>
                 <div className="flex items-center gap-2 mb-1">
                   <TrendingUp className="h-4 w-4 text-emerald-500" />
                   <p className="text-[10px] uppercase font-bold text-gray-400">Tasa recuperacion</p>
@@ -1073,7 +1073,7 @@ export default function PrestamosModule() {
 
             {/* Grafica mensual */}
             {monthData.some(d => d.cobrado > 0 || d.nuevos > 0) && (
-              <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl p-4 shadow-sm">
+              <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl p-4 ">
                 <h4 className="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase mb-3 flex items-center gap-1.5">
                   <TrendingUp className="h-3.5 w-3.5" /> Movimiento mensual (6 meses)
                 </h4>
@@ -1116,13 +1116,13 @@ export default function PrestamosModule() {
           <div className="flex gap-2">
             <div className="relative flex-1">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
-              <input type="text" value={searchQuery} onChange={e => { setSearchQuery(e.target.value); setPage(1); }} placeholder="Buscar por cliente, entidad, N° operación..." className="w-full pl-9 pr-3 py-2.5 rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 text-sm text-gray-900 dark:text-white placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#2563EB]/30" />
+              <input type="text" value={searchQuery} onChange={e => { setSearchQuery(e.target.value); setPage(1); }} placeholder="Buscar por cliente, entidad, N° operación..." className="w-full pl-9 pr-3 py-2.5 rounded-lg border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 text-sm text-gray-900 dark:text-white placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#2563EB]/30" />
             </div>
-            <button onClick={() => setShowFilters(f => !f)} className={cn("flex items-center gap-1.5 px-4 py-2.5 rounded-xl border text-sm font-semibold transition-colors", showFilters ? "bg-[#2563EB] text-white border-[#2563EB]" : "bg-white dark:bg-white/5 text-gray-600 dark:text-gray-400 border-gray-200 dark:border-white/10 hover:border-[#2563EB] hover:text-[#2563EB]")}>
+            <button onClick={() => setShowFilters(f => !f)} className={cn("flex items-center gap-1.5 px-4 py-2.5 rounded-lg border text-sm font-semibold transition-colors", showFilters ? "bg-[#2563EB] text-white border-[#2563EB]" : "bg-white dark:bg-white/5 text-gray-600 dark:text-gray-400 border-gray-200 dark:border-white/10 hover:border-[#2563EB] hover:text-[#2563EB]")}>
               <Filter className="h-4 w-4" />
               Filtros {activeFilterCount > 0 && <span className="bg-[#f97316] text-white rounded-full text-[10px] font-bold px-1.5 py-0.5">{activeFilterCount}</span>}
             </button>
-            <button onClick={() => { fetchPrestamos(); fetchResumen(); }} title="Recargar" className="p-2.5 rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 hover:bg-gray-50 dark:hover:bg-white/10 transition-colors">
+            <button onClick={() => { fetchPrestamos(); fetchResumen(); }} title="Recargar" className="p-2.5 rounded-lg border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 hover:bg-gray-50 dark:hover:bg-white/10 transition-colors">
               <RotateCcw className="h-4 w-4 text-gray-400" />
             </button>
           </div>
@@ -1181,7 +1181,7 @@ export default function PrestamosModule() {
         );
       })()}
       {(activeTab === "activos" || activeTab === "historial") && (
-        <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl overflow-hidden shadow-sm">
+        <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl overflow-hidden ">
           {loading ? (
             <div className="flex items-center justify-center py-12">
               <Loader2 className="h-6 w-6 animate-spin text-[#2563EB]" />
@@ -1197,7 +1197,7 @@ export default function PrestamosModule() {
               <div className="text-6xl mb-4">🏦</div>
               <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">Sin préstamos</h3>
               <p className="text-sm text-gray-500 mb-6 max-w-md mx-auto">Registra préstamos a clientes con cuotas</p>
-              <button onClick={() => { setShowCreate(true); setCreateError(null); }} className="bg-[#2563EB] text-white px-6 py-2.5 rounded-xl font-medium hover:bg-[#1D4ED8]">Crear préstamo</button>
+              <button onClick={() => { setShowCreate(true); setCreateError(null); }} className="bg-[#2563EB] text-white px-6 py-2.5 rounded-lg font-medium hover:bg-[#1D4ED8]">Crear préstamo</button>
             </div>
           ) : (
             <>
@@ -1330,7 +1330,7 @@ export default function PrestamosModule() {
           {!cobrosLoading && cobrosData && (
             <>
               {/* Vencidas */}
-              <div className="bg-white dark:bg-card border border-red-200 dark:border-red-900/40 rounded-2xl shadow-sm overflow-hidden">
+              <div className="bg-white dark:bg-card border border-red-200 dark:border-red-900/40 rounded-xl  overflow-hidden">
                 <div className="bg-red-50 dark:bg-red-900/20 px-4 py-3 flex items-center gap-2 border-b border-red-200 dark:border-red-900/40">
                   <XCircle className="h-4 w-4 text-red-600 dark:text-red-400" />
                   <span className="text-sm font-bold text-red-700 dark:text-red-400">
@@ -1385,7 +1385,7 @@ export default function PrestamosModule() {
               </div>
 
               {/* Próximas */}
-              <div className="bg-white dark:bg-card border border-amber-200 dark:border-amber-900/40 rounded-2xl shadow-sm overflow-hidden">
+              <div className="bg-white dark:bg-card border border-amber-200 dark:border-amber-900/40 rounded-xl  overflow-hidden">
                 <div className="bg-amber-50 dark:bg-amber-900/20 px-4 py-3 flex items-center gap-2 border-b border-amber-200 dark:border-amber-900/40">
                   <Clock className="h-4 w-4 text-amber-600 dark:text-amber-400" />
                   <span className="text-sm font-bold text-amber-700 dark:text-amber-400">
@@ -1457,8 +1457,8 @@ export default function PrestamosModule() {
 
       {/* ── Tab: Calculadora ──────────────────────────────────────────────────── */}
       {activeTab === "calculadora" && (
-        <div className="space-y-4">
-          <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl p-4 sm:p-6 shadow-sm space-y-4">
+        <div className="space-y-6">
+          <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl p-4 sm:p-6  space-y-4">
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
               <div>
                 <label className="block text-xs font-bold text-gray-600 dark:text-gray-400 mb-1">Monto (S/)</label>
@@ -1469,7 +1469,7 @@ export default function PrestamosModule() {
                   value={calcMonto}
                   onChange={e => setCalcMonto(e.target.value)}
                   placeholder="1000"
-                  className="w-full px-3 py-2 rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 text-sm text-gray-900 dark:text-white placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#2563EB]/30"
+                  className="w-full px-3 py-2 rounded-lg border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 text-sm text-gray-900 dark:text-white placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#2563EB]/30"
                 />
               </div>
               <div>
@@ -1482,17 +1482,17 @@ export default function PrestamosModule() {
                   value={calcTasa}
                   onChange={e => setCalcTasa(e.target.value)}
                   placeholder="12"
-                  className="w-full px-3 py-2 rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 text-sm text-gray-900 dark:text-white placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#2563EB]/30"
+                  className="w-full px-3 py-2 rounded-lg border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 text-sm text-gray-900 dark:text-white placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#2563EB]/30"
                 />
               </div>
               <div>
                 <label className="block text-xs font-bold text-gray-600 dark:text-gray-400 mb-1">N° cuotas</label>
-                <input type="number" min="1" max="60" value={calcCuotas} onChange={e => setCalcCuotas(e.target.value)} placeholder="12" className="w-full px-3 py-2 rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 text-sm text-gray-900 dark:text-white placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#2563EB]/30" />
+                <input type="number" min="1" max="60" value={calcCuotas} onChange={e => setCalcCuotas(e.target.value)} placeholder="12" className="w-full px-3 py-2 rounded-lg border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 text-sm text-gray-900 dark:text-white placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#2563EB]/30" />
               </div>
               {/* Mejora 19: Sistema selector */}
               <div>
                 <label className="block text-xs font-bold text-gray-600 dark:text-gray-400 mb-1">Sistema amortización</label>
-                <select value={calcSistema} onChange={e => setCalcSistema(e.target.value as SistemaAmortizacion)} className="w-full px-3 py-2 rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 text-sm text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-[#2563EB]/30">
+                <select value={calcSistema} onChange={e => setCalcSistema(e.target.value as SistemaAmortizacion)} className="w-full px-3 py-2 rounded-lg border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 text-sm text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-[#2563EB]/30">
                   {Object.entries(SISTEMA_LABELS).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
                 </select>
               </div>
@@ -1500,10 +1500,10 @@ export default function PrestamosModule() {
             <div className="flex flex-wrap gap-2">
               {amortizacion.length > 0 && (
                 <>
-                  <button onClick={() => { setShowCreate(true); setCreateError(null); }} className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-bold text-white bg-[#2563EB] hover:bg-[#1D4ED8] shadow-sm transition-colors">
+                  <button onClick={() => { setShowCreate(true); setCreateError(null); }} className="inline-flex items-center gap-2 px-4 py-2.5 rounded-lg text-sm font-bold text-white bg-[#2563EB] hover:bg-[#1D4ED8]  transition-colors">
                     <Plus className="h-4 w-4" /> Crear Préstamo con estos datos
                   </button>
-                  <button onClick={() => setShowComparador(c => !c)} className={cn("inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-bold shadow-sm transition-colors border", showComparador ? "bg-emerald-600 text-white border-emerald-600" : "border-gray-200 dark:border-white/10 text-gray-600 dark:text-gray-400 hover:border-emerald-500 hover:text-emerald-600")}>
+                  <button onClick={() => setShowComparador(c => !c)} className={cn("inline-flex items-center gap-2 px-4 py-2.5 rounded-lg text-sm font-bold  transition-colors border", showComparador ? "bg-emerald-600 text-white border-emerald-600" : "border-gray-200 dark:border-white/10 text-gray-600 dark:text-gray-400 hover:border-emerald-500 hover:text-emerald-600")}>
                     <Scale className="h-4 w-4" /> Comparar sistemas
                   </button>
                 </>
@@ -1513,7 +1513,7 @@ export default function PrestamosModule() {
 
           {/* Amortization table */}
           {amortizacion.length > 0 && (
-            <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl overflow-hidden shadow-sm">
+            <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl overflow-hidden ">
               <div className="px-4 py-3 border-b border-gray-100 dark:border-white/5">
                 <p className="text-sm font-bold text-gray-900 dark:text-white">Tabla de amortización</p>
                 <p className="text-xs text-gray-400 mt-0.5">
@@ -1551,7 +1551,7 @@ export default function PrestamosModule() {
 
           {/* Mejora 20: Gráfico capital vs interés */}
           {amortizacion.length > 0 && (
-            <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl p-4 sm:p-6 shadow-sm">
+            <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl p-4 sm:p-6 ">
               <h3 className="text-sm font-bold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
                 <TrendingUp className="h-4 w-4 text-[#2563EB]" /> Evolución Capital vs Interés ({calcSistema})
               </h3>
@@ -1579,7 +1579,7 @@ export default function PrestamosModule() {
             return (
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
                 {[{ label: "Total a pagar", value: formatCurrency(totalPagar), color: "text-gray-900 dark:text-white" }, { label: "Total intereses", value: formatCurrency(totalInt), color: "text-red-600 dark:text-red-400" }, { label: "Cuota promedio", value: formatCurrency(cuotaProm), color: "text-[#2563EB]" }, { label: "Costo / capital", value: montoBase > 0 ? `${((totalInt / montoBase) * 100).toFixed(1)}%` : "—", color: "text-amber-600 dark:text-amber-400" }].map(kpi => (
-                  <div key={kpi.label} className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl p-3 shadow-sm text-center">
+                  <div key={kpi.label} className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl p-3  text-center">
                     <p className="text-[10px] uppercase font-bold text-gray-400 mb-1">{kpi.label}</p>
                     <p className={cn("text-lg font-extrabold font-mono", kpi.color)}>{kpi.value}</p>
                   </div>
@@ -1593,7 +1593,7 @@ export default function PrestamosModule() {
             const sistemas = Object.entries(amortizacionAll) as [SistemaAmortizacion, { num: number; cuota: number; interes: number; capital: number; saldo: number }[]][];
             const colores: Record<SistemaAmortizacion, string> = { FRANCES: "#2563EB", ALEMAN: "#3b82f6", AMERICANO: "#f97316" };
             return (
-              <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl p-4 sm:p-6 shadow-sm space-y-4">
+              <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl p-4 sm:p-6  space-y-4">
                 <h3 className="text-sm font-bold text-gray-900 dark:text-white flex items-center gap-2">
                   <Scale className="h-4 w-4 text-emerald-500" /> Comparador — mismo monto, tasa y plazo
                 </h3>
@@ -1637,12 +1637,12 @@ export default function PrestamosModule() {
               animate={{ x: 0 }}
               exit={{ x: "100%" }}
               transition={{ type: "spring", damping: 25, stiffness: 250 }}
-              className="fixed inset-y-0 right-0 z-50 w-full max-w-md bg-white dark:bg-card border-l border-gray-200 dark:border-card-border shadow-2xl overflow-y-auto"
+              className="fixed inset-y-0 right-0 z-50 w-full max-w-md bg-white dark:bg-card border-l border-gray-200 dark:border-card-border overflow-y-auto"
             >
               <div className="p-4 sm:p-6 space-y-5">
                 <div className="flex items-center justify-between">
                   <h3 className="text-lg font-bold text-gray-900 dark:text-white">Detalle Préstamo</h3>
-                  <button onClick={() => setSelected(null)} className="p-2 rounded-xl hover:bg-gray-100 dark:hover:bg-white/5 transition-colors">
+                  <button onClick={() => setSelected(null)} className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-white/5 transition-colors">
                     <X className="h-5 w-5 text-gray-500" />
                   </button>
                 </div>
@@ -1774,13 +1774,13 @@ export default function PrestamosModule() {
                     <div className="flex bg-gray-100 dark:bg-white/5 rounded-lg p-0.5">
                       <button
                         onClick={() => setDetailView("timeline")}
-                        className={cn("px-2.5 py-1 rounded-md text-[10px] font-bold transition-colors", detailView === "timeline" ? "bg-white dark:bg-white/10 text-[#2563EB] shadow-sm" : "text-gray-500")}
+                        className={cn("px-2.5 py-1 rounded-md text-[10px] font-bold transition-colors", detailView === "timeline" ? "bg-white dark:bg-white/10 text-[#2563EB] " : "text-gray-500")}
                       >
                         Timeline
                       </button>
                       <button
                         onClick={() => setDetailView("amortizacion")}
-                        className={cn("px-2.5 py-1 rounded-md text-[10px] font-bold transition-colors", detailView === "amortizacion" ? "bg-white dark:bg-white/10 text-[#2563EB] shadow-sm" : "text-gray-500")}
+                        className={cn("px-2.5 py-1 rounded-md text-[10px] font-bold transition-colors", detailView === "amortizacion" ? "bg-white dark:bg-white/10 text-[#2563EB] " : "text-gray-500")}
                       >
                         Tabla
                       </button>
@@ -1972,7 +1972,7 @@ ${cuotas.map(c => { const row = `<tr>
                             w.document.close();
                             setTimeout(() => w.print(), 300);
                           }}
-                          className="flex-1 flex items-center justify-center gap-2 px-4 py-2 rounded-xl text-xs font-bold text-gray-600 dark:text-gray-300 bg-gray-100 dark:bg-white/5 hover:bg-gray-200 dark:hover:bg-white/10 transition-colors"
+                          className="flex-1 flex items-center justify-center gap-2 px-4 py-2 rounded-lg text-xs font-bold text-gray-600 dark:text-gray-300 bg-gray-100 dark:bg-white/5 hover:bg-gray-200 dark:hover:bg-white/10 transition-colors"
                         >
                           <Printer className="h-3.5 w-3.5" /> Cronograma
                         </button>
@@ -2049,7 +2049,7 @@ ${cuotas.map(c => { const row = `<tr>
                             w.document.close();
                             setTimeout(() => w.print(), 300);
                           }}
-                          className="flex-1 flex items-center justify-center gap-2 px-4 py-2 rounded-xl text-xs font-bold text-[#2563EB] bg-[#2563EB]/10 hover:bg-[#2563EB]/20 transition-colors"
+                          className="flex-1 flex items-center justify-center gap-2 px-4 py-2 rounded-lg text-xs font-bold text-[#2563EB] bg-[#2563EB]/10 hover:bg-[#2563EB]/20 transition-colors"
                         >
                           <FileText className="h-3.5 w-3.5" /> Resumen Deuda
                         </button>
@@ -2068,7 +2068,7 @@ ${cuotas.map(c => { const row = `<tr>
                                 <label
                                   key={c.id}
                                   className={cn(
-                                    "flex items-center gap-2 px-3 py-2 rounded-xl border cursor-pointer transition-all",
+                                    "flex items-center gap-2 px-3 py-2 rounded-lg border cursor-pointer transition-all",
                                     isSelected ? "border-[#2563EB] bg-[#2563EB]/5 dark:bg-[#2563EB]/10" : "border-gray-200 dark:border-white/10 hover:border-gray-300",
                                     isOverdue && !isSelected && "border-red-200 dark:border-red-800 bg-red-50/50 dark:bg-red-900/10"
                                   )}
@@ -2099,7 +2099,7 @@ ${cuotas.map(c => { const row = `<tr>
                               <button
                                 onClick={handlePagoMultiple}
                                 disabled={payingMultiple}
-                                className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold text-white bg-[#2563EB] hover:bg-[#1D4ED8] disabled:opacity-50 shadow-sm transition-colors"
+                                className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg text-xs font-bold text-white bg-[#2563EB] hover:bg-[#1D4ED8] disabled:opacity-50  transition-colors"
                               >
                                 {payingMultiple ? <Loader2 className="h-4 w-4 animate-spin" /> : <DollarSign className="h-4 w-4" />}
                                 Pagar {selectedCuotaIds.size} cuota{selectedCuotaIds.size > 1 ? "s" : ""} ({formatCurrency(selected.cuotas.filter(c => selectedCuotaIds.has(c.id)).reduce((s, c) => s + c.monto, 0))})
@@ -2110,7 +2110,7 @@ ${cuotas.map(c => { const row = `<tr>
                                   const next = selected.cuotas.find(c => !c.pagadoEn);
                                   if (next) { setPagoCuotaId(next.id); setPagoMonto(String(next.monto)); setPagoError(null); setShowPago(true); }
                                 }}
-                                className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold text-white bg-[#2563EB] hover:bg-[#1D4ED8] shadow-sm transition-colors"
+                                className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg text-xs font-bold text-white bg-[#2563EB] hover:bg-[#1D4ED8]  transition-colors"
                               >
                                 <DollarSign className="h-4 w-4" /> Pagar siguiente cuota
                               </button>
@@ -2120,17 +2120,17 @@ ${cuotas.map(c => { const row = `<tr>
                                 const all = new Set(selected.cuotas.filter(c => !c.pagadoEn).map(c => c.id));
                                 setSelectedCuotaIds(selectedCuotaIds.size === all.size ? new Set() : all);
                               }}
-                              className="px-3 py-2.5 rounded-xl text-xs font-bold text-gray-600 dark:text-gray-400 bg-gray-100 dark:bg-white/5 hover:bg-gray-200 dark:hover:bg-white/10 transition-colors"
+                              className="px-3 py-2.5 rounded-lg text-xs font-bold text-gray-600 dark:text-gray-400 bg-gray-100 dark:bg-white/5 hover:bg-gray-200 dark:hover:bg-white/10 transition-colors"
                               title={selectedCuotaIds.size > 0 ? "Deseleccionar todas" : "Seleccionar todas"}
                             >
                               {selectedCuotaIds.size > 0 ? <X className="h-4 w-4" /> : <CheckCircle2 className="h-4 w-4" />}
                             </button>
                           </div>
                           <div className="flex gap-2">
-                            <button onClick={() => { setRefMonto(String(selected.monto)); setRefTasa(String(selected.tasaInteres)); setRefCuotas(String(selected.numeroCuotas)); setRefSistema(selected.sistemaAmortizacion); setRefinanciarError(null); setShowRefinanciar(true); }} className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-900/20 hover:bg-emerald-100 dark:hover:bg-emerald-900/30 border border-emerald-200 dark:border-emerald-800">
+                            <button onClick={() => { setRefMonto(String(selected.monto)); setRefTasa(String(selected.tasaInteres)); setRefCuotas(String(selected.numeroCuotas)); setRefSistema(selected.sistemaAmortizacion); setRefinanciarError(null); setShowRefinanciar(true); }} className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg text-xs font-bold text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-900/20 hover:bg-emerald-100 dark:hover:bg-emerald-900/30 border border-emerald-200 dark:border-emerald-800">
                               <RotateCcw className="h-3.5 w-3.5" /> Refinanciar
                             </button>
-                            <button onClick={() => setShowCancelConfirm(true)} className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-900/20 hover:bg-red-100 dark:hover:bg-red-900/30 border border-red-200 dark:border-red-800">
+                            <button onClick={() => setShowCancelConfirm(true)} className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg text-xs font-bold text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-900/20 hover:bg-red-100 dark:hover:bg-red-900/30 border border-red-200 dark:border-red-800">
                               <Ban className="h-3.5 w-3.5" /> Cancelar
                             </button>
                           </div>
@@ -2146,7 +2146,7 @@ ${cuotas.map(c => { const row = `<tr>
                         {selected.documentos && selected.documentos.length > 0 ? (
                           <div className="space-y-1.5">
                             {selected.documentos.map(doc => (
-                              <a key={doc.id} href={doc.url} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 p-2 rounded-xl border border-gray-100 dark:border-white/10 hover:bg-gray-50 dark:hover:bg-white/5 transition-colors">
+                              <a key={doc.id} href={doc.url} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 p-2 rounded-lg border border-gray-100 dark:border-white/10 hover:bg-gray-50 dark:hover:bg-white/5 transition-colors">
                                 <FileText className="h-4 w-4 text-emerald-500 shrink-0" />
                                 <span className="text-xs text-gray-700 dark:text-gray-300 flex-1 truncate">{doc.nombre}</span>
                                 <span className="text-[9px] text-gray-400 shrink-0">{formatDate(doc.createdAt)}</span>
@@ -2154,7 +2154,7 @@ ${cuotas.map(c => { const row = `<tr>
                             ))}
                           </div>
                         ) : <p className="text-xs text-gray-400 py-1">Sin documentos adjuntos</p>}
-                        <label className="mt-2 flex items-center gap-2 px-3 py-2 rounded-xl border border-dashed border-gray-200 dark:border-white/10 cursor-pointer hover:bg-gray-50 dark:hover:bg-white/5">
+                        <label className="mt-2 flex items-center gap-2 px-3 py-2 rounded-lg border border-dashed border-gray-200 dark:border-white/10 cursor-pointer hover:bg-gray-50 dark:hover:bg-white/5">
                           <input type="file" className="hidden" onChange={async (e) => {
                             const file = e.target.files?.[0]; if (!file) return; setUploadingDoc(true);
                             try { const form = new FormData(); form.append("file", file); form.append("nombre", file.name); await fetch(`/api/prestamos/${selected.id}/documentos`, { method: "POST", body: form }); await openDetail(selected); } catch { /* silent */ } finally { setUploadingDoc(false); e.target.value = ""; }
@@ -2205,21 +2205,21 @@ ${cuotas.map(c => { const row = `<tr>
           <>
             <m.div key="ref-bd" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-[60] bg-black/40 backdrop-blur-sm" onClick={() => setShowRefinanciar(false)} />
             <m.div key="ref-modal" initial={{ opacity: 0, scale: 0.95, y: 10 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.95, y: 10 }} className="fixed inset-0 z-[60] flex items-center justify-center p-4" onClick={e => e.target === e.currentTarget && setShowRefinanciar(false)}>
-              <div className="w-full max-w-sm bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl shadow-2xl p-5 space-y-4">
+              <div className="w-full max-w-sm bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl p-5 space-y-4">
                 <div className="flex items-center justify-between">
                   <h3 className="text-lg font-bold text-gray-900 dark:text-white flex items-center gap-2"><RotateCcw className="h-5 w-5 text-emerald-500" /> Refinanciar Préstamo</h3>
                   <button onClick={() => setShowRefinanciar(false)}><X className="h-4 w-4 text-gray-500" /></button>
                 </div>
                 <div className="grid grid-cols-2 gap-3">
-                  <div><label className="block text-xs font-bold text-gray-600 dark:text-gray-400 mb-1">Nuevo monto (S/)</label><input type="number" step="0.01" min="0.01" value={refMonto} onChange={e => setRefMonto(e.target.value)} className="w-full px-3 py-2 rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 text-sm text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-emerald-500/30" /></div>
-                  <div><label className="block text-xs font-bold text-gray-600 dark:text-gray-400 mb-1">Nueva tasa (%)</label><input type="number" step="0.1" min="0" value={refTasa} onChange={e => setRefTasa(e.target.value)} className="w-full px-3 py-2 rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 text-sm text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-emerald-500/30" /></div>
-                  <div><label className="block text-xs font-bold text-gray-600 dark:text-gray-400 mb-1">N° cuotas</label><input type="number" min="1" value={refCuotas} onChange={e => setRefCuotas(e.target.value)} className="w-full px-3 py-2 rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 text-sm text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-emerald-500/30" /></div>
-                  <div><label className="block text-xs font-bold text-gray-600 dark:text-gray-400 mb-1">Sistema</label><select value={refSistema} onChange={e => setRefSistema(e.target.value as SistemaAmortizacion)} className="w-full px-3 py-2 rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 text-sm text-gray-900 dark:text-white focus:outline-none">{Object.entries(SISTEMA_LABELS).map(([k, v]) => <option key={k} value={k}>{v}</option>)}</select></div>
+                  <div><label className="block text-xs font-bold text-gray-600 dark:text-gray-400 mb-1">Nuevo monto (S/)</label><input type="number" step="0.01" min="0.01" value={refMonto} onChange={e => setRefMonto(e.target.value)} className="w-full px-3 py-2 rounded-lg border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 text-sm text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-emerald-500/30" /></div>
+                  <div><label className="block text-xs font-bold text-gray-600 dark:text-gray-400 mb-1">Nueva tasa (%)</label><input type="number" step="0.1" min="0" value={refTasa} onChange={e => setRefTasa(e.target.value)} className="w-full px-3 py-2 rounded-lg border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 text-sm text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-emerald-500/30" /></div>
+                  <div><label className="block text-xs font-bold text-gray-600 dark:text-gray-400 mb-1">N° cuotas</label><input type="number" min="1" value={refCuotas} onChange={e => setRefCuotas(e.target.value)} className="w-full px-3 py-2 rounded-lg border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 text-sm text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-emerald-500/30" /></div>
+                  <div><label className="block text-xs font-bold text-gray-600 dark:text-gray-400 mb-1">Sistema</label><select value={refSistema} onChange={e => setRefSistema(e.target.value as SistemaAmortizacion)} className="w-full px-3 py-2 rounded-lg border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 text-sm text-gray-900 dark:text-white focus:outline-none">{Object.entries(SISTEMA_LABELS).map(([k, v]) => <option key={k} value={k}>{v}</option>)}</select></div>
                 </div>
                 {refinanciarError && <p className="text-xs text-red-600 dark:text-red-400 font-semibold">{refinanciarError}</p>}
                 <div className="flex gap-2">
-                  <button onClick={() => setShowRefinanciar(false)} className="flex-1 px-4 py-2.5 rounded-xl text-sm font-bold text-gray-600 dark:text-gray-400 bg-gray-100 dark:bg-white/5 hover:bg-gray-200 dark:hover:bg-white/10">Cancelar</button>
-                  <button onClick={handleRefinanciar} disabled={refinancing} className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-sm font-bold text-white bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50">
+                  <button onClick={() => setShowRefinanciar(false)} className="flex-1 px-4 py-2.5 rounded-lg text-sm font-bold text-gray-600 dark:text-gray-400 bg-gray-100 dark:bg-white/5 hover:bg-gray-200 dark:hover:bg-white/10">Cancelar</button>
+                  <button onClick={handleRefinanciar} disabled={refinancing} className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg text-sm font-bold text-white bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50">
                     {refinancing ? <Loader2 className="h-4 w-4 animate-spin" /> : <RotateCcw className="h-4 w-4" />} Refinanciar
                   </button>
                 </div>
@@ -2235,7 +2235,7 @@ ${cuotas.map(c => { const row = `<tr>
           <>
             <m.div key="cancel-bd" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-[60] bg-black/40 backdrop-blur-sm" onClick={() => setShowCancelConfirm(false)} />
             <m.div key="cancel-modal" initial={{ opacity: 0, scale: 0.95, y: 10 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.95, y: 10 }} className="fixed inset-0 z-[60] flex items-center justify-center p-4" onClick={e => e.target === e.currentTarget && setShowCancelConfirm(false)}>
-              <div className="w-full max-w-sm bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl shadow-2xl p-5 space-y-4">
+              <div className="w-full max-w-sm bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl p-5 space-y-4">
                 <div className="flex items-center gap-3 p-3 bg-red-50 dark:bg-red-900/20 rounded-xl border border-red-200 dark:border-red-800">
                   <AlertCircle className="h-6 w-6 text-red-500 shrink-0" />
                   <div>
@@ -2245,8 +2245,8 @@ ${cuotas.map(c => { const row = `<tr>
                 </div>
                 <p className="text-sm text-gray-700 dark:text-gray-300">Préstamo: <strong>{selected.entidadNombre || selected.customerId}</strong> — {formatCurrency(selected.monto)}</p>
                 <div className="flex gap-2">
-                  <button onClick={() => setShowCancelConfirm(false)} className="flex-1 px-4 py-2.5 rounded-xl text-sm font-bold text-gray-600 dark:text-gray-400 bg-gray-100 dark:bg-white/5 hover:bg-gray-200">Volver</button>
-                  <button onClick={handleCancelPrestamo} disabled={canceling} className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-sm font-bold text-white bg-red-600 hover:bg-red-700 disabled:opacity-50">
+                  <button onClick={() => setShowCancelConfirm(false)} className="flex-1 px-4 py-2.5 rounded-lg text-sm font-bold text-gray-600 dark:text-gray-400 bg-gray-100 dark:bg-white/5 hover:bg-gray-200">Volver</button>
+                  <button onClick={handleCancelPrestamo} disabled={canceling} className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg text-sm font-bold text-white bg-red-600 hover:bg-red-700 disabled:opacity-50">
                     {canceling ? <Loader2 className="h-4 w-4 animate-spin" /> : <Ban className="h-4 w-4" />} Sí, cancelar
                   </button>
                 </div>
@@ -2276,7 +2276,7 @@ ${cuotas.map(c => { const row = `<tr>
               className="fixed inset-0 z-[60] flex items-center justify-center p-4"
               onClick={e => e.target === e.currentTarget && setShowPago(false)}
             >
-              <div className="w-full max-w-sm bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl shadow-2xl p-5 space-y-4">
+              <div className="w-full max-w-sm bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl p-5 space-y-4">
                 <h3 className="text-lg font-bold text-gray-900 dark:text-white">Pagar Cuota</h3>
                 <div>
                   <label className="block text-xs font-bold text-gray-600 dark:text-gray-400 mb-1">Monto del pago (S/)</label>
@@ -2286,18 +2286,18 @@ ${cuotas.map(c => { const row = `<tr>
                     min="0.01"
                     value={pagoMonto}
                     onChange={e => setPagoMonto(e.target.value)}
-                    className="w-full px-3 py-2 rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 text-sm text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-[#2563EB]/30"
+                    className="w-full px-3 py-2 rounded-lg border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 text-sm text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-[#2563EB]/30"
                   />
                 </div>
                 {pagoError && <p className="text-xs text-red-600 dark:text-red-400 font-semibold">{pagoError}</p>}
                 <div className="flex gap-2">
-                  <button onClick={() => setShowPago(false)} className="flex-1 px-4 py-2.5 rounded-xl text-sm font-bold text-gray-600 dark:text-gray-400 bg-gray-100 dark:bg-white/5 hover:bg-gray-200 dark:hover:bg-white/10 transition-colors">
+                  <button onClick={() => setShowPago(false)} className="flex-1 px-4 py-2.5 rounded-lg text-sm font-bold text-gray-600 dark:text-gray-400 bg-gray-100 dark:bg-white/5 hover:bg-gray-200 dark:hover:bg-white/10 transition-colors">
                     Cancelar
                   </button>
                   <button
                     onClick={handlePago}
                     disabled={paying}
-                    className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-sm font-bold text-white bg-[#2563EB] hover:bg-[#1D4ED8] disabled:opacity-50 shadow-sm transition-colors"
+                    className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg text-sm font-bold text-white bg-[#2563EB] hover:bg-[#1D4ED8] disabled:opacity-50  transition-colors"
                   >
                     {paying ? <Loader2 className="h-4 w-4 animate-spin" /> : <DollarSign className="h-4 w-4" />}
                     Pagar
@@ -2329,7 +2329,7 @@ ${cuotas.map(c => { const row = `<tr>
               className="fixed inset-0 z-50 flex items-center justify-center p-4 overflow-y-auto"
               onClick={e => e.target === e.currentTarget && (() => { setShowCreate(false); resetCreateForm(); })()}
             >
-              <div className="w-full max-w-2xl bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl shadow-2xl p-5 space-y-4 my-4">
+              <div className="w-full max-w-2xl bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl p-5 space-y-4 my-4">
                 {/* Header */}
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
@@ -2351,7 +2351,7 @@ ${cuotas.map(c => { const row = `<tr>
 
                 {/* ── STEP 1: Tipo, Dirección, Entidad ──────────── */}
                 {createStep === 1 && (
-                  <div className="space-y-4">
+                  <div className="space-y-6">
                     {/* Dirección: DADO / RECIBIDO */}
                     <div>
                       <label className="block text-xs font-bold text-gray-600 dark:text-gray-400 mb-1.5">¿Prestas o te prestan?</label>
@@ -2435,7 +2435,7 @@ ${cuotas.map(c => { const row = `<tr>
                             value={createEntidadNombre}
                             onChange={e => setCreateEntidadNombre(e.target.value)}
                             placeholder={createTipo === "BANCARIO" ? "Ej: BCP" : createTipo === "PROVEEDOR" ? "Ej: Distribuidora Lima" : "Ej: Juan Pérez"}
-                            className="w-full px-3 py-2 rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 text-sm text-gray-900 dark:text-white placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#2563EB]/30"
+                            className="w-full px-3 py-2 rounded-lg border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 text-sm text-gray-900 dark:text-white placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#2563EB]/30"
                           />
                         </div>
                         <div>
@@ -2443,7 +2443,7 @@ ${cuotas.map(c => { const row = `<tr>
                           <select
                             value={createEntidadTipo}
                             onChange={e => setCreateEntidadTipo(e.target.value as PrestamoEntidadTipo)}
-                            className="w-full px-3 py-2 rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 text-sm text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-[#2563EB]/30"
+                            className="w-full px-3 py-2 rounded-lg border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 text-sm text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-[#2563EB]/30"
                           >
                             <option value="">Seleccionar...</option>
                             {(Object.entries(ENTIDAD_LABELS) as [PrestamoEntidadTipo, string][]).map(([k, v]) => (
@@ -2464,12 +2464,12 @@ ${cuotas.map(c => { const row = `<tr>
                             value={createCustomerId}
                             onChange={e => setCreateCustomerId(e.target.value)}
                             placeholder="Ej: 987654321"
-                            className="flex-1 px-3 py-2 rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 text-sm text-gray-900 dark:text-white placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#2563EB]/30"
+                            className="flex-1 px-3 py-2 rounded-lg border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 text-sm text-gray-900 dark:text-white placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#2563EB]/30"
                           />
                           <button
                             type="button"
                             onClick={() => setShowQuickClient(true)}
-                            className="shrink-0 h-[38px] w-[38px] flex items-center justify-center rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 hover:bg-[#2563EB] hover:text-white hover:border-[#2563EB] text-gray-500 transition-colors"
+                            className="shrink-0 h-[38px] w-[38px] flex items-center justify-center rounded-lg border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 hover:bg-[#2563EB] hover:text-white hover:border-[#2563EB] text-gray-500 transition-colors"
                             title="Crear cliente rápido"
                           >
                             <Plus className="h-4 w-4" />
@@ -2486,19 +2486,19 @@ ${cuotas.map(c => { const row = `<tr>
                         value={createNroOperacion}
                         onChange={e => setCreateNroOperacion(e.target.value)}
                         placeholder="Ej: OP-2025-001234"
-                        className="w-full px-3 py-2 rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 text-sm text-gray-900 dark:text-white placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#2563EB]/30"
+                        className="w-full px-3 py-2 rounded-lg border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 text-sm text-gray-900 dark:text-white placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#2563EB]/30"
                       />
                     </div>
 
                     {createError && <p className="text-xs text-red-600 dark:text-red-400 font-semibold">{createError}</p>}
 
                     <div className="flex gap-2 pt-1">
-                      <button onClick={() => { setShowCreate(false); resetCreateForm(); }} className="flex-1 px-4 py-2.5 rounded-xl text-sm font-bold text-gray-600 dark:text-gray-400 bg-gray-100 dark:bg-white/5 hover:bg-gray-200 dark:hover:bg-white/10 transition-colors">
+                      <button onClick={() => { setShowCreate(false); resetCreateForm(); }} className="flex-1 px-4 py-2.5 rounded-lg text-sm font-bold text-gray-600 dark:text-gray-400 bg-gray-100 dark:bg-white/5 hover:bg-gray-200 dark:hover:bg-white/10 transition-colors">
                         Cancelar
                       </button>
                       <button
                         onClick={() => { setCreateError(null); setCreateStep(2); }}
-                        className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-sm font-bold text-white bg-[#2563EB] hover:bg-[#1D4ED8] shadow-sm transition-colors"
+                        className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg text-sm font-bold text-white bg-[#2563EB] hover:bg-[#1D4ED8]  transition-colors"
                       >
                         Siguiente
                         <ChevronRight className="h-4 w-4" />
@@ -2509,7 +2509,7 @@ ${cuotas.map(c => { const row = `<tr>
 
                 {/* ── STEP 2: Datos financieros ──────────── */}
                 {createStep === 2 && (
-                  <div className="space-y-4">
+                  <div className="space-y-6">
                     {/* Resumen de paso 1 */}
                     <div className="bg-gray-50 dark:bg-white/5 rounded-xl p-3 flex items-center justify-between">
                       <div className="flex items-center gap-2 text-xs text-gray-600 dark:text-gray-400">
@@ -2528,7 +2528,7 @@ ${cuotas.map(c => { const row = `<tr>
                         <select
                           value={createMoneda}
                           onChange={e => setCreateMoneda(e.target.value)}
-                          className="w-full px-3 py-2 rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 text-sm text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-[#2563EB]/30"
+                          className="w-full px-3 py-2 rounded-lg border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 text-sm text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-[#2563EB]/30"
                         >
                           <option value="PEN">S/ Soles</option>
                           <option value="USD">$ Dólares</option>
@@ -2543,7 +2543,7 @@ ${cuotas.map(c => { const row = `<tr>
                           value={calcMonto}
                           onChange={e => setCalcMonto(e.target.value)}
                           placeholder="10000"
-                          className="w-full px-3 py-2 rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 text-sm text-gray-900 dark:text-white placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#2563EB]/30"
+                          className="w-full px-3 py-2 rounded-lg border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 text-sm text-gray-900 dark:text-white placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#2563EB]/30"
                         />
                       </div>
                     </div>
@@ -2560,7 +2560,7 @@ ${cuotas.map(c => { const row = `<tr>
                           value={calcTasa}
                           onChange={e => setCalcTasa(e.target.value)}
                           placeholder="1.5"
-                          className="w-full px-3 py-2 rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 text-sm text-gray-900 dark:text-white placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#2563EB]/30"
+                          className="w-full px-3 py-2 rounded-lg border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 text-sm text-gray-900 dark:text-white placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#2563EB]/30"
                         />
                       </div>
                       <div>
@@ -2573,7 +2573,7 @@ ${cuotas.map(c => { const row = `<tr>
                           value={createTea}
                           onChange={e => setCreateTea(e.target.value)}
                           placeholder="19.56"
-                          className="w-full px-3 py-2 rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 text-sm text-gray-900 dark:text-white placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#2563EB]/30"
+                          className="w-full px-3 py-2 rounded-lg border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 text-sm text-gray-900 dark:text-white placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#2563EB]/30"
                         />
                       </div>
                       <div>
@@ -2586,7 +2586,7 @@ ${cuotas.map(c => { const row = `<tr>
                           value={createMoraInteres}
                           onChange={e => setCreateMoraInteres(e.target.value)}
                           placeholder="15"
-                          className="w-full px-3 py-2 rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 text-sm text-gray-900 dark:text-white placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#2563EB]/30"
+                          className="w-full px-3 py-2 rounded-lg border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 text-sm text-gray-900 dark:text-white placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#2563EB]/30"
                         />
                       </div>
                     </div>
@@ -2602,7 +2602,7 @@ ${cuotas.map(c => { const row = `<tr>
                           value={calcCuotas}
                           onChange={e => setCalcCuotas(e.target.value)}
                           placeholder="12"
-                          className="w-full px-3 py-2 rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 text-sm text-gray-900 dark:text-white placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#2563EB]/30"
+                          className="w-full px-3 py-2 rounded-lg border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 text-sm text-gray-900 dark:text-white placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#2563EB]/30"
                         />
                       </div>
                       <div>
@@ -2610,7 +2610,7 @@ ${cuotas.map(c => { const row = `<tr>
                         <select
                           value={calcSistema}
                           onChange={e => setCalcSistema(e.target.value as SistemaAmortizacion)}
-                          className="w-full px-3 py-2 rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 text-sm text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-[#2563EB]/30"
+                          className="w-full px-3 py-2 rounded-lg border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 text-sm text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-[#2563EB]/30"
                         >
                           {(Object.entries(SISTEMA_LABELS) as [SistemaAmortizacion, string][]).map(([k, v]) => (
                             <option key={k} value={k}>{v}</option>
@@ -2626,7 +2626,7 @@ ${cuotas.map(c => { const row = `<tr>
                           value={createPeriodoGracia}
                           onChange={e => setCreatePeriodoGracia(e.target.value)}
                           placeholder="0"
-                          className="w-full px-3 py-2 rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 text-sm text-gray-900 dark:text-white placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#2563EB]/30"
+                          className="w-full px-3 py-2 rounded-lg border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 text-sm text-gray-900 dark:text-white placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#2563EB]/30"
                         />
                       </div>
                     </div>
@@ -2639,7 +2639,7 @@ ${cuotas.map(c => { const row = `<tr>
                           type="date"
                           value={createFechaDesembolso}
                           onChange={e => setCreateFechaDesembolso(e.target.value)}
-                          className="w-full px-3 py-2 rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 text-sm text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-[#2563EB]/30"
+                          className="w-full px-3 py-2 rounded-lg border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 text-sm text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-[#2563EB]/30"
                         />
                       </div>
                       <div>
@@ -2649,7 +2649,7 @@ ${cuotas.map(c => { const row = `<tr>
                           value={createGarantia}
                           onChange={e => setCreateGarantia(e.target.value)}
                           placeholder="Ej: Título de propiedad"
-                          className="w-full px-3 py-2 rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 text-sm text-gray-900 dark:text-white placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#2563EB]/30"
+                          className="w-full px-3 py-2 rounded-lg border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 text-sm text-gray-900 dark:text-white placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#2563EB]/30"
                         />
                       </div>
                     </div>
@@ -2662,20 +2662,20 @@ ${cuotas.map(c => { const row = `<tr>
                         value={createNotas}
                         onChange={e => setCreateNotas(e.target.value)}
                         placeholder="Motivo del préstamo, condiciones especiales..."
-                        className="w-full px-3 py-2 rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 text-sm text-gray-900 dark:text-white placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#2563EB]/30"
+                        className="w-full px-3 py-2 rounded-lg border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 text-sm text-gray-900 dark:text-white placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#2563EB]/30"
                       />
                     </div>
 
                     {createError && <p className="text-xs text-red-600 dark:text-red-400 font-semibold">{createError}</p>}
 
                     <div className="flex gap-2 pt-1">
-                      <button onClick={() => setCreateStep(1)} className="px-4 py-2.5 rounded-xl text-sm font-bold text-gray-600 dark:text-gray-400 bg-gray-100 dark:bg-white/5 hover:bg-gray-200 dark:hover:bg-white/10 transition-colors">
+                      <button onClick={() => setCreateStep(1)} className="px-4 py-2.5 rounded-lg text-sm font-bold text-gray-600 dark:text-gray-400 bg-gray-100 dark:bg-white/5 hover:bg-gray-200 dark:hover:bg-white/10 transition-colors">
                         <ChevronLeft className="h-4 w-4 inline -mt-0.5" /> Atrás
                       </button>
                       <button
                         onClick={handleCreate}
                         disabled={creating}
-                        className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-sm font-bold text-white bg-[#2563EB] hover:bg-[#1D4ED8] disabled:opacity-50 shadow-sm transition-colors"
+                        className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg text-sm font-bold text-white bg-[#2563EB] hover:bg-[#1D4ED8] disabled:opacity-50  transition-colors"
                       >
                         {creating ? <Loader2 className="h-4 w-4 animate-spin" /> : <Plus className="h-4 w-4" />}
                         Crear Préstamo

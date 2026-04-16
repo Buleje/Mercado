@@ -138,7 +138,7 @@ export function ShiftClockWidget({ className }: { className?: string }) {
       className={cn(
         "rounded-xl border bg-white dark:bg-gray-900",
         "border-gray-200 dark:border-gray-700",
-        "p-4 shadow-sm",
+        "p-4 ",
         className
       )}
       role="region"
@@ -221,7 +221,7 @@ export function ShiftClockWidget({ className }: { className?: string }) {
       {/* Historial de la semana */}
       {week.length > 0 && (
         <div>
-          <h3 className="mb-2 text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">
+          <h3 className="mb-2 text-xs font-semibold text-gray-500 dark:text-gray-400">
             Esta semana
           </h3>
           <div className="overflow-hidden rounded-lg border border-gray-200 dark:border-gray-700">

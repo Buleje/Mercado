@@ -197,10 +197,10 @@ export function TouchGesturesDemo() {
   });
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-6">
       <div
         ref={ref}
-        className="rounded-xl border-2 border-dashed border-[#00B4A6]/40 bg-[#00B4A6]/5 dark:bg-[#00B4A6]/10 p-8 flex flex-col items-center justify-center min-h-44 select-none cursor-pointer touch-none"
+        className="rounded-lg border-2 border-dashed border-[#00B4A6]/40 bg-[#00B4A6]/5 dark:bg-[#00B4A6]/10 p-8 flex flex-col items-center justify-center min-h-44 select-none cursor-pointer touch-none"
       >
         <p className="text-sm font-medium text-gray-600 dark:text-gray-400 text-center">
           Area de prueba — toca aqui desde un movil o tablet

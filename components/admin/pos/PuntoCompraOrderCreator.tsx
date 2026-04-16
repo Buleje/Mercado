@@ -117,7 +117,7 @@ export default function PuntoCompraOrderCreator({ open, onClose, cartItems }: Pr
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-      <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-xl w-full max-w-lg max-h-[90vh] overflow-hidden flex flex-col">
+      <div className="bg-white dark:bg-gray-900 rounded-xl w-full max-w-lg max-h-[90vh] overflow-hidden flex flex-col">
         {/* Header */}
         <div className="flex items-center justify-between p-4 border-b border-gray-200 dark:border-card-border">
           <div className="flex items-center gap-2">
@@ -150,7 +150,7 @@ export default function PuntoCompraOrderCreator({ open, onClose, cartItems }: Pr
               <button
                 type="button"
                 onClick={onClose}
-                className="mt-4 px-6 py-2 bg-[#00B4A6] text-white rounded-xl text-xs font-medium hover:bg-[#009690] transition-colors"
+                className="mt-4 px-6 py-2 bg-[#00B4A6] text-white rounded-lg text-xs font-medium hover:bg-[#009690] transition-colors"
               >
                 Cerrar
               </button>
@@ -192,7 +192,7 @@ export default function PuntoCompraOrderCreator({ open, onClose, cartItems }: Pr
                       value={customerSearch}
                       onChange={(e) => setCustomerSearch(e.target.value)}
                       placeholder="Buscar por nombre o telefono..."
-                      className="w-full pl-9 pr-3 py-2 border border-gray-200 dark:border-card-border rounded-xl text-xs bg-white dark:bg-gray-800 text-gray-900 dark:text-white placeholder-gray-400 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#00B4A6]"
+                      className="w-full pl-9 pr-3 py-2 border border-gray-200 dark:border-card-border rounded-lg text-xs bg-white dark:bg-gray-800 text-gray-900 dark:text-white placeholder-gray-400 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#00B4A6]"
                     />
                     {searchLoading && (
                       <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-gray-400 animate-spin" />

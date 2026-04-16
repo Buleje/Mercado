@@ -60,7 +60,7 @@ function AdminTable({
                 <th
                   key={col.key}
                   className={cn(
-                    "px-4 py-3 text-xs text-gray-500 dark:text-zinc-400 uppercase tracking-wider font-medium select-none",
+                    "px-4 py-3 text-xs text-gray-500 dark:text-zinc-400 font-medium select-none",
                     alignCls,
                     col.width,
                     col.sortable && onSort && "cursor-pointer hover:text-gray-700 dark:hover:text-zinc-200 transition-colors",

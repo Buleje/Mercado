@@ -237,7 +237,7 @@ export default function AIDecisionLog() {
 
   if (loading) {
     return (
-      <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 p-6 shadow-sm">
+      <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 p-6 ">
         <div className="animate-pulse space-y-4">
           <div className="h-5 w-48 bg-gray-200 dark:bg-gray-700 rounded" />
           <div className="space-y-3">
@@ -249,12 +249,12 @@ export default function AIDecisionLog() {
   }
 
   return (
-    <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 p-5 shadow-sm">
+    <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 p-5 ">
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center gap-2">
           <BookOpen className="w-4 h-4 text-gray-500 dark:text-gray-400" />
           <div>
-            <h2 className="text-sm font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wide">
+            <h2 className="text-sm font-semibold text-gray-700 dark:text-gray-300">
               Historial de Decisiones
             </h2>
             <p className="text-xs text-gray-400 dark:text-gray-500">

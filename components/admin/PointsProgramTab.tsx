@@ -138,7 +138,7 @@ export default function PointsProgramTab() {
 
       {/* Barra de distribución por tier */}
       {totalMembers > 0 && (
-        <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl p-4">
+        <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl p-4">
           <h3 className="text-sm font-bold text-gray-700 dark:text-foreground mb-3">Distribución de miembros</h3>
           <div className="flex h-6 rounded-xl overflow-hidden gap-0.5">
             {tiers.filter(t => t.members > 0).map(t => {
@@ -168,11 +168,11 @@ export default function PointsProgramTab() {
           {tiers.map(t => {
             const isExpanded = expandedTier === t.name;
             return (
-              <div key={t.name} className={cn("bg-white dark:bg-card rounded-2xl border border-gray-200 dark:border-card-border overflow-hidden")}>
+              <div key={t.name} className={cn("bg-white dark:bg-card rounded-xl border border-gray-200 dark:border-card-border overflow-hidden")}>
                 <button className="w-full p-3 sm:p-5" onClick={() => setExpandedTier(isExpanded ? null : t.name)}>
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-3">
-                      <div className={cn("h-10 w-10 rounded-xl flex items-center justify-center text-white shrink-0", t.color)}>
+                      <div className={cn("h-10 w-10 rounded-lg flex items-center justify-center text-white shrink-0", t.color)}>
                         <Trophy className="h-5 w-5" />
                       </div>
                       <div className="text-left">
@@ -225,7 +225,7 @@ export default function PointsProgramTab() {
 
       {/* Historial de movimientos */}
       {view === "history" && (
-        <div className="bg-white dark:bg-card rounded-2xl border border-gray-200 dark:border-card-border overflow-hidden">
+        <div className="bg-white dark:bg-card rounded-xl border border-gray-200 dark:border-card-border overflow-hidden">
           <div className="flex items-center justify-between px-4 py-3 bg-gray-50 dark:bg-surface border-b border-gray-100 dark:border-card-border">
             <h3 className="font-bold text-sm text-gray-700 dark:text-foreground">Movimientos recientes</h3>
             <button onClick={() => exportToCSV(movements.map(m => ({ cliente: m.customer, nivel: m.tier, tipo: m.action, puntos: m.points, descripcion: m.description, fecha: fmtDate(m.date) })), "puntos-historial")} className="text-xs text-primary font-semibold flex items-center gap-1">
@@ -261,14 +261,14 @@ export default function PointsProgramTab() {
 
       {/* Configuración del programa */}
       {view === "config" && (
-        <div className="bg-white dark:bg-card rounded-2xl border border-gray-200 dark:border-card-border p-4 sm:p-6 space-y-5">
+        <div className="bg-white dark:bg-card rounded-xl border border-gray-200 dark:border-card-border p-4 sm:p-6 space-y-5">
           <h3 className="font-extrabold text-gray-900 dark:text-foreground flex items-center gap-2"><Settings className="h-5 w-5 text-primary" />Configuración del Programa</h3>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
             <div>
               <label className="text-xs font-bold text-gray-500 dark:text-muted block mb-1">Puntos por S/1 gastado</label>
               <div className="flex items-center gap-2">
-                <input type="number" min={1} max={10} value={pointsPerSol} onChange={e => setPointsPerSol(Number(e.target.value))} className="w-24 px-3 py-2 rounded-xl border border-gray-200 dark:border-card-border bg-white dark:bg-surface text-sm font-bold" />
+                <input type="number" min={1} max={10} value={pointsPerSol} onChange={e => setPointsPerSol(Number(e.target.value))} className="w-24 px-3 py-2 rounded-lg border border-gray-200 dark:border-card-border bg-white dark:bg-surface text-sm font-bold" />
                 <span className="text-sm text-gray-500 dark:text-muted">pts / S/1</span>
               </div>
               <p className="text-xs text-gray-400 mt-1">Actualmente: S/1 = {pointsPerSol} punto{pointsPerSol !== 1 ? "s" : ""}</p>
@@ -277,7 +277,7 @@ export default function PointsProgramTab() {
             <div>
               <label className="text-xs font-bold text-gray-500 dark:text-muted block mb-1">Puntos para S/1 de descuento</label>
               <div className="flex items-center gap-2">
-                <input type="number" min={10} max={1000} step={10} value={redeemRate} onChange={e => setRedeemRate(Number(e.target.value))} className="w-24 px-3 py-2 rounded-xl border border-gray-200 dark:border-card-border bg-white dark:bg-surface text-sm font-bold" />
+                <input type="number" min={10} max={1000} step={10} value={redeemRate} onChange={e => setRedeemRate(Number(e.target.value))} className="w-24 px-3 py-2 rounded-lg border border-gray-200 dark:border-card-border bg-white dark:bg-surface text-sm font-bold" />
                 <span className="text-sm text-gray-500 dark:text-muted">pts = S/1</span>
               </div>
               <p className="text-xs text-gray-400 mt-1">100 puntos = S/{(100 / redeemRate).toFixed(2)} descuento</p>
@@ -298,7 +298,7 @@ export default function PointsProgramTab() {
             </div>
           </div>
 
-          <button onClick={handleSaveConfig} className={cn("px-5 py-2.5 rounded-xl text-sm font-bold transition-all", configSaved ? "bg-emerald-500 text-white" : "bg-primary text-white hover:bg-primary/90")}>
+          <button onClick={handleSaveConfig} className={cn("px-5 py-2.5 rounded-lg text-sm font-bold transition-all", configSaved ? "bg-emerald-500 text-white" : "bg-primary text-white hover:bg-primary/90")}>
             {configSaved ? "Guardado" : "Guardar configuración"}
           </button>
         </div>

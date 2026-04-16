@@ -80,7 +80,7 @@ function QueueCard({ queue }: { queue: QueueStats }) {
   return (
     <div
       className={cn(
-        "rounded-xl border bg-white p-5 shadow-sm transition-shadow hover:shadow-md",
+        "rounded-xl border bg-white p-5  transition-shadow hover:shadow-sm",
         "dark:border-gray-700 dark:bg-gray-800",
         hasFailed && "border-red-300 dark:border-red-700",
       )}

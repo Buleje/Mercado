@@ -126,7 +126,7 @@ export default function LiveMarginDisplay({ items }: Props) {
   return (
     <div
       className={cn(
-        "rounded-2xl border-2 overflow-hidden transition-colors shadow-sm",
+        "rounded-xl border-2 overflow-hidden transition-colors ",
         level === "good"
           ? "border-[#00B4A6]/30"
           : level === "warning"
@@ -162,7 +162,7 @@ export default function LiveMarginDisplay({ items }: Props) {
             />
           </div>
           <div className="text-left">
-            <p className="text-xs text-gray-500 dark:text-gray-400 uppercase tracking-wider font-semibold">
+            <p className="text-xs text-gray-500 dark:text-gray-400 font-semibold">
               Margen total
             </p>
             <p className={cn("text-xl font-black", styles.text)}>
@@ -205,7 +205,7 @@ export default function LiveMarginDisplay({ items }: Props) {
         <div className="bg-white dark:bg-gray-900 px-5 py-3 border-t border-gray-100 dark:border-gray-800">
           <div className="flex items-center gap-2 mb-2">
             <DollarSign className="w-4 h-4 text-gray-400" />
-            <p className="text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wider">
+            <p className="text-xs font-semibold text-gray-600 dark:text-gray-400">
               Desglose por producto
             </p>
           </div>

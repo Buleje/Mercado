@@ -192,10 +192,10 @@ export default function InvoicingTab() {
           <p className="text-sm text-gray-500 dark:text-muted mt-0.5">Facturas, boletas, notas de crédito y débito</p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
-          <button onClick={() => exportToCSV(filtered.map(i => ({ tipo: TYPE_LABEL[i.type], serie_numero: `${i.serie}-${i.number}`, cliente: i.customerName, ruc_dni: i.customerDoc, fecha: i.issueDate, subtotal: i.subtotal, igv: i.igv, total: i.total, estado: STATUS_LABEL[i.status] })), "comprobantes")} className="flex items-center gap-1.5 px-3 py-2 rounded-xl border border-gray-200 dark:border-card-border bg-white dark:bg-surface text-sm font-semibold text-gray-700 dark:text-foreground hover:bg-gray-50 dark:hover:bg-accent transition-colors">
+          <button onClick={() => exportToCSV(filtered.map(i => ({ tipo: TYPE_LABEL[i.type], serie_numero: `${i.serie}-${i.number}`, cliente: i.customerName, ruc_dni: i.customerDoc, fecha: i.issueDate, subtotal: i.subtotal, igv: i.igv, total: i.total, estado: STATUS_LABEL[i.status] })), "comprobantes")} className="flex items-center gap-1.5 px-3 py-2 rounded-lg border border-gray-200 dark:border-card-border bg-white dark:bg-surface text-sm font-semibold text-gray-700 dark:text-foreground hover:bg-gray-50 dark:hover:bg-accent transition-colors">
             <Download className="h-4 w-4" /> Exportar
           </button>
-          <button onClick={() => setShowForm(v => !v)} className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-primary text-white text-sm font-semibold hover:bg-primary/90 transition-colors">
+          <button onClick={() => setShowForm(v => !v)} className="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-primary text-white text-sm font-semibold hover:bg-primary/90 transition-colors">
             <Plus className="h-4 w-4" /> Nuevo comprobante
           </button>
         </div>
@@ -209,7 +209,7 @@ export default function InvoicingTab() {
           { label: "En borrador", value: String(countDraft), icon: Clock, color: "text-gray-600", bg: "bg-gray-50 dark:bg-surface" },
           { label: "Comprobantes emitidos", value: String(invoices.filter(i => i.status === "emitida" || i.status === "pagada").length), icon: CheckCircle, color: "text-emerald-600", bg: "bg-emerald-50 dark:bg-emerald-950/30" },
         ].map(({ label, value, icon: Icon, color, bg }) => (
-          <div key={label} className={cn("rounded-2xl p-4", bg)}>
+          <div key={label} className={cn("rounded-xl p-4", bg)}>
             <Icon className={cn("h-5 w-5 mb-2", color)} />
             <p className="text-xs font-semibold text-gray-500 dark:text-muted mb-1">{label}</p>
             <p className={cn("text-xl font-extrabold", color)}>{value}</p>
@@ -219,7 +219,7 @@ export default function InvoicingTab() {
 
       {/* New invoice form */}
       {showForm && (
-        <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl p-3 sm:p-5 space-y-5">
+        <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl p-3 sm:p-5 space-y-5">
           <div className="flex items-center justify-between">
             <h3 className="font-bold text-gray-900 dark:text-foreground text-sm">Nuevo comprobante</h3>
             <button onClick={() => { setShowForm(false); setDniMsg(null); }}><X className="h-4 w-4 text-gray-400" /></button>
@@ -292,7 +292,7 @@ export default function InvoicingTab() {
           {/* Line items */}
           <div className="space-y-2">
             <div className="flex items-center justify-between">
-              <p className="text-xs font-bold text-gray-600 dark:text-muted uppercase tracking-wide">Líneas del comprobante</p>
+              <p className="text-xs font-bold text-gray-600 dark:text-muted">Líneas del comprobante</p>
               <button onClick={() => setFormItems(p => [...p, { ...EMPTY_ITEM }])} className="text-xs text-primary font-semibold hover:underline flex items-center gap-1"><Plus className="h-3.5 w-3.5" /> Agregar línea</button>
             </div>
             {formItems.map((item, idx) => (
@@ -330,8 +330,8 @@ export default function InvoicingTab() {
           </div>
 
           <div className="flex flex-wrap gap-2 justify-end">
-            <button onClick={() => setShowForm(false)} className="px-2 sm:px-4 py-1.5 sm:py-2 text-sm rounded-xl border border-gray-200 dark:border-card-border text-gray-600 dark:text-muted">Cancelar</button>
-            <button onClick={handleCreate} className="px-2 sm:px-4 py-1.5 sm:py-2 text-sm rounded-xl bg-primary text-white font-semibold hover:bg-primary/90">Crear comprobante</button>
+            <button onClick={() => setShowForm(false)} className="px-2 sm:px-4 py-1.5 sm:py-2 text-sm rounded-lg border border-gray-200 dark:border-card-border text-gray-600 dark:text-muted">Cancelar</button>
+            <button onClick={handleCreate} className="px-2 sm:px-4 py-1.5 sm:py-2 text-sm rounded-lg bg-primary text-white font-semibold hover:bg-primary/90">Crear comprobante</button>
           </div>
         </div>
       )}
@@ -340,7 +340,7 @@ export default function InvoicingTab() {
       <div className="flex items-center gap-3 flex-wrap">
         <div className="relative flex-1 min-w-48">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
-          <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Buscar cliente o N° comprobante..." className="w-full pl-9 pr-3 py-2 text-sm border border-gray-200 dark:border-card-border rounded-xl bg-white dark:bg-surface text-gray-700 dark:text-foreground" />
+          <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Buscar cliente o N° comprobante..." className="w-full pl-9 pr-3 py-2 text-sm border border-gray-200 dark:border-card-border rounded-lg bg-white dark:bg-surface text-gray-700 dark:text-foreground" />
         </div>
         <div className="flex gap-1 flex-wrap">
           {(["all", "boleta", "factura", "nota_credito", "nota_debito"] as const).map(t => (
@@ -352,7 +352,7 @@ export default function InvoicingTab() {
       </div>
 
       {/* Table */}
-      <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl overflow-y-hidden overflow-x-auto">
+      <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl overflow-y-hidden overflow-x-auto">
         <table className="w-full min-w-[600px] text-sm">
           <thead className="bg-gray-50 dark:bg-surface border-b border-gray-100 dark:border-card-border">
             <tr>
@@ -408,7 +408,7 @@ export default function InvoicingTab() {
       {/* Detail panel */}
       {selected && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4" onClick={() => setSelected(null)}>
-          <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl shadow-2xl p-3 sm:p-6 w-full max-w-lg space-y-4" onClick={e => e.stopPropagation()}>
+          <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl p-3 sm:p-6 w-full max-w-lg space-y-4" onClick={e => e.stopPropagation()}>
             <div className="flex items-center justify-between">
               <div>
                 <p className="font-extrabold text-gray-900 dark:text-foreground">{TYPE_LABEL[selected.type]} {selected.serie}-{selected.number}</p>
@@ -440,11 +440,11 @@ export default function InvoicingTab() {
             </div>
             {selected.notes && <p className="text-xs text-gray-400 dark:text-muted italic">{selected.notes}</p>}
             <div className="flex flex-wrap gap-2 pt-2">
-              <button className="flex-1 flex flex-wrap items-center justify-center gap-2 py-2.5 rounded-xl bg-gray-100 dark:bg-surface text-gray-700 dark:text-foreground text-sm font-semibold hover:bg-gray-200 dark:hover:bg-accent transition-colors">
+              <button className="flex-1 flex flex-wrap items-center justify-center gap-2 py-2.5 rounded-lg bg-gray-100 dark:bg-surface text-gray-700 dark:text-foreground text-sm font-semibold hover:bg-gray-200 dark:hover:bg-accent transition-colors">
                 <Printer className="h-4 w-4" /> Imprimir
               </button>
               {selected.status === "borrador" && (
-                <button onClick={() => { handleChangeStatus(selected.id, "emitida"); setSelected(null); }} className="flex-1 flex flex-wrap items-center justify-center gap-2 py-2.5 rounded-xl bg-primary text-white text-sm font-semibold hover:bg-primary/90 transition-colors">
+                <button onClick={() => { handleChangeStatus(selected.id, "emitida"); setSelected(null); }} className="flex-1 flex flex-wrap items-center justify-center gap-2 py-2.5 rounded-lg bg-primary text-white text-sm font-semibold hover:bg-primary/90 transition-colors">
                   <Send className="h-4 w-4" /> Emitir
                 </button>
               )}
