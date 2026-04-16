@@ -1,0 +1,562 @@
+
+> buleje@0.1.1 test
+> vitest run
+
+
+[1m[46m RUN [49m[22m [36mv4.1.0 [39m[90mC:/dev/bodega-san-martin/bodega-san-martin[39m
+
+Warning: A vi.mock("@/lib/db") call in "C:/dev/bodega-san-martin/bodega-san-martin/__tests__/ai-best-practices.test.ts" is not at the top level of the module. Although it appears nested, it will be hoisted and executed before any tests run. Move it to the top level to reflect its actual execution order. This will become an error in a future version.
+See: https://vitest.dev/guide/mocking/modules#how-it-works
+Warning: A vi.mock("@/lib/db/batches.db") call in "C:/dev/bodega-san-martin/bodega-san-martin/__tests__/ai-best-practices.test.ts" is not at the top level of the module. Although it appears nested, it will be hoisted and executed before any tests run. Move it to the top level to reflect its actual execution order. This will become an error in a future version.
+See: https://vitest.dev/guide/mocking/modules#how-it-works
+Warning: A vi.mock("@/lib/agents/bus") call in "C:/dev/bodega-san-martin/bodega-san-martin/__tests__/ai-best-practices.test.ts" is not at the top level of the module. Although it appears nested, it will be hoisted and executed before any tests run. Move it to the top level to reflect its actual execution order. This will become an error in a future version.
+See: https://vitest.dev/guide/mocking/modules#how-it-works
+Warning: A vi.mock("@/lib/agents/context") call in "C:/dev/bodega-san-martin/bodega-san-martin/__tests__/ai-best-practices.test.ts" is not at the top level of the module. Although it appears nested, it will be hoisted and executed before any tests run. Move it to the top level to reflect its actual execution order. This will become an error in a future version.
+See: https://vitest.dev/guide/mocking/modules#how-it-works
+ [31m❯[39m __tests__/api-orders-create.test.ts [2m([22m[2m22 tests[22m[2m | [22m[31m17 failed[39m[2m)[22m[32m 107[2mms[22m[39m
+[31m       [31m×[31m returns 400 when body is an empty object[39m[32m 41[2mms[22m[39m
+[31m       [31m×[31m returns 400 when customer.name is missing[39m[32m 4[2mms[22m[39m
+[31m       [31m×[31m returns 400 when items field is missing entirely[39m[32m 4[2mms[22m[39m
+[31m       [31m×[31m returns 400 when total is missing[39m[32m 4[2mms[22m[39m
+[31m       [31m×[31m returns 400 when paymentMethod is invalid[39m[32m 4[2mms[22m[39m
+[31m       [31m×[31m returns 400 when items array is empty[39m[32m 3[2mms[22m[39m
+[31m       [31m×[31m returns 400 when item.name is empty[39m[32m 3[2mms[22m[39m
+[31m       [31m×[31m returns 400 when item.quantity is less than 1[39m[32m 3[2mms[22m[39m
+[31m       [31m×[31m returns 400 when item.price is negative[39m[32m 3[2mms[22m[39m
+[31m       [31m×[31m creates an order and returns 201 with the saved order[39m[32m 4[2mms[22m[39m
+[31m       [31m×[31m returns 201 with correct total from items (ignoring client-provided total)[39m[32m 3[2mms[22m[39m
+[31m       [31m×[31m creates order with paymentMethod yape[39m[32m 3[2mms[22m[39m
+[31m       [31m×[31m accepts order with optional notes and deliverySlot[39m[32m 3[2mms[22m[39m
+[31m       [31m×[31m returns 200 (idempotent) when same idempotency-key is reused[39m[32m 4[2mms[22m[39m
+[31m       [31m×[31m calls OrdersDB.add once with correct tenant[39m[32m 2[2mms[22m[39m
+[31m       [31m×[31m creates order without phone and returns 201[39m[32m 2[2mms[22m[39m
+[31m     [31m×[31m returns 503 when DB throws[39m[32m 2[2mms[22m[39m
+ [31m❯[39m __tests__/orders-route-hotfix-001-004.test.ts [2m([22m[2m4 tests[22m[2m | [22m[31m4 failed[39m[2m)[22m[32m 110[2mms[22m[39m
+[31m     [31m×[31m HOTFIX-001: ignores client-supplied price and uses the DB price[39m[32m 42[2mms[22m[39m
+[31m     [31m×[31m HOTFIX-001: rejects 400 invalid_product when productId is not in the tenant catalog[39m[32m 5[2mms[22m[39m
+[31m     [31m×[31m HOTFIX-004: same-tenant idempotency replay returns the existing order[39m[32m 4[2mms[22m[39m
+[31m     [31m×[31m HOTFIX-004: cross-tenant key replay creates a NEW order (no leakage)[39m[32m 4[2mms[22m[39m
+ [31m❯[39m __tests__/orders-route-race-conditions.test.ts [2m([22m[2m6 tests[22m[2m | [22m[31m6 failed[39m[2m)[22m[32m 235[2mms[22m[39m
+[31m     [31m×[31m RED-005: rejects 409 insufficient_stock when the conditional UPDATE matches 0 rows[39m[32m 137[2mms[22m[39m
+[31m     [31m×[31m RED-005: succeeds (201) when the atomic UPDATE matches 1 row (race winner)[39m[32m 5[2mms[22m[39m
+[31m     [31m×[31m RED-005: skips the atomic decrement for products with stock=null (unlimited)[39m[32m 38[2mms[22m[39m
+[31m     [31m×[31m RED-006: rejects 409 coupon_exhausted when the coupon UPDATE matches 0 rows[39m[32m 5[2mms[22m[39m
+[31m     [31m×[31m RED-006: passes the conditional coupon UPDATE on the happy path[39m[32m 41[2mms[22m[39m
+[31m     [31m×[31m RED-007: tenant B's getByCode call is scoped by tenantId and returns null for tenant A's coupon[39m[32m 5[2mms[22m[39m
+Not implemented: navigation to another Document
+Not implemented: navigation to another Document
+
+[31m⎯⎯⎯⎯⎯⎯[39m[1m[41m Failed Tests 27 [49m[22m[31m⎯⎯⎯⎯⎯⎯⎯[39m
+
+[41m[1m FAIL [22m[49m __tests__/api-orders-create.test.ts[2m > [22mPOST /api/orders[2m > [22m400 – missing required fields[2m > [22mreturns 400 when body is an empty object
+[31m[1mAssertionError[22m: expected 500 to be 400 // Object.is equality[39m
+
+[32m- Expected[39m
+[31m+ Received[39m
+
+[32m- 400[39m
+[31m+ 500[39m
+
+[36m [2m❯[22m __tests__/api-orders-create.test.ts:[2m275:26[22m[39m
+    [90m273|[39m     [34mit[39m([32m"returns 400 when body is an empty object"[39m[33m,[39m [35masync[39m () [33m=>[39m {
+    [90m274|[39m       [35mconst[39m res [33m=[39m [35mawait[39m [33mPOST[39m([34mmakePostReq[39m({})[33m,[39m defaultCtx)[33m;[39m
+    [90m275|[39m       [34mexpect[39m(res[33m.[39mstatus)[33m.[39m[34mtoBe[39m([34m400[39m)[33m;[39m
+    [90m   |[39m                          [31m^[39m
+    [90m276|[39m       [35mconst[39m body [33m=[39m [35mawait[39m res[33m.[39m[34mjson[39m()[33m;[39m
+    [90m277|[39m       [34mexpect[39m(body[33m.[39merror)[33m.[39m[34mtoBeDefined[39m()[33m;[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/27]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m __tests__/api-orders-create.test.ts[2m > [22mPOST /api/orders[2m > [22m400 – missing required fields[2m > [22mreturns 400 when customer.name is missing
+[31m[1mAssertionError[22m: expected 500 to be 400 // Object.is equality[39m
+
+[32m- Expected[39m
+[31m+ Received[39m
+
+[32m- 400[39m
+[31m+ 500[39m
+
+[36m [2m❯[22m __tests__/api-orders-create.test.ts:[2m286:26[22m[39m
+    [90m284|[39m         total[33m:[39m [34m11.0[39m[33m,[39m
+    [90m285|[39m       })[33m,[39m defaultCtx)[33m;[39m
+    [90m286|[39m       [34mexpect[39m(res[33m.[39mstatus)[33m.[39m[34mtoBe[39m([34m400[39m)[33m;[39m
+    [90m   |[39m                          [31m^[39m
+    [90m287|[39m       [35mconst[39m body [33m=[39m [35mawait[39m res[33m.[39m[34mjson[39m()[33m;[39m
+    [90m288|[39m       [34mexpect[39m(body[33m.[39merror)[33m.[39m[34mtoBeDefined[39m()[33m;[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/27]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m __tests__/api-orders-create.test.ts[2m > [22mPOST /api/orders[2m > [22m400 – missing required fields[2m > [22mreturns 400 when items field is missing entirely
+[31m[1mAssertionError[22m: expected 500 to be 400 // Object.is equality[39m
+
+[32m- Expected[39m
+[31m+ Received[39m
+
+[32m- 400[39m
+[31m+ 500[39m
+
+[36m [2m❯[22m __tests__/api-orders-create.test.ts:[2m296:26[22m[39m
+    [90m294|[39m         total[33m:[39m [34m10[39m[33m,[39m
+    [90m295|[39m       })[33m,[39m defaultCtx)[33m;[39m
+    [90m296|[39m       [34mexpect[39m(res[33m.[39mstatus)[33m.[39m[34mtoBe[39m([34m400[39m)[33m;[39m
+    [90m   |[39m                          [31m^[39m
+    [90m297|[39m       [35mconst[39m body [33m=[39m [35mawait[39m res[33m.[39m[34mjson[39m()[33m;[39m
+    [90m298|[39m       [34mexpect[39m(body[33m.[39merror)[33m.[39m[34mtoBeDefined[39m()[33m;[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/27]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m __tests__/api-orders-create.test.ts[2m > [22mPOST /api/orders[2m > [22m400 – missing required fields[2m > [22mreturns 400 when total is missing
+[31m[1mAssertionError[22m: expected 500 to be 400 // Object.is equality[39m
+
+[32m- Expected[39m
+[31m+ Received[39m
+
+[32m- 400[39m
+[31m+ 500[39m
+
+[36m [2m❯[22m __tests__/api-orders-create.test.ts:[2m306:26[22m[39m
+    [90m304|[39m         items[33m:[39m [[33mVALID_ITEM[39m][33m,[39m
+    [90m305|[39m       })[33m,[39m defaultCtx)[33m;[39m
+    [90m306|[39m       [34mexpect[39m(res[33m.[39mstatus)[33m.[39m[34mtoBe[39m([34m400[39m)[33m;[39m
+    [90m   |[39m                          [31m^[39m
+    [90m307|[39m     })[33m;[39m
+    [90m308|[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[4/27]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m __tests__/api-orders-create.test.ts[2m > [22mPOST /api/orders[2m > [22m400 – missing required fields[2m > [22mreturns 400 when paymentMethod is invalid
+[31m[1mAssertionError[22m: expected 500 to be 400 // Object.is equality[39m
+
+[32m- Expected[39m
+[31m+ Received[39m
+
+[32m- 400[39m
+[31m+ 500[39m
+
+[36m [2m❯[22m __tests__/api-orders-create.test.ts:[2m314:26[22m[39m
+    [90m312|[39m         paymentMethod[33m:[39m [32m"tarjeta"[39m[33m,[39m [90m// not in enum[39m
+    [90m313|[39m       })[33m,[39m defaultCtx)[33m;[39m
+    [90m314|[39m       [34mexpect[39m(res[33m.[39mstatus)[33m.[39m[34mtoBe[39m([34m400[39m)[33m;[39m
+    [90m   |[39m                          [31m^[39m
+    [90m315|[39m     })[33m;[39m
+    [90m316|[39m   })[33m;[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[5/27]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m __tests__/api-orders-create.test.ts[2m > [22mPOST /api/orders[2m > [22m400 – empty items array[2m > [22mreturns 400 when items array is empty
+[31m[1mAssertionError[22m: expected 500 to be 400 // Object.is equality[39m
+
+[32m- Expected[39m
+[31m+ Received[39m
+
+[32m- 400[39m
+[31m+ 500[39m
+
+[36m [2m❯[22m __tests__/api-orders-create.test.ts:[2m327:26[22m[39m
+    [90m325|[39m         total[33m:[39m [34m0[39m[33m,[39m
+    [90m326|[39m       })[33m,[39m defaultCtx)[33m;[39m
+    [90m327|[39m       [34mexpect[39m(res[33m.[39mstatus)[33m.[39m[34mtoBe[39m([34m400[39m)[33m;[39m
+    [90m   |[39m                          [31m^[39m
+    [90m328|[39m       [35mconst[39m body [33m=[39m [35mawait[39m res[33m.[39m[34mjson[39m()[33m;[39m
+    [90m329|[39m       [34mexpect[39m(body[33m.[39merror)[33m.[39m[34mtoBeDefined[39m()[33m;[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[6/27]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m __tests__/api-orders-create.test.ts[2m > [22mPOST /api/orders[2m > [22m400 – invalid item fields[2m > [22mreturns 400 when item.name is empty
+[31m[1mAssertionError[22m: expected 500 to be 400 // Object.is equality[39m
+
+[32m- Expected[39m
+[31m+ Received[39m
+
+[32m- 400[39m
+[31m+ 500[39m
+
+[36m [2m❯[22m __tests__/api-orders-create.test.ts:[2m341:26[22m[39m
+    [90m339|[39m         items[33m:[39m [{ [33m...[39m[33mVALID_ITEM[39m[33m,[39m name[33m:[39m [32m""[39m }][33m,[39m
+    [90m340|[39m       })[33m,[39m defaultCtx)[33m;[39m
+    [90m341|[39m       [34mexpect[39m(res[33m.[39mstatus)[33m.[39m[34mtoBe[39m([34m400[39m)[33m;[39m
+    [90m   |[39m                          [31m^[39m
+    [90m342|[39m     })[33m;[39m
+    [90m343|[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[7/27]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m __tests__/api-orders-create.test.ts[2m > [22mPOST /api/orders[2m > [22m400 – invalid item fields[2m > [22mreturns 400 when item.quantity is less than 1
+[31m[1mAssertionError[22m: expected 500 to be 400 // Object.is equality[39m
+
+[32m- Expected[39m
+[31m+ Received[39m
+
+[32m- 400[39m
+[31m+ 500[39m
+
+[36m [2m❯[22m __tests__/api-orders-create.test.ts:[2m349:26[22m[39m
+    [90m347|[39m         items[33m:[39m [{ [33m...[39m[33mVALID_ITEM[39m[33m,[39m quantity[33m:[39m [34m0[39m }][33m,[39m
+    [90m348|[39m       })[33m,[39m defaultCtx)[33m;[39m
+    [90m349|[39m       [34mexpect[39m(res[33m.[39mstatus)[33m.[39m[34mtoBe[39m([34m400[39m)[33m;[39m
+    [90m   |[39m                          [31m^[39m
+    [90m350|[39m     })[33m;[39m
+    [90m351|[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[8/27]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m __tests__/api-orders-create.test.ts[2m > [22mPOST /api/orders[2m > [22m400 – invalid item fields[2m > [22mreturns 400 when item.price is negative
+[31m[1mAssertionError[22m: expected 500 to be 400 // Object.is equality[39m
+
+[32m- Expected[39m
+[31m+ Received[39m
+
+[32m- 400[39m
+[31m+ 500[39m
+
+[36m [2m❯[22m __tests__/api-orders-create.test.ts:[2m357:26[22m[39m
+    [90m355|[39m         items[33m:[39m [{ [33m...[39m[33mVALID_ITEM[39m[33m,[39m price[33m:[39m [33m-[39m[34m1[39m }][33m,[39m
+    [90m356|[39m       })[33m,[39m defaultCtx)[33m;[39m
+    [90m357|[39m       [34mexpect[39m(res[33m.[39mstatus)[33m.[39m[34mtoBe[39m([34m400[39m)[33m;[39m
+    [90m   |[39m                          [31m^[39m
+    [90m358|[39m     })[33m;[39m
+    [90m359|[39m   })[33m;[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[9/27]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m __tests__/api-orders-create.test.ts[2m > [22mPOST /api/orders[2m > [22m201 – successful order creation[2m > [22mcreates an order and returns 201 with the saved order
+[31m[1mAssertionError[22m: expected 500 to be 201 // Object.is equality[39m
+
+[32m- Expected[39m
+[31m+ Received[39m
+
+[32m- 201[39m
+[31m+ 500[39m
+
+[36m [2m❯[22m __tests__/api-orders-create.test.ts:[2m366:26[22m[39m
+    [90m364|[39m     it("creates an order and returns 201 with the saved order", async …
+    [90m365|[39m       [35mconst[39m res [33m=[39m [35mawait[39m [33mPOST[39m([34mmakePostReq[39m([33mVALID_BODY[39m)[33m,[39m defaultCtx)[33m;[39m
+    [90m366|[39m       [34mexpect[39m(res[33m.[39mstatus)[33m.[39m[34mtoBe[39m([34m201[39m)[33m;[39m
+    [90m   |[39m                          [31m^[39m
+    [90m367|[39m       [35mconst[39m body [33m=[39m [35mawait[39m res[33m.[39m[34mjson[39m()[33m;[39m
+    [90m368|[39m       [34mexpect[39m(body[33m.[39mid)[33m.[39m[34mtoBeDefined[39m()[33m;[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[10/27]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m __tests__/api-orders-create.test.ts[2m > [22mPOST /api/orders[2m > [22m201 – successful order creation[2m > [22mreturns 201 with correct total from items (ignoring client-provided total)
+[31m[1mAssertionError[22m: expected 500 to be 201 // Object.is equality[39m
+
+[32m- Expected[39m
+[31m+ Received[39m
+
+[32m- 201[39m
+[31m+ 500[39m
+
+[36m [2m❯[22m __tests__/api-orders-create.test.ts:[2m378:26[22m[39m
+    [90m376|[39m       mockOrdersAdd[33m.[39m[34mmockResolvedValue[39m({ [33m...[39m[33mSAVED_ORDER[39m[33m,[39m total[33m:[39m [34m11.0[39m })[33m;[39m
+    [90m377|[39m       const res = await POST(makePostReq({ ...VALID_BODY, total: 999 }…
+    [90m378|[39m       [34mexpect[39m(res[33m.[39mstatus)[33m.[39m[34mtoBe[39m([34m201[39m)[33m;[39m
+    [90m   |[39m                          [31m^[39m
+    [90m379|[39m       [35mconst[39m body [33m=[39m [35mawait[39m res[33m.[39m[34mjson[39m()[33m;[39m
+    [90m380|[39m       [34mexpect[39m(body[33m.[39mtotal)[33m.[39m[34mtoBe[39m([34m11.0[39m)[33m;[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[11/27]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m __tests__/api-orders-create.test.ts[2m > [22mPOST /api/orders[2m > [22m201 – successful order creation[2m > [22mcreates order with paymentMethod yape
+[31m[1mAssertionError[22m: expected 500 to be 201 // Object.is equality[39m
+
+[32m- Expected[39m
+[31m+ Received[39m
+
+[32m- 201[39m
+[31m+ 500[39m
+
+[36m [2m❯[22m __tests__/api-orders-create.test.ts:[2m389:26[22m[39m
+    [90m387|[39m       mockOrdersAdd.mockResolvedValue({ ...SAVED_ORDER, paymentMethod:…
+    [90m388|[39m       const res = await POST(makePostReq({ ...VALID_BODY, paymentMetho…
+    [90m389|[39m       [34mexpect[39m(res[33m.[39mstatus)[33m.[39m[34mtoBe[39m([34m201[39m)[33m;[39m
+    [90m   |[39m                          [31m^[39m
+    [90m390|[39m       [35mconst[39m body [33m=[39m [35mawait[39m res[33m.[39m[34mjson[39m()[33m;[39m
+    [90m391|[39m       [34mexpect[39m(body[33m.[39mpaymentMethod)[33m.[39m[34mtoBe[39m([32m"yape"[39m)[33m;[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[12/27]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m __tests__/api-orders-create.test.ts[2m > [22mPOST /api/orders[2m > [22m201 – successful order creation[2m > [22maccepts order with optional notes and deliverySlot
+[31m[1mAssertionError[22m: expected 500 to be 201 // Object.is equality[39m
+
+[32m- Expected[39m
+[31m+ Received[39m
+
+[32m- 201[39m
+[31m+ 500[39m
+
+[36m [2m❯[22m __tests__/api-orders-create.test.ts:[2m400:26[22m[39m
+    [90m398|[39m         deliverySlot[33m:[39m [32m"09:00 - 12:00"[39m[33m,[39m
+    [90m399|[39m       })[33m,[39m defaultCtx)[33m;[39m
+    [90m400|[39m       [34mexpect[39m(res[33m.[39mstatus)[33m.[39m[34mtoBe[39m([34m201[39m)[33m;[39m
+    [90m   |[39m                          [31m^[39m
+    [90m401|[39m     })[33m;[39m
+    [90m402|[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[13/27]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m __tests__/api-orders-create.test.ts[2m > [22mPOST /api/orders[2m > [22m201 – successful order creation[2m > [22mreturns 200 (idempotent) when same idempotency-key is reused
+[31m[1mAssertionError[22m: expected 500 to be 200 // Object.is equality[39m
+
+[32m- Expected[39m
+[31m+ Received[39m
+
+[32m- 200[39m
+[31m+ 500[39m
+
+[36m [2m❯[22m __tests__/api-orders-create.test.ts:[2m406:26[22m[39m
+    [90m404|[39m       mockOrderFindFirst.mockResolvedValue(SAVED_ORDER); // simulate d…
+    [90m405|[39m       const res = await POST(makePostReq(VALID_BODY, { "x-idempotency-…
+    [90m406|[39m       [34mexpect[39m(res[33m.[39mstatus)[33m.[39m[34mtoBe[39m([34m200[39m)[33m;[39m
+    [90m   |[39m                          [31m^[39m
+    [90m407|[39m       [35mconst[39m body [33m=[39m [35mawait[39m res[33m.[39m[34mjson[39m()[33m;[39m
+    [90m408|[39m       [34mexpect[39m(body[33m.[39mid)[33m.[39m[34mtoBe[39m([33mSAVED_ORDER[39m[33m.[39mid)[33m;[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[14/27]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m __tests__/api-orders-create.test.ts[2m > [22mPOST /api/orders[2m > [22m201 – successful order creation[2m > [22mcalls OrdersDB.add once with correct tenant
+[31m[1mAssertionError[22m: expected "vi.fn()" to be called 1 times, but got 0 times[39m
+[36m [2m❯[22m __tests__/api-orders-create.test.ts:[2m414:29[22m[39m
+    [90m412|[39m     [34mit[39m([32m"calls OrdersDB.add once with correct tenant"[39m[33m,[39m [35masync[39m () [33m=>[39m {
+    [90m413|[39m       [35mawait[39m [33mPOST[39m([34mmakePostReq[39m([33mVALID_BODY[39m)[33m,[39m defaultCtx)[33m;[39m
+    [90m414|[39m       [34mexpect[39m(mockOrdersAdd)[33m.[39m[34mtoHaveBeenCalledTimes[39m([34m1[39m)[33m;[39m
+    [90m   |[39m                             [31m^[39m
+    [90m415|[39m       [90m// Second arg to add() is tenantId[39m
+    [90m416|[39m       [34mexpect[39m(mockOrdersAdd)[33m.[39m[34mtoHaveBeenCalledWith[39m(
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[15/27]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m __tests__/api-orders-create.test.ts[2m > [22mPOST /api/orders[2m > [22m201 – order without customer phone[2m > [22mcreates order without phone and returns 201
+[31m[1mAssertionError[22m: expected 500 to be 201 // Object.is equality[39m
+
+[32m- Expected[39m
+[31m+ Received[39m
+
+[32m- 201[39m
+[31m+ 500[39m
+
+[36m [2m❯[22m __tests__/api-orders-create.test.ts:[2m437:26[22m[39m
+    [90m435|[39m         total[33m:[39m [34m11.0[39m[33m,[39m
+    [90m436|[39m       })[33m,[39m defaultCtx)[33m;[39m
+    [90m437|[39m       [34mexpect[39m(res[33m.[39mstatus)[33m.[39m[34mtoBe[39m([34m201[39m)[33m;[39m
+    [90m   |[39m                          [31m^[39m
+    [90m438|[39m       [35mconst[39m body [33m=[39m [35mawait[39m res[33m.[39m[34mjson[39m()[33m;[39m
+    [90m439|[39m       [34mexpect[39m(body[33m.[39mcustomer[33m.[39mname)[33m.[39m[34mtoBe[39m([32m"Cliente Anónimo"[39m)[33m;[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[16/27]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m __tests__/api-orders-create.test.ts[2m > [22mGET /api/orders[2m > [22mreturns 503 when DB throws
+[31m[1mAssertionError[22m: expected 500 to be 503 // Object.is equality[39m
+
+[32m- Expected[39m
+[31m+ Received[39m
+
+[32m- 503[39m
+[31m+ 500[39m
+
+[36m [2m❯[22m __tests__/api-orders-create.test.ts:[2m503:24[22m[39m
+    [90m501|[39m     mockOrdersGetAllFiltered.mockRejectedValue(new Error("DB connectio…
+    [90m502|[39m     [35mconst[39m res [33m=[39m [35mawait[39m [33mGET[39m([34mmakeGetReq[39m()[33m,[39m defaultCtx)[33m;[39m
+    [90m503|[39m     [34mexpect[39m(res[33m.[39mstatus)[33m.[39m[34mtoBe[39m([34m503[39m)[33m;[39m
+    [90m   |[39m                        [31m^[39m
+    [90m504|[39m     [35mconst[39m body [33m=[39m [35mawait[39m res[33m.[39m[34mjson[39m()[33m;[39m
+    [90m505|[39m     [34mexpect[39m(body[33m.[39merror)[33m.[39m[34mtoBe[39m([32m"Database error"[39m)[33m;[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[17/27]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m __tests__/orders-route-hotfix-001-004.test.ts[2m > [22mPOST /api/orders — HOTFIX-001 + HOTFIX-004[2m > [22mHOTFIX-001: ignores client-supplied price and uses the DB price
+[31m[1mAssertionError[22m: expected 500 to be 201 // Object.is equality[39m
+
+[32m- Expected[39m
+[31m+ Received[39m
+
+[32m- 201[39m
+[31m+ 500[39m
+
+[36m [2m❯[22m __tests__/orders-route-hotfix-001-004.test.ts:[2m240:24[22m[39m
+    [90m238|[39m
+    [90m239|[39m     [35mconst[39m res [33m=[39m [35mawait[39m [33mPOST[39m(req[33m,[39m defaultCtx)[33m;[39m
+    [90m240|[39m     [34mexpect[39m(res[33m.[39mstatus)[33m.[39m[34mtoBe[39m([34m201[39m)[33m;[39m
+    [90m   |[39m                        [31m^[39m
+    [90m241|[39m
+    [90m242|[39m     // OrdersDB.add was called with the SERVER-side total, not the cli…
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[18/27]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m __tests__/orders-route-hotfix-001-004.test.ts[2m > [22mPOST /api/orders — HOTFIX-001 + HOTFIX-004[2m > [22mHOTFIX-001: rejects 400 invalid_product when productId is not in the tenant catalog
+[31m[1mAssertionError[22m: expected 500 to be 400 // Object.is equality[39m
+
+[32m- Expected[39m
+[31m+ Received[39m
+
+[32m- 400[39m
+[31m+ 500[39m
+
+[36m [2m❯[22m __tests__/orders-route-hotfix-001-004.test.ts:[2m276:24[22m[39m
+    [90m274|[39m
+    [90m275|[39m     [35mconst[39m res [33m=[39m [35mawait[39m [33mPOST[39m(req[33m,[39m defaultCtx)[33m;[39m
+    [90m276|[39m     [34mexpect[39m(res[33m.[39mstatus)[33m.[39m[34mtoBe[39m([34m400[39m)[33m;[39m
+    [90m   |[39m                        [31m^[39m
+    [90m277|[39m     [35mconst[39m body [33m=[39m [35mawait[39m res[33m.[39m[34mjson[39m()[33m;[39m
+    [90m278|[39m     [34mexpect[39m(body[33m.[39merror)[33m.[39m[34mtoBe[39m([32m"invalid_product"[39m)[33m;[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[19/27]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m __tests__/orders-route-hotfix-001-004.test.ts[2m > [22mPOST /api/orders — HOTFIX-001 + HOTFIX-004[2m > [22mHOTFIX-004: same-tenant idempotency replay returns the existing order
+[31m[1mAssertionError[22m: expected 500 to be 200 // Object.is equality[39m
+
+[32m- Expected[39m
+[31m+ Received[39m
+
+[32m- 200[39m
+[31m+ 500[39m
+
+[36m [2m❯[22m __tests__/orders-route-hotfix-001-004.test.ts:[2m317:24[22m[39m
+    [90m315|[39m
+    [90m316|[39m     [35mconst[39m res [33m=[39m [35mawait[39m [33mPOST[39m(req[33m,[39m defaultCtx)[33m;[39m
+    [90m317|[39m     [34mexpect[39m(res[33m.[39mstatus)[33m.[39m[34mtoBe[39m([34m200[39m)[33m;[39m
+    [90m   |[39m                        [31m^[39m
+    [90m318|[39m     [35mconst[39m body [33m=[39m [35mawait[39m res[33m.[39m[34mjson[39m()[33m;[39m
+    [90m319|[39m     [34mexpect[39m(body[33m.[39mid)[33m.[39m[34mtoBe[39m([32m"ord-existing-abc"[39m)[33m;[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[20/27]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m __tests__/orders-route-hotfix-001-004.test.ts[2m > [22mPOST /api/orders — HOTFIX-001 + HOTFIX-004[2m > [22mHOTFIX-004: cross-tenant key replay creates a NEW order (no leakage)
+[31m[1mAssertionError[22m: expected 500 to be 201 // Object.is equality[39m
+
+[32m- Expected[39m
+[31m+ Received[39m
+
+[32m- 201[39m
+[31m+ 500[39m
+
+[36m [2m❯[22m __tests__/orders-route-hotfix-001-004.test.ts:[2m388:24[22m[39m
+    [90m386|[39m
+    [90m387|[39m     [35mconst[39m res [33m=[39m [35mawait[39m [33mPOST[39m(req[33m,[39m defaultCtx)[33m;[39m
+    [90m388|[39m     [34mexpect[39m(res[33m.[39mstatus)[33m.[39m[34mtoBe[39m([34m201[39m)[33m;[39m [90m// NEW order, not the 200 replay path[39m
+    [90m   |[39m                        [31m^[39m
+    [90m389|[39m     [35mconst[39m body [33m=[39m [35mawait[39m res[33m.[39m[34mjson[39m()[33m;[39m
+    [90m390|[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[21/27]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m __tests__/orders-route-race-conditions.test.ts[2m > [22mPOST /api/orders — RED-005 + RED-006 + RED-007 race conditions[2m > [22mRED-005: rejects 409 insufficient_stock when the conditional UPDATE matches 0 rows
+[31m[1mAssertionError[22m: expected 500 to be 409 // Object.is equality[39m
+
+[32m- Expected[39m
+[31m+ Received[39m
+
+[32m- 409[39m
+[31m+ 500[39m
+
+[36m [2m❯[22m __tests__/orders-route-race-conditions.test.ts:[2m255:24[22m[39m
+    [90m253|[39m
+    [90m254|[39m     [35mconst[39m res [33m=[39m [35mawait[39m [33mPOST[39m(req[33m,[39m defaultCtx)[33m;[39m
+    [90m255|[39m     [34mexpect[39m(res[33m.[39mstatus)[33m.[39m[34mtoBe[39m([34m409[39m)[33m;[39m
+    [90m   |[39m                        [31m^[39m
+    [90m256|[39m     [35mconst[39m body [33m=[39m [35mawait[39m res[33m.[39m[34mjson[39m()[33m;[39m
+    [90m257|[39m     [34mexpect[39m(body[33m.[39merror)[33m.[39m[34mtoBe[39m([32m"insufficient_stock"[39m)[33m;[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[22/27]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m __tests__/orders-route-race-conditions.test.ts[2m > [22mPOST /api/orders — RED-005 + RED-006 + RED-007 race conditions[2m > [22mRED-005: succeeds (201) when the atomic UPDATE matches 1 row (race winner)
+[31m[1mAssertionError[22m: expected 500 to be 201 // Object.is equality[39m
+
+[32m- Expected[39m
+[31m+ Received[39m
+
+[32m- 201[39m
+[31m+ 500[39m
+
+[36m [2m❯[22m __tests__/orders-route-race-conditions.test.ts:[2m278:24[22m[39m
+    [90m276|[39m
+    [90m277|[39m     [35mconst[39m res [33m=[39m [35mawait[39m [33mPOST[39m(req[33m,[39m defaultCtx)[33m;[39m
+    [90m278|[39m     [34mexpect[39m(res[33m.[39mstatus)[33m.[39m[34mtoBe[39m([34m201[39m)[33m;[39m
+    [90m   |[39m                        [31m^[39m
+    [90m279|[39m     [34mexpect[39m(mockOrdersAdd)[33m.[39m[34mtoHaveBeenCalledTimes[39m([34m1[39m)[33m;[39m
+    [90m280|[39m   })[33m;[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[23/27]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m __tests__/orders-route-race-conditions.test.ts[2m > [22mPOST /api/orders — RED-005 + RED-006 + RED-007 race conditions[2m > [22mRED-005: skips the atomic decrement for products with stock=null (unlimited)
+[31m[1mAssertionError[22m: expected 500 to be 201 // Object.is equality[39m
+
+[32m- Expected[39m
+[31m+ Received[39m
+
+[32m- 201[39m
+[31m+ 500[39m
+
+[36m [2m❯[22m __tests__/orders-route-race-conditions.test.ts:[2m300:24[22m[39m
+    [90m298|[39m
+    [90m299|[39m     [35mconst[39m res [33m=[39m [35mawait[39m [33mPOST[39m(req[33m,[39m defaultCtx)[33m;[39m
+    [90m300|[39m     [34mexpect[39m(res[33m.[39mstatus)[33m.[39m[34mtoBe[39m([34m201[39m)[33m;[39m
+    [90m   |[39m                        [31m^[39m
+    [90m301|[39m     [34mexpect[39m(mockOrdersAdd)[33m.[39m[34mtoHaveBeenCalledTimes[39m([34m1[39m)[33m;[39m
+    [90m302|[39m     // No stock guard fired (no executeRaw inside the txn for this ite…
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[24/27]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m __tests__/orders-route-race-conditions.test.ts[2m > [22mPOST /api/orders — RED-005 + RED-006 + RED-007 race conditions[2m > [22mRED-006: rejects 409 coupon_exhausted when the coupon UPDATE matches 0 rows
+[31m[1mAssertionError[22m: expected 500 to be 409 // Object.is equality[39m
+
+[32m- Expected[39m
+[31m+ Received[39m
+
+[32m- 409[39m
+[31m+ 500[39m
+
+[36m [2m❯[22m __tests__/orders-route-race-conditions.test.ts:[2m341:24[22m[39m
+    [90m339|[39m
+    [90m340|[39m     [35mconst[39m res [33m=[39m [35mawait[39m [33mPOST[39m(req[33m,[39m defaultCtx)[33m;[39m
+    [90m341|[39m     [34mexpect[39m(res[33m.[39mstatus)[33m.[39m[34mtoBe[39m([34m409[39m)[33m;[39m
+    [90m   |[39m                        [31m^[39m
+    [90m342|[39m     [35mconst[39m body [33m=[39m [35mawait[39m res[33m.[39m[34mjson[39m()[33m;[39m
+    [90m343|[39m     [34mexpect[39m(body[33m.[39merror)[33m.[39m[34mtoBe[39m([32m"coupon_exhausted"[39m)[33m;[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[25/27]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m __tests__/orders-route-race-conditions.test.ts[2m > [22mPOST /api/orders — RED-005 + RED-006 + RED-007 race conditions[2m > [22mRED-006: passes the conditional coupon UPDATE on the happy path
+[31m[1mAssertionError[22m: expected 500 to be 201 // Object.is equality[39m
+
+[32m- Expected[39m
+[31m+ Received[39m
+
+[32m- 201[39m
+[31m+ 500[39m
+
+[36m [2m❯[22m __tests__/orders-route-race-conditions.test.ts:[2m376:24[22m[39m
+    [90m374|[39m
+    [90m375|[39m     [35mconst[39m res [33m=[39m [35mawait[39m [33mPOST[39m(req[33m,[39m defaultCtx)[33m;[39m
+    [90m376|[39m     [34mexpect[39m(res[33m.[39mstatus)[33m.[39m[34mtoBe[39m([34m201[39m)[33m;[39m
+    [90m   |[39m                        [31m^[39m
+    [90m377|[39m     [34mexpect[39m(mockOrdersAdd)[33m.[39m[34mtoHaveBeenCalledTimes[39m([34m1[39m)[33m;[39m
+    [90m378|[39m     // The lookup MUST be tenant-scoped (RED-007 enforced at the call …
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[26/27]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m __tests__/orders-route-race-conditions.test.ts[2m > [22mPOST /api/orders — RED-005 + RED-006 + RED-007 race conditions[2m > [22mRED-007: tenant B's getByCode call is scoped by tenantId and returns null for tenant A's coupon
+[31m[1mAssertionError[22m: expected 500 to be 201 // Object.is equality[39m
+
+[32m- Expected[39m
+[31m+ Received[39m
+
+[32m- 201[39m
+[31m+ 500[39m
+
+[36m [2m❯[22m __tests__/orders-route-race-conditions.test.ts:[2m426:24[22m[39m
+    [90m424|[39m     [35mconst[39m res [33m=[39m [35mawait[39m [33mPOST[39m(req[33m,[39m defaultCtx)[33m;[39m
+    [90m425|[39m     [90m// Order still creates — but at full price (no discount applied).[39m
+    [90m426|[39m     [34mexpect[39m(res[33m.[39mstatus)[33m.[39m[34mtoBe[39m([34m201[39m)[33m;[39m
+    [90m   |[39m                        [31m^[39m
+    [90m427|[39m     [35mconst[39m body [33m=[39m [35mawait[39m res[33m.[39m[34mjson[39m()[33m;[39m
+    [90m428|[39m     [90m// Crucially: no coupon was attached to the order.[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[27/27]⎯[22m[39m
+
+
+[2m Test Files [22m [1m[31m3 failed[39m[22m[2m | [22m[1m[32m186 passed[39m[22m[90m (189)[39m
+[2m      Tests [22m [1m[31m27 failed[39m[22m[2m | [22m[1m[32m2835 passed[39m[22m[2m | [22m[33m5 skipped[39m[2m | [22m[90m4 todo[39m[90m (2871)[39m
+[2m   Start at [22m 15:46:30
+[2m   Duration [22m 63.60s[2m (transform 35.69s, setup 65.17s, import 114.59s, tests 99.08s, environment 493.48s)[22m
+
