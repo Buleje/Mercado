@@ -3,9 +3,9 @@
 import { useState, useEffect, useMemo, useCallback } from "react";
 import {
   Users, Search, X, Download, Loader2, AlertCircle,
-  Phone, Crown, Star, UserPlus, Moon,
+  Phone, Crown, Star, UserPlus, Moon, Heart,
   ShoppingCart, TrendingUp, UserCheck,
-  ChevronLeft, ChevronRight, BarChart3,
+  ChevronLeft, ChevronRight, BarChart3, RefreshCw,
 } from "lucide-react";
 import EmptyState from "@/components/admin/shared/EmptyState";
 import StatusBadge from "@/components/admin/shared/StatusBadge";
@@ -362,17 +362,18 @@ export default function CRMTab() {
   // ── Main view ─────────────────────────────────────────────────────────────
 
   return (
-    <div className="space-y-4 sm:space-y-6">
+    <div className="space-y-6">
 
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-        <div>
-          <h1 className="text-xl sm:text-2xl font-extrabold text-gray-900 dark:text-foreground flex items-center gap-2">
-            <Users className="h-6 w-6 text-primary" /> CRM — Clientes
-          </h1>
-          <p className="text-sm text-gray-500 dark:text-muted mt-0.5">Gestión y seguimiento de todos tus clientes</p>
+      {/* ── Header estandar ──────────────────────────────────────── */}
+      <div className="flex items-center gap-4">
+        <div className="flex items-center justify-center w-11 h-11 rounded-xl bg-violet-50 dark:bg-violet-900/20 shrink-0">
+          <Heart className="w-5 h-5 text-violet-600 dark:text-violet-400" />
         </div>
-        <div className="flex gap-2 flex-wrap">
+        <div className="flex-1 min-w-0">
+          <h1 className="text-xl font-bold text-gray-900 dark:text-white truncate">Mis Clientes</h1>
+          <p className="text-sm text-gray-500 dark:text-zinc-400 mt-0.5">CRM, fidelizacion y seguimiento</p>
+        </div>
+        <div className="flex items-center gap-2 shrink-0 flex-wrap">
           <button
             onClick={() => setShowNewClientModal(true)}
             className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-sm font-bold text-white transition-colors shadow-sm"
@@ -387,9 +388,8 @@ export default function CRMTab() {
             )}
             className="flex items-center gap-1.5 px-3 py-2 rounded-xl border border-gray-200 dark:border-card-border bg-white dark:bg-surface text-sm font-semibold text-gray-700 dark:text-foreground hover:bg-gray-50 dark:hover:bg-accent transition-colors"
           >
-            <Download className="h-4 w-4" /> Exportar CSV
+            <Download className="h-4 w-4" /> CSV
           </button>
-          {/* Mejora 11: Exportar clientes filtrados a Excel */}
           <button
             onClick={() => {
               if (filtered.length === 0) return;
@@ -409,7 +409,6 @@ export default function CRMTab() {
           >
             <Download className="h-4 w-4" /> Excel
           </button>
-          {/* Mejora 13: Comparar clientes */}
           <button
             onClick={() => { setCompareMode(!compareMode); if (compareMode) { setComparePhones(new Set()); } }}
             className={cn(
@@ -424,8 +423,8 @@ export default function CRMTab() {
         </div>
       </div>
 
-      {/* KPIs */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+      {/* ── KPIs estandar ─────────────────────────────────────────── */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         {[
           { label: "Total clientes",   value: String(stats.total),   icon: Users,       color: "text-blue-500",    bg: "bg-blue-50 dark:bg-blue-950/30" },
           { label: "Activos (30d)",    value: String(stats.activos), icon: UserCheck,   color: "text-emerald-500", bg: "bg-emerald-50 dark:bg-emerald-950/30" },
@@ -487,8 +486,71 @@ export default function CRMTab() {
         );
       })()}
 
-      {/* Quick filters */}
-      <div className="flex gap-2 flex-wrap">
+      {/* ── Toolbar estandar ───────────────────────────────────────── */}
+      <div className="flex flex-wrap items-center gap-3">
+        {/* Busqueda */}
+        <div className="relative flex-1 min-w-[200px] max-w-sm">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+          <input
+            value={search}
+            onChange={e => setSearch(e.target.value)}
+            placeholder="Nombre o telefono..."
+            className="w-full pl-10 pr-9 py-2.5 text-sm rounded-xl border border-gray-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 focus:border-violet-500 focus:ring-2 focus:ring-violet-500/20 outline-none transition-all"
+          />
+          {search && (
+            <button onClick={() => setSearch("")} className="absolute right-3 top-1/2 -translate-y-1/2">
+              <X className="h-3.5 w-3.5 text-gray-400 hover:text-gray-600 dark:hover:text-foreground" />
+            </button>
+          )}
+        </div>
+
+        {/* Filtro segmento — chips estandar */}
+        {([
+          { key: "todos" as const, label: "Todos", count: customers.length },
+          { key: "frecuente" as const, label: "Frecuente", count: segmentCounts.frecuente },
+          { key: "ocasional" as const, label: "Ocasional", count: segmentCounts.ocasional },
+          { key: "nuevo" as const, label: "Nuevo", count: segmentCounts.nuevo },
+          { key: "perdido" as const, label: "Perdido", count: segmentCounts.perdido },
+        ] as const).map(f => (
+          <button
+            key={f.key}
+            onClick={() => setFilterSegment(f.key)}
+            className={cn(
+              "inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-sm font-medium border transition-all",
+              filterSegment === f.key
+                ? "bg-violet-50 dark:bg-violet-900/20 border-violet-200 dark:border-violet-800 text-violet-700 dark:text-violet-400"
+                : "border-gray-200 dark:border-zinc-700 text-gray-600 dark:text-zinc-400 bg-white dark:bg-zinc-900 hover:bg-gray-50 dark:hover:bg-zinc-800"
+            )}
+          >
+            {f.label}
+            {f.count > 0 && (
+              <span className={cn(
+                "text-[10px] font-bold rounded-full min-w-[18px] h-[18px] inline-flex items-center justify-center px-1",
+                filterSegment === f.key ? "bg-violet-600 text-white" : "bg-gray-200 dark:bg-zinc-700 text-gray-600 dark:text-zinc-300"
+              )}>
+                {f.count > 99 ? "99+" : f.count}
+              </span>
+            )}
+          </button>
+        ))}
+
+        {/* Spacer */}
+        <div className="flex-1" />
+
+        {/* Resultado count */}
+        <span className="text-xs text-gray-400 dark:text-muted">
+          {filtered.length} resultado{filtered.length !== 1 ? "s" : ""}
+        </span>
+
+        {/* Acciones */}
+        <button onClick={load} className="p-2 rounded-xl bg-gray-100 dark:bg-surface hover:bg-gray-200 dark:hover:bg-accent transition-colors" title="Actualizar">
+          <RefreshCw className="h-4 w-4 text-gray-500" />
+        </button>
+      </div>
+
+      {/* Filtros secundarios: quick filter + frecuencia + tags */}
+      <div className="flex flex-wrap items-center gap-2">
+        {/* Quick filters */}
         {([
           { key: "todos" as QuickFilter,     label: "Todos" },
           { key: "activos" as QuickFilter,   label: "Activos" },
@@ -499,71 +561,50 @@ export default function CRMTab() {
             key={f.key}
             onClick={() => setQuickFilter(f.key)}
             className={cn(
-              "px-3.5 py-1.5 rounded-full text-sm font-bold border transition-colors",
+              "inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-sm font-medium border transition-all",
               quickFilter === f.key
-                ? "text-white border-transparent"
-                : "border-gray-200 dark:border-card-border text-gray-600 dark:text-muted hover:bg-gray-50 dark:hover:bg-surface"
+                ? "bg-violet-50 dark:bg-violet-900/20 border-violet-200 dark:border-violet-800 text-violet-700 dark:text-violet-400"
+                : "border-gray-200 dark:border-zinc-700 text-gray-600 dark:text-zinc-400 bg-white dark:bg-zinc-900 hover:bg-gray-50 dark:hover:bg-zinc-800"
             )}
-            style={quickFilter === f.key ? { backgroundColor: "#00B4A6" } : undefined}
           >
-            {f.label} · {quickFilterCounts[f.key]}
+            {f.label}
+            <span className={cn(
+              "text-[10px] font-bold rounded-full min-w-[18px] h-[18px] inline-flex items-center justify-center px-1",
+              quickFilter === f.key ? "bg-violet-600 text-white" : "bg-gray-200 dark:bg-zinc-700 text-gray-600 dark:text-zinc-300"
+            )}>
+              {quickFilterCounts[f.key] > 99 ? "99+" : quickFilterCounts[f.key]}
+            </span>
           </button>
         ))}
-      </div>
 
-      {/* Segment pills */}
-      <div className="flex gap-2 flex-wrap">
-        <button
-          onClick={() => setFilterSegment("todos")}
-          className={cn("px-3 py-1.5 rounded-full text-sm font-bold border transition-colors",
-            filterSegment === "todos"
-              ? "bg-primary text-white border-primary"
-              : "border-gray-200 dark:border-card-border text-gray-600 dark:text-muted hover:bg-gray-50 dark:hover:bg-surface"
-          )}
-        >
-          Todos · {customers.length}
-        </button>
-        {(Object.entries(SEGMENT_CONFIG) as [Segment, typeof SEGMENT_CONFIG[Segment]][]).map(([seg, cfg]) => {
-          const Icon = cfg.Icon;
-          const active = filterSegment === seg;
-          return (
-            <button
-              key={seg}
-              onClick={() => setFilterSegment(seg)}
-              className={cn("inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-bold border transition-colors",
-                active
-                  ? "bg-primary text-white border-primary"
-                  : cn(cfg.bg, cfg.color, cfg.border, "hover:opacity-80")
-              )}
-            >
-              <Icon className="h-3.5 w-3.5" />
-              {cfg.label} · {segmentCounts[seg]}
-            </button>
-          );
-        })}
-      </div>
+        <span className="text-gray-300 dark:text-zinc-600">|</span>
 
-      {/* Mejora nueva 7: Frecuencia de compra pills */}
-      <div className="flex gap-2 flex-wrap">
+        {/* Frecuencia de compra */}
         {([
-          { key: "todos-freq" as const, label: "Todos", emoji: "" },
-          { key: "diario" as const, label: "Diario", emoji: "\uD83D\uDCC5" },
-          { key: "semanal" as const, label: "Semanal", emoji: "\uD83D\uDCC6" },
-          { key: "quincenal" as const, label: "Quincenal", emoji: "\uD83D\uDDD3" },
-          { key: "mensual" as const, label: "Mensual", emoji: "\uD83D\uDCCB" },
-          { key: "inactivo-freq" as const, label: "Inactivo", emoji: "\uD83D\uDE34" },
+          { key: "todos-freq" as const, label: "Todos" },
+          { key: "diario" as const, label: "Diario" },
+          { key: "semanal" as const, label: "Semanal" },
+          { key: "quincenal" as const, label: "Quincenal" },
+          { key: "mensual" as const, label: "Mensual" },
+          { key: "inactivo-freq" as const, label: "Inactivo" },
         ]).map(f => (
           <button
             key={f.key}
             onClick={() => setFreqFilter(f.key)}
             className={cn(
-              "px-3 py-1.5 rounded-full text-sm font-bold border transition-colors",
+              "inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-sm font-medium border transition-all",
               freqFilter === f.key
-                ? "bg-[#f97316] text-white border-[#f97316]"
-                : "border-gray-200 dark:border-card-border text-gray-600 dark:text-muted hover:bg-gray-50 dark:hover:bg-surface"
+                ? "bg-violet-50 dark:bg-violet-900/20 border-violet-200 dark:border-violet-800 text-violet-700 dark:text-violet-400"
+                : "border-gray-200 dark:border-zinc-700 text-gray-600 dark:text-zinc-400 bg-white dark:bg-zinc-900 hover:bg-gray-50 dark:hover:bg-zinc-800"
             )}
           >
-            {f.emoji && `${f.emoji} `}{f.label} · {freqCounts[f.key]}
+            {f.label}
+            <span className={cn(
+              "text-[10px] font-bold rounded-full min-w-[18px] h-[18px] inline-flex items-center justify-center px-1",
+              freqFilter === f.key ? "bg-violet-600 text-white" : "bg-gray-200 dark:bg-zinc-700 text-gray-600 dark:text-zinc-300"
+            )}>
+              {freqCounts[f.key] > 99 ? "99+" : freqCounts[f.key]}
+            </span>
           </button>
         ))}
       </div>
@@ -574,34 +615,24 @@ export default function CRMTab() {
           <span className="text-xs font-semibold text-gray-500 dark:text-muted">Etiqueta:</span>
           <button
             onClick={() => setFilterTag("todos")}
-            className={cn("px-2.5 py-1 rounded-full text-xs font-bold border transition-colors",
+            className={cn("inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-sm font-medium border transition-all",
               filterTag === "todos"
-                ? "bg-primary text-white border-primary"
-                : "border-gray-200 dark:border-card-border text-gray-600 dark:text-muted hover:bg-gray-50 dark:hover:bg-surface"
+                ? "bg-violet-50 dark:bg-violet-900/20 border-violet-200 dark:border-violet-800 text-violet-700 dark:text-violet-400"
+                : "border-gray-200 dark:border-zinc-700 text-gray-600 dark:text-zinc-400 bg-white dark:bg-zinc-900 hover:bg-gray-50 dark:hover:bg-zinc-800"
             )}
           >
             Todas
           </button>
           {allTags.map(tag => {
-            const hash = tag.split("").reduce((acc, c) => acc + c.charCodeAt(0), 0);
-            const colors = [
-              { active: "bg-blue-500 border-blue-500", inactive: "bg-blue-50 dark:bg-blue-950/30 text-blue-700 dark:text-blue-400 border-blue-300 dark:border-blue-700" },
-              { active: "bg-emerald-500 border-emerald-500", inactive: "bg-emerald-50 dark:bg-emerald-950/30 text-emerald-700 dark:text-emerald-400 border-emerald-300 dark:border-emerald-700" },
-              { active: "bg-violet-500 border-violet-500", inactive: "bg-violet-50 dark:bg-violet-950/30 text-violet-700 dark:text-violet-400 border-violet-300 dark:border-violet-700" },
-              { active: "bg-amber-500 border-amber-500", inactive: "bg-amber-50 dark:bg-amber-950/30 text-amber-700 dark:text-amber-400 border-amber-300 dark:border-amber-700" },
-              { active: "bg-pink-500 border-pink-500", inactive: "bg-pink-50 dark:bg-pink-950/30 text-pink-700 dark:text-pink-400 border-pink-300 dark:border-pink-700" },
-              { active: "bg-cyan-500 border-cyan-500", inactive: "bg-cyan-50 dark:bg-cyan-950/30 text-cyan-700 dark:text-cyan-400 border-cyan-300 dark:border-cyan-700" },
-            ];
-            const colorSet = colors[hash % colors.length];
             const isActive = filterTag === tag;
             return (
               <button
                 key={tag}
                 onClick={() => setFilterTag(tag)}
-                className={cn("px-2.5 py-1 rounded-full text-xs font-bold border transition-colors",
+                className={cn("inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-sm font-medium border transition-all",
                   isActive
-                    ? cn(colorSet.active, "text-white")
-                    : cn(colorSet.inactive, "hover:opacity-80")
+                    ? "bg-violet-50 dark:bg-violet-900/20 border-violet-200 dark:border-violet-800 text-violet-700 dark:text-violet-400"
+                    : "border-gray-200 dark:border-zinc-700 text-gray-600 dark:text-zinc-400 bg-white dark:bg-zinc-900 hover:bg-gray-50 dark:hover:bg-zinc-800"
                 )}
               >
                 {tag}
@@ -610,27 +641,6 @@ export default function CRMTab() {
           })}
         </div>
       )}
-
-      {/* Filters */}
-      <div className="flex flex-col sm:flex-row gap-3">
-        <div className="relative flex-1 max-w-sm">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
-          <input
-            value={search}
-            onChange={e => setSearch(e.target.value)}
-            placeholder="Nombre o teléfono…"
-            className="w-full pl-9 pr-9 py-2 text-sm border border-gray-200 dark:border-card-border rounded-xl bg-white dark:bg-surface text-gray-700 dark:text-foreground placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-primary/30"
-          />
-          {search && (
-            <button onClick={() => setSearch("")} className="absolute right-3 top-1/2 -translate-y-1/2">
-              <X className="h-3.5 w-3.5 text-gray-400 hover:text-gray-600 dark:hover:text-foreground" />
-            </button>
-          )}
-        </div>
-        <p className="self-center text-xs text-gray-400 dark:text-muted">
-          {filtered.length} resultado{filtered.length !== 1 ? "s" : ""}
-        </p>
-      </div>
 
       {/* Mejora 10: Top customer summary — barra compacta */}
       {topCustomer && customers.length >= 3 && (

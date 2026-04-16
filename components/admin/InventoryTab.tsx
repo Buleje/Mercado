@@ -8,6 +8,7 @@ import {
   TrendingUp, PackagePlus, Eye, EyeOff, Layers, ChevronRight, Upload, CheckCircle, BookOpen,
   Warehouse, Maximize2, Copy,
 } from "lucide-react";
+import AdminModuleHeader from "@/components/admin/shared/AdminModuleHeader";
 import EmptyState from "@/components/admin/shared/EmptyState";
 import StatusBadge from "@/components/admin/shared/StatusBadge";
 import Image from "next/image";
@@ -714,23 +715,38 @@ export default function InventoryTab() {
   // ── Render ─────────────────────────────────────────────────────────────────
 
   if (loading) return (
-    <div className="space-y-4 animate-pulse">
-      {/* Toolbar skeleton */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-        <div className="space-y-1.5">
-          <div className="h-6 w-40 bg-gray-200 dark:bg-accent rounded-lg" />
+    <div className="space-y-6 animate-pulse">
+      {/* Header skeleton */}
+      <div className="flex items-center gap-4 mb-6">
+        <div className="w-11 h-11 rounded-xl bg-gray-200 dark:bg-accent shrink-0" />
+        <div className="flex-1 space-y-1.5">
+          <div className="h-6 w-32 bg-gray-200 dark:bg-accent rounded-lg" />
           <div className="h-4 w-56 bg-gray-200 dark:bg-accent rounded" />
         </div>
-        <div className="flex flex-wrap items-center gap-2">
-          <div className="h-8 w-64 bg-gray-200 dark:bg-accent rounded-lg" />
+        <div className="flex items-center gap-2">
           <div className="h-8 w-24 bg-gray-200 dark:bg-accent rounded-lg" />
-          <div className="h-8 w-28 bg-gray-200 dark:bg-accent rounded-lg" />
+          <div className="h-8 w-24 bg-gray-200 dark:bg-accent rounded-lg" />
         </div>
       </div>
-      {/* Search bar skeleton */}
-      <div className="h-9 w-full max-w-xs bg-gray-200 dark:bg-accent rounded-xl" />
+      {/* Toolbar skeleton */}
+      <div className="flex flex-wrap items-center gap-2">
+        <div className="h-9 flex-1 min-w-45 bg-gray-200 dark:bg-accent rounded-lg" />
+        <div className="h-9 w-28 bg-gray-200 dark:bg-accent rounded-lg" />
+        <div className="h-9 w-24 bg-gray-200 dark:bg-accent rounded-lg" />
+        <div className="h-9 w-20 bg-gray-200 dark:bg-accent rounded-lg" />
+      </div>
+      {/* KPI skeleton */}
+      <div className="grid grid-cols-2 sm:grid-cols-5 gap-4">
+        {[...Array(5)].map((_, i) => (
+          <div key={i} className="bg-white dark:bg-card border border-gray-100 dark:border-card-border rounded-xl p-5">
+            <div className="h-3 w-1/3 bg-gray-200 dark:bg-accent rounded mb-3" />
+            <div className="h-7 w-1/2 bg-gray-200 dark:bg-accent rounded mb-2" />
+            <div className="h-1 w-full bg-gray-200 dark:bg-accent rounded mt-3" />
+          </div>
+        ))}
+      </div>
       {/* Product row skeletons */}
-      {[...Array(8)].map((_, i) => (
+      {[...Array(6)].map((_, i) => (
         <div key={i} className="flex flex-wrap items-center gap-3 p-3 bg-white dark:bg-card rounded-xl border border-gray-100 dark:border-card-border">
           <div className="h-10 w-10 bg-gray-200 dark:bg-accent rounded-lg shrink-0" />
           <div className="flex-1 space-y-2">
@@ -746,74 +762,152 @@ export default function InventoryTab() {
 
   return (
     <div className="space-y-6">
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-        <div>
-          <h2 className="text-xl font-bold text-gray-900 dark:text-foreground">Inventario</h2>
-          <p className="text-sm text-gray-500 dark:text-muted flex items-center flex-wrap gap-2">
-            {totalProducts} productos · {activeProducts} activos
-            {lowStockCount > 0 && (
-              <StatusBadge variant="warning" label={`${lowStockCount} con pocas existencias`} icon={AlertTriangle} />
-            )}
-          </p>
+      {/* Header — formato estandar: icono + titulo + subtitulo + acciones */}
+      <AdminModuleHeader
+        icon={Warehouse}
+        bgTint="bg-amber-50 dark:bg-amber-900/20"
+        iconColorClass="text-amber-500 dark:text-amber-400"
+        title="Inventario"
+        description="Productos, stock y movimientos"
+      >
+        {/* View toggle */}
+        <div className="flex bg-gray-100 dark:bg-accent rounded-lg p-0.5 overflow-x-auto">
+          {(["productos", "kanban"] as const).map(v => (
+            <button
+              key={v}
+              onClick={() => setView(v)}
+              className={cn(
+                "px-3 py-1.5 rounded-md text-xs font-bold transition-colors capitalize whitespace-nowrap",
+                view === v ? "bg-white dark:bg-card text-gray-900 dark:text-foreground shadow-sm" : "text-gray-500 dark:text-muted hover:text-gray-700 dark:hover:text-foreground"
+              )}
+            >
+              {v === "productos" ? "Productos" : "Vista rapida"}
+            </button>
+          ))}
         </div>
-        <div className="flex items-center gap-2 flex-wrap">
-          {/* View toggle */}
-          <div className="flex bg-gray-100 dark:bg-accent rounded-lg p-0.5 overflow-x-auto">
-            {(["productos", "kanban"] as const).map(v => (
-              <button
-                key={v}
-                onClick={() => setView(v)}
-                className={cn(
-                  "px-3 py-1.5 rounded-md text-xs font-bold transition-colors capitalize whitespace-nowrap",
-                  view === v ? "bg-white dark:bg-card text-gray-900 dark:text-foreground shadow-sm" : "text-gray-500 dark:text-muted hover:text-gray-700 dark:hover:text-foreground"
-                )}
-              >
-                {v === "productos" ? "Productos" : "Vista rápida"}
-              </button>
-            ))}
-          </div>
-          <button
-            onClick={() => setShowScanner(true)}
-            disabled={scanLoading}
-            className="flex items-center gap-1.5 text-sm font-medium rounded-xl border border-gray-200 dark:border-zinc-700 hover:bg-gray-50 dark:hover:bg-zinc-800 px-4 py-2.5 transition-colors"
-          >
-            {scanLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <ScanBarcode className="h-4 w-4" />}
-            {scanLoading ? "Buscando…" : "Escanear"}
-          </button>
-          <button
-            onClick={() => { setPickerSearch(""); setPickerCat("todos"); setShowPicker(true); }}
-            className="flex items-center gap-1.5 text-sm font-medium text-white rounded-xl bg-emerald-600 hover:bg-emerald-700 px-4 py-2.5 transition-colors"
-          >
-            <Plus className="h-4 w-4" /> Nuevo
-          </button>
-          <button onClick={load} disabled={loading} className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-accent transition-colors text-gray-500 dark:text-muted">
-            <RefreshCw className={cn("h-4 w-4", loading && "animate-spin")} />
-          </button>
+        <button
+          onClick={() => setShowScanner(true)}
+          disabled={scanLoading}
+          className="flex items-center gap-1.5 text-sm font-medium rounded-xl border border-gray-200 dark:border-zinc-700 hover:bg-gray-50 dark:hover:bg-zinc-800 px-4 py-2.5 transition-colors"
+        >
+          {scanLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <ScanBarcode className="h-4 w-4" />}
+          {scanLoading ? "Buscando..." : "Escanear"}
+        </button>
+        <button
+          onClick={() => { setPickerSearch(""); setPickerCat("todos"); setShowPicker(true); }}
+          className="flex items-center gap-1.5 text-sm font-medium text-white rounded-xl bg-emerald-600 hover:bg-emerald-700 px-4 py-2.5 transition-colors"
+        >
+          <Plus className="h-4 w-4" /> Nuevo
+        </button>
+        <button onClick={load} disabled={loading} className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-accent transition-colors text-gray-500 dark:text-muted">
+          <RefreshCw className={cn("h-4 w-4", loading && "animate-spin")} />
+        </button>
+      </AdminModuleHeader>
+
+      {/* Toolbar — busqueda + filtros + acciones en UNA barra */}
+      <div className="flex flex-wrap items-center gap-2">
+        {/* Search */}
+        <div className="relative flex-1 min-w-45">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400 dark:text-muted" />
+          <input
+            value={search}
+            onChange={e => setSearch(e.target.value)}
+            placeholder={searchPlaceholders[phIndex]}
+            className="w-full pl-10 pr-4 py-2 rounded-lg border border-gray-200 dark:border-card-border text-sm text-gray-900 dark:text-foreground outline-none focus:border-primary transition-colors"
+          />
         </div>
+        {/* Category filter */}
+        <select
+          value={catFilter}
+          onChange={e => setCatFilter(e.target.value)}
+          className="px-3 py-2 rounded-lg border border-gray-200 dark:border-card-border text-sm text-gray-700 dark:text-foreground outline-none focus:border-primary"
+        >
+          {categories.map(c => (
+            <option key={c.id} value={c.id}>{c.label}</option>
+          ))}
+        </select>
+        {/* Filter chips inline */}
+        <button
+          onClick={() => setLowOnly(!lowOnly)}
+          className={cn(
+            "flex items-center gap-1 px-3 py-2 rounded-lg text-xs font-bold border transition-colors whitespace-nowrap",
+            lowOnly ? "border-amber-300 bg-amber-50 text-amber-700 dark:border-amber-700 dark:bg-amber-950/20 dark:text-amber-400" : "border-gray-200 dark:border-card-border text-gray-500 dark:text-muted hover:bg-gray-50 dark:hover:bg-surface"
+          )}
+        >
+          <AlertTriangle className="h-3.5 w-3.5" /> Bajo stock
+        </button>
+        <button
+          onClick={() => setShowInactive(!showInactive)}
+          className={cn(
+            "flex items-center gap-1 px-3 py-2 rounded-lg text-xs font-bold border transition-colors whitespace-nowrap",
+            showInactive ? "border-gray-400 bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300" : "border-gray-200 dark:border-card-border text-gray-500 dark:text-muted hover:bg-gray-50 dark:hover:bg-surface"
+          )}
+        >
+          {showInactive ? <Eye className="h-3.5 w-3.5" /> : <EyeOff className="h-3.5 w-3.5" />}
+          Inactivos
+        </button>
+        <button
+          onClick={() => setNoImageOnly(!noImageOnly)}
+          className={cn(
+            "flex items-center gap-1 px-3 py-2 rounded-lg text-xs font-bold border transition-colors whitespace-nowrap",
+            noImageOnly ? "border-violet-300 bg-violet-50 text-violet-700 dark:border-violet-700 dark:bg-violet-950/20 dark:text-violet-400" : "border-gray-200 dark:border-card-border text-gray-500 dark:text-muted hover:bg-gray-50 dark:hover:bg-surface"
+          )}
+        >
+          <Camera className="h-3.5 w-3.5" /> Sin foto ({noImageCount})
+        </button>
+        {(lowOnly || showInactive || noImageOnly) && (
+          <button
+            onClick={() => { setLowOnly(false); setShowInactive(false); setNoImageOnly(false); }}
+            className="flex items-center gap-1 px-3 py-2 rounded-lg text-xs font-bold text-red-500 hover:bg-red-50 dark:hover:bg-red-950/20 transition-colors whitespace-nowrap"
+          >
+            <X className="h-3.5 w-3.5" /> Limpiar
+          </button>
+        )}
+        {/* Mas filtros (vista, import/export) */}
+        <button
+          onClick={() => setShowFilters(!showFilters)}
+          className={cn(
+            "flex items-center gap-1 px-3 py-2 rounded-lg text-xs font-bold border transition-colors whitespace-nowrap",
+            showFilters ? "border-primary bg-primary/5 text-primary" : "border-gray-200 dark:border-card-border text-gray-500 dark:text-muted hover:bg-gray-50 dark:hover:bg-surface"
+          )}
+        >
+          <Filter className="h-3.5 w-3.5" />
+          Mas
+          <ChevronDown className={cn("h-3 w-3 transition-transform", showFilters && "rotate-180")} />
+        </button>
       </div>
 
-      {/* Stats */}
+      {/* KPIs — grid-cols-5 */}
       <div className="grid grid-cols-2 sm:grid-cols-5 gap-4">
-        <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl p-5">
-          <p className="text-sm font-medium text-gray-500 dark:text-zinc-400 uppercase tracking-wider">Productos</p>
-          <p className="text-2xl font-bold text-gray-900 dark:text-foreground mt-1">{totalProducts}</p>
+        <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl p-5 shadow-sm">
+          <p className="text-xs text-gray-500 dark:text-zinc-400 font-medium">Productos</p>
+          <p className="text-2xl font-mono font-bold text-gray-900 dark:text-foreground mt-1">{totalProducts}</p>
+          <p className="text-[10px] text-gray-400 dark:text-zinc-500 mt-1">{activeProducts} activos</p>
+          <div className="h-1 rounded-full mt-2 bg-primary" />
         </div>
-        <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl p-5">
-          <p className="text-sm font-medium text-gray-500 dark:text-zinc-400 uppercase tracking-wider">Activos</p>
-          <p className="text-2xl font-bold text-emerald-600 mt-1">{activeProducts}</p>
+        <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl p-5 shadow-sm">
+          <p className="text-xs text-gray-500 dark:text-zinc-400 font-medium">Activos</p>
+          <p className="text-2xl font-mono font-bold text-emerald-600 mt-1">{activeProducts}</p>
+          <p className="text-[10px] text-gray-400 dark:text-zinc-500 mt-1">{totalProducts - activeProducts} inactivos</p>
+          <div className="h-1 rounded-full mt-2 bg-emerald-500" />
         </div>
-        <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl p-5">
-          <p className="text-sm font-medium text-gray-500 dark:text-zinc-400 uppercase tracking-wider">Bajo stock</p>
-          <p className={cn("text-2xl font-bold mt-1", lowStockCount > 0 ? "text-amber-600" : "text-gray-900 dark:text-foreground")}>{lowStockCount}</p>
+        <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl p-5 shadow-sm">
+          <p className="text-xs text-gray-500 dark:text-zinc-400 font-medium">Bajo stock</p>
+          <p className={cn("text-2xl font-mono font-bold mt-1", lowStockCount > 0 ? "text-amber-600" : "text-gray-900 dark:text-foreground")}>{lowStockCount}</p>
+          <p className="text-[10px] text-gray-400 dark:text-zinc-500 mt-1">{lowStockCount > 0 ? "Requieren reposicion" : "Stock saludable"}</p>
+          <div className={cn("h-1 rounded-full mt-2", lowStockCount > 0 ? "bg-amber-500" : "bg-gray-200 dark:bg-zinc-700")} />
         </div>
-        <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl p-5">
-          <p className="text-sm font-medium text-gray-500 dark:text-zinc-400 uppercase tracking-wider">Prox. a vencer</p>
-          <p className={cn("text-2xl font-bold mt-1", expiringSoonCount > 0 ? "text-orange-600" : "text-gray-900 dark:text-foreground")}>{expiringSoonCount}</p>
+        <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl p-5 shadow-sm">
+          <p className="text-xs text-gray-500 dark:text-zinc-400 font-medium">Prox. a vencer</p>
+          <p className={cn("text-2xl font-mono font-bold mt-1", expiringSoonCount > 0 ? "text-orange-600" : "text-gray-900 dark:text-foreground")}>{expiringSoonCount}</p>
+          <p className="text-[10px] text-gray-400 dark:text-zinc-500 mt-1">Proximos 30 dias</p>
+          <div className={cn("h-1 rounded-full mt-2", expiringSoonCount > 0 ? "bg-orange-500" : "bg-gray-200 dark:bg-zinc-700")} />
         </div>
-        <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl p-5">
-          <p className="text-sm font-medium text-gray-500 dark:text-zinc-400 uppercase tracking-wider">Valor total</p>
-          <p className="text-2xl font-bold text-primary mt-1">{fmt(totalStockValue)}</p>
+        <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl p-5 shadow-sm">
+          <p className="text-xs text-gray-500 dark:text-zinc-400 font-medium">Valor total</p>
+          <p className="text-2xl font-mono font-bold text-primary mt-1">{fmt(totalStockValue)}</p>
+          <p className="text-[10px] text-gray-400 dark:text-zinc-500 mt-1">En inventario</p>
+          <div className="h-1 rounded-full mt-2 bg-blue-500" />
         </div>
       </div>
 
@@ -929,176 +1023,91 @@ export default function InventoryTab() {
         </div>
       )}
 
-      {/* Filter bar */}
-      <div className="space-y-2">
-        {/* Row 1: Search + Category + Filtros toggle + Exportar toggle */}
-        <div className="flex flex-wrap items-center gap-2">
-          <div className="relative flex-1 min-w-45">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400 dark:text-muted" />
-            <input
-              value={search}
-              onChange={e => setSearch(e.target.value)}
-              placeholder={searchPlaceholders[phIndex]}
-              className="w-full pl-10 pr-4 py-2 rounded-lg border border-gray-200 dark:border-card-border text-sm text-gray-900 dark:text-foreground outline-none focus:border-primary transition-colors"
-            />
+      {/* Expanded options panel (Vista + Import/Export) — collapsible from toolbar "Mas" button */}
+      {showFilters && (
+        <div className="bg-gray-50 dark:bg-surface rounded-xl p-3 border border-gray-100 dark:border-card-border space-y-3">
+          {/* Grupo: Vista */}
+          <div>
+            <p className="text-[10px] font-bold uppercase tracking-wider text-gray-400 dark:text-muted mb-2">Vista</p>
+            <div className="flex flex-wrap gap-2">
+              <button
+                onClick={() => { const next = !showExtendedCols; setShowExtendedCols(next); try { localStorage.setItem("inv-extended-cols", String(next)); } catch {} }}
+                className={cn(
+                  "flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-bold border transition-colors",
+                  showExtendedCols ? "border-blue-300 bg-blue-50 text-blue-700 dark:border-blue-700 dark:bg-blue-950/20 dark:text-blue-400" : "border-gray-200 dark:border-card-border text-gray-500 dark:text-muted hover:bg-white dark:hover:bg-card"
+                )}
+              >
+                <Layers className="h-3.5 w-3.5" /> {showExtendedCols ? "Menos columnas" : "Mas columnas"}
+              </button>
+              <button
+                onClick={() => setShowExpandedTable(true)}
+                className="flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-bold border border-emerald-300 bg-emerald-50 text-emerald-700 dark:border-emerald-700 dark:bg-emerald-950/20 dark:text-emerald-400 hover:bg-emerald-100 dark:hover:bg-emerald-950/30 transition-colors"
+              >
+                <Maximize2 className="h-3.5 w-3.5" /> Expandir tabla
+              </button>
+              {view === "productos" && (
+                <button
+                  onClick={() => { setBulkField("pricePercent"); setBulkValue(""); setBulkModal(true); }}
+                  className="flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-bold border border-primary/30 text-primary hover:bg-primary/5 transition-colors"
+                >
+                  <TrendingUp className="h-3.5 w-3.5" /> Ajuste %
+                </button>
+              )}
+            </div>
           </div>
-          <select
-            value={catFilter}
-            onChange={e => setCatFilter(e.target.value)}
-            className="px-3 py-2 rounded-lg border border-gray-200 dark:border-card-border text-sm text-gray-700 dark:text-foreground outline-none focus:border-primary"
-          >
-            {categories.map(c => (
-              <option key={c.id} value={c.id}>{c.label}</option>
-            ))}
-          </select>
-          {/* Filtros toggle */}
-          <button
-            onClick={() => setShowFilters(!showFilters)}
-            className={cn(
-              "flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-bold border transition-colors",
-              (lowOnly || showInactive || noImageOnly) ? "border-primary bg-primary/5 text-primary" : "border-gray-200 dark:border-card-border text-gray-500 dark:text-muted hover:bg-gray-50 dark:hover:bg-surface"
-            )}
-          >
-            <Filter className="h-3.5 w-3.5" />
-            Filtros
-            {(lowOnly || showInactive || noImageOnly) && (
-              <span className="ml-0.5 bg-primary text-white text-[10px] font-bold rounded-full h-4 w-4 flex items-center justify-center">
-                {[lowOnly, showInactive, noImageOnly].filter(Boolean).length}
-              </span>
-            )}
-            <ChevronDown className={cn("h-3 w-3 transition-transform", showFilters && "rotate-180")} />
-          </button>
+
+          {/* Grupo: Importar / Exportar */}
+          <div>
+            <p className="text-[10px] font-bold uppercase tracking-wider text-gray-400 dark:text-muted mb-2">Importar / Exportar</p>
+            <div className="flex flex-wrap gap-2">
+              <button
+                onClick={() => {
+                  const filtered = products.filter(p => {
+                    if (catFilter !== "todos" && p.category !== catFilter) return false;
+                    if (search && !p.name.toLowerCase().includes(search.toLowerCase()) && !(p.barcode ?? "").includes(search)) return false;
+                    return true;
+                  });
+                  exportToCSV(filtered.map(p => ({
+                    nombre: p.name, categoria: p.category, precio: p.price,
+                    costo: p.costPrice ?? "", stock: p.stock ?? "",
+                    stockMin: p.stockMin ?? "", stockMax: p.stockMax ?? "",
+                    unidad: p.unit, codigo: p.barcode ?? "", activo: p.active ? "Si" : "No",
+                  })), `inventario_${new Date().toISOString().slice(0, 10)}.csv`);
+                }}
+                className="flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-bold border border-gray-200 dark:border-card-border text-gray-500 dark:text-muted hover:bg-white dark:hover:bg-card transition-colors"
+              >
+                <Download className="h-3.5 w-3.5" /> CSV
+              </button>
+              <button
+                onClick={() => {
+                  const filtered = products.filter(p => {
+                    if (catFilter !== "todos" && p.category !== catFilter) return false;
+                    if (search && !p.name.toLowerCase().includes(search.toLowerCase()) && !(p.barcode ?? "").includes(search)) return false;
+                    return true;
+                  });
+                  exportToExcel(filtered.map(p => ({
+                    Nombre: p.name, Categoria: p.category, "Precio (S/)": p.price,
+                    "Costo (S/)": p.costPrice ?? "", Stock: p.stock ?? "",
+                    "Stock Min": p.stockMin ?? "", "Stock Max": p.stockMax ?? "",
+                    Unidad: p.unit, Codigo: p.barcode ?? "", Activo: p.active ? "Si" : "No",
+                  })), `inventario-${new Date().toISOString().slice(0, 10)}`, "Inventario");
+                }}
+                className="flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-bold border border-emerald-300 dark:border-emerald-800/50 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-950/20 transition-colors"
+              >
+                <Download className="h-3.5 w-3.5" /> Excel
+              </button>
+              <input ref={csvImportRef} type="file" accept=".csv,text/csv" className="hidden" onChange={handleCsvImport} />
+              <button
+                onClick={() => { setCsvResult(null); csvImportRef.current?.click(); }}
+                disabled={csvImporting}
+                className="flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-bold border border-emerald-200 dark:border-emerald-800/50 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-950/20 transition-colors disabled:opacity-50"
+              >
+                {csvImporting ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Upload className="h-3.5 w-3.5" />} Subir CSV
+              </button>
+            </div>
+          </div>
         </div>
-
-        {/* Row 2: Expanded filter options (collapsible) */}
-        {showFilters && (
-          <div className="bg-gray-50 dark:bg-surface rounded-xl p-3 border border-gray-100 dark:border-card-border space-y-3">
-            {/* Grupo: Filtrar productos */}
-            <div>
-              <p className="text-[10px] font-bold uppercase tracking-wider text-gray-400 dark:text-muted mb-2">Filtrar productos</p>
-              <div className="flex flex-wrap gap-2">
-                <button
-                  onClick={() => setLowOnly(!lowOnly)}
-                  className={cn(
-                    "flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-bold border transition-colors",
-                    lowOnly ? "border-amber-300 bg-amber-50 text-amber-700 dark:border-amber-700 dark:bg-amber-950/20 dark:text-amber-400" : "border-gray-200 dark:border-card-border text-gray-500 dark:text-muted hover:bg-white dark:hover:bg-card"
-                  )}
-                >
-                  <AlertTriangle className="h-3.5 w-3.5" /> Bajo stock
-                </button>
-                <button
-                  onClick={() => setShowInactive(!showInactive)}
-                  className={cn(
-                    "flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-bold border transition-colors",
-                    showInactive ? "border-gray-400 bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300" : "border-gray-200 dark:border-card-border text-gray-500 dark:text-muted hover:bg-white dark:hover:bg-card"
-                  )}
-                >
-                  {showInactive ? <Eye className="h-3.5 w-3.5" /> : <EyeOff className="h-3.5 w-3.5" />}
-                  Mostrar inactivos
-                </button>
-                <button
-                  onClick={() => setNoImageOnly(!noImageOnly)}
-                  className={cn(
-                    "flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-bold border transition-colors",
-                    noImageOnly ? "border-violet-300 bg-violet-50 text-violet-700 dark:border-violet-700 dark:bg-violet-950/20 dark:text-violet-400" : "border-gray-200 dark:border-card-border text-gray-500 dark:text-muted hover:bg-white dark:hover:bg-card"
-                  )}
-                >
-                  <Camera className="h-3.5 w-3.5" /> Sin foto ({noImageCount})
-                </button>
-                {(lowOnly || showInactive || noImageOnly) && (
-                  <button
-                    onClick={() => { setLowOnly(false); setShowInactive(false); setNoImageOnly(false); }}
-                    className="flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-bold text-red-500 hover:bg-red-50 dark:hover:bg-red-950/20 transition-colors"
-                  >
-                    <X className="h-3.5 w-3.5" /> Limpiar filtros
-                  </button>
-                )}
-              </div>
-            </div>
-
-            {/* Grupo: Vista */}
-            <div>
-              <p className="text-[10px] font-bold uppercase tracking-wider text-gray-400 dark:text-muted mb-2">Vista</p>
-              <div className="flex flex-wrap gap-2">
-                <button
-                  onClick={() => { const next = !showExtendedCols; setShowExtendedCols(next); try { localStorage.setItem("inv-extended-cols", String(next)); } catch {} }}
-                  className={cn(
-                    "flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-bold border transition-colors",
-                    showExtendedCols ? "border-blue-300 bg-blue-50 text-blue-700 dark:border-blue-700 dark:bg-blue-950/20 dark:text-blue-400" : "border-gray-200 dark:border-card-border text-gray-500 dark:text-muted hover:bg-white dark:hover:bg-card"
-                  )}
-                >
-                  <Layers className="h-3.5 w-3.5" /> {showExtendedCols ? "Menos columnas" : "Más columnas"}
-                </button>
-                <button
-                  onClick={() => setShowExpandedTable(true)}
-                  className="flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-bold border border-emerald-300 bg-emerald-50 text-emerald-700 dark:border-emerald-700 dark:bg-emerald-950/20 dark:text-emerald-400 hover:bg-emerald-100 dark:hover:bg-emerald-950/30 transition-colors"
-                >
-                  <Maximize2 className="h-3.5 w-3.5" /> Expandir tabla
-                </button>
-                {view === "productos" && (
-                  <button
-                    onClick={() => { setBulkField("pricePercent"); setBulkValue(""); setBulkModal(true); }}
-                    className="flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-bold border border-primary/30 text-primary hover:bg-primary/5 transition-colors"
-                  >
-                    <TrendingUp className="h-3.5 w-3.5" /> Ajuste %
-                  </button>
-                )}
-              </div>
-            </div>
-
-            {/* Grupo: Importar / Exportar */}
-            <div>
-              <p className="text-[10px] font-bold uppercase tracking-wider text-gray-400 dark:text-muted mb-2">Importar / Exportar</p>
-              <div className="flex flex-wrap gap-2">
-                <button
-                  onClick={() => {
-                    const filtered = products.filter(p => {
-                      if (catFilter !== "todos" && p.category !== catFilter) return false;
-                      if (search && !p.name.toLowerCase().includes(search.toLowerCase()) && !(p.barcode ?? "").includes(search)) return false;
-                      return true;
-                    });
-                    exportToCSV(filtered.map(p => ({
-                      nombre: p.name, categoria: p.category, precio: p.price,
-                      costo: p.costPrice ?? "", stock: p.stock ?? "",
-                      stockMin: p.stockMin ?? "", stockMax: p.stockMax ?? "",
-                      unidad: p.unit, codigo: p.barcode ?? "", activo: p.active ? "Sí" : "No",
-                    })), `inventario_${new Date().toISOString().slice(0, 10)}.csv`);
-                  }}
-                  className="flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-bold border border-gray-200 dark:border-card-border text-gray-500 dark:text-muted hover:bg-white dark:hover:bg-card transition-colors"
-                >
-                  <Download className="h-3.5 w-3.5" /> CSV
-                </button>
-                <button
-                  onClick={() => {
-                    const filtered = products.filter(p => {
-                      if (catFilter !== "todos" && p.category !== catFilter) return false;
-                      if (search && !p.name.toLowerCase().includes(search.toLowerCase()) && !(p.barcode ?? "").includes(search)) return false;
-                      return true;
-                    });
-                    exportToExcel(filtered.map(p => ({
-                      Nombre: p.name, Categoría: p.category, "Precio (S/)": p.price,
-                      "Costo (S/)": p.costPrice ?? "", Stock: p.stock ?? "",
-                      "Stock Mín": p.stockMin ?? "", "Stock Máx": p.stockMax ?? "",
-                      Unidad: p.unit, Código: p.barcode ?? "", Activo: p.active ? "Sí" : "No",
-                    })), `inventario-${new Date().toISOString().slice(0, 10)}`, "Inventario");
-                  }}
-                  className="flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-bold border border-emerald-300 dark:border-emerald-800/50 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-950/20 transition-colors"
-                >
-                  <Download className="h-3.5 w-3.5" /> Excel
-                </button>
-                <input ref={csvImportRef} type="file" accept=".csv,text/csv" className="hidden" onChange={handleCsvImport} />
-                <button
-                  onClick={() => { setCsvResult(null); csvImportRef.current?.click(); }}
-                  disabled={csvImporting}
-                  className="flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-bold border border-emerald-200 dark:border-emerald-800/50 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-950/20 transition-colors disabled:opacity-50"
-                >
-                  {csvImporting ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Upload className="h-3.5 w-3.5" />} Subir CSV
-                </button>
-              </div>
-            </div>
-          </div>
-        )}
-      </div>
+      )}
 
       {/* Contador de resultados filtrados */}
       {filteredProducts.length !== products.length && (

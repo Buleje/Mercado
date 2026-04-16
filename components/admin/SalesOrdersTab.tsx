@@ -495,25 +495,188 @@ export default function SalesOrdersTab() {
 
   return (
     <div className="space-y-6">
-      {/* ── Dashboard Analytics ────────────────────────────────────── */}
+      {/* ── Header estandar ──────────────────────────────────────── */}
+      <div className="flex items-center gap-4">
+        <div className="flex items-center justify-center w-11 h-11 rounded-xl bg-emerald-50 dark:bg-emerald-900/20 shrink-0">
+          <Receipt className="w-5 h-5 text-emerald-600 dark:text-emerald-400" />
+        </div>
+        <div className="flex-1 min-w-0">
+          <h1 className="text-xl font-bold text-gray-900 dark:text-white truncate">Ventas y Caja</h1>
+          <p className="text-sm text-gray-500 dark:text-zinc-400 mt-0.5">Pedidos, caja y punto de venta</p>
+        </div>
+        <div className="flex items-center gap-2 shrink-0">
+          <button onClick={exportCSV} className="p-2 rounded-xl bg-gray-100 dark:bg-surface hover:bg-gray-200 dark:hover:bg-accent transition-colors" title="Exportar CSV">
+            <Download className="h-4 w-4 text-gray-500" />
+          </button>
+          <button onClick={exportExcel} className="p-2 rounded-xl bg-emerald-50 dark:bg-emerald-950/30 hover:bg-emerald-100 dark:hover:bg-emerald-900/30 transition-colors" title="Exportar Excel">
+            <FileSpreadsheet className="h-4 w-4 text-emerald-600" />
+          </button>
+          <button
+            onClick={() => {
+              const next = !soundEnabled;
+              setSoundEnabled(next);
+              localStorage.setItem("order-sound-enabled", String(next));
+              if (next) playNewOrderSound();
+            }}
+            className={cn(
+              "p-2 rounded-xl transition-colors",
+              soundEnabled
+                ? "bg-amber-50 dark:bg-amber-950/30 hover:bg-amber-100"
+                : "bg-gray-100 dark:bg-surface hover:bg-gray-200"
+            )}
+            title={soundEnabled ? "Sonido: ON" : "Sonido: OFF"}
+          >
+            {soundEnabled ? <Bell className="h-4 w-4 text-amber-600" /> : <BellOff className="h-4 w-4 text-gray-400" />}
+          </button>
+        </div>
+      </div>
+
+      {/* ── Tabs estandar (View modes) ─────────────────────────────── */}
+      <div className="flex items-center gap-1 p-1 bg-gray-100 dark:bg-zinc-800 rounded-xl w-fit">
+        <button
+          onClick={() => { setViewMode("list"); try { localStorage.setItem("orders-view-mode", "list"); } catch {} }}
+          className={cn("px-4 py-2 text-sm font-medium rounded-lg transition-all", viewMode === "list" ? "bg-white dark:bg-zinc-700 text-gray-900 dark:text-white shadow-sm" : "text-gray-500 dark:text-zinc-400 hover:text-gray-700")}
+        >
+          Lista
+        </button>
+        <button
+          onClick={() => { setViewMode("kanban"); try { localStorage.setItem("orders-view-mode", "kanban"); } catch {} }}
+          className={cn("px-4 py-2 text-sm font-medium rounded-lg transition-all", viewMode === "kanban" ? "bg-white dark:bg-zinc-700 text-gray-900 dark:text-white shadow-sm" : "text-gray-500 dark:text-zinc-400 hover:text-gray-700")}
+        >
+          Kanban
+        </button>
+        <button
+          onClick={() => { setViewMode("historial"); try { localStorage.setItem("orders-view-mode", "historial"); } catch {} }}
+          className={cn("px-4 py-2 text-sm font-medium rounded-lg transition-all", viewMode === "historial" ? "bg-white dark:bg-zinc-700 text-gray-900 dark:text-white shadow-sm" : "text-gray-500 dark:text-zinc-400 hover:text-gray-700")}
+        >
+          Historial
+        </button>
+      </div>
+
+      {/* ── Toolbar estandar ───────────────────────────────────────── */}
+      <div className="flex flex-wrap items-center gap-3">
+        {/* Busqueda */}
+        <div className="relative flex-1 min-w-[200px] max-w-sm">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+          <input
+            type="text"
+            value={search}
+            onChange={e => { setSearch(e.target.value); setPage(1); }}
+            placeholder="Buscar cliente o ID..."
+            aria-label="Buscar pedidos"
+            className="w-full pl-10 pr-4 py-2.5 text-sm rounded-xl border border-gray-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 outline-none transition-all"
+          />
+        </div>
+
+        {/* Filtro status — chips estandar */}
+        {FILTER_OPTIONS.map(opt => (
+          <button
+            key={opt.id}
+            onClick={() => { setFilter(opt.id); setPage(1); }}
+            className={cn(
+              "inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-sm font-medium border transition-all",
+              filter === opt.id
+                ? "bg-emerald-50 dark:bg-emerald-900/20 border-emerald-200 dark:border-emerald-800 text-emerald-700 dark:text-emerald-400"
+                : "border-gray-200 dark:border-zinc-700 text-gray-600 dark:text-zinc-400 bg-white dark:bg-zinc-900 hover:bg-gray-50 dark:hover:bg-zinc-800"
+            )}
+          >
+            {opt.label}
+          </button>
+        ))}
+
+        {/* Filtro fecha — chips estandar */}
+        {DATE_OPTIONS.map(opt => (
+          <button
+            key={opt.id}
+            onClick={() => { setDateFilter(opt.id); setPage(1); }}
+            className={cn(
+              "inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-sm font-medium border transition-all",
+              dateFilter === opt.id
+                ? "bg-emerald-50 dark:bg-emerald-900/20 border-emerald-200 dark:border-emerald-800 text-emerald-700 dark:text-emerald-400"
+                : "border-gray-200 dark:border-zinc-700 text-gray-600 dark:text-zinc-400 bg-white dark:bg-zinc-900 hover:bg-gray-50 dark:hover:bg-zinc-800"
+            )}
+          >
+            {opt.label}
+          </button>
+        ))}
+
+        {/* Spacer */}
+        <div className="flex-1" />
+
+        {/* Resultado count */}
+        <span className="text-xs text-gray-400 dark:text-muted">
+          {filtered.length} pedido{filtered.length !== 1 ? "s" : ""}
+          {search && ` para "${search}"`}
+        </span>
+
+        {/* Acciones */}
+        <button onClick={load} className="p-2 rounded-xl bg-gray-100 dark:bg-surface hover:bg-gray-200 dark:hover:bg-accent transition-colors" title="Actualizar">
+          <RefreshCw className="h-4 w-4 text-gray-500" />
+        </button>
+
+        {/* Group by zone */}
+        {viewMode === "list" && (
+          <button
+            onClick={() => setGroupByZone(p => !p)}
+            className={cn(
+              "flex items-center gap-1 px-2.5 py-1.5 rounded-full text-xs font-medium border transition-all",
+              groupByZone
+                ? "bg-emerald-50 dark:bg-emerald-900/20 border-emerald-200 text-emerald-700"
+                : "border-gray-200 dark:border-zinc-700 text-gray-600 bg-white dark:bg-zinc-900 hover:bg-gray-50"
+            )}
+          >
+            <MapPin className="h-3 w-3" /> Zona
+          </button>
+        )}
+      </div>
+
+      {/* Filtros secundarios: urgencia */}
+      <div className="flex flex-wrap items-center gap-2">
+        {([
+          { id: "todos" as const, label: "Todos", count: urgencyCounts.todos },
+          { id: "urgentes" as const, label: "Urgentes <1h", count: urgencyCounts.urgentes },
+          { id: "hoy" as const, label: "Hoy", count: urgencyCounts.hoy },
+          { id: "manana" as const, label: "Manana", count: urgencyCounts.manana },
+          { id: "atrasados" as const, label: "Atrasados", count: urgencyCounts.atrasados },
+        ] as const).map(opt => (
+          <button
+            key={opt.id}
+            onClick={() => { setUrgencyFilter(opt.id); setPage(1); }}
+            className={cn(
+              "inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-sm font-medium border transition-all",
+              urgencyFilter === opt.id
+                ? "bg-emerald-50 dark:bg-emerald-900/20 border-emerald-200 dark:border-emerald-800 text-emerald-700 dark:text-emerald-400"
+                : "border-gray-200 dark:border-zinc-700 text-gray-600 dark:text-zinc-400 bg-white dark:bg-zinc-900 hover:bg-gray-50 dark:hover:bg-zinc-800"
+            )}
+          >
+            {opt.label}
+            <span className={cn(
+              "text-[10px] font-bold rounded-full min-w-[18px] h-[18px] inline-flex items-center justify-center px-1",
+              urgencyFilter === opt.id ? "bg-emerald-600 text-white" : "bg-gray-200 dark:bg-zinc-700 text-gray-600 dark:text-zinc-300"
+            )}>
+              {opt.count > 99 ? "99+" : opt.count}
+            </span>
+          </button>
+        ))}
+      </div>
+
+      {/* ── Dashboard Analytics (colapsable) ────────────────────────── */}
       <button
         onClick={() => {
           const v = !showDashboard;
           setShowDashboard(v);
           localStorage.setItem('orders-show-dashboard', String(v));
         }}
-        className="flex items-center gap-1.5 text-xs font-semibold text-gray-500 hover:text-gray-700 dark:text-muted dark:hover:text-foreground mb-4"
+        className="flex items-center gap-1.5 text-xs font-semibold text-gray-500 hover:text-gray-700 dark:text-muted dark:hover:text-foreground"
       >
         {showDashboard ? <ChevronDown className="h-3 w-3" /> : <ChevronRight className="h-3 w-3" />}
-        Pedidos
+        Dashboard detallado
       </button>
 
       {showDashboard && <OrdersDashboard orders={orders} />}
 
-      {/* Pedido mas grande del dia — inline en summary cards */}
-
-      {/* ── Day summary cards ─────────────────────────────────────────── */}
-      <StaggerContainer className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+      {/* ── KPIs estandar ────────────────────────────────────────────── */}
+      <StaggerContainer className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         <StaggerItem><AdminKPI label="Vendido hoy" value={fmt(todayStats.total)} icon={DollarSign} iconColor="var(--color-primary)" /></StaggerItem>
         <StaggerItem><AdminKPI label="Pedidos hoy" value={todayStats.count} icon={ShoppingBag} iconColor="#3B82F6" /></StaggerItem>
         <StaggerItem>
@@ -540,153 +703,6 @@ export default function SalesOrdersTab() {
           <StaggerItem><AdminKPI label="Entrega promedio" value={`${avgDeliveryTime} min`} icon={Truck} iconColor="#06b6d4" /></StaggerItem>
         )}
       </StaggerContainer>
-
-      {/* Métricas inline integradas en summary cards */}
-
-      {/* ── Search + actions ──────────────────────────────────────────── */}
-      <div className="flex gap-2">
-        <div className="flex-1 relative">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
-          <input
-            type="text"
-            value={search}
-            onChange={e => { setSearch(e.target.value); setPage(1); }}
-            placeholder="Buscar cliente o ID..."
-            aria-label="Buscar pedidos"
-            className="w-full pl-9 pr-3 py-2 rounded-xl border border-gray-200 dark:border-card-border bg-white dark:bg-card text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 dark:text-foreground"
-          />
-        </div>
-        <button onClick={load} className="p-2 rounded-xl bg-gray-100 dark:bg-surface hover:bg-gray-200 dark:hover:bg-accent transition-colors" title="Actualizar">
-          <RefreshCw className="h-4 w-4 text-gray-500" />
-        </button>
-        <button onClick={exportCSV} className="p-2 rounded-xl bg-gray-100 dark:bg-surface hover:bg-gray-200 dark:hover:bg-accent transition-colors" title="Exportar CSV">
-          <Download className="h-4 w-4 text-gray-500" />
-        </button>
-        <button onClick={exportExcel} className="p-2 rounded-xl bg-emerald-50 dark:bg-emerald-950/30 hover:bg-emerald-100 dark:hover:bg-emerald-900/30 transition-colors" title="Exportar Excel">
-          <FileSpreadsheet className="h-4 w-4 text-emerald-600" />
-        </button>
-        {/* Mejora 20: Toggle sonido */}
-        <button
-          onClick={() => {
-            const next = !soundEnabled;
-            setSoundEnabled(next);
-            localStorage.setItem("order-sound-enabled", String(next));
-            if (next) playNewOrderSound(); // Preview sound when enabling
-          }}
-          className={cn(
-            "p-2 rounded-xl transition-colors",
-            soundEnabled
-              ? "bg-amber-50 dark:bg-amber-950/30 hover:bg-amber-100"
-              : "bg-gray-100 dark:bg-surface hover:bg-gray-200"
-          )}
-          title={soundEnabled ? "Sonido: ON" : "Sonido: OFF"}
-        >
-          {soundEnabled ? <Bell className="h-4 w-4 text-amber-600" /> : <BellOff className="h-4 w-4 text-gray-400" />}
-        </button>
-      </div>
-
-      {/* ── Date filter ───────────────────────────────────────────────── */}
-      <div className="flex gap-1.5 overflow-x-auto scrollbar-none">
-        {DATE_OPTIONS.map(opt => (
-          <button
-            key={opt.id}
-            onClick={() => { setDateFilter(opt.id); setPage(1); }}
-            className={cn(
-              "shrink-0 px-3 py-1 rounded-lg text-xs font-bold transition-colors",
-              dateFilter === opt.id ? "bg-primary text-white" : "bg-gray-100 dark:bg-surface text-gray-500 dark:text-muted hover:bg-gray-200"
-            )}
-          >
-            {opt.label}
-          </button>
-        ))}
-      </div>
-
-      {/* ── Mejora 17: Urgency filter pills ─────────────────────────── */}
-      <div className="flex gap-1.5 overflow-x-auto scrollbar-none">
-        {([
-          { id: "todos" as const, label: "Todos", count: urgencyCounts.todos },
-          { id: "urgentes" as const, label: "Urgentes <1h", count: urgencyCounts.urgentes, color: "bg-red-500" },
-          { id: "hoy" as const, label: "Hoy", count: urgencyCounts.hoy },
-          { id: "manana" as const, label: "Manana", count: urgencyCounts.manana },
-          { id: "atrasados" as const, label: "Atrasados", count: urgencyCounts.atrasados, color: "bg-amber-500" },
-        ] as const).map(opt => (
-          <button
-            key={opt.id}
-            onClick={() => { setUrgencyFilter(opt.id); setPage(1); }}
-            className={cn(
-              "shrink-0 px-3 py-1 rounded-lg text-xs font-bold transition-colors flex items-center gap-1.5",
-              urgencyFilter === opt.id ? "bg-primary text-white" : "bg-gray-100 dark:bg-surface text-gray-500 dark:text-muted hover:bg-gray-200"
-            )}
-          >
-            {opt.label}
-            <span className={cn(
-              "px-1.5 py-0.5 rounded-full text-[10px] font-bold",
-              urgencyFilter === opt.id ? "bg-white/20 text-white" : "bg-gray-200 dark:bg-zinc-600 text-gray-600 dark:text-zinc-300"
-            )}>
-              {opt.count}
-            </span>
-          </button>
-        ))}
-      </div>
-
-      {/* ── Status filter ─────────────────────────────────────────────── */}
-      <div className="flex gap-1.5 overflow-x-auto scrollbar-none">
-        {FILTER_OPTIONS.map(opt => (
-          <button
-            key={opt.id}
-            onClick={() => { setFilter(opt.id); setPage(1); }}
-            className={cn(
-              "shrink-0 px-3 py-1 rounded-lg text-xs font-bold transition-colors",
-              filter === opt.id ? "bg-primary text-white" : "bg-gray-100 dark:bg-surface text-gray-500 dark:text-muted hover:bg-gray-200"
-            )}
-          >
-            {opt.label}
-          </button>
-        ))}
-      </div>
-
-      {/* ── View mode toggle + zone grouping (Mejora 13 & 15) ──────── */}
-      <div className="flex items-center justify-between">
-        <p className="text-xs text-gray-500 dark:text-muted">
-          {filtered.length} pedido{filtered.length !== 1 ? "s" : ""}
-          {search && ` para "${search}"`}
-        </p>
-        <div className="flex items-center gap-2">
-          {/* Mejora 15: Group by zone */}
-          {viewMode === "list" && (
-            <button
-              onClick={() => setGroupByZone(p => !p)}
-              className={cn(
-                "flex items-center gap-1 px-2 py-1 rounded-lg text-[10px] font-bold transition-colors",
-                groupByZone ? "bg-primary text-white" : "bg-gray-100 dark:bg-surface text-gray-500 dark:text-muted hover:bg-gray-200"
-              )}
-            >
-              <MapPin className="h-3 w-3" /> Agrupar por zona
-            </button>
-          )}
-          {/* Mejora 13: Kanban / List / Historial toggle */}
-          <div className="flex bg-gray-100 dark:bg-accent rounded-lg p-0.5">
-            <button
-              onClick={() => { setViewMode("list"); try { localStorage.setItem("orders-view-mode", "list"); } catch {} }}
-              className={cn("px-2 py-1 rounded-md text-[10px] font-bold transition-all", viewMode === "list" ? "bg-white dark:bg-card text-gray-900 dark:text-foreground shadow-sm" : "text-gray-500 dark:text-muted")}
-            >
-              <LayoutList className="h-3 w-3 inline mr-1" />Lista
-            </button>
-            <button
-              onClick={() => { setViewMode("kanban"); try { localStorage.setItem("orders-view-mode", "kanban"); } catch {} }}
-              className={cn("px-2 py-1 rounded-md text-[10px] font-bold transition-all", viewMode === "kanban" ? "bg-white dark:bg-card text-gray-900 dark:text-foreground shadow-sm" : "text-gray-500 dark:text-muted")}
-            >
-              <Columns3 className="h-3 w-3 inline mr-1" />Kanban
-            </button>
-            <button
-              onClick={() => { setViewMode("historial"); try { localStorage.setItem("orders-view-mode", "historial"); } catch {} }}
-              className={cn("px-2 py-1 rounded-md text-[10px] font-bold transition-all", viewMode === "historial" ? "bg-white dark:bg-card text-gray-900 dark:text-foreground shadow-sm" : "text-gray-500 dark:text-muted")}
-            >
-              📋 Historial
-            </button>
-          </div>
-        </div>
-      </div>
 
       {/* ── Mejora 13: Kanban view ─────────────────────────────────────── */}
       {viewMode === "kanban" && (() => {

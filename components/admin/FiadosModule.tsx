@@ -7,7 +7,7 @@ import {
   ChevronLeft, ChevronRight, Loader2, AlertTriangle, CreditCard,
   Clock, CheckCircle2, XCircle, Ban, MessageCircle, Printer, PenTool, Download,
   ArrowUp, ArrowDown, Maximize2, Minimize2,
-  LayoutList, Columns3, MapPin } from "lucide-react";
+  LayoutList, Columns3, MapPin, HandCoins, Search, RefreshCw } from "lucide-react";
 import EmptyState from "@/components/admin/shared/EmptyState";
 import StatusBadge from "@/components/admin/shared/StatusBadge";
 import type { BadgeVariant } from "@/components/admin/shared/StatusBadge";
@@ -880,88 +880,39 @@ export default function FiadosModule() {
   // ── Render ──────────────────────────────────────────────────────────────────
 
   return (
-    <div className="space-y-4 sm:space-y-6">
-      {/* Header — Mejora 20 */}
-      <div className="flex flex-col sm:flex-row sm:items-center gap-3">
+    <div className="space-y-6">
+      {/* ── Header estandar ──────────────────────────────────────── */}
+      <div className="flex items-center gap-4">
+        <div className="flex items-center justify-center w-11 h-11 rounded-xl bg-blue-50 dark:bg-blue-900/20 shrink-0">
+          <HandCoins className="w-5 h-5 text-blue-600 dark:text-blue-400" />
+        </div>
         <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-2 flex-wrap">
-            <div className="h-10 w-10 rounded-xl bg-[#00B4A6] text-white flex items-center justify-center shadow-sm shrink-0">
-              <CreditCard className="h-5 w-5" />
-            </div>
-            <div>
-              <h1 className="text-xl font-bold text-gray-900 dark:text-white">
-                Fiados
-                {/* Mejora 20 (R3): Badge de estado */}
-                {fiados.length > 0 && (() => {
-                  const activos = fiados.filter(f => f.status === "ACTIVO").length;
-                  const vencidos = fiados.filter(f => f.status === "VENCIDO").length;
-                  return (
-                    <span className="ml-2 text-xs font-bold text-gray-500 dark:text-gray-400 align-middle">
-                      {activos > 0 && <span className="text-emerald-600 dark:text-emerald-400">{activos} activos</span>}
-                      {activos > 0 && vencidos > 0 && " · "}
-                      {vencidos > 0 && <span className="text-red-600 dark:text-red-400">{vencidos} vencidos</span>}
-                    </span>
-                  );
-                })()}
-              </h1>
-              <p className="text-sm text-gray-500">Control de créditos y cobros pendientes</p>
-            </div>
-            {/* Mejora QW-8: Tendencia de morosidad */}
-            {(tendenciaMorosidad.cobradoEsteMes > 0 || tendenciaMorosidad.prestadoEsteMes > 0) && (
-              <span className={cn(
-                "text-[10px] font-bold px-2 py-0.5 rounded-full",
-                tendenciaMorosidad.cobradoEsteMes > tendenciaMorosidad.prestadoEsteMes
-                  ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400"
-                  : tendenciaMorosidad.cobradoEsteMes < tendenciaMorosidad.prestadoEsteMes
-                  ? "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400"
-                  : "bg-gray-100 text-gray-600 dark:bg-zinc-700 dark:text-zinc-400"
-              )}>
-                {tendenciaMorosidad.cobradoEsteMes > tendenciaMorosidad.prestadoEsteMes ? "↑" : tendenciaMorosidad.cobradoEsteMes < tendenciaMorosidad.prestadoEsteMes ? "↓" : "→"}{" "}
-                Cobrado S/{tendenciaMorosidad.cobradoEsteMes.toFixed(0)} · Prestado S/{tendenciaMorosidad.prestadoEsteMes.toFixed(0)}
-              </span>
-            )}
-          </div>
-          <p className="text-sm text-gray-500 dark:text-gray-400 mt-0.5">
-            Saldo pendiente total: <span className="font-bold text-red-600 dark:text-red-400">{formatCurrency(totalSaldo)}</span>
+          <h1 className="text-xl font-bold text-gray-900 dark:text-white truncate">
+            Fiados
+            {fiados.length > 0 && (() => {
+              const activos = fiados.filter(f => f.status === "ACTIVO").length;
+              const vencidos = fiados.filter(f => f.status === "VENCIDO").length;
+              return (
+                <span className="ml-2 text-xs font-bold text-gray-500 dark:text-gray-400 align-middle">
+                  {activos > 0 && <span className="text-emerald-600 dark:text-emerald-400">{activos} activos</span>}
+                  {activos > 0 && vencidos > 0 && " · "}
+                  {vencidos > 0 && <span className="text-red-600 dark:text-red-400">{vencidos} vencidos</span>}
+                </span>
+              );
+            })()}
+          </h1>
+          <p className="text-sm text-gray-500 dark:text-zinc-400 mt-0.5">
+            Creditos informales y cobranza
+            {totalSaldo > 0 && <> · Pendiente: <span className="font-bold text-red-600 dark:text-red-400">{formatCurrency(totalSaldo)}</span></>}
           </p>
         </div>
-        <div className="flex gap-2 shrink-0 flex-wrap">
-          {/* Mejora 20 (ronda 3): Mapa de deudores */}
+        <div className="flex items-center gap-2 shrink-0 flex-wrap">
           <button
             onClick={() => setShowDebtorsMap(true)}
-            className="inline-flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-blue-700 dark:text-blue-400 bg-blue-50 dark:bg-blue-950/30 hover:bg-blue-100 dark:hover:bg-blue-900/30 transition-colors"
+            className="p-2 rounded-xl bg-blue-50 dark:bg-blue-950/30 hover:bg-blue-100 dark:hover:bg-blue-900/30 transition-colors" title="Mapa deudores"
           >
-            <MapPin className="h-4 w-4" />
-            Mapa deudores
+            <MapPin className="h-4 w-4 text-blue-600" />
           </button>
-          {/* Mejora 17 (ronda 3): Kanban / List / Libreta toggle */}
-          <div className="flex bg-gray-100 dark:bg-accent rounded-xl p-0.5">
-            <button
-              onClick={() => { setFiadosViewMode("list"); try { localStorage.setItem("fiados-view-mode", "list"); } catch {} }}
-              className={cn("px-2.5 py-1.5 rounded-lg text-[10px] font-bold transition-all", fiadosViewMode === "list" ? "bg-white dark:bg-card text-gray-900 dark:text-foreground shadow-sm" : "text-gray-500 dark:text-muted")}
-            >
-              <LayoutList className="h-3 w-3 inline mr-0.5" />Lista
-            </button>
-            <button
-              onClick={() => { setFiadosViewMode("kanban"); try { localStorage.setItem("fiados-view-mode", "kanban"); } catch {} }}
-              className={cn("px-2.5 py-1.5 rounded-lg text-[10px] font-bold transition-all", fiadosViewMode === "kanban" ? "bg-white dark:bg-card text-gray-900 dark:text-foreground shadow-sm" : "text-gray-500 dark:text-muted")}
-            >
-              <Columns3 className="h-3 w-3 inline mr-0.5" />Kanban
-            </button>
-            <button
-              onClick={() => { setFiadosViewMode("libreta"); try { localStorage.setItem("fiados-view-mode", "libreta"); } catch {} }}
-              className={cn("px-2.5 py-1.5 rounded-lg text-[10px] font-bold transition-all", fiadosViewMode === "libreta" ? "bg-white dark:bg-card text-gray-900 dark:text-foreground shadow-sm" : "text-gray-500 dark:text-muted")}
-            >
-              <FileText className="h-3 w-3 inline mr-0.5" />Libreta
-            </button>
-            <button
-              onClick={() => { setFiadosViewMode("cobranza"); try { localStorage.setItem("fiados-view-mode", "cobranza"); } catch {} }}
-              className={cn("px-2.5 py-1.5 rounded-lg text-[10px] font-bold transition-all", fiadosViewMode === "cobranza" ? "bg-white dark:bg-card text-gray-900 dark:text-foreground shadow-sm" : "text-gray-500 dark:text-muted")}
-            >
-              <CreditCard className="h-3 w-3 inline mr-0.5" />Cobranza
-            </button>
-          </div>
-          {/* Mejora M-9: Lista de cobro imprimible */}
           <button
             onClick={() => {
               const deudores = fiados
@@ -1001,12 +952,10 @@ export default function FiadosModule() {
                 setTimeout(() => printWin.print(), 300);
               }
             }}
-            className="inline-flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-amber-700 dark:text-amber-400 bg-amber-50 dark:bg-amber-950/30 hover:bg-amber-100 dark:hover:bg-amber-900/30 transition-colors"
+            className="p-2 rounded-xl bg-amber-50 dark:bg-amber-950/30 hover:bg-amber-100 dark:hover:bg-amber-900/30 transition-colors" title="Lista de cobro"
           >
-            <Printer className="h-4 w-4" />
-            Lista de cobro
+            <Printer className="h-4 w-4 text-amber-600" />
           </button>
-          {/* Mejora 16: Exportar deudores a Excel */}
           <button
             onClick={() => {
               const deudores = fiados
@@ -1028,19 +977,110 @@ export default function FiadosModule() {
               const fecha = new Date().toISOString().slice(0, 10);
               exportToExcel(rows, `deudores-${fecha}`, "Deudores");
             }}
-            className="inline-flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-emerald-700 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/30 hover:bg-emerald-100 dark:hover:bg-emerald-900/30 transition-colors"
+            className="p-2 rounded-xl bg-emerald-50 dark:bg-emerald-950/30 hover:bg-emerald-100 dark:hover:bg-emerald-900/30 transition-colors" title="Exportar deudores"
           >
-            <Download className="h-4 w-4" />
-            Exportar deudores
+            <Download className="h-4 w-4 text-emerald-600" />
           </button>
           <button
             onClick={() => setShowNew(true)}
             className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-bold text-white bg-[#00B4A6] hover:bg-[#009690] shadow-sm transition-colors"
           >
             <Plus className="h-4 w-4" />
-            Nuevo Fíado
+            Nuevo Fiado
           </button>
         </div>
+      </div>
+
+      {/* ── Tabs estandar (View modes) ─────────────────────────────── */}
+      <div className="flex items-center gap-1 p-1 bg-gray-100 dark:bg-zinc-800 rounded-xl w-fit">
+        <button
+          onClick={() => { setFiadosViewMode("list"); try { localStorage.setItem("fiados-view-mode", "list"); } catch {} }}
+          className={cn("px-4 py-2 text-sm font-medium rounded-lg transition-all", fiadosViewMode === "list" ? "bg-white dark:bg-zinc-700 text-gray-900 dark:text-white shadow-sm" : "text-gray-500 dark:text-zinc-400 hover:text-gray-700")}
+        >
+          Lista
+        </button>
+        <button
+          onClick={() => { setFiadosViewMode("kanban"); try { localStorage.setItem("fiados-view-mode", "kanban"); } catch {} }}
+          className={cn("px-4 py-2 text-sm font-medium rounded-lg transition-all", fiadosViewMode === "kanban" ? "bg-white dark:bg-zinc-700 text-gray-900 dark:text-white shadow-sm" : "text-gray-500 dark:text-zinc-400 hover:text-gray-700")}
+        >
+          Kanban
+        </button>
+        <button
+          onClick={() => { setFiadosViewMode("libreta"); try { localStorage.setItem("fiados-view-mode", "libreta"); } catch {} }}
+          className={cn("px-4 py-2 text-sm font-medium rounded-lg transition-all", fiadosViewMode === "libreta" ? "bg-white dark:bg-zinc-700 text-gray-900 dark:text-white shadow-sm" : "text-gray-500 dark:text-zinc-400 hover:text-gray-700")}
+        >
+          Libreta
+        </button>
+        <button
+          onClick={() => { setFiadosViewMode("cobranza"); try { localStorage.setItem("fiados-view-mode", "cobranza"); } catch {} }}
+          className={cn("px-4 py-2 text-sm font-medium rounded-lg transition-all", fiadosViewMode === "cobranza" ? "bg-white dark:bg-zinc-700 text-gray-900 dark:text-white shadow-sm" : "text-gray-500 dark:text-zinc-400 hover:text-gray-700")}
+        >
+          Cobranza
+        </button>
+      </div>
+
+      {/* ── Toolbar estandar ───────────────────────────────────────── */}
+      <div className="flex flex-wrap items-center gap-3">
+        {/* Busqueda */}
+        <div className="relative flex-1 min-w-[200px] max-w-sm">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+          <input
+            type="text"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder="Buscar fiado o cliente..."
+            className="w-full pl-10 pr-4 py-2.5 text-sm rounded-xl border border-gray-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 outline-none transition-all"
+          />
+        </div>
+
+        {/* Filtro status — chips estandar */}
+        {([
+          { key: "" as const, label: "Todos" },
+          { key: "ACTIVO" as const, label: "Activo" },
+          { key: "VENCIDO" as const, label: "Vencido" },
+          { key: "PAGADO" as const, label: "Pagado" },
+        ] as const).map(f => (
+          <button
+            key={f.key}
+            onClick={() => setStatusFilter(f.key)}
+            className={cn(
+              "inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-sm font-medium border transition-all",
+              statusFilter === f.key
+                ? "bg-blue-50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-800 text-blue-700 dark:text-blue-400"
+                : "border-gray-200 dark:border-zinc-700 text-gray-600 dark:text-zinc-400 bg-white dark:bg-zinc-900 hover:bg-gray-50 dark:hover:bg-zinc-800"
+            )}
+          >
+            {f.label}
+          </button>
+        ))}
+
+        {/* Spacer */}
+        <div className="flex-1" />
+
+        {/* Tendencia de morosidad */}
+        {(tendenciaMorosidad.cobradoEsteMes > 0 || tendenciaMorosidad.prestadoEsteMes > 0) && (
+          <span className={cn(
+            "text-[10px] font-bold px-2 py-0.5 rounded-full",
+            tendenciaMorosidad.cobradoEsteMes > tendenciaMorosidad.prestadoEsteMes
+              ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400"
+              : tendenciaMorosidad.cobradoEsteMes < tendenciaMorosidad.prestadoEsteMes
+              ? "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400"
+              : "bg-gray-100 text-gray-600 dark:bg-zinc-700 dark:text-zinc-400"
+          )}>
+            {tendenciaMorosidad.cobradoEsteMes > tendenciaMorosidad.prestadoEsteMes ? "+" : tendenciaMorosidad.cobradoEsteMes < tendenciaMorosidad.prestadoEsteMes ? "-" : "="}{" "}
+            Cobrado S/{tendenciaMorosidad.cobradoEsteMes.toFixed(0)} / Prestado S/{tendenciaMorosidad.prestadoEsteMes.toFixed(0)}
+          </span>
+        )}
+
+        {/* Resultado count */}
+        <span className="text-xs text-gray-400">
+          {fiados.length} resultados
+        </span>
+
+        {/* Reload */}
+        <button onClick={fetchFiados} className="p-2 rounded-xl bg-gray-100 dark:bg-surface hover:bg-gray-200 dark:hover:bg-accent transition-colors" title="Actualizar">
+          <RefreshCw className="h-4 w-4 text-gray-500" />
+        </button>
       </div>
 
       {/* Stats, KPIs, Calendar, Risk Ranking, Projections */}
