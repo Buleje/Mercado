@@ -87,23 +87,29 @@ const pdfWorker = new Worker<PdfJobData>(
 const notificationWorker = new Worker<NotificationJobData>(
   QUEUE_NAMES.NOTIFICATION,
   async (job: Job<NotificationJobData>) => {
-    const { type, recipient, tenantId } = job.data;
+    const { type, recipient, message, tenantId } = job.data;
     logger.info("[worker/notification] Processing", { jobId: job.id, type, recipient, tenantId });
 
     switch (type) {
-      case "whatsapp":
-        // WhatsApp API integration
-        logger.info("[worker/notification] WhatsApp sent", { recipient });
+      case "whatsapp": {
+        const { sendWhatsAppText } = await import("@/lib/whatsapp");
+        const ok = await sendWhatsAppText(recipient, message);
+        if (!ok) throw new Error(`WhatsApp API returned false for ${recipient}`);
+        logger.info("[worker/notification] WhatsApp sent", { recipient, tenantId });
         break;
-      case "push":
-        // Web push notification
-        logger.info("[worker/notification] Push sent", { recipient });
+      }
+      case "push": {
+        const { sendPushToPhone } = await import("@/lib/push-sender");
+        await sendPushToPhone(recipient, { title: "Notificacion", body: message });
+        logger.info("[worker/notification] Push sent", { recipient, tenantId });
         break;
+      }
       case "email":
-        // Delegate to email queue
+        // Email deliveries should use the dedicated email queue (enqueueEmail)
+        logger.warn("[worker/notification] Email via notification queue — use enqueueEmail instead", { recipient });
         break;
       case "sms":
-        logger.info("[worker/notification] SMS sent", { recipient });
+        logger.warn("[worker/notification] SMS not implemented", { recipient });
         break;
     }
   },

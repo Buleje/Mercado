@@ -15,6 +15,28 @@
  *   logger.info("...", { requestId });
  */
 
+// Sentry is loaded lazily so logger stays usable in runtimes that don't bundle
+// @sentry/nextjs. Only invoked from emit() for error-level entries in prod.
+type SentryLike = {
+  captureException: (
+    error: unknown,
+    hint?: { extra?: Record<string, unknown>; tags?: Record<string, string> },
+  ) => void;
+};
+let sentryMod: SentryLike | null = null;
+let sentryLoadAttempted = false;
+function loadSentry(): SentryLike | null {
+  if (sentryMod || sentryLoadAttempted) return sentryMod;
+  sentryLoadAttempted = true;
+  try {
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    sentryMod = require("@sentry/nextjs") as SentryLike;
+    return sentryMod;
+  } catch {
+    return null;
+  }
+}
+
 type LogLevel = "debug" | "info" | "warn" | "error";
 
 const LEVEL_RANK: Record<LogLevel, number> = {
@@ -41,6 +63,21 @@ const RESET = "\x1b[0m";
 
 function emit(level: LogLevel, message: string, context?: Record<string, unknown>): void {
   if (LEVEL_RANK[level] < LEVEL_RANK[MIN_LEVEL]) return;
+
+  // Forward error-level entries to Sentry in production so fire-and-forget
+  // failures (via `.catch((err) => logger.error(...))`) surface as alerts.
+  if (IS_PRODUCTION && level === "error") {
+    const sentry = loadSentry();
+    if (sentry) {
+      const rawErr = context?.error ?? context?.err;
+      const errObj = rawErr instanceof Error ? rawErr : new Error(`${message}${rawErr ? ` — ${String(rawErr)}` : ""}`);
+      try {
+        sentry.captureException(errObj, { extra: { message, ...(context ?? {}) } });
+      } catch {
+        // Never let Sentry failure break logging
+      }
+    }
+  }
 
   const ts = new Date().toISOString();
 
