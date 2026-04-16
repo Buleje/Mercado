@@ -94,8 +94,8 @@ Cada sub-proyecto es un proyecto independiente con su propio spec, plan e implem
 |---|---|
 | Objetivo | Un solo archivo de tokens al que todo componente apunte |
 | Problema | Hex codes sueltos en JSX, rounded mezclados, Admin minimalista peleando con Marketing colorido |
-| Entregables | `lib/design-tokens.ts` único; migración de componentes a tokens; Storybook con tokens; contrastes WCAG AA; ADR "Design System v2" |
-| Métricas (done) | 0 hex hardcodeados en JSX · Storybook con 100% de tokens · axe-core sin errores de contraste |
+| Entregables | `lib/design-tokens.ts` único; migración de componentes a tokens; `tailwind.config` alineado; contrastes WCAG AA; ADR "Design System v2". _Storybook queda como nice-to-have, NO bloquea el sub-proyecto — si se quiere, spec aparte._ |
+| Métricas (done) | 0 hex hardcodeados en JSX · axe-core sin errores de contraste · Tailwind config con tokens unificados |
 | Depende de | #3 |
 | Bloquea a | #2, #6 |
 | Zonas de peligro | `globals.css`, `tailwind.config`, todos los `/components/ui/**` |
@@ -140,7 +140,7 @@ Cada sub-proyecto es un proyecto independiente con su propio spec, plan e implem
 | Métricas (done) | LCP <2.5s · CLS <0.1 · INP <200ms · Bundle −20% vs baseline |
 | Depende de | #4 |
 | Bloquea a | #6 |
-| Zonas de peligro | `next.config.ts`, layouts, rutas con `"use cache"` |
+| Zonas de peligro | `next.config.ts`, layouts, rutas con `"use cache"`. **Respetar ADR-019: Next 16 sin segment configs — solo `"use cache"` + `cacheLife()` + `cacheTag()`** |
 | Esfuerzo | 1 sprint |
 | ADRs nuevos | "Performance budgets y gates" |
 
@@ -151,7 +151,7 @@ Cada sub-proyecto es un proyecto independiente con su propio spec, plan e implem
 | Objetivo | Cada zona en estado "producción premium" con su lente de usuario |
 | Problema | Cada audiencia con tratamiento distinto sin unidad |
 | Entregables | Pase por zona: Marketing, Tienda, Admin, Delivery, Superadmin, Supplier, SaaS/onboarding, CMS |
-| Métricas (done) | Walkthrough antes/después · checklists cerrados · 0 regresiones en Lighthouse |
+| Métricas (done) | 0 regresiones nuevas en axe-core · Lighthouse mobile ≥85 en todas las zonas auditadas · Walkthrough con screenshots antes/después · checklist de UX por zona cerrado al 100% |
 | Depende de | Todos |
 | Bloquea a | Nada |
 | Zonas de peligro | Todas — con chasis firme, riesgo bajo |
@@ -206,7 +206,7 @@ Cada sub-proyecto es un proyecto independiente con su propio spec, plan e implem
 | Sub-proyecto | Cómo se revierte | Impacto |
 |---|---|---|
 | #3 Error hunt | `git revert` en commits atómicos | Bajo |
-| #1 Design System | Feature flag `DS_V2_ENABLED` | Medio |
+| #1 Design System | PR atómico por archivo + `git revert` quirúrgico (NO feature flag runtime — complejidad innecesaria para 1 developer) | Bajo |
 | #2 Animaciones | `prefers-reduced-motion: reduce` default | Bajo |
 | #4 Dedupe | PR separado por consolidación | Medio |
 | #5 Performance | CI gate verde obligatorio | Bajo |
@@ -230,6 +230,7 @@ Cada sub-proyecto es un proyecto independiente con su propio spec, plan e implem
 - [ ] Baseline: `npm test > reports/baseline/test.txt`
 - [ ] Baseline: Lighthouse mobile en 5 rutas clave
 - [ ] Baseline: `npm run analyze` para bundle size
+- [ ] **Gate e2e de checkout ANTES de cualquier commit en `checkout/**`, `orders.db.ts` o `auth/**`** (regla dura durante #3 por ser zona de peligro)
 - [ ] Branch `programa/optimizacion-master` con roadmap committeado
 - [ ] Issues en GitHub o notas por sub-proyecto
 
@@ -237,14 +238,14 @@ Cada sub-proyecto es un proyecto independiente con su propio spec, plan e implem
 
 ## Estado del programa
 
-| # | Sub-proyecto | Estado | Spec | Plan | PR |
-|---|---|---|---|---|---|
-| 3 | Error hunt | En preparación | pendiente | pendiente | — |
-| 1 | Design System | Pendiente | — | — | — |
-| 2 | Animaciones | Pendiente | — | — | — |
-| 4 | Dedupe | Pendiente | — | — | — |
-| 5 | Performance | Pendiente | — | — | — |
-| 6 | Polish | Pendiente | — | — | — |
+| # | Sub-proyecto | Estado | Baseline capturado | Spec | Plan | PR |
+|---|---|---|---|---|---|---|
+| 3 | Error hunt | En preparación | En curso | pendiente | pendiente | — |
+| 1 | Design System | Pendiente | — | — | — | — |
+| 2 | Animaciones | Pendiente | — | — | — | — |
+| 4 | Dedupe | Pendiente | — | — | — | — |
+| 5 | Performance | Pendiente | — | — | — | — |
+| 6 | Polish | Pendiente | — | — | — | — |
 
 **Última actualización:** 2026-04-16 — Roadmap aprobado, arrancando baseline de #3.
 
