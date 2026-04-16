@@ -175,6 +175,55 @@ Pasar al **Sub-Proyecto #1 — Design System lockdown**. Los 2 tests ya migrados
 
 ---
 
+## Progreso en esta sesión (2026-04-16)
+
+### Fase 1 — Cleanup ✅ COMPLETADA
+
+| Item | Estado |
+|---|---|
+| `.gitignore` ampliado (screenshots, playwright-mcp, brainstorm, state) | ✅ |
+| 85 screenshots exploratorios eliminados del disk | ✅ |
+| `.claude/state`, `learning`, `session-state` destrackeados | ✅ |
+| Dirty files: 101 → 0 | ✅ |
+| 8 commits atómicos por bloque temático | ✅ |
+
+### Fase 2 — TSC errors ✅ COMPLETADA
+
+| Cluster | Errores antes | Errores después | Estrategia |
+|---|---|---|---|
+| E — TenantSectionsWrapper | 2 | 0 | Eliminar dead code (sin consumidores) |
+| C — MCP SDK | 14 | 0 | Excluir `tools/mcp-bodega/**` de tsconfig |
+| A — CartItem missing fields | 13 | 0 | Agregar `category?/storeZone?` opcionales |
+| D — marketplace suggestions | 13 | 0 | Implementar `getMarketplaceAutocomplete` |
+| B — API test arity | 40 | 0 | Quitar 2º arg (req, ctx) → (req) |
+| **TOTAL** | **83** | **0** | 5 commits atómicos |
+
+### Fase 3 — Tests rojos ⏸️ PENDIENTE
+
+Post Fase 2, los tests siguen en **71 fallos de 2621**. Los fixes TSC no cascadearon a runtime como hipotetizado. Análisis pendiente:
+
+| Archivo | Fallos | Hipótesis |
+|---|---|---|
+| `admin-module-standards.test.ts` | 19 | Arquitectural enforcement — tests que detectan violaciones de CLAUDE.md reales |
+| `api-activity-log.test.ts` | 11 | Probable signature o mock |
+| `api-notes.test.ts` | 8 | Probable signature o mock |
+| `api-message-templates.test.ts` | 7 | Probable signature o mock |
+| `api-campaigns-create.test.ts` | 7 | Runtime — queda tras fix TSC |
+| `api-treasury-transferencias.test.ts` | 5 | Runtime — queda tras fix TSC |
+| `api-fiados-cobrar.test.ts` | 5 | Runtime — queda tras fix TSC |
+| `ProductGallery.test.tsx` | 1 | Token `border-primary` (pre-trabajo #1) |
+| `ProductVariantSelector.test.tsx` | 1 | Token `border-primary` (pre-trabajo #1) |
+| `image-placeholders.test.ts` | 2 | Fixture o contenido |
+
+**Observación:** los tests no pasaron automáticamente con el fix de TSC — signatura correcta pero los mocks/aserciones fallan en runtime. Requiere análisis caso-por-caso.
+
+### Fase 4 — CI gate + staging ⏸️ PENDIENTE
+
+Después de Fase 3.
+
+---
+
 ## Changelog
 
-- **2026-04-16** — Draft inicial con baseline capturado.
+- **2026-04-16 14:00** — Draft inicial con baseline capturado.
+- **2026-04-16 15:30** — Fases 1 y 2 completadas. TSC 83 → 0. Tests aún en 71.
