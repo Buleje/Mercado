@@ -10,7 +10,7 @@ import "server-only";
  * Nunca bloquea el request del caller.
  */
 import { sendQuotaAlert } from "@/lib/billing/alerts/resend-sender";
-import { sendWhatsAppText } from "@/lib/whatsapp";
+import { sendWhatsAppQueued } from "@/lib/whatsapp";
 import { logActivity } from "@/lib/activity-logger";
 import { isDuplicate, markSent } from "./deduper";
 import { buildQuotaAlertText } from "./templates";
@@ -74,14 +74,7 @@ export async function notifyQuotaAlert(opts: NotifyQuotaOptions): Promise<void> 
   // 2. WhatsApp fallback
   const staffPhone = process.env.WHATSAPP_STAFF_PHONE;
   if (!emailSent && staffPhone) {
-    sendWhatsAppText(staffPhone, buildQuotaAlertText(templateInput)).catch(
-      (err: unknown) => {
-        logger.warn("[quota-notifier] WhatsApp fallback failed", {
-          tenantId,
-          error: err instanceof Error ? err.message : String(err),
-        });
-      },
-    );
+    sendWhatsAppQueued(staffPhone, buildQuotaAlertText(templateInput), { tenantId, context: "quota-alert-fallback" }).catch(() => {});
   }
 
   // 3. ActivityLog — siempre

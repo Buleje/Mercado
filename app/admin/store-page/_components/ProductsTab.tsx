@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Image from "next/image";
 import { Loader2, Search, Star, Eye, EyeOff, Trash2, Plus } from "lucide-react";
 
 type Override = {
@@ -142,8 +143,8 @@ export default function ProductsTab() {
                 }}
                 className="flex items-center gap-3 w-full p-2 rounded-lg hover:bg-white dark:hover:bg-gray-800 text-left"
               >
-                <div className="w-10 h-10 rounded bg-gray-200 overflow-hidden flex-shrink-0">
-                  {p.image && <img src={p.image} alt="" className="w-full h-full object-cover" />}
+                <div className="relative w-10 h-10 rounded bg-gray-200 overflow-hidden flex-shrink-0">
+                  {p.image && <Image src={p.image} alt="" fill sizes="40px" className="object-cover" />}
                 </div>
                 <div className="min-w-0 flex-1">
                   <p className="font-semibold text-sm truncate">{p.name}</p>
@@ -206,12 +207,14 @@ function OverrideRow({
 
   return (
     <div className="p-4 rounded-xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 flex items-center gap-4 flex-wrap">
-      <div className="w-14 h-14 rounded-lg bg-gray-100 overflow-hidden flex-shrink-0">
+      <div className="relative w-14 h-14 rounded-lg bg-gray-100 overflow-hidden flex-shrink-0">
         {override.productImage && (
-          <img
+          <Image
             src={override.productImage}
             alt=""
-            className="w-full h-full object-cover"
+            fill
+            sizes="56px"
+            className="object-cover"
           />
         )}
       </div>

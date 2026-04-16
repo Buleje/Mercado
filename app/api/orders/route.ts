@@ -5,7 +5,7 @@ import type { DbOrder } from "@/lib/jsondb";
 import { emitAdminSSE } from "@/lib/sse-emitter";
 import { toNumOrZero } from "@/lib/decimal-utils";
 import { sendOrderNotification } from "@/lib/mailer";
-import { sendWhatsAppNotification, getWhatsAppLink, sendWhatsAppText } from "@/lib/whatsapp";
+import { sendWhatsAppNotification, getWhatsAppLink, sendWhatsAppQueued } from "@/lib/whatsapp";
 import { sendReceiptByWhatsApp } from "@/lib/receipt-whatsapp";
 import { sendPushToPhone } from "@/lib/push-sender";
 import { logActivity } from "@/lib/activity-logger";
@@ -594,7 +594,7 @@ export const POST = withApiHandler("orders-create", async (req) => {
           `💰 Total: S/${saved.total.toFixed(2)}\n` +
           `💳 Pago: ${saved.paymentMethod === "yape" ? "Yape" : saved.paymentMethod === "efectivo" ? "Efectivo" : saved.paymentMethod ?? "—"}\n\n` +
           `Revisa tu panel de administración para confirmar el pedido.`;
-        sendWhatsAppText(ownerPhone, vendorMsg).catch((err) => logger.error("[orders] WhatsApp send failed", { error: String(err), tenantId }));
+        sendWhatsAppQueued(ownerPhone, vendorMsg, { tenantId, context: "order-vendor-notify" }).catch(() => {});
         sendPushToPhone(ownerPhone, {
           title: `🔔 Nuevo pedido — S/${saved.total.toFixed(2)}`,
           body: `${saved.customer.name} hizo un pedido: ${itemsSummary}${moreItems}`,

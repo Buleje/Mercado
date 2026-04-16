@@ -4,7 +4,8 @@ import { createPlatformToken, getPlatformSession, maybeRotateToken, PLATFORM_SES
 import { applyRateLimit } from "@/lib/rate-limit";
 import { logActivity } from "@/lib/activity-logger";
 import { is2FAEnabled, create2FAChallenge, verify2FACode } from "@/lib/superadmin-2fa";
-import { sendWhatsAppText } from "@/lib/whatsapp";
+import { sendWhatsAppQueued } from "@/lib/whatsapp";
+import { logger } from "@/lib/logger";
 
 function cookieOpts(maxAge: number) {
   return {
@@ -64,7 +65,7 @@ function notifyLoginWhatsApp(user: string, ip: string): void {
   if (!phone) return;
   const now = new Date().toLocaleString("es-PE", { timeZone: "America/Lima" });
   const msg = `🔐 *Alerta de seguridad — Buleje*\n\nSe inició sesión como SuperAdmin.\n👤 Usuario: ${user}\n🌐 IP: ${ip}\n🕐 Fecha: ${now}\n\nSi no fuiste tú, cambia tu contraseña de inmediato.`;
-  sendWhatsAppText(phone, msg).catch(() => {});
+  sendWhatsAppQueued(phone, msg, { tenantId: "__platform__", context: "superadmin-login-alert" }).catch(() => {});
 }
 
 // POST /api/superadmin/auth  – login { username, password } or verify 2FA { challengeId, code }
@@ -77,7 +78,7 @@ export async function POST(req: NextRequest) {
   const ip = getLockoutKey(req);
   const lockout = checkLockout(ip);
   if (lockout.locked) {
-    logActivity("login_locked", "superadmin", `IP bloqueada por ${lockout.remainingMinutes} min: ${ip}`, undefined, "superadmin").catch(() => {});
+    logActivity("login_locked", "superadmin", `IP bloqueada por ${lockout.remainingMinutes} min: ${ip}`, undefined, "superadmin").catch((err) => logger.error("[superadmin/auth] activity log failed", { error: String(err) }));
     return NextResponse.json(
       { error: `Demasiados intentos fallidos. Intente en ${lockout.remainingMinutes} minutos.` },
       { status: 429 }
@@ -92,7 +93,7 @@ export async function POST(req: NextRequest) {
     const result = await verify2FACode(body.challengeId, body.code);
     if (!result.valid || !result.username) {
       const lockResult = recordFailedAttempt(ip);
-      logActivity("2fa_failed", "superadmin", `2FA fallido: challengeId=${body.challengeId} desde IP ${ip}. Intentos restantes: ${lockResult.attemptsLeft}`, undefined, "superadmin").catch(() => {});
+      logActivity("2fa_failed", "superadmin", `2FA fallido: challengeId=${body.challengeId} desde IP ${ip}. Intentos restantes: ${lockResult.attemptsLeft}`, undefined, "superadmin").catch((err) => logger.error("[superadmin/auth] activity log failed", { error: String(err) }));
       if (lockResult.locked) {
         return NextResponse.json({ error: "Demasiados intentos fallidos. Cuenta bloqueada por 15 minutos." }, { status: 429 });
       }
@@ -102,7 +103,7 @@ export async function POST(req: NextRequest) {
     const token = await createPlatformToken(result.username);
     const res = NextResponse.json({ ok: true });
     res.cookies.set(PLATFORM_SESSION.COOKIE_NAME, token, cookieOpts(PLATFORM_SESSION.MAX_AGE));
-    logActivity("login_success", "superadmin", `Login exitoso con 2FA: ${result.username} desde IP ${ip}`, undefined, "superadmin").catch(() => {});
+    logActivity("login_success", "superadmin", `Login exitoso con 2FA: ${result.username} desde IP ${ip}`, undefined, "superadmin").catch((err) => logger.error("[superadmin/auth] activity log failed", { error: String(err) }));
     notifyLoginWhatsApp(result.username, ip);
     return res;
   }
@@ -120,7 +121,7 @@ export async function POST(req: NextRequest) {
     !expectedPass
   ) {
     const lockResult = recordFailedAttempt(ip);
-    logActivity("login_failed", "superadmin", `Intento fallido: ${username || "(vacío)"} desde IP ${ip}. Intentos restantes: ${lockResult.attemptsLeft}`, undefined, "superadmin").catch(() => {});
+    logActivity("login_failed", "superadmin", `Intento fallido: ${username || "(vacío)"} desde IP ${ip}. Intentos restantes: ${lockResult.attemptsLeft}`, undefined, "superadmin").catch((err) => logger.error("[superadmin/auth] activity log failed", { error: String(err) }));
     if (lockResult.locked) {
       return NextResponse.json({ error: "Demasiados intentos fallidos. Cuenta bloqueada por 15 minutos." }, { status: 429 });
     }
@@ -133,7 +134,7 @@ export async function POST(req: NextRequest) {
   // If 2FA is enabled, generate challenge instead of granting session
   if (is2FAEnabled()) {
     const { challengeId } = create2FAChallenge(username);
-    logActivity("2fa_challenge", "superadmin", `Código 2FA enviado a ${username}`, undefined, "superadmin").catch(() => {});
+    logActivity("2fa_challenge", "superadmin", `Código 2FA enviado a ${username}`, undefined, "superadmin").catch((err) => logger.error("[superadmin/auth] activity log failed", { error: String(err) }));
     return NextResponse.json({ requires2FA: true, challengeId });
   }
 
@@ -141,7 +142,7 @@ export async function POST(req: NextRequest) {
   const token = await createPlatformToken(username);
   const res = NextResponse.json({ ok: true });
   res.cookies.set(PLATFORM_SESSION.COOKIE_NAME, token, cookieOpts(PLATFORM_SESSION.MAX_AGE));
-  logActivity("login_success", "superadmin", `Login exitoso: ${username} desde IP ${ip}`, undefined, "superadmin").catch(() => {});
+  logActivity("login_success", "superadmin", `Login exitoso: ${username} desde IP ${ip}`, undefined, "superadmin").catch((err) => logger.error("[superadmin/auth] activity log failed", { error: String(err) }));
   notifyLoginWhatsApp(username, ip);
   return res;
 }
@@ -149,7 +150,7 @@ export async function POST(req: NextRequest) {
 export async function DELETE() {
   const res = NextResponse.json({ ok: true });
   res.cookies.set(PLATFORM_SESSION.COOKIE_NAME, "", cookieOpts(0));
-  logActivity("logout", "superadmin", "SuperAdmin cerró sesión", undefined, "superadmin").catch(() => {});
+  logActivity("logout", "superadmin", "SuperAdmin cerró sesión", undefined, "superadmin").catch((err) => logger.error("[superadmin/auth] activity log failed", { error: String(err) }));
   return res;
 }
 

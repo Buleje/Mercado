@@ -10,7 +10,7 @@
  * In development, the current code is printed to the server console.
  */
 import { logger } from "@/lib/logger";
-import { sendWhatsAppText } from "@/lib/whatsapp";
+import { sendWhatsAppQueued } from "@/lib/whatsapp";
 
 // ── 2FA Method: "totp" (authenticator app) or "whatsapp" (code via WhatsApp) ─
 type TwoFAMethod = "totp" | "whatsapp";
@@ -183,15 +183,13 @@ export function create2FAChallenge(username: string): { challengeId: string; cod
     const phone = process.env.SUPERADMIN_PHONE;
     if (phone) {
       const msg = `🔐 *Código de verificación — Buleje*\n\nTu código de acceso SuperAdmin es:\n\n*${code}*\n\nExpira en 5 minutos. No compartas este código.`;
-      sendWhatsAppText(phone, msg).catch(() => {
-        logger.error("[2FA] Failed to send WhatsApp code");
-      });
+      sendWhatsAppQueued(phone, msg, { tenantId: "__platform__", context: "2fa-code" }).catch(() => {});
     } else {
       logger.warn("[2FA] SUPERADMIN_PHONE not configured — cannot send WhatsApp code");
     }
 
     if (process.env.NODE_ENV === "development") {
-      console.log(`\n[2FA-WhatsApp] Código para ${username}: ${code}\n`);
+      logger.debug(`[2FA-WhatsApp] Código para ${username}: ${code}`);
     }
 
     logger.info(`[2FA] WhatsApp challenge created for ${username}`);
@@ -205,7 +203,7 @@ export function create2FAChallenge(username: string): { challengeId: string; cod
     const code = String(Math.floor(100000 + Math.random() * 900000));
     logger.warn("[2FA] No TOTP secret configured — using random code fallback");
     if (process.env.NODE_ENV === "development") {
-      console.log(`\n[2FA] Codigo de verificacion para ${username}: ${code}\n`);
+      logger.debug(`[2FA] Codigo de verificacion para ${username}: ${code}`);
     }
     return {
       challengeId: crypto.randomUUID(),
@@ -219,7 +217,7 @@ export function create2FAChallenge(username: string): { challengeId: string; cod
   // Log to console in development
   if (process.env.NODE_ENV === "development") {
     codePromise.then((code) => {
-      console.log(`\n[2FA] TOTP code for ${username}: ${code} (valid for ${TOTP_PERIOD}s)\n`);
+      logger.debug(`[2FA] TOTP code for ${username}: ${code} (valid for ${TOTP_PERIOD}s)`);
     }).catch(() => {});
   }
 

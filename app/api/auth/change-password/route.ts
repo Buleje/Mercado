@@ -5,6 +5,7 @@ import { prisma } from "@/lib/prisma";
 import { compare, hash } from "bcryptjs";
 import { z } from "zod";
 import { applyRateLimit } from "@/lib/rate-limit";
+import { logger } from "@/lib/logger";
 
 const ChangePasswordSchema = z.object({
   currentPassword: z.string().min(1),
@@ -20,7 +21,8 @@ export async function POST(req: NextRequest) {
   const payload = await getSessionPayload(token);
   if (!payload) return NextResponse.json({ error: "session expired" }, { status: 401 });
 
-  const body = await req.json();
+  const body = await req.json().catch((err) => { logger.warn("[auth/change-password] invalid JSON body", { error: String(err) }); return null; });
+  if (!body) return NextResponse.json({ error: "Invalid JSON" }, { status: 400 });
   const parsed = ChangePasswordSchema.safeParse(body);
   if (!parsed.success) {
     return NextResponse.json({ issues: parsed.error.issues }, { status: 400 });

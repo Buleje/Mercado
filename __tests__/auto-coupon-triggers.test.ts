@@ -61,6 +61,7 @@ const { mockSendWhatsAppText } = vi.hoisted(() => ({
 
 vi.mock("@/lib/whatsapp", () => ({
   sendWhatsAppText: mockSendWhatsAppText,
+  sendWhatsAppQueued: mockSendWhatsAppText,
 }));
 
 const { mockIsFeatureEnabled } = vi.hoisted(() => ({

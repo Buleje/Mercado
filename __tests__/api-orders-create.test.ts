@@ -42,6 +42,7 @@ vi.mock("@/lib/whatsapp", () => ({
   sendWhatsAppNotification: vi.fn(async () => {}),
   getWhatsAppLink: vi.fn(() => "https://wa.me/fake"),
   sendWhatsAppText: vi.fn(async () => {}),
+  sendWhatsAppQueued: vi.fn(async () => ({ queued: true })),
 }));
 
 // ── Mock: push-sender — no-op ────────────────────────────────────────────────
@@ -177,6 +178,8 @@ import { POST, GET } from "@/app/api/orders/route";
 // Helpers
 // ─────────────────────────────────────────────────────────────────────────────
 
+const defaultCtx = { params: Promise.resolve({}) };
+
 const ADMIN_AUTH = { tenantId: "main", role: "admin", username: "testadmin" };
 const UNAUTH = NextResponse.json({ error: "unauthorized" }, { status: 401 });
 
@@ -268,7 +271,7 @@ describe("POST /api/orders", () => {
 
   describe("400 – missing required fields", () => {
     it("returns 400 when body is an empty object", async () => {
-      const res = await POST(makePostReq({}));
+      const res = await POST(makePostReq({}), defaultCtx);
       expect(res.status).toBe(400);
       const body = await res.json();
       expect(body.error).toBeDefined();
@@ -279,7 +282,7 @@ describe("POST /api/orders", () => {
         customer: { phone: "987654321" },
         items: [VALID_ITEM],
         total: 11.0,
-      }));
+      }), defaultCtx);
       expect(res.status).toBe(400);
       const body = await res.json();
       expect(body.error).toBeDefined();
@@ -289,7 +292,7 @@ describe("POST /api/orders", () => {
       const res = await POST(makePostReq({
         customer: { name: "Ana García" },
         total: 10,
-      }));
+      }), defaultCtx);
       expect(res.status).toBe(400);
       const body = await res.json();
       expect(body.error).toBeDefined();
@@ -299,7 +302,7 @@ describe("POST /api/orders", () => {
       const res = await POST(makePostReq({
         customer: { name: "Ana García" },
         items: [VALID_ITEM],
-      }));
+      }), defaultCtx);
       expect(res.status).toBe(400);
     });
 
@@ -307,7 +310,7 @@ describe("POST /api/orders", () => {
       const res = await POST(makePostReq({
         ...VALID_BODY,
         paymentMethod: "tarjeta", // not in enum
-      }));
+      }), defaultCtx);
       expect(res.status).toBe(400);
     });
   });
@@ -320,7 +323,7 @@ describe("POST /api/orders", () => {
         customer: { name: "Juan Pérez" },
         items: [],
         total: 0,
-      }));
+      }), defaultCtx);
       expect(res.status).toBe(400);
       const body = await res.json();
       expect(body.error).toBeDefined();
@@ -334,7 +337,7 @@ describe("POST /api/orders", () => {
       const res = await POST(makePostReq({
         ...VALID_BODY,
         items: [{ ...VALID_ITEM, name: "" }],
-      }));
+      }), defaultCtx);
       expect(res.status).toBe(400);
     });
 
@@ -342,7 +345,7 @@ describe("POST /api/orders", () => {
       const res = await POST(makePostReq({
         ...VALID_BODY,
         items: [{ ...VALID_ITEM, quantity: 0 }],
-      }));
+      }), defaultCtx);
       expect(res.status).toBe(400);
     });
 
@@ -350,7 +353,7 @@ describe("POST /api/orders", () => {
       const res = await POST(makePostReq({
         ...VALID_BODY,
         items: [{ ...VALID_ITEM, price: -1 }],
-      }));
+      }), defaultCtx);
       expect(res.status).toBe(400);
     });
   });
@@ -359,7 +362,7 @@ describe("POST /api/orders", () => {
 
   describe("201 – successful order creation", () => {
     it("creates an order and returns 201 with the saved order", async () => {
-      const res = await POST(makePostReq(VALID_BODY));
+      const res = await POST(makePostReq(VALID_BODY), defaultCtx);
       expect(res.status).toBe(201);
       const body = await res.json();
       expect(body.id).toBeDefined();
@@ -371,7 +374,7 @@ describe("POST /api/orders", () => {
     it("returns 201 with correct total from items (ignoring client-provided total)", async () => {
       // Server recomputes total = 5.5 * 2 = 11.0
       mockOrdersAdd.mockResolvedValue({ ...SAVED_ORDER, total: 11.0 });
-      const res = await POST(makePostReq({ ...VALID_BODY, total: 999 })); // wrong client hint
+      const res = await POST(makePostReq({ ...VALID_BODY, total: 999 }), defaultCtx); // wrong client hint
       expect(res.status).toBe(201);
       const body = await res.json();
       expect(body.total).toBe(11.0);
@@ -382,7 +385,7 @@ describe("POST /api/orders", () => {
 
     it("creates order with paymentMethod yape", async () => {
       mockOrdersAdd.mockResolvedValue({ ...SAVED_ORDER, paymentMethod: "yape" });
-      const res = await POST(makePostReq({ ...VALID_BODY, paymentMethod: "yape" }));
+      const res = await POST(makePostReq({ ...VALID_BODY, paymentMethod: "yape" }), defaultCtx);
       expect(res.status).toBe(201);
       const body = await res.json();
       expect(body.paymentMethod).toBe("yape");
@@ -393,13 +396,13 @@ describe("POST /api/orders", () => {
         ...VALID_BODY,
         notes: "Sin cebolla por favor",
         deliverySlot: "09:00 - 12:00",
-      }));
+      }), defaultCtx);
       expect(res.status).toBe(201);
     });
 
     it("returns 200 (idempotent) when same idempotency-key is reused", async () => {
       mockOrderFindFirst.mockResolvedValue(SAVED_ORDER); // simulate duplicate
-      const res = await POST(makePostReq(VALID_BODY, { "x-idempotency-key": "idem-key-abc" }));
+      const res = await POST(makePostReq(VALID_BODY, { "x-idempotency-key": "idem-key-abc" }), defaultCtx);
       expect(res.status).toBe(200);
       const body = await res.json();
       expect(body.id).toBe(SAVED_ORDER.id);
@@ -407,7 +410,7 @@ describe("POST /api/orders", () => {
     });
 
     it("calls OrdersDB.add once with correct tenant", async () => {
-      await POST(makePostReq(VALID_BODY));
+      await POST(makePostReq(VALID_BODY), defaultCtx);
       expect(mockOrdersAdd).toHaveBeenCalledTimes(1);
       // Second arg to add() is tenantId
       expect(mockOrdersAdd).toHaveBeenCalledWith(
@@ -430,7 +433,7 @@ describe("POST /api/orders", () => {
         customer: { name: "Cliente Anónimo" },
         items: [VALID_ITEM],
         total: 11.0,
-      }));
+      }), defaultCtx);
       expect(res.status).toBe(201);
       const body = await res.json();
       expect(body.customer.name).toBe("Cliente Anónimo");
@@ -452,13 +455,13 @@ describe("GET /api/orders", () => {
 
   it("returns 401 when not authenticated", async () => {
     mockRequireAdmin.mockResolvedValue(UNAUTH);
-    const res = await GET(makeGetReq());
+    const res = await GET(makeGetReq(), defaultCtx);
     expect(res.status).toBe(401);
   });
 
   it("returns all orders when no query params (legacy path)", async () => {
     mockOrdersGetAllFiltered.mockResolvedValue([SAVED_ORDER, SAVED_ORDER]);
-    const res = await GET(makeGetReq());
+    const res = await GET(makeGetReq(), defaultCtx);
     expect(res.status).toBe(200);
     const body = await res.json();
     expect(Array.isArray(body)).toBe(true);
@@ -468,7 +471,7 @@ describe("GET /api/orders", () => {
 
   it("returns paginated orders with X-Total-Count header when limit is set", async () => {
     mockOrdersGetAllFiltered.mockResolvedValue([SAVED_ORDER]);
-    const res = await GET(makeGetReq("?limit=10&page=1"));
+    const res = await GET(makeGetReq("?limit=10&page=1"), defaultCtx);
     expect(res.status).toBe(200);
     const body = await res.json();
     expect(Array.isArray(body)).toBe(true);
@@ -478,7 +481,7 @@ describe("GET /api/orders", () => {
   });
 
   it("returns cursor-paginated orders when limit is set without page", async () => {
-    const res = await GET(makeGetReq("?limit=5"));
+    const res = await GET(makeGetReq("?limit=5"), defaultCtx);
     expect(res.status).toBe(200);
     const body = await res.json();
     expect(Array.isArray(body)).toBe(true);
@@ -487,7 +490,7 @@ describe("GET /api/orders", () => {
 
   it("returns empty array when no orders exist", async () => {
     mockOrdersGetAllFiltered.mockResolvedValue([]);
-    const res = await GET(makeGetReq());
+    const res = await GET(makeGetReq(), defaultCtx);
     expect(res.status).toBe(200);
     const body = await res.json();
     expect(body).toHaveLength(0);
@@ -496,7 +499,7 @@ describe("GET /api/orders", () => {
 
   it("returns 503 when DB throws", async () => {
     mockOrdersGetAllFiltered.mockRejectedValue(new Error("DB connection error"));
-    const res = await GET(makeGetReq());
+    const res = await GET(makeGetReq(), defaultCtx);
     expect(res.status).toBe(503);
     const body = await res.json();
     expect(body.error).toBe("Database error");

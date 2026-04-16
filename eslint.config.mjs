@@ -72,7 +72,7 @@ const eslintConfig = defineConfig([
     files: ["app/api/**/*.ts", "lib/db/**/*.ts"],
     rules: {
       "no-restricted-syntax": [
-        "warn",
+        "error",
         {
           selector:
             "CallExpression[callee.property.name='catch'] > ArrowFunctionExpression[body.type='BlockStatement'][body.body.length=0]",

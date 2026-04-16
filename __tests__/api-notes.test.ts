@@ -20,8 +20,8 @@ const { mockFindMany, mockCreate, mockFindFirst, mockUpdate, mockDelete } = vi.h
   mockUpdate: vi.fn(),
   mockDelete: vi.fn(),
 }));
-vi.mock("@/lib/prisma", () => ({
-  prisma: {
+vi.mock("@/lib/tenant", () => ({
+  prismaForTenant: () => ({
     note: {
       findMany: mockFindMany,
       create: mockCreate,
@@ -29,7 +29,11 @@ vi.mock("@/lib/prisma", () => ({
       update: mockUpdate,
       delete: mockDelete,
     },
-  },
+  }),
+}));
+
+vi.mock("@/lib/rate-limit", () => ({
+  applyRateLimit: vi.fn(() => null),
 }));
 
 import { GET, POST, PATCH, DELETE } from "@/app/api/notes/route";

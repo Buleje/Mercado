@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import {
   DollarSign,
   AlertTriangle,
@@ -37,6 +37,7 @@ export interface InventarioSubTabProps {
 // ── Component ────────────────────────────────────────────────────────────────────
 
 export function InventarioSubTab(props: InventarioSubTabProps) {
+  const [now] = useState(() => Date.now());
   const {
     loading, products, sales,
     upcomingPayables, productsRunningOut,
@@ -47,7 +48,7 @@ export function InventarioSubTab(props: InventarioSubTabProps) {
   // ── Derived: Stock muerto ──────────────────────────────────────────────────
 
   const deadStockData = useMemo(() => {
-    const thirtyDaysAgo = new Date(Date.now() - 30 * 86400000).toISOString();
+    const thirtyDaysAgo = new Date(now - 30 * 86400000).toISOString();
     const deadStock = products.filter(p => {
       if (p.stock == null || p.stock <= 0) return false;
       const soldRecently = sales.some(s => {
@@ -59,7 +60,7 @@ export function InventarioSubTab(props: InventarioSubTabProps) {
     if (deadStock.length === 0) return null;
     const deadValue = deadStock.reduce((s, p) => s + (p.stock ?? 0) * (p.costPrice ?? p.price * 0.7), 0);
     return { count: deadStock.length, value: deadValue };
-  }, [products, sales]);
+  }, [products, sales, now]);
 
   return (
     <>
@@ -83,7 +84,7 @@ export function InventarioSubTab(props: InventarioSubTabProps) {
             {upcomingPayables.upcoming.length > 0 ? (
               <ul className="space-y-1.5">
                 {upcomingPayables.upcoming.map(p => {
-                  const daysLeft = p.dueDate ? Math.max(0, Math.ceil((new Date(p.dueDate).getTime() - Date.now()) / 86400000)) : 0;
+                  const daysLeft = p.dueDate ? Math.max(0, Math.ceil((new Date(p.dueDate).getTime() - now) / 86400000)) : 0;
                   return (
                     <li key={p.id} className="flex items-center justify-between text-xs">
                       <span className="truncate text-gray-600 dark:text-zinc-300 flex-1">{p.supplierName || "Proveedor"}</span>

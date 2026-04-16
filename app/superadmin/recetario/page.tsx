@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback, useMemo } from "react";
+import Image from "next/image";
 import {
   ChefHat, Search, Plus, Pencil, Trash2, Image as ImageIcon,
   ToggleLeft, ToggleRight, RefreshCw, AlertCircle,
@@ -393,11 +394,13 @@ export default function SuperAdminRecetarioPage() {
                   {/* Card image area */}
                   <div className="relative h-36 bg-gray-100 dark:bg-gray-800 overflow-hidden">
                     {r.imageUrl ? (
-                      /* eslint-disable-next-line @next/next/no-img-element */
-                      <img
+                      <Image
                         src={r.imageUrl}
                         alt={r.nombre}
-                        className="w-full h-full object-cover"
+                        fill
+                        sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
+                        className="object-cover"
+                        unoptimized
                       />
                     ) : (
                       <div className="w-full h-full flex items-center justify-center">
@@ -671,14 +674,16 @@ export default function SuperAdminRecetarioPage() {
                   className={inputCls}
                 />
                 {form.imageUrl && (
-                  <div className="mt-2 rounded-xl overflow-hidden border border-gray-200 dark:border-gray-700">
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img
+                  <div className="relative mt-2 h-32 rounded-xl overflow-hidden border border-gray-200 dark:border-gray-700">
+                    <Image
                       src={form.imageUrl}
                       alt="Vista previa"
-                      className="w-full h-32 object-cover"
+                      fill
+                      sizes="100vw"
+                      className="object-cover"
+                      unoptimized
                       onError={(e) => {
-                        (e.target as HTMLImageElement).style.display = "none";
+                        (e.target as HTMLImageElement).parentElement!.style.display = "none";
                       }}
                     />
                   </div>

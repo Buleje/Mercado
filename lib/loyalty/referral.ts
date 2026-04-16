@@ -2,7 +2,7 @@ import "server-only";
 
 import { prisma } from "@/lib/prisma";
 import { LoyaltyDB } from "@/lib/db/loyalty.db";
-import { sendWhatsAppText } from "@/lib/whatsapp";
+import { sendWhatsAppQueued } from "@/lib/whatsapp";
 import { logActivity } from "@/lib/activity-logger";
 import { logger } from "@/lib/logger";
 
@@ -119,18 +119,20 @@ export async function processReferral(
     );
 
     // 6. Notify both via WhatsApp — fire-and-forget
-    sendWhatsAppText(
+    sendWhatsAppQueued(
       referrer.phone,
       `🎉 *¡Alguien usó tu código de referido!*\n\n` +
       `Tu amigo/a se registró con tu código y ambos ganaron *${REFERRAL_POINTS} puntos* 🏆\n\n` +
       `Tu saldo se actualizó automáticamente. ¡Sigue invitando amigos para ganar más puntos!`,
+      { tenantId, context: "referral-referrer-notify" },
     ).catch(() => {});
 
-    sendWhatsAppText(
+    sendWhatsAppQueued(
       refereePhone,
       `🎁 *¡Bienvenido/a!*\n\n` +
       `Usaste el código de ${referrer.name} y ganaste *${REFERRAL_POINTS} puntos* de regalo 🎉\n\n` +
       `Recuerda: 50 puntos = S/1 de descuento en tu próxima compra.`,
+      { tenantId, context: "referral-referee-notify" },
     ).catch(() => {});
 
     // 7. Log activity — fire-and-forget

@@ -3,7 +3,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getPlatformSession, PLATFORM_SESSION } from "@/lib/superadmin-session";
 import { prisma } from "@/lib/prisma";
 import { z } from "zod";
-import { sendWhatsAppText } from "@/lib/whatsapp";
+import { sendWhatsAppQueued } from "@/lib/whatsapp";
 import { logger } from "@/lib/logger";
 
 // GET /api/superadmin/stores
@@ -74,11 +74,12 @@ const PatchSchema = z.object({
 
 export async function PATCH(req: NextRequest) {
   const token = req.cookies.get(PLATFORM_SESSION.COOKIE_NAME)?.value;
-  if (!token) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
+  if (!token) return NextResponse.json({ error: "unauthorized" }, { status:401 });
   const session = await getPlatformSession(token);
   if (!session) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
 
-  const body = await req.json();
+  const body = await req.json().catch((err) => { logger.error("[superadmin/stores] parse JSON body failed", { error: String(err) }); return null; });
+  if (!body) return NextResponse.json({ error: "Invalid JSON" }, { status: 400 });
   const parsed = PatchSchema.safeParse(body);
   if (!parsed.success) return NextResponse.json({ issues: parsed.error.issues }, { status: 400 });
 
@@ -118,12 +119,12 @@ export async function PATCH(req: NextRequest) {
             `─────`,
             `Buleje 🏪`,
           ].join("\n");
-          await sendWhatsAppText(ownerPhone, msg);
+          await sendWhatsAppQueued(ownerPhone, msg, { tenantId: store.tenantId, context: "store-published-notify" });
         }
       } catch (e) {
         logger.warn("[superadmin/stores] WhatsApp notification failed", { error: String(e) });
       }
-    })().catch(() => {});
+    })().catch((err) => logger.error("[superadmin/stores] operation failed", { error: String(err) }));
   }
 
   return NextResponse.json({ store });

@@ -47,6 +47,7 @@ vi.mock("@/lib/billing/alerts/resend-sender", () => ({
 // Mock WhatsApp
 vi.mock("@/lib/whatsapp", () => ({
   sendWhatsAppText: vi.fn().mockResolvedValue(true),
+  sendWhatsAppQueued: vi.fn(async () => ({ queued: true })),
 }));
 
 // Mock activity logger

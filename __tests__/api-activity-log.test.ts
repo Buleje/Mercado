@@ -21,14 +21,14 @@ const { mockFindMany, mockCreate, mockDeleteMany } = vi.hoisted(() => ({
   mockDeleteMany: vi.fn(),
 }));
 
-vi.mock("@/lib/prisma", () => ({
-  prisma: {
+vi.mock("@/lib/tenant", () => ({
+  prismaForTenant: () => ({
     activityLog: {
       findMany: mockFindMany,
       create: mockCreate,
       deleteMany: mockDeleteMany,
     },
-  },
+  }),
 }));
 
 const { mockRequireAdmin } = vi.hoisted(() => ({

@@ -19,7 +19,7 @@
 import "server-only";
 import { prisma } from "@/lib/prisma";
 import { CouponsDB } from "@/lib/db/promotions.db";
-import { sendWhatsAppText } from "@/lib/whatsapp";
+import { sendWhatsAppQueued } from "@/lib/whatsapp";
 import { isFeatureEnabled } from "@/lib/feature-flags";
 import { logger } from "@/lib/logger";
 import type { DbOrder } from "@/lib/db/misc.db";
@@ -195,13 +195,7 @@ async function issueCoupon(opts: {
       `📅 Válido por ${COUPON_VALIDITY_DAYS} días\n\n` +
       `🛒 Úsalo en:\n${marketplaceUrl}`;
 
-  sendWhatsAppText(opts.customerPhone, message).catch((err) => {
-    logger.error("[auto-coupon] Error enviando WhatsApp al cliente", {
-      trigger: opts.trigger,
-      customerPhone: opts.customerPhone,
-      error: String(err),
-    });
-  });
+  sendWhatsAppQueued(opts.customerPhone, message, { tenantId: opts.tenantId, context: `auto-coupon-${opts.trigger}` }).catch(() => {});
 }
 
 // ── Public API ────────────────────────────────────────────────────────────────

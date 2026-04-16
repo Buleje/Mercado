@@ -7,7 +7,7 @@
  *   - render mode: "color" (si attrs.color), "size" (si attrs.size), "pill" (default)
  *   - variante agotada (stock <= 0): disabled + texto "Agotado" en pill mode
  *   - en color mode: isOutOfStock tiene title con "Agotado"
- *   - selectedVariantId: border-[#00B4A6] en el botón activo
+ *   - selectedVariantId: border-[#2563EB] en el botón activo
  */
 
 import { describe, it, expect, vi, beforeEach } from "vitest";
@@ -134,7 +134,7 @@ describe("ProductVariantSelector", () => {
       />
     );
     const selectedBtn = screen.getByRole("button", { name: /Pequeño/ });
-    // La clase de selección incluye "00B4A6" (teal del brand)
-    expect(selectedBtn.className).toContain("00B4A6");
+    // La clase de selección usa token Tailwind "border-primary"
+    expect(selectedBtn.className).toContain("border-primary");
   });
 });

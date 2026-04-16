@@ -45,6 +45,7 @@ export async function POST(req: NextRequest) {
         order: {
           select: {
             id: true,
+            tenantId: true,
             customerName: true,
             customerPhone: true,
             total: true,
@@ -118,12 +119,11 @@ export async function POST(req: NextRequest) {
       // Fire-and-forget: enviar link de calificación por WhatsApp (30s delay via setTimeout no disponible en serverless, se envía inmediato en segundo mensaje)
       const ratingUrl = `${baseUrl}/marketplace/calificar-entrega?id=${updatedAssignment.id}`;
       const customerName = assignment.order.customerName?.split(" ")[0] ?? "vecino";
-      import("@/lib/whatsapp").then(({ sendWhatsAppText }) => {
-        sendWhatsAppText(
-          assignment.order.customerPhone!,
-          `⭐ ¡Hola ${customerName}! ¿Cómo fue tu entrega con ${assignment.partner.name}?\n\nCalifica aquí en 10 segundos 👉 ${ratingUrl}\n\nTu opinión nos ayuda a mejorar 🙏`
-        ).catch((err) => logger.error("[delivery/confirm] rating WhatsApp send failed", { error: String(err), orderId }));
-      }).catch((err) => logger.error("[delivery/confirm] dynamic whatsapp import failed", { error: String(err) }));
+      (await import("@/lib/whatsapp")).sendWhatsAppQueued(
+        assignment.order.customerPhone!,
+        `⭐ ¡Hola ${customerName}! ¿Cómo fue tu entrega con ${assignment.partner.name}?\n\nCalifica aquí en 10 segundos 👉 ${ratingUrl}\n\nTu opinión nos ayuda a mejorar 🙏`,
+        { tenantId: assignment.order.tenantId ?? "main", context: "delivery-confirm-rating" },
+      ).catch(() => {});
     }
 
     // Fire-and-forget: log de actividad
@@ -133,7 +133,7 @@ export async function POST(req: NextRequest) {
       `Entrega confirmada por ${auth.username} — orden ${orderId}`,
       assignment.id,
       auth.username
-    ).catch(() => {});
+    ).catch((err) => logger.error("[delivery/confirm] operation failed", { error: String(err) }));
 
     return NextResponse.json({
       success: true,

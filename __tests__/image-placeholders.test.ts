@@ -99,7 +99,7 @@ describe("Image Placeholders", () => {
       expect(decoded).toContain("<svg");
       expect(decoded).toContain("viewBox=\"0 0 400 400\"");
       expect(decoded).toContain("<path"); // Shopping bag icon paths
-      expect(decoded).toContain("stroke=\"#00B4A6\"");
+      expect(decoded).toContain("stroke=\"#2563EB\"");
     });
 
     it("should be reusable and consistent", () => {
@@ -148,7 +148,7 @@ describe("Image Placeholders", () => {
       ).toString();
 
       expect(decoded).toContain("<path");
-      expect(decoded).toContain("#00B4A6");
+      expect(decoded).toContain("#2563EB");
     });
   });
 

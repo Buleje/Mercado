@@ -42,6 +42,7 @@ vi.mock("@/lib/whatsapp", () => ({
   sendWhatsAppNotification: vi.fn(async () => {}),
   getWhatsAppLink: vi.fn(() => "https://wa.me/fake"),
   sendWhatsAppText: vi.fn(async () => {}),
+  sendWhatsAppQueued: vi.fn(async () => ({ queued: true })),
 }));
 
 vi.mock("@/lib/receipt-whatsapp", () => ({
@@ -170,6 +171,8 @@ vi.mock("@/lib/prisma", () => ({
 import { POST } from "@/app/api/orders/route";
 
 // ─── Helpers ────────────────────────────────────────────────────────────────
+const defaultCtx = { params: Promise.resolve({}) };
+
 function makePostReq(
   body: unknown,
   headers: Record<string, string> = {},
@@ -233,7 +236,7 @@ describe("POST /api/orders — HOTFIX-001 + HOTFIX-004", () => {
       { "x-tenant-id": TENANT_A },
     );
 
-    const res = await POST(req);
+    const res = await POST(req, defaultCtx);
     expect(res.status).toBe(201);
 
     // OrdersDB.add was called with the SERVER-side total, not the client's 0.01.
@@ -269,7 +272,7 @@ describe("POST /api/orders — HOTFIX-001 + HOTFIX-004", () => {
       { "x-tenant-id": TENANT_A },
     );
 
-    const res = await POST(req);
+    const res = await POST(req, defaultCtx);
     expect(res.status).toBe(400);
     const body = await res.json();
     expect(body.error).toBe("invalid_product");
@@ -310,7 +313,7 @@ describe("POST /api/orders — HOTFIX-001 + HOTFIX-004", () => {
       },
     );
 
-    const res = await POST(req);
+    const res = await POST(req, defaultCtx);
     expect(res.status).toBe(200);
     const body = await res.json();
     expect(body.id).toBe("ord-existing-abc");
@@ -381,7 +384,7 @@ describe("POST /api/orders — HOTFIX-001 + HOTFIX-004", () => {
       },
     );
 
-    const res = await POST(req);
+    const res = await POST(req, defaultCtx);
     expect(res.status).toBe(201); // NEW order, not the 200 replay path
     const body = await res.json();
 

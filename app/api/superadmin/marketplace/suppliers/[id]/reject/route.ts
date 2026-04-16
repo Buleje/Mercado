@@ -5,7 +5,7 @@ import { requirePlatformAPI } from "@/lib/superadmin-auth";
 import { applyRateLimit } from "@/lib/rate-limit";
 import { SupplierSignupDB } from "@/lib/db/supplier-signup.db";
 import { logActivity } from "@/lib/activity-logger";
-import { sendWhatsAppText } from "@/lib/whatsapp";
+import { sendWhatsAppQueued } from "@/lib/whatsapp";
 import { logger } from "@/lib/logger";
 import { newTraceId, toErrorPayload } from "@/lib/api-error";
 
@@ -37,7 +37,7 @@ export async function POST(
       return NextResponse.json({ error: "id requerido" }, { status: 400 });
     }
 
-    const body = await req.json().catch(() => null);
+    const body = await req.json().catch((err) => { logger.error("[superadmin/marketplace/suppliers/[id]/reject] parse JSON body failed", { error: String(err) }); return null; });
     if (!body) {
       return NextResponse.json({ error: "JSON inválido" }, { status: 400 });
     }
@@ -65,7 +65,7 @@ export async function POST(
       auth.username,
       undefined,
       "__platform__",
-    ).catch(() => {});
+    ).catch((err) => logger.error("[superadmin/marketplace/suppliers/[id]/reject] operation failed", { error: String(err) }));
 
     if (supplier.contactPhone) {
       const message =
@@ -74,12 +74,7 @@ export async function POST(
         `Lamentablemente tu solicitud no fue aprobada en este momento.\n\n` +
         `Motivo: ${parsed.data.reason}\n\n` +
         `Si quieres volver a postular, contáctanos directamente.`;
-      sendWhatsAppText(supplier.contactPhone, message).catch((e) =>
-        logger.warn("[supplier-reject] notify failed", {
-          error: String(e),
-          supplierId: id,
-        }),
-      );
+      sendWhatsAppQueued(supplier.contactPhone, message, { tenantId: "__platform__", context: "supplier-reject-notify" }).catch(() => {});
     }
 
     return NextResponse.json({ ok: true, supplier });
