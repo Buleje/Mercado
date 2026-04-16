@@ -79,15 +79,15 @@ type NCTemplate = {
 // ── Constants ─────────────────────────────────────────────────────────────────
 
 const STATUS_META: Record<NCStatus, { label: string; color: string; bg: string; dot: string }> = {
-  BORRADOR: { label: "Borrador", color: "text-gray-700 dark:text-gray-400", bg: "bg-gray-100 dark:bg-gray-800/50", dot: "bg-gray-400" },
-  EMITIDA:  { label: "Emitida",  color: "text-emerald-700 dark:text-emerald-400", bg: "bg-emerald-100 dark:bg-emerald-900/30", dot: "bg-emerald-500" },
-  ANULADA:  { label: "Anulada",  color: "text-red-700 dark:text-red-400", bg: "bg-red-100 dark:bg-red-900/30", dot: "bg-red-500" },
+  BORRADOR: { label: "Borrador", color: "text-gray-700", bg: "bg-gray-100", dot: "bg-gray-400" },
+  EMITIDA:  { label: "Emitida",  color: "text-emerald-700", bg: "bg-emerald-100", dot: "bg-emerald-500" },
+  ANULADA:  { label: "Anulada",  color: "text-red-700", bg: "bg-red-100", dot: "bg-red-500" },
 };
 
 const DOC_STYLE: Record<string, { bg: string; border: string; icon: string; badge: string; label: string; accent: string }> = {
-  factura: { bg: "bg-emerald-50 dark:bg-emerald-950/30", border: "border-emerald-200 dark:border-emerald-800/50", icon: "\u{1F4CB}", badge: "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-400", label: "Factura", accent: "text-emerald-600" },
-  boleta:  { bg: "bg-emerald-50 dark:bg-emerald-950/30", border: "border-emerald-200 dark:border-emerald-800/50", icon: "\u{1F4C4}", badge: "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-400", label: "Boleta", accent: "text-emerald-600" },
-  ticket:  { bg: "bg-amber-50 dark:bg-amber-950/30", border: "border-amber-200 dark:border-amber-800/50", icon: "\u{1F3AB}", badge: "bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-400", label: "Ticket", accent: "text-amber-600" },
+  factura: { bg: "bg-emerald-50", border: "border-emerald-200", icon: "\u{1F4CB}", badge: "bg-emerald-100 text-emerald-700", label: "Factura", accent: "text-emerald-600" },
+  boleta:  { bg: "bg-emerald-50", border: "border-emerald-200", icon: "\u{1F4C4}", badge: "bg-emerald-100 text-emerald-700", label: "Boleta", accent: "text-emerald-600" },
+  ticket:  { bg: "bg-amber-50", border: "border-amber-200", icon: "\u{1F3AB}", badge: "bg-amber-100 text-amber-700", label: "Ticket", accent: "text-amber-600" },
 };
 
 const PICKER_TABS: { id: PickerDocType; label: string; icon: string }[] = [
@@ -159,15 +159,15 @@ function StatusTimeline({ nc }: { nc: NotaCredito }) {
   ];
   return (
     <div className="relative pl-6 space-y-4">
-      <div className="absolute left-2.75 top-2 bottom-2 w-0.5 bg-gray-200 dark:bg-white/10" />
+      <div className="absolute left-2.75 top-2 bottom-2 w-0.5 bg-gray-200" />
       {steps.map((step, i) => (
         <div key={i} className="relative flex items-start gap-3">
           <div className={cn("absolute -left-3.25 w-4 h-4 rounded-full border-2 flex items-center justify-center",
-            step.done ? "bg-[#00B4A6] border-[#00B4A6]" : "bg-white dark:bg-gray-900 border-gray-300 dark:border-gray-600")}>
+            step.done ? "bg-primary border-primary" : "bg-white border-gray-300")}>
             {step.done && <span className="text-white text-[8px]">{"\u2713"}</span>}
           </div>
           <div>
-            <p className={cn("text-xs font-bold", step.done ? "text-gray-900 dark:text-white" : "text-gray-400")}>{step.label}</p>
+            <p className={cn("text-xs font-bold", step.done ? "text-gray-900" : "text-gray-400")}>{step.label}</p>
             {step.date && <p className="text-[10px] text-gray-400">{formatDateTime(step.date)}</p>}
             {step.by && <p className="text-[10px] text-gray-400">Por: {step.by}</p>}
           </div>
@@ -183,35 +183,35 @@ function NCCard({ nc, onSelect, selected, onToggle }: { nc: NotaCredito; onSelec
   const meta = STATUS_META[nc.status];
   return (
     <m.div layout initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }}
-      className={cn("bg-white dark:bg-card border rounded-xl p-4 cursor-pointer transition-all hover:shadow-sm",
-        selected ? "border-[#00B4A6] ring-2 ring-[#00B4A6]/20" : "border-gray-200 dark:border-card-border")}>
+      className={cn("bg-white border rounded-xl p-4 cursor-pointer transition-all hover:shadow-sm",
+        selected ? "border-primary ring-2 ring-primary/20" : "border-gray-200")}>
       <div className="flex items-start gap-3">
         <button onClick={(e) => { e.stopPropagation(); onToggle(); }}
           className={cn("w-5 h-5 rounded border-2 flex items-center justify-center shrink-0 mt-0.5 transition-colors",
-            selected ? "bg-[#00B4A6] border-[#00B4A6] text-white" : "border-gray-300 dark:border-gray-600")}>
+            selected ? "bg-primary border-primary text-white" : "border-gray-300")}>
           {selected && <span className="text-[10px]">{"\u2713"}</span>}
         </button>
         <div className="flex-1 min-w-0" onClick={onSelect}>
           <div className="flex items-center justify-between mb-1">
             <span className="flex items-center gap-1.5">
               <span className="text-lg">{getDocIcon(nc.numero)}</span>
-              <span className="font-mono text-xs font-bold text-gray-900 dark:text-white">{nc.numero}</span>
+              <span className="font-mono text-xs font-bold text-gray-900">{nc.numero}</span>
             </span>
             <span className={cn("flex items-center gap-1 px-2 py-0.5 rounded-lg text-[10px] font-bold", meta.bg, meta.color)}>
               <span className={cn("w-1.5 h-1.5 rounded-full", meta.dot)} />
               {meta.label}
             </span>
           </div>
-          <p className="text-xs text-gray-600 dark:text-gray-400 truncate mb-1">[{nc.codigoMotivo}] {nc.descripcionMotivo}</p>
+          <p className="text-xs text-gray-600 truncate mb-1">[{nc.codigoMotivo}] {nc.descripcionMotivo}</p>
           {nc.clienteNombre && <p className="text-[10px] text-gray-400 mb-1">{nc.clienteNombre}</p>}
           {nc.orderNumero && (
-            <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[9px] font-bold bg-emerald-50 dark:bg-emerald-900/20 text-emerald-600 dark:text-emerald-400 mb-2">
+            <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[9px] font-bold bg-emerald-50 text-emerald-600 mb-2">
               {"\u{1F517}"} {nc.orderNumero}
             </span>
           )}
-          <div className="flex items-center justify-between pt-2 border-t border-gray-100 dark:border-white/5">
+          <div className="flex items-center justify-between pt-2 border-t border-gray-100">
             <span className="text-[10px] text-gray-400">{formatDate(nc.createdAt)}</span>
-            <span className="text-sm font-bold text-gray-900 dark:text-white">{formatCurrency(nc.total)}</span>
+            <span className="text-sm font-bold text-gray-900">{formatCurrency(nc.total)}</span>
           </div>
         </div>
       </div>
@@ -227,9 +227,9 @@ function StaleDraftsBanner({ notas, onFilter }: { notas: NotaCredito[]; onFilter
   const stale = notas.filter(nc => nc.status === "BORRADOR" && (nowTs - new Date(nc.createdAt).getTime()) > 48 * 3600000);
   if (stale.length === 0) return null;
   return (
-    <div className="flex items-center gap-2 px-4 py-3 rounded-xl bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-800/50 text-sm">
+    <div className="flex items-center gap-2 px-4 py-3 rounded-xl bg-amber-50 border border-amber-200 text-sm">
       <AlertCircle className="h-4 w-4 text-amber-500 shrink-0" />
-      <span className="text-amber-800 dark:text-amber-300">
+      <span className="text-amber-800">
         Tienes <strong>{stale.length}</strong> borrador{stale.length !== 1 ? "es" : ""} sin emitir desde hace m{"\u00e1"}s de 48 horas.
       </span>
       <button onClick={onFilter} className="ml-auto text-xs font-bold text-amber-600 hover:underline shrink-0">Ver borradores</button>
@@ -247,15 +247,15 @@ function WizardProgress({ step }: { step: number }) {
       {WIZARD_STEPS.map((label, i) => (
         <div key={i} className="flex items-center gap-2 flex-1">
           <div className={cn("w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold transition-all duration-300",
-            i < step ? "bg-[#00B4A6] text-white " :
-            i === step ? "bg-[#00B4A6]/10 text-[#00B4A6] border-2 border-[#00B4A6]" :
-            "bg-gray-100 dark:bg-gray-800 text-gray-400")}>
+            i < step ? "bg-primary text-white " :
+            i === step ? "bg-primary/10 text-primary border-2 border-primary" :
+            "bg-gray-100 text-gray-400")}>
             {i < step ? "\u2713" : i + 1}
           </div>
-          <span className={cn("text-xs font-semibold hidden sm:block", i <= step ? "text-gray-900 dark:text-white" : "text-gray-400")}>{label}</span>
+          <span className={cn("text-xs font-semibold hidden sm:block", i <= step ? "text-gray-900" : "text-gray-400")}>{label}</span>
           {i < WIZARD_STEPS.length - 1 && (
-            <div className="flex-1 h-0.5 rounded-full overflow-hidden bg-gray-200 dark:bg-gray-700">
-              <m.div className="h-full bg-[#00B4A6]" initial={{ width: "0%" }} animate={{ width: i < step ? "100%" : "0%" }} transition={{ duration: 0.4 }} />
+            <div className="flex-1 h-0.5 rounded-full overflow-hidden bg-gray-200">
+              <m.div className="h-full bg-primary" initial={{ width: "0%" }} animate={{ width: i < step ? "100%" : "0%" }} transition={{ duration: 0.4 }} />
             </div>
           )}
         </div>
@@ -275,16 +275,16 @@ function SaleDocCard({ doc, isSelected, onSelect }: { doc: SaleDoc; isSelected: 
       className={cn(
         "w-full text-left rounded-xl border-2 p-4 transition-all duration-200 relative overflow-hidden",
         isSelected
-          ? "border-[#00B4A6] ring-2 ring-[#00B4A6]/20 bg-[#00B4A6]/5"
+          ? "border-primary ring-2 ring-primary/20 bg-primary/5"
           : cn(style.bg, style.border, "hover:shadow-lg")
       )}>
       {/* Color accent strip */}
-      <div className={cn("absolute top-0 left-0 w-1.5 h-full rounded-l-2xl", isSelected ? "bg-[#00B4A6]" :
+      <div className={cn("absolute top-0 left-0 w-1.5 h-full rounded-l-2xl", isSelected ? "bg-primary" :
         doc.comprobanteTipo === "factura" ? "bg-emerald-500" : doc.comprobanteTipo === "boleta" ? "bg-emerald-500" : "bg-amber-500"
       )} />
       <div className="flex items-start gap-3 pl-2">
         <div className={cn("w-12 h-12 rounded-xl flex items-center justify-center text-2xl shrink-0 ",
-          isSelected ? "bg-[#00B4A6]/10" : style.badge)}>
+          isSelected ? "bg-primary/10" : style.badge)}>
           {style.icon}
         </div>
         <div className="flex-1 min-w-0">
@@ -292,14 +292,14 @@ function SaleDocCard({ doc, isSelected, onSelect }: { doc: SaleDoc; isSelected: 
             <span className={cn("px-2 py-0.5 rounded-lg text-[10px] font-bold", style.badge)}>
               {style.label}
             </span>
-            <span className="font-mono text-xs font-bold text-gray-900 dark:text-white">
+            <span className="font-mono text-xs font-bold text-gray-900">
               {doc.comprobanteNumero || `#${doc.numero}`}
             </span>
           </div>
-          <div className="flex items-center gap-1.5 text-[11px] text-gray-500 dark:text-gray-400 mb-2">
+          <div className="flex items-center gap-1.5 text-[11px] text-gray-500 mb-2">
             <Calendar className="h-3 w-3 shrink-0" />
             <span>{doc.fecha ? formatDate(doc.fecha) : "\u2014"}</span>
-            <span className="text-gray-300 dark:text-gray-600">{"\u00b7"}</span>
+            <span className="text-gray-300">{"\u00b7"}</span>
             <span className="truncate">{doc.clienteNombre}</span>
             {doc.clienteDocumento && <span className="text-gray-300">({doc.clienteDocumento})</span>}
           </div>
@@ -308,15 +308,15 @@ function SaleDocCard({ doc, isSelected, onSelect }: { doc: SaleDoc; isSelected: 
               <Package className="h-3 w-3" />
               {doc.items.length} item{doc.items.length !== 1 ? "s" : ""}
             </span>
-            <span className={cn("text-base font-extrabold", isSelected ? "text-[#00B4A6]" : "text-gray-900 dark:text-white")}>
+            <span className={cn("text-base font-extrabold", isSelected ? "text-primary" : "text-gray-900")}>
               {formatCurrency(doc.total)}
             </span>
           </div>
           {/* Mini item preview */}
           {doc.items.length > 0 && (
-            <div className="mt-2 pt-2 border-t border-gray-200/50 dark:border-white/5 flex items-center gap-1 overflow-hidden">
+            <div className="mt-2 pt-2 border-t border-gray-200/50 flex items-center gap-1 overflow-hidden">
               {doc.items.slice(0, 3).map((it, i) => (
-                <span key={i} className="px-1.5 py-0.5 bg-white/70 dark:bg-white/5 rounded text-[9px] text-gray-500 truncate max-w-25 border border-gray-100 dark:border-white/5">
+                <span key={i} className="px-1.5 py-0.5 bg-white/70 rounded text-[9px] text-gray-500 truncate max-w-25 border border-gray-100">
                   {it.nombre}
                 </span>
               ))}
@@ -326,7 +326,7 @@ function SaleDocCard({ doc, isSelected, onSelect }: { doc: SaleDoc; isSelected: 
         </div>
         {isSelected && (
           <m.div initial={{ scale: 0 }} animate={{ scale: 1 }} transition={{ type: "spring", stiffness: 400, damping: 20 }}
-            className="w-7 h-7 rounded-full bg-[#00B4A6] text-white flex items-center justify-center shrink-0 ">
+            className="w-7 h-7 rounded-full bg-primary text-white flex items-center justify-center shrink-0 ">
             <span className="text-xs font-bold">{"\u2713"}</span>
           </m.div>
         )}
@@ -343,15 +343,15 @@ function MotivoCard({ motivo, selected, onClick }: { motivo: typeof MOTIVOS_SUNA
       className={cn(
         "text-left p-3 rounded-xl border-2 transition-all duration-200",
         selected
-          ? "border-[#00B4A6] bg-[#00B4A6]/5 ring-1 ring-[#00B4A6]/20 "
-          : "border-gray-200 dark:border-white/10 hover:border-gray-300 hover:bg-gray-50 dark:hover:bg-white/5"
+          ? "border-primary bg-primary/5 ring-1 ring-primary/20 "
+          : "border-gray-200 hover:border-gray-300 hover:bg-gray-50"
       )}>
       <div className="flex items-center gap-2 mb-1">
         <span className="text-lg">{motivo.icon}</span>
         <span className={cn("text-[10px] font-bold px-1.5 py-0.5 rounded",
-          selected ? "bg-[#00B4A6] text-white" : "bg-gray-100 dark:bg-gray-800 text-gray-500")}>{motivo.code}</span>
+          selected ? "bg-primary text-white" : "bg-gray-100 text-gray-500")}>{motivo.code}</span>
       </div>
-      <p className={cn("text-xs font-semibold mb-0.5", selected ? "text-[#00B4A6] dark:text-emerald-400" : "text-gray-700 dark:text-gray-300")}>{motivo.label}</p>
+      <p className={cn("text-xs font-semibold mb-0.5", selected ? "text-primary" : "text-gray-700")}>{motivo.label}</p>
       <p className="text-[10px] text-gray-400 leading-tight">{motivo.desc}</p>
     </button>
   );
@@ -367,9 +367,9 @@ function AmountBreakdown({ monto, igv, total, originalTotal }: { monto: number; 
         <div>
           <div className="flex justify-between text-xs mb-1.5">
             <span className="text-gray-400">NC respecto al documento original</span>
-            <span className="font-bold text-gray-700 dark:text-gray-300">{pct.toFixed(0)}%</span>
+            <span className="font-bold text-gray-700">{pct.toFixed(0)}%</span>
           </div>
-          <div className="h-3 bg-gray-100 dark:bg-gray-800 rounded-full overflow-hidden">
+          <div className="h-3 bg-gray-100 rounded-full overflow-hidden">
             <m.div initial={{ width: 0 }} animate={{ width: `${pct}%` }} transition={{ duration: 0.6, ease: "easeOut" }}
               className="h-full rounded-full bg-linear-to-r from-red-400 to-red-600" />
           </div>
@@ -380,15 +380,15 @@ function AmountBreakdown({ monto, igv, total, originalTotal }: { monto: number; 
         </div>
       )}
       <div className="grid grid-cols-3 gap-3">
-        <div className="bg-gray-50 dark:bg-white/5 rounded-xl p-3 text-center">
+        <div className="bg-gray-50 rounded-xl p-3 text-center">
           <p className="text-[10px] uppercase font-bold text-gray-400 mb-1">Monto</p>
-          <p className="text-lg font-extrabold text-gray-900 dark:text-white">{formatCurrency(monto)}</p>
+          <p className="text-lg font-extrabold text-gray-900">{formatCurrency(monto)}</p>
         </div>
-        <div className="bg-amber-50 dark:bg-amber-950/20 rounded-xl p-3 text-center">
+        <div className="bg-amber-50 rounded-xl p-3 text-center">
           <p className="text-[10px] uppercase font-bold text-amber-500 mb-1">IGV 18%</p>
           <p className="text-lg font-extrabold text-amber-600">{formatCurrency(igv)}</p>
         </div>
-        <div className="bg-red-50 dark:bg-red-950/20 rounded-xl p-3 text-center border border-red-200 dark:border-red-800/50">
+        <div className="bg-red-50 rounded-xl p-3 text-center border border-red-200">
           <p className="text-[10px] uppercase font-bold text-red-400 mb-1">Total NC</p>
           <p className="text-lg font-extrabold text-red-600">{formatCurrency(total)}</p>
         </div>
@@ -597,7 +597,7 @@ export default function NotasCreditoModule() {
 
   const SortIcon = ({ field }: { field: SortField }) => {
     if (sortField !== field) return <ArrowUpDown className="h-3 w-3 text-gray-300" />;
-    return sortDir === "asc" ? <ArrowUp className="h-3 w-3 text-[#00B4A6]" /> : <ArrowDown className="h-3 w-3 text-[#00B4A6]" />;
+    return sortDir === "asc" ? <ArrowUp className="h-3 w-3 text-primary" /> : <ArrowDown className="h-3 w-3 text-primary" />;
   };
 
   // ── Bulk operations ───────────────────────────────────────────────────────
@@ -812,10 +812,10 @@ export default function NotasCreditoModule() {
 
   // ── Semáforo de salud ─────────────────────────────────────────────────────
   const semaforo = useMemo(() => {
-    if (kpis.count === 0) return { nivel: "verde", label: "Normal", Icon: ShieldCheck, color: "text-emerald-500", bg: "bg-emerald-50 dark:bg-emerald-900/20" };
-    if (kpis.trend > 50) return { nivel: "rojo", label: "Alto", Icon: ShieldX, color: "text-red-500", bg: "bg-red-50 dark:bg-red-900/20" };
-    if (kpis.trend > 20) return { nivel: "amarillo", label: "Atención", Icon: ShieldAlert, color: "text-amber-500", bg: "bg-amber-50 dark:bg-amber-900/20" };
-    return { nivel: "verde", label: "Normal", Icon: ShieldCheck, color: "text-emerald-500", bg: "bg-emerald-50 dark:bg-emerald-900/20" };
+    if (kpis.count === 0) return { nivel: "verde", label: "Normal", Icon: ShieldCheck, color: "text-emerald-500", bg: "bg-emerald-50" };
+    if (kpis.trend > 50) return { nivel: "rojo", label: "Alto", Icon: ShieldX, color: "text-red-500", bg: "bg-red-50" };
+    if (kpis.trend > 20) return { nivel: "amarillo", label: "Atención", Icon: ShieldAlert, color: "text-amber-500", bg: "bg-amber-50" };
+    return { nivel: "verde", label: "Normal", Icon: ShieldCheck, color: "text-emerald-500", bg: "bg-emerald-50" };
   }, [kpis]);
 
   // ── Distribución por día de semana (mes actual) ───────────────────────────
@@ -851,20 +851,20 @@ export default function NotasCreditoModule() {
       {/* ── Header ─────────────────────────────────────────────────────── */}
       <div className="flex flex-col sm:flex-row sm:items-center gap-3">
         <div className="flex items-center gap-3 flex-1 min-w-0">
-          <div className="h-10 w-10 rounded-lg bg-[#00B4A6] text-white flex items-center justify-center  shrink-0">
+          <div className="h-10 w-10 rounded-lg bg-primary text-white flex items-center justify-center  shrink-0">
             <FileX className="h-5 w-5" />
           </div>
           <div>
-            <h1 className="text-xl font-bold text-gray-900 dark:text-white">Notas de Cr{"\u00e9"}dito</h1>
+            <h1 className="text-xl font-bold text-gray-900">Notas de Cr{"\u00e9"}dito</h1>
             <p className="text-sm text-gray-500">Centro de documentos {"\u2014"} anulaciones, devoluciones y ajustes</p>
           </div>
         </div>
         <div className="flex items-center gap-2">
-          <button onClick={() => setShowShortcuts(s => !s)} className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-white/5 text-gray-400 transition-colors hidden sm:block" title="Atajos de teclado">
+          <button onClick={() => setShowShortcuts(s => !s)} className="p-2 rounded-lg hover:bg-gray-100 text-gray-400 transition-colors hidden sm:block" title="Atajos de teclado">
             <Keyboard className="h-4 w-4" />
           </button>
           <button onClick={() => { setShowNew(true); setCreateError(null); setWizardStep(0); setPickerSearch(""); setPickerDocType("all"); }}
-            className="inline-flex items-center gap-2 px-4 py-2.5 rounded-lg text-sm font-bold text-white bg-[#00B4A6] hover:bg-[#009690]  transition-colors shrink-0">
+            className="inline-flex items-center gap-2 px-4 py-2.5 rounded-lg text-sm font-bold text-white bg-primary hover:bg-primary-dark  transition-colors shrink-0">
             <Plus className="h-4 w-4" />
             Nueva NC
           </button>
@@ -873,11 +873,11 @@ export default function NotasCreditoModule() {
 
       {/* ── Keyboard Shortcuts Panel ───────────────────────────────────── */}
       {showShortcuts && (
-        <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl p-3 text-xs text-gray-500">
+        <div className="bg-white border border-gray-200 rounded-xl p-3 text-xs text-gray-500">
           <div className="grid grid-cols-3 gap-2">
-            <div className="flex items-center gap-1.5"><kbd className="px-1.5 py-0.5 rounded bg-gray-100 dark:bg-gray-800 font-mono text-[10px]">N</kbd> Nueva NC</div>
-            <div className="flex items-center gap-1.5"><kbd className="px-1.5 py-0.5 rounded bg-gray-100 dark:bg-gray-800 font-mono text-[10px]">F</kbd> Buscar</div>
-            <div className="flex items-center gap-1.5"><kbd className="px-1.5 py-0.5 rounded bg-gray-100 dark:bg-gray-800 font-mono text-[10px]">Esc</kbd> Cerrar</div>
+            <div className="flex items-center gap-1.5"><kbd className="px-1.5 py-0.5 rounded bg-gray-100 font-mono text-[10px]">N</kbd> Nueva NC</div>
+            <div className="flex items-center gap-1.5"><kbd className="px-1.5 py-0.5 rounded bg-gray-100 font-mono text-[10px]">F</kbd> Buscar</div>
+            <div className="flex items-center gap-1.5"><kbd className="px-1.5 py-0.5 rounded bg-gray-100 font-mono text-[10px]">Esc</kbd> Cerrar</div>
           </div>
         </div>
       )}
@@ -890,9 +890,9 @@ export default function NotasCreditoModule() {
         <div className="space-y-3">
           {/* Semáforo de salud */}
           <div className={cn("flex items-center gap-2 px-4 py-2.5 rounded-xl border text-sm font-semibold", semaforo.bg,
-            semaforo.nivel === "rojo" ? "border-red-200 dark:border-red-800/50" :
-            semaforo.nivel === "amarillo" ? "border-amber-200 dark:border-amber-800/50" :
-            "border-emerald-200 dark:border-emerald-800/50")}>
+            semaforo.nivel === "rojo" ? "border-red-200" :
+            semaforo.nivel === "amarillo" ? "border-amber-200" :
+            "border-emerald-200")}>
             <semaforo.Icon className={cn("h-4 w-4 shrink-0", semaforo.color)} />
             <span className={semaforo.color}>Salud de devoluciones: <strong>{semaforo.label}</strong></span>
             <span className="text-gray-400 text-xs font-normal ml-1">
@@ -902,17 +902,17 @@ export default function NotasCreditoModule() {
             </span>
           </div>
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-            <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl p-3">
+            <div className="bg-white border border-gray-200 rounded-xl p-3">
               <p className="text-[10px] uppercase font-bold text-gray-400 mb-1">NC este mes</p>
-              <p className="text-2xl font-extrabold text-gray-900 dark:text-white">{kpis.count}</p>
+              <p className="text-2xl font-extrabold text-gray-900">{kpis.count}</p>
               <p className="text-[10px] text-gray-400 mt-0.5">{notas.filter(nc => nc.status === "BORRADOR").length} borradores pendientes</p>
             </div>
-            <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl p-3">
+            <div className="bg-white border border-gray-200 rounded-xl p-3">
               <p className="text-[10px] uppercase font-bold text-gray-400 mb-1">Monto devuelto</p>
               <p className="text-2xl font-extrabold text-red-600">{formatCurrency(kpis.total)}</p>
               <p className="text-[10px] text-gray-400 mt-0.5">solo NCs emitidas este mes</p>
             </div>
-            <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl p-3">
+            <div className="bg-white border border-gray-200 rounded-xl p-3">
               <p className="text-[10px] uppercase font-bold text-gray-400 mb-1">vs Mes anterior</p>
               <div className="flex items-center gap-1">
                 {kpis.trend > 0 ? <TrendingUp className="h-4 w-4 text-red-500" /> : <TrendingDown className="h-4 w-4 text-emerald-500" />}
@@ -920,9 +920,9 @@ export default function NotasCreditoModule() {
               </div>
               <p className="text-[10px] text-gray-400 mt-0.5">{kpis.trend > 0 ? "subió" : "bajó"} respecto al mes pasado</p>
             </div>
-            <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl p-3">
+            <div className="bg-white border border-gray-200 rounded-xl p-3">
               <p className="text-[10px] uppercase font-bold text-gray-400 mb-1">Top motivo</p>
-              <p className="text-sm font-bold text-gray-900 dark:text-white truncate">{kpis.topMotivo ? kpis.topMotivo[0] : "\u2014"}</p>
+              <p className="text-sm font-bold text-gray-900 truncate">{kpis.topMotivo ? kpis.topMotivo[0] : "\u2014"}</p>
               {kpis.topMotivo && <p className="text-[10px] text-gray-400">{kpis.topMotivo[1]} casos este mes</p>}
             </div>
           </div>
@@ -932,8 +932,8 @@ export default function NotasCreditoModule() {
       {/* ── Trend Chart + Donut + Weekday ──────────────────────────────── */}
       {!loading && trendData.length > 2 && (
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-3">
-          <div className="lg:col-span-2 bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl p-4">
-            <p className="text-xs font-bold text-gray-700 dark:text-gray-300 mb-2">NC por semana ({"\u00fa"}ltimos 3 meses)</p>
+          <div className="lg:col-span-2 bg-white border border-gray-200 rounded-xl p-4">
+            <p className="text-xs font-bold text-gray-700 mb-2">NC por semana ({"\u00fa"}ltimos 3 meses)</p>
             <ResponsiveContainer width="100%" height={130}>
               <LineChart data={trendData}>
                 <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
@@ -946,8 +946,8 @@ export default function NotasCreditoModule() {
           </div>
           <div className="flex flex-col gap-3">
             {donutData.length > 1 && (
-              <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl p-4 flex-1">
-                <p className="text-xs font-bold text-gray-700 dark:text-gray-300 mb-1">Motivos del mes</p>
+              <div className="bg-white border border-gray-200 rounded-xl p-4 flex-1">
+                <p className="text-xs font-bold text-gray-700 mb-1">Motivos del mes</p>
                 <ResponsiveContainer width="100%" height={80}>
                   <PieChart>
                     <Pie data={donutData} dataKey="value" cx="50%" cy="50%" innerRadius={20} outerRadius={36} paddingAngle={2}>
@@ -958,7 +958,7 @@ export default function NotasCreditoModule() {
                 </ResponsiveContainer>
                 <div className="space-y-0.5">
                   {donutData.map((d, i) => (
-                    <div key={i} className="flex items-center gap-1.5 text-[10px] text-gray-600 dark:text-gray-400">
+                    <div key={i} className="flex items-center gap-1.5 text-[10px] text-gray-600">
                       <div className="h-2 w-2 rounded-full shrink-0" style={{ backgroundColor: d.color }} />
                       <span className="truncate">{d.name}: {d.value}</span>
                     </div>
@@ -967,8 +967,8 @@ export default function NotasCreditoModule() {
               </div>
             )}
             {/* Días con más devoluciones */}
-            <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl p-4 flex-1">
-              <p className="text-xs font-bold text-gray-700 dark:text-gray-300 mb-1">Días con más devoluciones</p>
+            <div className="bg-white border border-gray-200 rounded-xl p-4 flex-1">
+              <p className="text-xs font-bold text-gray-700 mb-1">Días con más devoluciones</p>
               <ResponsiveContainer width="100%" height={80}>
                 <BarChart data={weekdayData} margin={{ top: 0, right: 0, bottom: 0, left: -20 }}>
                   <XAxis dataKey="name" tick={{ fontSize: 9 }} />
@@ -990,7 +990,7 @@ export default function NotasCreditoModule() {
             return (
               <button key={dt.id} onClick={() => setDocTypeFilter(dt.id)}
                 className={cn("flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold transition-colors whitespace-nowrap",
-                  docTypeFilter === dt.id ? "bg-[#00B4A6] text-white" : "bg-gray-100 dark:bg-white/5 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-white/10")}>
+                  docTypeFilter === dt.id ? "bg-primary text-white" : "bg-gray-100 text-gray-600 hover:bg-gray-200")}>
                 <Icon className="h-3.5 w-3.5" />
                 {dt.label}
               </button>
@@ -1003,7 +1003,7 @@ export default function NotasCreditoModule() {
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
             <input ref={searchRef} type="text" placeholder="Buscar por n\u00famero, cliente, RUC/DNI..."
               aria-label="Buscar documentos" value={search} onChange={e => setSearch(e.target.value)}
-              className="w-full pl-9 pr-3 py-2 rounded-lg border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 text-sm text-gray-900 dark:text-white placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#00B4A6]/30" />
+              className="w-full pl-9 pr-3 py-2 rounded-lg border border-gray-200 bg-white text-sm text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-primary/30" />
           </div>
           <div className="flex gap-1 items-center">
             {(["", "BORRADOR", "EMITIDA", "ANULADA"] as const).map(s => {
@@ -1011,22 +1011,22 @@ export default function NotasCreditoModule() {
               return (
                 <button key={s} onClick={() => setStatusFilter(s)}
                   className={cn("shrink-0 px-3 py-2 rounded-xl text-xs font-bold transition-colors inline-flex items-center gap-1.5",
-                    statusFilter === s ? "bg-[#00B4A6] text-white" : "bg-gray-100 dark:bg-white/5 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-white/10")}>
+                    statusFilter === s ? "bg-primary text-white" : "bg-gray-100 text-gray-600 hover:bg-gray-200")}>
                   {s === "" ? "Todos" : STATUS_META[s].label}
-                  {count > 0 && <span className={cn("px-1.5 py-0.5 rounded-full text-[9px] font-bold min-w-4.5 text-center", statusFilter === s ? "bg-white/20" : "bg-gray-200 dark:bg-gray-700")}>{count}</span>}
+                  {count > 0 && <span className={cn("px-1.5 py-0.5 rounded-full text-[9px] font-bold min-w-4.5 text-center", statusFilter === s ? "bg-white/20" : "bg-gray-200")}>{count}</span>}
                 </button>
               );
             })}
             <button onClick={() => setShowAdvFilters(s => !s)}
-              className={cn("p-2 rounded-lg transition-colors relative", showAdvFilters ? "bg-[#00B4A6] text-white" : "bg-gray-100 dark:bg-white/5 text-gray-500 hover:bg-gray-200")}>
+              className={cn("p-2 rounded-lg transition-colors relative", showAdvFilters ? "bg-primary text-white" : "bg-gray-100 text-gray-500 hover:bg-gray-200")}>
               <Filter className="h-4 w-4" />
               {activeFilterCount > 0 && <span className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-red-500 text-white text-[9px] font-bold flex items-center justify-center">{activeFilterCount}</span>}
             </button>
-            <div className="flex items-center gap-0.5 bg-gray-100 dark:bg-white/5 rounded-xl p-1">
+            <div className="flex items-center gap-0.5 bg-gray-100 rounded-xl p-1">
               {([["table", LayoutList], ["cards", LayoutGrid], ["kanban", Kanban]] as const).map(([mode, Icon]) => (
                 <button key={mode} onClick={() => setViewMode(mode)}
                   title={mode === "table" ? "Tabla" : mode === "cards" ? "Tarjetas" : "Kanban"}
-                  className={cn("p-1.5 rounded-lg transition-colors", viewMode === mode ? "bg-white dark:bg-gray-700 text-[#00B4A6] " : "text-gray-500 hover:text-gray-700 dark:hover:text-gray-300")}>
+                  className={cn("p-1.5 rounded-lg transition-colors", viewMode === mode ? "bg-white text-primary " : "text-gray-500 hover:text-gray-700")}>
                   <Icon className="h-3.5 w-3.5" />
                 </button>
               ))}
@@ -1037,26 +1037,26 @@ export default function NotasCreditoModule() {
         <AnimatePresence>
           {showAdvFilters && (
             <m.div initial={{ height: 0, opacity: 0 }} animate={{ height: "auto", opacity: 1 }} exit={{ height: 0, opacity: 0 }} className="overflow-hidden">
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 bg-gray-50 dark:bg-white/5 rounded-xl p-3">
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 bg-gray-50 rounded-xl p-3">
                 <div>
                   <label className="text-[10px] font-bold text-gray-400 block mb-1">Desde</label>
                   <input type="date" value={dateFrom} onChange={e => setDateFrom(e.target.value)}
-                    className="w-full px-2 py-1.5 rounded-lg border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 text-xs text-gray-900 dark:text-white" />
+                    className="w-full px-2 py-1.5 rounded-lg border border-gray-200 bg-white text-xs text-gray-900" />
                 </div>
                 <div>
                   <label className="text-[10px] font-bold text-gray-400 block mb-1">Hasta</label>
                   <input type="date" value={dateTo} onChange={e => setDateTo(e.target.value)}
-                    className="w-full px-2 py-1.5 rounded-lg border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 text-xs text-gray-900 dark:text-white" />
+                    className="w-full px-2 py-1.5 rounded-lg border border-gray-200 bg-white text-xs text-gray-900" />
                 </div>
                 <div>
                   <label className="text-[10px] font-bold text-gray-400 block mb-1">Monto min</label>
                   <input type="number" value={minAmount} onChange={e => setMinAmount(e.target.value)} placeholder="0"
-                    className="w-full px-2 py-1.5 rounded-lg border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 text-xs text-gray-900 dark:text-white" />
+                    className="w-full px-2 py-1.5 rounded-lg border border-gray-200 bg-white text-xs text-gray-900" />
                 </div>
                 <div>
                   <label className="text-[10px] font-bold text-gray-400 block mb-1">Monto max</label>
                   <input type="number" value={maxAmount} onChange={e => setMaxAmount(e.target.value)} placeholder={"\u221e"}
-                    className="w-full px-2 py-1.5 rounded-lg border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 text-xs text-gray-900 dark:text-white" />
+                    className="w-full px-2 py-1.5 rounded-lg border border-gray-200 bg-white text-xs text-gray-900" />
                 </div>
               </div>
             </m.div>
@@ -1068,16 +1068,16 @@ export default function NotasCreditoModule() {
       <AnimatePresence>
         {someChecked && (
           <m.div initial={{ height: 0, opacity: 0 }} animate={{ height: "auto", opacity: 1 }} exit={{ height: 0, opacity: 0 }}>
-            <div className="flex items-center gap-3 px-4 py-3 bg-[#00B4A6]/5 border border-[#00B4A6]/20 rounded-xl">
-              <CheckSquare className="h-4 w-4 text-[#00B4A6]" />
-              <span className="text-sm font-bold text-[#00B4A6]">{checkedIds.size} seleccionado{checkedIds.size !== 1 ? "s" : ""}</span>
+            <div className="flex items-center gap-3 px-4 py-3 bg-primary/5 border border-primary/20 rounded-xl">
+              <CheckSquare className="h-4 w-4 text-primary" />
+              <span className="text-sm font-bold text-primary">{checkedIds.size} seleccionado{checkedIds.size !== 1 ? "s" : ""}</span>
               <div className="flex-1" />
               {filteredNotas.filter(nc => checkedIds.has(nc.id) && nc.status === "BORRADOR").length > 0 && (
                 <button onClick={handleBulkEmit} className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold bg-emerald-600 text-white hover:bg-emerald-700 transition-colors">
                   <Send className="h-3.5 w-3.5" />Emitir {filteredNotas.filter(nc => checkedIds.has(nc.id) && nc.status === "BORRADOR").length} NC
                 </button>
               )}
-              <button onClick={exportCSV} className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold bg-white dark:bg-card border border-gray-200 dark:border-card-border text-gray-700 dark:text-gray-300 hover:bg-gray-50 transition-colors">
+              <button onClick={exportCSV} className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold bg-white border border-gray-200 text-gray-700 hover:bg-gray-50 transition-colors">
                 <Download className="h-3.5 w-3.5" />Exportar CSV
               </button>
               <button onClick={() => setCheckedIds(new Set())} className="text-xs text-gray-400 hover:text-gray-600">Deseleccionar</button>
@@ -1093,39 +1093,39 @@ export default function NotasCreditoModule() {
             const col = filteredNotas.filter(nc => nc.status === status);
             const meta = STATUS_META[status];
             return (
-              <div key={status} className="bg-gray-50 dark:bg-white/3 border border-gray-200 dark:border-card-border rounded-xl overflow-hidden">
-                <div className={cn("px-4 py-3 flex items-center gap-2 border-b border-gray-200 dark:border-white/5", meta.bg)}>
+              <div key={status} className="bg-gray-50 border border-gray-200 rounded-xl overflow-hidden">
+                <div className={cn("px-4 py-3 flex items-center gap-2 border-b border-gray-200", meta.bg)}>
                   <span className={cn("w-2 h-2 rounded-full shrink-0", meta.dot)} />
                   <span className={cn("text-xs font-bold", meta.color)}>{meta.label}</span>
-                  <span className={cn("ml-auto px-2 py-0.5 rounded-full text-[10px] font-bold bg-white/60 dark:bg-white/10", meta.color)}>{col.length}</span>
+                  <span className={cn("ml-auto px-2 py-0.5 rounded-full text-[10px] font-bold bg-white/60", meta.color)}>{col.length}</span>
                 </div>
                 <div className="p-2 space-y-2 max-h-130 overflow-y-auto">
                   {col.length === 0 ? (
-                    <div className="text-center py-8 text-gray-300 dark:text-gray-600">
+                    <div className="text-center py-8 text-gray-300">
                       <p className="text-2xl mb-1">{"\u{1F4C4}"}</p>
                       <p className="text-[10px]">Sin NCs en {meta.label}</p>
                     </div>
                   ) : col.map(nc => (
                     <m.div key={nc.id} layout initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }}
                       onClick={() => setSelected(nc)}
-                      className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-lg p-3 cursor-pointer hover:shadow-sm hover:border-[#00B4A6]/40 transition-all">
+                      className="bg-white border border-gray-200 rounded-lg p-3 cursor-pointer hover:shadow-sm hover:border-primary/40 transition-all">
                       <div className="flex items-center justify-between mb-1.5">
                         <span className="font-mono text-[10px] font-bold text-gray-500">{nc.numero}</span>
-                        <span className="text-sm font-extrabold text-gray-900 dark:text-white">{formatCurrency(nc.total)}</span>
+                        <span className="text-sm font-extrabold text-gray-900">{formatCurrency(nc.total)}</span>
                       </div>
-                      <p className="text-xs text-gray-600 dark:text-gray-400 truncate mb-1">[{nc.codigoMotivo}] {nc.descripcionMotivo}</p>
+                      <p className="text-xs text-gray-600 truncate mb-1">[{nc.codigoMotivo}] {nc.descripcionMotivo}</p>
                       {nc.clienteNombre && <p className="text-[10px] text-gray-400 truncate">{nc.clienteNombre}</p>}
-                      <div className="flex items-center justify-between mt-2 pt-2 border-t border-gray-100 dark:border-white/5">
+                      <div className="flex items-center justify-between mt-2 pt-2 border-t border-gray-100">
                         <span className="text-[9px] text-gray-400">{formatDate(nc.createdAt)}</span>
                         <div className="flex gap-1">
                           {nc.status === "BORRADOR" && (
                             <button onClick={(e) => { e.stopPropagation(); handleEmitSunat(nc); }}
-                              className="p-1 rounded hover:bg-emerald-50 dark:hover:bg-emerald-900/20 text-emerald-500" title="Emitir">
+                              className="p-1 rounded hover:bg-emerald-50 text-emerald-500" title="Emitir">
                               <Send className="h-3 w-3" />
                             </button>
                           )}
                           <button onClick={(e) => { e.stopPropagation(); handleDuplicate(nc); }}
-                            className="p-1 rounded hover:bg-gray-100 dark:hover:bg-white/5 text-gray-400" title="Duplicar">
+                            className="p-1 rounded hover:bg-gray-100 text-gray-400" title="Duplicar">
                             <Copy className="h-3 w-3" />
                           </button>
                         </div>
@@ -1141,21 +1141,21 @@ export default function NotasCreditoModule() {
 
       {/* ── Table / Cards View ─────────────────────────────────────────── */}
       {viewMode !== "kanban" && (
-      <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl overflow-hidden ">
+      <div className="bg-white border border-gray-200 rounded-xl overflow-hidden ">
         {loading ? (
-          <div className="flex items-center justify-center py-12"><Loader2 className="h-6 w-6 animate-spin text-[#00B4A6]" /></div>
+          <div className="flex items-center justify-center py-12"><Loader2 className="h-6 w-6 animate-spin text-primary" /></div>
         ) : error ? (
           <div className="flex flex-col items-center justify-center py-12 gap-2">
             <AlertTriangle className="h-8 w-8 text-red-400" />
-            <p className="text-sm text-red-600 dark:text-red-400">{error}</p>
-            <button onClick={fetchNotas} className="text-xs text-[#00B4A6] hover:underline font-semibold mt-1">Reintentar</button>
+            <p className="text-sm text-red-600">{error}</p>
+            <button onClick={fetchNotas} className="text-xs text-primary hover:underline font-semibold mt-1">Reintentar</button>
           </div>
         ) : filteredNotas.length === 0 ? (
           <div className="text-center py-16 px-4">
             <div className="text-6xl mb-4">{"\u{1F4C4}"}</div>
-            <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">Sin notas de cr{"\u00e9"}dito</h3>
+            <h3 className="text-lg font-semibold text-gray-900 mb-2">Sin notas de cr{"\u00e9"}dito</h3>
             <p className="text-sm text-gray-500 mb-6 max-w-md mx-auto">Las notas de cr{"\u00e9"}dito se crean al hacer devoluciones, anulaciones o ajustes a documentos existentes</p>
-            <button onClick={() => { setShowNew(true); setCreateError(null); setWizardStep(0); }} className="bg-[#00B4A6] text-white px-6 py-2.5 rounded-lg font-medium hover:bg-[#009690]">Crear NC</button>
+            <button onClick={() => { setShowNew(true); setCreateError(null); setWizardStep(0); }} className="bg-primary text-white px-6 py-2.5 rounded-lg font-medium hover:bg-primary-dark">Crear NC</button>
           </div>
         ) : viewMode === "cards" ? (
           <div className="p-4 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
@@ -1170,25 +1170,25 @@ export default function NotasCreditoModule() {
             <div className="overflow-x-auto">
               <table className="w-full min-w-175 text-sm">
                 <thead>
-                  <tr className="border-b border-gray-100 dark:border-white/5 text-left">
+                  <tr className="border-b border-gray-100 text-left">
                     <th className="px-3 py-3 w-10">
                       <button onClick={toggleAll} className={cn("w-5 h-5 rounded border-2 flex items-center justify-center transition-colors",
-                        allChecked ? "bg-[#00B4A6] border-[#00B4A6] text-white" : "border-gray-300 dark:border-gray-600")}>
+                        allChecked ? "bg-primary border-primary text-white" : "border-gray-300")}>
                         {allChecked && <span className="text-[10px]">{"\u2713"}</span>}
                       </button>
                     </th>
-                    <th className="px-3 py-3 font-semibold text-gray-500 dark:text-gray-400 cursor-pointer select-none" onClick={() => toggleSort("numero")}>
+                    <th className="px-3 py-3 font-semibold text-gray-500 cursor-pointer select-none" onClick={() => toggleSort("numero")}>
                       <span className="flex items-center gap-1">Documento <SortIcon field="numero" /></span>
                     </th>
-                    <th className="px-3 py-3 font-semibold text-gray-500 dark:text-gray-400 hidden sm:table-cell">Referencia</th>
-                    <th className="px-3 py-3 font-semibold text-gray-500 dark:text-gray-400">Motivo</th>
-                    <th className="px-3 py-3 font-semibold text-gray-500 dark:text-gray-400 text-right cursor-pointer select-none" onClick={() => toggleSort("total")}>
+                    <th className="px-3 py-3 font-semibold text-gray-500 hidden sm:table-cell">Referencia</th>
+                    <th className="px-3 py-3 font-semibold text-gray-500">Motivo</th>
+                    <th className="px-3 py-3 font-semibold text-gray-500 text-right cursor-pointer select-none" onClick={() => toggleSort("total")}>
                       <span className="flex items-center gap-1 justify-end">Total <SortIcon field="total" /></span>
                     </th>
-                    <th className="px-3 py-3 font-semibold text-gray-500 dark:text-gray-400 cursor-pointer select-none" onClick={() => toggleSort("status")}>
+                    <th className="px-3 py-3 font-semibold text-gray-500 cursor-pointer select-none" onClick={() => toggleSort("status")}>
                       <span className="flex items-center gap-1">Estado <SortIcon field="status" /></span>
                     </th>
-                    <th className="px-3 py-3 font-semibold text-gray-500 dark:text-gray-400 hidden md:table-cell cursor-pointer select-none" onClick={() => toggleSort("createdAt")}>
+                    <th className="px-3 py-3 font-semibold text-gray-500 hidden md:table-cell cursor-pointer select-none" onClick={() => toggleSort("createdAt")}>
                       <span className="flex items-center gap-1">Fecha <SortIcon field="createdAt" /></span>
                     </th>
                     <th className="px-3 py-3 w-10" />
@@ -1198,52 +1198,52 @@ export default function NotasCreditoModule() {
                   {paginated.map(nc => {
                     const meta = STATUS_META[nc.status];
                     return (
-                      <tr key={nc.id} className="border-b border-gray-50 dark:border-white/5 hover:bg-gray-50 dark:hover:bg-white/5 transition-colors group">
+                      <tr key={nc.id} className="border-b border-gray-50 hover:bg-gray-50 transition-colors group">
                         <td className="px-3 py-3">
                           <button onClick={() => toggleCheck(nc.id)} className={cn("w-5 h-5 rounded border-2 flex items-center justify-center transition-colors",
-                            checkedIds.has(nc.id) ? "bg-[#00B4A6] border-[#00B4A6] text-white" : "border-gray-300 dark:border-gray-600")}>
+                            checkedIds.has(nc.id) ? "bg-primary border-primary text-white" : "border-gray-300")}>
                             {checkedIds.has(nc.id) && <span className="text-[10px]">{"\u2713"}</span>}
                           </button>
                         </td>
                         <td className="px-3 py-3 cursor-pointer" onClick={() => setSelected(nc)}>
                           <span className="flex items-center gap-2">
                             <span className="text-base">{getDocIcon(nc.numero)}</span>
-                            <span className="font-mono text-xs font-bold text-gray-900 dark:text-white">{nc.numero}</span>
+                            <span className="font-mono text-xs font-bold text-gray-900">{nc.numero}</span>
                           </span>
                           {nc.clienteNombre && <p className="text-[10px] text-gray-400 mt-0.5">{nc.clienteNombre}</p>}
                         </td>
                         <td className="px-3 py-3 hidden sm:table-cell">
                           {nc.orderNumero ? (
-                            <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-bold bg-emerald-50 dark:bg-emerald-900/20 text-emerald-600 dark:text-emerald-400">
+                            <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-bold bg-emerald-50 text-emerald-600">
                               {"\u{1F517}"} {nc.orderNumero}
                             </span>
                           ) : <span className="text-gray-300">{"\u2014"}</span>}
                         </td>
-                        <td className="px-3 py-3 text-gray-700 dark:text-gray-300 truncate max-w-45">
+                        <td className="px-3 py-3 text-gray-700 truncate max-w-45">
                           <span className="text-xs text-gray-400 mr-1">[{nc.codigoMotivo}]</span>
                           {nc.descripcionMotivo}
                         </td>
-                        <td className="px-3 py-3 text-right font-bold text-gray-900 dark:text-white">{formatCurrency(nc.total)}</td>
+                        <td className="px-3 py-3 text-right font-bold text-gray-900">{formatCurrency(nc.total)}</td>
                         <td className="px-3 py-3">
                           <span className={cn("inline-flex items-center gap-1 px-2 py-1 rounded-lg text-xs font-bold", meta.bg, meta.color)}>
                             <span className={cn("w-1.5 h-1.5 rounded-full", meta.dot)} />
                             {meta.label}
                           </span>
                         </td>
-                        <td className="px-3 py-3 text-gray-500 dark:text-gray-400 hidden md:table-cell text-xs">{formatDate(nc.createdAt)}</td>
+                        <td className="px-3 py-3 text-gray-500 hidden md:table-cell text-xs">{formatDate(nc.createdAt)}</td>
                         <td className="px-3 py-3">
                           <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                             {nc.status === "BORRADOR" && (
-                              <button onClick={(e) => { e.stopPropagation(); handleEmitSunat(nc); }} className="p-1 rounded-lg hover:bg-emerald-50 dark:hover:bg-emerald-900/20 text-emerald-600" title="Emitir">
+                              <button onClick={(e) => { e.stopPropagation(); handleEmitSunat(nc); }} className="p-1 rounded-lg hover:bg-emerald-50 text-emerald-600" title="Emitir">
                                 <Send className="h-3.5 w-3.5" />
                               </button>
                             )}
                             {nc.status !== "ANULADA" && (
-                              <button onClick={(e) => { e.stopPropagation(); handleAnular(nc); }} className="p-1 rounded-lg hover:bg-red-50 dark:hover:bg-red-900/20 text-red-500" title="Anular">
+                              <button onClick={(e) => { e.stopPropagation(); handleAnular(nc); }} className="p-1 rounded-lg hover:bg-red-50 text-red-500" title="Anular">
                                 <Trash2 className="h-3.5 w-3.5" />
                               </button>
                             )}
-                            <button onClick={(e) => { e.stopPropagation(); handleDuplicate(nc); }} className="p-1 rounded-lg hover:bg-gray-100 dark:hover:bg-white/5 text-gray-400" title="Duplicar">
+                            <button onClick={(e) => { e.stopPropagation(); handleDuplicate(nc); }} className="p-1 rounded-lg hover:bg-gray-100 text-gray-400" title="Duplicar">
                               <Copy className="h-3.5 w-3.5" />
                             </button>
                           </div>
@@ -1255,11 +1255,11 @@ export default function NotasCreditoModule() {
               </table>
             </div>
             {totalPages > 1 && (
-              <div className="flex items-center justify-between px-4 py-3 border-t border-gray-100 dark:border-white/5">
-                <p className="text-xs text-gray-500 dark:text-gray-400">{filteredNotas.length} doc{filteredNotas.length !== 1 ? "s" : ""} {"\u2014"} P{"\u00e1"}g. {page}/{totalPages}</p>
+              <div className="flex items-center justify-between px-4 py-3 border-t border-gray-100">
+                <p className="text-xs text-gray-500">{filteredNotas.length} doc{filteredNotas.length !== 1 ? "s" : ""} {"\u2014"} P{"\u00e1"}g. {page}/{totalPages}</p>
                 <div className="flex gap-1">
-                  <button disabled={page <= 1} onClick={() => setPage(p => p - 1)} className="p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-white/5 disabled:opacity-30"><ChevronLeft className="h-4 w-4" /></button>
-                  <button disabled={page >= totalPages} onClick={() => setPage(p => p + 1)} className="p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-white/5 disabled:opacity-30"><ChevronRight className="h-4 w-4" /></button>
+                  <button disabled={page <= 1} onClick={() => setPage(p => p - 1)} className="p-1.5 rounded-lg hover:bg-gray-100 disabled:opacity-30"><ChevronLeft className="h-4 w-4" /></button>
+                  <button disabled={page >= totalPages} onClick={() => setPage(p => p + 1)} className="p-1.5 rounded-lg hover:bg-gray-100 disabled:opacity-30"><ChevronRight className="h-4 w-4" /></button>
                 </div>
               </div>
             )}
@@ -1276,17 +1276,17 @@ export default function NotasCreditoModule() {
           <>
             <m.div key="nc-backdrop" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-40 bg-black/40 backdrop-blur-sm" onClick={() => setSelected(null)} />
             <m.div key="nc-panel" initial={{ x: "100%" }} animate={{ x: 0 }} exit={{ x: "100%" }} transition={{ type: "spring", damping: 25, stiffness: 250 }}
-              className="fixed inset-y-0 right-0 z-50 w-full max-w-lg bg-white dark:bg-card border-l border-gray-200 dark:border-card-border overflow-y-auto">
+              className="fixed inset-y-0 right-0 z-50 w-full max-w-lg bg-white border-l border-gray-200 overflow-y-auto">
               <div className="p-4 sm:p-6 space-y-5">
                 <div className="flex items-center justify-between">
                   <div>
-                    <h3 className="text-lg font-bold text-gray-900 dark:text-white flex items-center gap-2">
+                    <h3 className="text-lg font-bold text-gray-900 flex items-center gap-2">
                       <span className="text-xl">{getDocIcon(selected.numero)}</span>
                       NC {selected.numero}
                     </h3>
                     <p className="text-xs text-gray-400">Creada {formatDateTime(selected.createdAt)}</p>
                   </div>
-                  <button onClick={() => setSelected(null)} className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-white/5 transition-colors">
+                  <button onClick={() => setSelected(null)} className="p-2 rounded-lg hover:bg-gray-100 transition-colors">
                     <X className="h-5 w-5 text-gray-500" />
                   </button>
                 </div>
@@ -1296,7 +1296,7 @@ export default function NotasCreditoModule() {
                     {STATUS_META[selected.status].label}
                   </span>
                   {selected.orderNumero && (
-                    <span className="inline-flex items-center gap-1 px-2 py-1 rounded-lg text-[10px] font-bold bg-emerald-50 dark:bg-emerald-900/20 text-emerald-600 dark:text-emerald-400">
+                    <span className="inline-flex items-center gap-1 px-2 py-1 rounded-lg text-[10px] font-bold bg-emerald-50 text-emerald-600">
                       {"\u{1F517}"} Vinculada a {selected.orderNumero}
                     </span>
                   )}
@@ -1307,74 +1307,74 @@ export default function NotasCreditoModule() {
                     </button>
                   )}
                   {selected.status !== "ANULADA" && (
-                    <button onClick={() => handleAnular(selected)} className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold bg-red-50 dark:bg-red-900/20 text-red-600 hover:bg-red-100 transition-colors">
+                    <button onClick={() => handleAnular(selected)} className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold bg-red-50 text-red-600 hover:bg-red-100 transition-colors">
                       <Trash2 className="h-3.5 w-3.5" />Anular
                     </button>
                   )}
-                  <button onClick={() => handleDuplicate(selected)} className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold bg-gray-100 dark:bg-white/5 text-gray-600 dark:text-gray-400 hover:bg-gray-200 transition-colors">
+                  <button onClick={() => handleDuplicate(selected)} className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold bg-gray-100 text-gray-600 hover:bg-gray-200 transition-colors">
                     <Copy className="h-3.5 w-3.5" />Duplicar
                   </button>
-                  <button onClick={() => sendWhatsApp(selected)} className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-400 hover:bg-green-100 transition-colors" title="Enviar por WhatsApp">
+                  <button onClick={() => sendWhatsApp(selected)} className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold bg-green-50 text-green-700 hover:bg-green-100 transition-colors" title="Enviar por WhatsApp">
                     <MessageCircle className="h-3.5 w-3.5" />WhatsApp
                   </button>
-                  <button onClick={() => exportPDF(selected)} className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold bg-emerald-50 dark:bg-emerald-900/20 text-emerald-700 dark:text-emerald-400 hover:bg-emerald-100 transition-colors" title="Descargar PDF">
+                  <button onClick={() => exportPDF(selected)} className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold bg-emerald-50 text-emerald-700 hover:bg-emerald-100 transition-colors" title="Descargar PDF">
                     <FileDown className="h-3.5 w-3.5" />PDF
                   </button>
                 </div>
 
-                <div className="bg-gray-50 dark:bg-white/5 rounded-xl p-4 space-y-3">
-                  <p className="text-sm font-bold text-gray-900 dark:text-white">[{selected.codigoMotivo}] {selected.descripcionMotivo}</p>
+                <div className="bg-gray-50 rounded-xl p-4 space-y-3">
+                  <p className="text-sm font-bold text-gray-900">[{selected.codigoMotivo}] {selected.descripcionMotivo}</p>
                   {selected.clienteNombre && (
                     <div className="flex items-center gap-2 text-xs text-gray-500">
-                      <span>Cliente: <strong className="text-gray-700 dark:text-gray-300">{selected.clienteNombre}</strong></span>
+                      <span>Cliente: <strong className="text-gray-700">{selected.clienteNombre}</strong></span>
                       {selected.clienteDocumento && <span className="text-gray-400">({selected.clienteDocumento})</span>}
                     </div>
                   )}
-                  <div className="grid grid-cols-3 gap-3 pt-3 border-t border-gray-200 dark:border-white/10">
-                    <div><p className="text-[10px] uppercase font-bold text-gray-400">Monto</p><p className="text-sm font-bold text-gray-900 dark:text-white">{formatCurrency(selected.monto)}</p></div>
-                    <div><p className="text-[10px] uppercase font-bold text-gray-400">IGV</p><p className="text-sm font-bold text-gray-900 dark:text-white">{formatCurrency(selected.igv)}</p></div>
-                    <div><p className="text-[10px] uppercase font-bold text-gray-400">Total</p><p className="text-sm font-bold text-red-600 dark:text-red-400">{formatCurrency(selected.total)}</p></div>
+                  <div className="grid grid-cols-3 gap-3 pt-3 border-t border-gray-200">
+                    <div><p className="text-[10px] uppercase font-bold text-gray-400">Monto</p><p className="text-sm font-bold text-gray-900">{formatCurrency(selected.monto)}</p></div>
+                    <div><p className="text-[10px] uppercase font-bold text-gray-400">IGV</p><p className="text-sm font-bold text-gray-900">{formatCurrency(selected.igv)}</p></div>
+                    <div><p className="text-[10px] uppercase font-bold text-gray-400">Total</p><p className="text-sm font-bold text-red-600">{formatCurrency(selected.total)}</p></div>
                   </div>
                 </div>
 
                 {selected.items && selected.items.length > 0 && (
-                  <div className="bg-gray-50 dark:bg-white/5 rounded-xl p-4">
-                    <p className="text-xs font-bold text-gray-700 dark:text-gray-300 mb-2">Items</p>
+                  <div className="bg-gray-50 rounded-xl p-4">
+                    <p className="text-xs font-bold text-gray-700 mb-2">Items</p>
                     <div className="space-y-1.5">
                       {selected.items.map((it, i) => (
                         <div key={i} className="flex items-center justify-between text-xs">
-                          <span className="text-gray-600 dark:text-gray-400">{it.nombre} x{it.cantidad}</span>
-                          <span className="font-bold text-gray-900 dark:text-white">{formatCurrency(it.cantidad * it.precio)}</span>
+                          <span className="text-gray-600">{it.nombre} x{it.cantidad}</span>
+                          <span className="font-bold text-gray-900">{formatCurrency(it.cantidad * it.precio)}</span>
                         </div>
                       ))}
                     </div>
                   </div>
                 )}
 
-                <div className="bg-gray-50 dark:bg-white/5 rounded-xl p-4">
-                  <p className="text-xs font-bold text-gray-700 dark:text-gray-300 mb-3 flex items-center gap-1.5">
+                <div className="bg-gray-50 rounded-xl p-4">
+                  <p className="text-xs font-bold text-gray-700 mb-3 flex items-center gap-1.5">
                     <History className="h-3.5 w-3.5" />Historial
                   </p>
                   <StatusTimeline nc={selected} />
                 </div>
 
                 {selected.notas && (
-                  <div className="bg-gray-50 dark:bg-white/5 rounded-xl p-4">
-                    <p className="text-xs font-bold text-gray-700 dark:text-gray-300 mb-1">Notas</p>
-                    <p className="text-sm text-gray-600 dark:text-gray-400">{selected.notas}</p>
+                  <div className="bg-gray-50 rounded-xl p-4">
+                    <p className="text-xs font-bold text-gray-700 mb-1">Notas</p>
+                    <p className="text-sm text-gray-600">{selected.notas}</p>
                   </div>
                 )}
 
                 {/* ── Impacto en ventas ───────────────────────────────── */}
                 {impactoVentas !== null && (
-                  <div className="bg-amber-50 dark:bg-amber-900/10 border border-amber-200 dark:border-amber-800/30 rounded-xl p-4">
-                    <p className="text-xs font-bold text-amber-700 dark:text-amber-400 mb-1 flex items-center gap-1.5">
+                  <div className="bg-amber-50 border border-amber-200 rounded-xl p-4">
+                    <p className="text-xs font-bold text-amber-700 mb-1 flex items-center gap-1.5">
                       <Activity className="h-3.5 w-3.5" />Impacto en devoluciones del mes
                     </p>
-                    <p className="text-sm text-amber-800 dark:text-amber-300">
+                    <p className="text-sm text-amber-800">
                       Esta NC representa el <strong>{impactoVentas.toFixed(1)}%</strong> del total devuelto este mes (<strong>{formatCurrency(kpis.total)}</strong>)
                     </p>
-                    <div className="mt-2 h-2 bg-amber-100 dark:bg-amber-900/30 rounded-full overflow-hidden">
+                    <div className="mt-2 h-2 bg-amber-100 rounded-full overflow-hidden">
                       <m.div className="h-full bg-amber-400 rounded-full" initial={{ width: 0 }} animate={{ width: `${Math.min(100, impactoVentas)}%` }} transition={{ duration: 0.6 }} />
                     </div>
                   </div>
@@ -1382,16 +1382,16 @@ export default function NotasCreditoModule() {
 
                 {/* ── Historial del cliente ───────────────────────────── */}
                 {selected.clienteNombre && (
-                  <div className="bg-gray-50 dark:bg-white/5 rounded-xl p-4">
-                    <p className="text-xs font-bold text-gray-700 dark:text-gray-300 mb-1.5 flex items-center gap-1.5">
+                  <div className="bg-gray-50 rounded-xl p-4">
+                    <p className="text-xs font-bold text-gray-700 mb-1.5 flex items-center gap-1.5">
                       <Users className="h-3.5 w-3.5" />Historial de {selected.clienteNombre}
                     </p>
                     {clienteHistorial === 0 ? (
                       <p className="text-xs text-gray-400">Primera nota de crédito de este cliente</p>
                     ) : (
-                      <p className="text-xs text-gray-600 dark:text-gray-400">
-                        Este cliente tiene <strong className="text-gray-900 dark:text-white">{clienteHistorial}</strong> nota{clienteHistorial !== 1 ? "s" : ""} de crédito anteriore{clienteHistorial !== 1 ? "s" : ""}
-                        {clienteHistorial >= 3 && <span className="ml-1 text-amber-600 dark:text-amber-400 font-semibold">{"\u26a0\ufe0f"} Cliente con múltiples devoluciones</span>}
+                      <p className="text-xs text-gray-600">
+                        Este cliente tiene <strong className="text-gray-900">{clienteHistorial}</strong> nota{clienteHistorial !== 1 ? "s" : ""} de crédito anteriore{clienteHistorial !== 1 ? "s" : ""}
+                        {clienteHistorial >= 3 && <span className="ml-1 text-amber-600 font-semibold">{"\u26a0\ufe0f"} Cliente con múltiples devoluciones</span>}
                       </p>
                     )}
                   </div>
@@ -1412,19 +1412,19 @@ export default function NotasCreditoModule() {
             <m.div key="nnc-modal" initial={{ opacity: 0, scale: 0.95, y: 20 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.95, y: 20 }} transition={{ type: "spring", damping: 25, stiffness: 300 }}
               className="fixed inset-0 z-50 flex items-center justify-center p-4" onClick={e => e.target === e.currentTarget && resetWizard()}>
               <div className={cn(
-                "w-full bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl overflow-hidden",
+                "w-full bg-white border border-gray-200 rounded-xl overflow-hidden",
                 wizardStep === 0 ? "max-w-3xl" : "max-w-xl"
               )}>
                 {/* Wizard Header */}
                 <div className="px-5 pt-5 pb-0">
                   <div className="flex items-center justify-between mb-4">
-                    <h3 className="text-lg font-bold text-gray-900 dark:text-white flex items-center gap-2">
-                      <div className="w-8 h-8 rounded-lg bg-[#00B4A6]/10 flex items-center justify-center">
-                        <CreditCard className="h-4 w-4 text-[#00B4A6]" />
+                    <h3 className="text-lg font-bold text-gray-900 flex items-center gap-2">
+                      <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center">
+                        <CreditCard className="h-4 w-4 text-primary" />
                       </div>
                       Nueva Nota de Cr{"\u00e9"}dito
                     </h3>
-                    <button onClick={resetWizard} className="p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-white/5 text-gray-400">
+                    <button onClick={resetWizard} className="p-1.5 rounded-lg hover:bg-gray-100 text-gray-400">
                       <X className="h-5 w-5" />
                     </button>
                   </div>
@@ -1442,17 +1442,17 @@ export default function NotasCreditoModule() {
                       </p>
 
                       {/* Doc Type Picker Tabs */}
-                      <div className="flex items-center gap-1 p-1 bg-gray-100 dark:bg-white/5 rounded-xl">
+                      <div className="flex items-center gap-1 p-1 bg-gray-100 rounded-xl">
                         {PICKER_TABS.map(tab => (
                           <button key={tab.id} onClick={() => setPickerDocType(tab.id)}
                             className={cn("flex-1 flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg text-xs font-bold transition-all",
                               pickerDocType === tab.id
-                                ? "bg-white dark:bg-card text-gray-900 dark:text-white "
-                                : "text-gray-500 dark:text-gray-400 hover:text-gray-700")}>
+                                ? "bg-white text-gray-900 "
+                                : "text-gray-500 hover:text-gray-700")}>
                             <span>{tab.icon}</span>
                             <span>{tab.label}</span>
                             <span className={cn("px-1.5 py-0.5 rounded-full text-[9px] font-bold",
-                              pickerDocType === tab.id ? "bg-[#00B4A6] text-white" : "bg-gray-200 dark:bg-gray-700 text-gray-500")}>
+                              pickerDocType === tab.id ? "bg-primary text-white" : "bg-gray-200 text-gray-500")}>
                               {pickerCounts[tab.id]}
                             </span>
                           </button>
@@ -1464,7 +1464,7 @@ export default function NotasCreditoModule() {
                         <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
                         <input type="text" value={pickerSearch} onChange={e => setPickerSearch(e.target.value)}
                           placeholder="Buscar por n\u00famero, cliente, RUC/DNI..."
-                          className="w-full pl-9 pr-3 py-2.5 rounded-lg border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 text-sm text-gray-900 dark:text-white placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#00B4A6]/30" />
+                          className="w-full pl-9 pr-3 py-2.5 rounded-lg border border-gray-200 bg-white text-sm text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-primary/30" />
                         {pickerLoading && <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 animate-spin text-gray-400" />}
                       </div>
 
@@ -1472,24 +1472,24 @@ export default function NotasCreditoModule() {
                       <AnimatePresence>
                         {selectedVenta && (
                           <m.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: "auto" }} exit={{ opacity: 0, height: 0 }} className="overflow-hidden">
-                            <div className="bg-[#00B4A6]/5 border-2 border-[#00B4A6]/30 rounded-xl p-4">
+                            <div className="bg-primary/5 border-2 border-primary/30 rounded-xl p-4">
                               <div className="flex items-center justify-between mb-2">
                                 <div className="flex items-center gap-2">
                                   <span className="text-xl">{(DOC_STYLE[selectedVenta.comprobanteTipo] || DOC_STYLE.ticket).icon}</span>
                                   <span className={cn("px-2 py-0.5 rounded-lg text-[10px] font-bold uppercase", (DOC_STYLE[selectedVenta.comprobanteTipo] || DOC_STYLE.ticket).badge)}>
                                     {(DOC_STYLE[selectedVenta.comprobanteTipo] || DOC_STYLE.ticket).label}
                                   </span>
-                                  <span className="font-mono text-sm font-bold text-[#00B4A6]">
+                                  <span className="font-mono text-sm font-bold text-primary">
                                     {selectedVenta.comprobanteNumero || `#${selectedVenta.numero}`}
                                   </span>
                                   <span className="text-xs text-gray-400">{"\u00b7"} {selectedVenta.clienteNombre}</span>
-                                  <span className="text-sm font-bold text-gray-900 dark:text-white">{"\u00b7"} {formatCurrency(selectedVenta.total)}</span>
+                                  <span className="text-sm font-bold text-gray-900">{"\u00b7"} {formatCurrency(selectedVenta.total)}</span>
                                 </div>
-                                <button onClick={() => setSelectedVenta(null)} className="text-xs font-bold text-red-500 hover:underline px-2 py-1 rounded-lg hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors">
+                                <button onClick={() => setSelectedVenta(null)} className="text-xs font-bold text-red-500 hover:underline px-2 py-1 rounded-lg hover:bg-red-50 transition-colors">
                                   Quitar
                                 </button>
                               </div>
-                              <div className="text-[10px] text-emerald-600 dark:text-emerald-400 font-bold flex items-center gap-1">
+                              <div className="text-[10px] text-emerald-600 font-bold flex items-center gap-1">
                                 <span>{"\u2713"}</span> Documento seleccionado {"\u2014"} en el paso siguiente podr{"\u00e1"}s elegir qu{"\u00e9"} items devolver
                               </div>
                             </div>
@@ -1500,13 +1500,13 @@ export default function NotasCreditoModule() {
                       {/* Document Cards Grid */}
                       {pickerLoading && pickerDocs.length === 0 ? (
                         <div className="flex items-center justify-center py-12">
-                          <Loader2 className="h-6 w-6 animate-spin text-[#00B4A6]" />
+                          <Loader2 className="h-6 w-6 animate-spin text-primary" />
                           <span className="ml-2 text-sm text-gray-500">Cargando documentos...</span>
                         </div>
                       ) : filteredPickerDocs.length === 0 ? (
                         <div className="text-center py-10">
                           <div className="text-4xl mb-3">{"\u{1F50D}"}</div>
-                          <p className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1">No se encontraron documentos</p>
+                          <p className="text-sm font-semibold text-gray-700 mb-1">No se encontraron documentos</p>
                           <p className="text-xs text-gray-400">Intenta con otro t{"\u00e9"}rmino de b{"\u00fasqueda"}</p>
                         </div>
                       ) : (
@@ -1521,7 +1521,7 @@ export default function NotasCreditoModule() {
                       )}
 
                       {/* Actions */}
-                      <div className="flex items-center gap-3 pt-2 border-t border-gray-100 dark:border-white/5">
+                      <div className="flex items-center gap-3 pt-2 border-t border-gray-100">
                         <button type="button" onClick={() => { setSelectedVenta(null); setForm(prev => ({ ...prev, orderId: "" })); setWizardStep(1); }}
                           className="text-xs text-gray-400 hover:text-gray-600 hover:underline transition-colors">
                           Continuar sin documento {"\u2192"}
@@ -1530,8 +1530,8 @@ export default function NotasCreditoModule() {
                         <button onClick={() => setWizardStep(1)} disabled={!selectedVenta}
                           className={cn("px-6 py-2.5 rounded-xl text-sm font-bold transition-all",
                             selectedVenta
-                              ? "text-white bg-[#00B4A6] hover:bg-[#009690] "
-                              : "text-gray-400 bg-gray-100 dark:bg-gray-800 cursor-not-allowed")}>
+                              ? "text-white bg-primary hover:bg-primary-dark "
+                              : "text-gray-400 bg-gray-100 cursor-not-allowed")}>
                           Siguiente {"\u2192"}
                         </button>
                       </div>
@@ -1545,8 +1545,8 @@ export default function NotasCreditoModule() {
                     <div className="space-y-6">
                       {/* ── Templates guardados ─────────────────────────── */}
                       {templates.length > 0 && (
-                        <div className="bg-emerald-50 dark:bg-emerald-900/10 border border-emerald-200 dark:border-emerald-800/30 rounded-xl p-3">
-                          <button onClick={() => setShowTemplates(s => !s)} className="flex items-center gap-2 w-full text-xs font-bold text-emerald-700 dark:text-emerald-400">
+                        <div className="bg-emerald-50 border border-emerald-200 rounded-xl p-3">
+                          <button onClick={() => setShowTemplates(s => !s)} className="flex items-center gap-2 w-full text-xs font-bold text-emerald-700">
                             <Bookmark className="h-3.5 w-3.5" />
                             Mis templates guardados ({templates.length})
                             <span className="ml-auto text-[10px] text-emerald-400">{showTemplates ? "Ocultar" : "Ver"}</span>
@@ -1556,8 +1556,8 @@ export default function NotasCreditoModule() {
                               <m.div initial={{ height: 0, opacity: 0 }} animate={{ height: "auto", opacity: 1 }} exit={{ height: 0, opacity: 0 }} className="overflow-hidden">
                                 <div className="mt-2 space-y-1">
                                   {templates.map(t => (
-                                    <div key={t.id} className="flex items-center gap-2 bg-white dark:bg-white/5 rounded-lg px-3 py-2">
-                                      <span className="flex-1 text-xs text-gray-700 dark:text-gray-300">
+                                    <div key={t.id} className="flex items-center gap-2 bg-white rounded-lg px-3 py-2">
+                                      <span className="flex-1 text-xs text-gray-700">
                                         <strong>{t.name}</strong> — [{t.codigoMotivo}] {t.descripcionMotivo}
                                       </span>
                                       <button onClick={() => loadTemplate(t)} className="text-[10px] font-bold text-emerald-600 hover:underline shrink-0">Usar</button>
@@ -1574,7 +1574,7 @@ export default function NotasCreditoModule() {
                       {/* Visual Motivo Picker Cards */}
                       <div>
                         <div className="flex items-center justify-between mb-2">
-                          <label className="block text-xs font-bold text-gray-600 dark:text-gray-400">Motivo SUNAT {"\u2014"} {"\u00bfPor qu\u00e9"} se emite la NC?</label>
+                          <label className="block text-xs font-bold text-gray-600">Motivo SUNAT {"\u2014"} {"\u00bfPor qu\u00e9"} se emite la NC?</label>
                           {form.codigoMotivo && (
                             <button onClick={saveTemplate} className="flex items-center gap-1 text-[10px] font-bold text-emerald-600 hover:underline">
                               <BookmarkPlus className="h-3 w-3" />Guardar template
@@ -1595,43 +1595,43 @@ export default function NotasCreditoModule() {
 
                       {/* Description */}
                       <div>
-                        <label className="block text-xs font-bold text-gray-600 dark:text-gray-400 mb-1">Descripci{"\u00f3"}n del motivo</label>
+                        <label className="block text-xs font-bold text-gray-600 mb-1">Descripci{"\u00f3"}n del motivo</label>
                         <textarea value={form.descripcionMotivo} onChange={e => setForm(p => ({ ...p, descripcionMotivo: e.target.value }))} placeholder="Detalle del motivo..." rows={2}
-                          className="w-full px-3 py-2 rounded-lg border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 text-sm text-gray-900 dark:text-white placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#00B4A6]/30 resize-none" />
+                          className="w-full px-3 py-2 rounded-lg border border-gray-200 bg-white text-sm text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-primary/30 resize-none" />
                       </div>
 
                       {/* Item Quantity Picker (if linked to a sale) */}
                       {selectedVenta && selectedVenta.items.length > 0 && (
                         <div>
-                          <label className="block text-xs font-bold text-gray-600 dark:text-gray-400 mb-2">
+                          <label className="block text-xs font-bold text-gray-600 mb-2">
                             Items a incluir en la NC {"\u2014"} ajusta cantidades para devoluci{"\u00f3"}n parcial
                           </label>
-                          <div className="border border-gray-200 dark:border-white/10 rounded-xl divide-y divide-gray-100 dark:divide-white/5 overflow-hidden">
+                          <div className="border border-gray-200 rounded-xl divide-y divide-gray-100 overflow-hidden">
                             {selectedVenta.items.map((item, idx) => (
-                              <div key={idx} className={cn("flex items-center gap-3 p-3 transition-colors", item.selected ? "bg-[#00B4A6]/5" : "hover:bg-gray-50 dark:hover:bg-white/5")}>
+                              <div key={idx} className={cn("flex items-center gap-3 p-3 transition-colors", item.selected ? "bg-primary/5" : "hover:bg-gray-50")}>
                                 <button type="button" onClick={() => handleItemToggle(idx)}
                                   className={cn("w-5 h-5 rounded border-2 flex items-center justify-center transition-colors shrink-0",
-                                    item.selected ? "bg-[#00B4A6] border-[#00B4A6] text-white" : "border-gray-300 dark:border-gray-600")}>
+                                    item.selected ? "bg-primary border-primary text-white" : "border-gray-300")}>
                                   {item.selected && <span className="text-[10px]">{"\u2713"}</span>}
                                 </button>
                                 <div className="flex-1 min-w-0">
-                                  <p className="text-sm font-medium text-gray-900 dark:text-white truncate">{item.nombre}</p>
+                                  <p className="text-sm font-medium text-gray-900 truncate">{item.nombre}</p>
                                   <p className="text-[10px] text-gray-400">Comprado: {item.cantidad} {"\u00d7"} {formatCurrency(item.precio)}</p>
                                 </div>
                                 {item.selected && (
                                   <div className="flex items-center gap-1.5">
                                     <button type="button" onClick={() => handleItemQty(idx, item.cantidadDevolver - 1)}
-                                      className="w-7 h-7 rounded-lg bg-gray-100 dark:bg-gray-800 flex items-center justify-center hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors">
-                                      <Minus className="h-3 w-3 text-gray-600 dark:text-gray-400" />
+                                      className="w-7 h-7 rounded-lg bg-gray-100 flex items-center justify-center hover:bg-gray-200 transition-colors">
+                                      <Minus className="h-3 w-3 text-gray-600" />
                                     </button>
-                                    <span className="w-8 text-center text-sm font-bold text-gray-900 dark:text-white">{item.cantidadDevolver}</span>
+                                    <span className="w-8 text-center text-sm font-bold text-gray-900">{item.cantidadDevolver}</span>
                                     <button type="button" onClick={() => handleItemQty(idx, item.cantidadDevolver + 1)}
-                                      className="w-7 h-7 rounded-lg bg-gray-100 dark:bg-gray-800 flex items-center justify-center hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors">
-                                      <Plus className="h-3 w-3 text-gray-600 dark:text-gray-400" />
+                                      className="w-7 h-7 rounded-lg bg-gray-100 flex items-center justify-center hover:bg-gray-200 transition-colors">
+                                      <Plus className="h-3 w-3 text-gray-600" />
                                     </button>
                                   </div>
                                 )}
-                                <span className={cn("text-sm font-bold w-20 text-right", item.selected ? "text-gray-900 dark:text-white" : "text-gray-300")}>
+                                <span className={cn("text-sm font-bold w-20 text-right", item.selected ? "text-gray-900" : "text-gray-300")}>
                                   {formatCurrency((item.selected ? item.cantidadDevolver : 0) * item.precio)}
                                 </span>
                               </div>
@@ -1639,7 +1639,7 @@ export default function NotasCreditoModule() {
                           </div>
                           <div className="mt-2 flex justify-between text-xs px-1">
                             <span className="text-gray-400">{selectedVenta.items.filter(it => it.selected).length} de {selectedVenta.items.length} items seleccionados</span>
-                            <span className="font-bold text-[#00B4A6]">Subtotal: {formatCurrency(autoMonto)}</span>
+                            <span className="font-bold text-primary">Subtotal: {formatCurrency(autoMonto)}</span>
                           </div>
                         </div>
                       )}
@@ -1647,11 +1647,11 @@ export default function NotasCreditoModule() {
                       {/* Manual amount (if no linked sale or override) */}
                       {!selectedVenta && (
                         <div>
-                          <label className="block text-xs font-bold text-gray-600 dark:text-gray-400 mb-1">Monto a acreditar (S/)</label>
+                          <label className="block text-xs font-bold text-gray-600 mb-1">Monto a acreditar (S/)</label>
                           <div className="relative">
                             <DollarSign className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
                             <input type="number" step="0.01" min="0.01" value={form.monto} onChange={e => setForm(p => ({ ...p, monto: e.target.value }))} placeholder="0.00"
-                              className="w-full pl-9 pr-3 py-2 rounded-lg border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 text-sm text-gray-900 dark:text-white placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#00B4A6]/30" />
+                              className="w-full pl-9 pr-3 py-2 rounded-lg border border-gray-200 bg-white text-sm text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-primary/30" />
                           </div>
                         </div>
                       )}
@@ -1663,21 +1663,21 @@ export default function NotasCreditoModule() {
 
                       {/* Notes */}
                       <div>
-                        <label className="block text-xs font-bold text-gray-600 dark:text-gray-400 mb-1">Notas internas (opcional)</label>
+                        <label className="block text-xs font-bold text-gray-600 mb-1">Notas internas (opcional)</label>
                         <input type="text" value={form.notasText} onChange={e => setForm(p => ({ ...p, notasText: e.target.value }))} placeholder="Observaciones..."
-                          className="w-full px-3 py-2 rounded-lg border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 text-sm text-gray-900 dark:text-white placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#00B4A6]/30" />
+                          className="w-full px-3 py-2 rounded-lg border border-gray-200 bg-white text-sm text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-primary/30" />
                       </div>
 
                       {/* Return stock toggle */}
                       {esDevolucion && (
-                        <div className="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-xl p-3">
+                        <div className="bg-amber-50 border border-amber-200 rounded-xl p-3">
                           <div className="flex items-center gap-3">
                             <button type="button" onClick={() => setDevolverStock(!devolverStock)}
                               className={cn("relative inline-flex h-5 w-9 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors",
-                                devolverStock ? "bg-[#00B4A6]" : "bg-gray-300 dark:bg-gray-600")}>
+                                devolverStock ? "bg-primary" : "bg-gray-300")}>
                               <span className={cn("inline-block h-4 w-4 rounded-full bg-white transition-transform", devolverStock ? "translate-x-4" : "translate-x-0")} />
                             </button>
-                            <span className="text-xs font-bold text-amber-800 dark:text-amber-300">{"\u{1F4E6}"} Devolver items al stock</span>
+                            <span className="text-xs font-bold text-amber-800">{"\u{1F4E6}"} Devolver items al stock</span>
                           </div>
                         </div>
                       )}
@@ -1686,7 +1686,7 @@ export default function NotasCreditoModule() {
 
                       {/* Navigation */}
                       <div className="flex gap-2 pt-2">
-                        <button onClick={() => setWizardStep(0)} className="flex-1 px-4 py-2.5 rounded-lg text-sm font-bold text-gray-600 dark:text-gray-400 bg-gray-100 dark:bg-white/5 hover:bg-gray-200 transition-colors">
+                        <button onClick={() => setWizardStep(0)} className="flex-1 px-4 py-2.5 rounded-lg text-sm font-bold text-gray-600 bg-gray-100 hover:bg-gray-200 transition-colors">
                           {"\u2190"} Atr{"\u00e1"}s
                         </button>
                         <button onClick={() => {
@@ -1694,7 +1694,7 @@ export default function NotasCreditoModule() {
                           if (!form.descripcionMotivo.trim()) { setCreateError("Completa la descripci\u00f3n"); return; }
                           if (montoNum <= 0) { setCreateError("El monto debe ser mayor a 0"); return; }
                           setCreateError(null); setWizardStep(2);
-                        }} className="flex-1 py-2.5 rounded-lg text-sm font-bold text-white bg-[#00B4A6] hover:bg-[#009690]  transition-colors">
+                        }} className="flex-1 py-2.5 rounded-lg text-sm font-bold text-white bg-primary hover:bg-primary-dark  transition-colors">
                           Siguiente {"\u2192"}
                         </button>
                       </div>
@@ -1716,23 +1716,23 @@ export default function NotasCreditoModule() {
                               <span className={cn("px-2 py-0.5 rounded-lg text-[10px] font-bold uppercase", (DOC_STYLE[selectedVenta.comprobanteTipo] || DOC_STYLE.ticket).badge)}>
                                 {(DOC_STYLE[selectedVenta.comprobanteTipo] || DOC_STYLE.ticket).label}
                               </span>
-                              <span className="font-mono text-sm font-bold text-gray-900 dark:text-white ml-2">{selectedVenta.comprobanteNumero || `#${selectedVenta.numero}`}</span>
+                              <span className="font-mono text-sm font-bold text-gray-900 ml-2">{selectedVenta.comprobanteNumero || `#${selectedVenta.numero}`}</span>
                             </div>
                             <div className="flex-1" />
                             <div className="text-right">
                               <p className="text-xs text-gray-500">{selectedVenta.clienteNombre}</p>
-                              <p className="text-sm font-bold text-gray-900 dark:text-white">{formatCurrency(selectedVenta.total)}</p>
+                              <p className="text-sm font-bold text-gray-900">{formatCurrency(selectedVenta.total)}</p>
                             </div>
                           </div>
 
                           {/* Items being returned */}
                           {selectedVenta.items.filter(it => it.selected).length > 0 && (
-                            <div className="mt-3 pt-3 border-t border-gray-200/50 dark:border-white/10 space-y-1">
+                            <div className="mt-3 pt-3 border-t border-gray-200/50 space-y-1">
                               <p className="text-[10px] uppercase font-bold text-gray-400 mb-1">Items incluidos en la NC</p>
                               {selectedVenta.items.filter(it => it.selected).map((it, i) => (
                                 <div key={i} className="flex items-center justify-between text-xs">
-                                  <span className="text-gray-600 dark:text-gray-400">{it.nombre} {"\u00d7"}{it.cantidadDevolver}{it.cantidadDevolver < it.cantidad ? ` (de ${it.cantidad})` : ""}</span>
-                                  <span className="font-bold text-gray-900 dark:text-white">{formatCurrency(it.cantidadDevolver * it.precio)}</span>
+                                  <span className="text-gray-600">{it.nombre} {"\u00d7"}{it.cantidadDevolver}{it.cantidadDevolver < it.cantidad ? ` (de ${it.cantidad})` : ""}</span>
+                                  <span className="font-bold text-gray-900">{formatCurrency(it.cantidadDevolver * it.precio)}</span>
                                 </div>
                               ))}
                             </div>
@@ -1741,32 +1741,32 @@ export default function NotasCreditoModule() {
                       )}
 
                       {/* Motivo Summary */}
-                      <div className="bg-gray-50 dark:bg-white/5 rounded-xl p-4">
+                      <div className="bg-gray-50 rounded-xl p-4">
                         <p className="text-[10px] uppercase font-bold text-gray-400 mb-2">Motivo</p>
                         <div className="flex items-center gap-2">
                           <span className="text-xl">{MOTIVOS_SUNAT.find(m => m.code === form.codigoMotivo)?.icon || "\u{1F4DD}"}</span>
                           <div>
-                            <p className="text-sm font-bold text-gray-900 dark:text-white">[{form.codigoMotivo}] {form.descripcionMotivo}</p>
+                            <p className="text-sm font-bold text-gray-900">[{form.codigoMotivo}] {form.descripcionMotivo}</p>
                             {form.notasText && <p className="text-xs text-gray-400 italic mt-0.5">{form.notasText}</p>}
                           </div>
                         </div>
                         {esDevolucion && devolverStock && (
-                          <p className="text-xs text-amber-600 dark:text-amber-400 mt-2 flex items-center gap-1">{"\u{1F4E6}"} Se devolver{"\u00e1"}n items al stock</p>
+                          <p className="text-xs text-amber-600 mt-2 flex items-center gap-1">{"\u{1F4E6}"} Se devolver{"\u00e1"}n items al stock</p>
                         )}
                       </div>
 
                       {/* Amount Breakdown */}
                       <AmountBreakdown monto={montoNum} igv={computedIgv} total={computedTotal} originalTotal={selectedVenta?.total} />
 
-                      {createError && <p className="text-xs text-red-600 font-semibold bg-red-50 dark:bg-red-900/20 p-3 rounded-xl">{createError}</p>}
+                      {createError && <p className="text-xs text-red-600 font-semibold bg-red-50 p-3 rounded-xl">{createError}</p>}
 
                       {/* Actions */}
                       <div className="flex gap-2 pt-2">
-                        <button onClick={() => setWizardStep(1)} className="flex-1 px-4 py-2.5 rounded-lg text-sm font-bold text-gray-600 dark:text-gray-400 bg-gray-100 dark:bg-white/5 hover:bg-gray-200 transition-colors">
+                        <button onClick={() => setWizardStep(1)} className="flex-1 px-4 py-2.5 rounded-lg text-sm font-bold text-gray-600 bg-gray-100 hover:bg-gray-200 transition-colors">
                           {"\u2190"} Atr{"\u00e1"}s
                         </button>
                         <button onClick={handleCreate} disabled={creating}
-                          className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg text-sm font-bold text-white bg-[#00B4A6] hover:bg-[#009690] disabled:opacity-50  transition-all">
+                          className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg text-sm font-bold text-white bg-primary hover:bg-primary-dark disabled:opacity-50  transition-all">
                           {creating ? <Loader2 className="h-4 w-4 animate-spin" /> : <Plus className="h-4 w-4" />}
                           Crear Nota de Cr{"\u00e9"}dito
                         </button>
