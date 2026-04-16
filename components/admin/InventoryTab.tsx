@@ -1,12 +1,12 @@
-﻿"use client";
+"use client";
 
 import { useState, useEffect, useCallback, useRef, useMemo, type FormEvent } from "react";
 import {
   Package, AlertTriangle, ArrowUp, ArrowDown, RefreshCw,
   Search, Loader2, ClipboardList, Plus, Pencil, Trash2,
-  ScanBarcode, X, Camera, Download, CheckSquare,
+  ScanBarcode, X, Camera, Download, CheckSquare, Filter, ChevronDown,
   TrendingUp, PackagePlus, Eye, EyeOff, Layers, ChevronRight, Upload, CheckCircle, BookOpen,
-  Warehouse,
+  Warehouse, Maximize2,
 } from "lucide-react";
 import EmptyState from "@/components/admin/shared/EmptyState";
 import Image from "next/image";
@@ -21,28 +21,15 @@ import dynamic from "next/dynamic";
 import { usePagination, Paginator } from "@/hooks/use-pagination";
 
 const BarcodeScanner = dynamic(() => import("@/components/admin/BarcodeScanner"), { ssr: false });
+const ExpandedStockModal = dynamic(() => import("@/components/admin/inventario/ExpandedStockModal"), { ssr: false });
 
 // ── Types ────────────────────────────────────────────────────────────────────
 
-type View = "productos" | "stock" | "movimientos" | "merma" | "conteo" | "kanban";
+type View = "productos" | "kanban";
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
 
 function fmt(n: number) { return `S/${n.toFixed(2)}`; }
-function fmtDate(iso: string) {
-  const d = new Date(iso);
-  return d.toLocaleDateString("es-PE", { day: "2-digit", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" });
-}
-
-const MOVEMENT_LABELS: Record<string, { label: string; color: string }> = {
-  compra: { label: "Compra", color: "text-blue-600 bg-blue-50" },
-  venta: { label: "Venta", color: "text-orange-600 bg-orange-50" },
-  venta_online: { label: "Venta online", color: "text-purple-600 bg-purple-50" },
-  devolucion: { label: "Devolución", color: "text-cyan-600 bg-cyan-50" },
-  ajuste_positivo: { label: "Ajuste +", color: "text-emerald-600 bg-emerald-50" },
-  ajuste_negativo: { label: "Ajuste −", color: "text-red-600 bg-red-50" },
-  merma: { label: "Pérdida", color: "text-gray-600 dark:text-muted bg-gray-100 dark:bg-accent" },
-};
 
 const realCategories = categories.filter(c => c.id !== "todos");
 
@@ -132,6 +119,7 @@ export default function InventoryTab() {
   const [showInactive, setShowInactive] = useState(false);
   // Mejora 8R2: Filtro sin imagen
   const [noImageOnly, setNoImageOnly] = useState(false);
+  const [showFilters, setShowFilters] = useState(false);
   const [expandedOC, setExpandedOC] = useState(false);
   const [generatingOC, setGeneratingOC] = useState(false);
 
@@ -140,6 +128,9 @@ export default function InventoryTab() {
   const [editForm, setEditForm] = useState<Partial<DbProduct & { expiryDate?: string; isVariant?: boolean; variantOf?: string; variantAttr?: string }>>({});
   const [saving, setSaving] = useState(false);
   const [showAdd, setShowAdd] = useState(false);
+  const [showPicker, setShowPicker] = useState(false);
+  const [pickerSearch, setPickerSearch] = useState("");
+  const [pickerCat, setPickerCat] = useState("todos");
   const EMPTY_ADD = { name: "", category: "abarrotes", price: "", unit: "und", badge: "", image: "", barcode: "", costPrice: "", stock: "", stockMin: "", stockMax: "", expiryDate: "", isVariant: false, variantOf: "", variantAttr: "" };
   const [addForm, setAddForm] = useState(EMPTY_ADD);
   const [showScanner, setShowScanner] = useState(false);
@@ -162,9 +153,6 @@ export default function InventoryTab() {
   const [bulkDeleteConfirm, setBulkDeleteConfirm] = useState(false);
   const [bulkDeleting, setBulkDeleting] = useState(false);
 
-  // Stocktaking
-  const [stockCounts, setStockCounts] = useState<Record<number, string>>({});
-
   // Mejora 5 nueva: Auto-reorden config
   const [autoReorderConfigs, setAutoReorderConfigs] = useState<Record<number, { threshold: number; qty: number; supplierId: string }>>(() => {
     if (typeof window === "undefined") return {};
@@ -186,13 +174,16 @@ export default function InventoryTab() {
     try { return localStorage.getItem("inv-extended-cols") === "true"; } catch { return false; }
   });
 
+  // Expanded table modal
+  const [showExpandedTable, setShowExpandedTable] = useState(false);
+
   // CSV Import
   const csvImportRef = useRef<HTMLInputElement>(null);
   const [csvImporting, setCsvImporting] = useState(false);
   const [csvResult, setCsvResult] = useState<{ created: number; errors: string[] } | null>(null);
   const [kardexProduct, setKardexProduct] = useState<{ id: number; name: string } | null>(null);
 
-  useScrollLock(!!(showAdd || editModalProduct || showScanner || bulkModal || bulkDeleteConfirm));
+  useScrollLock(!!(showAdd || showPicker || editModalProduct || showScanner || bulkModal || bulkDeleteConfirm));
 
   const handleDbSearch = async () => {
     if (!dbQuery.trim()) return;
@@ -692,7 +683,7 @@ export default function InventoryTab() {
         <div className="flex items-center gap-2 flex-wrap">
           {/* View toggle */}
           <div className="flex bg-gray-100 dark:bg-accent rounded-lg p-0.5 overflow-x-auto">
-            {(["productos", "stock", "kanban", "movimientos", "merma", "conteo"] as const).map(v => (
+            {(["productos", "kanban"] as const).map(v => (
               <button
                 key={v}
                 onClick={() => setView(v)}
@@ -701,7 +692,7 @@ export default function InventoryTab() {
                   view === v ? "bg-white dark:bg-card text-gray-900 dark:text-foreground shadow-sm" : "text-gray-500 dark:text-muted hover:text-gray-700 dark:hover:text-foreground"
                 )}
               >
-                {v === "productos" ? "Productos" : v === "stock" ? "Existencias" : v === "kanban" ? "Vista rápida" : v === "movimientos" ? "Movimientos" : v === "merma" ? "Pérdidas" : "Conteo"}
+                {v === "productos" ? "Productos" : "Vista rápida"}
               </button>
             ))}
           </div>
@@ -714,7 +705,7 @@ export default function InventoryTab() {
             {scanLoading ? "Buscando…" : "Escanear"}
           </button>
           <button
-            onClick={() => setShowAdd(true)}
+            onClick={() => { setPickerSearch(""); setPickerCat("todos"); setShowPicker(true); }}
             className="flex items-center gap-1.5 text-sm font-bold text-white bg-primary hover:bg-primary-dark px-3 py-1.5 rounded-lg transition-colors shadow-sm"
           >
             <Plus className="h-4 w-4" /> Nuevo
@@ -862,132 +853,178 @@ export default function InventoryTab() {
       )}
 
       {/* Filter bar */}
-      <div className="flex flex-wrap items-center gap-2">
-        <div className="relative flex-1 min-w-45">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400 dark:text-muted" />
-          <input
-            value={search}
-            onChange={e => setSearch(e.target.value)}
-            placeholder={view === "movimientos" ? "Buscar movimiento..." : searchPlaceholders[phIndex]}
-            className="w-full pl-10 pr-4 py-2 rounded-lg border border-gray-200 dark:border-card-border text-sm text-gray-900 dark:text-foreground outline-none focus:border-primary transition-colors"
-          />
-        </div>
-        {view !== "movimientos" && (
-          <>
-            <select
-              value={catFilter}
-              onChange={e => setCatFilter(e.target.value)}
-              className="px-3 py-2 rounded-lg border border-gray-200 dark:border-card-border text-sm text-gray-700 dark:text-foreground outline-none focus:border-primary"
-            >
-              {categories.map(c => (
-                <option key={c.id} value={c.id}>{c.emoji} {c.label}</option>
-              ))}
-            </select>
-            <button
-              onClick={() => setLowOnly(!lowOnly)}
-              className={cn(
-                "flex items-center gap-1 px-3 py-2 rounded-lg text-xs font-bold border transition-colors",
-                lowOnly ? "border-amber-300 bg-amber-50 text-amber-700" : "border-gray-200 dark:border-card-border text-gray-500 dark:text-muted hover:bg-gray-50 dark:hover:bg-surface"
-              )}
-            >
-              <AlertTriangle className="h-3.5 w-3.5" /> Bajo stock
-            </button>
-            {/* IMPROVEMENT 2: Show Inactive Toggle */}
-            <button
-              onClick={() => setShowInactive(!showInactive)}
-              className={cn(
-                "flex items-center gap-1 px-3 py-2 rounded-lg text-xs font-bold border transition-colors",
-                showInactive ? "border-gray-400 bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300" : "border-gray-200 dark:border-card-border text-gray-500 dark:text-muted hover:bg-gray-50 dark:hover:bg-surface"
-              )}
-            >
-              {showInactive ? <Eye className="h-3.5 w-3.5" /> : <EyeOff className="h-3.5 w-3.5" />}
-              Mostrar inactivos
-            </button>
-            {/* Mejora 8R2: Filtro sin foto */}
-            <button
-              onClick={() => setNoImageOnly(!noImageOnly)}
-              className={cn(
-                "flex items-center gap-1 px-3 py-2 rounded-lg text-xs font-bold border transition-colors",
-                noImageOnly ? "border-violet-300 bg-violet-50 text-violet-700 dark:border-violet-700 dark:bg-violet-950/20 dark:text-violet-400" : "border-gray-200 dark:border-card-border text-gray-500 dark:text-muted hover:bg-gray-50 dark:hover:bg-surface"
-              )}
-            >
-              <Camera className="h-3.5 w-3.5" /> Sin foto ({noImageCount})
-            </button>
-            {/* Toggle columnas extendidas */}
-            <button
-              onClick={() => { const next = !showExtendedCols; setShowExtendedCols(next); try { localStorage.setItem("inv-extended-cols", String(next)); } catch {} }}
-              className={cn(
-                "flex items-center gap-1 px-3 py-2 rounded-lg text-xs font-bold border transition-colors",
-                showExtendedCols ? "border-blue-300 bg-blue-50 text-blue-700 dark:border-blue-700 dark:bg-blue-950/20 dark:text-blue-400" : "border-gray-200 dark:border-card-border text-gray-500 dark:text-muted hover:bg-gray-50 dark:hover:bg-surface"
-              )}
-            >
-              <Layers className="h-3.5 w-3.5" /> {showExtendedCols ? "Menos columnas" : "Mas columnas"}
-            </button>
-            {view === "productos" && (
-              <button
-                onClick={() => { setBulkField("pricePercent"); setBulkValue(""); setBulkModal(true); }}
-                className="flex items-center gap-1 px-3 py-2 rounded-lg text-xs font-bold border border-primary/30 text-primary hover:bg-primary/5 transition-colors"
-                title="Ajustar precios por porcentaje"
-              >
-                <TrendingUp className="h-3.5 w-3.5" /> Ajuste %
-              </button>
+      <div className="space-y-2">
+        {/* Row 1: Search + Category + Filtros toggle + Exportar toggle */}
+        <div className="flex flex-wrap items-center gap-2">
+          <div className="relative flex-1 min-w-45">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400 dark:text-muted" />
+            <input
+              value={search}
+              onChange={e => setSearch(e.target.value)}
+              placeholder={searchPlaceholders[phIndex]}
+              className="w-full pl-10 pr-4 py-2 rounded-lg border border-gray-200 dark:border-card-border text-sm text-gray-900 dark:text-foreground outline-none focus:border-primary transition-colors"
+            />
+          </div>
+          <select
+            value={catFilter}
+            onChange={e => setCatFilter(e.target.value)}
+            className="px-3 py-2 rounded-lg border border-gray-200 dark:border-card-border text-sm text-gray-700 dark:text-foreground outline-none focus:border-primary"
+          >
+            {categories.map(c => (
+              <option key={c.id} value={c.id}>{c.label}</option>
+            ))}
+          </select>
+          {/* Filtros toggle */}
+          <button
+            onClick={() => setShowFilters(!showFilters)}
+            className={cn(
+              "flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-bold border transition-colors",
+              (lowOnly || showInactive || noImageOnly) ? "border-primary bg-primary/5 text-primary" : "border-gray-200 dark:border-card-border text-gray-500 dark:text-muted hover:bg-gray-50 dark:hover:bg-surface"
             )}
-            {/* AB4: Export inventory CSV */}
-            <button
-              onClick={() => {
-                const filtered = products.filter(p => {
-                  if (catFilter !== "todos" && p.category !== catFilter) return false;
-                  if (search && !p.name.toLowerCase().includes(search.toLowerCase()) && !(p.barcode ?? "").includes(search)) return false;
-                  return true;
-                });
-                exportToCSV(filtered.map(p => ({
-                  nombre: p.name, categoria: p.category, precio: p.price,
-                  costo: p.costPrice ?? "", stock: p.stock ?? "",
-                  stockMin: p.stockMin ?? "", stockMax: p.stockMax ?? "",
-                  unidad: p.unit, codigo: p.barcode ?? "", activo: p.active ? "Sí" : "No",
-                })), `inventario_${new Date().toISOString().slice(0, 10)}.csv`);
-              }}
-              className="flex items-center gap-1 px-3 py-2 rounded-lg text-xs font-bold border border-gray-200 dark:border-card-border text-gray-500 dark:text-muted hover:bg-gray-50 dark:hover:bg-surface transition-colors"
-              title="Descargar inventario filtrado como CSV"
-            >
-              <Download className="h-3.5 w-3.5" /> CSV
-            </button>
-            {/* Excel Export */}
-            <button
-              onClick={() => {
-                const filtered = products.filter(p => {
-                  if (catFilter !== "todos" && p.category !== catFilter) return false;
-                  if (search && !p.name.toLowerCase().includes(search.toLowerCase()) && !(p.barcode ?? "").includes(search)) return false;
-                  return true;
-                });
-                exportToExcel(filtered.map(p => ({
-                  Nombre: p.name, Categoría: p.category, "Precio (S/)": p.price,
-                  "Costo (S/)": p.costPrice ?? "", Stock: p.stock ?? "",
-                  "Stock Mín": p.stockMin ?? "", "Stock Máx": p.stockMax ?? "",
-                  Unidad: p.unit, Código: p.barcode ?? "", Activo: p.active ? "Sí" : "No",
-                })), `inventario-${new Date().toISOString().slice(0, 10)}`, "Inventario");
-              }}
-              className="flex items-center gap-1 px-3 py-2 rounded-lg text-xs font-bold border border-emerald-300 dark:border-emerald-800/50 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-950/20 transition-colors"
-              title="Descargar inventario como Excel"
-            >
-              <Download className="h-3.5 w-3.5" /> Excel
-            </button>
-            {/* AB5: Import CSV */}
-            <input ref={csvImportRef} type="file" accept=".csv,text/csv" className="hidden" onChange={handleCsvImport} />
-            <button
-              onClick={() => { setCsvResult(null); csvImportRef.current?.click(); }}
-              disabled={csvImporting}
-              className="flex items-center gap-1 px-3 py-2 rounded-lg text-xs font-bold border border-emerald-200 dark:border-emerald-800/50 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-950/20 transition-colors disabled:opacity-50"
-              title="Subir productos desde CSV (columnas: nombre, precio, categoria, stock, costo, unidad, codigo)"
-            >
-              {csvImporting ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Upload className="h-3.5 w-3.5" />} Subir
-            </button>
-          </>
+          >
+            <Filter className="h-3.5 w-3.5" />
+            Filtros
+            {(lowOnly || showInactive || noImageOnly) && (
+              <span className="ml-0.5 bg-primary text-white text-[10px] font-bold rounded-full h-4 w-4 flex items-center justify-center">
+                {[lowOnly, showInactive, noImageOnly].filter(Boolean).length}
+              </span>
+            )}
+            <ChevronDown className={cn("h-3 w-3 transition-transform", showFilters && "rotate-180")} />
+          </button>
+        </div>
+
+        {/* Row 2: Expanded filter options (collapsible) */}
+        {showFilters && (
+          <div className="bg-gray-50 dark:bg-surface rounded-xl p-3 border border-gray-100 dark:border-card-border space-y-3">
+            {/* Grupo: Filtrar productos */}
+            <div>
+              <p className="text-[10px] font-bold uppercase tracking-wider text-gray-400 dark:text-muted mb-2">Filtrar productos</p>
+              <div className="flex flex-wrap gap-2">
+                <button
+                  onClick={() => setLowOnly(!lowOnly)}
+                  className={cn(
+                    "flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-bold border transition-colors",
+                    lowOnly ? "border-amber-300 bg-amber-50 text-amber-700 dark:border-amber-700 dark:bg-amber-950/20 dark:text-amber-400" : "border-gray-200 dark:border-card-border text-gray-500 dark:text-muted hover:bg-white dark:hover:bg-card"
+                  )}
+                >
+                  <AlertTriangle className="h-3.5 w-3.5" /> Bajo stock
+                </button>
+                <button
+                  onClick={() => setShowInactive(!showInactive)}
+                  className={cn(
+                    "flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-bold border transition-colors",
+                    showInactive ? "border-gray-400 bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300" : "border-gray-200 dark:border-card-border text-gray-500 dark:text-muted hover:bg-white dark:hover:bg-card"
+                  )}
+                >
+                  {showInactive ? <Eye className="h-3.5 w-3.5" /> : <EyeOff className="h-3.5 w-3.5" />}
+                  Mostrar inactivos
+                </button>
+                <button
+                  onClick={() => setNoImageOnly(!noImageOnly)}
+                  className={cn(
+                    "flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-bold border transition-colors",
+                    noImageOnly ? "border-violet-300 bg-violet-50 text-violet-700 dark:border-violet-700 dark:bg-violet-950/20 dark:text-violet-400" : "border-gray-200 dark:border-card-border text-gray-500 dark:text-muted hover:bg-white dark:hover:bg-card"
+                  )}
+                >
+                  <Camera className="h-3.5 w-3.5" /> Sin foto ({noImageCount})
+                </button>
+                {(lowOnly || showInactive || noImageOnly) && (
+                  <button
+                    onClick={() => { setLowOnly(false); setShowInactive(false); setNoImageOnly(false); }}
+                    className="flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-bold text-red-500 hover:bg-red-50 dark:hover:bg-red-950/20 transition-colors"
+                  >
+                    <X className="h-3.5 w-3.5" /> Limpiar filtros
+                  </button>
+                )}
+              </div>
+            </div>
+
+            {/* Grupo: Vista */}
+            <div>
+              <p className="text-[10px] font-bold uppercase tracking-wider text-gray-400 dark:text-muted mb-2">Vista</p>
+              <div className="flex flex-wrap gap-2">
+                <button
+                  onClick={() => { const next = !showExtendedCols; setShowExtendedCols(next); try { localStorage.setItem("inv-extended-cols", String(next)); } catch {} }}
+                  className={cn(
+                    "flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-bold border transition-colors",
+                    showExtendedCols ? "border-blue-300 bg-blue-50 text-blue-700 dark:border-blue-700 dark:bg-blue-950/20 dark:text-blue-400" : "border-gray-200 dark:border-card-border text-gray-500 dark:text-muted hover:bg-white dark:hover:bg-card"
+                  )}
+                >
+                  <Layers className="h-3.5 w-3.5" /> {showExtendedCols ? "Menos columnas" : "Más columnas"}
+                </button>
+                <button
+                  onClick={() => setShowExpandedTable(true)}
+                  className="flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-bold border border-emerald-300 bg-emerald-50 text-emerald-700 dark:border-emerald-700 dark:bg-emerald-950/20 dark:text-emerald-400 hover:bg-emerald-100 dark:hover:bg-emerald-950/30 transition-colors"
+                >
+                  <Maximize2 className="h-3.5 w-3.5" /> Expandir tabla
+                </button>
+                {view === "productos" && (
+                  <button
+                    onClick={() => { setBulkField("pricePercent"); setBulkValue(""); setBulkModal(true); }}
+                    className="flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-bold border border-primary/30 text-primary hover:bg-primary/5 transition-colors"
+                  >
+                    <TrendingUp className="h-3.5 w-3.5" /> Ajuste %
+                  </button>
+                )}
+              </div>
+            </div>
+
+            {/* Grupo: Importar / Exportar */}
+            <div>
+              <p className="text-[10px] font-bold uppercase tracking-wider text-gray-400 dark:text-muted mb-2">Importar / Exportar</p>
+              <div className="flex flex-wrap gap-2">
+                <button
+                  onClick={() => {
+                    const filtered = products.filter(p => {
+                      if (catFilter !== "todos" && p.category !== catFilter) return false;
+                      if (search && !p.name.toLowerCase().includes(search.toLowerCase()) && !(p.barcode ?? "").includes(search)) return false;
+                      return true;
+                    });
+                    exportToCSV(filtered.map(p => ({
+                      nombre: p.name, categoria: p.category, precio: p.price,
+                      costo: p.costPrice ?? "", stock: p.stock ?? "",
+                      stockMin: p.stockMin ?? "", stockMax: p.stockMax ?? "",
+                      unidad: p.unit, codigo: p.barcode ?? "", activo: p.active ? "Sí" : "No",
+                    })), `inventario_${new Date().toISOString().slice(0, 10)}.csv`);
+                  }}
+                  className="flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-bold border border-gray-200 dark:border-card-border text-gray-500 dark:text-muted hover:bg-white dark:hover:bg-card transition-colors"
+                >
+                  <Download className="h-3.5 w-3.5" /> CSV
+                </button>
+                <button
+                  onClick={() => {
+                    const filtered = products.filter(p => {
+                      if (catFilter !== "todos" && p.category !== catFilter) return false;
+                      if (search && !p.name.toLowerCase().includes(search.toLowerCase()) && !(p.barcode ?? "").includes(search)) return false;
+                      return true;
+                    });
+                    exportToExcel(filtered.map(p => ({
+                      Nombre: p.name, Categoría: p.category, "Precio (S/)": p.price,
+                      "Costo (S/)": p.costPrice ?? "", Stock: p.stock ?? "",
+                      "Stock Mín": p.stockMin ?? "", "Stock Máx": p.stockMax ?? "",
+                      Unidad: p.unit, Código: p.barcode ?? "", Activo: p.active ? "Sí" : "No",
+                    })), `inventario-${new Date().toISOString().slice(0, 10)}`, "Inventario");
+                  }}
+                  className="flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-bold border border-emerald-300 dark:border-emerald-800/50 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-950/20 transition-colors"
+                >
+                  <Download className="h-3.5 w-3.5" /> Excel
+                </button>
+                <input ref={csvImportRef} type="file" accept=".csv,text/csv" className="hidden" onChange={handleCsvImport} />
+                <button
+                  onClick={() => { setCsvResult(null); csvImportRef.current?.click(); }}
+                  disabled={csvImporting}
+                  className="flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-bold border border-emerald-200 dark:border-emerald-800/50 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-950/20 transition-colors disabled:opacity-50"
+                >
+                  {csvImporting ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Upload className="h-3.5 w-3.5" />} Subir CSV
+                </button>
+              </div>
+            </div>
+          </div>
         )}
       </div>
 
       {/* Contador de resultados filtrados */}
-      {view !== "movimientos" && filteredProducts.length !== products.length && (
+      {filteredProducts.length !== products.length && (
         <p className="text-[10px] text-gray-400">Mostrando {filteredProducts.length} de {products.length} productos</p>
       )}
 
@@ -1065,7 +1102,7 @@ export default function InventoryTab() {
                           <span className="inline-flex px-1.5 py-0.5 rounded-full bg-emerald-100 text-emerald-700 dark:bg-emerald-950/30 dark:text-emerald-400 text-[10px] font-bold">Alta rentabilidad</span>
                         )}
                       </div>
-                      <p className="text-xs text-gray-400 dark:text-muted mt-0.5">{cat?.emoji} {cat?.label ?? p.category} · {p.unit}</p>
+                      <p className="text-xs text-gray-400 dark:text-muted mt-0.5">{cat?.label ?? p.category} · {p.unit}</p>
                       <div className="flex items-center gap-1.5 mt-1.5">
                         <span className="font-extrabold text-primary text-base">S/{p.price.toFixed(2)}</span>
                         {p.costPrice && <span className="text-xs text-gray-400 dark:text-muted">costo S/{p.costPrice.toFixed(2)}</span>}
@@ -1188,7 +1225,7 @@ export default function InventoryTab() {
                           </div>
                         </td>
                         <td className="px-2 sm:px-4 py-2 sm:py-3 text-gray-600 dark:text-muted">
-                          {categories.find(c => c.id === p.category)?.emoji} {categories.find(c => c.id === p.category)?.label ?? p.category}
+                          {categories.find(c => c.id === p.category)?.label ?? p.category}
                         </td>
                         <td className="px-2 sm:px-4 py-2 sm:py-3 font-bold text-primary">S/{p.price.toFixed(2)}</td>
                         <td className={cn("px-2 sm:px-4 py-2 sm:py-3", !showExtendedCols && "hidden")}>
@@ -1338,164 +1375,6 @@ export default function InventoryTab() {
             <Paginator page={pgProducts.page} totalPages={pgProducts.totalPages} total={pgProducts.total} pageSize={pgProducts.pageSize} onPage={pgProducts.setPage} onPageSize={pgProducts.setPageSize} />
           </div>
         </>
-      ) : view === "stock" ? (
-        /* ── Stock View ─────────────────────────────────────────── */
-        <div className="space-y-5">
-          {/* ── Visual KPI Tiles ─────────────────────────────────── */}
-          {(() => {
-            const all = filteredProducts.filter(p => p.stock !== undefined);
-            const agotado = all.filter(p => (p.stock ?? 0) === 0);
-            const bajo = all.filter(p => (p.stock ?? 0) > 0 && (p.stock ?? 0) <= (p.stockMin ?? 5));
-            const normal = all.filter(p => (p.stock ?? 0) > (p.stockMin ?? 5));
-            const valorTotal = all.reduce((s, p) => s + (p.stock ?? 0) * p.price, 0);
-            const lowList = [...agotado, ...bajo].slice(0, 10);
-            return (
-              <>
-                <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-                  <div className="bg-red-50 dark:bg-red-950/20 border border-red-200 dark:border-red-800/30 rounded-2xl p-4 flex flex-col gap-1">
-                    <span className="text-[11px] font-bold uppercase tracking-wider text-red-500">Agotado</span>
-                    <span className="text-xl sm:text-3xl font-extrabold text-red-600 dark:text-red-400">{agotado.length}</span>
-                    <span className="text-xs text-red-400">productos agotados</span>
-                  </div>
-                  <div className="bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-800/30 rounded-2xl p-4 flex flex-col gap-1">
-                    <span className="text-[11px] font-bold uppercase tracking-wider text-amber-500">Pocas Existencias</span>
-                    <span className="text-xl sm:text-3xl font-extrabold text-amber-600 dark:text-amber-400">{bajo.length}</span>
-                    <span className="text-xs text-amber-400">bajo mínimo</span>
-                  </div>
-                  <div className="bg-emerald-50 dark:bg-emerald-950/20 border border-emerald-200 dark:border-emerald-800/30 rounded-2xl p-4 flex flex-col gap-1">
-                    <span className="text-[11px] font-bold uppercase tracking-wider text-emerald-500">Normal</span>
-                    <span className="text-xl sm:text-3xl font-extrabold text-emerald-600 dark:text-emerald-400">{normal.length}</span>
-                    <span className="text-xs text-emerald-400">con stock suficiente</span>
-                  </div>
-                  <div className="bg-blue-50 dark:bg-blue-950/20 border border-blue-200 dark:border-blue-800/30 rounded-2xl p-4 flex flex-col gap-1">
-                    <span className="text-[11px] font-bold uppercase tracking-wider text-blue-500">Valor total</span>
-                    <span className="text-xl font-extrabold text-blue-600 dark:text-blue-400">{fmt(valorTotal)}</span>
-                    <span className="text-xs text-blue-400">inventario en stock</span>
-                  </div>
-                </div>
-
-                {/* ── Low-stock bar chart ───────────────────────── */}
-                {lowList.length > 0 && (
-                  <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl p-3 sm:p-5 shadow-sm">
-                    <div className="flex items-center justify-between mb-4">
-                      <h3 className="font-extrabold text-gray-900 dark:text-foreground flex flex-wrap items-center gap-2">
-                        <AlertTriangle className="h-4 w-4 text-amber-500" />
-                        Productos críticos — reordenar ya
-                      </h3>
-                      <span className="text-xs text-muted">{lowList.length} producto{lowList.length !== 1 ? "s" : ""}</span>
-                    </div>
-                    <div className="space-y-2.5">
-                      {lowList.map(p => {
-                        const stock = p.stock ?? 0;
-                        const min = p.stockMin ?? 5;
-                        const pct = stock === 0 ? 0 : Math.min(100, Math.round((stock / (min * 2)) * 100));
-                        const barColor = stock === 0 ? "bg-red-500" : "bg-amber-400";
-                        const reorderQty = Math.max(min * 3 - stock, min);
-                        return (
-                          <div key={p.id} className="flex flex-wrap items-center gap-3">
-                            <div className="w-32 sm:w-44 truncate text-xs font-semibold text-foreground">{p.name}</div>
-                            <div className="flex-1 h-4 bg-gray-100 dark:bg-surface rounded-full overflow-hidden">
-                              <div
-                                className={cn("h-full rounded-full transition-all duration-500", barColor)}
-                                style={{ width: `${pct}%` }}
-                              />
-                            </div>
-                            <div className="w-16 text-right text-xs font-bold shrink-0">
-                              <span className={stock === 0 ? "text-red-600 dark:text-red-400" : "text-amber-600 dark:text-amber-400"}>{stock} ud.</span>
-                            </div>
-                            <div className="hidden sm:block w-32 text-xs text-muted shrink-0">
-                              → pedir ~<span className="font-bold text-primary">{reorderQty}</span> ud.
-                            </div>
-                          </div>
-                        );
-                      })}
-                    </div>
-                  </div>
-                )}
-              </>
-            );
-          })()}
-
-          <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl overflow-hidden shadow-sm">
-          <div className="overflow-x-auto">
-            <table className="w-full min-w-[600px] text-sm">
-              <thead>
-                <tr className="border-b border-gray-100 dark:border-card-border text-left">
-                  <th className="px-2 sm:px-4 py-2 sm:py-3 text-xs font-bold text-gray-500 dark:text-muted uppercase tracking-wider">Producto</th>
-                  <th className="px-2 sm:px-4 py-2 sm:py-3 text-xs font-bold text-gray-500 dark:text-muted uppercase tracking-wider">Categoría</th>
-                  <th className="px-2 sm:px-4 py-2 sm:py-3 text-xs font-bold text-gray-500 dark:text-muted uppercase tracking-wider text-right">Stock</th>
-                  <th className="px-2 sm:px-4 py-2 sm:py-3 text-xs font-bold text-gray-500 dark:text-muted uppercase tracking-wider text-right hidden sm:table-cell">Mín</th>
-                  <th className="px-2 sm:px-4 py-2 sm:py-3 text-xs font-bold text-gray-500 dark:text-muted uppercase tracking-wider text-right hidden sm:table-cell">Máx</th>
-                  <th className="px-2 sm:px-4 py-2 sm:py-3 text-xs font-bold text-gray-500 dark:text-muted uppercase tracking-wider hidden md:table-cell">Vence</th>
-                  <th className="px-2 sm:px-4 py-2 sm:py-3 text-xs font-bold text-gray-500 dark:text-muted uppercase tracking-wider text-right">Valor</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-50">
-                {pgProducts.items.map(p => {
-                  const low = isLowStock(p);
-                  return (
-                    <tr key={p.id} className={cn("hover:bg-gray-50 dark:hover:bg-surface transition-colors", low && "bg-amber-50/40", !p.active && "opacity-50")}>
-                      <td className="px-2 sm:px-4 py-2 sm:py-3">
-                        <div className="flex flex-wrap items-center gap-2">
-                          {p.image ? (
-                            <Image src={p.image} alt="" width={32} height={32} unoptimized={p.image.startsWith("data:")} className="rounded-lg object-cover border border-gray-100 dark:border-card-border shrink-0" />
-                          ) : (
-                            <div className="h-8 w-8 rounded-lg bg-gray-100 dark:bg-accent flex items-center justify-center shrink-0">
-                              <Package className="h-4 w-4 text-gray-400 dark:text-muted" />
-                            </div>
-                          )}
-                          <span className="font-semibold text-gray-900 dark:text-foreground truncate">{p.name}</span>
-                        </div>
-                      </td>
-                      <td className="px-2 sm:px-4 py-2 sm:py-3 text-gray-500 dark:text-muted text-xs">
-                        {categories.find(c => c.id === p.category)?.emoji} {categories.find(c => c.id === p.category)?.label ?? p.category}
-                      </td>
-                      <td className="px-2 sm:px-4 py-2 sm:py-3 text-right">
-                        {p.stock !== undefined ? (
-                          <span className={cn(
-                            "inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-bold",
-                            low ? "bg-amber-100 text-amber-700" : "bg-blue-50 text-blue-600"
-                          )}>
-                            {low && <AlertTriangle className="h-3 w-3" />}
-                            {p.stock}
-                          </span>
-                        ) : (
-                          <span className="text-gray-300 dark:text-muted">—</span>
-                        )}
-                      </td>
-                      <td className="px-2 sm:px-4 py-2 sm:py-3 text-right text-gray-500 dark:text-muted text-xs hidden sm:table-cell">{p.stockMin ?? "—"}</td>
-                      <td className="px-2 sm:px-4 py-2 sm:py-3 text-right text-gray-500 dark:text-muted text-xs hidden sm:table-cell">{p.stockMax ?? "—"}</td>
-                      <td className="px-2 sm:px-4 py-2 sm:py-3 hidden md:table-cell">{(() => {
-                        const expiry = (p as DbProduct & { expiryDate?: string }).expiryDate;
-                        if (!expiry) return <span className="text-gray-300 dark:text-muted">—</span>;
-                        const expiryDate = new Date(expiry);
-                        const now = new Date();
-                        const diffDays = Math.floor((expiryDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
-                        const color = diffDays < 0 ? "text-gray-400 line-through" : diffDays <= 7 ? "text-red-600 font-bold" : diffDays <= 30 ? "text-amber-600 font-semibold" : "text-gray-600";
-                        const badge = diffDays < 0 ? "Vencido" : diffDays <= 7 ? `${diffDays}d` : diffDays <= 15 ? `${diffDays}d` : null;
-                        const badgeColor = diffDays < 0 ? "bg-gray-200 text-gray-600" : diffDays <= 7 ? "bg-red-100 text-red-700" : "bg-amber-100 text-amber-700";
-                        return (
-                          <div className="flex items-center gap-1.5">
-                            <span className={cn("text-xs", color)}>{expiryDate.toLocaleDateString("es-PE", { day: "2-digit", month: "short", year: "numeric" })}</span>
-                            {badge && <span className={cn("text-[9px] font-bold px-1 py-0.5 rounded", badgeColor)}>{badge}</span>}
-                          </div>
-                        );
-                      })()}</td>
-                      <td className="px-2 sm:px-4 py-2 sm:py-3 text-right font-bold text-gray-900 dark:text-foreground text-xs">{p.stock !== undefined ? fmt(p.stock * p.price) : "—"}</td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
-          {filteredProducts.length === 0 && (
-            <div className="h-32 flex items-center justify-center text-gray-400 dark:text-muted text-sm">
-              No se encontraron productos
-            </div>
-          )}
-          <Paginator page={pgProducts.page} totalPages={pgProducts.totalPages} total={pgProducts.total} pageSize={pgProducts.pageSize} onPage={pgProducts.setPage} onPageSize={pgProducts.setPageSize} />
-        </div>
-        </div>
       ) : view === "kanban" ? (
         /* ── Kanban Stock View ────────────────────────────────────── */
         (() => {
@@ -1535,254 +1414,108 @@ export default function InventoryTab() {
             </div>
           );
         })()
-      ) : view === "conteo" ? (
-        /* ── Stocktaking View ────────────────────────────────────── */
-        (() => {
-          const productsWithStock = filteredProducts.filter(p => p.stock !== undefined);
-          const counted = Object.keys(stockCounts).length;
-          const differences = Object.entries(stockCounts).filter(([id, val]) => {
-            const p = products.find(pr => pr.id === Number(id));
-            return p && p.stock !== undefined && Number(val) !== p.stock;
-          }).length;
-          const totalAdjustment = Object.entries(stockCounts).reduce((sum, [id, val]) => {
-            const p = products.find(pr => pr.id === Number(id));
-            if (!p || p.stock === undefined || !val) return sum;
-            return sum + Math.abs(Number(val) - p.stock);
-          }, 0);
-
-          const saveStocktaking = async () => {
-            setSaving(true);
-            for (const [id, countedStr] of Object.entries(stockCounts)) {
-              const counted = Number(countedStr);
-              const p = products.find(pr => pr.id === Number(id));
-              if (!p || p.stock === undefined || !countedStr) continue;
-              if (counted === p.stock) continue;
-              const type = counted > p.stock ? "ajuste_positivo" : "ajuste_negativo";
-              const quantity = Math.abs(counted - p.stock);
-              await fetch("/api/inventory-movements", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ productId: Number(id), type, quantity, notes: "Conteo físico" }),
-              });
-            }
-            setSaving(false);
-            setStockCounts({});
-            load();
-          };
-
-          return (
-            <div className="space-y-4">
-              {/* Summary card */}
-              <div className="bg-linear-to-r from-primary/10 to-primary/5 dark:from-primary/20 dark:to-primary/10 border border-primary/20 rounded-2xl p-4">
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 text-center">
-                  <div>
-                    <p className="text-xl sm:text-2xl font-extrabold text-primary">{counted}</p>
-                    <p className="text-xs text-gray-600 dark:text-muted">Contados</p>
-                  </div>
-                  <div>
-                    <p className="text-xl sm:text-2xl font-extrabold text-amber-600">{differences}</p>
-                    <p className="text-xs text-gray-600 dark:text-muted">Diferencias</p>
-                  </div>
-                  <div>
-                    <p className="text-xl sm:text-2xl font-extrabold text-red-600">{totalAdjustment}</p>
-                    <p className="text-xs text-gray-600 dark:text-muted">Ajuste total (ud.)</p>
-                  </div>
-                </div>
-              </div>
-
-              {/* Product cards */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-                {productsWithStock.map(p => {
-                  const countedVal = stockCounts[p.id] ?? "";
-                  const counted = countedVal ? Number(countedVal) : null;
-                  const diff = counted !== null && p.stock !== undefined ? counted - p.stock : 0;
-                  const diffColor = diff === 0 && counted !== null ? "border-emerald-300 bg-emerald-50/50" : Math.abs(diff) <= 3 ? "border-amber-300 bg-amber-50/50" : diff !== 0 ? "border-red-300 bg-red-50/50" : "border-gray-200 dark:border-card-border";
-                  return (
-                    <div key={p.id} className={cn("bg-white dark:bg-card rounded-2xl p-4 border transition-all", diffColor)}>
-                      <div className="flex flex-wrap items-start gap-3 mb-3">
-                        {p.image ? (
-                          <Image src={p.image} alt={p.name} width={48} height={48} unoptimized={p.image.startsWith("data:")} className="rounded-lg object-cover border border-gray-100 dark:border-card-border shrink-0 bg-gray-50 dark:bg-surface" />
-                        ) : (
-                          <div className="h-12 w-12 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
-                            <Package className="h-5 w-5 text-primary/40" />
-                          </div>
-                        )}
-                        <div className="flex-1 min-w-0">
-                          <p className="font-bold text-sm text-gray-900 dark:text-foreground leading-tight truncate">{p.name}</p>
-                          <p className="text-xs text-gray-400 dark:text-muted mt-0.5">Sistema: {p.stock} {p.unit}</p>
-                        </div>
-                      </div>
-                      <div>
-                        <label className="block text-xs font-semibold text-gray-600 dark:text-muted mb-1">Conteo físico</label>
-                        <input
-                          type="number"
-                          min="0"
-                          value={stockCounts[p.id] ?? ""}
-                          onChange={e => setStockCounts(prev => ({ ...prev, [p.id]: e.target.value }))}
-                          placeholder={String(p.stock)}
-                          className="w-full px-3 py-2 rounded-lg border border-gray-200 dark:border-card-border text-gray-900 dark:text-foreground focus:border-primary outline-none text-sm font-mono"
-                        />
-                      </div>
-                      {diff !== 0 && counted !== null && (
-                        <div className={cn("mt-2 text-xs font-bold text-center py-1 rounded", diff > 0 ? "text-emerald-700 bg-emerald-100" : "text-red-700 bg-red-100")}>
-                          {diff > 0 ? "+" : ""}{diff} unidades
-                        </div>
-                      )}
-                    </div>
-                  );
-                })}
-              </div>
-
-              {productsWithStock.length === 0 && (
-                <div className="h-32 flex items-center justify-center text-gray-400 dark:text-muted text-sm">
-                  No hay productos con stock para contar
-                </div>
-              )}
-
-              {/* Save button */}
-              {counted > 0 && (
-                <div className="flex justify-center pt-2">
-                  <button
-                    onClick={saveStocktaking}
-                    disabled={saving}
-                    className="flex flex-wrap items-center gap-2 px-3 sm:px-6 py-3 rounded-xl bg-primary text-white font-bold hover:bg-primary-dark transition-colors shadow-lg disabled:opacity-60"
-                  >
-                    {saving ? <Loader2 className="h-5 w-5 animate-spin" /> : <CheckSquare className="h-5 w-5" />}
-                    {saving ? "Guardando conteo..." : "Guardar conteo físico"}
-                  </button>
-                </div>
-              )}
-            </div>
-          );
-        })()
-      ) : (
-        /* ── Movements View ────────────────────────────────────── */
-        <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl overflow-hidden shadow-sm">
-          {filteredMovements.length === 0 ? (
-            <div className="h-32 flex flex-col items-center justify-center text-gray-400 dark:text-muted">
-              <ClipboardList className="h-6 w-6 mb-1" />
-              <p className="text-sm">Sin movimientos de inventario</p>
-            </div>
-          ) : (
-            <div className="divide-y divide-gray-50">
-              {pgMovements.items.map(m => {
-                const product = products.find(p => p.id === m.productId);
-                const meta = MOVEMENT_LABELS[m.type] ?? { label: m.type, color: "text-gray-600 dark:text-muted bg-gray-50 dark:bg-surface" };
-                const isPositive = ["compra", "devolucion", "ajuste_positivo"].includes(m.type);
-                return (
-                  <div key={m.id} className="px-2 sm:px-4 py-2 sm:py-3 flex flex-wrap items-center gap-3">
-                    <div className={cn("h-8 w-8 rounded-lg flex items-center justify-center shrink-0", isPositive ? "bg-emerald-50" : "bg-red-50")}>
-                      {isPositive ? <ArrowUp className="h-4 w-4 text-emerald-500" /> : <ArrowDown className="h-4 w-4 text-red-500" />}
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm font-semibold text-gray-900 dark:text-foreground truncate">{product?.name ?? `Producto #${m.productId}`}</p>
-                      <p className="text-xs text-gray-400 dark:text-muted">{fmtDate(m.createdAt)}{m.notes ? ` · ${m.notes}` : ""}</p>
-                    </div>
-                    <span className={cn("text-[10px] font-bold px-2 py-0.5 rounded-full shrink-0", meta.color)}>{meta.label}</span>
-                    <div className="text-right shrink-0 w-20">
-                      <p className={cn("text-sm font-bold", isPositive ? "text-emerald-600" : "text-red-600")}>
-                        {isPositive ? "+" : ""}{m.quantity}
-                      </p>
-                      <p className="text-[10px] text-gray-400 dark:text-muted">{m.previousStock} → {m.newStock}</p>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          )}
-          <Paginator page={pgMovements.page} totalPages={pgMovements.totalPages} total={pgMovements.total} pageSize={pgMovements.pageSize} onPage={pgMovements.setPage} onPageSize={pgMovements.setPageSize} />
-        </div>
-      )}
-
-      {/* ── Shrinkage Report View ─────────────────────────────────────── */}
-      {view === "merma" && (() => {
-        const LOSS_LABELS: Record<string, string> = {
-          damages: "Daños", theft: "Robo/Hurto", expiry: "Vencimiento", obsolescence: "Obsolescencia",
-        };
-        const shrinkage = movements.filter(m => m.type === "merma");
-        const byType: Record<string, { count: number; qty: number }> = {};
-        for (const m of shrinkage) {
-          const key = m.lossType ?? "other";
-          byType[key] = byType[key] ?? { count: 0, qty: 0 };
-          byType[key].count++;
-          byType[key].qty += m.quantity;
-        }
-        const totalQty = shrinkage.reduce((s, m) => s + m.quantity, 0);
-        // By product
-        const byProduct: Record<number, { name: string; qty: number; count: number }> = {};
-        for (const m of shrinkage) {
-          const p = products.find(pr => pr.id === m.productId);
-          const name = p?.name ?? `Producto #${m.productId}`;
-          byProduct[m.productId] = byProduct[m.productId] ?? { name, qty: 0, count: 0 };
-          byProduct[m.productId].qty += m.quantity;
-          byProduct[m.productId].count++;
-        }
-        const productRows = Object.entries(byProduct).sort((a, b) => b[1].qty - a[1].qty).slice(0, 10);
-        return (
-          <div className="space-y-4">
-            {/* KPIs */}
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-              <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl p-3 text-center">
-                <p className="text-lg font-extrabold text-red-600">{shrinkage.length}</p>
-                <p className="text-[10px] text-gray-400 dark:text-muted">Registros de merma</p>
-              </div>
-              <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl p-3 text-center">
-                <p className="text-lg font-extrabold text-red-600">{totalQty}</p>
-                <p className="text-[10px] text-gray-400 dark:text-muted">Unidades perdidas</p>
-              </div>
-              <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl p-3 text-center">
-                <p className="text-lg font-extrabold text-gray-900 dark:text-foreground">{Object.keys(byProduct).length}</p>
-                <p className="text-[10px] text-gray-400 dark:text-muted">Productos afectados</p>
-              </div>
-              <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl p-3 text-center">
-                <p className="text-lg font-extrabold text-gray-900 dark:text-foreground">{Object.keys(byType).length}</p>
-                <p className="text-[10px] text-gray-400 dark:text-muted">Tipos de pérdida</p>
-              </div>
-            </div>
-            {shrinkage.length === 0 ? (
-              <div className="bg-white dark:bg-card border-2 border-dashed border-gray-200 dark:border-card-border rounded-2xl p-10 text-center text-gray-400 dark:text-muted">
-                <p className="text-sm font-semibold">Sin mermas registradas</p>
-                <p className="text-xs mt-1">Registra movimientos de tipo &quot;merma&quot; con su causa</p>
-              </div>
-            ) : (
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-4">
-                {/* By loss type */}
-                <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl p-4">
-                  <h4 className="font-bold text-sm text-gray-900 dark:text-foreground mb-3">Por tipo de p&eacute;rdida</h4>
-                  <div className="space-y-2">
-                    {Object.entries(byType).map(([key, val]) => (
-                      <div key={key} className="flex items-center justify-between text-xs p-2 rounded-lg bg-gray-50 dark:bg-surface">
-                        <span className="font-semibold text-gray-700 dark:text-foreground">{LOSS_LABELS[key] ?? key}</span>
-                        <div className="flex flex-wrap items-center gap-3">
-                          <span className="text-gray-400 dark:text-muted">{val.count} reg.</span>
-                          <span className="font-bold text-red-600">{val.qty} ud.</span>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-                {/* Top products */}
-                <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl p-4">
-                  <h4 className="font-bold text-sm text-gray-900 dark:text-foreground mb-3">Productos más afectados</h4>
-                  <div className="space-y-2">
-                    {productRows.map(([id, row]) => (
-                      <div key={id} className="flex items-center justify-between text-xs p-2 rounded-lg bg-gray-50 dark:bg-surface">
-                        <span className="font-semibold text-gray-700 dark:text-foreground truncate max-w-40">{row.name}</span>
-                        <span className="font-bold text-red-600 shrink-0">{row.qty} ud.</span>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              </div>
-            )}
-          </div>
-        );
-      })()}
+      ) : null}
 
       {/* Barcode Scanner */}
       {showScanner && (
         <BarcodeScanner onDetected={handleBarcodeScan} onClose={() => setShowScanner(false)} />
       )}
+
+      {/* ── Product Picker Modal ── */}
+      {showPicker && (() => {
+        const q = pickerSearch.toLowerCase();
+        const pickerProducts = products.filter(p => {
+          if (!p.active) return false;
+          if (pickerCat !== "todos" && p.category !== pickerCat) return false;
+          if (q && !p.name.toLowerCase().includes(q) && !(p.barcode ?? "").toLowerCase().includes(q)) return false;
+          return true;
+        });
+        return (
+          <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/50" onClick={(e) => e.target === e.currentTarget && setShowPicker(false)}>
+            <div className="bg-white dark:bg-card w-full sm:max-w-4xl sm:rounded-2xl rounded-t-2xl shadow-2xl overflow-hidden max-h-[90dvh] flex flex-col">
+              <div className="flex items-center justify-between px-5 py-4 border-b sticky top-0 bg-white dark:bg-card z-10">
+                <h3 className="font-extrabold text-gray-900 dark:text-foreground">Escoger producto</h3>
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={() => { setShowPicker(false); setShowAdd(true); }}
+                    className="text-xs font-bold text-primary hover:underline"
+                  >
+                    + Crear nuevo
+                  </button>
+                  <button onClick={() => setShowPicker(false)} className="p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-accent transition-colors">
+                    <X className="h-5 w-5 text-gray-500 dark:text-muted" />
+                  </button>
+                </div>
+              </div>
+              <div className="px-5 py-3 border-b flex flex-wrap gap-2">
+                <div className="relative flex-1 min-w-[200px]">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+                  <input
+                    value={pickerSearch}
+                    onChange={e => setPickerSearch(e.target.value)}
+                    placeholder="Buscar producto..."
+                    className="w-full pl-10 pr-4 py-2 rounded-lg border border-gray-200 dark:border-card-border text-sm outline-none focus:border-primary"
+                    autoFocus
+                  />
+                </div>
+                <select
+                  value={pickerCat}
+                  onChange={e => setPickerCat(e.target.value)}
+                  className="px-3 py-2 rounded-lg border border-gray-200 dark:border-card-border text-sm outline-none"
+                >
+                  <option value="todos">Todos</option>
+                  {realCategories.map(c => (
+                    <option key={c.id} value={c.id}>{c.label}</option>
+                  ))}
+                </select>
+              </div>
+              <div className="flex-1 overflow-y-auto p-5">
+                {pickerProducts.length === 0 ? (
+                  <EmptyState
+                    icon={Package}
+                    title="Sin resultados"
+                    description="No se encontraron productos con esos filtros."
+                  />
+                ) : (
+                  <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
+                    {pickerProducts.map(p => (
+                      <button
+                        key={p.id}
+                        onClick={() => {
+                          setShowPicker(false);
+                          setEditModalProduct(p);
+                          setEditForm({ ...p });
+                        }}
+                        className="flex flex-col items-center gap-2 p-3 rounded-xl border border-gray-200 dark:border-card-border hover:border-primary hover:shadow-md transition-all text-center group"
+                      >
+                        <div className="w-16 h-16 rounded-lg bg-gray-100 dark:bg-accent overflow-hidden flex-shrink-0">
+                          {p.image ? (
+                            <Image src={p.image} alt={p.name} width={64} height={64} className="w-full h-full object-cover" />
+                          ) : (
+                            <div className="w-full h-full flex items-center justify-center">
+                              <Package className="h-6 w-6 text-gray-300 dark:text-muted" />
+                            </div>
+                          )}
+                        </div>
+                        <span className="text-xs font-bold text-gray-800 dark:text-foreground line-clamp-2 group-hover:text-primary transition-colors">{p.name}</span>
+                        <span className="text-[11px] text-gray-500 dark:text-muted">{fmt(p.price)}</span>
+                        {p.stock != null && (
+                          <span className={cn(
+                            "text-[10px] font-bold px-2 py-0.5 rounded-full",
+                            (p.stock ?? 0) === 0 ? "bg-red-100 text-red-700" : (p.stock ?? 0) <= (p.stockMin ?? 5) ? "bg-amber-100 text-amber-700" : "bg-emerald-100 text-emerald-700"
+                          )}>
+                            Stock: {p.stock}
+                          </span>
+                        )}
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        );
+      })()}
 
       {/* ── Add product modal ── */}
       {showAdd && (
@@ -1846,7 +1579,7 @@ export default function InventoryTab() {
                 <div>
                   <label className="block text-xs font-semibold text-gray-500 dark:text-muted mb-1">Categoría *</label>
                   <select value={addForm.category} onChange={(e) => setAddForm(f => ({ ...f, category: e.target.value }))} className="w-full px-3 py-2 rounded-lg border border-gray-200 dark:border-card-border text-gray-900 dark:text-foreground focus:border-primary outline-none text-sm">
-                    {realCategories.map((c) => <option key={c.id} value={c.id}>{c.emoji} {c.label}</option>)}
+                    {realCategories.map((c) => <option key={c.id} value={c.id}>{c.label}</option>)}
                   </select>
                 </div>
                 <div>
@@ -1947,7 +1680,7 @@ export default function InventoryTab() {
                   <div className="flex flex-wrap gap-3 items-start">
                     {addForm.image && (
                       <div className="relative h-16 w-16 rounded-xl overflow-hidden border border-gray-200 dark:border-card-border shrink-0 bg-gray-50 dark:bg-surface">
-                        <Image src={addForm.image} alt="preview" fill unoptimized={addForm.image.startsWith("data:")} className="object-cover" />
+                        <Image src={addForm.image} alt="preview" fill unoptimized={addForm.image.startsWith("data:")} className="object-cover" sizes="64px" />
                       </div>
                     )}
                     <div className="flex-1 space-y-1.5">
@@ -2018,7 +1751,7 @@ export default function InventoryTab() {
                 <div>
                   <label className="block text-xs font-semibold text-gray-500 dark:text-muted mb-1">Categoría</label>
                   <select value={editForm.category ?? ""} onChange={(e) => setEditForm(f => ({ ...f, category: e.target.value }))} className="w-full px-3 py-2 rounded-lg border border-gray-200 dark:border-card-border text-gray-900 dark:text-foreground focus:border-primary outline-none text-sm">
-                    {realCategories.map((c) => <option key={c.id} value={c.id}>{c.emoji} {c.label}</option>)}
+                    {realCategories.map((c) => <option key={c.id} value={c.id}>{c.label}</option>)}
                   </select>
                 </div>
                 <div>
@@ -2124,7 +1857,7 @@ export default function InventoryTab() {
                   <div className="flex flex-wrap gap-3 items-start">
                     {editForm.image && (
                       <div className="relative h-16 w-16 rounded-xl overflow-hidden border border-gray-200 dark:border-card-border shrink-0 bg-gray-50 dark:bg-surface">
-                        <Image src={editForm.image} alt="preview" fill unoptimized={editForm.image.startsWith("data:")} className="object-cover" />
+                        <Image src={editForm.image} alt="preview" fill unoptimized={editForm.image.startsWith("data:")} className="object-cover" sizes="64px" />
                       </div>
                     )}
                     <div className="flex-1 space-y-1.5">
@@ -2314,7 +2047,7 @@ export default function InventoryTab() {
                   <select value={bulkValue} onChange={e => setBulkValue(e.target.value)}
                     className="mt-1 w-full rounded-xl border border-gray-200 dark:border-card-border bg-white dark:bg-surface px-3 py-2 text-sm">
                     <option value="">Seleccionar…</option>
-                    {categories.map(c => <option key={c.id} value={c.id}>{c.emoji} {c.label}</option>)}
+                    {categories.map(c => <option key={c.id} value={c.id}>{c.label}</option>)}
                   </select>
                 ) : bulkField === "priceAdjust" ? (
                   <div className="mt-1">
@@ -2368,7 +2101,7 @@ export default function InventoryTab() {
                   <X className="h-4 w-4 text-gray-500" />
                 </button>
               </div>
-              <img
+              <Image
                 src={`https://chart.googleapis.com/chart?chs=200x200&cht=qr&chl=${encodeURIComponent(`PROD:${showQRProduct.id}|${showQRProduct.name}|S/${showQRProduct.price}`)}`}
                 alt={`QR ${showQRProduct.name}`}
                 className="mx-auto"
@@ -2383,7 +2116,7 @@ export default function InventoryTab() {
                   onClick={() => {
                     const w = window.open("", "_blank");
                     if (w) {
-                      w.document.write(`<html><head><title>QR ${showQRProduct.name}</title><style>body{text-align:center;font-family:sans-serif;padding:40px}img{margin:20px auto}@media print{button{display:none}}</style></head><body><h2>${showQRProduct.name}</h2><img src="https://chart.googleapis.com/chart?chs=300x300&cht=qr&chl=${encodeURIComponent(`PROD:${showQRProduct.id}|${showQRProduct.name}|S/${showQRProduct.price}`)}" /><p style="font-size:24px;font-weight:bold;color:#00B4A6">S/${showQRProduct.price.toFixed(2)}</p><button onclick="window.print()">Imprimir</button></body></html>`);
+                      w.document.write(`<html><head><title>QR ${showQRProduct.name}</title><style>body{text-align:center;font-family:sans-serif;padding:40px}img{margin:20px auto}@media print{button{display:none}}</style></head><body><h2>${showQRProduct.name}</h2><img src="https://chart.googleapis.com/chart?chs=300x300&cht=qr&chl=${encodeURIComponent(`PROD:${showQRProduct.id}|${showQRProduct.name}|S/${showQRProduct.price}`)}" /><p style="font-size:24px;font-weight:bold;color:var(--color-primary)">S/${showQRProduct.price.toFixed(2)}</p><button onclick="window.print()">Imprimir</button></body></html>`);
                       w.document.close();
                     }
                   }}
@@ -2453,6 +2186,11 @@ export default function InventoryTab() {
             {autoReorderCount} producto{autoReorderCount > 1 ? "s" : ""} con reorden automatico configurado
           </p>
         </div>
+      )}
+
+      {/* Expanded table modal */}
+      {showExpandedTable && (
+        <ExpandedStockModal products={products} movements={movements} onClose={() => setShowExpandedTable(false)} />
       )}
     </div>
   );

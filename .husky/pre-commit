@@ -26,3 +26,17 @@ npx tsc --noEmit || {
   exit 1
 }
 echo "✅ tsc clean"
+
+# 3. Delta check: block NEW empty .catch() in staged files.
+#    Existing ones are being cleaned up — this gate prevents adding more.
+EMPTY_CATCHES=$(git diff --cached --diff-filter=ACMR -U0 -- '*.ts' '*.tsx' | grep -E '^\+.*\.catch\(\s*(\(\s*\w*\s*\))?\s*=>\s*\{\s*\}\s*\)' || true)
+if [ -n "$EMPTY_CATCHES" ]; then
+  echo ""
+  echo "❌ New empty .catch(() => {}) detected in staged changes:"
+  echo "$EMPTY_CATCHES"
+  echo ""
+  echo "   Use: .catch((err) => logger.error('[ctx] failed', { error: String(err) }))"
+  echo "   Emergency bypass: HUSKY=0 git commit ..."
+  exit 1
+fi
+echo "✅ No new empty .catch()"

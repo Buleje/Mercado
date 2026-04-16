@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useCallback, useRef } from "react";
+import Image from "next/image";
 import { Upload, X, Loader2, ImageIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -98,11 +99,14 @@ export default function ImageUpload({
       {value ? (
         /* ── Con imagen ─────────────────────────────────────── */
         <div className="relative group">
-          <div className={cn("rounded-xl overflow-hidden border border-gray-200 dark:border-card-border bg-gray-50 dark:bg-surface", ASPECT_MAP[aspectRatio])}>
-            <img
+          <div className={cn("relative rounded-xl overflow-hidden border border-gray-200 dark:border-card-border bg-gray-50 dark:bg-surface", ASPECT_MAP[aspectRatio])}>
+            <Image
               src={value}
-              alt={label}
-              className="w-full h-full object-cover"
+              alt={label ?? ""}
+              fill
+              sizes="(max-width: 768px) 100vw, 300px"
+              className="object-cover"
+              unoptimized={value.startsWith("data:")}
             />
           </div>
           {/* Overlay con acciones */}

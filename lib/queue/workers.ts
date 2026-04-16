@@ -121,9 +121,22 @@ const notificationWorker = new Worker<NotificationJobData>(
 const activityLogWorker = new Worker<ActivityLogJobData>(
   QUEUE_NAMES.ACTIVITY_LOG,
   async (job: Job<ActivityLogJobData>) => {
-    logger.info("[worker/activity] Processing", { jobId: job.id, action: job.data.action });
-    // Write to activity_logs table via Prisma
-    // This offloads DB writes from the hot path
+    const { action, resource, resourceId, userId, tenantId, details, timestamp } = job.data;
+    logger.info("[worker/activity] Processing", { jobId: job.id, action, resource, tenantId });
+
+    const { prisma } = await import("@/lib/prisma");
+    await prisma.activityLog.create({
+      data: {
+        action,
+        entity: resource,
+        entityId: resourceId ?? undefined,
+        detail: details ? JSON.stringify(details) : "",
+        user: userId,
+        tenantId,
+        createdAt: new Date(timestamp),
+      },
+    });
+    logger.info("[worker/activity] Written to DB", { jobId: job.id, action, resource });
   },
   { connection, concurrency: 20 },
 );

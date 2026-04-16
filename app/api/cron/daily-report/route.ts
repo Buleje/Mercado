@@ -55,7 +55,7 @@ export async function GET(req: NextRequest) {
       const mensaje = await generateDailyReport(tenant.id);
 
       // Fire-and-forget: encolar el envío WA en BullMQ (durable + retryable)
-      await sendWhatsAppQueued(phone, mensaje, { tenantId: tenant.id, context: "cron/daily-report" }).catch(() => {});
+      await sendWhatsAppQueued(phone, mensaje, { tenantId: tenant.id, context: "cron/daily-report" }).catch((err) => logger.error("[cron/daily-report] WhatsApp enqueue fallback failed", { error: String(err) }));
 
       logger.info("[cron/daily-report] Reporte enviado", { tenant: tenant.name, tenantId: tenant.id });
       enviados++;

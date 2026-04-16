@@ -141,11 +141,12 @@ function ProductCard({
       {/* Image */}
       <div className="relative w-full aspect-square rounded-lg overflow-hidden bg-gray-100 dark:bg-gray-800 mb-2">
         {product.image ? (
-          <img
+          <Image
             src={product.image}
             alt={product.name}
-            className="w-full h-full object-cover group-hover:scale-105 transition-transform"
-            loading="lazy"
+            fill
+            sizes="(max-width: 640px) 33vw, 120px"
+            className="object-cover group-hover:scale-105 transition-transform"
           />
         ) : (
           <div className="w-full h-full flex items-center justify-center">

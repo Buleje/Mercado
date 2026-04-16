@@ -10,6 +10,7 @@ import { sendReceiptByWhatsApp } from "@/lib/receipt-whatsapp";
 import { sendPushToPhone } from "@/lib/push-sender";
 import { logActivity } from "@/lib/activity-logger";
 import { logger } from "@/lib/logger";
+import * as Sentry from "@sentry/nextjs";
 import { requireAdmin } from "@/lib/require-admin";
 import { withDbRetry } from "@/lib/db-retry";
 import { applyRateLimit } from "@/lib/rate-limit";
@@ -147,7 +148,7 @@ export const POST = withApiHandler("orders-create", async (req) => {
   if (idempotencyKey) {
     const existing = await prismaForTenant(tenantId).order.findFirst({
       where: { idempotencyKey, tenantId },
-    }).catch(() => null);
+    }).catch((err) => { logger.error("[orders] operation failed", { error: String(err), tenantId }); return null; });
     if (existing) {
       // Duplicate request — return the already-created order with 200
       return NextResponse.json(existing, { status: 200 });
@@ -314,12 +315,18 @@ export const POST = withApiHandler("orders-create", async (req) => {
     // total del servidor. Esto solo agrega observabilidad.
     const clientTotal = typeof body.total === "number" ? body.total : null;
     if (clientTotal !== null && Math.abs(clientTotal - computedTotal) > 0.01) {
-      logger.warn("[orders/create] client/server total mismatch", {
+      const fraudContext = {
         clientTotal,
         computedTotal,
         delta: Math.round((clientTotal - computedTotal) * 100) / 100,
         tenantId,
         requestId: req.headers.get("x-request-id") ?? undefined,
+      };
+      logger.warn("[orders/create] client/server total mismatch", fraudContext);
+      Sentry.captureMessage("Fraud attempt: order total mismatch", {
+        level: "warning",
+        tags: { fraud_attempt: "true", tenant: tenantId },
+        extra: fraudContext,
       });
     }
     // â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
@@ -484,7 +491,7 @@ export const POST = withApiHandler("orders-create", async (req) => {
             }
           });
         } catch { /* swallow — log path is best-effort */ }
-      })().catch(() => {});
+      })().catch((err) => logger.error("[orders] operation failed", { error: String(err), tenantId }));
       throw addErr;
     }
 
@@ -492,7 +499,7 @@ export const POST = withApiHandler("orders-create", async (req) => {
     //    earliest-expiring Batch rows). Fire-and-forget per CLAUDE.md #7.
     for (const item of body.items) {
       if (item.id > 0) {
-        InventoryMovementsDB.decrementFEFO(item.id, item.quantity, tenantId, saved.id, "venta_online").catch(() => {});
+        InventoryMovementsDB.decrementFEFO(item.id, item.quantity, tenantId, saved.id, "venta_online").catch((err) => logger.error("[orders] inventory FEFO decrement failed", { error: String(err), tenantId }));
       }
     }
     // Fire-and-forget email notification (never blocks the response)
@@ -505,7 +512,7 @@ export const POST = withApiHandler("orders-create", async (req) => {
       paymentMethod: saved.paymentMethod,
       items: saved.items.map(i => ({ name: i.name, quantity: i.quantity, price: i.price, unit: i.unit })),
       tenantId,
-    }).catch(() => {});
+    }).catch((err) => logger.error("[orders] operation failed", { error: String(err), tenantId }));
 
     // Auto-send WhatsApp order received notification (fire-and-forget)
     if (saved.customer.phone) {
@@ -513,7 +520,7 @@ export const POST = withApiHandler("orders-create", async (req) => {
       const custPrefs = await prismaForTenant(tenantId).customer.findUnique({
         where: { phone: saved.customer.phone },
         select: { notifOrderUpdates: true },
-      }).catch(() => null);
+      }).catch((err) => { logger.error("[orders] operation failed", { error: String(err), tenantId }); return null; });
       const wantsOrderNotifs = custPrefs?.notifOrderUpdates !== false;
 
       const orderInfo = {
@@ -535,7 +542,7 @@ export const POST = withApiHandler("orders-create", async (req) => {
         const custWa = await prismaForTenant(tenantId).customer.findUnique({
           where: { phone: saved.customer.phone },
           select: { alertasWhatsapp: true },
-        }).catch(() => null);
+        }).catch((err) => { logger.error("[orders] operation failed", { error: String(err), tenantId }); return null; });
         if (custWa?.alertasWhatsapp !== false) {
           sendReceiptByWhatsApp(
             {
@@ -547,7 +554,7 @@ export const POST = withApiHandler("orders-create", async (req) => {
             },
             saved.customer.phone,
             saved.customer.name,
-          ).catch(() => {});
+          ).catch((err) => logger.error("[orders] operation failed", { error: String(err), tenantId }));
         }
 
         // Push notification for new order
@@ -555,12 +562,12 @@ export const POST = withApiHandler("orders-create", async (req) => {
           title: "📋 ¡Pedido recibido!",
           body: `Tu pedido de S/${saved.total.toFixed(2)} fue recibido. Te avisamos cuando sea confirmado.`,
           url: `/pedido/${saved.id}`,
-        }).catch(() => {});
+        }).catch((err) => logger.error("[orders] operation failed", { error: String(err), tenantId }));
       }
     }
 
     const requestId = req.headers.get("x-request-id") ?? undefined;
-    logActivity("Crear", "pedido", `Nuevo pedido de ${saved.customer.name} por S/${saved.total.toFixed(2)}`, saved.id, "admin", requestId).catch(() => {});
+    logActivity("Crear", "pedido", `Nuevo pedido de ${saved.customer.name} por S/${saved.total.toFixed(2)}`, saved.id, "admin", requestId).catch((err) => logger.error("[orders] activity log failed", { error: String(err), tenantId }));
 
     // Notify connected admin clients in real-time (fire-and-forget)
     emitAdminSSE("new_order", {
@@ -587,12 +594,12 @@ export const POST = withApiHandler("orders-create", async (req) => {
           `💰 Total: S/${saved.total.toFixed(2)}\n` +
           `💳 Pago: ${saved.paymentMethod === "yape" ? "Yape" : saved.paymentMethod === "efectivo" ? "Efectivo" : saved.paymentMethod ?? "—"}\n\n` +
           `Revisa tu panel de administración para confirmar el pedido.`;
-        sendWhatsAppText(ownerPhone, vendorMsg).catch(() => {});
+        sendWhatsAppText(ownerPhone, vendorMsg).catch((err) => logger.error("[orders] WhatsApp send failed", { error: String(err), tenantId }));
         sendPushToPhone(ownerPhone, {
           title: `🔔 Nuevo pedido — S/${saved.total.toFixed(2)}`,
           body: `${saved.customer.name} hizo un pedido: ${itemsSummary}${moreItems}`,
           url: `/admin?tab=pedidos`,
-        }).catch(() => {});
+        }).catch((err) => logger.error("[orders] operation failed", { error: String(err), tenantId }));
       } catch { /* non-critical — never block the response */ }
     })();
     // ───────────────────────────────────────────────────────────────────────
@@ -626,9 +633,9 @@ export const POST = withApiHandler("orders-create", async (req) => {
               title: `🎁 ¡Premio de fidelidad!`,
               body: `Tienes un ${discountPct}% de descuento — usa el código ${code} en tu próximo pedido.`,
               url: "/",
-            }).catch(() => {});
+            }).catch((err) => logger.error("[orders] operation failed", { error: String(err), tenantId }));
             // Log coupon creation
-            logActivity("crear", "cupon", `Cupón de fidelidad ${code} (${discountPct}%) generado automáticamente para ${saved.customer.name} — pedido #${orderCount}`, code).catch(() => {});
+            logActivity("crear", "cupon", `Cupón de fidelidad ${code} (${discountPct}%) generado automáticamente para ${saved.customer.name} — pedido #${orderCount}`, code).catch((err) => logger.error("[orders] activity log failed", { error: String(err), tenantId }));
           }
         } catch { /* non-critical — never block the response */ }
       })();
@@ -645,7 +652,7 @@ export const POST = withApiHandler("orders-create", async (req) => {
           body: `Tu pedido #${saved.id.slice(-6)} por S/${saved.total.toFixed(2)} fue recibido. Te avisaremos cuando sea confirmado.`,
           link: `/pedido/${saved.id}`,
         },
-      }).catch(() => {});
+      }).catch((err) => logger.error("[orders] operation failed", { error: String(err), tenantId }));
     }
 
     return NextResponse.json(saved, { status: 201 });

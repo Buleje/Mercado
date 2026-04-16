@@ -177,7 +177,7 @@ async function sendDigest() {
   const fallbackPhone = process.env.NOTIFY_PHONE ?? process.env.WHATSAPP_OWNER_PHONE;
   if (tenantsBriefed === 0 && fallbackPhone) {
     const message = buildWhatsAppBriefing(data);
-    await sendWhatsAppQueued(fallbackPhone, message, { tenantId: "main", context: "daily-digest:fallback" }).catch(() => {});
+    await sendWhatsAppQueued(fallbackPhone, message, { tenantId: "main", context: "daily-digest:fallback" }).catch((err) => logger.error("[daily-digest] WhatsApp enqueue fallback failed", { error: String(err) }));
   }
 
   // ── 4. Email al admin (solo si hay ventas, como antes) ──────────────────

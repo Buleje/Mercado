@@ -67,6 +67,33 @@ const eslintConfig = defineConfig([
       ],
     },
   },
+  // Stricter rules for critical paths — empty catches are ERROR here
+  {
+    files: ["app/api/**/*.ts", "lib/db/**/*.ts"],
+    rules: {
+      "no-restricted-syntax": [
+        "warn",
+        {
+          selector:
+            "CallExpression[callee.property.name='catch'] > ArrowFunctionExpression[body.type='BlockStatement'][body.body.length=0]",
+          message:
+            "CRITICAL PATH: Empty .catch() forbidden in API routes and DB layer. Use logger.error().",
+        },
+        {
+          selector:
+            "CallExpression[callee.property.name='catch'] > FunctionExpression[body.type='BlockStatement'][body.body.length=0]",
+          message:
+            "CRITICAL PATH: Empty .catch(function(){}) is forbidden. Use logger.error().",
+        },
+        {
+          selector:
+            "CallExpression[callee.property.name='catch'] > ArrowFunctionExpression[body.type='Literal'][body.value=null]",
+          message:
+            "CRITICAL PATH: .catch(() => null) is forbidden. Log first, then return null.",
+        },
+      ],
+    },
+  },
   // Prettier compat — must be LAST to disable formatting rules that conflict with Prettier
   prettierConfig,
 ]);

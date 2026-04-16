@@ -50,7 +50,7 @@ export const GET = withCronAuth("loyalty-points-reminder", async (req) => {
             `Puedes canjearlos la proxima vez que compres. ` +
             `No los dejes guardados, usalos!`;
 
-          await sendWhatsAppQueued(c.phone, message, { tenantId: tenant.id, context: "cron/loyalty-points-reminder" }).catch(() => {});
+          await sendWhatsAppQueued(c.phone, message, { tenantId: tenant.id, context: "cron/loyalty-points-reminder" }).catch((err) => logger.error("[cron/loyalty-points-reminder] WhatsApp enqueue fallback failed", { error: String(err) }));
           totalSent++;
         }
       }

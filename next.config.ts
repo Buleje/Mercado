@@ -65,6 +65,7 @@ const nextConfig: NextConfig = {
       { protocol: "http", hostname: "static.openfoodfacts.org" },
       { protocol: "https", hostname: "*.supabase.co" },
       { protocol: "https", hostname: "chart.googleapis.com" },
+      { protocol: "https", hostname: "api.qrserver.com" },
     ],
   },
 

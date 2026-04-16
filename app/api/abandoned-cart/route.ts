@@ -5,6 +5,7 @@ import nodemailer from "nodemailer";
 import { sendWhatsAppQueued } from "@/lib/whatsapp";
 import { rateLimit, getClientIp } from "@/lib/rate-limit";
 import { withApiHandler } from "@/lib/api-handler";
+import { logger } from "@/lib/logger";
 
 /**
  * POST /api/abandoned-cart
@@ -87,7 +88,7 @@ export const POST = withApiHandler("abandoned-cart", async (req, ctx) => {
           `Si necesitas ayuda, escríbenos por aquí. Buleje - Tu bodega digital`,
         ].join("\n");
 
-        await sendWhatsAppQueued(cleanPhone, message, { tenantId, context: "abandoned-cart:customer" }).catch(() => {});
+        await sendWhatsAppQueued(cleanPhone, message, { tenantId, context: "abandoned-cart:customer" }).catch((err) => logger.error("[abandoned-cart] WhatsApp enqueue fallback failed", { error: String(err), tenantId }));
 
         whatsappSent = true;
       }
@@ -146,7 +147,7 @@ export const POST = withApiHandler("abandoned-cart", async (req, ctx) => {
               <p style="margin:0;font-size:12px;color:#9ca3af;text-align:center;">Buleje · Pucallpa, Perú</p>
             </div>
           </div>`,
-      }).catch(() => {}); // fire-and-forget — no bloquear response
+      }).catch((err) => logger.error("[abandoned-cart] operation failed", { error: String(err) })); // fire-and-forget — no bloquear response
     }
 
     const emailConfigured = !!(smtpUser && smtpPass);

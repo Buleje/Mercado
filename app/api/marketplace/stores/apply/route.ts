@@ -5,6 +5,7 @@ import { applyRateLimit } from "@/lib/rate-limit";
 import { logActivity } from "@/lib/activity-logger";
 import { sendWhatsAppQueued } from "@/lib/whatsapp";
 import { toErrorPayload, newTraceId } from "@/lib/api-error";
+import { logger } from "@/lib/logger";
 
 const RegisterSchema = z.object({
   ownerName:    z.string().min(2, "Nombre muy corto").max(80),
@@ -89,7 +90,7 @@ export async function POST(req: NextRequest) {
         `─────`,
         `Buleje 🏪`,
       ].filter(Boolean).join("\n");
-      await sendWhatsAppQueued(adminPhone, msg, { tenantId: store.id, context: "stores/apply:admin" }).catch(() => {});
+      await sendWhatsAppQueued(adminPhone, msg, { tenantId: store.id, context: "stores/apply:admin" }).catch((err) => logger.error("[marketplace/stores/apply] WhatsApp enqueue fallback failed", { error: String(err) }));
     }
 
     // Confirmation to store owner
@@ -108,7 +109,7 @@ export async function POST(req: NextRequest) {
         `Marketplace Buleje 🏪`,
       ].join("\n"),
       { tenantId: store.id, context: "stores/apply:owner" },
-    ).catch(() => {});
+    ).catch((err) => logger.error("[marketplace/stores/apply] operation failed", { error: String(err) }));
 
     logActivity(
       "Solicitud",
@@ -116,7 +117,7 @@ export async function POST(req: NextRequest) {
       `Nueva solicitud: ${storeName} (${ownerName}, ${ownerPhone})`,
       store.id,
       "público"
-    ).catch(() => {});
+    ).catch((err) => logger.error("[marketplace/stores/apply] operation failed", { error: String(err) }));
 
     return NextResponse.json(
       {

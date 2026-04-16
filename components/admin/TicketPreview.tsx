@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useCallback } from "react";
+import Image from "next/image";
 import { X, Printer, MessageCircle, Banknote, Smartphone, CreditCard } from "lucide-react";
 
 // ── Types ────────────────────────────────────────────────────────────────────
@@ -203,10 +204,12 @@ export default function TicketPreview({ ticket, business, onClose }: Props) {
             {/* Header with logo */}
             <div className="text-center space-y-1">
               {business.logoUrl && (
-                <img
+                <Image
                   src={business.logoUrl}
                   alt={business.name}
-                  className="h-12 mx-auto mb-2 object-contain"
+                  width={48}
+                  height={48}
+                  className="mx-auto mb-2 object-contain"
                 />
               )}
               <h2 className="text-lg font-extrabold text-gray-900 dark:text-foreground">
@@ -355,10 +358,10 @@ export default function TicketPreview({ ticket, business, onClose }: Props) {
                 <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wide">
                   Paga con Yape
                 </p>
-                <img
+                <Image
                   src={qrUrl}
                   alt="QR Yape"
-                  className="mx-auto w-[120px] h-[120px]"
+                  className="mx-auto"
                   width={120}
                   height={120}
                 />

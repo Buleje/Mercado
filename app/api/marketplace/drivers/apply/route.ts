@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
+import { logger } from "@/lib/logger";
 
 const DriverApplySchema = z.object({
   name: z.string().min(2).max(100),
@@ -50,7 +51,7 @@ export async function POST(req: NextRequest) {
       ].join("\n");
       await (await import("@/lib/whatsapp"))
         .sendWhatsAppQueued(adminPhone, msg, { tenantId: "main", context: "drivers/apply:admin" })
-        .catch(() => {});
+        .catch((err) => logger.error("[marketplace/drivers/apply] operation failed", { error: String(err) }));
     }
 
     return NextResponse.json({ success: true });

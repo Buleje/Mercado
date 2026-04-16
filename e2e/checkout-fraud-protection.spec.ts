@@ -221,4 +221,211 @@ test.describe("Checkout Fraud Protection — server recomputes total", () => {
       "Total persistido debe ser el recomputo del servidor, NO el valor manipulado",
     ).toBeGreaterThanOrEqual(FRAUDULENT_TOTAL * 100); // al menos 100x el ataque
   });
+
+  test("manipular item price → server persiste precio real", async ({ page }) => {
+    // ── Step 1: agregar producto al carrito ──
+    const added = await tryAddFirstProduct(page);
+    if (!added) {
+      test.skip(true, "Sin productos en el catálogo — necesita data seed");
+      return;
+    }
+
+    // ── Step 2: capturar la response del POST ──
+    type OrderItem = { id: number; price: number; quantity: number; name: string };
+    let serverResponseBody: { total?: number; items?: OrderItem[] } | null = null;
+    let serverResponseStatus: number | null = null;
+    let originalClientPrice: number | null = null;
+
+    page.on("response", async (response) => {
+      if (
+        response.url().includes("/api/orders") &&
+        response.request().method() === "POST"
+      ) {
+        serverResponseStatus = response.status();
+        try {
+          serverResponseBody = await response.json();
+        } catch {
+          // body no-JSON
+        }
+      }
+    });
+
+    // ── Step 3: interceptar POST y mutar el price del primer item a 0.01 ──
+    await page.route("**/api/orders", async (route: Route) => {
+      const request = route.request();
+      if (request.method() !== "POST") {
+        return route.continue();
+      }
+
+      const original = request.postDataJSON() as
+        | { total?: number; items?: Array<{ id: number; price: number; quantity: number; name: string }> }
+        | null;
+
+      if (!original?.items?.length) return route.continue();
+
+      // Guardar el precio real que el cliente envió (antes de manipular)
+      originalClientPrice = original.items[0].price;
+
+      // ── ATAQUE: cambiar el price del primer item a 0.01 sin cambiar el total ──
+      const tamperedItems = [...original.items];
+      tamperedItems[0] = { ...tamperedItems[0], price: FRAUDULENT_TOTAL };
+
+      const tampered = {
+        ...original,
+        items: tamperedItems,
+        // No cambiamos el total — solo el price del item
+      };
+
+      await route.continue({
+        postData: JSON.stringify(tampered),
+        headers: {
+          ...request.headers(),
+          "content-type": "application/json",
+        },
+      });
+    });
+
+    // ── Step 4: disparar el checkout ──
+    const btnPagoSubmit = await avanzarHastaPagoSubmit(page);
+    await btnPagoSubmit.click();
+
+    // ── Step 5: esperar resultado ──
+    const resultado = page
+      .getByText(/pedido confirmado/i)
+      .or(page.getByText(/seguir comprando/i))
+      .or(page.getByText(/error|inv[aá]lido|fall/i));
+    await expect(resultado.first()).toBeVisible({ timeout: 20_000 });
+
+    // ── Step 6: verificar que el servidor usó el precio real de la DB ──
+    expect(serverResponseStatus, "El POST a /api/orders debe haber respondido").not.toBeNull();
+    expect(serverResponseStatus, "warn-and-correct → 201").toBe(201);
+
+    expect(serverResponseBody, "La response debe traer el order body").not.toBeNull();
+    const respBody = serverResponseBody as { total?: number; items?: OrderItem[] } | null;
+
+    // El servidor DEBE devolver items con precio de la DB, no el 0.01 manipulado
+    expect(respBody?.items?.length, "La orden debe tener al menos un item").toBeGreaterThanOrEqual(1);
+    const firstItemPrice = respBody!.items![0].price;
+
+    expect(
+      firstItemPrice,
+      `El servidor debe ignorar price=${FRAUDULENT_TOTAL} del cliente y usar el precio de la DB`,
+    ).toBeGreaterThan(FRAUDULENT_TOTAL);
+
+    // El precio persistido debe ser el precio real del producto (el que el cliente
+    // tenía originalmente antes de la manipulación)
+    if (originalClientPrice !== null && originalClientPrice > 0) {
+      // Permitimos cierto delta por descuentos automáticos del servidor
+      expect(
+        firstItemPrice,
+        "El precio del item en la response debe coincidir con el precio real del producto",
+      ).toBeCloseTo(originalClientPrice as number, 1);
+    }
+
+    // Verificar coherencia: total = sum(price * quantity) de items del servidor
+    const computedTotal = respBody!.items!.reduce(
+      (sum, i) => sum + i.price * i.quantity,
+      0,
+    );
+    // El total puede incluir descuentos de cupón/promo, por lo que el total
+    // persistido puede ser <= computedTotal. Nunca debe ser mayor.
+    expect(
+      respBody!.total!,
+      "El total persistido no debe exceder la suma de items del servidor",
+    ).toBeLessThanOrEqual(computedTotal + 0.01); // +0.01 por redondeo
+  });
+
+  test("manipular item id cross-tenant → server rechaza producto inexistente", async ({ page }) => {
+    // ── Step 1: agregar producto al carrito ──
+    const added = await tryAddFirstProduct(page);
+    if (!added) {
+      test.skip(true, "Sin productos en el catálogo — necesita data seed");
+      return;
+    }
+
+    // ── Step 2: capturar la response del POST ──
+    let serverResponseBody: { error?: string; productId?: number } | null = null;
+    let serverResponseStatus: number | null = null;
+
+    page.on("response", async (response) => {
+      if (
+        response.url().includes("/api/orders") &&
+        response.request().method() === "POST"
+      ) {
+        serverResponseStatus = response.status();
+        try {
+          serverResponseBody = await response.json();
+        } catch {
+          // body no-JSON
+        }
+      }
+    });
+
+    // ── Step 3: interceptar POST y cambiar el id del primer item a uno inexistente ──
+    const FAKE_PRODUCT_ID = 99999;
+
+    await page.route("**/api/orders", async (route: Route) => {
+      const request = route.request();
+      if (request.method() !== "POST") {
+        return route.continue();
+      }
+
+      const original = request.postDataJSON() as
+        | { total?: number; items?: Array<{ id: number; price: number; quantity: number; name: string }> }
+        | null;
+
+      if (!original?.items?.length) return route.continue();
+
+      // ── ATAQUE: cambiar el id del primer item a un producto que no existe ──
+      const tamperedItems = [...original.items];
+      tamperedItems[0] = { ...tamperedItems[0], id: FAKE_PRODUCT_ID };
+
+      const tampered = {
+        ...original,
+        items: tamperedItems,
+      };
+
+      await route.continue({
+        postData: JSON.stringify(tampered),
+        headers: {
+          ...request.headers(),
+          "content-type": "application/json",
+        },
+      });
+    });
+
+    // ── Step 4: disparar el checkout ──
+    const btnPagoSubmit = await avanzarHastaPagoSubmit(page);
+    await btnPagoSubmit.click();
+
+    // ── Step 5: esperar resultado (debe fallar o mostrar error) ──
+    const resultado = page
+      .getByText(/pedido confirmado/i)
+      .or(page.getByText(/seguir comprando/i))
+      .or(page.getByText(/error|inv[aá]lido|fall/i));
+    await expect(resultado.first()).toBeVisible({ timeout: 20_000 });
+
+    // ── Step 6: verificar que el servidor rechazó el producto inexistente ──
+    expect(serverResponseStatus, "El POST a /api/orders debe haber respondido").not.toBeNull();
+
+    // HOTFIX-001: el servidor devuelve 400 con error "invalid_product" cuando
+    // el productId no existe en la DB del tenant (serverPriceMap.has(i.id) === false)
+    expect(
+      serverResponseStatus,
+      "Producto inexistente → servidor debe rechazar con 400",
+    ).toBe(400);
+
+    expect(serverResponseBody, "La response debe traer body con error").not.toBeNull();
+    const respBody = serverResponseBody as { error?: string; productId?: number } | null;
+
+    expect(
+      respBody?.error,
+      'El error debe ser "invalid_product"',
+    ).toBe("invalid_product");
+
+    expect(
+      respBody?.productId,
+      "La response debe indicar el productId rechazado",
+    ).toBe(FAKE_PRODUCT_ID);
+  });
 });
