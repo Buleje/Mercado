@@ -32,6 +32,20 @@ vi.mock("@/lib/tenant", () => ({
   }),
 }));
 
+// Route uses prisma direct from @/lib/prisma (CLAUDE.md Rule 1 violation,
+// tracked as tech debt). Mock so tests don't hit a real DB.
+vi.mock("@/lib/prisma", () => ({
+  prisma: {
+    messageTemplate: {
+      findMany: mockFindMany,
+      create: mockCreate,
+      findFirst: mockFindFirst,
+      update: mockUpdate,
+      delete: mockDelete,
+    },
+  },
+}));
+
 vi.mock("@/lib/rate-limit", () => ({
   applyRateLimit: vi.fn(() => null),
 }));

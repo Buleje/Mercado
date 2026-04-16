@@ -250,7 +250,7 @@ describe("POST /api/treasury/transferencias", () => {
     expect(res.status).toBe(201);
   });
 
-  it("maneja errores de DB y retorna 500 via withApiHandler", async () => {
+  it("maneja errores de DB y retorna 503 (Service Unavailable)", async () => {
     mockRequireAdmin.mockResolvedValue(ADMIN_SESSION);
     mockTransferir.mockRejectedValue(new Error("Insuficiente saldo en origen"));
 
@@ -262,9 +262,9 @@ describe("POST /api/treasury/transferencias", () => {
     });
 
     const res = await POST(req);
-    expect(res.status).toBe(500);
+    expect(res.status).toBe(503);
     const body = await res.json();
-    expect(body.error).toBe("Internal server error");
+    expect(body.error).toBe("Insuficiente saldo en origen");
   });
 
   it("usa tenantId correcto en multi-tenant", async () => {
@@ -347,7 +347,7 @@ describe("GET /api/treasury/transferencias", () => {
     expect(mockListTransferencias).toHaveBeenCalledWith("main", 10);
   });
 
-  it("maneja errores de DB y retorna 500 via withApiHandler", async () => {
+  it("maneja errores de DB y retorna 503 (Service Unavailable)", async () => {
     mockRequireAdmin.mockResolvedValue(ADMIN_SESSION);
     mockListTransferencias.mockRejectedValue(new Error("DB timeout"));
 
@@ -355,8 +355,8 @@ describe("GET /api/treasury/transferencias", () => {
     const req = makeGetRequest();
 
     const res = await GET(req);
-    expect(res.status).toBe(500);
+    expect(res.status).toBe(503);
     const body = await res.json();
-    expect(body.error).toBe("Internal server error");
+    expect(body.error).toBe("Database error");
   });
 });
