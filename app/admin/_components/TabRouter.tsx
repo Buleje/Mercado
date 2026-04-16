@@ -1,13 +1,14 @@
 "use client";
 
+import { useEffect, useRef } from "react";
 import dynamic from "next/dynamic";
 import { Users, SlidersHorizontal, ArrowUpDown, RefreshCw, GraduationCap } from "lucide-react";
 import { TabSpinner } from "@/app/admin/_lib/tab-spinner";
 import type { Tab } from "@/app/admin/_lib/tabs.types";
 import type { TabCategory } from "@/app/admin/_lib/tab-categories";
 import type { StoreMode } from "@/lib/jsondb";
-import DashboardWidgets from "@/components/admin/shared/DashboardWidgets";
-import OnboardingWizard from "@/components/admin/shared/OnboardingWizard";
+import type { AdminMode } from "@/app/admin/_hooks/useAdminMode";
+// DashboardWidgets (KPIs) removido — dashboard minimalista
 
 // ── Lazy tab wrappers (TASK-003 — reusable dynamic shells) ─────────────────────
 // These four wrappers live under components/admin/tabs/* and wrap their
@@ -18,12 +19,15 @@ const ReportsTab   = dynamic(() => import("@/components/admin/tabs/ReportsTab"),
 const InventoryTab = dynamic(() => import("@/components/admin/tabs/InventoryTab"), { loading: TabSpinner });
 const SettingsTab  = dynamic(() => import("@/components/admin/tabs/SettingsTab"),  { loading: TabSpinner });
 const AuditTab     = dynamic(() => import("@/components/admin/tabs/AuditTab"),     { loading: TabSpinner });
+const SupportInboxTab = dynamic(
+  () => import("@/components/admin/support/UnifiedSupportInbox").then((module) => ({ default: module.UnifiedSupportInbox })),
+  { loading: TabSpinner },
+);
 
 // ── Unified Module Imports (módulos consolidados) ──────────────────────────────
 const VendorDashboardModule   = dynamic(() => import("@/components/admin/unified/VendorDashboardModule"),   { loading: TabSpinner });
-const AsistenteIAModule       = dynamic(() => import("@/components/admin/unified/AsistenteIAModule"),       { loading: TabSpinner });
-// POSCajaModule removido — ventas-caja eliminado del panel
-const CatalogoTiendaModule    = dynamic(() => import("@/components/admin/unified/CatalogoTiendaModule"),    { loading: TabSpinner });
+const ChatIAModule            = dynamic(() => import("@/components/admin/unified/ChatIAModule"),            { ssr: false, loading: TabSpinner });
+const POSCajaModule           = dynamic(() => import("@/components/admin/unified/POSCajaModule"),           { loading: TabSpinner });
 const ComprasModule           = dynamic(() => import("@/components/admin/unified/ComprasModule"),           { loading: TabSpinner });
 const FinanzasModule          = dynamic(() => import("@/components/admin/unified/FinanzasModule"),          { loading: TabSpinner });
 const CRMClientesModule       = dynamic(() => import("@/components/admin/unified/CRMClientesModule"),       { loading: TabSpinner });
@@ -35,16 +39,12 @@ const DeliveryPartnersModule  = dynamic(() => import("@/components/admin/unified
 const DeliveryLiveTab         = dynamic(() => import("@/components/admin/DeliveryTab"),                     { loading: TabSpinner, ssr: false });
 const MarketplaceChatTab      = dynamic(() => import("@/components/admin/ChatTab"),                         { loading: TabSpinner });
 const RendimientoModule       = dynamic(() => import("@/components/admin/unified/RendimientoModule"),       { loading: TabSpinner });
+const CatalogoTiendaModule    = dynamic(() => import("@/components/admin/unified/CatalogoTiendaModule"),    { loading: TabSpinner });
 
 // ── Módulos adicionales ────────────────────────────────────────────────────────
-const DevolucionesProveedorModule = dynamic(() => import("@/components/admin/DevolucionesProveedorModule"), { loading: TabSpinner });
 const FiadosModule              = dynamic(() => import("@/components/admin/FiadosModule"),              { loading: TabSpinner });
 const TurnosModule              = dynamic(() => import("@/components/admin/TurnosModule"),              { loading: TabSpinner });
-const RecetasModule             = dynamic(() => import("@/components/admin/RecetasModule"),             { loading: TabSpinner });
 const PrestamosModule           = dynamic(() => import("@/components/admin/PrestamosModule"),           { loading: TabSpinner });
-const TreasuryDashboard         = dynamic(() => import("@/components/admin/TreasuryDashboard"),         { loading: TabSpinner });
-const PromocionesModule         = dynamic(() => import("@/components/admin/PromocionesModule"),         { loading: TabSpinner });
-const ScoringCrediticioTab      = dynamic(() => import("@/components/admin/ScoringCrediticioTab"),      { loading: TabSpinner });
 const StoreCustomizer           = dynamic(() => import("@/components/admin/StoreCustomizer"),           { loading: TabSpinner });
 const MiPerfilTab               = dynamic(() => import("@/components/admin/MiPerfilTab"),               { loading: TabSpinner });
 const ColasTab                  = dynamic(() => import("@/components/admin/ColasTab"),                  { loading: TabSpinner });
@@ -76,6 +76,56 @@ const SidebarReorderPanel = dynamic(
   { loading: TabSpinner },
 );
 
+// ── Prefetch map — modulos probables segun el tab activo ─────────────────────
+// Cada key es un tab activo, y el value es un array de tabs que probablemente
+// el usuario visitara despues. Se precargan tras 2 segundos de inactividad.
+const PREFETCH_MAP: Record<string, string[]> = {
+  "vendor-dashboard": ["ventas-caja", "inventario"],
+  "ventas-caja": ["inventario", "pedidos"],
+  "inventario": ["compras", "productos"],
+  "clientes": ["fiados", "pedidos"],
+  "compras": ["inventario", "productos"],
+  "pedidos": ["ventas-caja", "clientes"],
+};
+
+// Map de dynamic imports para prefetch — reutiliza los mismos loaders del router
+const PREFETCH_LOADERS: Record<string, () => Promise<unknown>> = {
+  "vendor-dashboard": () => import("@/components/admin/unified/VendorDashboardModule"),
+  "ventas-caja":      () => import("@/components/admin/unified/POSCajaModule"),
+  "inventario":       () => import("@/components/admin/tabs/InventoryTab"),
+  "productos":        () => import("@/components/admin/unified/CatalogoTiendaModule"),
+  "compras":          () => import("@/components/admin/unified/ComprasModule"),
+  "clientes":         () => import("@/components/admin/unified/CRMClientesModule"),
+  "fiados":           () => import("@/components/admin/FiadosModule"),
+  "pedidos":          () => import("@/components/admin/OrdersTab"),
+};
+
+/**
+ * Hook que prefetches modulos relacionados despues de 2s de inactividad.
+ * Solo carga en background, sin afectar el render actual.
+ */
+function usePrefetchRelated(activeTab: Tab) {
+  const prefetchedRef = useRef<Set<string>>(new Set());
+
+  useEffect(() => {
+    const targets = PREFETCH_MAP[activeTab];
+    if (!targets) return;
+
+    const timer = setTimeout(() => {
+      for (const tabId of targets) {
+        if (prefetchedRef.current.has(tabId)) continue;
+        const loader = PREFETCH_LOADERS[tabId];
+        if (loader) {
+          prefetchedRef.current.add(tabId);
+          loader().catch(() => {});
+        }
+      }
+    }, 2000);
+
+    return () => clearTimeout(timer);
+  }, [activeTab]);
+}
+
 // ─────────────────────────────────────────────────────────────────────────────
 // Props del TabRouter
 // ─────────────────────────────────────────────────────────────────────────────
@@ -100,6 +150,10 @@ export type TabRouterProps = {
   onboarding: { resetTour: () => void };
   /** Callback para navegar a una tab (lo usa el botón "Repetir tutorial") */
   onNavigateTab: (tab: Tab) => void;
+  /** Modo admin fácil/avanzado */
+  adminMode: AdminMode;
+  /** Callback para alternar modo admin */
+  onToggleAdminMode: () => void;
 };
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -114,26 +168,25 @@ export function TabRouter({
   onSaveCategoryOrder,
   onboarding,
   onNavigateTab,
+  adminMode,
+  onToggleAdminMode,
 }: TabRouterProps) {
+
+  // Prefetch modulos relacionados tras 2s de inactividad
+  usePrefetchRelated(tab);
 
   // ── 0. Panel del vendedor ──
   if (tab === "vendor-dashboard") return <VendorDashboardModule />;
 
-  // ── 1. Asistente IA ──
-  if (tab === "asistente-ia") return (
-    <>
-      <OnboardingWizard onNavigate={(t) => onNavigateTab(t as Tab)} />
-      <DashboardWidgets onNavigate={(t) => onNavigateTab(t as Tab)} />
-      <AsistenteIAModule />
-    </>
-  );
+  // ── 1. Chat IA (standalone) ──
+  if (tab === "asistente-ia") return <ChatIAModule />;
 
-  // ventas-caja removido — funcionalidad cubierta por Analytics + Pedidos
+  if (tab === "ventas-caja") return <POSCajaModule />;
 
   // ── 3. Inventario ──
   if (tab === "inventario") return <InventoryTab />;
 
-  // ── 4. Productos & Precios ──
+  // ── 4. Promociones & Ofertas ──
   if (tab === "productos") return <CatalogoTiendaModule />;
 
   // ── 5. Compras ──
@@ -148,7 +201,6 @@ export function TabRouter({
   // ── Módulos adicionales ──
   if (tab === "fiados")    return <FiadosModule />;
   if (tab === "turnos")    return <TurnosModule />;
-  if (tab === "recetas")   return <RecetasModule />;
   if (tab === "prestamos") return <PrestamosModule />;
 
   // ── Documentos ──
@@ -162,10 +214,6 @@ export function TabRouter({
 
   // ── Módulos nuevos ──
   if (tab === "auditoria")              return <AuditTab />;
-  if (tab === "devoluciones-proveedor") return <DevolucionesProveedorModule />;
-  if (tab === "tesoreria")              return <TreasuryDashboard />;
-  if (tab === "promociones")            return <PromocionesModule />;
-  if (tab === "scoring")                return <ScoringCrediticioTab />;
   // (Declaración Inventario movido dentro del módulo Inventario — tab "Declaración")
 
   // ── 8. Configuración ──
@@ -173,13 +221,13 @@ export function TabRouter({
   if (tab === "config") {
     return (
       <div className="space-y-8">
-        <SettingsTab storeMode={storeMode} onModeChange={onModeChange} />
+        <SettingsTab storeMode={storeMode} onModeChange={onModeChange} adminMode={adminMode} onToggleAdminMode={onToggleAdminMode} />
 
         {/* ── Gestión de Equipo ── */}
         <div className="pt-8 border-t border-gray-200 dark:border-card-border">
           <div className="flex items-center gap-3 mb-4">
-            <div className="w-9 h-9 rounded-xl bg-cyan-50 dark:bg-cyan-900/20 flex items-center justify-center shrink-0">
-              <Users className="h-5 w-5 text-cyan-500" />
+            <div className="w-9 h-9 rounded-xl bg-gray-50 dark:bg-gray-800/40 flex items-center justify-center shrink-0">
+              <Users className="h-5 w-5 text-gray-400" />
             </div>
             <div>
               <h3 className="text-lg font-bold text-gray-900 dark:text-foreground">Gestión de Equipo</h3>
@@ -192,11 +240,11 @@ export function TabRouter({
         {/* ── Navegación por defecto ── */}
         <div className="pt-8 border-t border-gray-200 dark:border-card-border">
           <div className="flex items-center gap-3 mb-4">
-            <div className="w-9 h-9 rounded-xl bg-violet-50 dark:bg-violet-900/20 flex items-center justify-center shrink-0">
-              <SlidersHorizontal className="h-5 w-5 text-violet-500" />
+            <div className="w-9 h-9 rounded-xl bg-gray-50 dark:bg-gray-800/40 flex items-center justify-center shrink-0">
+              <SlidersHorizontal className="h-5 w-5 text-gray-400" />
             </div>
             <div>
-              <h3 className="text-lg font-bold text-gray-900 dark:text-foreground">Navegacion</h3>
+              <h3 className="text-lg font-bold text-gray-900 dark:text-foreground">Navegación</h3>
               <p className="text-xs text-gray-500 dark:text-muted">Configura que tab se abre por defecto en cada seccion</p>
             </div>
           </div>
@@ -206,8 +254,8 @@ export function TabRouter({
         {/* ── Reordenar barra lateral ── */}
         <div className="pt-8 border-t border-gray-200 dark:border-card-border">
           <div className="flex items-center gap-3 mb-4">
-            <div className="w-9 h-9 rounded-xl bg-amber-50 dark:bg-amber-900/20 flex items-center justify-center shrink-0">
-              <ArrowUpDown className="h-5 w-5 text-amber-500" />
+            <div className="w-9 h-9 rounded-xl bg-gray-50 dark:bg-gray-800/40 flex items-center justify-center shrink-0">
+              <ArrowUpDown className="h-5 w-5 text-gray-400" />
             </div>
             <div>
               <h3 className="text-lg font-bold text-gray-900 dark:text-foreground">Reordenar barra lateral</h3>
@@ -224,8 +272,8 @@ export function TabRouter({
         <div className="pt-8 border-t border-gray-200 dark:border-card-border">
           <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl p-5 shadow-sm flex flex-col sm:flex-row sm:items-center gap-4">
             <div className="flex items-center gap-3 flex-1 min-w-0">
-              <div className="w-11 h-11 rounded-xl bg-emerald-50 dark:bg-emerald-900/20 flex items-center justify-center shrink-0">
-                <GraduationCap className="h-5 w-5 text-emerald-600 dark:text-emerald-300" />
+              <div className="w-11 h-11 rounded-xl bg-gray-50 dark:bg-gray-800/40 flex items-center justify-center shrink-0">
+                <GraduationCap className="h-5 w-5 text-gray-400" />
               </div>
               <div className="flex-1 min-w-0">
                 <p className="font-bold text-gray-900 dark:text-foreground text-sm">Tutorial de bienvenida</p>
@@ -237,7 +285,7 @@ export function TabRouter({
                 onboarding.resetTour();
                 onNavigateTab("asistente-ia");
               }}
-              className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-bold text-white bg-[#2563EB] hover:bg-primary-dark shadow-sm transition-colors shrink-0"
+              className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-bold text-white bg-gray-900 dark:bg-white dark:text-gray-900 hover:bg-gray-800 dark:hover:bg-gray-100 shadow-sm transition-colors shrink-0"
             >
               <RefreshCw className="h-4 w-4" />
               Repetir tutorial de bienvenida
@@ -272,6 +320,7 @@ export function TabRouter({
   if (tab === "store-customizer") return <StoreCustomizer />;
   if (tab === "colas")            return <ColasTab />;
   if (tab === "mi-perfil")        return <MiPerfilTab />;
+  if (tab === "support-inbox")    return <SupportInboxTab />;
 
   // ── Página individual de la tienda ──
   if (tab === "pagina-inicio") return <StorePageAdminPage />;

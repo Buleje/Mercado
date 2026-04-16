@@ -188,7 +188,7 @@ test.describe("Checkout Fraud Protection — server recomputes total", () => {
         (res) => res.url().includes("/api/orders") && res.request().method() === "POST",
         { timeout: 30_000 },
       ),
-      btnConfirmar.isVisible({ timeout: 5_000 }).then((v) => v && btnConfirmar.click()).catch(() => {}),
+      btnConfirmar.isVisible({ timeout: 5_000 }).then(async (v) => { if (v) await btnConfirmar.click(); }).catch(() => {}),
     ]);
 
     const serverResponseStatus = serverResponse.status();
@@ -264,7 +264,7 @@ test.describe("Checkout Fraud Protection — server recomputes total", () => {
         (res) => res.url().includes("/api/orders") && res.request().method() === "POST",
         { timeout: 30_000 },
       ),
-      btnConfirmar.isVisible({ timeout: 5_000 }).then((v) => v && btnConfirmar.click()).catch(() => {}),
+      btnConfirmar.isVisible({ timeout: 5_000 }).then(async (v) => { if (v) await btnConfirmar.click(); }).catch(() => {}),
     ]);
 
     const status = serverResponse.status();
@@ -310,7 +310,7 @@ test.describe("Checkout Fraud Protection — server recomputes total", () => {
         (res) => res.url().includes("/api/orders") && res.request().method() === "POST",
         { timeout: 30_000 },
       ),
-      btnConfirmar.isVisible({ timeout: 5_000 }).then((v) => v && btnConfirmar.click()).catch(() => {}),
+      btnConfirmar.isVisible({ timeout: 5_000 }).then(async (v) => { if (v) await btnConfirmar.click(); }).catch(() => {}),
     ]);
 
     const status = serverResponse.status();
