@@ -68,6 +68,12 @@
         "hooks": [
           {
             "type": "command",
+            "command": "node ${CLAUDE_PROJECT_DIR}/.claude/hooks/hex-code-guard.mjs",
+            "timeout": 3,
+            "async": true
+          },
+          {
+            "type": "command",
             "command": "node ${CLAUDE_PROJECT_DIR}/.claude/hooks/post-tool-lint.mjs",
             "timeout": 30,
             "async": true
