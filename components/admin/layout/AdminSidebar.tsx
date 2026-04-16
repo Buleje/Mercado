@@ -12,13 +12,17 @@ import {
   Store,
   PanelLeftClose,
   PanelLeft,
+  SlidersHorizontal,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 // resolveSessionStorefrontTarget removed — use activeTenantSlug directly
 import { useModuleTabs } from "@/contexts/module-tabs-context";
 import type { Tab } from "@/app/admin/_lib/tabs.types";
 import type { TabCategory } from "@/app/admin/_lib/tab-categories";
-import { MODULE_INFO } from "@/app/admin/_lib/tab-categories";
+import { MODULE_INFO, TAB_CATEGORIES } from "@/app/admin/_lib/tab-categories";
+import { SidebarFlyout } from "@/components/admin/shared/SidebarFlyout";
+import SidebarConfigurator from "@/components/admin/shared/SidebarConfigurator";
+import type { SidebarTheme } from "@/components/admin/shared/SidebarConfigurator";
 
 // ─── Tipos del tab-item que se usa en esta pantalla ───────────────────────────
 type TabItem = {
@@ -160,6 +164,125 @@ export function AdminSidebar({
     };
   }, [activeTenantSlug]);
 
+  // ── Sidebar theme (persisted in localStorage) ──
+  const [sidebarTheme, setSidebarTheme] = React.useState<SidebarTheme>(() => {
+    if (typeof window === "undefined") return "light";
+    try {
+      const stored = localStorage.getItem("admin-sidebar-theme");
+      if (stored === "light" || stored === "shaded" || stored === "dark") return stored;
+    } catch { /* ignore */ }
+    return "light";
+  });
+
+  const updateTheme = React.useCallback((theme: SidebarTheme) => {
+    setSidebarTheme(theme);
+    try { localStorage.setItem("admin-sidebar-theme", theme); } catch { /* ignore */ }
+  }, []);
+
+  // ── Hidden categories (persisted in localStorage) ──
+  const [hiddenCategories, setHiddenCategories] = React.useState<Set<string>>(() => {
+    if (typeof window === "undefined") return new Set();
+    try {
+      const stored = localStorage.getItem("admin-sidebar-hidden");
+      if (stored) return new Set(JSON.parse(stored) as string[]);
+    } catch { /* ignore */ }
+    return new Set();
+  });
+
+  // ── Hidden individual sub-tabs (persisted in localStorage) ──
+  const [hiddenSubTabs, setHiddenSubTabs] = React.useState<Set<Tab>>(() => {
+    if (typeof window === "undefined") return new Set();
+    try {
+      const stored = localStorage.getItem("admin-sidebar-hidden-tabs");
+      if (stored) return new Set(JSON.parse(stored) as Tab[]);
+    } catch { /* ignore */ }
+    return new Set();
+  });
+
+  // ── Category order (persisted in localStorage) ──
+  const [categoryOrder, setCategoryOrder] = React.useState<string[]>(() => {
+    if (typeof window === "undefined") return TAB_CATEGORIES.map(c => c.id);
+    try {
+      const stored = localStorage.getItem("admin-sidebar-order");
+      if (stored) {
+        const parsed = JSON.parse(stored) as string[];
+        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+      }
+    } catch { /* ignore */ }
+    return TAB_CATEGORIES.map(c => c.id);
+  });
+
+  // ── Config mode ──
+  const [configMode, setConfigMode] = React.useState(false);
+
+  const handleConfigSave = React.useCallback((config: {
+    hiddenCategories: Set<string>;
+    hiddenSubTabs: Set<Tab>;
+    categoryOrder: string[];
+    theme: SidebarTheme;
+  }) => {
+    setHiddenCategories(config.hiddenCategories);
+    setHiddenSubTabs(config.hiddenSubTabs);
+    setCategoryOrder(config.categoryOrder);
+    updateTheme(config.theme);
+    try {
+      localStorage.setItem("admin-sidebar-hidden", JSON.stringify([...config.hiddenCategories]));
+      localStorage.setItem("admin-sidebar-hidden-tabs", JSON.stringify([...config.hiddenSubTabs]));
+      localStorage.setItem("admin-sidebar-order", JSON.stringify(config.categoryOrder));
+    } catch { /* ignore */ }
+    setConfigMode(false);
+  }, [updateTheme]);
+
+  // ── Reorder visibleCategories by categoryOrder + filter hidden ──
+  const orderedVisibleCategories = React.useMemo(() => {
+    const map = new Map(visibleCategories.map(c => [c.id, c]));
+    const result: TabCategory[] = [];
+    for (const id of categoryOrder) {
+      const cat = map.get(id);
+      if (cat && !hiddenCategories.has(id)) result.push(cat);
+    }
+    // Any new categories not in saved order
+    for (const cat of visibleCategories) {
+      if (!categoryOrder.includes(cat.id) && !hiddenCategories.has(cat.id)) {
+        result.push(cat);
+      }
+    }
+    return result;
+  }, [visibleCategories, categoryOrder, hiddenCategories]);
+
+  // ── Theme CSS classes ──
+  const themeClasses = React.useMemo(() => {
+    switch (sidebarTheme) {
+      case "shaded":
+        return {
+          bg: "bg-gray-50 dark:bg-zinc-800",
+          text: "text-gray-600 dark:text-zinc-300",
+          hover: "hover:bg-gray-100 dark:hover:bg-zinc-700",
+          border: "border-gray-200 dark:border-zinc-700",
+          activeItem: "bg-gray-100 dark:bg-zinc-700/50",
+          headerBorder: "border-gray-200 dark:border-zinc-700",
+        };
+      case "dark":
+        return {
+          bg: "bg-zinc-900",
+          text: "text-zinc-300",
+          hover: "hover:bg-zinc-800",
+          border: "border-zinc-800",
+          activeItem: "bg-zinc-800",
+          headerBorder: "border-zinc-800",
+        };
+      default: // light
+        return {
+          bg: "bg-white dark:bg-card",
+          text: "text-gray-700 dark:text-gray-400",
+          hover: "hover:bg-gray-50 dark:hover:bg-gray-800/40",
+          border: "border-gray-100 dark:border-card-border",
+          activeItem: "bg-gray-50 dark:bg-zinc-800/50",
+          headerBorder: "border-gray-100 dark:border-card-border",
+        };
+    }
+  }, [sidebarTheme]);
+
   // ── Collapsible sections state (persisted in localStorage) ──
   const [collapsedSections, setCollapsedSections] = React.useState<Set<string>>(() => {
     if (typeof window === "undefined") return new Set();
@@ -225,6 +348,50 @@ export function AdminSidebar({
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [tab, visibleCategories]);
 
+  // ── Flyout state for expanded sidebar hover ──
+  const [hoveredCategory, setHoveredCategory] = React.useState<string | null>(null);
+  const hoverTimerRef = React.useRef<ReturnType<typeof setTimeout> | null>(null);
+  const categoryRefs = React.useRef<Record<string, HTMLButtonElement | null>>({});
+
+  const flyoutPosition = React.useMemo(() => {
+    if (!hoveredCategory) return null;
+    const el = categoryRefs.current[hoveredCategory];
+    if (!el) return null;
+    const rect = el.getBoundingClientRect();
+    return { top: rect.top };
+  }, [hoveredCategory]);
+
+  const handleCategoryMouseEnter = React.useCallback((categoryId: string) => {
+    if (hoverTimerRef.current) clearTimeout(hoverTimerRef.current);
+    hoverTimerRef.current = setTimeout(() => {
+      setHoveredCategory(categoryId);
+    }, 300);
+  }, []);
+
+  const handleCategoryMouseLeave = React.useCallback(() => {
+    if (hoverTimerRef.current) clearTimeout(hoverTimerRef.current);
+    hoverTimerRef.current = setTimeout(() => {
+      setHoveredCategory(null);
+    }, 150);
+  }, []);
+
+  const handleFlyoutMouseEnter = React.useCallback(() => {
+    if (hoverTimerRef.current) clearTimeout(hoverTimerRef.current);
+  }, []);
+
+  const handleFlyoutMouseLeave = React.useCallback(() => {
+    hoverTimerRef.current = setTimeout(() => {
+      setHoveredCategory(null);
+    }, 150);
+  }, []);
+
+  // Cleanup timer on unmount
+  React.useEffect(() => {
+    return () => {
+      if (hoverTimerRef.current) clearTimeout(hoverTimerRef.current);
+    };
+  }, []);
+
   // Uniform minimalist icon color — light gray for all categories
   const ICON_COLORS: Record<string, string> = {
     dashboard: "text-gray-400", ventas: "text-gray-400", productos: "text-gray-400",
@@ -246,14 +413,34 @@ export function AdminSidebar({
     <>
       {/* Desktop permanent sidebar */}
       <aside className={cn(
-        "hidden md:flex fixed left-0 bottom-0 z-40 bg-white dark:bg-card border-r border-gray-100 dark:border-card-border flex-col transition-[width] duration-200 ease-in-out overflow-hidden",
+        "hidden md:flex fixed left-0 bottom-0 z-40 flex-col transition-[width] duration-200 ease-in-out overflow-hidden border-r",
+        themeClasses.bg,
+        themeClasses.border,
         effectiveCompact ? "w-[60px]" : "w-[260px]",
         presentationMode && "hidden!",
         isSuperAdminImpersonating ? "top-10" : "top-0"
       )}>
         {/* ── Header: tenant + user ── */}
+        {/* ── Configurator overlay (replaces sidebar content when active) ── */}
+        {configMode && !effectiveCompact && (
+          <SidebarConfigurator
+            allCategories={TAB_CATEGORIES}
+            hiddenCategories={hiddenCategories}
+            hiddenSubTabs={hiddenSubTabs}
+            categoryOrder={categoryOrder}
+            theme={sidebarTheme}
+            allTabs={allTabs}
+            allowedTabs={allowedTabs}
+            onSave={handleConfigSave}
+            onCancel={() => setConfigMode(false)}
+          />
+        )}
+
+        {/* Normal sidebar content (hidden when configMode) */}
+        {(!configMode || effectiveCompact) && (<>
         <div className={cn(
-          "flex items-center gap-3 h-16 border-b border-gray-100 dark:border-card-border transition-all duration-300",
+          "flex items-center gap-3 h-16 border-b transition-all duration-300",
+          themeClasses.headerBorder,
           effectiveCompact ? "px-3 justify-center" : "px-4"
         )}>
           {activeTenantLogo ? (
@@ -289,9 +476,9 @@ export function AdminSidebar({
           effectiveCompact ? "px-1.5" : "px-2.5"
         )}>
           {/* ── Main modules (expanded mode) ── */}
-          {!effectiveCompact && visibleCategories.map((category, catIdx) => {
+          {!effectiveCompact && orderedVisibleCategories.map((category, catIdx) => {
             const catTabs = category.tabs.filter(
-              t => allowedTabs.includes(t as Tab) && !hiddenTabs.has(t as Tab)
+              t => allowedTabs.includes(t as Tab) && !hiddenTabs.has(t as Tab) && !hiddenSubTabs.has(t as Tab)
             );
             if (catTabs.length === 0) return null;
             const CategoryIcon = category.icon;
@@ -320,7 +507,7 @@ export function AdminSidebar({
                 {sectionLabel && (
                   <>
                     {catIdx > 0 && (
-                      <div className="my-2 border-t border-gray-100 dark:border-zinc-800" />
+                      <div className={cn("my-2 border-t", themeClasses.border)} />
                     )}
                     <button
                       onClick={() => toggleSection(sectionLabel)}
@@ -345,7 +532,14 @@ export function AdminSidebar({
                   <div className="overflow-hidden">
                     <div className="group/cat relative">
                     <button
+                      ref={(el) => { categoryRefs.current[category.id] = el; }}
                       data-tour-tab={isSingleTab ? catTabs[0] : category.id}
+                      onMouseEnter={() => {
+                        if (!isSingleTab) handleCategoryMouseEnter(category.id);
+                      }}
+                      onMouseLeave={() => {
+                        if (!isSingleTab) handleCategoryMouseLeave();
+                      }}
                       onClick={() => {
                         if (isSingleTab) {
                           navigateTab(catTabs[0] as Tab);
@@ -362,8 +556,8 @@ export function AdminSidebar({
                         "group relative w-full flex items-center gap-3 rounded-lg text-[13px] font-medium transition-all duration-150 mb-px",
                         "px-3 py-2.5",
                         isActive
-                          ? "bg-gray-50 dark:bg-zinc-800/50 text-gray-900 dark:text-gray-100 font-semibold"
-                          : "text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800/40 hover:text-gray-900 dark:hover:text-gray-200"
+                          ? cn(themeClasses.activeItem, sidebarTheme === "dark" ? "text-white font-semibold" : "text-gray-900 dark:text-gray-100 font-semibold")
+                          : cn(themeClasses.text, themeClasses.hover, sidebarTheme === "dark" ? "hover:text-white" : "hover:text-gray-900 dark:hover:text-gray-200")
                       )}
                     >
                       {/* Active indicator bar — 3px left bar with category color */}
@@ -420,7 +614,7 @@ export function AdminSidebar({
                         style={{ gridTemplateRows: expandedCategories.has(category.id) ? "1fr" : "0fr" }}
                       >
                         <div className="overflow-hidden">
-                          <div className="ml-4 pl-3 border-l-2 border-gray-100 dark:border-zinc-800 space-y-0.5 py-1">
+                          <div className={cn("ml-4 pl-3 border-l-2 space-y-0.5 py-1", themeClasses.border)}>
                             {catTabs.map(subTabId => {
                               const subTabInfo = allTabs.find(t => t.id === subTabId);
                               if (!subTabInfo) return null;
@@ -434,8 +628,8 @@ export function AdminSidebar({
                                   className={cn(
                                     "group relative w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-[13px] transition-all",
                                     isSubActive
-                                      ? "bg-gray-50 dark:bg-zinc-800/50 text-gray-900 dark:text-gray-100 font-semibold"
-                                      : "text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800/30 hover:text-gray-700 font-medium"
+                                      ? cn(themeClasses.activeItem, sidebarTheme === "dark" ? "text-white font-semibold" : "text-gray-900 dark:text-gray-100 font-semibold")
+                                      : cn(themeClasses.text, themeClasses.hover, "font-medium")
                                   )}
                                 >
                                   {isSubActive && (
@@ -528,7 +722,8 @@ export function AdminSidebar({
 
         {/* ── Footer: mode toggle + external links + compact toggle ── */}
         <div className={cn(
-          "py-3 border-t border-gray-100 dark:border-card-border space-y-0.5 transition-all duration-300",
+          "py-3 border-t space-y-0.5 transition-all duration-300",
+          themeClasses.headerBorder,
           effectiveCompact ? "px-1.5" : "px-2.5"
         )}>
           {/* Easy / Advanced mode toggle */}
@@ -595,12 +790,13 @@ export function AdminSidebar({
           {/* ── Compact mode toggle (hidden when auto-collapsed on narrow screens) ── */}
           {!focusMode && !isNarrow && (
             <>
-              <div className="my-1.5 border-t border-gray-100 dark:border-zinc-800" />
+              <div className={cn("my-1.5 border-t", themeClasses.border)} />
               <button
                 onClick={toggleCompact}
                 title={isCompact ? "Expandir sidebar" : "Compactar sidebar"}
                 className={cn(
-                  "flex items-center rounded-lg text-[13px] font-medium text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800/40 transition-all",
+                  "flex items-center rounded-lg text-[13px] font-medium transition-all",
+                  themeClasses.text, themeClasses.hover,
                   effectiveCompact ? "justify-center w-full px-0 py-2.5" : "gap-3 px-3 py-2.5 w-full"
                 )}
               >
@@ -615,7 +811,37 @@ export function AdminSidebar({
               </button>
             </>
           )}
+
+          {/* ── Configure sidebar button ── */}
+          {!effectiveCompact && (
+            <>
+              <div className={cn("my-1.5 border-t", themeClasses.border)} />
+              <button
+                onClick={() => setConfigMode(true)}
+                className={cn(
+                  "flex items-center gap-3 px-3 py-2.5 w-full rounded-lg text-[13px] font-medium transition-all",
+                  themeClasses.text, themeClasses.hover
+                )}
+              >
+                <SlidersHorizontal className="h-[18px] w-[18px] shrink-0" />
+                <span className="truncate">Configurar barra lateral</span>
+              </button>
+            </>
+          )}
+          {effectiveCompact && (
+            <button
+              onClick={() => setConfigMode(true)}
+              title="Configurar barra lateral"
+              className={cn(
+                "flex items-center justify-center w-full px-0 py-2.5 rounded-lg text-[13px] font-medium transition-all",
+                themeClasses.text, themeClasses.hover
+              )}
+            >
+              <SlidersHorizontal className="h-[18px] w-[18px] shrink-0" />
+            </button>
+          )}
         </div>
+        </>)}
       </aside>
 
       {/* Sidebar category flyout panel — only for multi-tab categories */}
@@ -657,6 +883,33 @@ export function AdminSidebar({
               );
             })}
           </m.div>
+        );
+      })()}
+
+      {/* Sidebar flyout panel — expanded mode hover (Holded-style) */}
+      {!effectiveCompact && hoveredCategory && flyoutPosition && (() => {
+        const cat = visibleCategories.find(c => c.id === hoveredCategory);
+        if (!cat) return null;
+        const catTabs = cat.tabs.filter(
+          t => allowedTabs.includes(t as Tab) && !hiddenTabs.has(t as Tab)
+        );
+        if (catTabs.length <= 1) return null;
+        const flyoutTabs = catTabs
+          .map(tId => allTabs.find(t => t.id === tId))
+          .filter((t): t is typeof allTabs[number] => t != null)
+          .map(t => ({ id: t.id as string, label: t.label, icon: t.icon as React.ComponentType<{ className?: string }> }));
+        return (
+          <SidebarFlyout
+            key={hoveredCategory}
+            category={{ id: cat.id, label: cat.label, tabs: catTabs as string[] }}
+            tabs={flyoutTabs}
+            activeTab={tab}
+            onNavigate={(tabId) => navigateTab(tabId as Tab)}
+            position={flyoutPosition}
+            onClose={() => setHoveredCategory(null)}
+            onMouseEnter={handleFlyoutMouseEnter}
+            onMouseLeave={handleFlyoutMouseLeave}
+          />
         );
       })()}
     </>

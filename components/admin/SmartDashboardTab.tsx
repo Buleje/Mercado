@@ -855,7 +855,7 @@ function SmartDashboardTab({ adminName = "Administrador" }: SmartDashboardTabPro
 
       {/* Monthly sales chart (shared: resumen + ventas) */}
       {!loading && (dashTab === "resumen" || dashTab === "ventas") && (
-        <div className="bg-white dark:bg-zinc-800 rounded-xl border border-gray-200 dark:border-zinc-700 p-5 shadow-sm">
+        <div className="bg-white dark:bg-zinc-800 rounded-xl border border-gray-100 dark:border-zinc-800 p-4">
           <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-2 mb-4">
             <div>
               <h2 className="text-sm font-medium text-gray-500 dark:text-zinc-400 uppercase tracking-wider">Total de ventas</h2>
@@ -883,27 +883,27 @@ function SmartDashboardTab({ adminName = "Administrador" }: SmartDashboardTabPro
       {/* Financial cards (shared: resumen + finanzas) */}
       {!loading && (dashTab === "resumen" || dashTab === "finanzas") && dashTab === "resumen" && (
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          <div className="bg-white dark:bg-zinc-800 rounded-xl border border-gray-200 dark:border-zinc-700 p-5 shadow-sm">
-            <a href="/admin?module=fiados" className="text-xs font-semibold text-gray-700 dark:text-zinc-300 hover:text-primary transition-colors cursor-pointer">Cuentas por cobrar</a>
+          <div className="bg-white dark:bg-zinc-800 rounded-xl border border-gray-100 dark:border-zinc-800 p-4">
+            <a href="/admin?module=fiados" className="text-sm font-medium text-gray-500 dark:text-zinc-400 uppercase tracking-wider hover:text-primary transition-colors cursor-pointer">Cuentas por cobrar</a>
             <p className="text-2xl font-mono font-bold text-gray-900 dark:text-zinc-100 mt-1">{fmtR(cuentasPorCobrar.total)}</p>
             <div className="flex items-center gap-2 mt-2 text-[10px]"><span className="flex items-center gap-0.5"><span className="w-1.5 h-1.5 rounded-full bg-emerald-500 inline-block" /><span className="text-gray-500 dark:text-zinc-400">Vigentes {fmtShortR(cuentasPorCobrar.vigentes)}</span></span></div>
             <div className="flex items-center gap-2 mt-0.5 text-[10px]"><span className="flex items-center gap-0.5"><span className="w-1.5 h-1.5 rounded-full bg-red-500 inline-block" /><span className="text-gray-500 dark:text-zinc-400">Vencidas {fmtShortR(cuentasPorCobrar.vencidas)}</span></span></div>
             <p className="text-[10px] text-gray-400 dark:text-zinc-500 mt-1">{cuentasPorCobrar.count} documentos</p>
           </div>
-          <div className="bg-white dark:bg-zinc-800 rounded-xl border border-gray-200 dark:border-zinc-700 p-5 shadow-sm">
-            <a href="/admin?module=compras" className="text-xs font-semibold text-gray-700 dark:text-zinc-300 hover:text-primary transition-colors cursor-pointer">Cuentas por pagar</a>
+          <div className="bg-white dark:bg-zinc-800 rounded-xl border border-gray-100 dark:border-zinc-800 p-4">
+            <a href="/admin?module=compras" className="text-sm font-medium text-gray-500 dark:text-zinc-400 uppercase tracking-wider hover:text-primary transition-colors cursor-pointer">Cuentas por pagar</a>
             <p className="text-2xl font-mono font-bold text-gray-900 dark:text-zinc-100 mt-1">{fmtR(cuentasPorPagar.total)}</p>
             <div className="flex items-center gap-2 mt-2 text-[10px]"><span className="flex items-center gap-0.5"><span className="w-1.5 h-1.5 rounded-full bg-emerald-500 inline-block" /><span className="text-gray-500 dark:text-zinc-400">Vigentes {fmtShortR(cuentasPorPagar.vigentes)}</span></span></div>
             <div className="flex items-center gap-2 mt-0.5 text-[10px]"><span className="flex items-center gap-0.5"><span className="w-1.5 h-1.5 rounded-full bg-red-500 inline-block" /><span className="text-gray-500 dark:text-zinc-400">Vencidas {fmtShortR(cuentasPorPagar.vencidas)}</span></span></div>
             <p className="text-[10px] text-gray-400 dark:text-zinc-500 mt-1">{cuentasPorPagar.count} documentos</p>
           </div>
-          <div className="bg-white dark:bg-zinc-800 rounded-xl border border-gray-200 dark:border-zinc-700 p-5 shadow-sm">
-            <span className="text-xs font-semibold text-gray-700 dark:text-zinc-300">Impuestos en venta</span>
+          <div className="bg-white dark:bg-zinc-800 rounded-xl border border-gray-100 dark:border-zinc-800 p-4">
+            <span className="text-sm font-medium text-gray-500 dark:text-zinc-400 uppercase tracking-wider">Impuestos en venta</span>
             <p className="text-2xl font-mono font-bold text-gray-900 dark:text-zinc-100 mt-1">{fmtR(igvVentasMes)}</p>
             <p className="text-[10px] text-gray-400 dark:text-zinc-500 mt-2">IGV estimado del mes</p>
           </div>
-          <div className="bg-white dark:bg-zinc-800 rounded-xl border border-gray-200 dark:border-zinc-700 p-5 shadow-sm">
-            <span className="text-xs font-semibold text-gray-700 dark:text-zinc-300">Devoluciones</span>
+          <div className="bg-white dark:bg-zinc-800 rounded-xl border border-gray-100 dark:border-zinc-800 p-4">
+            <span className="text-sm font-medium text-gray-500 dark:text-zinc-400 uppercase tracking-wider">Devoluciones</span>
             <p className={cn("text-2xl font-mono font-bold mt-1", devoluciones > 0 ? "text-red-600 dark:text-red-400" : "text-gray-900 dark:text-zinc-100")}>{fmtR(devoluciones)}</p>
             <p className="text-[10px] text-gray-400 dark:text-zinc-500 mt-2">Incluye impuestos</p>
           </div>
@@ -1065,7 +1065,7 @@ function SmartDashboardTab({ adminName = "Administrador" }: SmartDashboardTabPro
       {!loading && dashTab === "ventas" && (
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
           {bestDay && (
-            <div className="rounded-xl border border-gray-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 p-5 shadow-sm">
+            <div className="rounded-xl border border-gray-100 dark:border-zinc-800 bg-white dark:bg-zinc-800 p-4">
               <div className="flex items-center gap-2 mb-2">
                 <TrendingUp className="w-4 h-4 text-amber-500" />
                 <span className="text-sm font-medium text-gray-500 dark:text-zinc-400 uppercase tracking-wider">Mejor dia de la semana</span>
@@ -1076,7 +1076,7 @@ function SmartDashboardTab({ adminName = "Administrador" }: SmartDashboardTabPro
             </div>
           )}
           {growingCategory?.top && (
-            <div className="rounded-xl border border-gray-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 p-5 shadow-sm">
+            <div className="rounded-xl border border-gray-100 dark:border-zinc-800 bg-white dark:bg-zinc-800 p-4">
               <div className="flex items-center gap-2 mb-2">
                 <TrendingUp className="w-4 h-4 text-emerald-500" />
                 <span className="text-sm font-medium text-gray-500 dark:text-zinc-400 uppercase tracking-wider">Categoria en crecimiento</span>
@@ -1087,7 +1087,7 @@ function SmartDashboardTab({ adminName = "Administrador" }: SmartDashboardTabPro
             </div>
           )}
           {topClientMonth && (
-            <div className="rounded-xl border border-gray-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 p-5 shadow-sm">
+            <div className="rounded-xl border border-gray-100 dark:border-zinc-800 bg-white dark:bg-zinc-800 p-4">
               <div className="flex items-center gap-2 mb-2">
                 <Users className="w-4 h-4 text-primary" />
                 <span className="text-sm font-medium text-gray-500 dark:text-zinc-400 uppercase tracking-wider">Cliente del mes</span>

@@ -196,7 +196,7 @@ export function VentasSubTab(props: VentasSubTabProps) {
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
               {activeCharts.map((chartId, index) => (
-                <div key={chartId} className="bg-white dark:bg-zinc-800 rounded-xl border border-gray-200 dark:border-zinc-700 p-5 shadow-sm">
+                <div key={chartId} className="bg-white dark:bg-zinc-800 rounded-xl border border-gray-100 dark:border-zinc-800 p-4">
                   <div className="flex items-center justify-between mb-3">
                     <span className="text-sm font-medium text-gray-500 dark:text-zinc-400 uppercase tracking-wider truncate">{chartLabel(chartId)}</span>
                     <div className="flex items-center gap-1 shrink-0">
@@ -248,7 +248,7 @@ export function VentasSubTab(props: VentasSubTabProps) {
           .sort((a, b) => b.ventas - a.ventas)
           .slice(0, 3);
         return (
-          <div className="rounded-xl border border-gray-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 p-5 shadow-sm">
+          <div className="rounded-xl border border-gray-100 dark:border-zinc-800 bg-white dark:bg-zinc-800 p-4">
             <div className="flex items-center gap-2 mb-2">
               <Users className="w-4 h-4 text-gray-400" />
               <span className="text-sm font-medium text-gray-500 dark:text-zinc-400 uppercase tracking-wider">Rendimiento cajeros hoy</span>

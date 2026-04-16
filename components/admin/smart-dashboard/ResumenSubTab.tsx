@@ -10,8 +10,6 @@ import {
   DollarSign,
   ArrowUp,
   ArrowDown,
-  ChevronUp,
-  ChevronDown,
   RotateCcw,
   ShoppingCart,
   BarChart3,
@@ -21,6 +19,7 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { BusinessOverviewHero } from "@/components/admin/shared/BusinessOverviewHero";
+import { DraggableWidgetGrid } from "@/components/admin/shared/DraggableWidgetGrid";
 import { StaggerContainer, StaggerItem } from "@/components/admin/shared/StaggerContainer";
 import type {
   Order,
@@ -158,9 +157,6 @@ export function ResumenSubTab(props: ResumenSubTabProps) {
     fmtR, fmtShortR, showLogro, setShowLogro, logro,
   } = props;
 
-  // ── Drag and drop ────────────────────────────────────────────────────────────
-  const [dragIdx, setDragIdx] = useState<number | null>(null);
-  const [dragOverIdx, setDragOverIdx] = useState<number | null>(null);
   const [noClosedYesterday, setNoClosedYesterday] = useState(() => {
     try {
       const lastClose = localStorage.getItem("last-daily-close");
@@ -181,34 +177,10 @@ export function ResumenSubTab(props: ResumenSubTabProps) {
 
   const isDefaultOrder = sectionOrder.every((id, i) => id === DEFAULT_ORDER[i]);
 
-  const moveSection = (index: number, direction: "up" | "down") => {
-    const newOrder = [...sectionOrder];
-    const targetIndex = direction === "up" ? index - 1 : index + 1;
-    if (targetIndex < 0 || targetIndex >= newOrder.length) return;
-    [newOrder[index], newOrder[targetIndex]] = [newOrder[targetIndex], newOrder[index]];
-    setSectionOrder(newOrder);
-    localStorage.setItem("dashboard-widget-order", JSON.stringify(newOrder));
-  };
-
   const resetOrder = () => {
     setSectionOrder(DEFAULT_ORDER);
     localStorage.removeItem("dashboard-widget-order");
   };
-
-  const handleDragStart = (idx: number) => { setDragIdx(idx); };
-  const handleDragOver = (e: React.DragEvent, idx: number) => { e.preventDefault(); setDragOverIdx(idx); };
-  const handleDragLeave = () => { setDragOverIdx(null); };
-  const handleDrop = (targetIdx: number) => {
-    if (dragIdx === null || dragIdx === targetIdx) { setDragIdx(null); setDragOverIdx(null); return; }
-    const newOrder = [...sectionOrder];
-    const [moved] = newOrder.splice(dragIdx, 1);
-    newOrder.splice(targetIdx, 0, moved);
-    setSectionOrder(newOrder);
-    localStorage.setItem("dashboard-widget-order", JSON.stringify(newOrder));
-    setDragIdx(null);
-    setDragOverIdx(null);
-  };
-  const handleDragEnd = () => { setDragIdx(null); setDragOverIdx(null); };
 
   // ── Logros ────────────────────────────────────────────────────────────────────
 
@@ -579,280 +551,259 @@ export function ResumenSubTab(props: ResumenSubTabProps) {
         </div>
       )}
 
-      {/* Reorderable sections */}
-      {filteredSections.map((sectionId, sectionIdx) => (
-        <div
-          key={sectionId}
-          className={cn(
-            "relative group/section transition-all duration-200",
-            dragIdx === sectionIdx && "opacity-50 scale-[0.98]",
-            dragOverIdx === sectionIdx && dragIdx !== sectionIdx && "ring-2 ring-primary/40 ring-offset-2 rounded-xl",
-          )}
-          draggable
-          onDragStart={() => handleDragStart(sectionIdx)}
-          onDragOver={(e) => handleDragOver(e, sectionIdx)}
-          onDragLeave={handleDragLeave}
-          onDrop={() => handleDrop(sectionIdx)}
-          onDragEnd={handleDragEnd}
-        >
-          {/* Reorder buttons */}
-          <div className="absolute -left-1 sm:-left-8 top-1 flex flex-col gap-0.5 opacity-0 group-hover/section:opacity-100 transition-opacity z-10">
-            <button onClick={() => moveSection(sectionIdx, "up")} disabled={sectionIdx === 0} className="p-1 rounded bg-white dark:bg-zinc-700 border border-gray-200 dark:border-zinc-600 shadow-sm hover:bg-gray-50 dark:hover:bg-zinc-600 disabled:opacity-30 disabled:cursor-not-allowed transition-colors" title="Mover arriba">
-              <ChevronUp className="w-3 h-3 text-gray-500 dark:text-zinc-400" />
-            </button>
-            <button onClick={() => moveSection(sectionIdx, "down")} disabled={sectionIdx === filteredSections.length - 1} className="p-1 rounded bg-white dark:bg-zinc-700 border border-gray-200 dark:border-zinc-600 shadow-sm hover:bg-gray-50 dark:hover:bg-zinc-600 disabled:opacity-30 disabled:cursor-not-allowed transition-colors" title="Mover abajo">
-              <ChevronDown className="w-3 h-3 text-gray-500 dark:text-zinc-400" />
-            </button>
+      {/* Draggable widget sections */}
+      <DraggableWidgetGrid storageKey="dashboard-resumen-order" columns={1}>
+        {/* Top 10 productos section */}
+        {filteredSections.includes("top-productos") && (
+          <div key="top-productos" className="rounded-xl border border-gray-100 dark:border-zinc-800 bg-white dark:bg-zinc-800 p-4">
+            <div className="flex items-center gap-2 mb-4">
+              <TrendingUp className="w-4 h-4" style={{ color: "var(--color-primary)" }} />
+              <span className="text-sm font-medium text-gray-500 dark:text-zinc-400 uppercase tracking-wider">Top 10 productos mas vendidos</span>
+            </div>
+            {loading ? (
+              <SkeletonBar rows={10} />
+            ) : topProducts.length === 0 ? (
+              <p className="text-sm text-gray-400 dark:text-zinc-500">No hay datos de ventas aun.</p>
+            ) : (
+              <div className="space-y-2">
+                {topProducts.map((prod, idx) => {
+                  const pct = Math.max(4, (prod.qty / maxProductQty) * 100);
+                  return (
+                    <div key={String(prod.id)} className="flex items-center gap-2 text-sm">
+                      <span className="w-5 text-right text-xs text-gray-400 dark:text-zinc-500 font-mono shrink-0">{idx + 1}</span>
+                      <span className="w-36 sm:w-44 truncate text-gray-700 dark:text-zinc-300 shrink-0 text-xs" title={prod.name}>{prod.name}</span>
+                      <div className="flex-1 h-5 rounded bg-gray-100 dark:bg-zinc-700 relative overflow-hidden">
+                        <div className="absolute inset-y-0 left-0 rounded transition-all" style={{ width: `${pct}%`, backgroundColor: idx === 0 ? "var(--color-primary)" : "var(--color-primary)60" }} />
+                        <span className="absolute inset-y-0 left-2 flex items-center text-[10px] font-semibold text-white z-10">{prod.qty} uds</span>
+                      </div>
+                      <span className="text-xs text-gray-400 dark:text-zinc-500 shrink-0 w-20 text-right tabular-nums">{fmtR(prod.revenue)}</span>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
           </div>
+        )}
 
-          {/* Top 10 productos section */}
-          {sectionId === "top-productos" && (
-            <div className="rounded-xl border border-gray-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 p-5 shadow-sm">
-              <div className="flex items-center gap-2 mb-4">
-                <TrendingUp className="w-4 h-4" style={{ color: "var(--color-primary)" }} />
-                <span className="text-sm font-medium text-gray-500 dark:text-zinc-400 uppercase tracking-wider">Top 10 productos mas vendidos</span>
-              </div>
-              {loading ? (
-                <SkeletonBar rows={10} />
-              ) : topProducts.length === 0 ? (
-                <p className="text-sm text-gray-400 dark:text-zinc-500">No hay datos de ventas aun.</p>
-              ) : (
-                <div className="space-y-2">
-                  {topProducts.map((prod, idx) => {
-                    const pct = Math.max(4, (prod.qty / maxProductQty) * 100);
-                    return (
-                      <div key={String(prod.id)} className="flex items-center gap-2 text-sm">
-                        <span className="w-5 text-right text-xs text-gray-400 dark:text-zinc-500 font-mono shrink-0">{idx + 1}</span>
-                        <span className="w-36 sm:w-44 truncate text-gray-700 dark:text-zinc-300 shrink-0 text-xs" title={prod.name}>{prod.name}</span>
-                        <div className="flex-1 h-5 rounded bg-gray-100 dark:bg-zinc-700 relative overflow-hidden">
-                          <div className="absolute inset-y-0 left-0 rounded transition-all" style={{ width: `${pct}%`, backgroundColor: idx === 0 ? "var(--color-primary)" : "var(--color-primary)60" }} />
-                          <span className="absolute inset-y-0 left-2 flex items-center text-[10px] font-semibold text-white z-10">{prod.qty} uds</span>
-                        </div>
-                        <span className="text-xs text-gray-400 dark:text-zinc-500 shrink-0 w-20 text-right tabular-nums">{fmtR(prod.revenue)}</span>
+        {/* Horario pico section */}
+        {filteredSections.includes("horario-pico") && (
+          <div key="horario-pico" className="rounded-xl border border-gray-100 dark:border-zinc-800 bg-white dark:bg-zinc-800 p-4">
+            <div className="flex items-center gap-2 mb-4">
+              <Clock className="w-4 h-4" style={{ color: "#f97316" }} />
+              <span className="text-sm font-medium text-gray-500 dark:text-zinc-400 uppercase tracking-wider">Ventas por hora (hoy)</span>
+            </div>
+            {loading ? (
+              <SkeletonBar rows={4} />
+            ) : salesToday.length === 0 ? (
+              <p className="text-sm text-gray-400 dark:text-zinc-500">Sin ventas registradas hoy.</p>
+            ) : (
+              <div className="space-y-1">
+                {hourBuckets.map((bucket) => {
+                  const pct = Math.max(0, (bucket.amount / maxHourAmount) * 100);
+                  const isActive = bucket.hour === new Date().getHours();
+                  return (
+                    <div key={bucket.hour} className="flex items-center gap-2 text-xs">
+                      <span className={cn("w-8 text-right shrink-0 font-mono", isActive ? "text-amber-500 font-bold" : "text-gray-400 dark:text-zinc-500")}>{bucket.label}</span>
+                      <div className="flex-1 h-4 rounded bg-gray-100 dark:bg-zinc-700 relative overflow-hidden">
+                        {pct > 0 && <div className="absolute inset-y-0 left-0 rounded transition-all" style={{ width: `${pct}%`, backgroundColor: isActive ? "#f97316" : "var(--color-primary)80" }} />}
+                        {pct > 10 && <span className="absolute inset-y-0 left-2 flex items-center text-[10px] font-semibold text-white z-10">{fmtR(bucket.amount)}</span>}
                       </div>
-                    );
-                  })}
-                </div>
-              )}
-            </div>
-          )}
-
-          {/* Horario pico section */}
-          {sectionId === "horario-pico" && (
-            <div className="rounded-xl border border-gray-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 p-5 shadow-sm">
-              <div className="flex items-center gap-2 mb-4">
-                <Clock className="w-4 h-4" style={{ color: "#f97316" }} />
-                <span className="text-sm font-medium text-gray-500 dark:text-zinc-400 uppercase tracking-wider">Ventas por hora (hoy)</span>
+                      {pct === 0 && <span className="text-gray-300 dark:text-zinc-600 text-[10px]">--</span>}
+                    </div>
+                  );
+                })}
               </div>
-              {loading ? (
-                <SkeletonBar rows={4} />
-              ) : salesToday.length === 0 ? (
-                <p className="text-sm text-gray-400 dark:text-zinc-500">Sin ventas registradas hoy.</p>
-              ) : (
-                <div className="space-y-1">
-                  {hourBuckets.map((bucket) => {
-                    const pct = Math.max(0, (bucket.amount / maxHourAmount) * 100);
-                    const isActive = bucket.hour === new Date().getHours();
-                    return (
-                      <div key={bucket.hour} className="flex items-center gap-2 text-xs">
-                        <span className={cn("w-8 text-right shrink-0 font-mono", isActive ? "text-amber-500 font-bold" : "text-gray-400 dark:text-zinc-500")}>{bucket.label}</span>
-                        <div className="flex-1 h-4 rounded bg-gray-100 dark:bg-zinc-700 relative overflow-hidden">
-                          {pct > 0 && <div className="absolute inset-y-0 left-0 rounded transition-all" style={{ width: `${pct}%`, backgroundColor: isActive ? "#f97316" : "var(--color-primary)80" }} />}
-                          {pct > 10 && <span className="absolute inset-y-0 left-2 flex items-center text-[10px] font-semibold text-white z-10">{fmtR(bucket.amount)}</span>}
-                        </div>
-                        {pct === 0 && <span className="text-gray-300 dark:text-zinc-600 text-[10px]">--</span>}
+            )}
+          </div>
+        )}
+
+        {/* Comparador mes actual vs anterior */}
+        {filteredSections.includes("margen-comparador") && (
+          <div key="margen-comparador">
+            {loading ? (
+              <SkeletonCard />
+            ) : (
+              <div className="rounded-xl border border-gray-100 dark:border-zinc-800 bg-white dark:bg-zinc-800 p-4">
+                <div className="flex items-center gap-2 mb-3">
+                  <BarChart3 className="w-4 h-4" style={{ color: "#f97316" }} />
+                  <span className="text-sm font-medium text-gray-500 dark:text-zinc-400 uppercase tracking-wider">Este mes vs anterior</span>
+                </div>
+                <div className="flex items-end gap-3">
+                  <div>
+                    <p className="text-2xl font-bold font-mono text-gray-900 dark:text-zinc-100">{fmtR(revenueThisMonth)}</p>
+                    <p className="text-xs text-gray-400 dark:text-zinc-500">mes actual</p>
+                  </div>
+                  <div className={cn("flex items-center gap-1 text-sm font-semibold pb-1", monthDelta >= 0 ? "text-emerald-600 dark:text-emerald-400" : "text-red-500 dark:text-red-400")}>
+                    {monthDelta >= 0 ? <ArrowUp className="w-4 h-4" /> : <ArrowDown className="w-4 h-4" />}
+                    {Math.abs(monthDelta).toFixed(1)}%
+                  </div>
+                </div>
+                <p className="text-xs text-gray-400 dark:text-zinc-500 mt-1">
+                  Mes anterior: <span className="font-medium text-gray-600 dark:text-zinc-400">{fmtR(revenuePrevMonth)}</span>
+                </p>
+                <div className="mt-3 grid grid-cols-2 gap-2">
+                  {[
+                    { label: "Este mes", value: revenueThisMonth, color: "var(--color-primary)", max: Math.max(revenueThisMonth, revenuePrevMonth, 1) },
+                    { label: "Anterior", value: revenuePrevMonth, color: "#94a3b8", max: Math.max(revenueThisMonth, revenuePrevMonth, 1) },
+                  ].map((bar) => (
+                    <div key={bar.label}>
+                      <div className="flex justify-between text-[10px] text-gray-400 dark:text-zinc-500 mb-1">
+                        <span>{bar.label}</span>
+                        <span>{fmtR(bar.value)}</span>
                       </div>
-                    );
-                  })}
-                </div>
-              )}
-            </div>
-          )}
-
-          {/* Comparador mes actual vs anterior */}
-          {sectionId === "margen-comparador" && (loading ? (
-            <SkeletonCard />
-          ) : (
-            <div className="rounded-xl border border-gray-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 p-5 shadow-sm">
-              <div className="flex items-center gap-2 mb-3">
-                <BarChart3 className="w-4 h-4" style={{ color: "#f97316" }} />
-                <span className="text-sm font-medium text-gray-500 dark:text-zinc-400 uppercase tracking-wider">Este mes vs anterior</span>
-              </div>
-              <div className="flex items-end gap-3">
-                <div>
-                  <p className="text-2xl font-bold font-mono text-gray-900 dark:text-zinc-100">{fmtR(revenueThisMonth)}</p>
-                  <p className="text-xs text-gray-400 dark:text-zinc-500">mes actual</p>
-                </div>
-                <div className={cn("flex items-center gap-1 text-sm font-semibold pb-1", monthDelta >= 0 ? "text-emerald-600 dark:text-emerald-400" : "text-red-500 dark:text-red-400")}>
-                  {monthDelta >= 0 ? <ArrowUp className="w-4 h-4" /> : <ArrowDown className="w-4 h-4" />}
-                  {Math.abs(monthDelta).toFixed(1)}%
-                </div>
-              </div>
-              <p className="text-xs text-gray-400 dark:text-zinc-500 mt-1">
-                Mes anterior: <span className="font-medium text-gray-600 dark:text-zinc-400">{fmtR(revenuePrevMonth)}</span>
-              </p>
-              <div className="mt-3 grid grid-cols-2 gap-2">
-                {[
-                  { label: "Este mes", value: revenueThisMonth, color: "var(--color-primary)", max: Math.max(revenueThisMonth, revenuePrevMonth, 1) },
-                  { label: "Anterior", value: revenuePrevMonth, color: "#94a3b8", max: Math.max(revenueThisMonth, revenuePrevMonth, 1) },
-                ].map((bar) => (
-                  <div key={bar.label}>
-                    <div className="flex justify-between text-[10px] text-gray-400 dark:text-zinc-500 mb-1">
-                      <span>{bar.label}</span>
-                      <span>{fmtR(bar.value)}</span>
+                      <div className="h-1.5 rounded-full bg-gray-100 dark:bg-zinc-700">
+                        <div className="h-full rounded-full" style={{ width: `${Math.min(100, (bar.value / bar.max) * 100)}%`, backgroundColor: bar.color }} />
+                      </div>
                     </div>
-                    <div className="h-1.5 rounded-full bg-gray-100 dark:bg-zinc-700">
-                      <div className="h-full rounded-full" style={{ width: `${Math.min(100, (bar.value / bar.max) * 100)}%`, backgroundColor: bar.color }} />
-                    </div>
-                  </div>
-                ))}
+                  ))}
+                </div>
               </div>
-            </div>
-          ))}
+            )}
+          </div>
+        )}
 
-          {/* KPIs extra section */}
-          {sectionId === "kpis" && !loading && (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-              {monthProjection && (
-                <div className="rounded-xl border border-gray-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 p-5 shadow-sm">
-                  <span className="text-xs font-medium text-gray-500 dark:text-zinc-400 uppercase tracking-wide">Proyeccion mensual</span>
-                  <p className="text-lg font-bold font-mono text-gray-900 dark:text-zinc-100 mt-1">
-                    {fmtR(monthProjection.ventasMes)} <span className="text-xs font-normal text-gray-400">de {fmtR(monthProjection.proyeccion)}</span>
-                  </p>
-                  <div className="w-full bg-gray-200 dark:bg-zinc-700 rounded-full h-2 mt-2">
-                    <div className={cn("h-2 rounded-full transition-all", monthProjection.porcentaje >= 80 ? "bg-emerald-500" : monthProjection.porcentaje >= 50 ? "bg-amber-500" : "bg-red-500")} style={{ width: `${Math.min(100, monthProjection.porcentaje)}%` }} />
+        {/* KPIs extra section */}
+        {filteredSections.includes("kpis") && !loading && (
+          <div key="kpis" className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            {monthProjection && (
+              <div className="rounded-xl border border-gray-100 dark:border-zinc-800 bg-white dark:bg-zinc-800 p-4">
+                <span className="text-sm font-medium text-gray-500 dark:text-zinc-400 uppercase tracking-wider">Proyeccion mensual</span>
+                <p className="text-lg font-bold font-mono text-gray-900 dark:text-zinc-100 mt-1">
+                  {fmtR(monthProjection.ventasMes)} <span className="text-xs font-normal text-gray-400">de {fmtR(monthProjection.proyeccion)}</span>
+                </p>
+                <div className="w-full bg-gray-200 dark:bg-zinc-700 rounded-full h-2 mt-2">
+                  <div className={cn("h-2 rounded-full transition-all", monthProjection.porcentaje >= 80 ? "bg-emerald-500" : monthProjection.porcentaje >= 50 ? "bg-amber-500" : "bg-red-500")} style={{ width: `${Math.min(100, monthProjection.porcentaje)}%` }} />
+                </div>
+                <p className="text-xs mt-1 text-gray-400">
+                  {monthProjection.porcentaje > 100 ? "Superando proyeccion!" : `${monthProjection.porcentaje}% — dia ${monthProjection.diasTranscurridos}/${monthProjection.diasTotales}`}
+                </p>
+              </div>
+            )}
+            {noClosedYesterday && !ignoredClose && revenueYesterday > 0 && (
+              <div className="rounded-xl border border-amber-200 dark:border-amber-800/30 bg-amber-50 dark:bg-amber-900/20 p-4">
+                <span className="text-xs font-bold text-amber-600 dark:text-amber-400 uppercase tracking-wide">No cerraste ayer</span>
+                <p className="text-sm text-amber-700 dark:text-amber-300 mt-1">
+                  Ventas: <span className="font-bold">{fmtR(revenueYesterday)}</span> &middot; {salesYesterdayCount} transacciones
+                </p>
+                <button
+                  onClick={() => { localStorage.setItem("last-daily-close", new Date().toISOString().slice(0, 10)); setIgnoredClose(true); }}
+                  className="mt-2 text-xs font-bold text-amber-600 hover:underline"
+                >
+                  Ignorar
+                </button>
+              </div>
+            )}
+            {productosSinVenderHoy.length > 0 && (
+              <div className="rounded-xl border border-gray-100 dark:border-zinc-800 bg-white dark:bg-zinc-800 p-4">
+                <span className="text-sm font-medium text-gray-500 dark:text-zinc-400 uppercase tracking-wider">Sin vender hoy</span>
+                <div className="mt-2 space-y-1">
+                  {productosSinVenderHoy.map((p, i) => (
+                    <div key={i} className="flex items-center justify-between text-xs">
+                      <span className="text-gray-700 dark:text-zinc-300 truncate">{p.name}</span>
+                      <span className="text-gray-400 dark:text-zinc-500 shrink-0 ml-2">Ayer: {p.qty}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+            {decliningProduct && (
+              <div className="rounded-xl border border-orange-200 dark:border-orange-800/30 bg-orange-50 dark:bg-orange-900/20 p-4">
+                <span className="text-xs font-bold text-orange-600 dark:text-orange-400 uppercase tracking-wide">En declive</span>
+                <p className="text-sm text-orange-800 dark:text-orange-300 mt-1 font-medium">
+                  {decliningProduct.name} (-{decliningProduct.pct}% vs semana pasada)
+                </p>
+                <p className="text-xs text-orange-500 mt-0.5">Revisa stock, precio o visibilidad</p>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Clientes + Alertas section */}
+        {filteredSections.includes("clientes-alertas") && (
+          <div key="clientes-alertas" className="space-y-4">
+            {abandonedCartCount > 0 && (
+              <div className="rounded-xl border border-amber-200 dark:border-amber-800 bg-amber-50 dark:bg-amber-900/20 p-4">
+                <div className="flex items-center gap-3">
+                  <div className="h-10 w-10 rounded-xl bg-amber-100 dark:bg-amber-900/40 flex items-center justify-center shrink-0">
+                    <ShoppingCart className="w-5 h-5 text-amber-600 dark:text-amber-400" />
                   </div>
-                  <p className="text-xs mt-1 text-gray-400">
-                    {monthProjection.porcentaje > 100 ? "Superando proyeccion!" : `${monthProjection.porcentaje}% — dia ${monthProjection.diasTranscurridos}/${monthProjection.diasTotales}`}
-                  </p>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-bold text-amber-800 dark:text-amber-300">
+                      {abandonedCartCount} carrito{abandonedCartCount !== 1 ? "s" : ""} abandonado{abandonedCartCount !== 1 ? "s" : ""} hoy
+                    </p>
+                    <p className="text-xs text-amber-600 dark:text-amber-400">{fmtR(abandonedCartValue)} en ventas potenciales</p>
+                  </div>
+                  <a href="/admin?module=notificaciones" className="shrink-0 px-3 py-1.5 rounded-lg text-xs font-bold text-amber-800 dark:text-amber-300 bg-amber-200/60 dark:bg-amber-800/40 hover:bg-amber-200 dark:hover:bg-amber-800/60 transition-colors">
+                    Ver y contactar
+                  </a>
                 </div>
-              )}
-              {noClosedYesterday && !ignoredClose && revenueYesterday > 0 && (
-                <div className="rounded-xl border border-amber-200 dark:border-amber-800/30 bg-amber-50 dark:bg-amber-900/20 p-4">
-                  <span className="text-xs font-bold text-amber-600 dark:text-amber-400 uppercase tracking-wide">No cerraste ayer</span>
-                  <p className="text-sm text-amber-700 dark:text-amber-300 mt-1">
-                    Ventas: <span className="font-bold">{fmtR(revenueYesterday)}</span> &middot; {salesYesterdayCount} transacciones
-                  </p>
-                  <button
-                    onClick={() => { localStorage.setItem("last-daily-close", new Date().toISOString().slice(0, 10)); setIgnoredClose(true); }}
-                    className="mt-2 text-xs font-bold text-amber-600 hover:underline"
-                  >
-                    Ignorar
-                  </button>
+              </div>
+            )}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              {/* Top 5 clientes */}
+              <div className="rounded-xl border border-gray-100 dark:border-zinc-800 bg-white dark:bg-zinc-800 p-4">
+                <div className="flex items-center gap-2 mb-4">
+                  <Users className="w-4 h-4" style={{ color: "var(--color-primary)" }} />
+                  <span className="text-sm font-medium text-gray-500 dark:text-zinc-400 uppercase tracking-wider">Top 5 clientes del mes</span>
                 </div>
-              )}
-              {productosSinVenderHoy.length > 0 && (
-                <div className="rounded-xl border border-gray-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 p-5 shadow-sm">
-                  <span className="text-xs font-medium text-gray-500 dark:text-zinc-400 uppercase tracking-wide">Sin vender hoy</span>
-                  <div className="mt-2 space-y-1">
-                    {productosSinVenderHoy.map((p, i) => (
-                      <div key={i} className="flex items-center justify-between text-xs">
-                        <span className="text-gray-700 dark:text-zinc-300 truncate">{p.name}</span>
-                        <span className="text-gray-400 dark:text-zinc-500 shrink-0 ml-2">Ayer: {p.qty}</span>
+                {loading ? (
+                  <div className="space-y-3 animate-pulse">
+                    {Array.from({ length: 5 }).map((_, i) => (
+                      <div key={i} className="flex items-center gap-2">
+                        <div className="w-6 h-6 rounded-full bg-gray-200 dark:bg-zinc-700 shrink-0" />
+                        <div className="flex-1 h-3 rounded bg-gray-200 dark:bg-zinc-700" />
+                        <div className="w-14 h-3 rounded bg-gray-200 dark:bg-zinc-700" />
                       </div>
                     ))}
                   </div>
-                </div>
-              )}
-              {decliningProduct && (
-                <div className="rounded-xl border border-orange-200 dark:border-orange-800/30 bg-orange-50 dark:bg-orange-900/20 p-4">
-                  <span className="text-xs font-bold text-orange-600 dark:text-orange-400 uppercase tracking-wide">En declive</span>
-                  <p className="text-sm text-orange-800 dark:text-orange-300 mt-1 font-medium">
-                    {decliningProduct.name} (-{decliningProduct.pct}% vs semana pasada)
-                  </p>
-                  <p className="text-xs text-orange-500 mt-0.5">Revisa stock, precio o visibilidad</p>
-                </div>
-              )}
-            </div>
-          )}
+                ) : topCustomers.length === 0 ? (
+                  <p className="text-sm text-gray-400 dark:text-zinc-500">Sin pedidos este mes.</p>
+                ) : (
+                  <ol className="space-y-2">
+                    {topCustomers.map((c, idx) => (
+                      <li key={c.phone ?? c.name} className="flex items-center gap-2 text-sm">
+                        <span className="flex items-center justify-center w-5 h-5 rounded-full text-[10px] font-bold shrink-0 text-white" style={{ backgroundColor: idx === 0 ? "var(--color-primary)" : "#94a3b8" }}>
+                          {idx + 1}
+                        </span>
+                        <span className="flex-1 truncate text-gray-700 dark:text-zinc-300 text-xs" title={c.name}>{c.name}</span>
+                        <span className="text-[10px] text-gray-400 dark:text-zinc-500 shrink-0">{c.orderCount} ped.</span>
+                        <span className="text-xs font-semibold tabular-nums shrink-0" style={{ color: "var(--color-primary)" }}>{fmtR(c.total)}</span>
+                      </li>
+                    ))}
+                  </ol>
+                )}
+              </div>
 
-          {/* Clientes + Alertas section */}
-          {sectionId === "clientes-alertas" && (
-            <div className="space-y-4">
-              {abandonedCartCount > 0 && (
-                <div className="rounded-xl border border-amber-200 dark:border-amber-800 bg-amber-50 dark:bg-amber-900/20 p-4">
-                  <div className="flex items-center gap-3">
-                    <div className="h-10 w-10 rounded-xl bg-amber-100 dark:bg-amber-900/40 flex items-center justify-center shrink-0">
-                      <ShoppingCart className="w-5 h-5 text-amber-600 dark:text-amber-400" />
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm font-bold text-amber-800 dark:text-amber-300">
-                        {abandonedCartCount} carrito{abandonedCartCount !== 1 ? "s" : ""} abandonado{abandonedCartCount !== 1 ? "s" : ""} hoy
-                      </p>
-                      <p className="text-xs text-amber-600 dark:text-amber-400">{fmtR(abandonedCartValue)} en ventas potenciales</p>
-                    </div>
-                    <a href="/admin?module=notificaciones" className="shrink-0 px-3 py-1.5 rounded-lg text-xs font-bold text-amber-800 dark:text-amber-300 bg-amber-200/60 dark:bg-amber-800/40 hover:bg-amber-200 dark:hover:bg-amber-800/60 transition-colors">
-                      Ver y contactar
-                    </a>
-                  </div>
+              {/* Alertas activas */}
+              <div className="rounded-xl border border-gray-100 dark:border-zinc-800 bg-white dark:bg-zinc-800 p-4">
+                <div className="flex items-center gap-2 mb-4">
+                  <AlertTriangle className="w-4 h-4 text-amber-500" />
+                  <span className="text-sm font-medium text-gray-500 dark:text-zinc-400 uppercase tracking-wider">Alertas activas</span>
                 </div>
-              )}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                {/* Top 5 clientes */}
-                <div className="rounded-xl border border-gray-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 p-5 shadow-sm">
-                  <div className="flex items-center gap-2 mb-4">
-                    <Users className="w-4 h-4" style={{ color: "var(--color-primary)" }} />
-                    <span className="text-sm font-semibold text-gray-700 dark:text-zinc-300">Top 5 clientes del mes</span>
+                {loading ? (
+                  <div className="space-y-2 animate-pulse">
+                    {Array.from({ length: 3 }).map((_, i) => (
+                      <div key={i} className="h-9 rounded-lg bg-gray-200 dark:bg-zinc-700" />
+                    ))}
                   </div>
-                  {loading ? (
-                    <div className="space-y-3 animate-pulse">
-                      {Array.from({ length: 5 }).map((_, i) => (
-                        <div key={i} className="flex items-center gap-2">
-                          <div className="w-6 h-6 rounded-full bg-gray-200 dark:bg-zinc-700 shrink-0" />
-                          <div className="flex-1 h-3 rounded bg-gray-200 dark:bg-zinc-700" />
-                          <div className="w-14 h-3 rounded bg-gray-200 dark:bg-zinc-700" />
-                        </div>
-                      ))}
-                    </div>
-                  ) : topCustomers.length === 0 ? (
-                    <p className="text-sm text-gray-400 dark:text-zinc-500">Sin pedidos este mes.</p>
-                  ) : (
-                    <ol className="space-y-2">
-                      {topCustomers.map((c, idx) => (
-                        <li key={c.phone ?? c.name} className="flex items-center gap-2 text-sm">
-                          <span className="flex items-center justify-center w-5 h-5 rounded-full text-[10px] font-bold shrink-0 text-white" style={{ backgroundColor: idx === 0 ? "var(--color-primary)" : "#94a3b8" }}>
-                            {idx + 1}
-                          </span>
-                          <span className="flex-1 truncate text-gray-700 dark:text-zinc-300 text-xs" title={c.name}>{c.name}</span>
-                          <span className="text-[10px] text-gray-400 dark:text-zinc-500 shrink-0">{c.orderCount} ped.</span>
-                          <span className="text-xs font-semibold tabular-nums shrink-0" style={{ color: "var(--color-primary)" }}>{fmtR(c.total)}</span>
-                        </li>
-                      ))}
-                    </ol>
-                  )}
-                </div>
-
-                {/* Alertas activas */}
-                <div className="rounded-xl border border-gray-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 p-5 shadow-sm">
-                  <div className="flex items-center gap-2 mb-4">
-                    <AlertTriangle className="w-4 h-4 text-amber-500" />
-                    <span className="text-sm font-semibold text-gray-700 dark:text-zinc-300">Alertas activas</span>
+                ) : !hasAnyAlert ? (
+                  <div className="flex flex-col items-center justify-center gap-2 py-4 text-center">
+                    <TrendingUp className="w-8 h-8 text-emerald-400 mx-auto" />
+                    <p className="text-sm font-medium text-gray-600 dark:text-zinc-400">Todo bajo control</p>
+                    <p className="text-xs text-gray-400 dark:text-zinc-500">No hay alertas pendientes</p>
                   </div>
-                  {loading ? (
-                    <div className="space-y-2 animate-pulse">
-                      {Array.from({ length: 3 }).map((_, i) => (
-                        <div key={i} className="h-9 rounded-lg bg-gray-200 dark:bg-zinc-700" />
-                      ))}
-                    </div>
-                  ) : !hasAnyAlert ? (
-                    <div className="flex flex-col items-center justify-center gap-2 py-4 text-center">
-                      <TrendingUp className="w-8 h-8 text-emerald-400 mx-auto" />
-                      <p className="text-sm font-medium text-gray-600 dark:text-zinc-400">Todo bajo control</p>
-                      <p className="text-xs text-gray-400 dark:text-zinc-500">No hay alertas pendientes</p>
-                    </div>
-                  ) : (
-                    <div className="space-y-2">
-                      <AlertBadge Icon={Package} label="Productos con stock bajo" count={alerts.lowStock} colorClass="bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-400 border border-red-200 dark:border-red-800" />
-                      <AlertBadge Icon={AlertTriangle} label="Lotes por vencer (7 dias)" count={expiringBatchCount} colorClass="bg-amber-50 dark:bg-amber-900/20 text-amber-700 dark:text-amber-400 border border-amber-200 dark:border-amber-800" />
-                      <AlertBadge Icon={DollarSign} label="Fiados vencidos" count={alerts.overduePayables} colorClass="bg-orange-50 dark:bg-orange-900/20 text-orange-700 dark:text-orange-400 border border-orange-200 dark:border-orange-800" />
-                    </div>
-                  )}
-                </div>
+                ) : (
+                  <div className="space-y-2">
+                    <AlertBadge Icon={Package} label="Productos con stock bajo" count={alerts.lowStock} colorClass="bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-400 border border-red-200 dark:border-red-800" />
+                    <AlertBadge Icon={AlertTriangle} label="Lotes por vencer (7 dias)" count={expiringBatchCount} colorClass="bg-amber-50 dark:bg-amber-900/20 text-amber-700 dark:text-amber-400 border border-amber-200 dark:border-amber-800" />
+                    <AlertBadge Icon={DollarSign} label="Fiados vencidos" count={alerts.overduePayables} colorClass="bg-orange-50 dark:bg-orange-900/20 text-orange-700 dark:text-orange-400 border border-orange-200 dark:border-orange-800" />
+                  </div>
+                )}
               </div>
             </div>
-          )}
-        </div>
-      ))}
+          </div>
+        )}
+      </DraggableWidgetGrid>
 
       {/* Logros y Streaks */}
       {!loading && (
