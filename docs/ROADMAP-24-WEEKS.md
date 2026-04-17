@@ -27,7 +27,7 @@ Sem:  1   2   3   4   5   6   7   8   9  10  11  12  13  14  15  16  17  18  19 
 |---|---|---|---|
 | **0** (Quick Wins) | 2.5h | ✅ **Completado 2026-04-08** | 8 bugs críticos + Vercel AI Gateway migrado |
 | **1** Fundamentos | sem 1-3 | ✅ **Completado 2026-04-10** | `cacheComponents` activo, Dashboard aggregates, Onboarding wizard 5 pasos, SUNAT Nubefact real, AI Insights daily-summary |
-| **2** AI + WhatsApp | sem 4-6 | 🟡 en progreso | Hybrid Recommender v2 con pgvector, WhatsApp Concierge, Billing metering, Programmatic SEO piloto |
+| **2** AI + WhatsApp | sem 4-6 | 🟡 en progreso (#6 cerrado 2026-04-16) | Hybrid Recommender v2 con pgvector, ✅ WhatsApp Concierge AI-first activado en webhook real (ADR-058 + bug hoisting fixed), Billing metering, Programmatic SEO piloto |
 | **3** Pagos + Retención | sem 7-9 | ⬜ pending | Culqi+Izipay, PagoEfectivo, Buyer Churn, Smart Replenishment, Bundle slim |
 | **4** Marketplace Economy | sem 10-12 | ⬜ pending | Marketplace bilateral KYC + ledger, Public API v1, Axiom logs |
 | **5** Catálogo + Pricing | sem 13-15 | ⬜ pending | Catálogo canónico, Pricing dinámico no-code, Dynamic Pricing v2, LTV BG/NBD |
