@@ -26,7 +26,7 @@ const EVENT_COLORS: Record<WebhookEvent, string> = {
   new_order:    "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300",
   low_stock:    "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-300",
   new_customer: "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300",
-  payment:      "bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-300",
+  payment:      "bg-[var(--surface-sunken)] text-[var(--text-primary)]",
 };
 
 const ALL_EVENTS: WebhookEvent[] = ["new_order", "low_stock", "new_customer", "payment"];
@@ -170,7 +170,7 @@ export function WebhooksConfigTab() {
       {/* Formulario de creacion */}
       <form
         onSubmit={handleCreate}
-        className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl p-5 space-y-4"
+        className="bg-white dark:bg-gray-900 border border-[var(--rule-base)] rounded-xl p-5 space-y-4"
       >
         <h3 className="font-medium text-gray-800 dark:text-gray-200 text-sm">
           Agregar nuevo webhook
@@ -185,7 +185,7 @@ export function WebhooksConfigTab() {
             value={url}
             onChange={(e) => setUrl(e.target.value)}
             placeholder="https://mi-servidor.com/webhook"
-            className="w-full px-3 py-2 text-sm border border-gray-200 dark:border-gray-700 rounded-lg bg-gray-50 dark:bg-gray-800 text-gray-900 dark:text-gray-100 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-green-500"
+            className="w-full px-3 py-2 text-sm border border-[var(--rule-base)] rounded-lg bg-gray-50 dark:bg-gray-800 text-gray-900 dark:text-gray-100 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-green-500"
           />
         </div>
 
@@ -202,7 +202,7 @@ export function WebhooksConfigTab() {
                 className={`px-3 py-1 rounded-full text-xs font-medium border transition-colors ${
                   selectedEvents.includes(event)
                     ? "border-green-600 bg-green-600 text-white"
-                    : "border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-400 hover:border-green-400"
+                    : "border-[var(--rule-base)] text-gray-600 dark:text-gray-400 hover:border-green-400"
                 }`}
               >
                 {EVENT_LABELS[event]}
@@ -251,7 +251,7 @@ export function WebhooksConfigTab() {
           return (
             <div
               key={webhook.id}
-              className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl p-4 space-y-3"
+              className="bg-white dark:bg-gray-900 border border-[var(--rule-base)] rounded-xl p-4 space-y-3"
             >
               <div className="flex items-start justify-between gap-2">
                 <div className="min-w-0 flex-1">

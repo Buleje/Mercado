@@ -135,7 +135,7 @@ export default function RecentPurchases() {
         "fixed bottom-6 left-4 z-40 flex max-w-xs items-center gap-3 rounded-xl",
         "border border-border bg-card px-4 py-3 shadow-lg",
         "dark:bg-card dark:border-border",
-        "transition-all duration-300",
+        "transition-all duration-[var(--dur-base)]",
         entering
           ? "translate-y-0 opacity-100"
           : "translate-y-2 opacity-90",

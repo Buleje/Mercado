@@ -80,7 +80,7 @@ function BannerPreview({ banner }: { banner: Banner }) {
           onError={() => setImgError(true)}
         />
       ) : null}
-      <div className="absolute inset-0 bg-gradient-to-r from-black/60 to-transparent flex flex-col justify-center px-5">
+      <div className="absolute inset-0 bg-linear-to-r from-black/60 to-transparent flex flex-col justify-center px-5">
         <p className="text-white font-bold text-base leading-snug drop-shadow">
           {banner.title || "Titulo del banner"}
         </p>
@@ -136,7 +136,7 @@ function BannerForm({
         placeholder={placeholder}
         className={cn(
           "w-full px-3 py-2 rounded-lg border bg-white dark:bg-card text-gray-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-primary/40",
-          errors[field] ? "border-red-400 dark:border-red-500" : "border-gray-200 dark:border-card-border"
+          errors[field] ? "border-red-400 dark:border-red-500" : "border-[var(--rule-base)] dark:border-card-border"
         )}
       />
       {errors[field] && <p className="text-xs text-red-500">{errors[field]}</p>}
@@ -144,7 +144,7 @@ function BannerForm({
   );
 
   return (
-    <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl p-5  space-y-4">
+    <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl p-5  space-y-4">
       <p className="text-sm font-semibold text-gray-700 dark:text-gray-300">
         {initial.title ? "Editar banner" : "Nuevo banner"}
       </p>
@@ -340,7 +340,7 @@ export default function BannerEditor() {
                 className={cn(
                   "bg-white dark:bg-card border rounded-xl overflow-hidden  transition-all cursor-grab active:cursor-grabbing",
                   dragging === banner.id ? "opacity-50 scale-[0.98]" : "",
-                  dragOver === banner.id && dragging !== banner.id ? "border-primary ring-2 ring-primary/30" : "border-gray-200 dark:border-card-border"
+                  dragOver === banner.id && dragging !== banner.id ? "border-primary ring-2 ring-primary/30" : "border-[var(--rule-base)] dark:border-card-border"
                 )}
               >
                 {/* Banner mini preview */}

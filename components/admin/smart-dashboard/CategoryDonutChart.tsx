@@ -35,7 +35,7 @@ function renderActiveShape(props: any) {
       <text x={cx} y={cy - 10} textAnchor="middle" className="fill-gray-900 dark:fill-white text-xs font-bold">
         {payload.name}
       </text>
-      <text x={cx} y={cy + 10} textAnchor="middle" className="fill-gray-500 dark:fill-zinc-400 text-[10px]">
+      <text x={cx} y={cy + 10} textAnchor="middle" className="fill-gray-500 dark:fill-zinc-400 text-[length:var(--ts-2xs)]">
         {(percent * 100).toFixed(0)}%
       </text>
     </g>
@@ -92,7 +92,7 @@ export default function CategoryDonutChart({ data, fmtR }: Props) {
         {activeIndex === null && (
           <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
             <span className="text-2xl font-bold text-gray-900 dark:text-white">{fmtR(total)}</span>
-            <span className="text-[10px] text-gray-400">Total</span>
+            <span className="text-[length:var(--ts-2xs)] text-gray-400">Total</span>
           </div>
         )}
       </div>

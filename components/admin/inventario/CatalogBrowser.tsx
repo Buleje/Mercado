@@ -33,30 +33,30 @@ function ProductCard({
       "rounded-xl border p-3 transition-all hover:shadow-sm group",
       inCart
         ? "border-primary bg-primary/5 dark:bg-primary/10 ring-1 ring-primary/30"
-        : "border-gray-200 dark:border-card-border bg-white dark:bg-card hover:border-primary/40"
+        : "border-[var(--rule-base)] dark:border-card-border bg-white dark:bg-card hover:border-primary/40"
     )}>
       <div className="flex items-center justify-between mb-2">
         <span className="text-3xl">{product.emoji}</span>
         <div className="flex items-center gap-1">
           {product.tags?.includes("popular") && (
-            <span className="text-[8px] font-bold px-1.5 py-0.5 rounded bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400">
+            <span className="text-[length:var(--ts-2xs)] font-bold px-1.5 py-0.5 rounded bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400">
               Popular
             </span>
           )}
           {margin !== null && (
-            <span className="text-[8px] font-bold px-1.5 py-0.5 rounded bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400">
+            <span className="text-[length:var(--ts-2xs)] font-bold px-1.5 py-0.5 rounded bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400">
               {margin}% margen
             </span>
           )}
         </div>
       </div>
       <p className="text-xs font-bold text-foreground truncate">{product.name}</p>
-      <p className="text-[10px] text-muted truncate">{product.brand} · {product.presentation ?? product.unit}</p>
+      <p className="text-[length:var(--ts-2xs)] text-muted truncate">{product.brand} · {product.presentation ?? product.unit}</p>
       <div className="flex items-center justify-between mt-2">
         <div>
           <p className="text-sm font-extrabold text-primary">S/ {product.suggestedPrice.toFixed(2)}</p>
           {product.suggestedCostPrice && (
-            <p className="text-[9px] text-muted">Costo: S/ {product.suggestedCostPrice.toFixed(2)}</p>
+            <p className="text-[length:var(--ts-2xs)] text-muted">Costo: S/ {product.suggestedCostPrice.toFixed(2)}</p>
           )}
         </div>
         <button
@@ -92,22 +92,22 @@ function ProductRow({
       "flex items-center gap-3 px-3 py-2.5 rounded-lg border transition-all",
       inCart
         ? "border-primary/40 bg-primary/5 dark:bg-primary/10"
-        : "border-gray-100 dark:border-card-border hover:bg-gray-50 dark:hover:bg-surface"
+        : "border-[var(--rule-soft)] dark:border-card-border hover:bg-gray-50 dark:hover:bg-surface"
     )}>
       <span className="text-xl shrink-0">{product.emoji}</span>
       <div className="flex-1 min-w-0">
         <p className="text-xs font-semibold text-foreground truncate">{product.name}</p>
-        <p className="text-[10px] text-muted">{product.brand} · {product.category}</p>
+        <p className="text-[length:var(--ts-2xs)] text-muted">{product.brand} · {product.category}</p>
       </div>
       <p className="text-xs font-bold text-primary shrink-0 w-16 text-right">S/ {product.suggestedPrice.toFixed(2)}</p>
       {product.barcode && (
-        <p className="text-[9px] text-muted font-mono shrink-0 w-24 text-right hidden lg:block">{product.barcode}</p>
+        <p className="text-[length:var(--ts-2xs)] text-muted font-mono shrink-0 w-24 text-right hidden lg:block">{product.barcode}</p>
       )}
       <button
         onClick={() => onAdd(product)}
         disabled={inCart}
         className={cn(
-          "h-7 px-2.5 rounded-md text-[10px] font-bold transition-all shrink-0",
+          "h-7 px-2.5 rounded-md text-[length:var(--ts-2xs)] font-bold transition-all shrink-0",
           inCart
             ? "bg-primary text-white"
             : "bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 hover:bg-primary hover:text-white"
@@ -142,7 +142,7 @@ function CartItemRow({
           <span className="text-lg">{item.product.emoji}</span>
           <div className="min-w-0">
             <p className="text-xs font-bold text-foreground truncate">{item.product.name}</p>
-            <p className="text-[10px] text-muted">{item.product.brand}</p>
+            <p className="text-[length:var(--ts-2xs)] text-muted">{item.product.brand}</p>
           </div>
         </div>
         <button
@@ -156,13 +156,13 @@ function CartItemRow({
       {/* Inputs con labels claros */}
       <div className="grid grid-cols-3 gap-2">
         <div>
-          <label className="text-[10px] font-semibold text-muted block mb-1">Stock inicial</label>
+          <label className="text-[length:var(--ts-2xs)] font-semibold text-muted block mb-1">Stock inicial</label>
           <input
             type="number"
             min={0}
             value={item.stock}
             onChange={(e) => onUpdate(item.product.catalogId, "stock", Math.max(0, Number(e.target.value)))}
-            className="w-full px-2 py-1.5 rounded-lg border border-gray-200 dark:border-card-border bg-white dark:bg-card text-sm font-mono text-center font-bold focus:ring-2 focus:ring-primary/40 focus:outline-none"
+            className="w-full px-2 py-1.5 rounded-lg border border-[var(--rule-base)] dark:border-card-border bg-white dark:bg-card text-sm font-mono text-center font-bold focus:ring-2 focus:ring-primary/40 focus:outline-none"
           />
           {/* Quick stock buttons */}
           <div className="flex gap-0.5 mt-1">
@@ -171,7 +171,7 @@ function CartItemRow({
                 key={n}
                 onClick={() => onUpdate(item.product.catalogId, "stock", n)}
                 className={cn(
-                  "flex-1 py-0.5 rounded text-[8px] font-bold transition-all",
+                  "flex-1 py-0.5 rounded text-[length:var(--ts-2xs)] font-bold transition-all",
                   item.stock === n ? "bg-primary text-white" : "bg-gray-200 dark:bg-gray-700 text-muted hover:bg-primary/20"
                 )}
               >
@@ -181,31 +181,31 @@ function CartItemRow({
           </div>
         </div>
         <div>
-          <label className="text-[10px] font-semibold text-muted block mb-1">Precio venta</label>
+          <label className="text-[length:var(--ts-2xs)] font-semibold text-muted block mb-1">Precio venta</label>
           <input
             type="number"
             min={0}
             step={0.1}
             value={item.price}
             onChange={(e) => onUpdate(item.product.catalogId, "price", Math.max(0, Number(e.target.value)))}
-            className="w-full px-2 py-1.5 rounded-lg border border-gray-200 dark:border-card-border bg-white dark:bg-card text-sm font-mono text-center font-bold text-primary focus:ring-2 focus:ring-primary/40 focus:outline-none"
+            className="w-full px-2 py-1.5 rounded-lg border border-[var(--rule-base)] dark:border-card-border bg-white dark:bg-card text-sm font-mono text-center font-bold text-primary focus:ring-2 focus:ring-primary/40 focus:outline-none"
           />
         </div>
         <div>
-          <label className="text-[10px] font-semibold text-muted block mb-1">Precio costo</label>
+          <label className="text-[length:var(--ts-2xs)] font-semibold text-muted block mb-1">Precio costo</label>
           <input
             type="number"
             min={0}
             step={0.1}
             value={item.costPrice}
             onChange={(e) => onUpdate(item.product.catalogId, "costPrice", Math.max(0, Number(e.target.value)))}
-            className="w-full px-2 py-1.5 rounded-lg border border-gray-200 dark:border-card-border bg-white dark:bg-card text-sm font-mono text-center focus:ring-2 focus:ring-primary/40 focus:outline-none"
+            className="w-full px-2 py-1.5 rounded-lg border border-[var(--rule-base)] dark:border-card-border bg-white dark:bg-card text-sm font-mono text-center focus:ring-2 focus:ring-primary/40 focus:outline-none"
           />
         </div>
       </div>
 
       {/* Subtotales */}
-      <div className="flex items-center justify-between text-[10px] pt-1 border-t border-gray-200 dark:border-card-border">
+      <div className="flex items-center justify-between text-[length:var(--ts-2xs)] pt-1 border-t border-[var(--rule-base)] dark:border-card-border">
         <span className="text-muted">Inversion: <span className="font-bold text-foreground">S/ {costTotal.toFixed(2)}</span></span>
         <span className="text-muted">Ganancia: <span className="font-bold text-emerald-600">+S/ {profit.toFixed(2)}</span></span>
       </div>
@@ -335,11 +335,11 @@ export default function CatalogBrowser() {
         <div className="flex-1 relative">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted" />
           <input type="text" value={search} onChange={(e) => { setSearch(e.target.value); setPage(1); }} placeholder="Buscar producto, marca o codigo de barras..."
-            className="w-full pl-9 pr-3 py-2.5 rounded-lg border border-gray-200 dark:border-card-border bg-white dark:bg-surface text-sm placeholder:text-muted focus:outline-none focus:ring-2 focus:ring-primary/40" />
+            className="w-full pl-9 pr-3 py-2.5 rounded-lg border border-[var(--rule-base)] dark:border-card-border bg-white dark:bg-surface text-sm placeholder:text-muted focus:outline-none focus:ring-2 focus:ring-primary/40" />
         </div>
         <button onClick={() => setShowCategories(!showCategories)}
           className={cn("flex items-center gap-1.5 px-3 py-2.5 rounded-xl border text-xs font-semibold transition-colors",
-            selectedCategory !== "all" ? "border-primary bg-primary/5 text-primary" : "border-gray-200 dark:border-card-border text-muted hover:text-foreground")}>
+            selectedCategory !== "all" ? "border-primary bg-primary/5 text-primary" : "border-[var(--rule-base)] dark:border-card-border text-muted hover:text-foreground")}>
           <Filter className="h-3.5 w-3.5" />
           {categoryMeta?.emoji ?? "Todas"}
           <ChevronDown className={cn("h-3 w-3 transition-transform", showCategories && "rotate-180")} />
@@ -350,7 +350,7 @@ export default function CatalogBrowser() {
       {showCategories && (
         <div className="flex flex-wrap gap-1.5">
           <button onClick={() => { setSelectedCategory("all"); setPage(1); }}
-            className={cn("px-3 py-1.5 rounded-full text-[11px] font-semibold transition-all",
+            className={cn("px-3 py-1.5 rounded-full text-[length:var(--ts-xs)] font-semibold transition-all",
               selectedCategory === "all" ? "bg-primary text-white" : "bg-gray-100 dark:bg-gray-800 text-muted hover:text-foreground")}>
             Todas ({CATALOG_STATS.total})
           </button>
@@ -358,7 +358,7 @@ export default function CatalogBrowser() {
             const count = PERU_CATALOG.filter((p) => p.category === cat.id).length;
             return (
               <button key={cat.id} onClick={() => { setSelectedCategory(cat.id); setPage(1); }}
-                className={cn("px-3 py-1.5 rounded-full text-[11px] font-semibold transition-all",
+                className={cn("px-3 py-1.5 rounded-full text-[length:var(--ts-xs)] font-semibold transition-all",
                   selectedCategory === cat.id ? "bg-primary text-white" : "bg-gray-100 dark:bg-gray-800 text-muted hover:text-foreground")}>
                 {cat.emoji} {cat.label} ({count})
               </button>
@@ -367,7 +367,7 @@ export default function CatalogBrowser() {
         </div>
       )}
 
-      <p className="text-[10px] text-muted">
+      <p className="text-[length:var(--ts-2xs)] text-muted">
         {filtered.length} productos encontrados
         {cart.length > 0 && <span className="ml-2 font-bold text-primary">· {cart.length} productos en carrito ({cartTotals.items} unidades)</span>}
       </p>
@@ -389,7 +389,7 @@ export default function CatalogBrowser() {
 
       {hasMore && (
         <button onClick={() => setPage((p) => p + 1)}
-          className="w-full py-2.5 rounded-lg border border-gray-200 dark:border-card-border text-xs font-semibold text-muted hover:text-foreground hover:bg-gray-50 dark:hover:bg-surface transition-colors">
+          className="w-full py-2.5 rounded-lg border border-[var(--rule-base)] dark:border-card-border text-xs font-semibold text-muted hover:text-foreground hover:bg-gray-50 dark:hover:bg-surface transition-colors">
           Cargar mas ({filtered.length - visibleProducts.length} restantes)
         </button>
       )}
@@ -403,7 +403,7 @@ export default function CatalogBrowser() {
 
       {/* ═══ CARRITO MEJORADO (panel inferior expandible) ═══ */}
       {cart.length > 0 && (
-        <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl overflow-hidden">
+        <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl overflow-hidden">
           {/* Header del carrito */}
           <button
             onClick={() => setCartExpanded(!cartExpanded)}
@@ -422,15 +422,15 @@ export default function CatalogBrowser() {
               {/* Totales en el header */}
               <div className="hidden sm:flex items-center gap-4 text-right">
                 <div>
-                  <p className="text-[10px] text-muted">Inversion</p>
+                  <p className="text-[length:var(--ts-2xs)] text-muted">Inversion</p>
                   <p className="text-sm font-bold text-foreground">S/ {cartTotals.inversion.toFixed(2)}</p>
                 </div>
                 <div>
-                  <p className="text-[10px] text-muted">Venta estimada</p>
+                  <p className="text-[length:var(--ts-2xs)] text-muted">Venta estimada</p>
                   <p className="text-sm font-bold text-primary">S/ {cartTotals.ventaTotal.toFixed(2)}</p>
                 </div>
                 <div>
-                  <p className="text-[10px] text-muted">Ganancia</p>
+                  <p className="text-[length:var(--ts-2xs)] text-muted">Ganancia</p>
                   <p className="text-sm font-bold text-emerald-600">+S/ {cartTotals.ganancia.toFixed(2)}</p>
                 </div>
               </div>
@@ -440,7 +440,7 @@ export default function CatalogBrowser() {
 
           {/* Contenido expandible */}
           {cartExpanded && (
-            <div className="border-t border-gray-200 dark:border-card-border">
+            <div className="border-t border-[var(--rule-base)] dark:border-card-border">
               {/* Items del carrito */}
               <div className="p-4 grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3 max-h-[500px] overflow-y-auto">
                 {cart.map((item) => (
@@ -454,19 +454,19 @@ export default function CatalogBrowser() {
               </div>
 
               {/* Footer con totales + acciones */}
-              <div className="border-t border-gray-200 dark:border-card-border px-5 py-4 bg-gray-50 dark:bg-surface">
+              <div className="border-t border-[var(--rule-base)] dark:border-card-border px-5 py-4 bg-gray-50 dark:bg-surface">
                 {/* Totales mobile */}
                 <div className="sm:hidden grid grid-cols-3 gap-3 mb-3">
                   <div className="text-center">
-                    <p className="text-[10px] text-muted">Inversion</p>
+                    <p className="text-[length:var(--ts-2xs)] text-muted">Inversion</p>
                     <p className="text-sm font-bold">S/ {cartTotals.inversion.toFixed(2)}</p>
                   </div>
                   <div className="text-center">
-                    <p className="text-[10px] text-muted">Venta</p>
+                    <p className="text-[length:var(--ts-2xs)] text-muted">Venta</p>
                     <p className="text-sm font-bold text-primary">S/ {cartTotals.ventaTotal.toFixed(2)}</p>
                   </div>
                   <div className="text-center">
-                    <p className="text-[10px] text-muted">Ganancia</p>
+                    <p className="text-[length:var(--ts-2xs)] text-muted">Ganancia</p>
                     <p className="text-sm font-bold text-emerald-600">+S/ {cartTotals.ganancia.toFixed(2)}</p>
                   </div>
                 </div>

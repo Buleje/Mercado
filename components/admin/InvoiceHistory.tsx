@@ -61,7 +61,7 @@ function EstadoBadge({ estado }: { estado: InvoiceRecord["estado"] }) {
 
   return (
     <span
-      className={`inline-flex items-center px-2 py-0.5 rounded-lg border text-[11px] font-bold ${styles[estado]}`}
+      className={`inline-flex items-center px-2 py-0.5 rounded-lg border text-[length:var(--ts-xs)] font-bold ${styles[estado]}`}
     >
       {labels[estado]}
     </span>
@@ -150,7 +150,7 @@ export default function InvoiceHistory() {
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             placeholder="Buscar por cliente, número..."
-            className="w-full pl-9 pr-3 py-2 rounded-lg border border-gray-200 dark:border-card-border bg-white dark:bg-card text-sm text-gray-900 dark:text-foreground placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-colors"
+            className="w-full pl-9 pr-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-card-border bg-white dark:bg-card text-sm text-gray-900 dark:text-foreground placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-colors"
           />
         </div>
 
@@ -221,7 +221,7 @@ export default function InvoiceHistory() {
           <div className="hidden sm:block overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
-                <tr className="text-xs text-gray-500 dark:text-muted uppercase border-b border-gray-200 dark:border-card-border">
+                <tr className="text-xs text-gray-500 dark:text-muted uppercase border-b border-[var(--rule-base)] dark:border-card-border">
                   <th className="text-left py-2 px-2 font-bold">Tipo</th>
                   <th className="text-left py-2 px-2 font-bold">Serie-Número</th>
                   <th className="text-left py-2 px-2 font-bold">Cliente</th>
@@ -234,11 +234,11 @@ export default function InvoiceHistory() {
                 {paginatedRecords.map((record) => (
                   <tr
                     key={record.id}
-                    className="border-b border-gray-100 dark:border-card-border/50 hover:bg-gray-50 dark:hover:bg-surface/50 transition-colors"
+                    className="border-b border-[var(--rule-soft)] dark:border-card-border/50 hover:bg-gray-50 dark:hover:bg-surface/50 transition-colors"
                   >
                     <td className="py-2.5 px-2">
                       <span
-                        className={`inline-flex items-center px-2 py-0.5 rounded-lg text-[11px] font-bold ${
+                        className={`inline-flex items-center px-2 py-0.5 rounded-lg text-[length:var(--ts-xs)] font-bold ${
                           record.tipo === "factura"
                             ? "bg-emerald-50 text-emerald-700 dark:bg-emerald-950/20 dark:text-emerald-400"
                             : "bg-primary/10 text-primary"
@@ -255,7 +255,7 @@ export default function InvoiceHistory() {
                         {record.clienteNombre}
                       </div>
                       {record.clienteDoc && (
-                        <div className="text-[11px] text-gray-400 dark:text-muted">
+                        <div className="text-[length:var(--ts-xs)] text-gray-400 dark:text-muted">
                           {record.clienteDoc}
                         </div>
                       )}
@@ -280,11 +280,11 @@ export default function InvoiceHistory() {
             {paginatedRecords.map((record) => (
               <div
                 key={record.id}
-                className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl p-3 space-y-2"
+                className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl p-3 space-y-2"
               >
                 <div className="flex items-center justify-between">
                   <span
-                    className={`inline-flex items-center px-2 py-0.5 rounded-lg text-[11px] font-bold ${
+                    className={`inline-flex items-center px-2 py-0.5 rounded-lg text-[length:var(--ts-xs)] font-bold ${
                       record.tipo === "factura"
                         ? "bg-emerald-50 text-emerald-700 dark:bg-emerald-950/20 dark:text-emerald-400"
                         : "bg-primary/10 text-primary"
@@ -317,7 +317,7 @@ export default function InvoiceHistory() {
               <button
                 onClick={() => setPage((p) => Math.max(1, p - 1))}
                 disabled={page <= 1}
-                className="p-1.5 rounded-lg border border-gray-200 dark:border-card-border text-gray-500 hover:bg-gray-50 dark:hover:bg-surface disabled:opacity-30 transition-colors"
+                className="p-1.5 rounded-lg border border-[var(--rule-base)] dark:border-card-border text-gray-500 hover:bg-gray-50 dark:hover:bg-surface disabled:opacity-30 transition-colors"
               >
                 <ChevronLeft className="h-4 w-4" />
               </button>
@@ -327,7 +327,7 @@ export default function InvoiceHistory() {
               <button
                 onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
                 disabled={page >= totalPages}
-                className="p-1.5 rounded-lg border border-gray-200 dark:border-card-border text-gray-500 hover:bg-gray-50 dark:hover:bg-surface disabled:opacity-30 transition-colors"
+                className="p-1.5 rounded-lg border border-[var(--rule-base)] dark:border-card-border text-gray-500 hover:bg-gray-50 dark:hover:bg-surface disabled:opacity-30 transition-colors"
               >
                 <ChevronRight className="h-4 w-4" />
               </button>

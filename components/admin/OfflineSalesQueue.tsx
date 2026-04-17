@@ -249,7 +249,7 @@ export default function OfflineSalesQueue() {
         {syncedCount > 0 && (
           <button
             onClick={clearSynced}
-            className="flex items-center gap-2 rounded-lg border border-gray-200 px-3 py-2 text-sm text-gray-600 hover:bg-gray-50 dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-800"
+            className="flex items-center gap-2 rounded-lg border border-[var(--rule-base)] px-3 py-2 text-sm text-gray-600 hover:bg-gray-50 dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-800"
           >
             <Trash2 className="h-4 w-4" />
             Limpiar sincronizados ({syncedCount})
@@ -258,7 +258,7 @@ export default function OfflineSalesQueue() {
 
         <button
           onClick={addDemoSale}
-          className="ml-auto rounded-lg border border-dashed border-gray-300 px-3 py-2 text-xs text-gray-400 hover:border-gray-400 dark:border-gray-600"
+          className="ml-auto rounded-lg border border-dashed border-[var(--rule-base)] px-3 py-2 text-xs text-gray-400 hover:border-gray-400 dark:border-gray-600"
         >
           + Venta demo
         </button>
@@ -266,13 +266,13 @@ export default function OfflineSalesQueue() {
 
       {/* Queue list */}
       {queue.length === 0 ? (
-        <div className="flex flex-col items-center justify-center rounded-xl border-2 border-dashed border-gray-200 py-10 dark:border-gray-700">
+        <div className="flex flex-col items-center justify-center rounded-xl border-2 border-dashed border-[var(--rule-base)] py-10 dark:border-[var(--rule-base)]">
           <CheckCircle className="mb-2 h-8 w-8 text-gray-300 dark:text-gray-600" />
           <p className="text-sm text-gray-400">Sin ventas en cola</p>
         </div>
       ) : (
-        <div className="rounded-xl border border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-900">
-          <div className="border-b border-gray-100 px-5 py-3 dark:border-gray-700">
+        <div className="rounded-xl border border-[var(--rule-base)] bg-white dark:border-[var(--rule-base)] dark:bg-gray-900">
+          <div className="border-b border-[var(--rule-soft)] px-5 py-3 dark:border-[var(--rule-base)]">
             <p className="text-sm font-semibold text-gray-800 dark:text-gray-100">
               Cola de ventas ({queue.length})
             </p>
@@ -330,7 +330,7 @@ export default function OfflineSalesQueue() {
           </div>
 
           {/* Summary footer */}
-          <div className="flex gap-6 border-t border-gray-100 bg-gray-50 px-5 py-3 text-xs dark:border-gray-700 dark:bg-gray-800/50">
+          <div className="flex gap-6 border-t border-[var(--rule-soft)] bg-gray-50 px-5 py-3 text-xs dark:border-[var(--rule-base)] dark:bg-gray-800/50">
             {(["pending", "syncing", "synced", "error"] as SyncStatus[]).map((s) => {
               const count = queue.filter((q) => q.status === s).length;
               const cfg = STATUS_CONFIG[s];

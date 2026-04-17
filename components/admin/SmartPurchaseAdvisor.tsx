@@ -235,9 +235,9 @@ export default function SmartPurchaseAdvisor() {
   }, [advised]);
 
   return (
-    <div className="bg-white rounded-xl border border-gray-200 overflow-hidden ">
+    <div className="bg-white rounded-xl border border-[var(--rule-base)] overflow-hidden ">
       {/* Header */}
-      <div className="p-5 border-b border-gray-100">
+      <div className="p-5 border-b border-[var(--rule-soft)]">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
             <div className="p-2 rounded-xl bg-primary/10">
@@ -282,19 +282,19 @@ export default function SmartPurchaseAdvisor() {
         {!loading && (
           <div className="mt-4 grid grid-cols-3 gap-3">
             <div className="text-center p-3 rounded-xl bg-red-50 border border-red-100">
-              <p className="text-xl font-black text-red-600">
+              <p className="text-xl font-extrabold text-red-600">
                 {advised.filter((i) => i.urgency === "critical").length}
               </p>
               <p className="text-xs text-red-500 font-semibold">Criticos</p>
             </div>
             <div className="text-center p-3 rounded-xl bg-secondary/5 border border-secondary/20">
-              <p className="text-xl font-black text-secondary">
+              <p className="text-xl font-extrabold text-secondary">
                 {advised.filter((i) => i.urgency === "high").length}
               </p>
               <p className="text-xs text-secondary font-semibold">Urgentes</p>
             </div>
             <div className="text-center p-3 rounded-xl bg-primary/5 border border-primary/20">
-              <p className="text-xl font-black text-primary">
+              <p className="text-xl font-extrabold text-primary">
                 {fmt(totalEstimated)}
               </p>
               <p className="text-xs text-primary font-semibold">
@@ -376,7 +376,7 @@ export default function SmartPurchaseAdvisor() {
                   <div className="flex items-center gap-3 flex-shrink-0">
                     <div className="text-right">
                       <p className="text-xs text-gray-400">Comprar</p>
-                      <p className="font-black text-gray-900">
+                      <p className="font-extrabold text-gray-900">
                         {item.suggestedQty} {item.product.unit ?? "u"}
                       </p>
                       <p className="text-xs text-primary font-semibold">
@@ -392,9 +392,9 @@ export default function SmartPurchaseAdvisor() {
                 </button>
 
                 {isExpanded && (
-                  <div className="px-5 pb-4 bg-gray-50 border-t border-gray-100">
+                  <div className="px-5 pb-4 bg-gray-50 border-t border-[var(--rule-soft)]">
                     <div className="grid grid-cols-2 gap-3 pt-3">
-                      <div className="p-3 rounded-xl bg-white border border-gray-100">
+                      <div className="p-3 rounded-xl bg-white border border-[var(--rule-soft)]">
                         <p className="text-xs text-gray-400 mb-1">Analisis de stock</p>
                         <p className="text-sm font-medium text-gray-900">
                           Stock minimo: {item.product.stockMin} {item.product.unit ?? "u"}
@@ -411,7 +411,7 @@ export default function SmartPurchaseAdvisor() {
                           </div>
                         )}
                       </div>
-                      <div className="p-3 rounded-xl bg-white border border-gray-100">
+                      <div className="p-3 rounded-xl bg-white border border-[var(--rule-soft)]">
                         <p className="text-xs text-gray-400 mb-1">Orden sugerida</p>
                         <p className="text-sm font-bold text-primary">
                           {item.suggestedQty} {item.product.unit ?? "u"}

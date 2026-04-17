@@ -179,7 +179,7 @@ function FiadoStreakBadge({ customerId, fiados }: { customerId: string; fiados: 
   if (streak < 3) return null;
   return (
     <span className={cn(
-      "inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-full text-[9px] font-bold",
+      "inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-full text-[length:var(--ts-2xs)] font-bold",
       streak >= 5 ? "bg-amber-100 text-amber-700" : "bg-orange-100 text-orange-700"
     )}>
       {streak >= 5 ? "\u2B50" : "\uD83D\uDD25"} {streak} pagos a tiempo
@@ -202,7 +202,7 @@ function FiadoReliabilityBadge({ customerId, fiados }: { customerId: string; fia
 
   if (!score.sufficientHistory) {
     return (
-      <span className="text-[9px] text-gray-400 italic ml-1">Sin historial</span>
+      <span className="text-[length:var(--ts-2xs)] text-gray-400 italic ml-1">Sin historial</span>
     );
   }
 
@@ -216,7 +216,7 @@ function FiadoReliabilityBadge({ customerId, fiados }: { customerId: string; fia
 
   return (
     <span
-      className={cn("text-[10px] font-bold ml-1", colorMap[score.score] ?? "text-gray-400")}
+      className={cn("text-[length:var(--ts-2xs)] font-bold ml-1", colorMap[score.score] ?? "text-gray-400")}
       title={`Calificación basada en pagos a tiempo. 5 estrellas = siempre puntual. Pagos a tiempo: ${score.pagosATiempo}/${score.pagosTotal} · Promedio: ${Math.round(score.diasPromedioPago)} días`}
     >
       {score.label}
@@ -254,7 +254,7 @@ function FiadoTendenciaCobro() {
 
   if (loading) {
     return (
-      <div className="bg-white border border-gray-200 rounded-xl p-4 animate-pulse">
+      <div className="bg-white border border-[var(--rule-base)] rounded-xl p-4 animate-pulse">
         <div className="h-[200px] bg-gray-100 rounded-xl" />
       </div>
     );
@@ -262,7 +262,7 @@ function FiadoTendenciaCobro() {
 
   if (chartData.length === 0) {
     return (
-      <div className="bg-white border border-gray-200 rounded-xl p-4">
+      <div className="bg-white border border-[var(--rule-base)] rounded-xl p-4">
         <p className="text-xs text-gray-400 text-center py-4">Sin datos de fiados para mostrar grafica</p>
       </div>
     );
@@ -271,7 +271,7 @@ function FiadoTendenciaCobro() {
   const lastNeto = chartData[chartData.length - 1]?.neto ?? 0;
 
   return (
-    <div className="bg-white border border-gray-200 rounded-xl p-4 sm:p-5 ">
+    <div className="bg-white border border-[var(--rule-base)] rounded-xl p-4 sm:p-5 ">
       <div className="flex items-center justify-between mb-3">
         <p className="text-xs font-bold text-gray-600">Tendencia de Cobro</p>
         <StatusBadge
@@ -1029,7 +1029,7 @@ export default function FiadosModule() {
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder="Buscar fiado o cliente..."
-            className="w-full pl-10 pr-4 py-2.5 text-sm rounded-lg border border-gray-200 bg-white focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500/20 outline-none transition-all"
+            className="w-full pl-10 pr-4 py-2.5 text-sm rounded-lg border border-[var(--rule-base)] bg-white focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500/20 outline-none transition-all"
           />
         </div>
 
@@ -1047,7 +1047,7 @@ export default function FiadosModule() {
               "inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-sm font-medium border transition-all",
               statusFilter === f.key
                 ? "bg-emerald-50 border-emerald-200 text-emerald-700"
-                : "border-gray-200 text-gray-600 bg-white hover:bg-gray-50"
+                : "border-[var(--rule-base)] text-gray-600 bg-white hover:bg-gray-50"
             )}
           >
             {f.label}
@@ -1060,7 +1060,7 @@ export default function FiadosModule() {
         {/* Tendencia de morosidad */}
         {(tendenciaMorosidad.cobradoEsteMes > 0 || tendenciaMorosidad.prestadoEsteMes > 0) && (
           <span className={cn(
-            "text-[10px] font-bold px-2 py-0.5 rounded-full",
+            "text-[length:var(--ts-2xs)] font-bold px-2 py-0.5 rounded-full",
             tendenciaMorosidad.cobradoEsteMes > tendenciaMorosidad.prestadoEsteMes
               ? "bg-emerald-100 text-emerald-700"
               : tendenciaMorosidad.cobradoEsteMes < tendenciaMorosidad.prestadoEsteMes
@@ -1123,7 +1123,7 @@ export default function FiadosModule() {
                       <div className="flex items-center gap-2">
                         <span className="font-serif italic font-bold text-amber-900 text-base">{cliente.nombre}</span>
                       </div>
-                      <span className="text-[10px] font-mono text-amber-600">Pag. {idx + 1}/{libretaClientes.length}</span>
+                      <span className="text-[length:var(--ts-2xs)] font-mono text-amber-600">Pag. {idx + 1}/{libretaClientes.length}</span>
                     </div>
                     <FiadoReliabilityBadge customerId={cliente.customerId} fiados={fiados} />
                   </div>
@@ -1196,7 +1196,7 @@ export default function FiadosModule() {
                   className="w-full px-3 py-2.5 rounded-lg border border-amber-300 bg-white text-sm font-mono focus:outline-none focus:ring-2 focus:ring-primary/40"
                 />
                 <div className="flex gap-2 pt-2">
-                  <button onClick={() => setShowQuickFiado(false)} className="flex-1 py-2.5 rounded-lg border border-gray-300 text-sm font-bold text-gray-600 hover:bg-gray-100 transition-colors">Cancelar</button>
+                  <button onClick={() => setShowQuickFiado(false)} className="flex-1 py-2.5 rounded-lg border border-[var(--rule-base)] text-sm font-bold text-gray-600 hover:bg-gray-100 transition-colors">Cancelar</button>
                   <button onClick={handleQuickFiado} disabled={quickFiadoCreating || !quickFiadoForm.nombre.trim() || !quickFiadoForm.monto} className="flex-1 py-2.5 rounded-lg bg-primary text-white text-sm font-bold hover:bg-[#245a41] transition-colors disabled:opacity-50">
                     {quickFiadoCreating ? "Anotando..." : "Anotar"}
                   </button>
@@ -1259,25 +1259,25 @@ export default function FiadosModule() {
               <div key={col.key} className={cn("rounded-xl border-2 min-w-[200px]", col.bg, col.border)}>
                 <div className={cn("px-3 py-2 rounded-t-lg flex items-center justify-between", col.headerBg)}>
                   <span className="text-xs font-extrabold text-gray-800">{col.label}</span>
-                  <span className="px-1.5 py-0.5 rounded-full bg-white/60 text-[10px] font-bold text-gray-700">{col.items.length}</span>
+                  <span className="px-1.5 py-0.5 rounded-full bg-white/60 text-[length:var(--ts-2xs)] font-bold text-gray-700">{col.items.length}</span>
                 </div>
                 <div className="p-2 space-y-2 max-h-[60vh] overflow-y-auto">
                   {col.items.length === 0 ? (
-                    <p className="text-[10px] text-gray-400 text-center py-4">Sin fiados</p>
+                    <p className="text-[length:var(--ts-2xs)] text-gray-400 text-center py-4">Sin fiados</p>
                   ) : [...col.items].sort((a, b) => b.saldo - a.saldo).map(f => {
                     const diasCreado = Math.floor((Date.now() - new Date(f.createdAt).getTime()) / 86400000);
                     const diasVence = f.fechaVence ? Math.floor((new Date(f.fechaVence).getTime() - Date.now()) / 86400000) : null;
                     return (
-                      <div key={f.id} className="bg-white rounded-lg border border-gray-200 p-2.5  hover:shadow-sm transition-shadow cursor-pointer" onClick={() => openDetail(f)}>
+                      <div key={f.id} className="bg-white rounded-lg border border-[var(--rule-base)] p-2.5  hover:shadow-sm transition-shadow cursor-pointer" onClick={() => openDetail(f)}>
                         <p className="text-xs font-bold text-gray-900 truncate">{f.customerName || f.customerId}</p>
                         <p className={cn("text-sm font-extrabold font-mono mt-0.5", col.key === "vencido" || col.key === "bloqueado" ? "text-red-600" : col.key === "porvencer" ? "text-amber-600" : "text-primary")}>{formatCurrency(f.saldo)}</p>
-                        <p className="text-[10px] text-gray-400 mt-0.5">
+                        <p className="text-[length:var(--ts-2xs)] text-gray-400 mt-0.5">
                           {diasVence !== null ? (diasVence > 0 ? `vence en ${diasVence}d` : `vencido hace ${Math.abs(diasVence)}d`) : `hace ${diasCreado} dias`}
                         </p>
                         <div className="flex gap-1.5 mt-2">
                           <button
                             onClick={e => { e.stopPropagation(); openDetail(f); }}
-                            className="flex-1 text-[10px] font-bold text-center py-1 rounded-lg bg-primary/10 text-primary hover:bg-primary/20 transition-colors"
+                            className="flex-1 text-[length:var(--ts-2xs)] font-bold text-center py-1 rounded-lg bg-primary/10 text-primary hover:bg-primary/20 transition-colors"
                           >
                             Cobrar
                           </button>
@@ -1290,7 +1290,7 @@ export default function FiadosModule() {
                                 const cleanPhone = f.customerId.replace(/\D/g, "");
                                 window.open(`https://wa.me/${cleanPhone}?text=${encodeURIComponent(msg)}`, "_blank");
                               }}
-                              className="text-[10px] font-bold px-2 py-1 rounded-lg bg-[#25D366]/10 text-[#25D366] hover:bg-[#25D366]/20 transition-colors"
+                              className="text-[length:var(--ts-2xs)] font-bold px-2 py-1 rounded-lg bg-[#25D366]/10 text-[#25D366] hover:bg-[#25D366]/20 transition-colors"
                             >
                               <MessageCircle className="h-3 w-3" />
                             </button>
@@ -1308,12 +1308,12 @@ export default function FiadosModule() {
 
       {/* UX Mejora 20: Density toggle */}
       {fiadosViewMode === "list" && <div className="flex items-center gap-1 mb-2">
-        <span className="text-[10px] font-bold text-gray-400 mr-1">Densidad:</span>
+        <span className="text-[length:var(--ts-2xs)] font-bold text-gray-400 mr-1">Densidad:</span>
         {(["compact", "normal", "wide"] as const).map(d => (
           <button
             key={d}
             onClick={() => { setTableDensity(d); try { localStorage.setItem("table-density", d); } catch {} }}
-            className={cn("px-2 py-0.5 rounded-full text-[10px] font-bold transition-colors", tableDensity === d ? "bg-primary text-white" : "bg-gray-100 text-gray-500 hover:bg-gray-200")}
+            className={cn("px-2 py-0.5 rounded-full text-[length:var(--ts-2xs)] font-bold transition-colors", tableDensity === d ? "bg-primary text-white" : "bg-gray-100 text-gray-500 hover:bg-gray-200")}
           >
             {d === "compact" ? "Compacta" : d === "normal" ? "Normal" : "Amplia"}
           </button>
@@ -1321,7 +1321,7 @@ export default function FiadosModule() {
       </div>}
 
       {/* Table — UX Mejora 18: Sticky header + Mejora 19: Sortable columns */}
-      {fiadosViewMode === "list" && <div className={cn("bg-white border border-gray-200 rounded-xl overflow-hidden ", tableDensity === "compact" ? "table-compact" : tableDensity === "wide" ? "table-wide" : "")}>
+      {fiadosViewMode === "list" && <div className={cn("bg-white border border-[var(--rule-base)] rounded-xl overflow-hidden ", tableDensity === "compact" ? "table-compact" : tableDensity === "wide" ? "table-wide" : "")}>
         {loading ? (
           <div className="flex items-center justify-center py-12">
             <Loader2 className="h-6 w-6 animate-spin text-primary" />
@@ -1343,8 +1343,8 @@ export default function FiadosModule() {
           <>
             <div className="max-h-[65vh] overflow-y-auto overflow-x-auto -mx-4 sm:mx-0">
               <table className="w-full min-w-[700px] sm:min-w-0 text-sm">
-                <thead className="sticky top-0 bg-white z-10 shadow-[0_1px_0_0_rgba(0,0,0,0.05)]">
-                  <tr className="border-b border-gray-100 text-left">
+                <thead className="sticky top-0 bg-white z-10 shadow-[var(--shadow-sm)]">
+                  <tr className="border-b border-[var(--rule-soft)] text-left">
                     <th className="px-2 py-3 w-8">
                       <span className="sr-only">Seleccionar</span>
                     </th>
@@ -1378,7 +1378,7 @@ export default function FiadosModule() {
                               type="checkbox"
                               checked={selectedIds.has(f.id)}
                               onChange={() => toggleSelect(f.id)}
-                              className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary"
+                              className="h-4 w-4 rounded border-[var(--rule-base)] text-primary focus:ring-primary"
                             />
                           )}
                         </td>
@@ -1390,7 +1390,7 @@ export default function FiadosModule() {
                               let h = 0; for (let i = 0; i < name.length; i++) h = name.charCodeAt(i) + ((h << 5) - h);
                               const color = avatarColors[Math.abs(h) % avatarColors.length];
                               const initials = name.split(' ').map((w: string) => w[0]).join('').substring(0, 2).toUpperCase();
-                              return <div className="w-8 h-8 rounded-full flex items-center justify-center text-white text-[10px] font-bold shrink-0" style={{ backgroundColor: color }}>{initials}</div>;
+                              return <div className="w-8 h-8 rounded-full flex items-center justify-center text-white text-[length:var(--ts-2xs)] font-bold shrink-0" style={{ backgroundColor: color }}>{initials}</div>;
                             })()}
                             <div className="min-w-0">
                               <div className="flex items-center gap-1.5 flex-wrap">
@@ -1448,7 +1448,7 @@ export default function FiadosModule() {
             </div>
             {/* Pagination */}
             {totalPages > 1 && (
-              <div className="flex items-center justify-between px-4 py-3 border-t border-gray-100">
+              <div className="flex items-center justify-between px-4 py-3 border-t border-[var(--rule-soft)]">
                 <p className="text-xs text-gray-500">
                   {fiados.length} fíado{fiados.length !== 1 ? "s" : ""} — Pág. {page}/{totalPages}
                 </p>
@@ -1492,7 +1492,7 @@ export default function FiadosModule() {
               animate={{ x: 0 }}
               exit={{ x: "100%" }}
               transition={{ type: "spring", damping: 25, stiffness: 250 }}
-              className={cn("fixed inset-y-0 right-0 z-50 w-full bg-white border-l border-gray-200 overflow-y-auto transition-all duration-300", isPanelWide ? "max-w-[500px]" : "max-w-md")}
+              className={cn("fixed inset-y-0 right-0 z-50 w-full bg-white border-l border-[var(--rule-base)] overflow-y-auto transition-all duration-[var(--dur-base)]", isPanelWide ? "max-w-[500px]" : "max-w-md")}
             >
               <div className="p-4 sm:p-6 space-y-5">
                 {/* Sheet header — UX Mejora 16: Width toggle */}
@@ -1513,7 +1513,7 @@ export default function FiadosModule() {
                 </div>
 
                 {/* UX Mejora 15: Panel tabs */}
-                <div className="flex border-b border-gray-200">
+                <div className="flex border-b border-[var(--rule-base)]">
                   {(["Detalle", "Pagos", "Acciones"] as const).map(t => (
                     <button key={t} onClick={() => setPanelTab(t)} className={cn(
                       "px-3 py-2 text-xs font-medium border-b-2 transition-colors",
@@ -1543,17 +1543,17 @@ export default function FiadosModule() {
                   {selected.descripcion && (
                     <p className="text-sm text-gray-600">{selected.descripcion}</p>
                   )}
-                  <div className="grid grid-cols-3 gap-3 pt-2 border-t border-gray-200">
+                  <div className="grid grid-cols-3 gap-3 pt-2 border-t border-[var(--rule-base)]">
                     <div>
-                      <p className="text-[10px] uppercase font-bold text-gray-400">Total</p>
+                      <p className="text-[length:var(--ts-2xs)] uppercase font-bold text-gray-400">Total</p>
                       <p className="text-sm font-bold text-gray-900">{formatCurrency(selected.total)}</p>
                     </div>
                     <div>
-                      <p className="text-[10px] uppercase font-bold text-gray-400">Pagado</p>
+                      <p className="text-[length:var(--ts-2xs)] uppercase font-bold text-gray-400">Pagado</p>
                       <p className="text-sm font-bold text-emerald-600">{formatCurrency(selected.total - selected.saldo)}</p>
                     </div>
                     <div>
-                      <p className="text-[10px] uppercase font-bold text-gray-400">Saldo</p>
+                      <p className="text-[length:var(--ts-2xs)] uppercase font-bold text-gray-400">Saldo</p>
                       <p className="text-sm font-bold text-red-600">{formatCurrency(selected.saldo)}</p>
                     </div>
                   </div>
@@ -1594,7 +1594,7 @@ export default function FiadosModule() {
                                 <p className="text-sm font-bold text-gray-900">{formatCurrency(c.monto)}</p>
                                 <StatusBadge variant="success" label="Pagado" size="sm" />
                               </div>
-                              <p className="text-[10px] text-gray-400 mt-0.5">
+                              <p className="text-[length:var(--ts-2xs)] text-gray-400 mt-0.5">
                                 {new Date(c.createdAt).toLocaleDateString("es-PE", { day: "2-digit", month: "2-digit", year: "numeric" })}
                                 {" "}
                                 {new Date(c.createdAt).toLocaleTimeString("es-PE", { hour: "2-digit", minute: "2-digit" })}

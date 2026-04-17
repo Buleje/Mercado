@@ -169,7 +169,7 @@ export function VentasSubTab(props: VentasSubTabProps) {
                 Agregar grafico
               </button>
               {showChartPicker && (
-                <div className="absolute right-0 top-full mt-1 z-20 bg-white dark:bg-zinc-800 border border-gray-200 dark:border-zinc-700 rounded-xl p-2 w-64">
+                <div className="absolute right-0 top-full mt-1 z-20 bg-white dark:bg-zinc-800 border border-[var(--rule-base)] dark:border-zinc-700 rounded-xl p-2 w-64">
                   {CHART_OPTIONS.filter(o => !activeCharts.includes(o.id)).map(option => (
                     <button
                       key={option.id}
@@ -188,7 +188,7 @@ export function VentasSubTab(props: VentasSubTabProps) {
           </div>
 
           {activeCharts.length === 0 ? (
-            <div className="bg-white dark:bg-zinc-800 rounded-xl border border-dashed border-gray-300 dark:border-zinc-600 p-8 text-center">
+            <div className="bg-white dark:bg-zinc-800 rounded-xl border border-dashed border-[var(--rule-base)] dark:border-zinc-600 p-8 text-center">
               <PieChartIcon className="w-8 h-8 text-gray-300 dark:text-zinc-600 mx-auto mb-2" />
               <p className="text-sm text-gray-400 dark:text-zinc-500">Agrega graficos para visualizar tus datos</p>
               <p className="text-xs text-gray-300 dark:text-zinc-600 mt-1">Haz click en &quot;+ Agregar grafico&quot; arriba</p>
@@ -196,7 +196,7 @@ export function VentasSubTab(props: VentasSubTabProps) {
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
               {activeCharts.map((chartId, index) => (
-                <div key={chartId} className="bg-white dark:bg-zinc-900 rounded-xl border border-gray-200 dark:border-zinc-800 p-6">
+                <div key={chartId} className="bg-white dark:bg-zinc-900 rounded-xl border border-[var(--rule-base)] dark:border-zinc-800 p-6">
                   <div className="flex items-center justify-between mb-3">
                     <span className="text-sm font-semibold text-gray-900 dark:text-white truncate">{chartLabel(chartId)}</span>
                     <div className="flex items-center gap-1 shrink-0">
@@ -248,7 +248,7 @@ export function VentasSubTab(props: VentasSubTabProps) {
           .sort((a, b) => b.ventas - a.ventas)
           .slice(0, 3);
         return (
-          <div className="rounded-xl border border-gray-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 p-6">
+          <div className="rounded-xl border border-[var(--rule-base)] dark:border-zinc-800 bg-white dark:bg-zinc-900 p-6">
             <div className="flex items-center gap-2 mb-2">
               <Users className="w-4 h-4 text-gray-400" />
               <span className="text-sm font-semibold text-gray-900 dark:text-white">Rendimiento cajeros hoy</span>
@@ -271,7 +271,7 @@ export function VentasSubTab(props: VentasSubTabProps) {
         try { const stored = localStorage.getItem("daily-goal"); if (stored) dailyGoal = Number(stored) || 800; } catch { /* ignore */ }
         const dailyGoalPct = dailyGoal > 0 ? (revenueToday / dailyGoal) * 100 : 0;
         return (
-          <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl p-5">
+          <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl p-5">
             <div className="flex items-center justify-between mb-2">
               <p className="text-sm font-bold text-gray-900 dark:text-white flex items-center gap-2">
                 <Target className="h-4 w-4 text-primary" /> Meta del dia
@@ -289,7 +289,7 @@ export function VentasSubTab(props: VentasSubTabProps) {
       {filteredSections.map((sectionId) => (
         <div key={sectionId}>
           {sectionId === "top-productos" && (
-            <div className="rounded-xl border border-gray-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 p-6">
+            <div className="rounded-xl border border-[var(--rule-base)] dark:border-zinc-800 bg-white dark:bg-zinc-900 p-6">
               <div className="flex items-center gap-2 mb-4">
                 <TrendingUp className="w-4 h-4" style={{ color: "var(--color-primary)" }} />
                 <span className="text-sm font-semibold text-gray-900 dark:text-white">Top 10 productos mas vendidos</span>
@@ -308,7 +308,7 @@ export function VentasSubTab(props: VentasSubTabProps) {
                         <span className="w-36 sm:w-44 truncate text-gray-700 dark:text-zinc-300 shrink-0 text-xs" title={prod.name}>{prod.name}</span>
                         <div className="flex-1 h-5 rounded bg-gray-100 dark:bg-zinc-700 relative overflow-hidden">
                           <div className="absolute inset-y-0 left-0 rounded transition-all" style={{ width: `${pct}%`, backgroundColor: idx === 0 ? "var(--color-primary)" : "var(--color-primary)60" }} />
-                          <span className="absolute inset-y-0 left-2 flex items-center text-[10px] font-semibold text-white z-10">{prod.qty} uds</span>
+                          <span className="absolute inset-y-0 left-2 flex items-center text-[length:var(--ts-2xs)] font-semibold text-white z-10">{prod.qty} uds</span>
                         </div>
                         <span className="text-xs text-gray-400 dark:text-zinc-500 shrink-0 w-20 text-right tabular-nums">{fmtR(prod.revenue)}</span>
                       </div>
@@ -320,7 +320,7 @@ export function VentasSubTab(props: VentasSubTabProps) {
           )}
 
           {sectionId === "horario-pico" && (
-            <div className="rounded-xl border border-gray-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 p-6">
+            <div className="rounded-xl border border-[var(--rule-base)] dark:border-zinc-800 bg-white dark:bg-zinc-900 p-6">
               <div className="flex items-center gap-2 mb-4">
                 <TrendingUp className="w-4 h-4" style={{ color: "#f97316" }} />
                 <span className="text-sm font-semibold text-gray-900 dark:text-white">Ventas por hora (hoy)</span>
@@ -339,9 +339,9 @@ export function VentasSubTab(props: VentasSubTabProps) {
                         <span className={cn("w-8 text-right shrink-0 font-mono", isActive ? "text-amber-500 font-bold" : "text-gray-400 dark:text-zinc-500")}>{bucket.label}</span>
                         <div className="flex-1 h-4 rounded bg-gray-100 dark:bg-zinc-700 relative overflow-hidden">
                           {pct > 0 && <div className="absolute inset-y-0 left-0 rounded transition-all" style={{ width: `${pct}%`, backgroundColor: isActive ? "#f97316" : "var(--color-primary)80" }} />}
-                          {pct > 10 && <span className="absolute inset-y-0 left-2 flex items-center text-[10px] font-semibold text-white z-10">{fmtR(bucket.amount)}</span>}
+                          {pct > 10 && <span className="absolute inset-y-0 left-2 flex items-center text-[length:var(--ts-2xs)] font-semibold text-white z-10">{fmtR(bucket.amount)}</span>}
                         </div>
-                        {pct === 0 && <span className="text-gray-300 dark:text-zinc-600 text-[10px]">--</span>}
+                        {pct === 0 && <span className="text-gray-300 dark:text-zinc-600 text-[length:var(--ts-2xs)]">--</span>}
                       </div>
                     );
                   })}

@@ -20,7 +20,7 @@ interface AdminStatsProps {
 /** Mobile quick stats strip (horizontal scroll) */
 export function AdminStatsMobile({ quickStats, navigateTab }: AdminStatsProps) {
   return (
-    <div className="sm:hidden flex items-center gap-1 px-2.5 py-1.5 bg-white dark:bg-card border-b border-gray-100 dark:border-card-border overflow-x-auto scrollbar-none text-[11px]">
+    <div className="sm:hidden flex items-center gap-1 px-2.5 py-1.5 bg-white dark:bg-card border-b border-[var(--rule-soft)] dark:border-card-border overflow-x-auto scrollbar-none text-[length:var(--ts-xs)]">
       <button
         onClick={() => navigateTab("pedidos")}
         className={cn(
@@ -67,7 +67,7 @@ export function AdminStatsMobile({ quickStats, navigateTab }: AdminStatsProps) {
 /** Desktop quick stats bar */
 export function AdminStatsDesktop({ quickStats, navigateTab }: AdminStatsProps) {
   return (
-    <div className="hidden sm:flex items-center gap-1 px-6 py-1.5 bg-white dark:bg-card border-b border-gray-100 dark:border-card-border text-xs">
+    <div className="hidden sm:flex items-center gap-1 px-6 py-1.5 bg-white dark:bg-card border-b border-[var(--rule-soft)] dark:border-card-border text-xs">
       <button
         onClick={() => navigateTab("pedidos")}
         className={cn(
@@ -109,7 +109,7 @@ export function AdminStatsDesktop({ quickStats, navigateTab }: AdminStatsProps) 
           </button>
         </>
       )}
-      <span className="ml-auto text-gray-300 text-[10px]">Actualizado hace &lt;1 min</span>
+      <span className="ml-auto text-gray-300 text-[length:var(--ts-2xs)]">Actualizado hace &lt;1 min</span>
     </div>
   );
 }

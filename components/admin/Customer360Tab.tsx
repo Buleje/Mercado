@@ -130,10 +130,10 @@ function getAvatarColor(name: string): string {
 
 // ── Mejora 9: Customer segment badge ─────────────────────────────────────────
 function CustomerSegmentBadge({ totalSpent, orderCount }: { totalSpent: number; orderCount: number }) {
-  if (orderCount === 0) return <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-300">Nuevo</span>;
-  if (totalSpent > 1000) return <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-yellow-50 text-yellow-700 border border-yellow-300">VIP</span>;
-  if (totalSpent > 500) return <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-300">Premium</span>;
-  return <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-gray-100 text-gray-600 border border-gray-300">Regular</span>;
+  if (orderCount === 0) return <span className="text-[length:var(--ts-2xs)] font-bold px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-300">Nuevo</span>;
+  if (totalSpent > 1000) return <span className="text-[length:var(--ts-2xs)] font-bold px-2 py-0.5 rounded-full bg-yellow-50 text-yellow-700 border border-yellow-300">VIP</span>;
+  if (totalSpent > 500) return <span className="text-[length:var(--ts-2xs)] font-bold px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-300">Premium</span>;
+  return <span className="text-[length:var(--ts-2xs)] font-bold px-2 py-0.5 rounded-full bg-gray-100 text-gray-600 border border-[var(--rule-base)]">Regular</span>;
 }
 
 // ── Mejora 11: Productos favoritos del cliente ──────────────────────────────
@@ -163,7 +163,7 @@ function FavoriteProductsSection({ phone }: { phone: string }) {
 
   if (loading) {
     return (
-      <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl p-4 sm:p-5">
+      <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl p-4 sm:p-5">
         <h3 className="font-bold text-sm text-gray-900 dark:text-foreground mb-3 flex items-center gap-2">
           <Award className="h-4 w-4 text-amber-500" /> Productos Favoritos
         </h3>
@@ -178,7 +178,7 @@ function FavoriteProductsSection({ phone }: { phone: string }) {
 
   if (totalPurchases < 3) {
     return (
-      <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl p-4 sm:p-5">
+      <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl p-4 sm:p-5">
         <h3 className="font-bold text-sm text-gray-900 dark:text-foreground mb-3 flex items-center gap-2">
           <Award className="h-4 w-4 text-amber-500" /> Productos Favoritos
         </h3>
@@ -196,7 +196,7 @@ function FavoriteProductsSection({ phone }: { phone: string }) {
   }
 
   return (
-    <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl p-4 sm:p-5">
+    <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl p-4 sm:p-5">
       <h3 className="font-bold text-sm text-gray-900 dark:text-foreground mb-3 flex items-center gap-2">
         <Award className="h-4 w-4 text-amber-500" /> Productos Favoritos
       </h3>
@@ -207,13 +207,13 @@ function FavoriteProductsSection({ phone }: { phone: string }) {
             <div className="flex-1 min-w-0">
               <div className="flex items-center justify-between gap-2 mb-0.5">
                 <span className="text-xs font-bold text-gray-800 dark:text-foreground truncate">{p.name}</span>
-                <span className="text-[10px] font-semibold text-gray-500 dark:text-muted shrink-0">
+                <span className="text-[length:var(--ts-2xs)] font-semibold text-gray-500 dark:text-muted shrink-0">
                   {p.totalQty} veces · S/{p.totalSpent.toFixed(0)} · {formatFreq(p.freqPerMonth)}
                 </span>
               </div>
               <div className="h-1.5 bg-gray-100 dark:bg-gray-800 rounded-full overflow-hidden">
                 <div
-                  className="h-full rounded-full transition-all duration-500"
+                  className="h-full rounded-full transition-all duration-[var(--dur-slow)]"
                   style={{
                     width: `${Math.max(8, (p.totalQty / maxQty) * 100)}%`,
                     backgroundColor: i === 0 ? "#00B4A6" : i === 1 ? "#f97316" : "#457b9d",
@@ -233,7 +233,7 @@ function FavoriteProductsSection({ phone }: { phone: string }) {
 const SEGMENT_CONFIG: Record<Segment, { label: string; color: string; bg: string; border: string }> = {
   frecuente: { label: "Frecuente",  color: "text-emerald-700 dark:text-emerald-400", bg: "bg-emerald-50 dark:bg-emerald-950/30", border: "border-emerald-300 dark:border-emerald-700" },
   ocasional: { label: "Ocasional",  color: "text-emerald-700 dark:text-emerald-400",     bg: "bg-emerald-50 dark:bg-emerald-950/30",     border: "border-emerald-300 dark:border-emerald-700" },
-  nuevo:     { label: "Nuevo",      color: "text-violet-700 dark:text-violet-400", bg: "bg-violet-50 dark:bg-violet-950/30", border: "border-violet-300 dark:border-violet-700" },
+  nuevo:     { label: "Nuevo",      color: "text-[var(--text-secondary)] dark:text-[var(--text-primary)]", bg: "bg-[var(--surface-sunken)]", border: "border-violet-300 dark:border-violet-700" },
   perdido:   { label: "Perdido",    color: "text-red-700 dark:text-red-400",       bg: "bg-red-50 dark:bg-red-950/30",       border: "border-red-300 dark:border-red-700" },
 };
 
@@ -241,13 +241,13 @@ const HEALTH_CONFIG: Record<HealthScore | "desconocido", { label: string; color:
   activo:      { label: "Activo",     color: "text-emerald-700 dark:text-emerald-400", bg: "bg-emerald-50 dark:bg-emerald-950/30", border: "border-emerald-300 dark:border-emerald-700", tooltip: "Compra en últimos 30 días" },
   en_riesgo:   { label: "En riesgo",  color: "text-amber-700 dark:text-amber-400",     bg: "bg-amber-50 dark:bg-amber-950/30",     border: "border-amber-300 dark:border-amber-700",   tooltip: "Sin compras hace 31-90 días" },
   perdido:     { label: "Perdido",    color: "text-red-700 dark:text-red-400",         bg: "bg-red-50 dark:bg-red-950/30",         border: "border-red-300 dark:border-red-700",       tooltip: "Sin compras hace +90 días" },
-  desconocido: { label: "Desconocido", color: "text-gray-500 dark:text-gray-400",      bg: "bg-gray-100 dark:bg-gray-800/30",      border: "border-gray-300 dark:border-gray-600",     tooltip: "Activo: compra en últimos 30 días | En riesgo: 31-90 días | Perdido: +90 días" },
+  desconocido: { label: "Desconocido", color: "text-gray-500 dark:text-gray-400",      bg: "bg-gray-100 dark:bg-gray-800/30",      border: "border-[var(--rule-base)] dark:border-gray-600",     tooltip: "Activo: compra en últimos 30 días | En riesgo: 31-90 días | Perdido: +90 días" },
 };
 
 const STATUS_CONFIG: Record<string, { label: string; color: string; bg: string; Icon: React.ElementType }> = {
   pendiente:  { label: "Pendiente",  color: "text-amber-700 dark:text-amber-400",   bg: "bg-amber-50 dark:bg-amber-950/30",   Icon: Clock },
   confirmado: { label: "Confirmado", color: "text-emerald-700 dark:text-emerald-400",     bg: "bg-emerald-50 dark:bg-emerald-950/30",     Icon: CheckCircle },
-  en_camino:  { label: "En camino",  color: "text-violet-700 dark:text-violet-400", bg: "bg-violet-50 dark:bg-violet-950/30", Icon: Truck },
+  en_camino:  { label: "En camino",  color: "text-[var(--text-secondary)] dark:text-[var(--text-primary)]", bg: "bg-[var(--surface-sunken)]", Icon: Truck },
   entregado:  { label: "Entregado",  color: "text-emerald-700 dark:text-emerald-400", bg: "bg-emerald-50 dark:bg-emerald-950/30", Icon: CheckCircle },
   cancelado:  { label: "Cancelado",  color: "text-red-700 dark:text-red-400",       bg: "bg-red-50 dark:bg-red-950/30",       Icon: XCircle },
 };
@@ -273,12 +273,12 @@ function HealthBadge({ score }: { score?: HealthScore }) {
       <span
         onMouseEnter={() => setShowTip(true)}
         onMouseLeave={() => setShowTip(false)}
-        className={cn("text-[10px] font-extrabold px-2 py-0.5 rounded-full border cursor-help", cfg.bg, cfg.color, cfg.border)}
+        className={cn("text-[length:var(--ts-2xs)] font-extrabold px-2 py-0.5 rounded-full border cursor-help", cfg.bg, cfg.color, cfg.border)}
       >
         {cfg.label}
       </span>
       {showTip && (
-        <div className="absolute left-0 top-full mt-1 z-50 w-64 bg-gray-900 text-white text-[10px] leading-relaxed rounded-lg px-3 py-2 pointer-events-none">
+        <div className="absolute left-0 top-full mt-1 z-50 w-64 bg-gray-900 text-white text-[length:var(--ts-2xs)] leading-relaxed rounded-lg px-3 py-2 pointer-events-none">
           <p className="font-bold mb-1">Salud del cliente</p>
           <p>Activo: compra en últimos 30 días</p>
           <p>En riesgo: 31-90 días sin comprar</p>
@@ -300,7 +300,7 @@ const HOURS_DISPLAY = Array.from({ length: 9 }, (_, i) => {
 function PurchaseHeatmap({ orders }: { orders: Order[] }) {
   if (orders.length < 5) {
     return (
-      <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl p-4 sm:p-5">
+      <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl p-4 sm:p-5">
         <h3 className="font-bold text-sm text-gray-900 dark:text-foreground mb-3 flex items-center gap-2">
           <Clock className="h-4 w-4" style={{ color: "#00B4A6" }} /> Cuando compra?
         </h3>
@@ -347,7 +347,7 @@ function PurchaseHeatmap({ orders }: { orders: Order[] }) {
   const peakHourStr = peakHour < 12 ? `${peakHour}am` : peakHour === 12 ? "12pm" : `${peakHour - 12}pm`;
 
   return (
-    <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl p-4 sm:p-5">
+    <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl p-4 sm:p-5">
       <h3 className="font-bold text-sm text-gray-900 dark:text-foreground mb-3 flex items-center gap-2">
         <Clock className="h-4 w-4" style={{ color: "#00B4A6" }} /> Cuando compra?
       </h3>
@@ -358,13 +358,13 @@ function PurchaseHeatmap({ orders }: { orders: Order[] }) {
           {/* Header row */}
           <div />
           {HOURS_DISPLAY.map(h => (
-            <div key={h} className="text-[9px] text-gray-400 dark:text-muted text-center font-medium pb-1">{h}</div>
+            <div key={h} className="text-[length:var(--ts-2xs)] text-gray-400 dark:text-muted text-center font-medium pb-1">{h}</div>
           ))}
 
           {/* Data rows */}
           {DAYS.map((day, dayIdx) => (
             <>
-              <div key={`label-${day}`} className="text-[10px] text-gray-500 dark:text-muted font-bold flex items-center justify-end pr-2">{day}</div>
+              <div key={`label-${day}`} className="text-[length:var(--ts-2xs)] text-gray-500 dark:text-muted font-bold flex items-center justify-end pr-2">{day}</div>
               {grid[dayIdx].map((val, slotIdx) => (
                 <div
                   key={`${dayIdx}-${slotIdx}`}
@@ -383,7 +383,7 @@ function PurchaseHeatmap({ orders }: { orders: Order[] }) {
       </div>
 
       {/* Insight */}
-      <p className="text-xs text-gray-500 dark:text-muted mt-3 pt-2 border-t border-gray-100 dark:border-card-border">
+      <p className="text-xs text-gray-500 dark:text-muted mt-3 pt-2 border-t border-[var(--rule-soft)] dark:border-card-border">
         Este cliente suele comprar los <strong className="text-gray-700 dark:text-foreground">{DAYS[peakDay]}</strong> a las <strong className="text-gray-700 dark:text-foreground">{peakHourStr}</strong>
       </p>
     </div>
@@ -428,15 +428,15 @@ function FamilyAccountSection({ phone, customer }: { phone: string; customer: Cu
   };
 
   return (
-    <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl p-4 sm:p-5">
+    <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl p-4 sm:p-5">
       <div className="flex items-center justify-between mb-3">
         <h3 className="font-bold text-sm text-gray-900 dark:text-foreground flex items-center gap-2">
           <Users className="h-4 w-4 text-emerald-500" /> Cuenta Familiar
           {savingFamily && <Loader2 className="h-3 w-3 animate-spin text-gray-400" />}
         </h3>
-        <span className="text-[10px] text-gray-400 dark:text-muted">{familyMembers.length} miembros</span>
+        <span className="text-[length:var(--ts-2xs)] text-gray-400 dark:text-muted">{familyMembers.length} miembros</span>
       </div>
-      <p className="text-[10px] text-gray-400 dark:text-muted mb-3">Las compras de toda la familia suman al mismo historial. El fiado y puntos son compartidos.</p>
+      <p className="text-[length:var(--ts-2xs)] text-gray-400 dark:text-muted mb-3">Las compras de toda la familia suman al mismo historial. El fiado y puntos son compartidos.</p>
 
       <div className="flex items-center gap-2 bg-emerald-50 dark:bg-emerald-950/20 rounded-lg px-3 py-2 mb-2">
         <div className="h-8 w-8 rounded-full flex items-center justify-center text-sm font-bold text-white shrink-0" style={{ backgroundColor: getAvatarColor(customer.name) }}>
@@ -444,7 +444,7 @@ function FamilyAccountSection({ phone, customer }: { phone: string; customer: Cu
         </div>
         <div className="flex-1 min-w-0">
           <p className="text-xs font-bold text-gray-800 dark:text-foreground truncate">{customer.name} <span className="text-emerald-600 dark:text-emerald-400">(titular)</span></p>
-          <p className="text-[10px] text-gray-400">{customer.phone}</p>
+          <p className="text-[length:var(--ts-2xs)] text-gray-400">{customer.phone}</p>
         </div>
         <Star className="h-3.5 w-3.5 text-amber-500 shrink-0" />
       </div>
@@ -456,7 +456,7 @@ function FamilyAccountSection({ phone, customer }: { phone: string; customer: Cu
           </div>
           <div className="flex-1 min-w-0">
             <p className="text-xs font-bold text-gray-800 dark:text-foreground truncate">{m.nombre} <span className="text-gray-400 font-normal">({m.relacion})</span></p>
-            <p className="text-[10px] text-gray-400">{m.telefono}</p>
+            <p className="text-[length:var(--ts-2xs)] text-gray-400">{m.telefono}</p>
           </div>
           <button onClick={() => saveFamily(familyMembers.filter((_, idx) => idx !== i))} className="text-gray-300 hover:text-red-500 transition-colors shrink-0">
             <X className="h-3.5 w-3.5" />
@@ -468,10 +468,10 @@ function FamilyAccountSection({ phone, customer }: { phone: string; customer: Cu
         <div className="mt-2 bg-emerald-50 dark:bg-emerald-950/20 rounded-lg p-3 space-y-2">
           <p className="text-xs font-bold text-emerald-700 dark:text-emerald-400">Nuevo miembro familiar</p>
           <div className="grid grid-cols-2 gap-2">
-            <input type="text" placeholder="Nombre" value={newMember.nombre} onChange={e => setNewMember({...newMember, nombre: e.target.value})} className="text-xs border border-gray-200 dark:border-card-border rounded-lg px-2 py-1.5 bg-white dark:bg-card text-gray-900 dark:text-foreground" />
-            <input type="tel" placeholder="Telefono" value={newMember.telefono} onChange={e => setNewMember({...newMember, telefono: e.target.value})} className="text-xs border border-gray-200 dark:border-card-border rounded-lg px-2 py-1.5 bg-white dark:bg-card text-gray-900 dark:text-foreground" />
+            <input type="text" placeholder="Nombre" value={newMember.nombre} onChange={e => setNewMember({...newMember, nombre: e.target.value})} className="text-xs border border-[var(--rule-base)] dark:border-card-border rounded-lg px-2 py-1.5 bg-white dark:bg-card text-gray-900 dark:text-foreground" />
+            <input type="tel" placeholder="Telefono" value={newMember.telefono} onChange={e => setNewMember({...newMember, telefono: e.target.value})} className="text-xs border border-[var(--rule-base)] dark:border-card-border rounded-lg px-2 py-1.5 bg-white dark:bg-card text-gray-900 dark:text-foreground" />
           </div>
-          <select value={newMember.relacion} onChange={e => setNewMember({...newMember, relacion: e.target.value})} className="text-xs border border-gray-200 dark:border-card-border rounded-lg px-2 py-1.5 bg-white dark:bg-card text-gray-900 dark:text-foreground w-full">
+          <select value={newMember.relacion} onChange={e => setNewMember({...newMember, relacion: e.target.value})} className="text-xs border border-[var(--rule-base)] dark:border-card-border rounded-lg px-2 py-1.5 bg-white dark:bg-card text-gray-900 dark:text-foreground w-full">
             <option value="esposa">Esposa/o</option>
             <option value="hijo">Hijo/a</option>
             <option value="padre">Padre/Madre</option>
@@ -484,7 +484,7 @@ function FamilyAccountSection({ phone, customer }: { phone: string; customer: Cu
           </div>
         </div>
       ) : (
-        <button onClick={() => setAddingMember(true)} className="mt-2 w-full py-2 rounded-lg border border-dashed border-gray-200 dark:border-card-border text-xs font-bold text-gray-400 hover:text-primary hover:border-primary/40 transition-colors">
+        <button onClick={() => setAddingMember(true)} className="mt-2 w-full py-2 rounded-lg border border-dashed border-[var(--rule-base)] dark:border-card-border text-xs font-bold text-gray-400 hover:text-primary hover:border-primary/40 transition-colors">
           + Agregar miembro familiar
         </button>
       )}
@@ -724,7 +724,7 @@ export default function Customer360Tab({ phone, onClose }: Props) {
       <m.div
         initial={{ opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
-        className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl p-4 sm:p-6"
+        className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl p-4 sm:p-6"
       >
         <div className="flex flex-col sm:flex-row sm:items-center gap-4">
           {/* Avatar with auto-generated color */}
@@ -744,13 +744,13 @@ export default function Customer360Tab({ phone, onClose }: Props) {
                 const dias = Math.floor((Date.now() - new Date(firstOrder.createdAt).getTime()) / 86400000);
                 const meses = Math.floor(dias / 30);
                 const anos = Math.floor(dias / 365);
-                if (dias < 30) return <span className="text-[10px] text-gray-400">Nuevo (hace {dias}d)</span>;
-                if (dias < 90) return <span className="text-[10px] text-gray-400">Cliente hace {dias} dias</span>;
-                if (dias < 365) return <span className="text-[10px] text-gray-400">Cliente hace {meses} meses</span>;
-                return <span className="text-[10px] text-amber-600 dark:text-amber-400 font-medium">Cliente hace {anos}+ ano(s)</span>;
+                if (dias < 30) return <span className="text-[length:var(--ts-2xs)] text-gray-400">Nuevo (hace {dias}d)</span>;
+                if (dias < 90) return <span className="text-[length:var(--ts-2xs)] text-gray-400">Cliente hace {dias} dias</span>;
+                if (dias < 365) return <span className="text-[length:var(--ts-2xs)] text-gray-400">Cliente hace {meses} meses</span>;
+                return <span className="text-[length:var(--ts-2xs)] text-amber-600 dark:text-amber-400 font-medium">Cliente hace {anos}+ ano(s)</span>;
               })()}
               <HealthBadge score={customer.healthScore} />
-              <span className={cn("text-[10px] font-extrabold px-2 py-0.5 rounded-full border", segCfg.bg, segCfg.color, segCfg.border)}>
+              <span className={cn("text-[length:var(--ts-2xs)] font-extrabold px-2 py-0.5 rounded-full border", segCfg.bg, segCfg.color, segCfg.border)}>
                 {segCfg.label}
               </span>
               <CustomerSegmentBadge totalSpent={totalSpent} orderCount={orders.length} />
@@ -793,7 +793,7 @@ export default function Customer360Tab({ phone, onClose }: Props) {
       </m.div>
 
       {/* Mejora 10R2: Notas rapidas (observaciones) */}
-      <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl overflow-hidden">
+      <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl overflow-hidden">
         <button
           onClick={() => setObsExpanded(!obsExpanded)}
           className="w-full px-4 sm:px-5 py-3 flex items-center justify-between hover:bg-gray-50 dark:hover:bg-surface transition-colors"
@@ -812,7 +812,7 @@ export default function Customer360Tab({ phone, onClose }: Props) {
               onChange={e => handleObservacionesChange(e.target.value)}
               placeholder="Prefiere delivery lunes, Alergico al mani, etc."
               rows={3}
-              className="w-full text-sm border border-gray-200 dark:border-card-border rounded-lg px-3 py-2 bg-gray-50 dark:bg-surface text-gray-700 dark:text-foreground placeholder:text-gray-400 dark:placeholder:text-muted resize-none focus:outline-none focus:ring-2 focus:ring-primary/30"
+              className="w-full text-sm border border-[var(--rule-base)] dark:border-card-border rounded-lg px-3 py-2 bg-gray-50 dark:bg-surface text-gray-700 dark:text-foreground placeholder:text-gray-400 dark:placeholder:text-muted resize-none focus:outline-none focus:ring-2 focus:ring-primary/30"
             />
             <div className="flex items-center gap-2 text-xs">
               {savingObs && <span className="text-gray-400 flex items-center gap-1"><Loader2 className="h-3 w-3 animate-spin" /> Guardando...</span>}
@@ -825,7 +825,7 @@ export default function Customer360Tab({ phone, onClose }: Props) {
 
       {/* Mejora 9: Purchase chart mini (last 6 months) */}
       {orders.length > 0 && (
-        <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl p-4 sm:p-5">
+        <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl p-4 sm:p-5">
           <h3 className="font-bold text-sm text-gray-900 dark:text-foreground mb-3 flex items-center gap-2">
             <TrendingUp className="h-4 w-4" style={{ color: "#00B4A6" }} /> Compras ultimos 6 meses
           </h3>
@@ -853,7 +853,7 @@ export default function Customer360Tab({ phone, onClose }: Props) {
                 return (
                   <div key={label} className="flex-1 flex flex-col items-center gap-1" title={`${monthName}: S/${val.toFixed(0)}`}>
                     <div className="w-full max-w-[28px] rounded-t" style={{ height, backgroundColor: "#00B4A6", opacity: val > 0 ? 1 : 0.2 }} />
-                    <span className="text-[9px] text-gray-400 dark:text-muted">{monthName}</span>
+                    <span className="text-[length:var(--ts-2xs)] text-gray-400 dark:text-muted">{monthName}</span>
                   </div>
                 );
               });
@@ -869,7 +869,7 @@ export default function Customer360Tab({ phone, onClose }: Props) {
 
       {/* Ficha completa del cliente */}
       {(customer.documento || customer.categoria || customer.departamento || customer.email || customer.observaciones) && (
-        <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl p-4 sm:p-5">
+        <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl p-4 sm:p-5">
           <h3 className="font-bold text-sm text-gray-900 dark:text-foreground mb-3">Datos de la ficha</h3>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-x-6 gap-y-2 text-sm">
             {customer.tipoPersona && (
@@ -909,24 +909,24 @@ export default function Customer360Tab({ phone, onClose }: Props) {
           {/* Badges */}
           <div className="flex flex-wrap gap-1.5 mt-3">
             {customer.categoria && (
-              <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-50 dark:bg-emerald-950/30 text-emerald-700 dark:text-emerald-400 border border-emerald-300 dark:border-emerald-700 capitalize">{customer.categoria}</span>
+              <span className="text-[length:var(--ts-2xs)] font-bold px-2 py-0.5 rounded-full bg-emerald-50 dark:bg-emerald-950/30 text-emerald-700 dark:text-emerald-400 border border-emerald-300 dark:border-emerald-700 capitalize">{customer.categoria}</span>
             )}
             {customer.canal && (
-              <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-violet-50 dark:bg-violet-950/30 text-violet-700 dark:text-violet-400 border border-violet-300 dark:border-violet-700 capitalize">{customer.canal}</span>
+              <span className="text-[length:var(--ts-2xs)] font-bold px-2 py-0.5 rounded-full bg-[var(--surface-sunken)] text-[var(--text-secondary)] dark:text-[var(--text-primary)] border border-violet-300 dark:border-violet-700 capitalize">{customer.canal}</span>
             )}
             {customer.listaPrecio && customer.listaPrecio !== 'general' && (
-              <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-amber-50 dark:bg-amber-950/30 text-amber-700 dark:text-amber-400 border border-amber-300 dark:border-amber-700 capitalize">Lista: {customer.listaPrecio}</span>
+              <span className="text-[length:var(--ts-2xs)] font-bold px-2 py-0.5 rounded-full bg-amber-50 dark:bg-amber-950/30 text-amber-700 dark:text-amber-400 border border-amber-300 dark:border-amber-700 capitalize">Lista: {customer.listaPrecio}</span>
             )}
             {customer.estado && customer.estado !== 'activo' && (
-              <span className={cn("text-[10px] font-bold px-2 py-0.5 rounded-full border",
-                customer.estado === 'bloqueado' ? "bg-red-50 dark:bg-red-950/30 text-red-700 dark:text-red-400 border-red-300 dark:border-red-700" : "bg-gray-100 dark:bg-gray-800/30 text-gray-600 dark:text-gray-400 border-gray-300 dark:border-gray-600"
+              <span className={cn("text-[length:var(--ts-2xs)] font-bold px-2 py-0.5 rounded-full border",
+                customer.estado === 'bloqueado' ? "bg-red-50 dark:bg-red-950/30 text-red-700 dark:text-red-400 border-red-300 dark:border-red-700" : "bg-gray-100 dark:bg-gray-800/30 text-gray-600 dark:text-gray-400 border-[var(--rule-base)] dark:border-gray-600"
               )}>
                 {customer.estado === 'bloqueado' ? 'BLOQUEADO' : 'INACTIVO'}
               </span>
             )}
           </div>
           {customer.observaciones && (
-            <p className="mt-3 text-xs text-gray-500 dark:text-muted italic border-t border-gray-100 dark:border-card-border pt-2">{customer.observaciones}</p>
+            <p className="mt-3 text-xs text-gray-500 dark:text-muted italic border-t border-[var(--rule-soft)] dark:border-card-border pt-2">{customer.observaciones}</p>
           )}
         </div>
       )}
@@ -934,7 +934,7 @@ export default function Customer360Tab({ phone, onClose }: Props) {
       {/* Crédito + Etiquetas */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         {/* Límite de crédito */}
-        <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl p-4 sm:p-5">
+        <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl p-4 sm:p-5">
           <h3 className="font-bold text-sm text-gray-900 dark:text-foreground mb-3 flex items-center gap-2">
             <CreditCard className="h-4 w-4 text-amber-500" /> Límite de crédito
           </h3>
@@ -947,7 +947,7 @@ export default function Customer360Tab({ phone, onClose }: Props) {
                 step={0.01}
                 value={creditLimitInput}
                 onChange={e => setCreditLimitInput(e.target.value)}
-                className="w-32 text-sm border border-gray-200 dark:border-card-border rounded-lg px-3 py-1.5 bg-white dark:bg-surface text-gray-900 dark:text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30"
+                className="w-32 text-sm border border-[var(--rule-base)] dark:border-card-border rounded-lg px-3 py-1.5 bg-white dark:bg-surface text-gray-900 dark:text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30"
                 placeholder="0.00"
               />
               <button
@@ -985,7 +985,7 @@ export default function Customer360Tab({ phone, onClose }: Props) {
                     </span>
                     <button
                       onClick={() => { setEditingCreditLimit(true); setCreditLimitInput(String(customer.creditLimit ?? 0)); }}
-                      className="text-[10px] text-primary hover:underline font-semibold"
+                      className="text-[length:var(--ts-2xs)] text-primary hover:underline font-semibold"
                     >
                       Editar
                     </button>
@@ -1004,9 +1004,9 @@ export default function Customer360Tab({ phone, onClose }: Props) {
         </div>
 
         {/* Etiquetas */}
-        <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl p-4 sm:p-5">
+        <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl p-4 sm:p-5">
           <h3 className="font-bold text-sm text-gray-900 dark:text-foreground mb-3 flex items-center gap-2">
-            <Star className="h-4 w-4 text-violet-500" /> Etiquetas
+            <Star className="h-4 w-4 text-[var(--text-secondary)]" /> Etiquetas
             {savingTags && <Loader2 className="h-3 w-3 animate-spin text-gray-400 ml-1" />}
           </h3>
           <div className="flex flex-wrap gap-1.5 mb-3">
@@ -1019,14 +1019,14 @@ export default function Customer360Tab({ phone, onClose }: Props) {
               const colors = [
                 "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400",
                 "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400",
-                "bg-violet-100 text-violet-700 dark:bg-violet-900/30 dark:text-violet-400",
+                "bg-[var(--surface-sunken)] text-[var(--text-primary)]",
                 "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400",
-                "bg-pink-100 text-pink-700 dark:bg-pink-900/30 dark:text-pink-400",
+                "bg-[var(--surface-sunken)] text-[var(--text-primary)]",
                 "bg-cyan-100 text-cyan-700 dark:bg-cyan-900/30 dark:text-cyan-400",
               ];
               const colorClass = colors[hash % colors.length];
               return (
-                <span key={tag} className={cn("inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full", colorClass)}>
+                <span key={tag} className={cn("inline-flex items-center gap-1 text-[length:var(--ts-2xs)] font-bold px-2 py-0.5 rounded-full", colorClass)}>
                   {tag}
                   <button
                     onClick={() => handleRemoveTag(tag)}
@@ -1045,7 +1045,7 @@ export default function Customer360Tab({ phone, onClose }: Props) {
               onChange={e => setNewTag(e.target.value)}
               onKeyDown={e => { if (e.key === "Enter") { e.preventDefault(); handleAddTag(newTag); } }}
               placeholder="Nueva etiqueta (Enter para agregar)"
-              className="flex-1 text-xs border border-gray-200 dark:border-card-border rounded-lg px-3 py-1.5 bg-gray-50 dark:bg-surface text-gray-700 dark:text-foreground placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-primary/30"
+              className="flex-1 text-xs border border-[var(--rule-base)] dark:border-card-border rounded-lg px-3 py-1.5 bg-gray-50 dark:bg-surface text-gray-700 dark:text-foreground placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-primary/30"
             />
           </div>
           <div className="flex flex-wrap gap-1 mt-2">
@@ -1055,7 +1055,7 @@ export default function Customer360Tab({ phone, onClose }: Props) {
                 <button
                   key={s}
                   onClick={() => handleAddTag(s)}
-                  className="text-[10px] text-gray-400 hover:text-primary border border-dashed border-gray-200 dark:border-card-border rounded-full px-2 py-0.5 hover:border-primary/40 transition-colors"
+                  className="text-[length:var(--ts-2xs)] text-gray-400 hover:text-primary border border-dashed border-[var(--rule-base)] dark:border-card-border rounded-full px-2 py-0.5 hover:border-primary/40 transition-colors"
                 >
                   + {s}
                 </button>
@@ -1072,18 +1072,18 @@ export default function Customer360Tab({ phone, onClose }: Props) {
         {[
           { label: "Total gastado",  value: fmt(totalSpent),        icon: CreditCard,   color: "text-emerald-500" },
           { label: "Pedidos",        value: String(orders.length),  icon: ShoppingCart, color: "text-emerald-500" },
-          { label: "Ticket prom.",   value: fmt(avgTicket),         icon: TrendingUp,   color: "text-violet-500" },
+          { label: "Ticket prom.",   value: fmt(avgTicket),         icon: TrendingUp,   color: "text-[var(--text-secondary)]" },
           { label: "Primera compra", value: firstOrder ? fmtDate(firstOrder.createdAt) : "—", icon: Calendar, color: "text-amber-500" },
         ].map(k => (
           <m.div
             key={k.label}
             initial={{ opacity: 0, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}
-            className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl p-3 sm:p-4"
+            className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl p-3 sm:p-4"
           >
             <div className="flex items-center gap-1.5 mb-1.5">
               <k.icon className={cn("h-3.5 w-3.5", k.color)} />
-              <p className="text-[10px] font-semibold text-gray-500 dark:text-muted">{k.label}</p>
+              <p className="text-[length:var(--ts-2xs)] font-semibold text-gray-500 dark:text-muted">{k.label}</p>
             </div>
             <p className="text-sm sm:text-base font-extrabold text-gray-900 dark:text-foreground">{k.value}</p>
           </m.div>
@@ -1096,9 +1096,9 @@ export default function Customer360Tab({ phone, onClose }: Props) {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
 
         {/* Productos favoritos (local, basado en pedidos cargados) */}
-        <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl p-4 sm:p-5">
+        <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl p-4 sm:p-5">
           <h3 className="font-bold text-sm text-gray-900 dark:text-foreground mb-3 flex items-center gap-2">
-            <Heart className="h-4 w-4 text-pink-500" /> Top productos (pedidos)
+            <Heart className="h-4 w-4 text-[var(--text-secondary)]" /> Top productos (pedidos)
           </h3>
           {topProducts.length === 0 ? (
             <p className="text-xs text-gray-400 dark:text-muted">Sin compras registradas</p>
@@ -1106,7 +1106,7 @@ export default function Customer360Tab({ phone, onClose }: Props) {
             <div className="space-y-2">
               {topProducts.map((p, i) => (
                 <div key={p.name} className="flex items-center gap-2">
-                  <span className="text-[10px] font-extrabold text-gray-400 w-4 text-right">{i + 1}</span>
+                  <span className="text-[length:var(--ts-2xs)] font-extrabold text-gray-400 w-4 text-right">{i + 1}</span>
                   <div className="flex-1 bg-gray-100 dark:bg-surface rounded-full h-5 overflow-hidden">
                     <div
                       className="h-full bg-primary/20 dark:bg-primary/30 rounded-full transition-all"
@@ -1114,7 +1114,7 @@ export default function Customer360Tab({ phone, onClose }: Props) {
                     />
                   </div>
                   <span className="text-xs font-semibold text-gray-700 dark:text-foreground truncate max-w-[120px]">{p.name}</span>
-                  <span className="text-[10px] text-gray-400 shrink-0">x{p.count}</span>
+                  <span className="text-[length:var(--ts-2xs)] text-gray-400 shrink-0">x{p.count}</span>
                 </div>
               ))}
             </div>
@@ -1122,7 +1122,7 @@ export default function Customer360Tab({ phone, onClose }: Props) {
         </div>
 
         {/* Timeline */}
-        <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl p-4 sm:p-5">
+        <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl p-4 sm:p-5">
           <h3 className="font-bold text-sm text-gray-900 dark:text-foreground mb-3 flex items-center gap-2">
             <Clock className="h-4 w-4 text-primary" /> Actividad reciente
           </h3>
@@ -1139,9 +1139,9 @@ export default function Customer360Tab({ phone, onClose }: Props) {
                     </div>
                     <div className="flex-1 min-w-0">
                       <p className="text-xs font-semibold text-gray-800 dark:text-foreground truncate">{ev.title}</p>
-                      <p className="text-[10px] text-gray-400 dark:text-muted truncate">{ev.detail}</p>
+                      <p className="text-[length:var(--ts-2xs)] text-gray-400 dark:text-muted truncate">{ev.detail}</p>
                     </div>
-                    <span className="text-[10px] text-gray-400 shrink-0">{fmtRelative(ev.date)}</span>
+                    <span className="text-[length:var(--ts-2xs)] text-gray-400 shrink-0">{fmtRelative(ev.date)}</span>
                   </div>
                 );
               })}
@@ -1151,10 +1151,10 @@ export default function Customer360Tab({ phone, onClose }: Props) {
       </div>
 
       {/* Historial de pedidos */}
-      <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl p-4 sm:p-5">
+      <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl p-4 sm:p-5">
         <h3 className="font-bold text-sm text-gray-900 dark:text-foreground mb-3 flex items-center gap-2">
           <Package className="h-4 w-4 text-primary" /> Historial de pedidos
-          <span className="text-[10px] text-gray-400 font-normal ml-auto">{orders.length} total</span>
+          <span className="text-[length:var(--ts-2xs)] text-gray-400 font-normal ml-auto">{orders.length} total</span>
         </h3>
         {orders.length === 0 ? (
           <p className="text-xs text-gray-400 dark:text-muted py-4 text-center">Sin pedidos registrados</p>
@@ -1162,12 +1162,12 @@ export default function Customer360Tab({ phone, onClose }: Props) {
           <div className="overflow-x-auto">
             <table className="w-full min-w-[500px] text-sm">
               <thead>
-                <tr className="text-left border-b border-gray-100 dark:border-card-border">
-                  <th className="pb-2 text-[10px] font-bold text-gray-400">Pedido</th>
-                  <th className="pb-2 text-[10px] font-bold text-gray-400">Fecha</th>
-                  <th className="pb-2 text-[10px] font-bold text-gray-400">Items</th>
-                  <th className="pb-2 text-[10px] font-bold text-gray-400 text-right">Total</th>
-                  <th className="pb-2 text-[10px] font-bold text-gray-400">Estado</th>
+                <tr className="text-left border-b border-[var(--rule-soft)] dark:border-card-border">
+                  <th className="pb-2 text-[length:var(--ts-2xs)] font-bold text-gray-400">Pedido</th>
+                  <th className="pb-2 text-[length:var(--ts-2xs)] font-bold text-gray-400">Fecha</th>
+                  <th className="pb-2 text-[length:var(--ts-2xs)] font-bold text-gray-400">Items</th>
+                  <th className="pb-2 text-[length:var(--ts-2xs)] font-bold text-gray-400 text-right">Total</th>
+                  <th className="pb-2 text-[length:var(--ts-2xs)] font-bold text-gray-400">Estado</th>
                 </tr>
               </thead>
               <tbody>
@@ -1184,7 +1184,7 @@ export default function Customer360Tab({ phone, onClose }: Props) {
                         <td className="py-2 text-xs text-gray-500 dark:text-muted">{o.items.length} prod.</td>
                         <td className="py-2 font-bold text-gray-900 dark:text-foreground text-right">{fmt(o.total)}</td>
                         <td className="py-2">
-                          <span className={cn("inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full", st.bg, st.color)}>
+                          <span className={cn("inline-flex items-center gap-1 text-[length:var(--ts-2xs)] font-bold px-2 py-0.5 rounded-full", st.bg, st.color)}>
                             <Icon className="h-2.5 w-2.5" />{st.label}
                           </span>
                         </td>
@@ -1201,7 +1201,7 @@ export default function Customer360Tab({ phone, onClose }: Props) {
       <PurchaseHeatmap orders={orders} />
 
       {/* Mejora 16: Historial de Puntos de Lealtad */}
-      <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl p-4 sm:p-5">
+      <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl p-4 sm:p-5">
         <h3 className="font-bold text-sm text-gray-900 dark:text-foreground mb-3 flex items-center gap-2">
           <Star className="h-4 w-4 text-yellow-500" /> Historial de Puntos
         </h3>
@@ -1229,10 +1229,10 @@ export default function Customer360Tab({ phone, onClose }: Props) {
                 <Star className="h-6 w-6 text-yellow-500" />
                 <div>
                   <p className="text-lg font-extrabold text-gray-900 dark:text-foreground">{totalPoints} puntos</p>
-                  <p className="text-[10px] text-gray-500 dark:text-muted">= S/{(totalPoints * 0.05).toFixed(2)} en descuento</p>
+                  <p className="text-[length:var(--ts-2xs)] text-gray-500 dark:text-muted">= S/{(totalPoints * 0.05).toFixed(2)} en descuento</p>
                 </div>
                 {totalPoints >= 100 && (
-                  <span className="ml-auto text-[10px] font-bold px-2.5 py-1 rounded-full bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400 border border-emerald-300 dark:border-emerald-700">
+                  <span className="ml-auto text-[length:var(--ts-2xs)] font-bold px-2.5 py-1 rounded-full bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400 border border-emerald-300 dark:border-emerald-700">
                     Canjeable
                   </span>
                 )}
@@ -1250,7 +1250,7 @@ export default function Customer360Tab({ phone, onClose }: Props) {
                     <span className="text-gray-600 dark:text-gray-300 truncate flex-1">
                       {entry.description}
                     </span>
-                    <span className="text-gray-400 dark:text-muted shrink-0 text-[10px]">
+                    <span className="text-gray-400 dark:text-muted shrink-0 text-[length:var(--ts-2xs)]">
                       {fmtDate(entry.date)}
                     </span>
                   </div>
@@ -1262,7 +1262,7 @@ export default function Customer360Tab({ phone, onClose }: Props) {
       </div>
 
       {/* Notas del vendedor */}
-      <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl p-4 sm:p-5">
+      <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl p-4 sm:p-5">
         <h3 className="font-bold text-sm text-gray-900 dark:text-foreground mb-3 flex items-center gap-2">
           <MessageSquare className="h-4 w-4 text-primary" /> Notas del vendedor
         </h3>
@@ -1271,7 +1271,7 @@ export default function Customer360Tab({ phone, onClose }: Props) {
           onChange={e => setNotes(e.target.value)}
           placeholder="Ej: Cliente prefiere pago con Yape. Pide factura."
           rows={3}
-          className="w-full text-sm border border-gray-200 dark:border-card-border rounded-lg px-3 py-2 bg-gray-50 dark:bg-surface text-gray-700 dark:text-foreground placeholder:text-gray-400 dark:placeholder:text-muted resize-none focus:outline-none focus:ring-2 focus:ring-primary/30"
+          className="w-full text-sm border border-[var(--rule-base)] dark:border-card-border rounded-lg px-3 py-2 bg-gray-50 dark:bg-surface text-gray-700 dark:text-foreground placeholder:text-gray-400 dark:placeholder:text-muted resize-none focus:outline-none focus:ring-2 focus:ring-primary/30"
         />
         <div className="flex items-center justify-between mt-2">
           <AnimatePresence>

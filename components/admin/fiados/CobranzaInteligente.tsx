@@ -175,7 +175,7 @@ function KpiCard({
   colorClass: string;
 }) {
   return (
-    <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl p-4  flex items-center gap-3">
+    <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl p-4  flex items-center gap-3">
       <div
         className={cn(
           "w-10 h-10 rounded-xl flex items-center justify-center shrink-0",
@@ -192,7 +192,7 @@ function KpiCard({
           {value}
         </p>
         {sub && (
-          <p className="text-[10px] text-gray-400 dark:text-gray-500">{sub}</p>
+          <p className="text-[length:var(--ts-2xs)] text-gray-400 dark:text-gray-500">{sub}</p>
         )}
       </div>
     </div>
@@ -217,9 +217,9 @@ function ModalDescuento({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
-      <div className="bg-white dark:bg-card rounded-xl w-full max-w-sm border border-gray-200 dark:border-card-border overflow-hidden">
+      <div className="bg-white dark:bg-card rounded-xl w-full max-w-sm border border-[var(--rule-base)] dark:border-card-border overflow-hidden">
         {/* Header */}
-        <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100 dark:border-card-border">
+        <div className="flex items-center justify-between px-5 py-4 border-b border-[var(--rule-soft)] dark:border-card-border">
           <div className="flex items-center gap-2">
             <Gift className="h-5 w-5 text-[#00B4A6]" />
             <h2 className="text-sm font-bold text-gray-900 dark:text-white">
@@ -253,7 +253,7 @@ function ModalDescuento({
             return (
               <div
                 key={op.desc}
-                className="border border-gray-200 dark:border-card-border rounded-xl p-3 space-y-2"
+                className="border border-[var(--rule-base)] dark:border-card-border rounded-xl p-3 space-y-2"
               >
                 <div className="flex items-center justify-between">
                   <div>
@@ -271,7 +271,7 @@ function ModalDescuento({
                     -{op.desc}%
                   </span>
                 </div>
-                <p className="text-[10px] text-gray-400 dark:text-gray-500 italic bg-gray-50 dark:bg-white/5 rounded-lg px-2 py-1.5">
+                <p className="text-[length:var(--ts-2xs)] text-gray-400 dark:text-gray-500 italic bg-gray-50 dark:bg-white/5 rounded-lg px-2 py-1.5">
                   {msg}
                 </p>
                 <button
@@ -450,7 +450,7 @@ export default function CobranzaInteligente() {
       </div>
 
       {/* Acciones masivas por nivel */}
-      <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl p-4 ">
+      <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl p-4 ">
         <p className="text-xs font-bold text-gray-500 dark:text-gray-400 mb-3">
           Envío masivo por nivel
         </p>
@@ -483,13 +483,13 @@ export default function CobranzaInteligente() {
 
       {/* Filtro por nivel */}
       <div className="flex items-center gap-2 flex-wrap">
-        <span className="text-[10px] font-bold text-gray-400">
+        <span className="text-[length:var(--ts-2xs)] font-bold text-gray-400">
           Filtrar:
         </span>
         <button
           onClick={() => setFiltroNivel(0)}
           className={cn(
-            "px-2.5 py-1 rounded-full text-[10px] font-bold transition-colors",
+            "px-2.5 py-1 rounded-full text-[length:var(--ts-2xs)] font-bold transition-colors",
             filtroNivel === 0
               ? "bg-[#00B4A6] text-white"
               : "bg-gray-100 dark:bg-white/5 text-gray-500 hover:bg-gray-200"
@@ -505,7 +505,7 @@ export default function CobranzaInteligente() {
               key={nivel}
               onClick={() => setFiltroNivel(nivel)}
               className={cn(
-                "px-2.5 py-1 rounded-full text-[10px] font-bold transition-colors",
+                "px-2.5 py-1 rounded-full text-[length:var(--ts-2xs)] font-bold transition-colors",
                 filtroNivel === nivel
                   ? "ring-2 ring-offset-1 " + meta.colorBadge
                   : "bg-gray-100 dark:bg-white/5 text-gray-500 hover:bg-gray-200"
@@ -519,7 +519,7 @@ export default function CobranzaInteligente() {
 
       {/* Tabla de cobranza */}
       {fiadosFiltrados.length === 0 ? (
-        <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl p-10 text-center">
+        <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl p-10 text-center">
           <TrendingUp className="h-10 w-10 text-[#00B4A6]/40 mx-auto mb-2" />
           <p className="text-sm font-bold text-gray-500 dark:text-gray-400">
             {fiados.length === 0
@@ -528,10 +528,10 @@ export default function CobranzaInteligente() {
           </p>
         </div>
       ) : (
-        <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl overflow-hidden ">
+        <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl overflow-hidden ">
           <div className="overflow-x-auto">
             <table className="w-full min-w-[680px] text-sm">
-              <thead className="sticky top-0 bg-white dark:bg-card z-10 border-b border-gray-100 dark:border-white/5">
+              <thead className="sticky top-0 bg-white dark:bg-card z-10 border-b border-[var(--rule-soft)] dark:border-white/5">
                 <tr className="text-left">
                   <th className="px-4 py-3 font-semibold text-gray-500 dark:text-gray-400 text-xs">
                     Cliente
@@ -591,7 +591,7 @@ export default function CobranzaInteligente() {
                               .toUpperCase();
                             return (
                               <div
-                                className="w-8 h-8 rounded-full flex items-center justify-center text-white text-[10px] font-bold shrink-0"
+                                className="w-8 h-8 rounded-full flex items-center justify-center text-white text-[length:var(--ts-2xs)] font-bold shrink-0"
                                 style={{ backgroundColor: color }}
                               >
                                 {initials}
@@ -602,7 +602,7 @@ export default function CobranzaInteligente() {
                             <p className="font-medium text-gray-900 dark:text-white truncate max-w-[140px]">
                               {nombre}
                             </p>
-                            <p className="text-[10px] text-gray-400 dark:text-gray-500 font-mono">
+                            <p className="text-[length:var(--ts-2xs)] text-gray-400 dark:text-gray-500 font-mono">
                               {f.customerId}
                             </p>
                           </div>
@@ -615,7 +615,7 @@ export default function CobranzaInteligente() {
                           S/{f.saldo.toFixed(2)}
                         </span>
                         {f.total !== f.saldo && (
-                          <p className="text-[9px] text-gray-400 dark:text-gray-500">
+                          <p className="text-[length:var(--ts-2xs)] text-gray-400 dark:text-gray-500">
                             de S/{f.total.toFixed(2)}
                           </p>
                         )}
@@ -641,7 +641,7 @@ export default function CobranzaInteligente() {
                       <td className="px-4 py-3">
                         <span
                           className={cn(
-                            "inline-flex items-center gap-1 px-2 py-1 rounded-lg text-[10px] font-bold",
+                            "inline-flex items-center gap-1 px-2 py-1 rounded-lg text-[length:var(--ts-2xs)] font-bold",
                             meta.colorBadge
                           )}
                         >
@@ -658,14 +658,14 @@ export default function CobranzaInteligente() {
                         {f.nivel === 3 && (
                           <a
                             href={`tel:${f.customerId.replace(/\D/g, "")}`}
-                            className="inline-flex items-center gap-1 text-[10px] text-orange-600 hover:underline font-bold mt-0.5"
+                            className="inline-flex items-center gap-1 text-[length:var(--ts-2xs)] text-orange-600 hover:underline font-bold mt-0.5"
                           >
                             <Phone className="h-2.5 w-2.5" />
                             Llamar
                           </a>
                         )}
                         {f.nivel === 4 && (
-                          <p className="text-[10px] text-red-600 dark:text-red-400 font-bold mt-0.5">
+                          <p className="text-[length:var(--ts-2xs)] text-red-600 dark:text-red-400 font-bold mt-0.5">
                             Bloquear credito
                           </p>
                         )}
@@ -681,7 +681,7 @@ export default function CobranzaInteligente() {
                               abrirWhatsApp(f, msg);
                             }}
                             className={cn(
-                              "inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-[10px] font-bold transition-colors",
+                              "inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-[length:var(--ts-2xs)] font-bold transition-colors",
                               meta.colorBtn
                             )}
                             title={`Enviar recordatorio nivel ${f.nivel}`}
@@ -694,7 +694,7 @@ export default function CobranzaInteligente() {
                           {f.nivel >= 2 && (
                             <button
                               onClick={() => setModalDescuento(f)}
-                              className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-[10px] font-bold bg-[#00B4A6]/10 text-[#00B4A6] hover:bg-[#00B4A6]/20 transition-colors"
+                              className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-[length:var(--ts-2xs)] font-bold bg-[#00B4A6]/10 text-[#00B4A6] hover:bg-[#00B4A6]/20 transition-colors"
                               title="Ofrecer descuento por pronto pago"
                             >
                               <Gift className="h-3 w-3" />
@@ -711,7 +711,7 @@ export default function CobranzaInteligente() {
           </div>
 
           {/* Footer con total */}
-          <div className="px-4 py-3 border-t border-gray-100 dark:border-white/5 flex items-center justify-between bg-gray-50/50 dark:bg-white/2">
+          <div className="px-4 py-3 border-t border-[var(--rule-soft)] dark:border-white/5 flex items-center justify-between bg-gray-50/50 dark:bg-white/2">
             <p className="text-xs text-gray-500 dark:text-gray-400">
               {fiadosFiltrados.length} fiado
               {fiadosFiltrados.length !== 1 ? "s" : ""} mostrado
@@ -738,7 +738,7 @@ export default function CobranzaInteligente() {
           return (
             <div
               key={nivel}
-              className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl p-3 flex items-start gap-2"
+              className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl p-3 flex items-start gap-2"
             >
               <span
                 className={cn(
@@ -749,10 +749,10 @@ export default function CobranzaInteligente() {
                 <NivelIcon className="h-3.5 w-3.5" />
               </span>
               <div className="min-w-0">
-                <p className="text-[10px] font-extrabold text-gray-800 dark:text-white leading-tight">
+                <p className="text-[length:var(--ts-2xs)] font-extrabold text-gray-800 dark:text-white leading-tight">
                   Nivel {nivel}: {meta.label}
                 </p>
-                <p className="text-[9px] text-gray-400 dark:text-gray-500 mt-0.5">
+                <p className="text-[length:var(--ts-2xs)] text-gray-400 dark:text-gray-500 mt-0.5">
                   {meta.rango} · {meta.descripcion}
                 </p>
               </div>

@@ -324,7 +324,7 @@ function ComprasDashboard() {
       </div>
 
       {/* === Compras por Mes (AreaChart) === */}
-      <div className="bg-white rounded-xl border border-gray-100 p-6 ">
+      <div className="bg-white rounded-xl border border-[var(--rule-soft)] p-6 ">
         <div className="flex items-center gap-2 mb-4"><FavStar id="compras-mes" favs={compFavs} /><h3 className="text-sm font-bold text-gray-900">Compras por mes (ultimos 6 meses)</h3></div>
         <ResponsiveContainer width="100%" height={280}>
           <AreaChart data={purchasesByMonth}>
@@ -343,7 +343,7 @@ function ComprasDashboard() {
               const val = typeof rawVal === "number" ? rawVal : 0;
               const count = (payload[0]?.payload as { count?: number } | undefined)?.count || 0;
               return (
-                <div className="bg-white rounded-xl border border-gray-100 px-4 py-3">
+                <div className="bg-white rounded-xl border border-[var(--rule-soft)] px-4 py-3">
                   <p className="text-xs font-semibold text-gray-900">{String(label ?? "")}</p>
                   <p className="text-xs text-gray-500 mt-1">
                     S/ {val.toLocaleString()} ({count} OCs)
@@ -358,7 +358,7 @@ function ComprasDashboard() {
 
       {/* === Distribucion por Proveedor (PieChart + tabla) === */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <div className="bg-white rounded-xl border border-gray-100 p-6 ">
+        <div className="bg-white rounded-xl border border-[var(--rule-soft)] p-6 ">
           <div className="flex items-center justify-between mb-4">
             <h3 className="text-sm font-bold text-gray-900">Gasto por proveedor</h3>
             <div className="flex items-center gap-2">
@@ -387,7 +387,7 @@ function ComprasDashboard() {
           </ResponsiveContainer>
         </div>
 
-        <div className="bg-white rounded-xl border border-gray-100 p-6 ">
+        <div className="bg-white rounded-xl border border-[var(--rule-soft)] p-6 ">
           <h3 className="text-sm font-bold text-gray-900 mb-4">Ranking de proveedores</h3>
           <div className="max-h-70 space-y-3 overflow-y-auto">
             {supplierSpend.length === 0 ? (
@@ -407,8 +407,8 @@ function ComprasDashboard() {
                         <div className="flex-1 h-1.5 bg-gray-100 rounded-full overflow-hidden">
                           <div className="h-full rounded-full transition-all" style={{ width: `${pct}%`, backgroundColor: CHART_COLORS[i % CHART_COLORS.length] }} />
                         </div>
-                        <span className="text-[10px] text-gray-400 shrink-0 w-10 text-right">{pct.toFixed(0)}%</span>
-                        <span className="text-[10px] text-gray-400 shrink-0">{s.count} OCs</span>
+                        <span className="text-[length:var(--ts-2xs)] text-gray-400 shrink-0 w-10 text-right">{pct.toFixed(0)}%</span>
+                        <span className="text-[length:var(--ts-2xs)] text-gray-400 shrink-0">{s.count} OCs</span>
                       </div>
                     </div>
                   </div>
@@ -420,7 +420,7 @@ function ComprasDashboard() {
       </div>
 
       {/* === Estado de OC (BarChart stacked) === */}
-      <div className="bg-white rounded-xl border border-gray-100 p-6 ">
+      <div className="bg-white rounded-xl border border-[var(--rule-soft)] p-6 ">
         <h3 className="text-sm font-bold text-gray-900 mb-4">Estado de ordenes por mes</h3>
         <ResponsiveContainer width="100%" height={250}>
           <BarChart data={statusByMonth}>
@@ -439,7 +439,7 @@ function ComprasDashboard() {
 
       {/* === Deuda por Proveedor (horizontal) + Proximos Pagos === */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <div className="bg-white rounded-xl border border-gray-100 p-6 ">
+        <div className="bg-white rounded-xl border border-[var(--rule-soft)] p-6 ">
           <h3 className="text-sm font-bold text-gray-900 mb-4">Deuda por proveedor</h3>
           {debtBySupplier.length === 0 ? (
             <EmptyState title="Sin deudas registradas" description="No hay deudas pendientes con proveedores" />
@@ -460,7 +460,7 @@ function ComprasDashboard() {
           )}
         </div>
 
-        <div className="bg-white rounded-xl border border-gray-100 p-6 ">
+        <div className="bg-white rounded-xl border border-[var(--rule-soft)] p-6 ">
           <h3 className="text-sm font-bold text-gray-900 mb-4">Proximos pagos</h3>
           {nextPayments.length === 0 ? (
             <EmptyState title="Sin pagos pendientes" description="No hay pagos próximos registrados" />
@@ -477,17 +477,17 @@ function ComprasDashboard() {
                 const dotColor = isOverdue ? "bg-red-500" : isUrgent ? "bg-amber-500" : "bg-green-500";
 
                 return (
-                  <div key={p.id || i} className="flex items-center gap-3 p-3 rounded-xl border border-gray-100 bg-gray-50/50">
+                  <div key={p.id || i} className="flex items-center gap-3 p-3 rounded-xl border border-[var(--rule-soft)] bg-gray-50/50">
                     <div className={cn("h-2.5 w-2.5 rounded-full shrink-0", dotColor)} />
                     <div className="flex-1 min-w-0">
                       <p className="text-xs font-medium text-gray-800 truncate">{p.name}</p>
                       <p className="text-lg font-mono font-bold text-gray-900">S/ {p.amount.toLocaleString()}</p>
                     </div>
                     <div className="flex flex-col items-end gap-1 shrink-0">
-                      <span className={cn("text-[10px] font-medium px-2 py-0.5 rounded-full", badgeColor)}>
+                      <span className={cn("text-[length:var(--ts-2xs)] font-medium px-2 py-0.5 rounded-full", badgeColor)}>
                         {isOverdue ? `Vencido ${Math.abs(p.days)}d` : p.days === 0 ? "Hoy" : `En ${p.days}d`}
                       </span>
-                      <button className="text-[10px] font-semibold text-primary hover:underline flex items-center gap-1">
+                      <button className="text-[length:var(--ts-2xs)] font-semibold text-primary hover:underline flex items-center gap-1">
                         <CheckCircle2 className="h-3 w-3" /> Pagado
                       </button>
                     </div>
@@ -500,9 +500,9 @@ function ComprasDashboard() {
       </div>
 
       {/* === Tendencia de Gastos vs Promedio Movil (ComposedChart) === */}
-      <div className="bg-white rounded-xl border border-gray-100 p-6 ">
+      <div className="bg-white rounded-xl border border-[var(--rule-soft)] p-6 ">
         <h3 className="text-sm font-bold text-gray-900 mb-1">Tendencia de gastos</h3>
-        <p className="text-[10px] text-gray-400 mb-4">Gasto real vs promedio movil 3 meses</p>
+        <p className="text-[length:var(--ts-2xs)] text-gray-400 mb-4">Gasto real vs promedio movil 3 meses</p>
         <ResponsiveContainer width="100%" height={260}>
           <ComposedChart data={trendData}>
             <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="rgba(0,0,0,0.06)" />

@@ -199,7 +199,7 @@ export default function ChurnPrediction() {
         <button
           onClick={fetchData}
           disabled={loading}
-          className="flex items-center gap-2 rounded-lg border border-gray-200 px-3 py-2 text-sm text-gray-600 transition hover:bg-gray-50 disabled:opacity-50 dark:border-gray-700 dark:text-gray-300 dark:hover:bg-gray-800"
+          className="flex items-center gap-2 rounded-lg border border-[var(--rule-base)] px-3 py-2 text-sm text-gray-600 transition hover:bg-gray-50 disabled:opacity-50 dark:border-[var(--rule-base)] dark:text-gray-300 dark:hover:bg-gray-800"
         >
           <RefreshCw className={cn("h-4 w-4", loading && "animate-spin")} />
           Actualizar
@@ -216,7 +216,7 @@ export default function ChurnPrediction() {
               "rounded-xl border p-4 text-left transition",
               filterRisk === r
                 ? "border-[#00B4A6] bg-[#00B4A6]/5 dark:bg-[#00B4A6]/10"
-                : "border-gray-200 bg-white hover:border-gray-300 dark:border-gray-700 dark:bg-gray-900"
+                : "border-[var(--rule-base)] bg-white hover:border-[var(--rule-base)] dark:bg-gray-900"
             )}
           >
             <p className={cn("text-2xl font-bold", RISK_CONFIG[r].color)}>
@@ -239,9 +239,9 @@ export default function ChurnPrediction() {
           <p className="text-sm text-red-600 dark:text-red-400">{error}</p>
         </div>
       ) : (
-        <div className="rounded-xl border border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-900">
+        <div className="rounded-xl border border-[var(--rule-base)] bg-white dark:border-[var(--rule-base)] dark:bg-gray-900">
           {/* Filter bar */}
-          <div className="flex gap-2 border-b border-gray-100 p-4 dark:border-gray-800">
+          <div className="flex gap-2 border-b border-[var(--rule-soft)] p-4 dark:border-[var(--rule-base)]">
             {["todos", "alto", "medio", "bajo"].map((r) => (
               <button
                 key={r}

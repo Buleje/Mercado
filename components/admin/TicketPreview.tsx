@@ -162,7 +162,7 @@ export default function TicketPreview({ ticket, business, onClose }: Props) {
       <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 no-print">
         <div className="bg-white dark:bg-card rounded-xl max-w-md w-full max-h-[90vh] overflow-y-auto">
           {/* Close button + width toggle */}
-          <div className="flex justify-between items-center p-4 border-b border-gray-100 dark:border-card-border no-print">
+          <div className="flex justify-between items-center p-4 border-b border-[var(--rule-soft)] dark:border-card-border no-print">
             <h3 className="font-bold text-gray-900 dark:text-foreground">
               Vista previa del ticket
             </h3>
@@ -171,7 +171,7 @@ export default function TicketPreview({ ticket, business, onClose }: Props) {
               <div className="flex bg-gray-100 dark:bg-accent rounded-lg p-0.5">
                 <button
                   onClick={() => setTicketWidth("58mm")}
-                  className={`px-2 py-1 rounded-md text-[10px] font-bold transition-colors ${
+                  className={`px-2 py-1 rounded-md text-[length:var(--ts-2xs)] font-bold transition-colors ${
                     ticketWidth === "58mm"
                       ? "bg-white dark:bg-card text-gray-900 dark:text-foreground "
                       : "text-gray-500 dark:text-muted"
@@ -181,7 +181,7 @@ export default function TicketPreview({ ticket, business, onClose }: Props) {
                 </button>
                 <button
                   onClick={() => setTicketWidth("80mm")}
-                  className={`px-2 py-1 rounded-md text-[10px] font-bold transition-colors ${
+                  className={`px-2 py-1 rounded-md text-[length:var(--ts-2xs)] font-bold transition-colors ${
                     ticketWidth === "80mm"
                       ? "bg-white dark:bg-card text-gray-900 dark:text-foreground "
                       : "text-gray-500 dark:text-muted"
@@ -238,7 +238,7 @@ export default function TicketPreview({ ticket, business, onClose }: Props) {
             </div>
 
             {/* Boleta number + Ticket number + date */}
-            <div className="ticket-separator border-t border-b border-dashed border-gray-300 dark:border-card-border py-2 space-y-1">
+            <div className="ticket-separator border-t border-b border-dashed border-[var(--rule-base)] dark:border-card-border py-2 space-y-1">
               {ticket.boletaNumber && (
                 <div className="text-center">
                   <span className="text-xs font-extrabold text-gray-900 dark:text-foreground">
@@ -270,7 +270,7 @@ export default function TicketPreview({ ticket, business, onClose }: Props) {
             {/* Items table — Producto | Qty | P.Unit | Subtotal */}
             <table className="ticket-items w-full text-xs">
               <thead>
-                <tr className="border-b border-gray-200 dark:border-card-border">
+                <tr className="border-b border-[var(--rule-base)] dark:border-card-border">
                   <th className="text-left py-1 font-bold text-gray-500 dark:text-muted">
                     Producto
                   </th>
@@ -309,7 +309,7 @@ export default function TicketPreview({ ticket, business, onClose }: Props) {
             </table>
 
             {/* Totals — Subtotal, IGV 18% separated, Total bold */}
-            <div className="ticket-separator space-y-1 border-t border-dashed border-gray-300 dark:border-card-border pt-3">
+            <div className="ticket-separator space-y-1 border-t border-dashed border-[var(--rule-base)] dark:border-card-border pt-3">
               <div className="flex justify-between text-xs text-gray-600 dark:text-muted">
                 <span>Subtotal</span>
                 <span>{fmt(ticket.subtotal)}</span>
@@ -328,7 +328,7 @@ export default function TicketPreview({ ticket, business, onClose }: Props) {
             <div className="text-xs text-center space-y-1.5">
               {ticket.paymentMethod === "MIXTO" && ticket.paymentDetails ? (
                 <div className="space-y-1">
-                  <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-purple-50 dark:bg-purple-950/30 text-purple-700 dark:text-purple-400 font-bold">
+                  <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-[var(--surface-sunken)] text-[var(--text-secondary)] dark:text-[var(--text-primary)] font-bold">
                     Pago mixto
                   </span>
                   <div className="space-y-0.5 mt-1">
@@ -355,7 +355,7 @@ export default function TicketPreview({ ticket, business, onClose }: Props) {
             {/* Yape QR */}
             {qrUrl && (
               <div className="text-center space-y-1 pt-2">
-                <p className="text-[10px] font-bold text-gray-400">
+                <p className="text-[length:var(--ts-2xs)] font-bold text-gray-400">
                   Paga con Yape
                 </p>
                 <Image
@@ -365,26 +365,26 @@ export default function TicketPreview({ ticket, business, onClose }: Props) {
                   width={120}
                   height={120}
                 />
-                <p className="text-[10px] text-gray-400">
+                <p className="text-[length:var(--ts-2xs)] text-gray-400">
                   {business.yapePhone}
                 </p>
               </div>
             )}
 
             {/* Footer */}
-            <div className="ticket-separator text-center border-t border-dashed border-gray-300 dark:border-card-border pt-3">
+            <div className="ticket-separator text-center border-t border-dashed border-[var(--rule-base)] dark:border-card-border pt-3">
               <p className="text-xs font-semibold text-gray-600 dark:text-muted">
                 {business.footerMessage ??
                   "Gracias por su preferencia! Vuelva pronto"}
               </p>
-              <p className="text-[10px] text-gray-400 dark:text-muted mt-1">
+              <p className="text-[length:var(--ts-2xs)] text-gray-400 dark:text-muted mt-1">
                 {business.name}
               </p>
             </div>
           </div>
 
           {/* Action buttons */}
-          <div className="flex gap-2 p-4 border-t border-gray-100 dark:border-card-border no-print">
+          <div className="flex gap-2 p-4 border-t border-[var(--rule-soft)] dark:border-card-border no-print">
             <button
               onClick={handlePrint}
               className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg bg-primary text-white text-sm font-bold hover:bg-primary/90 transition-colors"

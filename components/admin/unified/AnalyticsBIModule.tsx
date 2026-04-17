@@ -75,7 +75,7 @@ function AnalyticsCard({ title, subtitle, icon: Icon, children, className }: {
 }) {
   return (
     <div className={cn(
-      "bg-white rounded-xl border border-gray-200 p-6  transition-shadow hover:shadow-sm",
+      "bg-white rounded-xl border border-[var(--rule-base)] p-6  transition-shadow hover:shadow-sm",
       className,
     )}>
       <div className="mb-5">
@@ -159,7 +159,7 @@ function InlineKPIStrip() {
     { label: "Ventas hoy", value: `S/ ${kpis.ventasHoy.toFixed(0)}`, color: "text-emerald-600" },
     { label: "Ticket prom", value: `S/ ${kpis.ticketPromedio.toFixed(0)}`, color: "text-emerald-600" },
     { label: "Margen", value: `${kpis.margen.toFixed(1)}%`, color: kpis.margen >= 20 ? "text-emerald-600" : "text-amber-600" },
-    { label: "Clientes hoy", value: String(kpis.clientesHoy), color: "text-purple-600" },
+    { label: "Clientes hoy", value: String(kpis.clientesHoy), color: "text-[var(--text-secondary)]" },
     { label: "Fiado pend.", value: `S/ ${kpis.fiadoPendiente.toFixed(0)}`, color: kpis.fiadoPendiente > 0 ? "text-red-500" : "text-gray-500" },
     { label: "Rotación", value: `${kpis.rotacion.toFixed(1)}x`, color: "text-cyan-600" },
   ];
@@ -169,9 +169,9 @@ function InlineKPIStrip() {
       {items.map((item) => (
         <div
           key={item.label}
-          className="rounded-xl border border-gray-200 bg-white px-3 py-2.5  text-center"
+          className="rounded-xl border border-[var(--rule-base)] bg-white px-3 py-2.5  text-center"
         >
-          <p className="text-[10px] font-bold text-gray-400 mb-0.5">{item.label}</p>
+          <p className="text-[length:var(--ts-2xs)] font-bold text-gray-400 mb-0.5">{item.label}</p>
           <p className={cn("text-lg font-extrabold tabular-nums", item.color)} style={{ fontVariantNumeric: "tabular-nums" }}>{item.value}</p>
         </div>
       ))}
@@ -192,7 +192,7 @@ function SectionKPIStrip({ section }: { section: "ventas" | "productos" | "clien
           setItems([
             { label: "Ventas hoy", value: `S/ ${(Number(d.ingresosHoy ?? d.ventasHoy ?? 0) || 0).toFixed(0)}`, color: "text-emerald-600" },
             { label: "Ticket prom", value: `S/ ${(Number(d.ticketPromedio ?? d.avgTicket ?? 0) || 0).toFixed(0)}`, color: "text-emerald-600" },
-            { label: "Operaciones", value: String(Number(d.ordersToday ?? d.totalVentas ?? 0) || 0), color: "text-purple-600" },
+            { label: "Operaciones", value: String(Number(d.ordersToday ?? d.totalVentas ?? 0) || 0), color: "text-[var(--text-secondary)]" },
             { label: "Pico (hora)", value: d.peakHour ? `${d.peakHour}h` : "--", color: "text-amber-600" },
           ]);
         } else if (section === "productos") {
@@ -207,7 +207,7 @@ function SectionKPIStrip({ section }: { section: "ventas" | "productos" | "clien
             { label: "Total clientes", value: String(Number(d.totalClientes ?? d.totalCustomers ?? 0) || 0), color: "text-emerald-600" },
             { label: "Nuevos (mes)", value: String(Number(d.newCustomersMonth ?? d.clientesNuevos ?? 0) || 0), color: "text-emerald-600" },
             { label: "Fiado pend.", value: `S/ ${(Number(d.fiadoPendiente ?? d.fiadoTotal ?? 0) || 0).toFixed(0)}`, color: "text-red-500" },
-            { label: "Retención", value: `${(Number(d.retentionRate ?? d.retencion ?? 0) || 0).toFixed(0)}%`, color: "text-purple-600" },
+            { label: "Retención", value: `${(Number(d.retentionRate ?? d.retencion ?? 0) || 0).toFixed(0)}%`, color: "text-[var(--text-secondary)]" },
           ]);
         }
       })();
@@ -226,8 +226,8 @@ function SectionKPIStrip({ section }: { section: "ventas" | "productos" | "clien
   return (
     <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 mb-4">
       {items.map((item) => (
-        <div key={item.label} className="rounded-xl border border-gray-200 bg-white px-3 py-2  text-center">
-          <p className="text-[10px] font-bold text-gray-400 mb-0.5">{item.label}</p>
+        <div key={item.label} className="rounded-xl border border-[var(--rule-base)] bg-white px-3 py-2  text-center">
+          <p className="text-[length:var(--ts-2xs)] font-bold text-gray-400 mb-0.5">{item.label}</p>
           <p className={cn("text-base font-extrabold tabular-nums", item.color)} style={{ fontVariantNumeric: "tabular-nums" }}>{item.value}</p>
         </div>
       ))}
@@ -246,7 +246,7 @@ function TabbedCard({ title, subtitle, icon, tabs, className }: {
   const [activeTab, setActiveTab] = useState(tabs[0]?.id ?? "");
   return (
     <div className={cn(
-      "bg-white rounded-xl border border-gray-200 p-6  transition-shadow hover:shadow-sm",
+      "bg-white rounded-xl border border-[var(--rule-base)] p-6  transition-shadow hover:shadow-sm",
       className,
     )}>
       <div className="mb-4">
@@ -261,7 +261,7 @@ function TabbedCard({ title, subtitle, icon, tabs, className }: {
             {subtitle && <p className="text-sm text-gray-500 mt-0.5">{subtitle}</p>}
           </div>
         </div>
-        <div className="flex gap-1 border-b border-gray-200">
+        <div className="flex gap-1 border-b border-[var(--rule-base)]">
           {tabs.map((t) => (
             <button
               key={t.id}
@@ -334,7 +334,7 @@ function Top10Clientes({ refreshKey }: { refreshKey: number }) {
       ) : (
         <table className="w-full text-sm">
           <thead>
-            <tr className="border-b border-gray-200 text-left">
+            <tr className="border-b border-[var(--rule-base)] text-left">
               <th className="px-3 py-3 font-semibold text-gray-500 text-xs">#</th>
               <th className="px-3 py-3 font-semibold text-gray-500 text-xs">Cliente</th>
               <th className="px-3 py-3 font-semibold text-gray-500 text-xs text-right">Gasto total</th>
@@ -345,7 +345,7 @@ function Top10Clientes({ refreshKey }: { refreshKey: number }) {
           </thead>
           <tbody>
             {customers.map((c, i) => (
-              <tr key={c.id} className="border-b border-gray-100 hover:bg-gray-50 cursor-pointer transition-colors">
+              <tr key={c.id} className="border-b border-[var(--rule-soft)] hover:bg-gray-50 cursor-pointer transition-colors">
                 <td className="px-3 py-3 text-center">
                   {i < 3 ? <span className="text-lg">{medals[i]}</span> : <span className="text-xs font-bold text-gray-400">{i + 1}</span>}
                 </td>
@@ -444,10 +444,10 @@ function StarProductCard({ refreshKey }: { refreshKey: number }) {
   }
 
   return (
-    <div className="rounded-xl bg-linear-to-br from-secondary/5 to-secondary/10 p-4 border border-secondary/20">
+    <div className="rounded-xl bg-[var(--surface-sunken)] p-4 border border-[var(--rule-base)]">
       <div className="flex items-start gap-3">
         {star.imageUrl && (
-          <div className="relative w-16 h-16 rounded-xl overflow-hidden bg-white shrink-0 border border-gray-200">
+          <div className="relative w-16 h-16 rounded-xl overflow-hidden bg-white shrink-0 border border-[var(--rule-base)]">
             <Image src={star.imageUrl} alt={star.name} fill className="object-cover" sizes="64px" />
           </div>
         )}

@@ -243,7 +243,7 @@ export default function LiquidityForecastTab() {
               `liquidez-${scenario}`
             )
           }
-          className="flex items-center gap-1.5 px-3 py-2 rounded-lg border border-gray-200 dark:border-card-border bg-white dark:bg-surface text-sm font-semibold text-gray-700 dark:text-foreground hover:bg-gray-50 dark:hover:bg-accent transition-colors"
+          className="flex items-center gap-1.5 px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-card-border bg-white dark:bg-surface text-sm font-semibold text-gray-700 dark:text-foreground hover:bg-gray-50 dark:hover:bg-accent transition-colors"
         >
           <Download className="h-4 w-4" /> Exportar
         </button>
@@ -270,7 +270,7 @@ export default function LiquidityForecastTab() {
       {/* Controles */}
       <div className="flex flex-wrap items-center gap-3">
         {/* Horizonte */}
-        <div className="flex rounded-xl border border-gray-200 dark:border-card-border overflow-hidden">
+        <div className="flex rounded-xl border border-[var(--rule-base)] dark:border-card-border overflow-hidden">
           {([30, 60, 90] as const).map((h) => (
             <button
               key={h}
@@ -288,7 +288,7 @@ export default function LiquidityForecastTab() {
         </div>
 
         {/* Escenario */}
-        <div className="flex rounded-xl border border-gray-200 dark:border-card-border bg-gray-100 dark:bg-surface p-1 gap-1">
+        <div className="flex rounded-xl border border-[var(--rule-base)] dark:border-card-border bg-gray-100 dark:bg-surface p-1 gap-1">
           {(Object.keys(SCENARIO_META) as Scenario[]).map((k) => (
             <button
               key={k}
@@ -322,7 +322,7 @@ export default function LiquidityForecastTab() {
       )}
 
       {/* Gráfico de barras */}
-      <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl p-4 space-y-3">
+      <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl p-4 space-y-3">
         <h3 className="text-sm font-bold text-gray-700 dark:text-foreground">
           Ingresos vs Egresos semanales ({horizon} días)
         </h3>
@@ -371,7 +371,7 @@ export default function LiquidityForecastTab() {
       </div>
 
       {/* Tabla detallada */}
-      <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl overflow-hidden">
+      <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full min-w-[600px] text-sm">
             <thead>
@@ -388,7 +388,7 @@ export default function LiquidityForecastTab() {
                 <tr
                   key={w.weekLabel}
                   className={cn(
-                    "border-t border-gray-100 dark:border-card-border",
+                    "border-t border-[var(--rule-soft)] dark:border-card-border",
                     w.cumulative < 0 && "bg-red-50/50 dark:bg-red-950/10"
                   )}
                 >
@@ -431,14 +431,14 @@ export default function LiquidityForecastTab() {
 
       {/* Compromisos pendientes */}
       {pendingPayables.length > 0 && (
-        <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl p-4">
+        <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl p-4">
           <h3 className="text-sm font-bold text-gray-700 dark:text-foreground mb-3">
             Compromisos pendientes de pago ({payables.filter((p) => p.status !== "pagado").length} total)
           </h3>
           <div className="overflow-x-auto">
             <table className="w-full min-w-[400px] text-sm">
               <thead>
-                <tr className="text-xs text-gray-400 border-b border-gray-100 dark:border-card-border">
+                <tr className="text-xs text-gray-400 border-b border-[var(--rule-soft)] dark:border-card-border">
                   <th className="text-left pb-2">Proveedor</th>
                   <th className="text-right pb-2">Monto</th>
                   <th className="text-right pb-2">Pagado</th>

@@ -225,7 +225,7 @@ export default function ProductQRGenerator() {
 
       <div className="grid gap-6 lg:grid-cols-2">
         {/* Left: Controls */}
-        <div className="space-y-4 rounded-xl border border-gray-200 bg-white p-5 dark:border-gray-700 dark:bg-gray-900">
+        <div className="space-y-4 rounded-xl border border-[var(--rule-base)] bg-white p-5 dark:border-[var(--rule-base)] dark:bg-gray-900">
           {/* Search */}
           <div>
             <label className="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-300">
@@ -237,11 +237,11 @@ export default function ProductQRGenerator() {
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
                 placeholder="Escribe el nombre del producto..."
-                className="w-full rounded-lg border border-gray-200 bg-gray-50 py-2 pl-9 pr-3 text-sm focus:border-primary focus:outline-none dark:border-gray-700 dark:bg-gray-800 dark:text-white"
+                className="w-full rounded-lg border border-[var(--rule-base)] bg-gray-50 py-2 pl-9 pr-3 text-sm focus:border-primary focus:outline-none dark:border-[var(--rule-base)] dark:bg-gray-800 dark:text-white"
               />
             </div>
             {search && (
-              <div className="mt-1 max-h-48 overflow-y-auto rounded-lg border border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-900">
+              <div className="mt-1 max-h-48 overflow-y-auto rounded-lg border border-[var(--rule-base)] bg-white dark:border-[var(--rule-base)] dark:bg-gray-900">
                 {loading ? (
                   <p className="p-3 text-sm text-gray-500">Cargando...</p>
                 ) : filtered.length === 0 ? (
@@ -279,7 +279,7 @@ export default function ProductQRGenerator() {
                     "flex-1 rounded-lg border px-3 py-2 text-sm font-medium transition",
                     size === s
                       ? "border-primary bg-primary text-white"
-                      : "border-gray-200 bg-gray-50 text-gray-700 hover:border-primary/50 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-300"
+                      : "border-[var(--rule-base)] bg-gray-50 text-gray-700 hover:border-primary/50 dark:border-[var(--rule-base)] dark:bg-gray-800 dark:text-gray-300"
                   )}
                 >
                   {s === "small" ? "Pequeno" : s === "medium" ? "Mediano" : "Grande"}
@@ -307,7 +307,7 @@ export default function ProductQRGenerator() {
         </div>
 
         {/* Right: QR Preview */}
-        <div className="flex flex-col items-center justify-center gap-4 rounded-xl border border-gray-200 bg-white p-5 dark:border-gray-700 dark:bg-gray-900">
+        <div className="flex flex-col items-center justify-center gap-4 rounded-xl border border-[var(--rule-base)] bg-white p-5 dark:border-[var(--rule-base)] dark:bg-gray-900">
           {selected ? (
             <>
               <div className={cn("rounded-xl border-2 border-primary bg-white p-4", rendering && "opacity-50")}>
@@ -355,7 +355,7 @@ export default function ProductQRGenerator() {
                     "flex items-center gap-2 rounded-lg border px-4 py-2 text-sm font-semibold transition disabled:opacity-50",
                     copied
                       ? "border-emerald-500 bg-emerald-50 text-emerald-700 dark:bg-emerald-900/20 dark:text-emerald-400"
-                      : "border-gray-200 text-gray-600 hover:border-gray-400 dark:border-gray-700 dark:text-gray-300"
+                      : "border-[var(--rule-base)] text-gray-600 hover:border-gray-400 dark:border-[var(--rule-base)] dark:text-gray-300"
                   )}
                 >
                   {copied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
@@ -365,7 +365,7 @@ export default function ProductQRGenerator() {
             </>
           ) : (
             <div className="flex flex-col items-center gap-3 text-center">
-              <div className="flex h-32 w-32 items-center justify-center rounded-xl border-2 border-dashed border-gray-200 dark:border-gray-700">
+              <div className="flex h-32 w-32 items-center justify-center rounded-xl border-2 border-dashed border-[var(--rule-base)]">
                 <QrCode className="h-12 w-12 text-gray-200 dark:text-gray-700" />
               </div>
               <p className="text-sm text-gray-400">Selecciona un producto para generar su QR</p>

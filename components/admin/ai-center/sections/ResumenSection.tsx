@@ -206,7 +206,7 @@ function TrendBadge({ pct, size = "sm" }: TrendBadgeProps) {
       <span
         className={cn(
           "text-gray-400 dark:text-gray-500",
-          size === "xs" ? "text-[10px]" : "text-xs"
+          size === "xs" ? "text-[length:var(--ts-2xs)]" : "text-xs"
         )}
       >
         Sin datos previos
@@ -217,7 +217,7 @@ function TrendBadge({ pct, size = "sm" }: TrendBadgeProps) {
     <span
       className={cn(
         "inline-flex items-center gap-0.5 font-medium",
-        size === "xs" ? "text-[10px]" : "text-xs",
+        size === "xs" ? "text-[length:var(--ts-2xs)]" : "text-xs",
         positive
           ? "text-emerald-500 dark:text-emerald-400"
           : "text-red-500 dark:text-red-400"
@@ -243,7 +243,7 @@ interface KPICardProps {
 
 function KPICard({ label, value, sub, icon }: KPICardProps) {
   return (
-    <div className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-lg p-4">
+    <div className="bg-white dark:bg-gray-900 border border-[var(--rule-base)] rounded-lg p-4">
       <div className="flex items-center justify-between mb-2">
         <span className="text-xs text-gray-400 dark:text-gray-500">{label}</span>
         <span className="text-gray-400 dark:text-gray-500">{icon}</span>
@@ -498,7 +498,7 @@ export default function ResumenSection({ data }: Props) {
           }
           icon={<Activity className="w-4 h-4" />}
         />
-        <div className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-lg p-4">
+        <div className="bg-white dark:bg-gray-900 border border-[var(--rule-base)] rounded-lg p-4">
           <div className="flex items-center justify-between mb-2">
             <span className="text-xs text-gray-400 dark:text-gray-500">
               Salud negocio
@@ -519,7 +519,7 @@ export default function ResumenSection({ data }: Props) {
           <div className="mt-1.5">
             <span
               className={cn(
-                "text-[10px] px-1.5 py-0.5 rounded-full font-medium",
+                "text-[length:var(--ts-2xs)] px-1.5 py-0.5 rounded-full font-medium",
                 healthColor.badge
               )}
             >
@@ -532,14 +532,14 @@ export default function ResumenSection({ data }: Props) {
       {/* ── Two-column grid ───────────────────────────────────────────────── */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
         {/* Alertas activas */}
-        <div className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-lg p-4">
+        <div className="bg-white dark:bg-gray-900 border border-[var(--rule-base)] rounded-lg p-4">
           <div className="flex items-center gap-2 mb-3">
             <AlertTriangle className="w-4 h-4 text-gray-400 dark:text-gray-500" />
             <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300">
               Alertas activas
             </h3>
             {alerts.length > 0 && (
-              <span className="ml-auto text-[10px] px-1.5 py-0.5 rounded-full bg-red-50 dark:bg-red-950/30 text-red-600 dark:text-red-400 font-medium">
+              <span className="ml-auto text-[length:var(--ts-2xs)] px-1.5 py-0.5 rounded-full bg-red-50 dark:bg-red-950/30 text-red-600 dark:text-red-400 font-medium">
                 {alerts.length}
               </span>
             )}
@@ -565,7 +565,7 @@ export default function ResumenSection({ data }: Props) {
                   </span>
                   <span
                     className={cn(
-                      "ml-auto text-[10px] font-medium shrink-0",
+                      "ml-auto text-[length:var(--ts-2xs)] font-medium shrink-0",
                       alert.level === "urgente"
                         ? "text-red-500 dark:text-red-400"
                         : "text-amber-500 dark:text-amber-400"
@@ -580,7 +580,7 @@ export default function ResumenSection({ data }: Props) {
         </div>
 
         {/* Ventas ultimos 7 dias */}
-        <div className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-lg p-4">
+        <div className="bg-white dark:bg-gray-900 border border-[var(--rule-base)] rounded-lg p-4">
           <div className="flex items-center justify-between mb-3">
             <div className="flex items-center gap-2">
               <Clock className="w-4 h-4 text-gray-400 dark:text-gray-500" />
@@ -648,7 +648,7 @@ export default function ResumenSection({ data }: Props) {
                 <p className="text-xs text-gray-600 dark:text-gray-400 mb-1.5">
                   {opp.detail}
                 </p>
-                <p className="text-[10px] text-emerald-600 dark:text-emerald-400">
+                <p className="text-[length:var(--ts-2xs)] text-emerald-600 dark:text-emerald-400">
                   {opp.impact}
                 </p>
               </div>

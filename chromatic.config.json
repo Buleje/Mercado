@@ -1,0 +1,11 @@
+{
+  "$schema": "https://www.chromatic.com/config-file.schema.json",
+  "buildScriptName": "build-storybook",
+  "storybookBuildDir": "storybook-static",
+  "onlyChanged": true,
+  "externals": ["public/**", "app/globals.css"],
+  "skip": "dependabot/**",
+  "zip": true,
+  "exitZeroOnChanges": true,
+  "exitOnceUploaded": true
+}

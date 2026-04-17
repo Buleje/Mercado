@@ -45,7 +45,7 @@ const TYPE_COLORS: Record<PostType, string> = {
   receta:
     "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400",
   motivacional:
-    "bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400",
+    "bg-[var(--surface-sunken)] text-[var(--text-primary)]",
 };
 
 const LS_KEY = "buleje_post_history";
@@ -176,7 +176,7 @@ export default function SocialPostGenerator() {
         </div>
         <button
           onClick={() => setShowHistory(!showHistory)}
-          className="flex items-center gap-2 rounded-lg border border-gray-200 px-3 py-2 text-sm text-gray-600 transition hover:bg-gray-50 dark:border-gray-700 dark:text-gray-300 dark:hover:bg-gray-800"
+          className="flex items-center gap-2 rounded-lg border border-[var(--rule-base)] px-3 py-2 text-sm text-gray-600 transition hover:bg-gray-50 dark:border-[var(--rule-base)] dark:text-gray-300 dark:hover:bg-gray-800"
         >
           <Clock className="h-4 w-4" />
           Historial ({history.length})
@@ -185,7 +185,7 @@ export default function SocialPostGenerator() {
 
       <div className="grid gap-6 lg:grid-cols-2">
         {/* Left: Form */}
-        <div className="space-y-4 rounded-xl border border-gray-200 bg-white p-5 dark:border-gray-700 dark:bg-gray-900">
+        <div className="space-y-4 rounded-xl border border-[var(--rule-base)] bg-white p-5 dark:border-[var(--rule-base)] dark:bg-gray-900">
           {/* Post type */}
           <div>
             <label className="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
@@ -200,7 +200,7 @@ export default function SocialPostGenerator() {
                     "rounded-lg border px-3 py-2 text-sm font-medium transition",
                     postType === t.value
                       ? "border-[#00B4A6] bg-[#00B4A6] text-white"
-                      : "border-gray-200 bg-gray-50 text-gray-700 hover:border-[#00B4A6]/50 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-300"
+                      : "border-[var(--rule-base)] bg-gray-50 text-gray-700 hover:border-[#00B4A6]/50 dark:border-[var(--rule-base)] dark:bg-gray-800 dark:text-gray-300"
                   )}
                 >
                   {t.label}
@@ -221,11 +221,11 @@ export default function SocialPostGenerator() {
                   value={search}
                   onChange={(e) => setSearch(e.target.value)}
                   placeholder="Buscar producto..."
-                  className="w-full rounded-lg border border-gray-200 bg-gray-50 py-2 pl-9 pr-3 text-sm focus:border-[#00B4A6] focus:outline-none dark:border-gray-700 dark:bg-gray-800 dark:text-white"
+                  className="w-full rounded-lg border border-[var(--rule-base)] bg-gray-50 py-2 pl-9 pr-3 text-sm focus:border-[#00B4A6] focus:outline-none dark:border-[var(--rule-base)] dark:bg-gray-800 dark:text-white"
                 />
               </div>
               {search && (
-                <div className="mt-1 max-h-40 overflow-y-auto rounded-lg border border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-900">
+                <div className="mt-1 max-h-40 overflow-y-auto rounded-lg border border-[var(--rule-base)] bg-white dark:border-[var(--rule-base)] dark:bg-gray-900">
                   {loadingProducts ? (
                     <p className="p-3 text-sm text-gray-500">Cargando...</p>
                   ) : filteredProducts.length === 0 ? (
@@ -271,7 +271,7 @@ export default function SocialPostGenerator() {
                 value={prevPrice}
                 onChange={(e) => setPrevPrice(e.target.value)}
                 placeholder="Ej: 5.50"
-                className="w-full rounded-lg border border-gray-200 bg-gray-50 px-3 py-2 text-sm focus:border-[#00B4A6] focus:outline-none dark:border-gray-700 dark:bg-gray-800 dark:text-white"
+                className="w-full rounded-lg border border-[var(--rule-base)] bg-gray-50 px-3 py-2 text-sm focus:border-[#00B4A6] focus:outline-none dark:border-[var(--rule-base)] dark:bg-gray-800 dark:text-white"
               />
             </div>
           )}
@@ -287,7 +287,7 @@ export default function SocialPostGenerator() {
                 onChange={(e) => setCustomNote(e.target.value)}
                 rows={2}
                 placeholder="Agrega un detalle personal..."
-                className="w-full rounded-lg border border-gray-200 bg-gray-50 px-3 py-2 text-sm focus:border-[#00B4A6] focus:outline-none dark:border-gray-700 dark:bg-gray-800 dark:text-white"
+                className="w-full rounded-lg border border-[var(--rule-base)] bg-gray-50 px-3 py-2 text-sm focus:border-[#00B4A6] focus:outline-none dark:border-[var(--rule-base)] dark:bg-gray-800 dark:text-white"
               />
             </div>
           )}
@@ -303,7 +303,7 @@ export default function SocialPostGenerator() {
 
         {/* Right: Preview */}
         <div className="space-y-6">
-          <div className="rounded-xl border border-gray-200 bg-white p-5 dark:border-gray-700 dark:bg-gray-900">
+          <div className="rounded-xl border border-[var(--rule-base)] bg-white p-5 dark:border-[var(--rule-base)] dark:bg-gray-900">
             <div className="mb-3 flex items-center gap-2">
               <Eye className="h-4 w-4 text-gray-400" />
               <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
@@ -311,7 +311,7 @@ export default function SocialPostGenerator() {
               </span>
             </div>
             {generatedText ? (
-              <div className="rounded-xl border border-gray-100 bg-gradient-to-br from-[#00B4A6] to-[#1a3d2e] p-5 dark:border-gray-800">
+              <div className="rounded-xl border border-[var(--rule-soft)] bg-[var(--brand-ink)] p-5 dark:border-[var(--rule-base)]">
                 <div className="mb-1 text-xs font-bold text-[#f97316]">
                   Buleje
                 </div>
@@ -321,7 +321,7 @@ export default function SocialPostGenerator() {
                 <p className="mt-3 text-xs text-emerald-300">{HASHTAGS}</p>
               </div>
             ) : (
-              <div className="flex h-32 items-center justify-center rounded-xl border-2 border-dashed border-gray-200 dark:border-gray-700">
+              <div className="flex h-32 items-center justify-center rounded-xl border-2 border-dashed border-[var(--rule-base)]">
                 <p className="text-sm text-gray-400">
                   Genera un post para verlo aqui
                 </p>
@@ -370,7 +370,7 @@ export default function SocialPostGenerator() {
 
       {/* History */}
       {showHistory && (
-        <div className="rounded-xl border border-gray-200 bg-white p-5 dark:border-gray-700 dark:bg-gray-900">
+        <div className="rounded-xl border border-[var(--rule-base)] bg-white p-5 dark:border-[var(--rule-base)] dark:bg-gray-900">
           <h3 className="mb-4 text-sm font-semibold text-gray-800 dark:text-white">
             Historial de posts generados
           </h3>
@@ -383,7 +383,7 @@ export default function SocialPostGenerator() {
               {history.map((h) => (
                 <div
                   key={h.id}
-                  className="flex items-start gap-3 rounded-lg border border-gray-100 p-3 dark:border-gray-800"
+                  className="flex items-start gap-3 rounded-lg border border-[var(--rule-soft)] p-3 dark:border-[var(--rule-base)]"
                 >
                   <span
                     className={cn(

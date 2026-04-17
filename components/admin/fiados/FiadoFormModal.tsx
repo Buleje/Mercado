@@ -82,9 +82,9 @@ export default function FiadoFormModal({
               className="fixed inset-0 z-50 flex items-center justify-center p-4"
               onClick={e => e.target === e.currentTarget && setShowNew(false)}
             >
-              <div className="w-full max-w-xl bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl flex flex-col max-h-[90vh]">
+              <div className="w-full max-w-xl bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl flex flex-col max-h-[90vh]">
                 {/* UX Mejora 12: Sticky header */}
-                <div className="sticky top-0 z-10 bg-white dark:bg-card border-b border-gray-200 dark:border-gray-700 px-6 py-4 flex items-center justify-between rounded-t-2xl">
+                <div className="sticky top-0 z-10 bg-white dark:bg-card border-b border-[var(--rule-base)] px-6 py-4 flex items-center justify-between rounded-t-2xl">
                   <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Nuevo Fíado</h3>
                   <button onClick={() => setShowNew(false)} className="p-1 hover:bg-gray-100 dark:hover:bg-white/5 rounded-lg transition-colors">
                     <X className="h-5 w-5 text-gray-500" />
@@ -102,7 +102,7 @@ export default function FiadoFormModal({
                         value={newForm.customerId}
                         onChange={e => setNewForm((p: FiadoNewForm) => ({ ...p, customerId: e.target.value }))}
                         placeholder="Ej: 987654321"
-                        className="w-full pl-9 pr-3 py-2 rounded-lg border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 text-sm text-gray-900 dark:text-white placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-primary/30"
+                        className="w-full pl-9 pr-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-white/10 bg-white dark:bg-white/5 text-sm text-gray-900 dark:text-white placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-primary/30"
                       />
                     </div>
                   </div>
@@ -150,7 +150,7 @@ export default function FiadoFormModal({
                         </div>
                       )
                     ) : clienteEsNuevo ? (
-                      <div className="border border-gray-200 dark:border-white/10 bg-gray-50 dark:bg-white/5 rounded-xl p-3">
+                      <div className="border border-[var(--rule-base)] dark:border-white/10 bg-gray-50 dark:bg-white/5 rounded-xl p-3">
                         <p className="text-xs text-gray-500 dark:text-gray-400">Cliente nuevo — sin historial de fiados</p>
                       </div>
                     ) : null
@@ -167,7 +167,7 @@ export default function FiadoFormModal({
                         value={newForm.total}
                         onChange={e => setNewForm((p: FiadoNewForm) => ({ ...p, total: e.target.value }))}
                         placeholder="0.00"
-                        className="w-full pl-9 pr-3 py-2 rounded-lg border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 text-sm text-gray-900 dark:text-white placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-primary/30"
+                        className="w-full pl-9 pr-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-white/10 bg-white dark:bg-white/5 text-sm text-gray-900 dark:text-white placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-primary/30"
                       />
                     </div>
                   </div>
@@ -181,7 +181,7 @@ export default function FiadoFormModal({
                         onChange={e => setNewForm((p: FiadoNewForm) => ({ ...p, descripcion: e.target.value }))}
                         placeholder="Detalle de lo que se llevó..."
                         rows={2}
-                        className="w-full pl-9 pr-3 py-2 rounded-lg border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 text-sm text-gray-900 dark:text-white placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-primary/30 resize-none"
+                        className="w-full pl-9 pr-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-white/10 bg-white dark:bg-white/5 text-sm text-gray-900 dark:text-white placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-primary/30 resize-none"
                       />
                     </div>
                   </div>
@@ -194,7 +194,7 @@ export default function FiadoFormModal({
                         type="date"
                         value={newForm.fechaVence}
                         onChange={e => setNewForm((p: FiadoNewForm) => ({ ...p, fechaVence: e.target.value }))}
-                        className="w-full pl-9 pr-3 py-2 rounded-lg border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 text-sm text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary/30"
+                        className="w-full pl-9 pr-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-white/10 bg-white dark:bg-white/5 text-sm text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary/30"
                       />
                     </div>
                   </div>
@@ -213,7 +213,7 @@ export default function FiadoFormModal({
                             alt="DNI del cliente"
                             width={200}
                             height={120}
-                            className="object-cover rounded-xl border border-gray-200 dark:border-white/10"
+                            className="object-cover rounded-xl border border-[var(--rule-base)] dark:border-white/10"
                             unoptimized
                           />
                           <button
@@ -225,7 +225,7 @@ export default function FiadoFormModal({
                           </button>
                         </div>
                       ) : (
-                        <label className="flex items-center justify-center gap-2 w-full py-6 rounded-lg border-2 border-dashed border-gray-300 dark:border-white/20 cursor-pointer hover:border-primary hover:bg-primary/5 transition-colors">
+                        <label className="flex items-center justify-center gap-2 w-full py-6 rounded-lg border-2 border-dashed border-[var(--rule-base)] dark:border-white/20 cursor-pointer hover:border-primary hover:bg-primary/5 transition-colors">
                           <Camera className="h-5 w-5 text-gray-400" />
                           <span className="text-xs text-gray-500">Tomar foto o seleccionar imagen</span>
                           <input
@@ -256,7 +256,7 @@ export default function FiadoFormModal({
                 )}
                 </div>
                 {/* UX Mejora 12: Sticky footer */}
-                <div className="sticky bottom-0 bg-white dark:bg-card border-t border-gray-200 dark:border-gray-700 px-6 py-4 flex justify-end gap-3 rounded-b-2xl">
+                <div className="sticky bottom-0 bg-white dark:bg-card border-t border-[var(--rule-base)] px-6 py-4 flex justify-end gap-3 rounded-b-2xl">
                   <button
                     onClick={() => setShowNew(false)}
                     className="px-4 py-2 text-sm font-bold text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-white/5 rounded-lg transition-colors"

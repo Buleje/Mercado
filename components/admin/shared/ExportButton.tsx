@@ -67,7 +67,7 @@ export default function ExportButton({
         onClick={handleClick}
         className={cn(
           "inline-flex items-center gap-1.5 px-3 py-2 rounded-xl border text-sm font-semibold transition-colors",
-          "border-gray-200 dark:border-zinc-700 bg-white dark:bg-zinc-900",
+          "border-[var(--rule-base)] dark:border-zinc-700 bg-white dark:bg-zinc-900",
           "text-gray-700 dark:text-zinc-300 hover:bg-gray-50 dark:hover:bg-zinc-800",
           className,
         )}
@@ -77,7 +77,7 @@ export default function ExportButton({
       </button>
 
       {open && options.length > 1 && (
-        <div className="absolute right-0 mt-1 w-32 rounded-xl border border-gray-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 z-20 overflow-hidden">
+        <div className="absolute right-0 mt-1 w-32 rounded-xl border border-[var(--rule-base)] dark:border-zinc-700 bg-white dark:bg-zinc-900 z-20 overflow-hidden">
           {options.map(opt => (
             <button
               key={opt.key}

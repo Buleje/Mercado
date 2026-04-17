@@ -73,7 +73,7 @@ function ProductRow({ item }: ProductRowProps) {
   const styles = LEVEL_STYLES[level];
 
   return (
-    <div className="flex items-center justify-between gap-3 py-2.5 border-b border-gray-100 last:border-0">
+    <div className="flex items-center justify-between gap-3 py-2.5 border-b border-[var(--rule-soft)] last:border-0">
       <div className="flex-1 min-w-0">
         <p className="text-sm font-medium text-gray-900 truncate">
           {item.name}
@@ -165,7 +165,7 @@ export default function LiveMarginDisplay({ items }: Props) {
             <p className="text-xs text-gray-500 font-semibold">
               Margen total
             </p>
-            <p className={cn("text-xl font-black", styles.text)}>
+            <p className={cn("text-xl font-extrabold", styles.text)}>
               {fmt(totals.margin)}{" "}
               <span className="text-base font-bold">({totals.marginPct}%)</span>
             </p>
@@ -195,14 +195,14 @@ export default function LiveMarginDisplay({ items }: Props) {
       {/* Progress bar */}
       <div className="h-2 w-full bg-gray-100">
         <div
-          className={cn("h-full transition-all duration-500", styles.bar)}
+          className={cn("h-full transition-all duration-[var(--dur-slow)]", styles.bar)}
           style={{ width: `${Math.min(100, totals.marginPct)}%` }}
         />
       </div>
 
       {/* Breakdown */}
       {expanded && items.length > 0 && (
-        <div className="bg-white px-5 py-3 border-t border-gray-100">
+        <div className="bg-white px-5 py-3 border-t border-[var(--rule-soft)]">
           <div className="flex items-center gap-2 mb-2">
             <DollarSign className="w-4 h-4 text-gray-400" />
             <p className="text-xs font-semibold text-gray-600">

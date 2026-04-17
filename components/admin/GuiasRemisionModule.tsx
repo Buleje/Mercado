@@ -158,29 +158,29 @@ function GuiaPreview({ guia }: { guia: GuiaRemision }) {
   const meta = STATUS_META[guia.status];
   const placa = getPlaca(guia);
   return (
-    <div className="w-75 bg-white border border-gray-200 rounded-xl p-4 space-y-2">
+    <div className="w-75 bg-white border border-[var(--rule-base)] rounded-xl p-4 space-y-2">
       <div className="flex items-center justify-between">
         <span className="font-mono text-xs text-gray-500">{guia.numero}</span>
-        <span className={cn("inline-flex items-center gap-1 px-2 py-0.5 rounded-lg text-[10px] font-bold", meta.bg, meta.color)}>
+        <span className={cn("inline-flex items-center gap-1 px-2 py-0.5 rounded-lg text-[length:var(--ts-2xs)] font-bold", meta.bg, meta.color)}>
           <span className={cn("w-1.5 h-1.5 rounded-full", meta.dot)} />{meta.label}
         </span>
       </div>
       <p className="font-bold text-gray-900 text-sm">{guia.destinatarioNombre}</p>
-      <p className="text-[10px] text-gray-400">{guia.puntoPartida} → {guia.puntoLlegada}</p>
+      <p className="text-[length:var(--ts-2xs)] text-gray-400">{guia.puntoPartida} → {guia.puntoLlegada}</p>
       {guia.transportistaNombre && (
-        <p className="text-[10px] text-gray-500 flex items-center gap-1">
+        <p className="text-[length:var(--ts-2xs)] text-gray-500 flex items-center gap-1">
           <Truck className="h-3 w-3" /> {guia.transportistaNombre}
-          {placa && <span className="ml-1 px-1 bg-emerald-100 text-emerald-700 rounded text-[9px] font-bold">{placa}</span>}
+          {placa && <span className="ml-1 px-1 bg-emerald-100 text-emerald-700 rounded text-[length:var(--ts-2xs)] font-bold">{placa}</span>}
         </p>
       )}
-      <div className="border-t border-gray-100 pt-2">
-        <p className="text-[10px] font-bold text-gray-500 uppercase mb-1">Items</p>
+      <div className="border-t border-[var(--rule-soft)] pt-2">
+        <p className="text-[length:var(--ts-2xs)] font-bold text-gray-500 uppercase mb-1">Items</p>
         {guia.items.slice(0, 3).map((it, i) => (
           <p key={i} className="text-xs text-gray-600 truncate">{it.cantidad}× {it.descripcion}</p>
         ))}
-        {guia.items.length > 3 && <p className="text-[10px] text-gray-400">y {guia.items.length - 3} más...</p>}
+        {guia.items.length > 3 && <p className="text-[length:var(--ts-2xs)] text-gray-400">y {guia.items.length - 3} más...</p>}
       </div>
-      <div className="flex items-center justify-between pt-1 border-t border-gray-100">
+      <div className="flex items-center justify-between pt-1 border-t border-[var(--rule-soft)]">
         <span className="text-xs text-gray-500">{formatDate(guia.fechaTraslado)}</span>
         <span className="text-xs font-semibold text-gray-500">{guia.motivoTraslado}</span>
       </div>
@@ -197,7 +197,7 @@ function GuiaHoverRow({ children, preview }: { children: ReactNode; preview: Rea
     <div className="relative" onMouseEnter={handleEnter} onMouseLeave={handleLeave}>
       {children}
       {show && (
-        <div className="absolute left-1/2 -translate-x-1/2 bottom-full mb-2 z-50 pointer-events-none animate-in fade-in zoom-in-95 duration-150">
+        <div className="absolute left-1/2 -translate-x-1/2 bottom-full mb-2 z-50 pointer-events-none animate-in fade-in zoom-in-95 duration-[var(--dur-fast)]">
           {preview}
         </div>
       )}
@@ -222,27 +222,27 @@ function _OrderPickerCard({ order, isSelected, onSelect }: {
       whileHover={{ scale: 1.02 }}
       whileTap={{ scale: 0.98 }}
       className={cn(
-        "w-full text-left rounded-xl border-2 p-4 transition-all duration-200 relative overflow-hidden",
+        "w-full text-left rounded-xl border-2 p-4 transition-all duration-[var(--dur-base)] relative overflow-hidden",
         isSelected
           ? "border-primary ring-2 ring-primary/20 bg-primary/5"
-          : "bg-white border-gray-200 hover:shadow-lg hover:border-primary/40"
+          : "bg-white border-[var(--rule-base)] hover:shadow-lg hover:border-primary/40"
       )}
     >
       <div className={cn("absolute top-0 left-0 w-1.5 h-full rounded-l-2xl", isSelected ? "bg-primary" : "bg-emerald-400")} />
       <div className="pl-2">
         <div className="flex items-center justify-between mb-1.5 flex-wrap gap-2">
           <span className="font-mono text-xs font-bold text-gray-900">#{order.numero}</span>
-          <span className="text-[10px] text-gray-400">{formatDate(order.createdAt)}</span>
+          <span className="text-[length:var(--ts-2xs)] text-gray-400">{formatDate(order.createdAt)}</span>
         </div>
         <p className={cn("text-sm font-semibold truncate mb-1", isSelected ? "text-primary" : "text-gray-800")}>
           {order.customerName}
         </p>
         {order.shippingAddress && (
-          <p className="text-[10px] text-gray-400 truncate flex items-center gap-1">
+          <p className="text-[length:var(--ts-2xs)] text-gray-400 truncate flex items-center gap-1">
             <MapPin className="h-2.5 w-2.5 shrink-0" /> {order.shippingAddress}
           </p>
         )}
-        <div className="flex items-center gap-1 mt-1.5 text-[10px] text-gray-400">
+        <div className="flex items-center gap-1 mt-1.5 text-[length:var(--ts-2xs)] text-gray-400">
           <Package className="h-3 w-3 shrink-0" />
           {order.items.length} item{order.items.length !== 1 ? "s" : ""}
         </div>
@@ -258,7 +258,7 @@ function _DashboardSection({ resumen, loading }: { resumen: Resumen | null; load
     return (
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
         {Array.from({ length: 4 }).map((_, i) => (
-          <div key={i} className="bg-white border border-gray-200 rounded-xl p-3 animate-pulse">
+          <div key={i} className="bg-white border border-[var(--rule-base)] rounded-xl p-3 animate-pulse">
             <div className="h-7 w-7 rounded-lg bg-gray-100 mb-2" />
             <div className="h-3 w-20 rounded bg-gray-100 mb-1.5" />
             <div className="h-7 w-10 rounded bg-gray-100" />
@@ -283,28 +283,28 @@ function _DashboardSection({ resumen, loading }: { resumen: Resumen | null; load
           const Icon = card.icon;
           return (
             <m.div key={card.label} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}
-              className="bg-white border border-gray-200 rounded-xl  p-3">
+              className="bg-white border border-[var(--rule-base)] rounded-xl  p-3">
               <div className={cn("h-7 w-7 rounded-lg flex items-center justify-center mb-2", card.bg)}>
                 <Icon className={cn("h-3.5 w-3.5", card.color)} />
               </div>
-              <p className="text-[10px] text-gray-400 font-bold">{card.label}</p>
+              <p className="text-[length:var(--ts-2xs)] text-gray-400 font-bold">{card.label}</p>
               <p className="text-2xl font-mono font-bold text-gray-900">{card.value}</p>
             </m.div>
           );
         })}
       </div>
       {resumen.transportistasFrecuentes.length > 0 && (
-        <div className="bg-white border border-gray-200 rounded-xl p-4">
-          <p className="text-[10px] text-gray-400 font-bold mb-3 flex items-center gap-1.5">
+        <div className="bg-white border border-[var(--rule-base)] rounded-xl p-4">
+          <p className="text-[length:var(--ts-2xs)] text-gray-400 font-bold mb-3 flex items-center gap-1.5">
             <Truck className="h-3 w-3" /> Transportistas frecuentes
           </p>
           <div className="space-y-2">
             {resumen.transportistasFrecuentes.slice(0, 3).map((t, i) => (
               <div key={i} className="flex items-center gap-3">
-                <div className="h-7 w-7 rounded-full bg-emerald-100 flex items-center justify-center text-[10px] font-bold text-emerald-600 shrink-0">{i + 1}</div>
+                <div className="h-7 w-7 rounded-full bg-emerald-100 flex items-center justify-center text-[length:var(--ts-2xs)] font-bold text-emerald-600 shrink-0">{i + 1}</div>
                 <div className="flex-1 min-w-0">
                   <p className="text-xs font-semibold text-gray-900 truncate">{t.nombre}</p>
-                  <p className="text-[10px] text-gray-400 font-mono">{t.ruc}</p>
+                  <p className="text-[length:var(--ts-2xs)] text-gray-400 font-mono">{t.ruc}</p>
                 </div>
                 <span className="text-xs font-bold text-primary">{t.count} guía{t.count !== 1 ? "s" : ""}</span>
               </div>
@@ -810,7 +810,7 @@ export default function GuiasRemisionModule() {
             ].map(card => {
               const CardIcon = card.icon;
               return (
-                <div key={card.label} className="bg-white border border-gray-200 rounded-xl  p-3">
+                <div key={card.label} className="bg-white border border-[var(--rule-base)] rounded-xl  p-3">
                   <div className="flex items-center gap-2 mb-1.5">
                     <div className={cn("h-7 w-7 rounded-lg flex items-center justify-center", card.bg)}>
                       <CardIcon className={cn("h-3.5 w-3.5", card.color)} />
@@ -835,7 +835,7 @@ export default function GuiasRemisionModule() {
             aria-label="Buscar guías de remisión"
             value={search}
             onChange={e => setSearch(e.target.value)}
-            className="w-full pl-9 pr-3 py-2 rounded-lg border border-gray-200 bg-white text-sm text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-primary/30"
+            className="w-full pl-9 pr-3 py-2 rounded-lg border border-[var(--rule-base)] bg-white text-sm text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-primary/30"
           />
         </div>
         {/* Mejora 12: Pills coloreadas con count */}
@@ -863,7 +863,7 @@ export default function GuiasRemisionModule() {
               >
                 {s === "" ? "Todos" : STATUS_META[s].label}
                 <span className={cn(
-                  "px-1.5 py-0.5 rounded-full text-[10px] font-bold min-w-5 text-center",
+                  "px-1.5 py-0.5 rounded-full text-[length:var(--ts-2xs)] font-bold min-w-5 text-center",
                   statusFilter === s ? "bg-white/20" : "bg-black/5"
                 )}>{count}</span>
               </button>
@@ -873,7 +873,7 @@ export default function GuiasRemisionModule() {
       </div>
 
       {/* Table */}
-      <div className="bg-white border border-gray-200 rounded-xl overflow-hidden ">
+      <div className="bg-white border border-[var(--rule-base)] rounded-xl overflow-hidden ">
         {loading ? (
           <div className="flex items-center justify-center py-12">
             <Loader2 className="h-6 w-6 animate-spin text-primary" />
@@ -896,7 +896,7 @@ export default function GuiasRemisionModule() {
             <div className="overflow-x-auto -mx-4 sm:mx-0">
               <table className="w-full min-w-150 sm:min-w-0 text-sm">
                 <thead>
-                  <tr className="border-b border-gray-100 text-left">
+                  <tr className="border-b border-[var(--rule-soft)] text-left">
                     <th className="px-4 py-3 font-semibold text-gray-500">N° GRR</th>
                     <th className="px-4 py-3 font-semibold text-gray-500 hidden sm:table-cell">Fecha traslado</th>
                     <th className="px-4 py-3 font-semibold text-gray-500">Destinatario</th>
@@ -941,7 +941,7 @@ export default function GuiasRemisionModule() {
               </table>
             </div>
             {totalPages > 1 && (
-              <div className="flex items-center justify-between px-4 py-3 border-t border-gray-100">
+              <div className="flex items-center justify-between px-4 py-3 border-t border-[var(--rule-soft)]">
                 <p className="text-xs text-gray-500">
                   {guias.length} guía{guias.length !== 1 ? "s" : ""} — Pág. {page}/{totalPages}
                 </p>
@@ -967,7 +967,7 @@ export default function GuiasRemisionModule() {
               className="fixed inset-0 z-40 bg-black/40 backdrop-blur-sm" onClick={() => setSelected(null)} />
             <m.div key="grr-panel" initial={{ x: "100%" }} animate={{ x: 0 }} exit={{ x: "100%" }}
               transition={{ type: "spring", damping: 25, stiffness: 250 }}
-              className="fixed inset-y-0 right-0 z-50 w-full max-w-lg bg-white border-l border-gray-200 overflow-y-auto">
+              className="fixed inset-y-0 right-0 z-50 w-full max-w-lg bg-white border-l border-[var(--rule-base)] overflow-y-auto">
               <div className="p-4 sm:p-6 space-y-5">
                 {/* Header */}
                 <div className="flex items-center justify-between">
@@ -1000,15 +1000,15 @@ export default function GuiasRemisionModule() {
                     </span>
                   </div>
                   {selected.destinatarioRuc && <p className="text-xs text-gray-500">RUC: {selected.destinatarioRuc}</p>}
-                  <div className="grid grid-cols-2 gap-3 pt-2 border-t border-gray-200 text-xs text-gray-600">
-                    <div><p className="font-bold text-gray-400 text-[10px] uppercase">Motivo</p><p>{selected.motivoTraslado}</p></div>
-                    <div><p className="font-bold text-gray-400 text-[10px] uppercase">Fecha traslado</p><p>{formatDate(selected.fechaTraslado)}</p></div>
-                    <div><p className="font-bold text-gray-400 text-[10px] uppercase">Origen</p><p>{selected.puntoPartida}</p></div>
-                    <div><p className="font-bold text-gray-400 text-[10px] uppercase">Destino</p><p>{selected.puntoLlegada}</p></div>
+                  <div className="grid grid-cols-2 gap-3 pt-2 border-t border-[var(--rule-base)] text-xs text-gray-600">
+                    <div><p className="font-bold text-gray-400 text-[length:var(--ts-2xs)] uppercase">Motivo</p><p>{selected.motivoTraslado}</p></div>
+                    <div><p className="font-bold text-gray-400 text-[length:var(--ts-2xs)] uppercase">Fecha traslado</p><p>{formatDate(selected.fechaTraslado)}</p></div>
+                    <div><p className="font-bold text-gray-400 text-[length:var(--ts-2xs)] uppercase">Origen</p><p>{selected.puntoPartida}</p></div>
+                    <div><p className="font-bold text-gray-400 text-[length:var(--ts-2xs)] uppercase">Destino</p><p>{selected.puntoLlegada}</p></div>
                   </div>
                   {/* Mejora 8: Tracking mejorado — Transportista + Placa */}
-                  <div className="pt-2 border-t border-gray-200 space-y-2">
-                    <p className="font-bold text-gray-400 text-[10px] uppercase">Transportista</p>
+                  <div className="pt-2 border-t border-[var(--rule-base)] space-y-2">
+                    <p className="font-bold text-gray-400 text-[length:var(--ts-2xs)] uppercase">Transportista</p>
                     {selected.transportistaNombre ? (
                       <div className="flex items-center gap-3 text-xs text-gray-600">
                         <div className="h-8 w-8 rounded-full bg-emerald-100 flex items-center justify-center shrink-0">
@@ -1016,14 +1016,14 @@ export default function GuiasRemisionModule() {
                         </div>
                         <div className="flex-1 min-w-0">
                           <p className="font-medium text-gray-900">{selected.transportistaNombre}</p>
-                          {selected.transportistaRuc && <p className="text-[10px] text-gray-400">RUC: {selected.transportistaRuc}</p>}
+                          {selected.transportistaRuc && <p className="text-[length:var(--ts-2xs)] text-gray-400">RUC: {selected.transportistaRuc}</p>}
                         </div>
                         {selected.transportistaPlaca ? (
                           <span className="px-2 py-1 rounded-lg bg-emerald-50 text-xs font-bold text-emerald-700 flex items-center gap-1">
                             {selected.transportistaPlaca}
                           </span>
                         ) : (
-                          <span className="px-2 py-1 rounded-lg bg-amber-50 text-[10px] font-bold text-amber-700">
+                          <span className="px-2 py-1 rounded-lg bg-amber-50 text-[length:var(--ts-2xs)] font-bold text-amber-700">
                             Agregar placa
                           </span>
                         )}
@@ -1035,15 +1035,15 @@ export default function GuiasRemisionModule() {
 
                   {/* Conductor */}
                   {(selected.conductorNombre || selected.conductorDni) && (
-                    <div className="pt-2 border-t border-gray-200 space-y-1">
-                      <p className="font-bold text-gray-400 text-[10px] uppercase">Conductor</p>
+                    <div className="pt-2 border-t border-[var(--rule-base)] space-y-1">
+                      <p className="font-bold text-gray-400 text-[length:var(--ts-2xs)] uppercase">Conductor</p>
                       <div className="flex items-center gap-3 text-xs text-gray-600">
-                        <div className="h-8 w-8 rounded-full bg-purple-100 flex items-center justify-center shrink-0">
-                          <User className="h-4 w-4 text-purple-600" />
+                        <div className="h-8 w-8 rounded-full bg-[var(--surface-sunken)] flex items-center justify-center shrink-0">
+                          <User className="h-4 w-4 text-[var(--text-secondary)]" />
                         </div>
                         <div className="flex-1 min-w-0">
                           {selected.conductorNombre && <p className="font-medium text-gray-900">{selected.conductorNombre}</p>}
-                          {selected.conductorDni && <p className="text-[10px] text-gray-400">DNI: {selected.conductorDni}</p>}
+                          {selected.conductorDni && <p className="text-[length:var(--ts-2xs)] text-gray-400">DNI: {selected.conductorDni}</p>}
                         </div>
                       </div>
                     </div>
@@ -1051,29 +1051,29 @@ export default function GuiasRemisionModule() {
 
                   {/* Detalles adicionales: bultos, doc ref, pesos */}
                   {(selected.bultos || selected.documentoRef || selected.pesoTotal || selected.pesoBruto) && (
-                    <div className="pt-2 border-t border-gray-200">
+                    <div className="pt-2 border-t border-[var(--rule-base)]">
                       <div className="grid grid-cols-2 gap-3 text-xs text-gray-600">
                         {selected.bultos != null && (
                           <div>
-                            <p className="font-bold text-gray-400 text-[10px] uppercase">Bultos</p>
+                            <p className="font-bold text-gray-400 text-[length:var(--ts-2xs)] uppercase">Bultos</p>
                             <p className="font-semibold text-gray-900">{selected.bultos}</p>
                           </div>
                         )}
                         {selected.documentoRef && (
                           <div>
-                            <p className="font-bold text-gray-400 text-[10px] uppercase">Doc. Referencia</p>
+                            <p className="font-bold text-gray-400 text-[length:var(--ts-2xs)] uppercase">Doc. Referencia</p>
                             <p className="font-semibold text-gray-900">{selected.documentoRef}</p>
                           </div>
                         )}
                         {selected.pesoTotal != null && (
                           <div>
-                            <p className="font-bold text-gray-400 text-[10px] uppercase">Peso Neto</p>
+                            <p className="font-bold text-gray-400 text-[length:var(--ts-2xs)] uppercase">Peso Neto</p>
                             <p className="font-semibold text-gray-900">{Number(selected.pesoTotal).toFixed(2)} kg</p>
                           </div>
                         )}
                         {selected.pesoBruto != null && (
                           <div>
-                            <p className="font-bold text-gray-400 text-[10px] uppercase">Peso Bruto</p>
+                            <p className="font-bold text-gray-400 text-[length:var(--ts-2xs)] uppercase">Peso Bruto</p>
                             <p className="font-semibold text-gray-900">{Number(selected.pesoBruto).toFixed(3)} kg</p>
                           </div>
                         )}
@@ -1082,8 +1082,8 @@ export default function GuiasRemisionModule() {
                   )}
 
                   {/* Mejora 8: Timeline de estados */}
-                  <div className="pt-2 border-t border-gray-200">
-                    <p className="font-bold text-gray-400 text-[10px] uppercase mb-2">Timeline de estados</p>
+                  <div className="pt-2 border-t border-[var(--rule-base)]">
+                    <p className="font-bold text-gray-400 text-[length:var(--ts-2xs)] uppercase mb-2">Timeline de estados</p>
                     <div className="space-y-0">
                       {(["BORRADOR", "EMITIDA", "EN_TRANSITO", "ENTREGADA"] as const).map((st, idx) => {
                         const statusOrder: GuiaStatus[] = ["BORRADOR", "EMITIDA", "EN_TRANSITO", "ENTREGADA"];
@@ -1107,9 +1107,9 @@ export default function GuiasRemisionModule() {
                             </div>
                             <div className="pb-2">
                               <p className={cn("text-xs font-bold", isDone ? "text-gray-900" : "text-gray-400")}>{meta.label}</p>
-                              {isDone && idx === 0 && <p className="text-[10px] text-gray-400">{formatDate(selected.createdAt)}</p>}
-                              {isDone && idx === currentIdx && idx > 0 && <p className="text-[10px] text-gray-400">{formatDate(selected.updatedAt)}</p>}
-                              {!isDone && <p className="text-[10px] text-gray-400 italic">pendiente</p>}
+                              {isDone && idx === 0 && <p className="text-[length:var(--ts-2xs)] text-gray-400">{formatDate(selected.createdAt)}</p>}
+                              {isDone && idx === currentIdx && idx > 0 && <p className="text-[length:var(--ts-2xs)] text-gray-400">{formatDate(selected.updatedAt)}</p>}
+                              {!isDone && <p className="text-[length:var(--ts-2xs)] text-gray-400 italic">pendiente</p>}
                             </div>
                           </div>
                         );
@@ -1121,7 +1121,7 @@ export default function GuiasRemisionModule() {
                           </div>
                           <div>
                             <p className="text-xs font-bold text-red-600">ANULADA</p>
-                            <p className="text-[10px] text-gray-400">{formatDate(selected.updatedAt)}</p>
+                            <p className="text-[length:var(--ts-2xs)] text-gray-400">{formatDate(selected.updatedAt)}</p>
                           </div>
                         </div>
                       )}
@@ -1203,9 +1203,9 @@ export default function GuiasRemisionModule() {
               className="fixed inset-0 z-50 flex items-start justify-center p-4 overflow-y-auto"
               onClick={e => e.target === e.currentTarget && setShowNew(false)}
             >
-              <div className="w-full max-w-3xl bg-white border border-gray-200 rounded-xl flex flex-col max-h-[90vh] my-8">
+              <div className="w-full max-w-3xl bg-white border border-[var(--rule-base)] rounded-xl flex flex-col max-h-[90vh] my-8">
                 {/* UX Mejora 12: Sticky header */}
-                <div className="sticky top-0 z-10 bg-white border-b border-gray-200 px-6 py-4 flex items-center justify-between rounded-t-2xl">
+                <div className="sticky top-0 z-10 bg-white border-b border-[var(--rule-base)] px-6 py-4 flex items-center justify-between rounded-t-2xl">
                   <h3 className="text-lg font-semibold text-gray-900">Nueva Guía de Remisión</h3>
                   <button onClick={() => setShowNew(false)} className="p-1 hover:bg-gray-100 rounded-lg transition-colors">
                     <X className="h-5 w-5 text-gray-500" />
@@ -1218,13 +1218,13 @@ export default function GuiasRemisionModule() {
                   <div>
                     <label className="block text-xs font-bold text-gray-600 mb-1">Vincular pedido (opcional)</label>
                     <input type="text" value={form.orderIds} onChange={e => setForm(p => ({ ...p, orderIds: e.target.value }))} placeholder="N° de orden"
-                      className="w-full px-3 py-2 rounded-lg border border-gray-200 bg-white text-sm text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-primary/30" />
+                      className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] bg-white text-sm text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-primary/30" />
                   </div>
                   {/* Motivo */}
                   <div>
                     <label className="block text-xs font-bold text-gray-600 mb-1">Motivo de traslado</label>
                     <select value={form.motivoTraslado} onChange={e => setForm(p => ({ ...p, motivoTraslado: e.target.value }))}
-                      className="w-full px-3 py-2 rounded-lg border border-gray-200 bg-white text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-primary/30">
+                      className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] bg-white text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-primary/30">
                       {MOTIVOS.map(m => <option key={m} value={m}>{m}</option>)}
                     </select>
                   </div>
@@ -1232,34 +1232,34 @@ export default function GuiasRemisionModule() {
                   <div>
                     <label className="block text-xs font-bold text-gray-600 mb-1">Destinatario</label>
                     <input type="text" value={form.destinatarioNombre} onChange={e => setForm(p => ({ ...p, destinatarioNombre: e.target.value }))} placeholder="Nombre"
-                      className="w-full px-3 py-2 rounded-lg border border-gray-200 bg-white text-sm text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-primary/30" />
+                      className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] bg-white text-sm text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-primary/30" />
                   </div>
                   <div>
                     <label className="block text-xs font-bold text-gray-600 mb-1">RUC destinatario</label>
                     <input type="text" value={form.destinatarioRuc} onChange={e => setForm(p => ({ ...p, destinatarioRuc: e.target.value }))} placeholder="20XXXXXXXXX"
-                      className="w-full px-3 py-2 rounded-lg border border-gray-200 bg-white text-sm text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-primary/30" />
+                      className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] bg-white text-sm text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-primary/30" />
                   </div>
                   <div className="sm:col-span-2">
                     <label className="block text-xs font-bold text-gray-600 mb-1">Dirección destinatario</label>
                     <input type="text" value={form.destinatarioDireccion} onChange={e => setForm(p => ({ ...p, destinatarioDireccion: e.target.value }))} placeholder="Dirección"
-                      className="w-full px-3 py-2 rounded-lg border border-gray-200 bg-white text-sm text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-primary/30" />
+                      className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] bg-white text-sm text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-primary/30" />
                   </div>
                   {/* Transportista */}
                   <div>
                     <label className="block text-xs font-bold text-gray-600 mb-1">Transportista</label>
                     <input type="text" value={form.transportistaNombre} onChange={e => setForm(p => ({ ...p, transportistaNombre: e.target.value }))} placeholder="Nombre"
-                      className="w-full px-3 py-2 rounded-lg border border-gray-200 bg-white text-sm text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-primary/30" />
+                      className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] bg-white text-sm text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-primary/30" />
                   </div>
                   <div className="grid grid-cols-2 gap-2">
                     <div>
                       <label className="block text-xs font-bold text-gray-600 mb-1">RUC transp.</label>
                       <input type="text" value={form.transportistaRuc} onChange={e => setForm(p => ({ ...p, transportistaRuc: e.target.value }))} placeholder="RUC"
-                        className="w-full px-3 py-2 rounded-lg border border-gray-200 bg-white text-sm text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-primary/30" />
+                        className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] bg-white text-sm text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-primary/30" />
                     </div>
                     <div>
                       <label className="block text-xs font-bold text-gray-600 mb-1">Placa</label>
                       <input type="text" value={form.vehiculoPlaca} onChange={e => setForm(p => ({ ...p, vehiculoPlaca: e.target.value }))} placeholder="ABC-123"
-                        className="w-full px-3 py-2 rounded-lg border border-gray-200 bg-white text-sm text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-primary/30" />
+                        className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] bg-white text-sm text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-primary/30" />
                     </div>
                   </div>
                   {/* Partida / Llegada */}
@@ -1267,28 +1267,28 @@ export default function GuiasRemisionModule() {
                   <div>
                     <label className="block text-xs font-bold text-gray-600 mb-1">Conductor</label>
                     <input type="text" value={form.conductorNombre} onChange={e => setForm(p => ({ ...p, conductorNombre: e.target.value }))} placeholder="Nombre del conductor"
-                      className="w-full px-3 py-2 rounded-lg border border-gray-200 bg-white text-sm text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-primary/30" />
+                      className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] bg-white text-sm text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-primary/30" />
                   </div>
                   <div>
                     <label className="block text-xs font-bold text-gray-600 mb-1">DNI Conductor</label>
                     <input type="text" value={form.conductorDni} onChange={e => setForm(p => ({ ...p, conductorDni: e.target.value.replace(/\D/g, "").slice(0, 8) }))} placeholder="12345678" maxLength={8}
-                      className="w-full px-3 py-2 rounded-lg border border-gray-200 bg-white text-sm text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-primary/30" />
+                      className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] bg-white text-sm text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-primary/30" />
                   </div>
                   {/* Bultos / Doc Referencia / Peso Bruto */}
                   <div>
                     <label className="block text-xs font-bold text-gray-600 mb-1">N° Bultos</label>
                     <input type="number" min="0" value={form.bultos} onChange={e => setForm(p => ({ ...p, bultos: e.target.value }))} placeholder="0"
-                      className="w-full px-3 py-2 rounded-lg border border-gray-200 bg-white text-sm text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-primary/30" />
+                      className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] bg-white text-sm text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-primary/30" />
                   </div>
                   <div>
                     <label className="block text-xs font-bold text-gray-600 mb-1">Doc. Referencia</label>
                     <input type="text" value={form.documentoRef} onChange={e => setForm(p => ({ ...p, documentoRef: e.target.value }))} placeholder="Factura, boleta u orden"
-                      className="w-full px-3 py-2 rounded-lg border border-gray-200 bg-white text-sm text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-primary/30" />
+                      className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] bg-white text-sm text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-primary/30" />
                   </div>
                   <div>
                     <label className="block text-xs font-bold text-gray-600 mb-1">Peso Bruto (kg)</label>
                     <input type="number" min="0" step="0.001" value={form.pesoBruto} onChange={e => setForm(p => ({ ...p, pesoBruto: e.target.value }))} placeholder="0.000"
-                      className="w-full px-3 py-2 rounded-lg border border-gray-200 bg-white text-sm text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-primary/30" />
+                      className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] bg-white text-sm text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-primary/30" />
                   </div>
                   {/* Ruta */}
                   <div>
@@ -1296,7 +1296,7 @@ export default function GuiasRemisionModule() {
                     <div className="relative">
                       <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
                       <input type="text" value={form.puntoPartida} onChange={e => setForm(p => ({ ...p, puntoPartida: e.target.value }))} placeholder="Dirección origen"
-                        className="w-full pl-9 pr-3 py-2 rounded-lg border border-gray-200 bg-white text-sm text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-primary/30" />
+                        className="w-full pl-9 pr-3 py-2 rounded-lg border border-[var(--rule-base)] bg-white text-sm text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-primary/30" />
                     </div>
                   </div>
                   <div>
@@ -1304,7 +1304,7 @@ export default function GuiasRemisionModule() {
                     <div className="relative">
                       <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
                       <input type="text" value={form.puntoLlegada} onChange={e => setForm(p => ({ ...p, puntoLlegada: e.target.value }))} placeholder="Dirección destino"
-                        className="w-full pl-9 pr-3 py-2 rounded-lg border border-gray-200 bg-white text-sm text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-primary/30" />
+                        className="w-full pl-9 pr-3 py-2 rounded-lg border border-[var(--rule-base)] bg-white text-sm text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-primary/30" />
                     </div>
                   </div>
                   {/* Fecha */}
@@ -1313,7 +1313,7 @@ export default function GuiasRemisionModule() {
                     <div className="relative">
                       <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
                       <input type="datetime-local" value={form.fechaTraslado} onChange={e => setForm(p => ({ ...p, fechaTraslado: e.target.value }))}
-                        className="w-full pl-9 pr-3 py-2 rounded-lg border border-gray-200 bg-white text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-primary/30" />
+                        className="w-full pl-9 pr-3 py-2 rounded-lg border border-[var(--rule-base)] bg-white text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-primary/30" />
                     </div>
                   </div>
                 </div>
@@ -1325,13 +1325,13 @@ export default function GuiasRemisionModule() {
                     {newItems.map((item, idx) => (
                       <div key={idx} className="flex gap-2 items-center">
                         <input type="text" value={item.descripcion} onChange={e => updateItem(idx, "descripcion", e.target.value)} placeholder="Descripción"
-                          className="flex-1 px-2 py-1.5 rounded-lg border border-gray-200 bg-white text-sm text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-1 focus:ring-primary/30" />
+                          className="flex-1 px-2 py-1.5 rounded-lg border border-[var(--rule-base)] bg-white text-sm text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-1 focus:ring-primary/30" />
                         <input type="number" min="1" value={item.cantidad} onChange={e => updateItem(idx, "cantidad", e.target.value)} placeholder="Cant."
-                          className="w-16 px-2 py-1.5 rounded-lg border border-gray-200 bg-white text-sm text-center text-gray-900 focus:outline-none focus:ring-1 focus:ring-primary/30" />
+                          className="w-16 px-2 py-1.5 rounded-lg border border-[var(--rule-base)] bg-white text-sm text-center text-gray-900 focus:outline-none focus:ring-1 focus:ring-primary/30" />
                         <input type="text" value={item.unidad} onChange={e => updateItem(idx, "unidad", e.target.value)} placeholder="Und"
-                          className="w-16 px-2 py-1.5 rounded-lg border border-gray-200 bg-white text-sm text-center text-gray-900 focus:outline-none focus:ring-1 focus:ring-primary/30" />
+                          className="w-16 px-2 py-1.5 rounded-lg border border-[var(--rule-base)] bg-white text-sm text-center text-gray-900 focus:outline-none focus:ring-1 focus:ring-primary/30" />
                         <input type="number" min="0" step="0.1" value={item.pesoUnitario} onChange={e => updateItem(idx, "pesoUnitario", e.target.value)} placeholder="Peso kg"
-                          className="w-20 px-2 py-1.5 rounded-lg border border-gray-200 bg-white text-sm text-center text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-1 focus:ring-primary/30" />
+                          className="w-20 px-2 py-1.5 rounded-lg border border-[var(--rule-base)] bg-white text-sm text-center text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-1 focus:ring-primary/30" />
                         {newItems.length > 1 && (
                           <button onClick={() => removeItem(idx)} className="p-1 text-red-400 hover:text-red-600"><X className="h-4 w-4" /></button>
                         )}
@@ -1354,7 +1354,7 @@ export default function GuiasRemisionModule() {
                           <span className="font-extrabold text-primary">{pesoTotal.toFixed(1)} kg</span>
                         </div>
                         {itemsSinPeso.length > 0 && (
-                          <p className="text-[10px] text-amber-600 mt-1">
+                          <p className="text-[length:var(--ts-2xs)] text-amber-600 mt-1">
                             {itemsSinPeso.length} item{itemsSinPeso.length !== 1 ? "s" : ""} sin peso registrado
                           </p>
                         )}
@@ -1366,7 +1366,7 @@ export default function GuiasRemisionModule() {
                 {createError && <p className="text-xs text-red-600 font-semibold">{createError}</p>}
                 </div>
                 {/* UX Mejora 12: Sticky footer */}
-                <div className="sticky bottom-0 bg-white border-t border-gray-200 px-6 py-4 flex justify-end gap-3 rounded-b-2xl">
+                <div className="sticky bottom-0 bg-white border-t border-[var(--rule-base)] px-6 py-4 flex justify-end gap-3 rounded-b-2xl">
                   <button onClick={() => setShowNew(false)}
                     className="px-4 py-2 text-sm font-bold text-gray-600 hover:bg-gray-100 rounded-lg transition-colors">
                     Cancelar

@@ -173,7 +173,7 @@ function buildMetrics(sales: Sale[]): FinancialMetrics {
 
 function SkeletonCard() {
   return (
-    <div className="bg-white dark:bg-card rounded-xl border border-gray-100 dark:border-card-border p-5 animate-pulse">
+    <div className="bg-white dark:bg-card rounded-xl border border-[var(--rule-soft)] dark:border-card-border p-5 animate-pulse">
       <div className="flex items-start justify-between mb-3">
         <div className="h-8 w-8 rounded-xl bg-gray-200 dark:bg-gray-700" />
         <div className="h-4 w-12 rounded bg-gray-200 dark:bg-gray-700" />
@@ -186,7 +186,7 @@ function SkeletonCard() {
 
 function SkeletonChart() {
   return (
-    <div className="bg-white dark:bg-card rounded-xl border border-gray-100 dark:border-card-border p-5 animate-pulse">
+    <div className="bg-white dark:bg-card rounded-xl border border-[var(--rule-soft)] dark:border-card-border p-5 animate-pulse">
       <div className="h-5 w-40 rounded bg-gray-200 dark:bg-gray-700 mb-4" />
       <div className="flex items-end gap-[3px] h-28">
         {Array.from({ length: 30 }).map((_, i) => (
@@ -216,7 +216,7 @@ interface PLCardProps {
 function PLCard({ label, value, icon: Icon, accent, iconColor, borderColor, badge }: PLCardProps) {
   return (
     <div
-      className="bg-white dark:bg-card rounded-xl border border-gray-100 dark:border-card-border p-5 border-l-[3px] flex flex-col gap-3 "
+      className="bg-white dark:bg-card rounded-xl border border-[var(--rule-soft)] dark:border-card-border p-5 border-l-[3px] flex flex-col gap-3 "
       style={{ borderLeftColor: borderColor }}
     >
       <div className="flex items-center justify-between">
@@ -224,16 +224,16 @@ function PLCard({ label, value, icon: Icon, accent, iconColor, borderColor, badg
           <Icon className={cn("h-4 w-4", iconColor)} />
         </div>
         {badge && (
-          <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400">
+          <span className="text-[length:var(--ts-2xs)] font-semibold px-2 py-0.5 rounded-full bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400">
             {badge}
           </span>
         )}
       </div>
       <div>
-        <p className="text-[11px] font-medium text-gray-500 dark:text-gray-400 leading-none mb-1">
+        <p className="text-[length:var(--ts-xs)] font-medium text-gray-500 dark:text-gray-400 leading-none mb-1">
           {label}
         </p>
-        <p className="text-2xl font-black font-mono text-gray-900 dark:text-white leading-tight">
+        <p className="text-2xl font-extrabold font-mono text-gray-900 dark:text-white leading-tight">
           {value}
         </p>
       </div>
@@ -276,7 +276,7 @@ function RevenueBarChart({ dias }: { dias: DayBucket[] }) {
           >
             <div
               className={cn(
-                "w-full rounded-t-[3px] transition-all duration-150",
+                "w-full rounded-t-[3px] transition-all duration-[var(--dur-fast)]",
                 isActive
                   ? "bg-primary"
                   : day.revenue > 0
@@ -291,7 +291,7 @@ function RevenueBarChart({ dias }: { dias: DayBucket[] }) {
 
       {tooltip && (
         <div
-          className="absolute z-20 pointer-events-none bg-gray-900 dark:bg-gray-700 text-white text-[11px] rounded-lg px-2.5 py-1.5 whitespace-nowrap"
+          className="absolute z-20 pointer-events-none bg-gray-900 dark:bg-gray-700 text-white text-[length:var(--ts-xs)] rounded-lg px-2.5 py-1.5 whitespace-nowrap"
           style={{
             left: tooltip.x,
             top: tooltip.y - 52,
@@ -326,29 +326,29 @@ function TopProductsTable({ productos }: { productos: TopProduct[] }) {
     <div className="space-y-3">
       {productos.map((p, i) => (
         <div key={p.name} className="flex items-center gap-3">
-          <span className="text-[11px] font-bold text-gray-400 dark:text-gray-500 w-4 shrink-0 text-right">
+          <span className="text-[length:var(--ts-xs)] font-bold text-gray-400 dark:text-gray-500 w-4 shrink-0 text-right">
             {i + 1}
           </span>
           <div className="flex-1 min-w-0">
             <div className="flex items-center justify-between mb-1">
-              <p className="text-[12px] font-semibold text-gray-800 dark:text-gray-200 truncate max-w-[140px] sm:max-w-none">
+              <p className="text-[length:var(--ts-xs)] font-semibold text-gray-800 dark:text-gray-200 truncate max-w-[140px] sm:max-w-none">
                 {p.name}
               </p>
               <div className="flex items-center gap-3 shrink-0 ml-2">
-                <span className="text-[11px] text-gray-400 dark:text-gray-500">
+                <span className="text-[length:var(--ts-xs)] text-gray-400 dark:text-gray-500">
                   {p.units} uds
                 </span>
-                <span className="text-[12px] font-mono font-bold text-gray-900 dark:text-white">
+                <span className="text-[length:var(--ts-xs)] font-mono font-bold text-gray-900 dark:text-white">
                   {formatCurrency(p.revenue)}
                 </span>
-                <span className="text-[11px] text-gray-400 dark:text-gray-500 w-10 text-right">
+                <span className="text-[length:var(--ts-xs)] text-gray-400 dark:text-gray-500 w-10 text-right">
                   {p.pct.toFixed(1)}%
                 </span>
               </div>
             </div>
             <div className="h-1.5 w-full bg-gray-100 dark:bg-gray-800 rounded-full overflow-hidden">
               <div
-                className="h-full rounded-full transition-all duration-500"
+                className="h-full rounded-full transition-all duration-[var(--dur-slow)]"
                 style={{
                   width: `${p.pct}%`,
                   background: i === 0 ? "var(--color-primary)" : i === 1 ? "#f4a261" : `var(--color-primary)${Math.round(80 - i * 15).toString(16).padStart(2, "0")}`,
@@ -377,10 +377,10 @@ function QuickStat({ icon: Icon, label, value }: QuickStatProps) {
         <Icon className="h-4 w-4 text-primary" />
       </div>
       <div className="min-w-0">
-        <p className="text-[10px] text-gray-400 dark:text-gray-500 font-medium truncate">
+        <p className="text-[length:var(--ts-2xs)] text-gray-400 dark:text-gray-500 font-medium truncate">
           {label}
         </p>
-        <p className="text-sm font-black font-mono text-gray-900 dark:text-white truncate">
+        <p className="text-sm font-extrabold font-mono text-gray-900 dark:text-white truncate">
           {value}
         </p>
       </div>
@@ -432,7 +432,7 @@ export default function FinancialDashboard() {
           ))}
         </div>
         <SkeletonChart />
-        <div className="bg-white dark:bg-card rounded-xl border border-gray-100 dark:border-card-border p-5 animate-pulse">
+        <div className="bg-white dark:bg-card rounded-xl border border-[var(--rule-soft)] dark:border-card-border p-5 animate-pulse">
           <div className="h-5 w-32 rounded bg-gray-200 dark:bg-gray-700 mb-4" />
           <div className="space-y-3">
             {Array.from({ length: 5 }).map((_, i) => (
@@ -538,13 +538,13 @@ export default function FinancialDashboard() {
       </div>
 
       {/* Trend Chart */}
-      <div className="bg-white dark:bg-card rounded-xl border border-gray-100 dark:border-card-border p-5 ">
+      <div className="bg-white dark:bg-card rounded-xl border border-[var(--rule-soft)] dark:border-card-border p-5 ">
         <div className="flex items-center justify-between mb-4">
           <div>
             <h3 className="text-sm font-bold text-gray-900 dark:text-white">
               Tendencia de ingresos
             </h3>
-            <p className="text-[11px] text-gray-400 dark:text-gray-500 mt-0.5">
+            <p className="text-[length:var(--ts-xs)] text-gray-400 dark:text-gray-500 mt-0.5">
               Ultimos 30 dias — pasa el cursor sobre una barra para ver el detalle
             </p>
           </div>
@@ -560,7 +560,7 @@ export default function FinancialDashboard() {
           {dias.map((d, i) => (
             <div key={d.date} className="flex-1 text-center">
               {i % 5 === 0 && (
-                <span className="text-[9px] text-gray-300 dark:text-gray-600">
+                <span className="text-[length:var(--ts-2xs)] text-gray-300 dark:text-gray-600">
                   {d.label.split(" ")[0]}
                 </span>
               )}
@@ -570,13 +570,13 @@ export default function FinancialDashboard() {
       </div>
 
       {/* Top 5 Products */}
-      <div className="bg-white dark:bg-card rounded-xl border border-gray-100 dark:border-card-border p-5 ">
+      <div className="bg-white dark:bg-card rounded-xl border border-[var(--rule-soft)] dark:border-card-border p-5 ">
         <div className="flex items-center justify-between mb-4">
           <div>
             <h3 className="text-sm font-bold text-gray-900 dark:text-white">
               Top 5 productos por ingresos
             </h3>
-            <p className="text-[11px] text-gray-400 dark:text-gray-500 mt-0.5">
+            <p className="text-[length:var(--ts-xs)] text-gray-400 dark:text-gray-500 mt-0.5">
               Ultimos 30 dias
             </p>
           </div>

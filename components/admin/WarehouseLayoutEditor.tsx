@@ -27,8 +27,8 @@ const CATEGORIES = [
   { name: "Carnes", color: "bg-red-200 text-red-800 dark:bg-red-800 dark:text-red-100" },
   { name: "Frutas", color: "bg-green-200 text-green-800 dark:bg-green-800 dark:text-green-100" },
   { name: "Granos", color: "bg-stone-200 text-stone-800 dark:bg-stone-700 dark:text-stone-100" },
-  { name: "Higiene", color: "bg-purple-200 text-purple-800 dark:bg-purple-800 dark:text-purple-100" },
-  { name: "Panaderia", color: "bg-rose-200 text-rose-800 dark:bg-rose-800 dark:text-rose-100" },
+  { name: "Higiene", color: "bg-[var(--surface-sunken)] text-[var(--text-primary)] dark:bg-[var(--surface-sunken)] dark:text-[var(--text-primary)]" },
+  { name: "Panaderia", color: "bg-[var(--surface-sunken)] text-[var(--text-primary)] dark:bg-[var(--surface-sunken)] dark:text-[var(--text-primary)]" },
   { name: "Congelados", color: "bg-sky-200 text-sky-800 dark:bg-sky-800 dark:text-sky-100" },
   { name: "Otros", color: "bg-gray-200 text-gray-700 dark:bg-gray-700 dark:text-gray-100" },
 ];
@@ -142,7 +142,7 @@ export default function WarehouseLayoutEditor() {
         <div className="flex gap-2">
           <button
             onClick={handleReset}
-            className="flex items-center gap-2 rounded-lg border border-gray-200 px-3 py-2 text-sm text-gray-600 transition hover:bg-gray-50 dark:border-gray-700 dark:text-gray-300 dark:hover:bg-gray-800"
+            className="flex items-center gap-2 rounded-lg border border-[var(--rule-base)] px-3 py-2 text-sm text-gray-600 transition hover:bg-gray-50 dark:border-[var(--rule-base)] dark:text-gray-300 dark:hover:bg-gray-800"
           >
             <RotateCcw className="h-4 w-4" />
             Resetear
@@ -172,7 +172,7 @@ export default function WarehouseLayoutEditor() {
             }}
             onKeyDown={(e) => e.key === "Enter" && handleSearch()}
             placeholder="Buscar categoria (ej: Bebidas)..."
-            className="w-full rounded-lg border border-gray-200 bg-gray-50 py-2 pl-9 pr-3 text-sm focus:border-[#00B4A6] focus:outline-none dark:border-gray-700 dark:bg-gray-800 dark:text-white"
+            className="w-full rounded-lg border border-[var(--rule-base)] bg-gray-50 py-2 pl-9 pr-3 text-sm focus:border-[#00B4A6] focus:outline-none dark:border-[var(--rule-base)] dark:bg-gray-800 dark:text-white"
           />
         </div>
         <button
@@ -184,7 +184,7 @@ export default function WarehouseLayoutEditor() {
         {highlight && (
           <button
             onClick={() => { setHighlight(null); setSearch(""); }}
-            className="rounded-lg border border-gray-200 px-3 py-2 text-sm text-gray-500 hover:bg-gray-50 dark:border-gray-700 dark:hover:bg-gray-800"
+            className="rounded-lg border border-[var(--rule-base)] px-3 py-2 text-sm text-gray-500 hover:bg-gray-50 dark:border-[var(--rule-base)] dark:hover:bg-gray-800"
           >
             Limpiar
           </button>
@@ -212,7 +212,7 @@ export default function WarehouseLayoutEditor() {
               "rounded-lg border px-3 py-1.5 text-xs font-medium transition",
               selectedCat === null
                 ? "border-gray-500 bg-gray-500 text-white"
-                : "border-gray-200 bg-gray-100 text-gray-600 hover:bg-gray-200 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-300"
+                : "border-[var(--rule-base)] bg-gray-100 text-gray-600 hover:bg-gray-200 dark:border-[var(--rule-base)] dark:bg-gray-800 dark:text-gray-300"
             )}
           >
             Borrar
@@ -239,7 +239,7 @@ export default function WarehouseLayoutEditor() {
       </div>
 
       {/* Grid */}
-      <div className="overflow-x-auto rounded-xl border border-gray-200 bg-white p-4 dark:border-gray-700 dark:bg-gray-900">
+      <div className="overflow-x-auto rounded-xl border border-[var(--rule-base)] bg-white p-4 dark:border-[var(--rule-base)] dark:bg-gray-900">
         <div className="mb-2 flex items-center gap-2 text-xs text-gray-400">
           <span>Entrada</span>
           <div className="h-px flex-1 bg-gray-200 dark:bg-gray-700" />
@@ -261,10 +261,10 @@ export default function WarehouseLayoutEditor() {
                   "flex min-h-[64px] cursor-pointer select-none items-center justify-center rounded-lg border-2 text-xs font-medium transition",
                   cell.category
                     ? catColor(cell.category)
-                    : "border-dashed border-gray-200 bg-gray-50 text-gray-300 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-600",
+                    : "border-dashed border-[var(--rule-base)] bg-gray-50 text-gray-300 dark:border-[var(--rule-base)] dark:bg-gray-800 dark:text-gray-600",
                   isHighlighted &&
                     "ring-4 ring-[#f97316] ring-offset-1",
-                  !cell.category && "border-gray-200"
+                  !cell.category && "border-[var(--rule-base)]"
                 )}
               >
                 {cell.category ?? "+"}
@@ -278,7 +278,7 @@ export default function WarehouseLayoutEditor() {
       </div>
 
       {/* Grid size controls */}
-      <div className="flex flex-wrap items-center gap-4 rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 dark:border-gray-700 dark:bg-gray-800/50">
+      <div className="flex flex-wrap items-center gap-4 rounded-xl border border-[var(--rule-base)] bg-gray-50 px-4 py-3 dark:border-[var(--rule-base)] dark:bg-gray-800/50">
         <p className="text-sm font-medium text-gray-700 dark:text-gray-300">
           Tamano del mapa:
         </p>
@@ -294,7 +294,7 @@ export default function WarehouseLayoutEditor() {
               setRows(r);
               setCells((prev) => buildGrid(r, cols, prev));
             }}
-            className="w-16 rounded border border-gray-200 bg-white px-2 py-1 text-sm focus:border-[#00B4A6] focus:outline-none dark:border-gray-700 dark:bg-gray-900 dark:text-white"
+            className="w-16 rounded border border-[var(--rule-base)] bg-white px-2 py-1 text-sm focus:border-[#00B4A6] focus:outline-none dark:border-[var(--rule-base)] dark:bg-gray-900 dark:text-white"
           />
         </div>
         <div className="flex items-center gap-2">
@@ -309,7 +309,7 @@ export default function WarehouseLayoutEditor() {
               setCols(c);
               setCells((prev) => buildGrid(rows, c, prev));
             }}
-            className="w-16 rounded border border-gray-200 bg-white px-2 py-1 text-sm focus:border-[#00B4A6] focus:outline-none dark:border-gray-700 dark:bg-gray-900 dark:text-white"
+            className="w-16 rounded border border-[var(--rule-base)] bg-white px-2 py-1 text-sm focus:border-[#00B4A6] focus:outline-none dark:border-[var(--rule-base)] dark:bg-gray-900 dark:text-white"
           />
         </div>
       </div>

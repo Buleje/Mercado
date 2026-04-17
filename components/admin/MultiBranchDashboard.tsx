@@ -110,13 +110,13 @@ export default function MultiBranchDashboard() {
         {[
           { label: "Ventas Total", value: fmt(totals.sales), icon: DollarSign, color: "text-emerald-600" },
           { label: "Pedidos", value: String(totals.orders), icon: Package, color: "text-emerald-600" },
-          { label: "Productos", value: String(totals.products), icon: Package, color: "text-purple-600" },
+          { label: "Productos", value: String(totals.products), icon: Package, color: "text-[var(--text-secondary)]" },
           { label: "Clientes", value: String(totals.customers), icon: Users, color: "text-amber-600" },
         ].map(kpi => (
-          <div key={kpi.label} className="bg-white dark:bg-card border border-gray-100 dark:border-card-border rounded-xl p-3">
+          <div key={kpi.label} className="bg-white dark:bg-card border border-[var(--rule-soft)] dark:border-card-border rounded-xl p-3">
             <div className="flex items-center gap-2 mb-1">
               <kpi.icon className={cn("h-4 w-4", kpi.color)} />
-              <span className="text-[10px] font-bold text-gray-400 dark:text-muted uppercase">{kpi.label}</span>
+              <span className="text-[length:var(--ts-2xs)] font-bold text-gray-400 dark:text-muted uppercase">{kpi.label}</span>
             </div>
             <p className="text-lg font-extrabold text-gray-900 dark:text-foreground">{kpi.value}</p>
           </div>
@@ -133,14 +133,14 @@ export default function MultiBranchDashboard() {
             return (
               <div key={branch.id} className={cn(
                 "bg-white dark:bg-card border rounded-xl p-3.5",
-                isBest ? "border-primary/30 " : "border-gray-100 dark:border-card-border"
+                isBest ? "border-primary/30 " : "border-[var(--rule-soft)] dark:border-card-border"
               )}>
                 <div className="flex items-center justify-between mb-2">
                   <div className="flex items-center gap-2">
                     <Building2 className={cn("h-4 w-4", isBest ? "text-primary" : "text-gray-400")} />
                     <span className="text-sm font-bold text-gray-900 dark:text-foreground">{branch.name}</span>
                     {isBest && (
-                      <span className="px-1.5 py-0.5 rounded-full bg-primary/10 text-primary text-[10px] font-bold">Mejor</span>
+                      <span className="px-1.5 py-0.5 rounded-full bg-primary/10 text-primary text-[length:var(--ts-2xs)] font-bold">Mejor</span>
                     )}
                   </div>
                   <span className="text-sm font-extrabold text-primary">{fmt(branch.salesTotal)}</span>

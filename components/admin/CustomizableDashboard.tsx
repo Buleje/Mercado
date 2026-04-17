@@ -103,7 +103,7 @@ function WidgetContent({ id }: { id: WidgetId }) {
                 className="w-full rounded-t bg-green-200 dark:bg-green-800"
                 style={{ height: `${h}px` }}
               />
-              <span className="text-[10px] text-gray-400">{day}</span>
+              <span className="text-[length:var(--ts-2xs)] text-gray-400">{day}</span>
             </div>
           ))}
         </div>
@@ -129,7 +129,7 @@ function WidgetContent({ id }: { id: WidgetId }) {
     case "margen-diario":
       return (
         <div className="space-y-1">
-          <p className="text-3xl font-bold text-purple-600 dark:text-purple-400">0%</p>
+          <p className="text-3xl font-bold text-[var(--text-secondary)] dark:text-[var(--text-primary)]">0%</p>
           <p className="text-xs text-gray-500 dark:text-gray-400">margen promedio hoy</p>
         </div>
       );
@@ -238,7 +238,7 @@ export function CustomizableDashboard({ tenantId = "main" }: CustomizableDashboa
         <div className="flex items-center gap-2">
           <button
             onClick={restoreDefault}
-            className="flex items-center gap-1 text-xs px-3 py-1.5 rounded-lg border border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+            className="flex items-center gap-1 text-xs px-3 py-1.5 rounded-lg border border-[var(--rule-base)] text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
           >
             <RotateCcw className="h-3 w-3" />
             Restaurar default
@@ -248,7 +248,7 @@ export function CustomizableDashboard({ tenantId = "main" }: CustomizableDashboa
             className={`flex items-center gap-1 text-xs px-3 py-1.5 rounded-lg transition-colors ${
               editMode
                 ? "bg-green-600 text-white hover:bg-green-700"
-                : "border border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800"
+                : "border border-[var(--rule-base)] text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800"
             }`}
           >
             {editMode ? "Listo" : "Personalizar"}
@@ -258,7 +258,7 @@ export function CustomizableDashboard({ tenantId = "main" }: CustomizableDashboa
 
       {/* Lista de todos los widgets en modo edicion */}
       {editMode && (
-        <div className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl p-4 space-y-2">
+        <div className="bg-white dark:bg-gray-900 border border-[var(--rule-base)] rounded-xl p-4 space-y-2">
           <p className="text-xs text-gray-500 dark:text-gray-400 mb-3">
             Usa las flechas para reordenar. Usa el ojo para mostrar u ocultar.
           </p>
@@ -310,7 +310,7 @@ export function CustomizableDashboard({ tenantId = "main" }: CustomizableDashboa
         {visibleWidgets.slice(0, 4).map((widget) => (
           <div
             key={widget.id}
-            className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl p-4 "
+            className="bg-white dark:bg-gray-900 border border-[var(--rule-base)] rounded-xl p-4 "
           >
             <div className="flex items-center gap-2 mb-3">
               <span className="text-gray-500 dark:text-gray-400">{widget.icon}</span>
@@ -329,7 +329,7 @@ export function CustomizableDashboard({ tenantId = "main" }: CustomizableDashboa
           {visibleWidgets.slice(4).map((widget) => (
             <div
               key={widget.id}
-              className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl p-4 "
+              className="bg-white dark:bg-gray-900 border border-[var(--rule-base)] rounded-xl p-4 "
             >
               <div className="flex items-center gap-2 mb-3">
                 <span className="text-gray-500 dark:text-gray-400">{widget.icon}</span>

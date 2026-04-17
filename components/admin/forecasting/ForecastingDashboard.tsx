@@ -471,7 +471,7 @@ export default function ForecastingDashboard() {
 
               {/* Mini-barras diarias */}
               <div>
-                <p className="text-[10px] font-semibold text-slate-400 dark:text-slate-500 mb-2">
+                <p className="text-[length:var(--ts-2xs)] font-semibold text-slate-400 dark:text-slate-500 mb-2">
                   Proyeccion dia a dia
                 </p>
                 <div className="flex items-end gap-1 h-20" role="img" aria-label="Grafico de barras proyeccion semanal">
@@ -480,18 +480,18 @@ export default function ForecastingDashboard() {
                     return (
                       <div key={i} className="flex-1 flex flex-col items-center gap-1">
                         {/* Valor sobre la barra */}
-                        <span className="text-[8px] text-slate-400 dark:text-slate-500 font-medium hidden sm:block">
+                        <span className="text-[length:var(--ts-2xs)] text-slate-400 dark:text-slate-500 font-medium hidden sm:block">
                           {formatCurrency(d.rev).replace("S/ ", "")}
                         </span>
                         {/* Barra */}
                         <div className="w-full relative" style={{ height: "44px" }}>
                           <div
-                            className="absolute bottom-0 left-0 right-0 rounded-t-md bg-emerald-500/70 dark:bg-emerald-600/70 transition-all duration-500"
+                            className="absolute bottom-0 left-0 right-0 rounded-t-md bg-emerald-500/70 dark:bg-emerald-600/70 transition-all duration-[var(--dur-slow)]"
                             style={{ height: `${Math.max(pct, 6)}%` }}
                           />
                         </div>
                         {/* Nombre del día */}
-                        <span className="text-[9px] font-bold text-slate-500 dark:text-slate-400">
+                        <span className="text-[length:var(--ts-2xs)] font-bold text-slate-500 dark:text-slate-400">
                           {d.dia}
                         </span>
                       </div>
@@ -534,7 +534,7 @@ export default function ForecastingDashboard() {
                       </p>
                       <div className="mt-1 h-2 bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
                         <div
-                          className="h-full rounded-full bg-amber-400 dark:bg-amber-500 transition-all duration-500"
+                          className="h-full rounded-full bg-amber-400 dark:bg-amber-500 transition-all duration-[var(--dur-slow)]"
                           style={{ width: `${Math.max(pct, 6)}%` }}
                         />
                       </div>
@@ -630,7 +630,7 @@ export default function ForecastingDashboard() {
                               <span className="font-semibold text-slate-800 dark:text-slate-200">
                                 {item.productName}
                               </span>
-                              <span className="text-[10px] text-slate-400 dark:text-slate-500">
+                              <span className="text-[length:var(--ts-2xs)] text-slate-400 dark:text-slate-500">
                                 {item.supplierName} · LT {item.leadTimeDays}d
                               </span>
                             </div>
@@ -669,12 +669,12 @@ export default function ForecastingDashboard() {
                           <td className="py-2.5 px-2">
                             <div className="flex items-center justify-end gap-1 flex-wrap">
                               {critico && (
-                                <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-full text-[10px] font-bold bg-red-100 text-red-700 dark:bg-red-950/50 dark:text-red-400">
+                                <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-full text-[length:var(--ts-2xs)] font-bold bg-red-100 text-red-700 dark:bg-red-950/50 dark:text-red-400">
                                   Critico
                                 </span>
                               )}
                               {item.confidence < 0.5 && (
-                                <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-full text-[10px] font-bold bg-amber-100 text-amber-700 dark:bg-amber-950/50 dark:text-amber-400">
+                                <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-full text-[length:var(--ts-2xs)] font-bold bg-amber-100 text-amber-700 dark:bg-amber-950/50 dark:text-amber-400">
                                   Baja conf.
                                 </span>
                               )}
@@ -847,7 +847,7 @@ function MetricChip({
 }) {
   return (
     <div className="rounded-xl bg-slate-50 dark:bg-slate-800/60 p-2.5 text-center">
-      <p className="text-[10px] text-slate-500 dark:text-slate-400 font-medium mb-0.5">{label}</p>
+      <p className="text-[length:var(--ts-2xs)] text-slate-500 dark:text-slate-400 font-medium mb-0.5">{label}</p>
       <p className={cn(
         "text-sm font-extrabold",
         danger
@@ -906,7 +906,7 @@ function PriceCard({ suggestion: s, isApplied, isApplying, onAplicar, esBaja }: 
           {s.productName}
         </p>
         <span className={cn(
-          "text-[10px] font-bold px-1.5 py-0.5 rounded-full shrink-0",
+          "text-[length:var(--ts-2xs)] font-bold px-1.5 py-0.5 rounded-full shrink-0",
           reasonCls,
         )}>
           {reasonLabel}
@@ -928,7 +928,7 @@ function PriceCard({ suggestion: s, isApplied, isApplying, onAplicar, esBaja }: 
           {formatCurrency(s.suggestedPrice)}
         </span>
         <span className={cn(
-          "text-[10px] font-bold px-1.5 py-0.5 rounded-full",
+          "text-[length:var(--ts-2xs)] font-bold px-1.5 py-0.5 rounded-full",
           esBaja
             ? "bg-red-100 text-red-700 dark:bg-red-950/40 dark:text-red-400"
             : "bg-emerald-100 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-400",
@@ -938,12 +938,12 @@ function PriceCard({ suggestion: s, isApplied, isApplying, onAplicar, esBaja }: 
       </div>
 
       {/* Detalle */}
-      <p className="text-[11px] text-slate-500 dark:text-slate-400 leading-relaxed">
+      <p className="text-[length:var(--ts-xs)] text-slate-500 dark:text-slate-400 leading-relaxed">
         {s.detail}
       </p>
 
       {/* Stock */}
-      <p className="text-[10px] text-slate-400 dark:text-slate-600">
+      <p className="text-[length:var(--ts-2xs)] text-slate-400 dark:text-slate-600">
         Stock actual: {s.currentStock} u.
       </p>
 

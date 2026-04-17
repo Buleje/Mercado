@@ -43,7 +43,7 @@ function ModuleTooltip() {
         <Info className="h-4 w-4" />
       </button>
       {open && (
-        <div className="pointer-events-none absolute left-6 top-0 z-50 w-80 rounded-xl border border-gray-200 bg-white p-4 text-xs leading-relaxed dark:border-card-border dark:bg-card">
+        <div className="pointer-events-none absolute left-6 top-0 z-50 w-80 rounded-xl border border-[var(--rule-base)] bg-white p-4 text-xs leading-relaxed dark:border-card-border dark:bg-card">
           <p className="mb-2 text-sm font-extrabold text-gray-900 dark:text-foreground">Inventario Fisico</p>
           <p className="mb-3 text-gray-600 dark:text-muted">Compara el stock real contado en bodega contra el stock del sistema y registra ajustes reales.</p>
           <p className="text-gray-500 dark:text-muted">Ejemplo: si el sistema dice 20 unidades y cuentas 18, al registrar el conteo se crea un ajuste y el stock queda corregido.</p>
@@ -195,7 +195,7 @@ export default function PhysicalInventoryTab() {
       <div className="flex flex-col gap-2 sm:gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h2 className="flex flex-wrap items-center gap-2 text-xl font-extrabold text-gray-900 dark:text-foreground">
-            <ClipboardList className="h-6 w-6 text-violet-500" /> Inventario Fisico <ModuleTooltip />
+            <ClipboardList className="h-6 w-6 text-[var(--text-secondary)]" /> Inventario Fisico <ModuleTooltip />
           </h2>
           <p className="mt-1 text-sm text-gray-500 dark:text-muted">Conteo fisico y conciliacion de stock</p>
         </div>
@@ -208,7 +208,7 @@ export default function PhysicalInventoryTab() {
           <button
             onClick={() => bulkSubmit()}
             disabled={bulkSubmitting || Object.keys(countInput).length === 0}
-            className="flex flex-wrap items-center gap-2 rounded-lg border border-violet-300 bg-violet-50 px-2 sm:px-4 py-1.5 sm:py-2.5 text-sm font-bold text-violet-700 hover:bg-violet-100 disabled:cursor-not-allowed disabled:opacity-50 dark:border-violet-700 dark:bg-violet-900/30 dark:text-violet-300 dark:hover:bg-violet-900/50"
+            className="flex flex-wrap items-center gap-2 rounded-lg border border-violet-300 bg-[var(--surface-sunken)] px-2 sm:px-4 py-1.5 sm:py-2.5 text-sm font-bold text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)] disabled:cursor-not-allowed disabled:opacity-50 dark:border-violet-700 dark:bg-violet-900/30 dark:text-[var(--text-primary)] dark:hover:bg-violet-900/50"
           >
             {bulkSubmitting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Check className="h-4 w-4" />}
             Registrar todos ({Object.keys(countInput).length})
@@ -219,13 +219,13 @@ export default function PhysicalInventoryTab() {
         </div>
       </div>
 
-      <div className="rounded-xl border border-gray-200 bg-white p-3 sm:p-5 dark:border-card-border dark:bg-card">
+      <div className="rounded-xl border border-[var(--rule-base)] bg-white p-3 sm:p-5 dark:border-card-border dark:bg-card">
         <div className="mb-2 flex items-center justify-between">
           <span className="text-sm font-bold text-gray-900 dark:text-foreground">Progreso del Conteo</span>
-          <span className="text-sm font-extrabold text-violet-600 dark:text-violet-400">{stats.pct}%</span>
+          <span className="text-sm font-extrabold text-[var(--text-secondary)] dark:text-[var(--text-primary)]">{stats.pct}%</span>
         </div>
         <div className="h-4 w-full overflow-hidden rounded-full bg-gray-100 dark:bg-surface">
-          <div className="h-full rounded-full bg-violet-500 transition-all" style={{ width: `${stats.pct}%` }} />
+          <div className="h-full rounded-full bg-[var(--text-primary)] transition-all" style={{ width: `${stats.pct}%` }} />
         </div>
         <div className="mt-4 grid grid-cols-2 gap-2 sm:gap-4 lg:grid-cols-4">
           <div><p className="text-xs font-semibold text-gray-500 dark:text-muted">Total Productos</p><p className="text-xl font-extrabold text-gray-900 dark:text-foreground">{stats.total}</p></div>
@@ -238,16 +238,16 @@ export default function PhysicalInventoryTab() {
       <div className="flex flex-wrap items-center gap-3">
         <div className="relative max-w-xs flex-1">
           <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
-          <input value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Buscar producto o SKU..." className="w-full rounded-lg border-2 border-gray-200 bg-white py-2.5 pl-10 pr-4 text-sm outline-none focus:border-primary dark:border-card-border dark:bg-card" />
+          <input value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Buscar producto o SKU..." className="w-full rounded-lg border-2 border-[var(--rule-base)] bg-white py-2.5 pl-10 pr-4 text-sm outline-none focus:border-primary dark:border-card-border dark:bg-card" />
         </div>
         {(["todas", "pendiente", "contando", "finalizado", "diferencias"] as const).map((status) => (
-          <button key={status} onClick={() => setStatusFilter(status)} className={cn("rounded-lg px-2 sm:px-4 py-1.5 sm:py-2.5 text-sm font-bold transition-colors", statusFilter === status ? "bg-violet-500 text-white" : "border border-gray-200 bg-white text-gray-600 hover:bg-gray-50 dark:border-card-border dark:bg-card dark:text-muted dark:hover:bg-accent")}>
+          <button key={status} onClick={() => setStatusFilter(status)} className={cn("rounded-lg px-2 sm:px-4 py-1.5 sm:py-2.5 text-sm font-bold transition-colors", statusFilter === status ? "bg-[var(--text-primary)] text-white" : "border border-[var(--rule-base)] bg-white text-gray-600 hover:bg-gray-50 dark:border-card-border dark:bg-card dark:text-muted dark:hover:bg-accent")}>
             {status === "todas" ? "Todos" : status === "diferencias" ? "Diferencias" : status.charAt(0).toUpperCase() + status.slice(1)}
           </button>
         ))}
       </div>
 
-      <div className="overflow-hidden rounded-xl border border-gray-200 bg-white dark:border-card-border dark:bg-card">
+      <div className="overflow-hidden rounded-xl border border-[var(--rule-base)] bg-white dark:border-card-border dark:bg-card">
         <div className="overflow-x-auto">
           <table className="w-full min-w-[600px] text-sm">
             <thead>
@@ -287,7 +287,7 @@ export default function PhysicalInventoryTab() {
                     {item.status === "finalizado" ? (
                       <span className="font-bold">{item.countedQty}</span>
                     ) : (
-                      <input type="number" min={0} value={countInput[item.id] ?? ""} onChange={(event) => setCountInput((prev) => ({ ...prev, [item.id]: event.target.value }))} placeholder="-" className="w-20 rounded-lg border-2 border-gray-200 bg-white px-2 py-1 text-right text-sm font-bold outline-none focus:border-violet-500 dark:border-card-border dark:bg-card" />
+                      <input type="number" min={0} value={countInput[item.id] ?? ""} onChange={(event) => setCountInput((prev) => ({ ...prev, [item.id]: event.target.value }))} placeholder="-" className="w-20 rounded-lg border-2 border-[var(--rule-base)] bg-white px-2 py-1 text-right text-sm font-bold outline-none focus:border-[var(--text-primary)] dark:border-card-border dark:bg-card" />
                     )}
                   </td>
                   <td className="px-5 py-3 text-right">
@@ -299,7 +299,7 @@ export default function PhysicalInventoryTab() {
                   </td>
                   <td className="px-5 py-3 text-center">
                     {item.status !== "finalizado" && (
-                      <button onClick={() => submitCount(item.id)} disabled={!countInput[item.id] || item.saving} className="rounded-lg bg-violet-500 px-3 py-1.5 text-xs font-bold text-white transition-colors hover:bg-violet-600 disabled:opacity-40">
+                      <button onClick={() => submitCount(item.id)} disabled={!countInput[item.id] || item.saving} className="rounded-lg bg-[var(--text-primary)] px-3 py-1.5 text-xs font-bold text-white transition-colors hover:bg-violet-600 disabled:opacity-40">
                         {item.saving ? "Guardando..." : "Registrar"}
                       </button>
                     )}

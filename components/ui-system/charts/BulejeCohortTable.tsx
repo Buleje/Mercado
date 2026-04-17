@@ -55,7 +55,7 @@ export const BulejeCohortTable = memo(function BulejeCohortTable({
       {(label || sublabel) && (
         <div className="mb-5">
           {label && (
-            <p className="text-[10px] font-bold uppercase tracking-[0.25em] text-[var(--text-tertiary)] mb-1">
+            <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)] mb-1">
               {label}
             </p>
           )}
@@ -70,7 +70,7 @@ export const BulejeCohortTable = memo(function BulejeCohortTable({
       <div className="overflow-x-auto">
         <table className="w-full">
           <thead>
-            <tr className="text-[10px] font-bold uppercase tracking-[0.18em] text-[var(--text-tertiary)]">
+            <tr className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)]">
               <th className="text-left pb-3 font-bold">Cohorte</th>
               <th className="text-right pb-3 font-bold tabular-nums pr-3">N</th>
               {periodLabels.map((p) => (
@@ -105,7 +105,7 @@ export const BulejeCohortTable = memo(function BulejeCohortTable({
                         >
                           <span
                             className={cn(
-                              "text-[11px] font-bold tabular-nums",
+                              "text-[length:var(--ts-xs)] font-bold tabular-nums",
                               i && i > 0.5 ? "text-white" : "text-[var(--text-primary)]",
                             )}
                           >

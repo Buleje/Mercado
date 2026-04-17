@@ -23,7 +23,7 @@ function KPICard({ label, value, icon: Icon, color, change, subtitle, alert, onC
       tabIndex={onClick ? 0 : undefined}
       onKeyDown={onClick ? (e) => { if (e.key === "Enter") onClick(); } : undefined}
       className={cn(
-        "bg-white dark:bg-card rounded-xl  p-4 border-l-[3px] border border-gray-100 dark:border-card-border transition-all",
+        "bg-white dark:bg-card rounded-xl  p-4 border-l-[3px] border border-[var(--rule-soft)] dark:border-card-border transition-all",
         onClick && "cursor-pointer hover:shadow-sm hover:scale-[1.02]",
         className,
       )}
@@ -31,7 +31,7 @@ function KPICard({ label, value, icon: Icon, color, change, subtitle, alert, onC
     >
       <div className="flex items-start justify-between">
         <div className="min-w-0">
-          <p className="text-[10px] text-gray-500 dark:text-gray-400 font-medium truncate">
+          <p className="text-[length:var(--ts-2xs)] text-gray-500 dark:text-gray-400 font-medium truncate">
             {label}
           </p>
           <div className="flex items-baseline gap-1.5 mt-1">
@@ -51,7 +51,7 @@ function KPICard({ label, value, icon: Icon, color, change, subtitle, alert, onC
             )}
           </div>
           {subtitle && (
-            <p className="text-[10px] text-gray-400 dark:text-gray-500 mt-0.5 truncate">{subtitle}</p>
+            <p className="text-[length:var(--ts-2xs)] text-gray-400 dark:text-gray-500 mt-0.5 truncate">{subtitle}</p>
           )}
         </div>
         <div

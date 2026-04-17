@@ -33,13 +33,13 @@ function statusColor(status: string): string {
 export function VendorPendingOrders({ orders }: Props) {
   if (orders.length === 0) {
     return (
-      <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl p-6 ">
+      <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl p-6 ">
         <h3 className="font-bold text-gray-900 dark:text-foreground mb-4 flex items-center gap-2">
           <Package className="h-5 w-5 text-[#f97316]" />
           Pedidos sin atender
         </h3>
         <div className="text-center py-8">
-          <div className="inline-flex h-10 w-10 items-center justify-center rounded-xl border border-gray-200 dark:border-gray-800 bg-gray-50 dark:bg-gray-950 text-emerald-600 dark:text-emerald-400 mb-2">
+          <div className="inline-flex h-10 w-10 items-center justify-center rounded-xl border border-[var(--rule-base)] bg-gray-50 dark:bg-gray-950 text-emerald-600 dark:text-emerald-400 mb-2">
             <CheckCircle2 className="h-5 w-5" strokeWidth={1.5} />
           </div>
           <p className="mt-2 text-sm font-semibold text-gray-700 dark:text-gray-200">
@@ -54,7 +54,7 @@ export function VendorPendingOrders({ orders }: Props) {
   }
 
   return (
-    <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl p-6 ">
+    <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl p-6 ">
       <div className="flex items-center justify-between mb-4">
         <h3 className="font-bold text-gray-900 dark:text-foreground flex items-center gap-2">
           <Package className="h-5 w-5 text-[#f97316]" />

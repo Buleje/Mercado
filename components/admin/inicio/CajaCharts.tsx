@@ -130,10 +130,10 @@ export default function CajaCharts({ data }: { data: CajaData }) {
 
 function ChartCard({ title, subtitle, children, span }: { title: string; subtitle?: string; children: React.ReactNode; span?: string }) {
   return (
-    <div className={`bg-white dark:bg-card border border-gray-100 dark:border-card-border rounded-xl p-5 ${span ?? ""}`}>
+    <div className={`bg-white dark:bg-card border border-[var(--rule-soft)] dark:border-card-border rounded-xl p-5 ${span ?? ""}`}>
       <div className="mb-4">
         <h3 className="text-sm font-bold text-gray-900 dark:text-foreground">{title}</h3>
-        {subtitle && <p className="text-[11px] text-gray-400 dark:text-muted">{subtitle}</p>}
+        {subtitle && <p className="text-[length:var(--ts-xs)] text-gray-400 dark:text-muted">{subtitle}</p>}
       </div>
       {children}
     </div>

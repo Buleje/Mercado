@@ -39,9 +39,9 @@ export default function GoalTrackerTab() {
           { label: "Metas totales", value: goals.length, color: "text-emerald-500", icon: Target },
           { label: "En progreso", value: inProgress, color: "text-amber-500", icon: Flame },
           { label: "Completadas", value: completed, color: "text-emerald-500", icon: Trophy },
-          { label: "Tasa de éxito", value: `${goals.length > 0 ? Math.round((completed / goals.length) * 100) : 0}%`, color: "text-violet-500", icon: Star },
+          { label: "Tasa de éxito", value: `${goals.length > 0 ? Math.round((completed / goals.length) * 100) : 0}%`, color: "text-[var(--text-secondary)]", icon: Star },
         ].map(k => (
-          <div key={k.label} className="bg-white dark:bg-card rounded-xl border border-gray-200 dark:border-card-border p-4 flex flex-wrap items-center gap-3">
+          <div key={k.label} className="bg-white dark:bg-card rounded-xl border border-[var(--rule-base)] dark:border-card-border p-4 flex flex-wrap items-center gap-3">
             <k.icon className={cn("h-5 w-5", k.color)} />
             <div>
               <p className="text-xs font-semibold text-gray-500 dark:text-muted">{k.label}</p>
@@ -59,19 +59,19 @@ export default function GoalTrackerTab() {
             : Math.min((g.currentValue / g.targetValue) * 100, 100);
 
           return (
-            <div key={g.id} className={cn("bg-white dark:bg-card rounded-xl border p-3 sm:p-5", g.status === "completado" ? "border-emerald-200 dark:border-emerald-900/30" : "border-gray-200 dark:border-card-border")}>
+            <div key={g.id} className={cn("bg-white dark:bg-card rounded-xl border p-3 sm:p-5", g.status === "completado" ? "border-emerald-200 dark:border-emerald-900/30" : "border-[var(--rule-base)] dark:border-card-border")}>
               <div className="flex flex-wrap items-start justify-between gap-3 mb-3">
                 <div>
                   <div className="flex items-center gap-2 flex-wrap mb-1">
                     <h3 className="font-extrabold text-gray-900 dark:text-foreground">{g.title}</h3>
-                    <span className={cn("text-[10px] font-bold px-2 py-0.5 rounded-full", STATUS_COLORS[g.status])}>{g.status}</span>
-                    <span className={cn("text-[10px] font-bold px-2 py-0.5 rounded-full", PRIORITY_COLORS[g.priority])}>{g.priority}</span>
+                    <span className={cn("text-[length:var(--ts-2xs)] font-bold px-2 py-0.5 rounded-full", STATUS_COLORS[g.status])}>{g.status}</span>
+                    <span className={cn("text-[length:var(--ts-2xs)] font-bold px-2 py-0.5 rounded-full", PRIORITY_COLORS[g.priority])}>{g.priority}</span>
                   </div>
                   <p className="text-xs text-gray-500 dark:text-muted">{g.description}</p>
                 </div>
                 <div className="text-right shrink-0">
                   <p className="text-xl font-extrabold text-gray-900 dark:text-foreground">{Math.round(progress)}%</p>
-                  <p className="text-[10px] text-gray-400">Fecha límite: {fmtDate(g.deadline)}</p>
+                  <p className="text-[length:var(--ts-2xs)] text-gray-400">Fecha límite: {fmtDate(g.deadline)}</p>
                 </div>
               </div>
 
@@ -84,14 +84,14 @@ export default function GoalTrackerTab() {
                 <div className="flex justify-between">
                   {g.milestones.map((m, i) => (
                     <div key={i} className="flex flex-col items-center">
-                      <div className={cn("h-3 w-3 rounded-full border-2", m.reached ? "bg-emerald-500 border-emerald-500" : "bg-white dark:bg-card border-gray-300 dark:border-card-border")} />
-                      <span className="text-[9px] text-gray-400 mt-0.5">{m.label}</span>
+                      <div className={cn("h-3 w-3 rounded-full border-2", m.reached ? "bg-emerald-500 border-emerald-500" : "bg-white dark:bg-card border-[var(--rule-base)] dark:border-card-border")} />
+                      <span className="text-[length:var(--ts-2xs)] text-gray-400 mt-0.5">{m.label}</span>
                     </div>
                   ))}
                 </div>
               </div>
 
-              <div className="flex items-center justify-between mt-3 pt-3 border-t border-gray-100 dark:border-card-border text-xs text-gray-500 dark:text-muted">
+              <div className="flex items-center justify-between mt-3 pt-3 border-t border-[var(--rule-soft)] dark:border-card-border text-xs text-gray-500 dark:text-muted">
                 <span>{g.category}</span>
                 <span>Actual: <b className="text-gray-900 dark:text-foreground">{fmt(g.currentValue, g.unit)}</b> / Meta: <b className="text-primary">{fmt(g.targetValue, g.unit)}</b></span>
               </div>

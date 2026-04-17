@@ -146,8 +146,8 @@ export default function PeakHoursTab({ period }: { period?: AnalyticsPeriod }) {
 
       {/* By Hour Chart */}
       {viewTab === "horas" && !isEmpty && (
-        <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl p-4 sm:p-5">
-          <p className="text-[10px] font-semibold text-gray-400 dark:text-muted mb-4">
+        <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl p-4 sm:p-5">
+          <p className="text-[length:var(--ts-2xs)] font-semibold text-gray-400 dark:text-muted mb-4">
             Ventas por hora del dia (0-23h)
           </p>
           <div className="flex items-end gap-1 sm:gap-1.5" style={{ height: 350 }}>
@@ -165,7 +165,7 @@ export default function PeakHoursTab({ period }: { period?: AnalyticsPeriod }) {
                   style={{ minWidth: 16 }}
                 >
                   {/* Tooltip */}
-                  <div className="absolute -top-8 left-1/2 -translate-x-1/2 hidden group-hover:block bg-white dark:bg-gray-800 text-gray-900 dark:text-white text-[10px] font-bold px-3 py-1.5 rounded-lg border border-gray-100 dark:border-gray-700 whitespace-nowrap z-10">
+                  <div className="absolute -top-8 left-1/2 -translate-x-1/2 hidden group-hover:block bg-white dark:bg-gray-800 text-gray-900 dark:text-white text-[length:var(--ts-2xs)] font-bold px-3 py-1.5 rounded-lg border border-[var(--rule-base)] whitespace-nowrap z-10">
                     {h.hour}:00 -- S/ {h.count} ventas
                   </div>
                   {/* Bar */}
@@ -186,7 +186,7 @@ export default function PeakHoursTab({ period }: { period?: AnalyticsPeriod }) {
                     style={{ height: `${Math.max(pct, 2)}%` }}
                   />
                   {/* Label */}
-                  <span className="text-[10px] font-mono text-gray-400 dark:text-muted mt-1.5 leading-none">
+                  <span className="text-[length:var(--ts-2xs)] font-mono text-gray-400 dark:text-muted mt-1.5 leading-none">
                     {h.hour}
                   </span>
                 </div>
@@ -207,8 +207,8 @@ export default function PeakHoursTab({ period }: { period?: AnalyticsPeriod }) {
 
       {/* By Day Chart */}
       {viewTab === "dias" && !isEmpty && (
-        <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl p-4 sm:p-5">
-          <p className="text-[10px] font-semibold text-gray-400 dark:text-muted mb-4">
+        <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl p-4 sm:p-5">
+          <p className="text-[length:var(--ts-2xs)] font-semibold text-gray-400 dark:text-muted mb-4">
             Ventas por dia de la semana
           </p>
           <div className="space-y-3">
@@ -229,12 +229,12 @@ export default function PeakHoursTab({ period }: { period?: AnalyticsPeriod }) {
                       style={{ width: `${Math.max(pct, 3)}%` }}
                     >
                       {pct > 15 && (
-                        <span className="text-[10px] font-bold text-white">{d.count}</span>
+                        <span className="text-[length:var(--ts-2xs)] font-bold text-white">{d.count}</span>
                       )}
                     </div>
                   </div>
                   {pct <= 15 && (
-                    <span className="text-[10px] font-bold text-gray-500 dark:text-muted shrink-0">{d.count}</span>
+                    <span className="text-[length:var(--ts-2xs)] font-bold text-gray-500 dark:text-muted shrink-0">{d.count}</span>
                   )}
                 </div>
               );

@@ -107,7 +107,7 @@ function TrendBadge({ change, higherIsBetter }: { change: number; higherIsBetter
 
   if (isNeutral) {
     return (
-      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400">
+      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[length:var(--ts-2xs)] font-bold bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400">
         <Minus className="h-2.5 w-2.5" /> {change >= 0 ? "+" : ""}{change.toFixed(1)}%
       </span>
     );
@@ -115,7 +115,7 @@ function TrendBadge({ change, higherIsBetter }: { change: number; higherIsBetter
 
   return (
     <span className={cn(
-      "inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold",
+      "inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[length:var(--ts-2xs)] font-bold",
       isGood
         ? "bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400"
         : "bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400",
@@ -240,16 +240,16 @@ export default function ComparativeReportsTab() {
       {dataA && dataB && (
         <>
           {/* Table */}
-          <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl overflow-hidden">
+          <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl overflow-hidden">
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
                 <thead>
-                  <tr className="bg-gray-50 dark:bg-white/5 border-b border-gray-100 dark:border-card-border">
-                    <th className="px-4 py-3 text-left text-[11px] font-bold uppercase text-gray-400">Métrica</th>
-                    <th className="px-4 py-3 text-right text-[11px] font-bold uppercase text-primary">{periods.labelA}</th>
-                    <th className="px-4 py-3 text-right text-[11px] font-bold uppercase text-gray-400">{periods.labelB}</th>
-                    <th className="px-4 py-3 text-right text-[11px] font-bold uppercase text-gray-400">Cambio</th>
-                    <th className="px-4 py-3 text-center text-[11px] font-bold uppercase text-gray-400">Tendencia</th>
+                  <tr className="bg-gray-50 dark:bg-white/5 border-b border-[var(--rule-soft)] dark:border-card-border">
+                    <th className="px-4 py-3 text-left text-[length:var(--ts-xs)] font-bold uppercase text-gray-400">Métrica</th>
+                    <th className="px-4 py-3 text-right text-[length:var(--ts-xs)] font-bold uppercase text-primary">{periods.labelA}</th>
+                    <th className="px-4 py-3 text-right text-[length:var(--ts-xs)] font-bold uppercase text-gray-400">{periods.labelB}</th>
+                    <th className="px-4 py-3 text-right text-[length:var(--ts-xs)] font-bold uppercase text-gray-400">Cambio</th>
+                    <th className="px-4 py-3 text-center text-[length:var(--ts-xs)] font-bold uppercase text-gray-400">Tendencia</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-100 dark:divide-card-border">
@@ -288,7 +288,7 @@ export default function ComparativeReportsTab() {
           </div>
 
           {/* Chart */}
-          <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl p-4">
+          <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl p-4">
             <p className="text-sm font-bold text-gray-700 dark:text-gray-300 mb-4">Top 5 métricas — comparación</p>
             <div className="h-64">
               <ResponsiveContainer width="100%" height="100%">

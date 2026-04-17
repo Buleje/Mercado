@@ -48,6 +48,12 @@ const TodayHub = dynamic(
   { ssr: false, loading: DashboardLoading },
 );
 
+// ADR-066 Ola M — InicioDashboardV2 con compound charts + multi-signal KPIs
+const InicioDashboardV2 = dynamic(
+  () => import("@/components/admin/inicio/InicioDashboardV2"),
+  { ssr: false, loading: DashboardLoading },
+);
+
 const MODULE_ID = "vendor-dashboard";
 
 type InicioTab = "general" | "ventas" | "caja" | "inventario" | "compras" | "productos" | "clientes" | "marketplace";
@@ -87,7 +93,7 @@ function KPISkeleton() {
 
 function CardSkeleton({ rows = 3 }: { rows?: number }) {
   return (
-    <div className="bg-white border border-gray-200 rounded-xl p-6  space-y-3">
+    <div className="bg-white border border-[var(--rule-base)] rounded-xl p-6  space-y-3">
       <div className="h-4 bg-gray-100 rounded w-1/3 animate-pulse" />
       {Array.from({ length: rows }).map((_, i) => (
         <div key={i} className="h-10 bg-gray-100 rounded-xl animate-pulse" />
@@ -183,10 +189,10 @@ export default function VendorDashboardModule() {
       <AdminTabBar tabs={TABS} activeTab={tab} onTabChange={(t) => setTab(t as InicioTab)} onTabHover={(id) => TAB_PREFETCH[id as InicioTab]?.()} moduleId={MODULE_ID}>
         {tab === "general" && (
           <div className="space-y-6">
-            {/* ADR-064 · Hub unificado "Hoy" con saludo dinámico por hora (Ola H) */}
+            {/* ADR-064 · Hub unificado "Hoy" con saludo dinámico por hora */}
             <TodayHub />
-            {/* Dashboard legacy debajo (transición gradual) */}
-            <InicioDashboard dateRange={dateRange} />
+            {/* ADR-066 Ola M · Dashboard denso con compound charts + multi-signal KPIs */}
+            <InicioDashboardV2 dateRange={dateRange} />
           </div>
         )}
         {tab === "ventas" && <VentasDashboard dateRange={dateRange} />}

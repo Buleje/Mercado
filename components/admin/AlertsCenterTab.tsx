@@ -153,7 +153,7 @@ function AlertSkeleton() {
       {Array.from({ length: 4 }).map((_, i) => (
         <div
           key={i}
-          className="bg-white dark:bg-card rounded-xl border border-gray-200 dark:border-card-border p-4 animate-pulse"
+          className="bg-white dark:bg-card rounded-xl border border-[var(--rule-base)] dark:border-card-border p-4 animate-pulse"
         >
           <div className="flex items-center gap-3">
             <div className="h-10 w-10 bg-gray-200 dark:bg-gray-700 rounded-xl shrink-0" />
@@ -523,7 +523,7 @@ export default function AlertsCenterTab({ tenantId: _tenantId, onNavigate }: Pro
                       "flex items-center gap-3 sm:gap-4 rounded-xl border border-l-4 p-4",
                       config.border,
                       config.bg,
-                      "border-gray-200 dark:border-card-border",
+                      "border-[var(--rule-base)] dark:border-card-border",
                     )}
                   >
                     {/* Icon */}
@@ -544,7 +544,7 @@ export default function AlertsCenterTab({ tenantId: _tenantId, onNavigate }: Pro
                         </p>
                         <span
                           className={cn(
-                            "hidden sm:inline-flex shrink-0 px-1.5 py-0.5 rounded text-[10px] font-bold",
+                            "hidden sm:inline-flex shrink-0 px-1.5 py-0.5 rounded text-[length:var(--ts-2xs)] font-bold",
                             config.badge,
                             config.badgeText,
                           )}
@@ -556,7 +556,7 @@ export default function AlertsCenterTab({ tenantId: _tenantId, onNavigate }: Pro
                         {alert.description}
                       </p>
                       {alert.createdAt > 0 && (
-                        <p className="text-[10px] text-gray-400 dark:text-gray-500 mt-0.5">
+                        <p className="text-[length:var(--ts-2xs)] text-gray-400 dark:text-gray-500 mt-0.5">
                           {timeAgo(alert.createdAt)}
                         </p>
                       )}
@@ -576,14 +576,14 @@ export default function AlertsCenterTab({ tenantId: _tenantId, onNavigate }: Pro
                             );
                           }
                         }}
-                        className="flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-bold bg-white dark:bg-card border border-gray-200 dark:border-card-border text-gray-700 dark:text-foreground hover:bg-gray-50 dark:hover:bg-surface transition-colors"
+                        className="flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-bold bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border text-gray-700 dark:text-foreground hover:bg-gray-50 dark:hover:bg-surface transition-colors"
                       >
                         {alert.action}
                         <ArrowRight className="w-3 h-3" />
                       </button>
                       <button
                         onClick={() => handleDismiss(alert.id)}
-                        className="flex items-center gap-1 px-3 py-1 rounded-lg text-[10px] font-medium text-gray-400 hover:text-emerald-600 hover:bg-emerald-50 dark:hover:bg-emerald-950/20 transition-colors"
+                        className="flex items-center gap-1 px-3 py-1 rounded-lg text-[length:var(--ts-2xs)] font-medium text-gray-400 hover:text-emerald-600 hover:bg-emerald-50 dark:hover:bg-emerald-950/20 transition-colors"
                         title="Marcar como resuelta"
                       >
                         <Check className="w-3 h-3" />

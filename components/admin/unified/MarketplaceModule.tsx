@@ -109,7 +109,7 @@ interface CommissionSummary {
 const ORDER_STATUS_CONFIG: Record<string, { label: string; className: string }> = {
   pendiente:   { label: "Pendiente",  className: "bg-amber-100 text-amber-700" },
   confirmado:  { label: "Confirmado", className: "bg-emerald-100 text-emerald-700" },
-  en_camino:   { label: "En camino",  className: "bg-purple-100 text-purple-700" },
+  en_camino:   { label: "En camino",  className: "bg-[var(--surface-sunken)] text-[var(--text-primary)]" },
   entregado:   { label: "Entregado",  className: "bg-emerald-100 text-emerald-700" },
   cancelado:   { label: "Cancelado",  className: "bg-red-100 text-red-600" },
 };
@@ -181,7 +181,7 @@ export function AdminMarketplaceOverview() {
       <div className="flex items-center gap-2">
         <BarChart3 className="h-5 w-5 text-primary" />
         <h3 className="text-sm font-bold text-gray-900">Resumen del Marketplace</h3>
-        <span className="text-[10px] px-2 py-0.5 rounded-full bg-primary/10 text-primary font-bold">Admin</span>
+        <span className="text-[length:var(--ts-2xs)] px-2 py-0.5 rounded-full bg-primary/10 text-primary font-bold">Admin</span>
       </div>
 
       {/* KPIs globales */}
@@ -189,21 +189,21 @@ export function AdminMarketplaceOverview() {
         {[
           { label: "Tiendas activas", value: `${data.stores.active}/${data.stores.total}`, sub: data.stores.pending > 0 ? `${data.stores.pending} por aprobar` : "Todas aprobadas", color: "text-primary" },
           { label: "Pedidos hoy", value: String(data.today.orders), sub: fmtS(data.today.revenue), color: "text-emerald-600" },
-          { label: "Ventas del mes", value: fmtS(data.month.revenue), sub: data.month.revenueGrowth !== 0 ? `${data.month.revenueGrowth > 0 ? "+" : ""}${data.month.revenueGrowth}% vs anterior` : "—", color: "text-purple-600" },
+          { label: "Ventas del mes", value: fmtS(data.month.revenue), sub: data.month.revenueGrowth !== 0 ? `${data.month.revenueGrowth > 0 ? "+" : ""}${data.month.revenueGrowth}% vs anterior` : "—", color: "text-[var(--text-secondary)]" },
           { label: "Comisiones del mes", value: fmtS(data.commissions.month), sub: `${data.month.orders} órdenes`, color: "text-amber-600" },
           { label: "Pedidos pendientes", value: String(data.pendingOrders), sub: data.pendingOrders > 0 ? "¡Requieren atención!" : "Todo al día", color: data.pendingOrders > 0 ? "text-red-600" : "text-emerald-600" },
         ].map(({ label, value, sub, color }) => (
-          <div key={label} className="bg-white border border-gray-200 rounded-xl p-3 ">
+          <div key={label} className="bg-white border border-[var(--rule-base)] rounded-xl p-3 ">
             <p className={cn("text-xl font-extrabold", color)}>{value}</p>
-            <p className="text-[10px] text-gray-500 mt-0.5">{label}</p>
-            <p className="text-[9px] text-gray-400 mt-0.5">{sub}</p>
+            <p className="text-[length:var(--ts-2xs)] text-gray-500 mt-0.5">{label}</p>
+            <p className="text-[length:var(--ts-2xs)] text-gray-400 mt-0.5">{sub}</p>
           </div>
         ))}
       </div>
 
       {/* Top tiendas + Últimos pedidos */}
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-        <div className="bg-white border border-gray-200 rounded-xl p-4 ">
+        <div className="bg-white border border-[var(--rule-base)] rounded-xl p-4 ">
           <h4 className="text-xs font-bold text-gray-700 mb-3">Top tiendas este mes</h4>
           {data.topStores.length === 0 ? (
             <p className="text-xs text-gray-400 text-center py-3">Sin datos</p>
@@ -216,7 +216,7 @@ export function AdminMarketplaceOverview() {
                   </span>
                   <div className="flex-1 min-w-0">
                     <p className="text-xs font-semibold text-gray-800 truncate">{s.name}</p>
-                    <p className="text-[10px] text-gray-400">{s.orders} pedido(s)</p>
+                    <p className="text-[length:var(--ts-2xs)] text-gray-400">{s.orders} pedido(s)</p>
                   </div>
                   <span className="text-xs font-bold text-emerald-600 shrink-0">{fmtS(s.revenue)}</span>
                 </div>
@@ -225,7 +225,7 @@ export function AdminMarketplaceOverview() {
           )}
         </div>
 
-        <div className="bg-white border border-gray-200 rounded-xl p-4 ">
+        <div className="bg-white border border-[var(--rule-base)] rounded-xl p-4 ">
           <h4 className="text-xs font-bold text-gray-700 mb-3">Últimos pedidos marketplace</h4>
           {data.recentOrders.length === 0 ? (
             <p className="text-xs text-gray-400 text-center py-3">Sin pedidos</p>
@@ -237,9 +237,9 @@ export function AdminMarketplaceOverview() {
                   <div key={o.id} className="flex items-center gap-3">
                     <div className="flex-1 min-w-0">
                       <p className="text-xs font-semibold text-gray-800 truncate">{o.customerName}</p>
-                      <p className="text-[10px] text-gray-400">{o.storeName}</p>
+                      <p className="text-[length:var(--ts-2xs)] text-gray-400">{o.storeName}</p>
                     </div>
-                    <span className={cn("px-2 py-0.5 rounded-full text-[10px] font-bold", cfg.className)}>
+                    <span className={cn("px-2 py-0.5 rounded-full text-[length:var(--ts-2xs)] font-bold", cfg.className)}>
                       {cfg.label}
                     </span>
                     <span className="text-xs font-bold text-gray-700 shrink-0">{fmtS(o.total)}</span>
@@ -251,7 +251,7 @@ export function AdminMarketplaceOverview() {
         </div>
       </div>
 
-      <div className="border-b border-gray-200" />
+      <div className="border-b border-[var(--rule-base)]" />
     </div>
   );
 }
@@ -332,20 +332,20 @@ void DashboardTab;
         {[
           { label: "Hoy", value: fmtS(data.today.revenue), sub: `${data.today.orders} pedido(s)`, color: "text-primary" },
           { label: "Este mes", value: fmtS(data.month.revenue), sub: `${data.month.orders} pedido(s)`, color: "text-emerald-600" },
-          { label: "Ticket promedio", value: fmtS(data.month.avgTicket), sub: data.month.revenueGrowth !== 0 ? `${data.month.revenueGrowth > 0 ? "+" : ""}${data.month.revenueGrowth}% vs mes anterior` : "Sin comparación", color: "text-purple-600" },
+          { label: "Ticket promedio", value: fmtS(data.month.avgTicket), sub: data.month.revenueGrowth !== 0 ? `${data.month.revenueGrowth > 0 ? "+" : ""}${data.month.revenueGrowth}% vs mes anterior` : "Sin comparación", color: "text-[var(--text-secondary)]" },
           { label: "Reseñas", value: `★ ${data.store.rating.toFixed(1)}`, sub: `${data.store.reviewCount} opiniones`, color: "text-amber-500" },
         ].map(({ label, value, sub, color }) => (
-          <div key={label} className="bg-white border border-gray-200 rounded-xl p-3 sm:p-4 ">
+          <div key={label} className="bg-white border border-[var(--rule-base)] rounded-xl p-3 sm:p-4 ">
             <p className={cn("text-xl sm:text-2xl font-extrabold", color)}>{value}</p>
-            <p className="text-[10px] sm:text-xs text-gray-500 mt-0.5 leading-tight">{label}</p>
-            <p className="text-[9px] text-gray-400 mt-0.5">{sub}</p>
+            <p className="text-[length:var(--ts-2xs)] sm:text-xs text-gray-500 mt-0.5 leading-tight">{label}</p>
+            <p className="text-[length:var(--ts-2xs)] text-gray-400 mt-0.5">{sub}</p>
           </div>
         ))}
       </div>
 
       {/* ── Resumen todos los canales (Marketplace + Directa + POS) ── */}
       {data.allChannels && (data.allChannels.today.orders > data.today.orders || data.allChannels.month.orders > data.month.orders) && (
-        <div className="bg-linear-to-r from-primary/5 to-emerald-50 border border-primary/20 rounded-xl p-4 ">
+        <div className="bg-[var(--surface-sunken)] border border-[var(--rule-base)] rounded-xl p-4 ">
           <h3 className="text-xs font-bold text-gray-700 mb-2 flex items-center gap-1.5">
             <Store className="h-3.5 w-3.5 text-primary" />
             Resumen total (todos los canales)
@@ -353,22 +353,22 @@ void DashboardTab;
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
             <div>
               <p className="text-lg font-extrabold text-primary">{fmtS(data.allChannels.today.revenue)}</p>
-              <p className="text-[10px] text-gray-500">Hoy (total)</p>
+              <p className="text-[length:var(--ts-2xs)] text-gray-500">Hoy (total)</p>
             </div>
             <div>
               <p className="text-lg font-extrabold text-emerald-600">{data.allChannels.today.orders}</p>
-              <p className="text-[10px] text-gray-500">Pedidos hoy (total)</p>
+              <p className="text-[length:var(--ts-2xs)] text-gray-500">Pedidos hoy (total)</p>
             </div>
             <div>
-              <p className="text-lg font-extrabold text-purple-600">{fmtS(data.allChannels.month.revenue)}</p>
-              <p className="text-[10px] text-gray-500">Este mes (total)</p>
+              <p className="text-lg font-extrabold text-[var(--text-secondary)]">{fmtS(data.allChannels.month.revenue)}</p>
+              <p className="text-[length:var(--ts-2xs)] text-gray-500">Este mes (total)</p>
             </div>
             <div>
               <p className="text-lg font-extrabold text-amber-600">{data.allChannels.month.orders}</p>
-              <p className="text-[10px] text-gray-500">Pedidos mes (total)</p>
+              <p className="text-[length:var(--ts-2xs)] text-gray-500">Pedidos mes (total)</p>
             </div>
           </div>
-          <p className="text-[9px] text-gray-400 mt-2">Incluye ventas directas, POS y marketplace.</p>
+          <p className="text-[length:var(--ts-2xs)] text-gray-400 mt-2">Incluye ventas directas, POS y marketplace.</p>
         </div>
       )}
 
@@ -391,7 +391,7 @@ void DashboardTab;
       )}
 
       {/* ── Acciones rápidas del vendedor ── */}
-      <div className="bg-white border border-gray-200 rounded-xl p-4 ">
+      <div className="bg-white border border-[var(--rule-base)] rounded-xl p-4 ">
         <div className="flex items-center gap-2 mb-3">
           <Zap className="h-4 w-4 text-primary" />
           <h3 className="text-sm font-bold text-gray-800">Qué hacer ahora</h3>
@@ -410,7 +410,7 @@ void DashboardTab;
               "flex items-center gap-3 p-3 rounded-xl border text-left transition-all hover:shadow-sm",
               (data.pendingOrders ?? 0) > 0
                 ? "border-amber-200 bg-amber-50 hover:bg-amber-100"
-                : "border-gray-200 bg-gray-50 hover:bg-gray-100"
+                : "border-[var(--rule-base)] bg-gray-50 hover:bg-gray-100"
             )}
           >
             <div className={cn(
@@ -425,7 +425,7 @@ void DashboardTab;
                   ? `${data.pendingOrders} pedido(s) por confirmar`
                   : "Sin pedidos pendientes"}
               </p>
-              <p className="text-[10px] text-gray-500 flex items-center gap-1">
+              <p className="text-[length:var(--ts-2xs)] text-gray-500 flex items-center gap-1">
                 Ir a órdenes <ArrowRight className="h-3 w-3" />
               </p>
             </div>
@@ -444,7 +444,7 @@ void DashboardTab;
               "flex items-center gap-3 p-3 rounded-xl border text-left transition-all hover:shadow-sm",
               data.products.lowStock > 0
                 ? "border-red-200 bg-red-50 hover:bg-red-100"
-                : "border-gray-200 bg-gray-50 hover:bg-gray-100"
+                : "border-[var(--rule-base)] bg-gray-50 hover:bg-gray-100"
             )}
           >
             <div className={cn(
@@ -459,7 +459,7 @@ void DashboardTab;
                   ? `${data.products.lowStock} producto(s) stock bajo`
                   : "Stock OK"}
               </p>
-              <p className="text-[10px] text-gray-500 flex items-center gap-1">
+              <p className="text-[length:var(--ts-2xs)] text-gray-500 flex items-center gap-1">
                 Ver productos <ArrowRight className="h-3 w-3" />
               </p>
             </div>
@@ -477,7 +477,7 @@ void DashboardTab;
             </div>
             <div className="min-w-0">
               <p className="text-sm font-bold text-gray-900">Ver mi tienda</p>
-              <p className="text-[10px] text-gray-500 flex items-center gap-1">
+              <p className="text-[length:var(--ts-2xs)] text-gray-500 flex items-center gap-1">
                 Abrir en marketplace <ArrowRight className="h-3 w-3" />
               </p>
             </div>
@@ -488,14 +488,14 @@ void DashboardTab;
             href="/marketplace"
             target="_blank"
             rel="noopener noreferrer"
-            className="flex items-center gap-3 p-3 rounded-lg border border-purple-200 bg-purple-50 text-left transition-all hover:shadow-sm hover:bg-purple-100"
+            className="flex items-center gap-3 p-3 rounded-lg border border-purple-200 bg-[var(--surface-sunken)] text-left transition-all hover:shadow-sm hover:bg-[var(--surface-sunken)]"
           >
-            <div className="h-10 w-10 rounded-xl flex items-center justify-center shrink-0 bg-purple-200 text-purple-600">
+            <div className="h-10 w-10 rounded-xl flex items-center justify-center shrink-0 bg-[var(--surface-sunken)] text-[var(--text-primary)]">
               <Store className="h-5 w-5" />
             </div>
             <div className="min-w-0">
               <p className="text-sm font-bold text-gray-900">Ir al Marketplace</p>
-              <p className="text-[10px] text-gray-500 flex items-center gap-1">
+              <p className="text-[length:var(--ts-2xs)] text-gray-500 flex items-center gap-1">
                 Ver todas las tiendas <ArrowRight className="h-3 w-3" />
               </p>
             </div>
@@ -504,7 +504,7 @@ void DashboardTab;
       </div>
 
       {/* ── Gráfico de ventas 7 días (barras simples CSS) ── */}
-      <div className="bg-white border border-gray-200 rounded-xl p-4 ">
+      <div className="bg-white border border-[var(--rule-base)] rounded-xl p-4 ">
         <h3 className="text-sm font-bold text-gray-800 mb-3">Ventas últimos 7 días</h3>
         <div className="flex items-end gap-1.5 h-32">
           {data.dailySales.map((day) => {
@@ -514,12 +514,12 @@ void DashboardTab;
               <div key={day.date} className="flex-1 flex flex-col items-center gap-1">
                 <div className="w-full relative" style={{ height: "96px" }}>
                   <div
-                    className="absolute bottom-0 w-full rounded-t-lg bg-primary transition-all duration-500"
+                    className="absolute bottom-0 w-full rounded-t-lg bg-primary transition-all duration-[var(--dur-slow)]"
                     style={{ height: `${Math.max(pct, 4)}%` }}
                     title={`${fmtS(day.revenue)} — ${day.orders} pedido(s)`}
                   />
                 </div>
-                <span className="text-[9px] text-gray-400 capitalize">{dayLabel}</span>
+                <span className="text-[length:var(--ts-2xs)] text-gray-400 capitalize">{dayLabel}</span>
               </div>
             );
           })}
@@ -528,7 +528,7 @@ void DashboardTab;
 
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         {/* ── Top productos ── */}
-        <div className="bg-white border border-gray-200 rounded-xl p-4 ">
+        <div className="bg-white border border-[var(--rule-base)] rounded-xl p-4 ">
           <h3 className="text-sm font-bold text-gray-800 mb-3">Top 5 productos del mes</h3>
           {data.topProducts.length === 0 ? (
             <p className="text-xs text-gray-400 py-4 text-center">Sin ventas este mes</p>
@@ -541,7 +541,7 @@ void DashboardTab;
                   </span>
                   <div className="flex-1 min-w-0">
                     <p className="text-xs font-semibold text-gray-800 truncate">{p.name}</p>
-                    <p className="text-[10px] text-gray-400">{p.qty} vendido(s)</p>
+                    <p className="text-[length:var(--ts-2xs)] text-gray-400">{p.qty} vendido(s)</p>
                   </div>
                   <span className="text-xs font-bold text-emerald-600 shrink-0">{fmtS(p.revenue)}</span>
                 </div>
@@ -551,7 +551,7 @@ void DashboardTab;
         </div>
 
         {/* ── Últimos pedidos ── */}
-        <div className="bg-white border border-gray-200 rounded-xl p-4 ">
+        <div className="bg-white border border-[var(--rule-base)] rounded-xl p-4 ">
           <h3 className="text-sm font-bold text-gray-800 mb-3">Últimos pedidos</h3>
           {data.recentOrders.length === 0 ? (
             <p className="text-xs text-gray-400 py-4 text-center">Sin pedidos aún</p>
@@ -563,7 +563,7 @@ void DashboardTab;
                   <div key={o.id} className="flex items-center gap-3">
                     <div className="flex-1 min-w-0">
                       <p className="text-xs font-semibold text-gray-800 truncate">{o.customerName}</p>
-                      <p className="text-[10px] text-gray-400">
+                      <p className="text-[length:var(--ts-2xs)] text-gray-400">
                         {o.itemsCount} producto(s) · {new Date(o.createdAt).toLocaleDateString("es-PE", { day: "numeric", month: "short" })}
                       </p>
                     </div>
@@ -571,13 +571,13 @@ void DashboardTab;
                       <button
                         onClick={() => handleQuickConfirm(o.id)}
                         disabled={confirmingId === o.id}
-                        className="flex items-center gap-1 px-2 py-1 rounded-lg bg-primary text-white text-[10px] font-bold hover:bg-[#009B8D] transition-colors disabled:opacity-50 shrink-0"
+                        className="flex items-center gap-1 px-2 py-1 rounded-lg bg-primary text-white text-[length:var(--ts-2xs)] font-bold hover:bg-[#009B8D] transition-colors disabled:opacity-50 shrink-0"
                       >
                         <CheckCircle className="h-3 w-3" />
                         {confirmingId === o.id ? "..." : "Confirmar"}
                       </button>
                     ) : (
-                      <span className={cn("px-2 py-0.5 rounded-full text-[10px] font-bold", cfg.className)}>
+                      <span className={cn("px-2 py-0.5 rounded-full text-[length:var(--ts-2xs)] font-bold", cfg.className)}>
                         {cfg.label}
                       </span>
                     )}
@@ -592,19 +592,19 @@ void DashboardTab;
 
       {/* ── Inventario rápido ── */}
       <div className="grid grid-cols-3 gap-3">
-        <div className="bg-white border border-gray-200 rounded-xl p-3 text-center ">
+        <div className="bg-white border border-[var(--rule-base)] rounded-xl p-3 text-center ">
           <p className="text-xl font-extrabold text-primary">{data.products.published}</p>
-          <p className="text-[10px] text-gray-500 mt-0.5">Publicados</p>
+          <p className="text-[length:var(--ts-2xs)] text-gray-500 mt-0.5">Publicados</p>
         </div>
-        <div className="bg-white border border-gray-200 rounded-xl p-3 text-center ">
+        <div className="bg-white border border-[var(--rule-base)] rounded-xl p-3 text-center ">
           <p className="text-xl font-extrabold text-gray-600">{data.products.total}</p>
-          <p className="text-[10px] text-gray-500 mt-0.5">Total productos</p>
+          <p className="text-[length:var(--ts-2xs)] text-gray-500 mt-0.5">Total productos</p>
         </div>
-        <div className="bg-white border border-gray-200 rounded-xl p-3 text-center ">
+        <div className="bg-white border border-[var(--rule-base)] rounded-xl p-3 text-center ">
           <p className={cn("text-xl font-extrabold", data.products.lowStock > 0 ? "text-amber-600" : "text-emerald-600")}>
             {data.products.lowStock}
           </p>
-          <p className="text-[10px] text-gray-500 mt-0.5">Stock bajo</p>
+          <p className="text-[length:var(--ts-2xs)] text-gray-500 mt-0.5">Stock bajo</p>
         </div>
       </div>
     </div>
@@ -674,7 +674,7 @@ function TiendaTab() {
         </div>
       )}
 
-      <div className="bg-white border border-gray-200 rounded-xl p-5  space-y-5">
+      <div className="bg-white border border-[var(--rule-base)] rounded-xl p-5  space-y-5">
         <h3 className="font-bold text-gray-900 text-sm">Configuración de la tienda</h3>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -688,10 +688,10 @@ function TiendaTab() {
               value={store.slug}
               onChange={(e) => setStore((p) => ({ ...p, slug: e.target.value.toLowerCase().replace(/\s+/g, "-") }))}
               placeholder="mi-bodega"
-              className="w-full px-3 py-2.5 rounded-lg border border-gray-200 bg-white text-sm text-gray-900 outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all"
+              className="w-full px-3 py-2.5 rounded-lg border border-[var(--rule-base)] bg-white text-sm text-gray-900 outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all"
             />
             {store.slug && (
-              <p className="text-[10px] text-gray-400">marketplace.com/{store.slug}</p>
+              <p className="text-[length:var(--ts-2xs)] text-gray-400">marketplace.com/{store.slug}</p>
             )}
           </div>
 
@@ -703,7 +703,7 @@ function TiendaTab() {
               value={store.name}
               onChange={(e) => setStore((p) => ({ ...p, name: e.target.value }))}
               placeholder="Mi Bodega"
-              className="w-full px-3 py-2.5 rounded-lg border border-gray-200 bg-white text-sm text-gray-900 outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all"
+              className="w-full px-3 py-2.5 rounded-lg border border-[var(--rule-base)] bg-white text-sm text-gray-900 outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all"
             />
           </div>
 
@@ -714,7 +714,7 @@ function TiendaTab() {
               <select
                 value={store.category}
                 onChange={(e) => setStore((p) => ({ ...p, category: e.target.value }))}
-                className="w-full px-3 py-2.5 rounded-lg border border-gray-200 bg-white text-sm text-gray-900 outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary appearance-none transition-all"
+                className="w-full px-3 py-2.5 rounded-lg border border-[var(--rule-base)] bg-white text-sm text-gray-900 outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary appearance-none transition-all"
               >
                 {CATEGORIAS.map((c) => <option key={c} value={c}>{c}</option>)}
               </select>
@@ -729,7 +729,7 @@ function TiendaTab() {
               <select
                 value={store.zone}
                 onChange={(e) => setStore((p) => ({ ...p, zone: e.target.value }))}
-                className="w-full px-3 py-2.5 rounded-lg border border-gray-200 bg-white text-sm text-gray-900 outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary appearance-none transition-all"
+                className="w-full px-3 py-2.5 rounded-lg border border-[var(--rule-base)] bg-white text-sm text-gray-900 outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary appearance-none transition-all"
               >
                 {ZONAS.map((z) => <option key={z} value={z}>{z}</option>)}
               </select>
@@ -747,7 +747,7 @@ function TiendaTab() {
               step={0.5}
               value={store.commissionRate}
               onChange={(e) => setStore((p) => ({ ...p, commissionRate: parseFloat(e.target.value) || 0 }))}
-              className="w-full px-3 py-2.5 rounded-lg border border-gray-200 bg-white text-sm text-gray-900 outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all"
+              className="w-full px-3 py-2.5 rounded-lg border border-[var(--rule-base)] bg-white text-sm text-gray-900 outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all"
             />
           </div>
 
@@ -773,7 +773,7 @@ function TiendaTab() {
                   value={store.logoUrl}
                   onChange={(e) => setStore((p) => ({ ...p, logoUrl: e.target.value }))}
                   placeholder="https://... o sube una imagen"
-                  className="w-full px-3 py-2.5 rounded-lg border border-gray-200 bg-white text-sm text-gray-900 outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all"
+                  className="w-full px-3 py-2.5 rounded-lg border border-[var(--rule-base)] bg-white text-sm text-gray-900 outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all"
                 />
                 {store.logoUrl && (
                   <div className="flex items-center gap-2 text-xs text-green-600">
@@ -794,12 +794,12 @@ function TiendaTab() {
             value={store.description}
             onChange={(e) => setStore((p) => ({ ...p, description: e.target.value }))}
             placeholder="Describe tu bodega, horarios, especialidades..."
-            className="w-full px-3 py-2.5 rounded-lg border border-gray-200 bg-white text-sm text-gray-900 outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary resize-none transition-all"
+            className="w-full px-3 py-2.5 rounded-lg border border-[var(--rule-base)] bg-white text-sm text-gray-900 outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary resize-none transition-all"
           />
         </div>
 
         {/* Estado activo */}
-        <div className="flex items-center justify-between p-3 bg-gray-50 rounded-xl border border-gray-200">
+        <div className="flex items-center justify-between p-3 bg-gray-50 rounded-xl border border-[var(--rule-base)]">
           <div>
             <p className="text-sm font-bold text-gray-900">Tienda activa en marketplace</p>
             <p className="text-xs text-gray-500">Los clientes podrán encontrar y comprar en tu tienda</p>
@@ -978,10 +978,10 @@ function ProductosTab() {
           <p className="text-xs mt-1">Activa productos desde tu catálogo para mostrarlos en el marketplace.</p>
         </div>
       ) : (
-        <div className="bg-white border border-gray-200 rounded-xl  overflow-hidden">
+        <div className="bg-white border border-[var(--rule-base)] rounded-xl  overflow-hidden">
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
-              <thead className="bg-gray-50 border-b border-gray-200">
+              <thead className="bg-gray-50 border-b border-[var(--rule-base)]">
                 <tr>
                   <th className="text-left px-4 py-3 text-xs font-bold text-gray-500">Producto</th>
                   <th className="text-right px-4 py-3 text-xs font-bold text-gray-500">Precio retail</th>
@@ -1084,10 +1084,10 @@ function OrdenesTab() {
           <p className="text-xs mt-1">Las órdenes recibidas desde el marketplace aparecerán aquí.</p>
         </div>
       ) : (
-        <div className="bg-white border border-gray-200 rounded-xl  overflow-hidden">
+        <div className="bg-white border border-[var(--rule-base)] rounded-xl  overflow-hidden">
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
-              <thead className="bg-gray-50 border-b border-gray-200">
+              <thead className="bg-gray-50 border-b border-[var(--rule-base)]">
                 <tr>
                   <th className="text-left px-4 py-3 text-xs font-bold text-gray-500">Orden</th>
                   <th className="text-left px-4 py-3 text-xs font-bold text-gray-500">Cliente</th>
@@ -1227,7 +1227,7 @@ function ComisionesTab() {
           { key: "liquidado", label: "Liquidado",  color: "text-emerald-600",  bg: "bg-emerald-50" },
           { key: "pagado",    label: "Pagado",     color: "text-emerald-600", bg: "bg-emerald-50" },
         ].map(({ key, label, color, bg }) => (
-          <div key={key} className={cn("rounded-xl p-4 border border-gray-200 ", bg)}>
+          <div key={key} className={cn("rounded-xl p-4 border border-[var(--rule-base)] ", bg)}>
             <p className="text-xs font-bold text-gray-500">{label}</p>
             <p className={cn("text-2xl font-extrabold mt-1", color)}>
               S/{(summary[key as keyof CommissionSummary] || 0).toFixed(2)}
@@ -1278,10 +1278,10 @@ function ComisionesTab() {
           <p className="text-sm font-semibold">Sin comisiones {filterStatus !== "all" ? `en estado "${filterStatus}"` : "registradas aún"}</p>
         </div>
       ) : (
-        <div className="bg-white border border-gray-200 rounded-xl  overflow-hidden">
+        <div className="bg-white border border-[var(--rule-base)] rounded-xl  overflow-hidden">
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
-              <thead className="bg-gray-50 border-b border-gray-200">
+              <thead className="bg-gray-50 border-b border-[var(--rule-base)]">
                 <tr>
                   <th className="text-left px-4 py-3 text-xs font-bold text-gray-500">Orden</th>
                   <th className="text-right px-4 py-3 text-xs font-bold text-gray-500">Total orden</th>
@@ -1326,7 +1326,7 @@ function ComisionesTab() {
                           </button>
                         )}
                         {e.status === "pagado" && (
-                          <span className="text-[10px] text-gray-400">✓ Pagado</span>
+                          <span className="text-[length:var(--ts-2xs)] text-gray-400">✓ Pagado</span>
                         )}
                       </td>
                     </tr>
@@ -1457,7 +1457,7 @@ function CuponesTab() {
       </div>
 
       {showForm && (
-        <div className="bg-gray-50 border border-gray-200 rounded-xl p-4 space-y-3">
+        <div className="bg-gray-50 border border-[var(--rule-base)] rounded-xl p-4 space-y-3">
           <div className="grid grid-cols-2 gap-3">
             <div>
               <label className="text-xs font-semibold text-gray-600 block mb-1">Código</label>
@@ -1466,7 +1466,7 @@ function CuponesTab() {
                 placeholder="BIENVENIDO10"
                 value={form.code}
                 onChange={(e) => setForm({ ...form, code: e.target.value })}
-                className="w-full px-3 py-2 rounded-lg border border-gray-300 text-sm focus:ring-2 focus:ring-primary focus:border-transparent"
+                className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] text-sm focus:ring-2 focus:ring-primary focus:border-transparent"
               />
             </div>
             <div>
@@ -1474,7 +1474,7 @@ function CuponesTab() {
               <select
                 value={form.discountType}
                 onChange={(e) => setForm({ ...form, discountType: e.target.value as "percent" | "fixed" })}
-                className="w-full px-3 py-2 rounded-lg border border-gray-300 text-sm focus:ring-2 focus:ring-primary focus:border-transparent"
+                className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] text-sm focus:ring-2 focus:ring-primary focus:border-transparent"
               >
                 <option value="percent">Porcentaje (%)</option>
                 <option value="fixed">Monto fijo (S/)</option>
@@ -1491,7 +1491,7 @@ function CuponesTab() {
                 placeholder="10"
                 value={form.discountValue}
                 onChange={(e) => setForm({ ...form, discountValue: e.target.value })}
-                className="w-full px-3 py-2 rounded-lg border border-gray-300 text-sm focus:ring-2 focus:ring-primary focus:border-transparent"
+                className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] text-sm focus:ring-2 focus:ring-primary focus:border-transparent"
               />
             </div>
             <div>
@@ -1501,7 +1501,7 @@ function CuponesTab() {
                 placeholder="Opcional"
                 value={form.minPurchase}
                 onChange={(e) => setForm({ ...form, minPurchase: e.target.value })}
-                className="w-full px-3 py-2 rounded-lg border border-gray-300 text-sm focus:ring-2 focus:ring-primary focus:border-transparent"
+                className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] text-sm focus:ring-2 focus:ring-primary focus:border-transparent"
               />
             </div>
             <div>
@@ -1511,7 +1511,7 @@ function CuponesTab() {
                 placeholder="Ilimitado"
                 value={form.maxUses}
                 onChange={(e) => setForm({ ...form, maxUses: e.target.value })}
-                className="w-full px-3 py-2 rounded-lg border border-gray-300 text-sm focus:ring-2 focus:ring-primary focus:border-transparent"
+                className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] text-sm focus:ring-2 focus:ring-primary focus:border-transparent"
               />
             </div>
           </div>
@@ -1523,7 +1523,7 @@ function CuponesTab() {
                 placeholder="Descuento de bienvenida"
                 value={form.description}
                 onChange={(e) => setForm({ ...form, description: e.target.value })}
-                className="w-full px-3 py-2 rounded-lg border border-gray-300 text-sm focus:ring-2 focus:ring-primary focus:border-transparent"
+                className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] text-sm focus:ring-2 focus:ring-primary focus:border-transparent"
               />
             </div>
             <div>
@@ -1532,14 +1532,14 @@ function CuponesTab() {
                 type="datetime-local"
                 value={form.expiresAt}
                 onChange={(e) => setForm({ ...form, expiresAt: e.target.value ? new Date(e.target.value).toISOString() : "" })}
-                className="w-full px-3 py-2 rounded-lg border border-gray-300 text-sm focus:ring-2 focus:ring-primary focus:border-transparent"
+                className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] text-sm focus:ring-2 focus:ring-primary focus:border-transparent"
               />
             </div>
           </div>
           <div className="flex gap-2 justify-end">
             <button
               onClick={() => setShowForm(false)}
-              className="px-4 py-2 rounded-lg text-sm text-gray-600 border border-gray-300 hover:bg-gray-100 transition"
+              className="px-4 py-2 rounded-lg text-sm text-gray-600 border border-[var(--rule-base)] hover:bg-gray-100 transition"
             >
               Cancelar
             </button>
@@ -1574,7 +1574,7 @@ function CuponesTab() {
                 <div className="flex items-center gap-2">
                   <span className="font-mono font-bold text-sm text-primary">{c.code}</span>
                   <span className={cn(
-                    "text-[10px] font-semibold px-2 py-0.5 rounded-full",
+                    "text-[length:var(--ts-2xs)] font-semibold px-2 py-0.5 rounded-full",
                     c.active ? "bg-emerald-100 text-emerald-700" : "bg-gray-200 text-gray-500"
                   )}>
                     {c.active ? "Activo" : "Inactivo"}
@@ -1681,7 +1681,7 @@ function FidelidadTab() {
         {Object.entries(TIER_CONFIG).map(([key, cfg]) => (
           <div key={key} className={cn("rounded-xl p-2 text-xs font-semibold", cfg.className)}>
             <p className="text-sm">{cfg.label}</p>
-            <p className="text-[10px] font-normal mt-0.5">{cfg.minPoints} pts</p>
+            <p className="text-[length:var(--ts-2xs)] font-normal mt-0.5">{cfg.minPoints} pts</p>
           </div>
         ))}
       </div>
@@ -1694,7 +1694,7 @@ function FidelidadTab() {
           value={phone}
           onChange={(e) => setPhone(e.target.value)}
           onKeyDown={(e) => e.key === "Enter" && searchCustomer()}
-          className="flex-1 px-3 py-2 rounded-lg border border-gray-300 text-sm focus:ring-2 focus:ring-primary focus:border-transparent"
+          className="flex-1 px-3 py-2 rounded-lg border border-[var(--rule-base)] text-sm focus:ring-2 focus:ring-primary focus:border-transparent"
         />
         <button
           onClick={searchCustomer}
@@ -1706,7 +1706,7 @@ function FidelidadTab() {
       </div>
 
       {data && (
-        <div className="bg-white border border-gray-200 rounded-xl p-4 space-y-4">
+        <div className="bg-white border border-[var(--rule-base)] rounded-xl p-4 space-y-4">
           {/* Customer info */}
           <div className="flex items-center justify-between">
             <div>
@@ -1715,7 +1715,7 @@ function FidelidadTab() {
             </div>
             <div className="text-right">
               <p className="text-2xl font-extrabold text-primary">{data.points}</p>
-              <span className={cn("text-[10px] font-semibold px-2 py-0.5 rounded-full", TIER_CONFIG[data.tier]?.className ?? "bg-gray-100 text-gray-600")}>
+              <span className={cn("text-[length:var(--ts-2xs)] font-semibold px-2 py-0.5 rounded-full", TIER_CONFIG[data.tier]?.className ?? "bg-gray-100 text-gray-600")}>
                 {TIER_CONFIG[data.tier]?.label ?? data.tier}
               </span>
             </div>
@@ -1732,7 +1732,7 @@ function FidelidadTab() {
                 placeholder="100"
                 value={earnPoints}
                 onChange={(e) => setEarnPoints(e.target.value)}
-                className="w-full px-3 py-2 rounded-lg border border-gray-300 text-sm focus:ring-2 focus:ring-primary focus:border-transparent"
+                className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] text-sm focus:ring-2 focus:ring-primary focus:border-transparent"
               />
             </div>
             <button
@@ -1750,14 +1750,14 @@ function FidelidadTab() {
               <p className="text-xs font-semibold text-gray-600 mb-2">Historial reciente</p>
               <div className="space-y-1 max-h-48 overflow-y-auto">
                 {data.transactions.map((tx) => (
-                  <div key={tx.id} className="flex items-center justify-between text-xs py-1 border-b border-gray-100 last:border-0">
+                  <div key={tx.id} className="flex items-center justify-between text-xs py-1 border-b border-[var(--rule-soft)] last:border-0">
                     <div>
                       <span className={tx.type === "earn" ? "text-emerald-600 font-semibold" : "text-red-500 font-semibold"}>
                         {tx.points > 0 ? "+" : ""}{tx.points} pts
                       </span>
                       <span className="text-gray-400 ml-2">{tx.description}</span>
                     </div>
-                    <span className="text-gray-400 text-[10px]">
+                    <span className="text-gray-400 text-[length:var(--ts-2xs)]">
                       {new Date(tx.createdAt).toLocaleDateString("es-PE")}
                     </span>
                   </div>
@@ -1775,10 +1775,10 @@ function FidelidadTab() {
           <p className="text-xs mt-1">Busca un cliente por teléfono para ver y gestionar sus puntos.</p>
           <div className="mt-4 bg-gray-50 rounded-xl p-3 text-left max-w-xs mx-auto">
             <p className="text-xs font-semibold text-gray-600 mb-1">Reglas de puntos:</p>
-            <p className="text-[10px] text-gray-500">• 1 punto por cada S/1 de compra</p>
-            <p className="text-[10px] text-gray-500">• 500 pts = Nivel Plata (5% descuento)</p>
-            <p className="text-[10px] text-gray-500">• 1000 pts = Nivel Oro (10% descuento)</p>
-            <p className="text-[10px] text-gray-500">• 100 pts = S/1 de descuento al canjear</p>
+            <p className="text-[length:var(--ts-2xs)] text-gray-500">• 1 punto por cada S/1 de compra</p>
+            <p className="text-[length:var(--ts-2xs)] text-gray-500">• 500 pts = Nivel Plata (5% descuento)</p>
+            <p className="text-[length:var(--ts-2xs)] text-gray-500">• 1000 pts = Nivel Oro (10% descuento)</p>
+            <p className="text-[length:var(--ts-2xs)] text-gray-500">• 100 pts = S/1 de descuento al canjear</p>
           </div>
         </div>
       )}
@@ -1861,21 +1861,21 @@ function ResenasTab() {
     <div className="space-y-6">
       {/* Summary strip */}
       <div className="grid grid-cols-3 gap-3">
-        <div className="bg-white border border-gray-200 rounded-xl p-3 text-center">
+        <div className="bg-white border border-[var(--rule-base)] rounded-xl p-3 text-center">
           <p className="text-2xl font-extrabold text-primary">{reviews.length}</p>
-          <p className="text-[10px] text-gray-500 mt-0.5">Total reseñas</p>
+          <p className="text-[length:var(--ts-2xs)] text-gray-500 mt-0.5">Total reseñas</p>
         </div>
-        <div className="bg-white border border-gray-200 rounded-xl p-3 text-center">
+        <div className="bg-white border border-[var(--rule-base)] rounded-xl p-3 text-center">
           <p className="text-2xl font-extrabold text-amber-600">{pendingCount}</p>
-          <p className="text-[10px] text-gray-500 mt-0.5">Por moderar</p>
+          <p className="text-[length:var(--ts-2xs)] text-gray-500 mt-0.5">Por moderar</p>
         </div>
-        <div className="bg-white border border-gray-200 rounded-xl p-3 text-center">
+        <div className="bg-white border border-[var(--rule-base)] rounded-xl p-3 text-center">
           <p className="text-2xl font-extrabold text-emerald-600">
             {reviews.length > 0
               ? (reviews.reduce((s, r) => s + r.rating, 0) / reviews.length).toFixed(1)
               : "—"}
           </p>
-          <p className="text-[10px] text-gray-500 mt-0.5">Promedio ★</p>
+          <p className="text-[length:var(--ts-2xs)] text-gray-500 mt-0.5">Promedio ★</p>
         </div>
       </div>
 
@@ -1913,13 +1913,13 @@ function ResenasTab() {
         {filtered.map((review) => {
           const cfg = REVIEW_STATUS_CONFIG[review.status] ?? REVIEW_STATUS_CONFIG.pending;
           return (
-            <div key={review.id} className="bg-white border border-gray-200 rounded-xl p-4 space-y-3">
+            <div key={review.id} className="bg-white border border-[var(--rule-base)] rounded-xl p-4 space-y-3">
               {/* Header: name, stars, status badge */}
               <div className="flex items-start justify-between gap-3">
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2 flex-wrap">
                     <span className="font-bold text-sm text-gray-900 truncate">{review.name || "Anónimo"}</span>
-                    <span className={cn("px-2 py-0.5 rounded-full text-[10px] font-bold", cfg.className)}>
+                    <span className={cn("px-2 py-0.5 rounded-full text-[length:var(--ts-2xs)] font-bold", cfg.className)}>
                       {cfg.label}
                     </span>
                   </div>
@@ -1930,7 +1930,7 @@ function ResenasTab() {
                         className={cn("h-3.5 w-3.5", s <= review.rating ? "fill-amber-400 text-amber-400" : "text-gray-200")}
                       />
                     ))}
-                    <span className="text-[10px] text-gray-400 ml-1">
+                    <span className="text-[length:var(--ts-2xs)] text-gray-400 ml-1">
                       {new Date(review.date).toLocaleDateString("es-PE", { day: "numeric", month: "short", year: "numeric" })}
                     </span>
                   </div>
@@ -1976,7 +1976,7 @@ function ResenasTab() {
               {/* Existing admin reply */}
               {review.adminReply && replyingTo !== review.id && (
                 <div className="bg-primary/5 border border-primary/20 rounded-xl p-3">
-                  <p className="text-[10px] font-bold text-primary mb-1">Tu respuesta:</p>
+                  <p className="text-[length:var(--ts-2xs)] font-bold text-primary mb-1">Tu respuesta:</p>
                   <p className="text-xs text-gray-700">{review.adminReply}</p>
                 </div>
               )}
@@ -1989,7 +1989,7 @@ function ResenasTab() {
                     onChange={(e) => setReplyText(e.target.value)}
                     placeholder="Escribe tu respuesta al cliente..."
                     rows={2}
-                    className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:ring-2 focus:ring-primary/30 focus:border-primary resize-none"
+                    className="w-full rounded-lg border border-[var(--rule-base)] px-3 py-2 text-sm focus:ring-2 focus:ring-primary/30 focus:border-primary resize-none"
                   />
                   <div className="flex gap-2">
                     <button
@@ -2070,14 +2070,14 @@ export default function MarketplaceModule() {
         ].map(({ label, value, color }) => (
           <div
             key={label}
-            className="bg-white border border-gray-200 rounded-xl p-3 sm:p-4  text-center"
+            className="bg-white border border-[var(--rule-base)] rounded-xl p-3 sm:p-4  text-center"
           >
             {kpisLoading ? (
               <div className="h-7 w-16 mx-auto bg-gray-200 rounded animate-pulse" />
             ) : (
               <p className={cn("text-2xl font-extrabold", color)}>{value}</p>
             )}
-            <p className="text-[10px] sm:text-xs text-gray-500 mt-0.5 leading-tight">{label}</p>
+            <p className="text-[length:var(--ts-2xs)] sm:text-xs text-gray-500 mt-0.5 leading-tight">{label}</p>
           </div>
         ))}
       </div>

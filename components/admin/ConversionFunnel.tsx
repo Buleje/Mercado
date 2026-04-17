@@ -174,7 +174,7 @@ export default function ConversionFunnel() {
               {/* Bar */}
               <div className="relative h-10 rounded-lg bg-gray-100 dark:bg-gray-800 overflow-hidden">
                 <div
-                  className={cn("h-full rounded-lg transition-all duration-700", STAGE_COLORS[i])}
+                  className={cn("h-full rounded-lg transition-all duration-[var(--dur-slower)]", STAGE_COLORS[i])}
                   style={{ width: `${widthPct}%` }}
                 />
                 {/* Conversion badge */}
@@ -201,7 +201,7 @@ export default function ConversionFunnel() {
       {/* Summary */}
       <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
         {/* Overall conversion */}
-        <div className="rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 p-4">
+        <div className="rounded-xl border border-[var(--rule-base)] bg-white dark:bg-gray-900 p-4">
           <p className="text-xs text-gray-500 dark:text-gray-400">Conversion total</p>
           <p className="text-2xl font-bold text-[#00B4A6] dark:text-green-400 mt-1">
             {current.stages[0]?.value > 0
@@ -211,7 +211,7 @@ export default function ConversionFunnel() {
           <p className="text-xs text-gray-400 mt-0.5">Visitantes que compraron</p>
         </div>
 
-        <div className="rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 p-4">
+        <div className="rounded-xl border border-[var(--rule-base)] bg-white dark:bg-gray-900 p-4">
           <p className="text-xs text-gray-500 dark:text-gray-400">Compradores esta semana</p>
           <p className="text-2xl font-bold text-gray-900 dark:text-gray-100 mt-1">
             {current.stages[current.stages.length - 1]?.value.toLocaleString("es-PE") ?? "—"}
@@ -219,7 +219,7 @@ export default function ConversionFunnel() {
           <p className="text-xs text-gray-400 mt-0.5">Pedidos completados</p>
         </div>
 
-        <div className="rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 p-4">
+        <div className="rounded-xl border border-[var(--rule-base)] bg-white dark:bg-gray-900 p-4">
           <p className="text-xs text-gray-500 dark:text-gray-400">Abandono en carrito</p>
           <p className="text-2xl font-bold text-amber-600 dark:text-amber-400 mt-1">
             {current.stages[1]?.value > 0

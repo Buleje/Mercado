@@ -87,7 +87,7 @@ export default function TagManager() {
   const filtered = tags.filter(t => t.entity === entity);
 
   return (
-    <div className="bg-white dark:bg-card rounded-xl border border-gray-200 dark:border-card-border p-5 space-y-4">
+    <div className="bg-white dark:bg-card rounded-xl border border-[var(--rule-base)] dark:border-card-border p-5 space-y-4">
       {/* Header */}
       <div className="flex items-center gap-2">
         <TagIcon className="h-5 w-5 text-[#00B4A6]" />
@@ -123,7 +123,7 @@ export default function TagManager() {
           onKeyDown={e => { if (e.key === "Enter") handleCreate(); }}
           placeholder="Nueva etiqueta..."
           maxLength={30}
-          className="flex-1 px-3 py-2 rounded-lg border border-gray-200 dark:border-card-border bg-white dark:bg-surface text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-[#00B4A6]/30 focus:border-[#00B4A6]"
+          className="flex-1 px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-card-border bg-white dark:bg-surface text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-[#00B4A6]/30 focus:border-[#00B4A6]"
         />
         {/* Color picker */}
         <div className="flex items-center gap-1 flex-wrap">

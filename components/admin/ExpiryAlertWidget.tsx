@@ -49,7 +49,7 @@ const LEVEL_STYLES: Record<ExpiryLevel, { badge: string; row: string; label: str
   },
   soon: {
     badge: "bg-[#00B4A6]/10 text-[#00B4A6] dark:text-[#2dd4bf]",
-    row: "bg-white dark:bg-gray-900 border-gray-100 dark:border-gray-800",
+    row: "bg-white dark:bg-gray-900 border-[var(--rule-base)]",
     label: "Proximas 2 semanas",
   },
 };
@@ -123,9 +123,9 @@ export default function ExpiryAlertWidget() {
   }, []);
 
   return (
-    <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-700 overflow-hidden ">
+    <div className="bg-white dark:bg-gray-900 rounded-xl border border-[var(--rule-base)] overflow-hidden ">
       {/* Header */}
-      <div className="p-5 border-b border-gray-100 dark:border-gray-800">
+      <div className="p-5 border-b border-[var(--rule-base)]">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
             <div className="relative">
@@ -246,7 +246,7 @@ export default function ExpiryAlertWidget() {
                       "flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold border transition-colors",
                       action === "sale"
                         ? "bg-[#f97316] text-white border-[#f97316]"
-                        : "border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-400 hover:border-[#f97316] hover:text-[#f97316]"
+                        : "border-[var(--rule-base)] text-gray-600 dark:text-gray-400 hover:border-[#f97316] hover:text-[#f97316]"
                     )}
                   >
                     <Tag className="w-3 h-3" />
@@ -258,7 +258,7 @@ export default function ExpiryAlertWidget() {
                       "flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold border transition-colors",
                       action === "return"
                         ? "bg-gray-700 text-white border-gray-700 dark:bg-gray-300 dark:text-gray-900 dark:border-gray-300"
-                        : "border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-400 hover:border-gray-500 hover:text-gray-700 dark:hover:text-gray-300"
+                        : "border-[var(--rule-base)] text-gray-600 dark:text-gray-400 hover:border-gray-500 hover:text-gray-700 dark:hover:text-gray-300"
                     )}
                   >
                     <RotateCcw className="w-3 h-3" />

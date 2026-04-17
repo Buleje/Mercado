@@ -27,8 +27,8 @@ function Donut({ data, total, size = 96 }: { data: { total: number; color: strin
 function Kpi({ label, value, icon: Icon, accent, delta }: { label: string; value: string; icon: React.ComponentType<{className?:string}>; accent: string; delta?: number|null }) {
   const isPositive = delta != null ? delta >= 0 : false;
   const arrowUp = delta != null ? delta >= 0 : false;
-  return (<div className="bg-white dark:bg-card rounded-xl border border-gray-100 dark:border-card-border px-2 sm:px-4 py-2 sm:py-3.5 hover:border-gray-200 dark:hover:border-gray-600 transition-all relative overflow-hidden">
-    {delta != null && Math.abs(delta) >= 10 && <div className={cn("absolute top-0 left-0 right-0 h-1", isPositive ? "bg-linear-to-r from-emerald-400 to-green-500" : "bg-linear-to-r from-red-400 to-red-500")} />}
+  return (<div className="bg-white dark:bg-card rounded-xl border border-[var(--rule-soft)] dark:border-card-border px-2 sm:px-4 py-2 sm:py-3.5 hover:border-gray-200 dark:hover:border-gray-600 transition-all relative overflow-hidden">
+    {delta != null && Math.abs(delta) >= 10 && <div className={cn("absolute top-0 left-0 right-0 h-1", isPositive ? "bg-[var(--data-success)]" : "bg-[var(--data-error)]")} />}
     <p className="text-xs font-medium text-gray-400 dark:text-muted mb-2.5 truncate">{label}</p>
     <div className="flex flex-wrap items-end justify-between gap-2"><div className="flex flex-col gap-1.5">
       <p className="text-base sm:text-xl font-bold text-gray-900 dark:text-foreground tabular-nums leading-none">{value}</p>
@@ -37,22 +37,22 @@ function Kpi({ label, value, icon: Icon, accent, delta }: { label: string; value
   </div>);
 }
 function Card({ title, icon: Icon, children, action }: { title: string; icon: React.ComponentType<{className?:string}>; children: React.ReactNode; action?: React.ReactNode }) {
-  return (<div className="bg-white dark:bg-card rounded-xl border border-gray-100 dark:border-card-border p-4"><div className="flex items-center justify-between mb-4"><h3 className="flex items-center gap-1.5 text-xs font-semibold tracking-wider text-gray-400 dark:text-muted" style={{letterSpacing:"0.06em"}}><Icon className="h-3 w-3 text-gray-300 dark:text-muted" />{title.toUpperCase()}</h3>{action}</div>{children}</div>);
+  return (<div className="bg-white dark:bg-card rounded-xl border border-[var(--rule-soft)] dark:border-card-border p-4"><div className="flex items-center justify-between mb-4"><h3 className="flex items-center gap-1.5 text-xs font-semibold tracking-wider text-gray-400 dark:text-muted" style={{letterSpacing:"0.06em"}}><Icon className="h-3 w-3 text-gray-300 dark:text-muted" />{title.toUpperCase()}</h3>{action}</div>{children}</div>);
 }
 function Empty({ text = "Sin datos en este periodo" }: { text?: string }) { return <div className="py-8 text-center text-xs text-gray-300 dark:text-muted">{text}</div>; }
 function _DBadge({ children, color }: { children: React.ReactNode; color: "green"|"red"|"amber"|"blue"|"purple"|"gray" }) {
-  const m: Record<string,string> = { green:"bg-emerald-50 text-emerald-600", red:"bg-red-50 text-red-600", amber:"bg-amber-50 text-amber-600", blue:"bg-emerald-50 text-emerald-600", purple:"bg-purple-50 text-purple-600", gray:"bg-gray-100 text-gray-500" };
+  const m: Record<string,string> = { green:"bg-emerald-50 text-emerald-600", red:"bg-red-50 text-red-600", amber:"bg-amber-50 text-amber-600", blue:"bg-emerald-50 text-emerald-600", purple:"bg-[var(--surface-sunken)] text-[var(--text-secondary)]", gray:"bg-gray-100 text-gray-500" };
   return <span className={cn("inline-flex px-1.5 py-0.5 rounded text-xs font-semibold",m[color])}>{children}</span>;
 }
 
 export default function DashboardClientesSection({ st, expandAll, orders, customers, _products, showCohortRetention, setShowCohortRetention, _showCrossSell, _setShowCrossSell, _selectedProductForCrossSell, _setSelectedProductForCrossSell, reviewFilter, setReviewFilter, reviews, period }: any) {
   const [selectedClientPhone, setSelectedClientPhone] = useState<string | null>(null);
   return (
-        <div className={cn("space-y-4", expandAll && "bg-white dark:bg-card rounded-xl border border-gray-100 dark:border-card-border p-4")}>
+        <div className={cn("space-y-4", expandAll && "bg-white dark:bg-card rounded-xl border border-[var(--rule-soft)] dark:border-card-border p-4")}>
           {expandAll && (
-            <div className="flex flex-wrap items-center gap-2 mb-4 pb-3 border-b border-gray-100 dark:border-card-border">
-              <div className="w-7 h-7 rounded-lg bg-indigo-50 dark:bg-indigo-900/30 flex items-center justify-center">
-                <Users className="h-3.5 w-3.5 text-indigo-600 dark:text-indigo-400" />
+            <div className="flex flex-wrap items-center gap-2 mb-4 pb-3 border-b border-[var(--rule-soft)] dark:border-card-border">
+              <div className="w-7 h-7 rounded-lg bg-[var(--surface-sunken)] flex items-center justify-center">
+                <Users className="h-3.5 w-3.5 text-[var(--text-secondary)] dark:text-[var(--text-primary)]" />
               </div>
               <h3 className="text-sm font-bold text-gray-800 dark:text-foreground">Clientes</h3>
             </div>
@@ -87,7 +87,7 @@ export default function DashboardClientesSection({ st, expandAll, orders, custom
               <div className="flex items-center justify-end">
                 <button
                   onClick={handleExportCustomers}
-                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold border border-violet-200 dark:border-violet-800/50 text-violet-600 dark:text-violet-400 hover:bg-violet-50 dark:hover:bg-violet-950/20 transition-colors"
+                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold border border-[var(--rule-base)] text-[var(--text-secondary)] dark:text-[var(--text-primary)] hover:bg-[var(--surface-sunken)] dark:hover:bg-violet-950/20 transition-colors"
                 >
                   <Download className="h-3.5 w-3.5" /> Exportar clientes CSV
                 </button>
@@ -95,8 +95,8 @@ export default function DashboardClientesSection({ st, expandAll, orders, custom
             );
           })()}
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
-            <Kpi label="Total Clientes" value={String(st.totalCustomers)} icon={Users} accent="text-violet-500" />
-            <Kpi label="Atendidos" value={String(st.clientesAtendidos)} icon={Users} accent="text-indigo-500" />
+            <Kpi label="Total Clientes" value={String(st.totalCustomers)} icon={Users} accent="text-[var(--text-secondary)]" />
+            <Kpi label="Atendidos" value={String(st.clientesAtendidos)} icon={Users} accent="text-[var(--text-secondary)]" />
             <Kpi label="Rating Prom." value={`${st.avgRating.toFixed(1)}`} icon={Star} accent="text-amber-500" />
             <Kpi label="Reseñas" value={String(reviews.length)} icon={Star} accent="text-amber-400" />
           </div>
@@ -122,7 +122,7 @@ export default function DashboardClientesSection({ st, expandAll, orders, custom
                         className="flex flex-wrap items-center gap-2.5 w-full text-left hover:bg-gray-50 dark:hover:bg-accent/60 rounded-lg px-1 -mx-1 py-0.5 transition-colors"
                       >
                         <span className={cn("w-5 h-5 rounded-full flex items-center justify-center text-xs font-bold shrink-0",
-                          i<3?"bg-violet-100 dark:bg-violet-900/50 text-violet-700 dark:text-violet-300":"bg-gray-100 dark:bg-accent text-gray-400 dark:text-muted"
+                          i<3?"bg-[var(--surface-sunken)] text-[var(--text-secondary)] dark:text-[var(--text-primary)]":"bg-gray-100 dark:bg-accent text-gray-400 dark:text-muted"
                         )}>{i+1}</span>
                         <div className="flex-1 min-w-0">
                           <div className="flex justify-between mb-0.5">
@@ -137,11 +137,11 @@ export default function DashboardClientesSection({ st, expandAll, orders, custom
                       {selectedClientPhone === c.phone && (() => {
                         const clientOrders = orders.filter((o: any) => o.customer.phone === c.phone).slice(0,5);
                         return (
-                          <div className="mt-1.5 mb-1 ml-7 pl-2 border-l-2 border-violet-200 dark:border-violet-800/50 space-y-1">
+                          <div className="mt-1.5 mb-1 ml-7 pl-2 border-l-2 border-[var(--rule-base)] space-y-1">
                             {clientOrders.length === 0
-                              ? <p className="text-[10px] text-gray-400">Sin pedidos registrados</p>
+                              ? <p className="text-[length:var(--ts-2xs)] text-gray-400">Sin pedidos registrados</p>
                               : clientOrders.map((o: any) => (
-                                <div key={o.id} className="flex items-center justify-between text-[10px]">
+                                <div key={o.id} className="flex items-center justify-between text-[length:var(--ts-2xs)]">
                                   <span className="text-gray-500">#{o.id.slice(-6)} · {fmtDate(o.createdAt)}</span>
                                   <span className="font-semibold text-gray-700 dark:text-foreground">{fmt(o.total)}</span>
                                 </div>
@@ -150,7 +150,7 @@ export default function DashboardClientesSection({ st, expandAll, orders, custom
                             <a
                               href={`https://wa.me/51${c.phone.replace(/\D/g,"")}?text=${encodeURIComponent(`Hola ${c.name}, ¡gracias por ser cliente de Buleje!`)}`}
                               target="_blank" rel="noopener noreferrer"
-                              className="inline-flex items-center gap-1 text-[10px] font-bold text-emerald-600 hover:underline mt-0.5"
+                              className="inline-flex items-center gap-1 text-[length:var(--ts-2xs)] font-bold text-emerald-600 hover:underline mt-0.5"
                             >Contactar por WA</a>
                           </div>
                         );
@@ -179,7 +179,7 @@ export default function DashboardClientesSection({ st, expandAll, orders, custom
                 />
                 <div className="space-y-3">
                   <div className="flex flex-wrap items-center gap-2 text-xs">
-                    <div className="w-2.5 h-2.5 rounded-full bg-indigo-500 shrink-0" />
+                    <div className="w-2.5 h-2.5 rounded-full bg-[var(--text-primary)] shrink-0" />
                     <span className="text-gray-500 w-24">Nuevos</span>
                     <span className="font-bold text-gray-800 dark:text-foreground">{st.newCust}</span>
                     <span className="text-gray-400">({st.clientesAtendidos > 0 ? ((st.newCust/st.clientesAtendidos)*100).toFixed(0) : 0}%)</span>
@@ -208,17 +208,17 @@ export default function DashboardClientesSection({ st, expandAll, orders, custom
                 <div className="space-y-6">
                   {/* Retention metrics summary */}
                   <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
-                    <div className="bg-linear-to-br from-emerald-50 to-emerald-100 dark:from-emerald-950/30 dark:to-emerald-900/20 rounded-lg p-3 text-center">
-                      <div className="text-[10px] font-semibold text-emerald-600 dark:text-emerald-400 mb-0.5">Día 1</div>
+                    <div className="bg-[var(--surface-sunken)] rounded-lg p-3 text-center">
+                      <div className="text-[length:var(--ts-2xs)] font-semibold text-emerald-600 dark:text-emerald-400 mb-0.5">Día 1</div>
                       <div className="text-lg font-bold text-emerald-700 dark:text-emerald-300">{st.retentionMetrics.day1}%</div>
                     </div>
-                    <div className="bg-linear-to-br from-emerald-50 to-emerald-100 dark:from-emerald-950/30 dark:to-emerald-900/20 rounded-lg p-3 text-center">
-                      <div className="text-[10px] font-semibold text-emerald-600 dark:text-emerald-400 mb-0.5">Día 7</div>
+                    <div className="bg-[var(--surface-sunken)] rounded-lg p-3 text-center">
+                      <div className="text-[length:var(--ts-2xs)] font-semibold text-emerald-600 dark:text-emerald-400 mb-0.5">Día 7</div>
                       <div className="text-lg font-bold text-emerald-700 dark:text-emerald-300">{st.retentionMetrics.day7}%</div>
                     </div>
-                    <div className="bg-linear-to-br from-violet-50 to-violet-100 dark:from-violet-950/30 dark:to-violet-900/20 rounded-lg p-3 text-center">
-                      <div className="text-[10px] font-semibold text-violet-600 dark:text-violet-400 mb-0.5">Día 30</div>
-                      <div className="text-lg font-bold text-violet-700 dark:text-violet-300">{st.retentionMetrics.day30}%</div>
+                    <div className="bg-[var(--surface-sunken)] rounded-lg p-3 text-center">
+                      <div className="text-[length:var(--ts-2xs)] font-semibold text-[var(--text-secondary)] dark:text-[var(--text-primary)] mb-0.5">Día 30</div>
+                      <div className="text-lg font-bold text-[var(--text-secondary)] dark:text-[var(--text-primary)]">{st.retentionMetrics.day30}%</div>
                     </div>
                   </div>
 
@@ -226,7 +226,7 @@ export default function DashboardClientesSection({ st, expandAll, orders, custom
                   <div className="overflow-x-auto -mx-2">
                     <table className="w-full min-w-[600px] text-xs">
                       <thead>
-                        <tr className="border-b border-gray-200 dark:border-card-border">
+                        <tr className="border-b border-[var(--rule-base)] dark:border-card-border">
                           <th className="text-left px-2 py-2 text-gray-500 dark:text-muted font-semibold">Cohorte</th>
                           <th className="text-center px-2 py-2 text-gray-500 dark:text-muted font-semibold">M0</th>
                           <th className="text-center px-2 py-2 text-gray-500 dark:text-muted font-semibold">M1</th>
@@ -238,7 +238,7 @@ export default function DashboardClientesSection({ st, expandAll, orders, custom
                       </thead>
                       <tbody>
                         {st.cohortData.map((cohort: any, idx: number) => (
-                          <tr key={idx} className="border-b border-gray-100 dark:border-card-border/50">
+                          <tr key={idx} className="border-b border-[var(--rule-soft)] dark:border-card-border/50">
                             <td className="px-2 py-2 font-medium text-gray-700 dark:text-foreground">{cohort.cohortMonth}</td>
                             {[cohort.month0, cohort.month1, cohort.month2, cohort.month3, cohort.month4, cohort.month5plus].map((val, i) => {
                               const color = val >= 50 ? "bg-emerald-500" : val >= 30 ? "bg-green-400" : val >= 15 ? "bg-amber-400" : val > 0 ? "bg-red-400" : "bg-gray-100 dark:bg-accent";
@@ -259,7 +259,7 @@ export default function DashboardClientesSection({ st, expandAll, orders, custom
 
                   <div className="bg-emerald-50 dark:bg-emerald-950/30 rounded-lg p-3 text-xs">
                     <div className="font-semibold text-emerald-700 dark:text-emerald-400 mb-1">Interpretación</div>
-                    <p className="text-emerald-600 dark:text-emerald-300 text-[10px]">
+                    <p className="text-emerald-600 dark:text-emerald-300 text-[length:var(--ts-2xs)]">
                       Verde (≥50%): Excelente retención. Naranja (30-49%): Retención aceptable. Rojo (&lt;30%): Requiere acción inmediata. 
                       Los primeros 30 días son críticos para fidelizar clientes.
                     </p>
@@ -280,7 +280,7 @@ export default function DashboardClientesSection({ st, expandAll, orders, custom
               <div className="space-y-3">
                 {st.atRiskClients.length > 0 && (
                   <div>
-                    <div className="text-[10px] font-semibold text-red-600 dark:text-red-400 mb-2">
+                    <div className="text-[length:var(--ts-2xs)] font-semibold text-red-600 dark:text-red-400 mb-2">
                       Sin compras recientes ({st.atRiskClients.length})
                     </div>
                     <div className="space-y-1.5">
@@ -289,20 +289,20 @@ export default function DashboardClientesSection({ st, expandAll, orders, custom
                           <div className="flex-1 min-w-0">
                             <div className="text-xs font-medium text-gray-700 dark:text-foreground truncate">{c.name}</div>
                             <div className="flex flex-wrap items-center gap-2 mt-0.5">
-                              <span className="text-[10px] text-gray-500">Gastó {fmt(c.totalSpent)}</span>
-                              <span className="text-[10px] text-gray-400">• {c.orderCount} pedidos</span>
+                              <span className="text-[length:var(--ts-2xs)] text-gray-500">Gastó {fmt(c.totalSpent)}</span>
+                              <span className="text-[length:var(--ts-2xs)] text-gray-400">• {c.orderCount} pedidos</span>
                             </div>
                           </div>
                           <div className="flex flex-wrap items-center gap-2 shrink-0">
                             <div className="text-right">
                               <div className="text-xs font-semibold text-red-600">{c.daysSinceLastOrder} días</div>
-                              <div className="text-[9px] text-gray-400">sin comprar</div>
+                              <div className="text-[length:var(--ts-2xs)] text-gray-400">sin comprar</div>
                             </div>
                             <a
                               href={`https://wa.me/51${c.phone.replace(/\D/g,"")}?text=${encodeURIComponent(`Hola ${c.name}, ¡te extrañamos en Buleje!\n\n¿Necesitas algo? Tenemos novedades y ofertas especiales para ti.`)}`}
                               target="_blank"
                               rel="noopener noreferrer"
-                              className="text-[10px] font-bold text-emerald-600 bg-emerald-50 hover:bg-emerald-100 dark:bg-emerald-950/30 dark:hover:bg-emerald-900/50 px-2 py-1 rounded transition-colors"
+                              className="text-[length:var(--ts-2xs)] font-bold text-emerald-600 bg-emerald-50 hover:bg-emerald-100 dark:bg-emerald-950/30 dark:hover:bg-emerald-900/50 px-2 py-1 rounded transition-colors"
                             >
                               Contactar
                             </a>
@@ -317,7 +317,7 @@ export default function DashboardClientesSection({ st, expandAll, orders, custom
                 )}
                 {st.decliningClients.length > 0 && (
                   <div>
-                    <div className="text-[10px] font-semibold text-amber-600 dark:text-amber-400 mb-2">
+                    <div className="text-[length:var(--ts-2xs)] font-semibold text-amber-600 dark:text-amber-400 mb-2">
                       Frecuencia en declive ({st.decliningClients.length})
                     </div>
                     <div className="space-y-1.5">
@@ -325,13 +325,13 @@ export default function DashboardClientesSection({ st, expandAll, orders, custom
                         <div key={c.phone} className="flex items-center justify-between py-2 px-3 bg-amber-50 dark:bg-amber-950/30 rounded-lg">
                           <div className="flex-1 min-w-0">
                             <div className="text-xs font-medium text-gray-700 dark:text-foreground truncate">{c.name}</div>
-                            <span className="text-[10px] text-gray-500">{c.orderCount} pedidos totales • Último: hace {c.daysSinceLastOrder} días</span>
+                            <span className="text-[length:var(--ts-2xs)] text-gray-500">{c.orderCount} pedidos totales • Último: hace {c.daysSinceLastOrder} días</span>
                           </div>
                           <a
                             href={`https://wa.me/51${c.phone.replace(/\D/g,"")}?text=${encodeURIComponent(`Hola ${c.name}, esperamos que estés bien. En Buleje tenemos tus productos favoritos listos para ti. ¿Te enviamos algo?`)}`}
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="text-[10px] font-bold text-amber-700 bg-amber-100 hover:bg-amber-200 dark:bg-amber-900/50 dark:hover:bg-amber-800/50 px-2 py-1 rounded transition-colors shrink-0"
+                            className="text-[length:var(--ts-2xs)] font-bold text-amber-700 bg-amber-100 hover:bg-amber-200 dark:bg-amber-900/50 dark:hover:bg-amber-800/50 px-2 py-1 rounded transition-colors shrink-0"
                           >
                             Reactivar
                           </a>
@@ -342,7 +342,7 @@ export default function DashboardClientesSection({ st, expandAll, orders, custom
                 )}
                 <div className="bg-emerald-50 dark:bg-emerald-950/30 rounded-lg p-3 text-xs">
                   <div className="font-semibold text-emerald-700 dark:text-emerald-400 mb-1">Retención proactiva</div>
-                  <p className="text-emerald-600 dark:text-emerald-300 text-[10px]">
+                  <p className="text-emerald-600 dark:text-emerald-300 text-[length:var(--ts-2xs)]">
                     Los clientes VIP (top 20% en gasto) que no compran en 3+ semanas tienen alto riesgo de irse. Un mensaje personalizado recupera hasta 30% de clientes inactivos.
                   </p>
                 </div>
@@ -370,14 +370,14 @@ export default function DashboardClientesSection({ st, expandAll, orders, custom
               return (
                 <div className="space-y-2.5 max-h-80 overflow-y-auto">
                   {filtered.map((r: any) => (
-                    <div key={r.id} className="flex flex-wrap items-start gap-3 py-2.5 px-3 rounded-xl bg-gray-50 dark:bg-accent/40 border border-gray-100 dark:border-card-border">
+                    <div key={r.id} className="flex flex-wrap items-start gap-3 py-2.5 px-3 rounded-xl bg-gray-50 dark:bg-accent/40 border border-[var(--rule-soft)] dark:border-card-border">
                       <div className="w-8 h-8 rounded-full bg-amber-100 dark:bg-amber-900/30 flex items-center justify-center text-xs font-bold text-amber-600 shrink-0">
                         {r.name.charAt(0).toUpperCase()}
                       </div>
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center justify-between">
                           <span className="text-xs font-bold text-gray-700 dark:text-foreground">{r.name}</span>
-                          <span className="text-[10px] text-gray-400">{fmtDate(r.date)}</span>
+                          <span className="text-[length:var(--ts-2xs)] text-gray-400">{fmtDate(r.date)}</span>
                         </div>
                         <div className="flex items-center gap-0.5 my-0.5">
                           {Array.from({ length: 5 }).map((_, s) => (

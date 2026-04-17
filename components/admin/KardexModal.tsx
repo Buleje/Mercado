@@ -43,7 +43,7 @@ const TYPE_LABELS: Record<string, { label: string; color: string; dir: "in" | "o
   venta:            { label: "Venta POS",    color: "text-amber-700 dark:text-amber-400 bg-amber-50 dark:bg-amber-950/30",       dir: "out" },
   venta_online:     { label: "Venta Online", color: "text-orange-700 dark:text-orange-400 bg-orange-50 dark:bg-orange-950/30",   dir: "out" },
   ajuste_negativo:  { label: "Ajuste (-)",   color: "text-red-700 dark:text-red-400 bg-red-50 dark:bg-red-950/30",               dir: "out" },
-  merma:            { label: "Pérdida",      color: "text-rose-700 dark:text-rose-400 bg-rose-50 dark:bg-rose-950/30",           dir: "out" },
+  merma:            { label: "Pérdida",      color: "text-[var(--text-secondary)] dark:text-[var(--text-primary)] bg-[var(--surface-sunken)]",           dir: "out" },
 };
 
 function fmtDate(iso: string) {
@@ -109,7 +109,7 @@ export default function KardexModal({ productId, productName, onClose }: Props) 
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
       <div className="bg-white dark:bg-card rounded-xl max-w-3xl w-full max-h-[90vh] flex flex-col">
         {/* Header */}
-        <div className="flex items-center justify-between p-4 border-b border-gray-100 dark:border-card-border shrink-0">
+        <div className="flex items-center justify-between p-4 border-b border-[var(--rule-soft)] dark:border-card-border shrink-0">
           <div className="flex items-center gap-2">
             <BookOpen className="h-5 w-5 text-primary" />
             <h3 className="font-bold text-gray-900 dark:text-foreground">
@@ -130,7 +130,7 @@ export default function KardexModal({ productId, productName, onClose }: Props) 
               type="date"
               value={from}
               onChange={(e) => setFrom(e.target.value)}
-              className="text-xs border border-gray-200 dark:border-card-border rounded-lg px-2 py-1.5 bg-white dark:bg-surface text-gray-700 dark:text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30"
+              className="text-xs border border-[var(--rule-base)] dark:border-card-border rounded-lg px-2 py-1.5 bg-white dark:bg-surface text-gray-700 dark:text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30"
             />
           </div>
           <div className="flex items-center gap-1.5">
@@ -139,7 +139,7 @@ export default function KardexModal({ productId, productName, onClose }: Props) 
               type="date"
               value={to}
               onChange={(e) => setTo(e.target.value)}
-              className="text-xs border border-gray-200 dark:border-card-border rounded-lg px-2 py-1.5 bg-white dark:bg-surface text-gray-700 dark:text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30"
+              className="text-xs border border-[var(--rule-base)] dark:border-card-border rounded-lg px-2 py-1.5 bg-white dark:bg-surface text-gray-700 dark:text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30"
             />
           </div>
           <button
@@ -172,15 +172,15 @@ export default function KardexModal({ productId, productName, onClose }: Props) 
               <div className="grid grid-cols-3 gap-3 mb-4">
                 <div className="bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-800 rounded-xl p-3 text-center">
                   <p className="text-lg font-extrabold text-emerald-700 dark:text-emerald-400">{data.resumen.totalEntradas}</p>
-                  <p className="text-[10px] font-bold text-emerald-600/70 uppercase">Total entradas</p>
+                  <p className="text-[length:var(--ts-2xs)] font-bold text-emerald-600/70 uppercase">Total entradas</p>
                 </div>
                 <div className="bg-red-50 dark:bg-red-950/30 border border-red-200 dark:border-red-800 rounded-xl p-3 text-center">
                   <p className="text-lg font-extrabold text-red-700 dark:text-red-400">{data.resumen.totalSalidas}</p>
-                  <p className="text-[10px] font-bold text-red-600/70 uppercase">Total salidas</p>
+                  <p className="text-[length:var(--ts-2xs)] font-bold text-red-600/70 uppercase">Total salidas</p>
                 </div>
                 <div className="bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-800 rounded-xl p-3 text-center">
                   <p className="text-lg font-extrabold text-emerald-700 dark:text-emerald-400">{data.resumen.saldoFinal}</p>
-                  <p className="text-[10px] font-bold text-emerald-600/70 uppercase">Saldo final</p>
+                  <p className="text-[length:var(--ts-2xs)] font-bold text-emerald-600/70 uppercase">Saldo final</p>
                 </div>
               </div>
 
@@ -194,7 +194,7 @@ export default function KardexModal({ productId, productName, onClose }: Props) 
                 <div className="overflow-x-auto">
                   <table className="w-full min-w-[600px] text-xs">
                     <thead>
-                      <tr className="border-b border-gray-200 dark:border-card-border">
+                      <tr className="border-b border-[var(--rule-base)] dark:border-card-border">
                         <th className="text-left py-2 font-bold text-gray-400">Fecha</th>
                         <th className="text-left py-2 font-bold text-gray-400">Tipo</th>
                         <th className="text-left py-2 font-bold text-gray-400">Referencia</th>
@@ -210,7 +210,7 @@ export default function KardexModal({ productId, productName, onClose }: Props) 
                           <tr key={m.id} className="border-t border-gray-50 dark:border-card-border hover:bg-gray-50 dark:hover:bg-surface transition-colors">
                             <td className="py-2 text-gray-500 dark:text-muted">{fmtDate(m.fecha)}</td>
                             <td className="py-2">
-                              <span className={cn("inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold", meta.color)}>
+                              <span className={cn("inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[length:var(--ts-2xs)] font-bold", meta.color)}>
                                 {meta.dir === "in" ? <ArrowUpCircle className="h-2.5 w-2.5" /> : <ArrowDownCircle className="h-2.5 w-2.5" />}
                                 {meta.label}
                               </span>
@@ -228,7 +228,7 @@ export default function KardexModal({ productId, productName, onClose }: Props) 
                       })}
                     </tbody>
                     <tfoot>
-                      <tr className="border-t-2 border-gray-300 dark:border-card-border font-bold">
+                      <tr className="border-t-2 border-[var(--rule-base)] dark:border-card-border font-bold">
                         <td colSpan={3} className="py-2 text-gray-700 dark:text-foreground">Totales</td>
                         <td className="py-2 text-right text-emerald-600 dark:text-emerald-400">+{data.resumen.totalEntradas}</td>
                         <td className="py-2 text-right text-red-600 dark:text-red-400">-{data.resumen.totalSalidas}</td>

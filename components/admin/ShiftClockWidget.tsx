@@ -127,7 +127,7 @@ export function ShiftClockWidget({ className }: { className?: string }) {
 
   if (!mounted) {
     return (
-      <div className={cn("rounded-xl border border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-900 p-4", className)}>
+      <div className={cn("rounded-xl border border-[var(--rule-base)] bg-white dark:border-[var(--rule-base)] dark:bg-gray-900 p-4", className)}>
         <div className="h-48 animate-pulse rounded-lg bg-gray-100 dark:bg-gray-800" />
       </div>
     );
@@ -137,7 +137,7 @@ export function ShiftClockWidget({ className }: { className?: string }) {
     <div
       className={cn(
         "rounded-xl border bg-white dark:bg-gray-900",
-        "border-gray-200 dark:border-gray-700",
+        "border-[var(--rule-base)]",
         "p-4 ",
         className
       )}
@@ -187,7 +187,7 @@ export function ShiftClockWidget({ className }: { className?: string }) {
           disabled={hasEntry}
           className={cn(
             "flex flex-1 items-center justify-center gap-2 rounded-lg py-3 text-sm font-semibold",
-            "transition-colors duration-150",
+            "transition-colors duration-[var(--dur-fast)]",
             "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#00B4A6]",
             hasEntry
               ? "cursor-not-allowed bg-gray-100 text-gray-400 dark:bg-gray-800 dark:text-gray-600"
@@ -205,7 +205,7 @@ export function ShiftClockWidget({ className }: { className?: string }) {
           disabled={!hasEntry || hasExit}
           className={cn(
             "flex flex-1 items-center justify-center gap-2 rounded-lg py-3 text-sm font-semibold",
-            "transition-colors duration-150",
+            "transition-colors duration-[var(--dur-fast)]",
             "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#f97316]",
             !hasEntry || hasExit
               ? "cursor-not-allowed bg-gray-100 text-gray-400 dark:bg-gray-800 dark:text-gray-600"
@@ -224,7 +224,7 @@ export function ShiftClockWidget({ className }: { className?: string }) {
           <h3 className="mb-2 text-xs font-semibold text-gray-500 dark:text-gray-400">
             Esta semana
           </h3>
-          <div className="overflow-hidden rounded-lg border border-gray-200 dark:border-gray-700">
+          <div className="overflow-hidden rounded-lg border border-[var(--rule-base)]">
             <table className="w-full text-xs">
               <thead>
                 <tr className="bg-gray-50 dark:bg-gray-800">

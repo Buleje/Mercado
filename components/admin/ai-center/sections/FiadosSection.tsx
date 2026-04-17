@@ -76,13 +76,13 @@ function sortFiados(list: FiadoEntry[]): FiadoEntry[] {
 
 function SkeletonKPI() {
   return (
-    <div className="h-20 rounded-lg border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/40 animate-pulse" />
+    <div className="h-20 rounded-lg border border-[var(--rule-base)] bg-gray-50 dark:bg-gray-800/40 animate-pulse" />
   );
 }
 
 function SkeletonRow() {
   return (
-    <div className="h-12 rounded border border-gray-100 dark:border-gray-800 bg-gray-50 dark:bg-gray-800/30 animate-pulse" />
+    <div className="h-12 rounded border border-[var(--rule-base)] bg-gray-50 dark:bg-gray-800/30 animate-pulse" />
   );
 }
 
@@ -110,7 +110,7 @@ function KPICard({ icon: Icon, label, value, sub, accent = "gray" }: KPICardProp
   }[accent];
 
   return (
-    <div className="rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 p-4">
+    <div className="rounded-lg border border-[var(--rule-base)] bg-white dark:bg-gray-900 p-4">
       <div className="flex items-center gap-2 mb-2">
         <Icon className={cn("w-4 h-4 shrink-0", iconColor)} />
         <span className="text-xs text-gray-500 dark:text-gray-400 truncate">{label}</span>
@@ -145,12 +145,12 @@ function StatusBadge({ status }: StatusBadgeProps) {
     PAGADO: {
       label: "Pagado",
       className:
-        "bg-gray-50 text-gray-500 border border-gray-200 dark:bg-gray-800 dark:text-gray-400 dark:border-gray-700",
+        "bg-gray-50 text-gray-500 border border-[var(--rule-base)] dark:bg-gray-800 dark:text-gray-400 dark:border-[var(--rule-base)]",
     },
     CANCELADO: {
       label: "Cancelado",
       className:
-        "bg-gray-50 text-gray-400 border border-gray-200 dark:bg-gray-800 dark:text-gray-500 dark:border-gray-700 line-through",
+        "bg-gray-50 text-gray-400 border border-[var(--rule-base)] dark:bg-gray-800 dark:text-gray-500 dark:border-[var(--rule-base)] line-through",
     },
   };
 
@@ -337,7 +337,7 @@ export default function FiadosSection() {
               "px-3 py-1 text-xs rounded border transition-colors",
               filter === f.key
                 ? "bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-950/30 dark:text-emerald-400 dark:border-emerald-800"
-                : "bg-white text-gray-600 border-gray-200 hover:border-gray-300 dark:bg-gray-900 dark:text-gray-400 dark:border-gray-700 dark:hover:border-gray-600"
+                : "bg-white text-gray-600 border-[var(--rule-base)] hover:border-gray-300 dark:bg-gray-900 dark:text-gray-400 dark:border-[var(--rule-base)] dark:hover:border-gray-600"
             )}
           >
             {f.label}
@@ -353,15 +353,15 @@ export default function FiadosSection() {
           ))}
         </div>
       ) : filtered.length === 0 ? (
-        <div className="rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 py-10 text-center">
+        <div className="rounded-lg border border-[var(--rule-base)] bg-white dark:bg-gray-900 py-10 text-center">
           <p className="text-sm text-gray-400 dark:text-gray-500">
             No hay fiados registrados
           </p>
         </div>
       ) : (
-        <div className="rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 overflow-hidden">
+        <div className="rounded-lg border border-[var(--rule-base)] bg-white dark:bg-gray-900 overflow-hidden">
           {/* Header */}
-          <div className="grid grid-cols-[1fr_auto_auto_auto] gap-3 px-4 py-2 border-b border-gray-100 dark:border-gray-800 bg-gray-50 dark:bg-gray-800/50">
+          <div className="grid grid-cols-[1fr_auto_auto_auto] gap-3 px-4 py-2 border-b border-[var(--rule-base)] bg-gray-50 dark:bg-gray-800/50">
             <span className="text-xs text-gray-400 dark:text-gray-500">Cliente</span>
             <span className="text-xs text-gray-400 dark:text-gray-500 text-right">Monto</span>
             <span className="text-xs text-gray-400 dark:text-gray-500">Estado</span>
@@ -376,7 +376,7 @@ export default function FiadosSection() {
                 className={cn(
                   "grid grid-cols-[1fr_auto_auto_auto] gap-3 items-center px-4 py-3",
                   idx !== filtered.length - 1 &&
-                    "border-b border-gray-100 dark:border-gray-800"
+                    "border-b border-[var(--rule-base)]"
                 )}
               >
                 {/* Customer name */}
@@ -413,7 +413,7 @@ export default function FiadosSection() {
       )}
 
       {/* Deep-link Footer */}
-      <div className="rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 px-4 py-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+      <div className="rounded-lg border border-[var(--rule-base)] bg-white dark:bg-gray-900 px-4 py-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
         <p className="text-sm text-gray-500 dark:text-gray-400">
           Para cobrar, ajustar limites o ver historial completo
         </p>

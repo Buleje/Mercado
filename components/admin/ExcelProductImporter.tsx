@@ -371,7 +371,7 @@ export default function ExcelProductImporter() {
             "flex flex-col items-center justify-center gap-3 rounded-lg border-2 border-dashed p-12 cursor-pointer transition-colors",
             dragging
               ? "border-[#00B4A6] bg-[#00B4A6]/5"
-              : "border-gray-200 dark:border-gray-700 hover:border-[#00B4A6] dark:hover:border-[#00B4A6]"
+              : "border-[var(--rule-base)] hover:border-[#00B4A6] dark:hover:border-[#00B4A6]"
           )}
         >
           <Upload className="h-10 w-10 text-gray-400" />
@@ -395,7 +395,7 @@ export default function ExcelProductImporter() {
 
       {/* Mapping step */}
       {step === "mapping" && (
-        <div className="rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 p-6 space-y-5">
+        <div className="rounded-xl border border-[var(--rule-base)] bg-white dark:bg-gray-900 p-6 space-y-5">
           <div className="flex items-center gap-2">
             <FileText className="h-5 w-5 text-[#00B4A6]" />
             <span className="font-medium text-gray-800 dark:text-gray-200">{fileName}</span>
@@ -424,7 +424,7 @@ export default function ExcelProductImporter() {
                 <select
                   value={columnMap[key]}
                   onChange={(e) => setColumnMap((prev) => ({ ...prev, [key]: e.target.value }))}
-                  className="w-full rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 px-3 py-2 text-sm text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-[#00B4A6]"
+                  className="w-full rounded-lg border border-[var(--rule-base)] bg-white dark:bg-gray-800 px-3 py-2 text-sm text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-[#00B4A6]"
                 >
                   <option value="">-- No mapear --</option>
                   {headers.map((h) => (
@@ -468,7 +468,7 @@ export default function ExcelProductImporter() {
             )}
           </div>
 
-          <div className="overflow-x-auto rounded-xl border border-gray-200 dark:border-gray-700">
+          <div className="overflow-x-auto rounded-xl border border-[var(--rule-base)]">
             <table className="min-w-full text-sm">
               <thead className="bg-gray-50 dark:bg-gray-800">
                 <tr>
@@ -544,7 +544,7 @@ export default function ExcelProductImporter() {
             </button>
             <button
               onClick={() => setStep("mapping")}
-              className="px-5 py-2 rounded-lg text-sm font-medium text-gray-600 dark:text-gray-400 border border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800"
+              className="px-5 py-2 rounded-lg text-sm font-medium text-gray-600 dark:text-gray-400 border border-[var(--rule-base)] hover:bg-gray-50 dark:hover:bg-gray-800"
             >
               Volver al mapeo
             </button>
@@ -554,12 +554,12 @@ export default function ExcelProductImporter() {
 
       {/* Importing progress */}
       {step === "importing" && (
-        <div className="rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 p-8 flex flex-col items-center gap-4">
+        <div className="rounded-xl border border-[var(--rule-base)] bg-white dark:bg-gray-900 p-8 flex flex-col items-center gap-4">
           <Loader2 className="h-8 w-8 animate-spin text-[#00B4A6]" />
           <p className="font-medium text-gray-700 dark:text-gray-300">Importando productos...</p>
           <div className="w-full max-w-sm bg-gray-100 dark:bg-gray-800 rounded-full h-3">
             <div
-              className="bg-[#00B4A6] h-3 rounded-full transition-all duration-500"
+              className="bg-[#00B4A6] h-3 rounded-full transition-all duration-[var(--dur-slow)]"
               style={{ width: `${progress}%` }}
             />
           </div>
@@ -569,7 +569,7 @@ export default function ExcelProductImporter() {
 
       {/* Done */}
       {step === "done" && result && (
-        <div className="rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 p-6 space-y-4">
+        <div className="rounded-xl border border-[var(--rule-base)] bg-white dark:bg-gray-900 p-6 space-y-4">
           <div className="flex items-center gap-3">
             <CheckCircle className="h-6 w-6 text-green-500" />
             <div>

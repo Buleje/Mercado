@@ -135,7 +135,7 @@ function ProductCard({
         "group relative bg-white dark:bg-card border rounded-xl p-3 text-left transition-all hover:shadow-sm hover:border-primary/40",
         inCart
           ? "border-primary/60 ring-1 ring-primary/20 bg-primary/5 dark:bg-primary/10"
-          : "border-gray-200 dark:border-card-border",
+          : "border-[var(--rule-base)] dark:border-card-border",
       )}
     >
       {/* Image */}
@@ -169,12 +169,12 @@ function ProductCard({
       <p className="text-xs font-semibold text-gray-900 dark:text-white truncate leading-tight">
         {product.name}
       </p>
-      <p className="text-[10px] text-gray-400 truncate">{product.category}</p>
+      <p className="text-[length:var(--ts-2xs)] text-gray-400 truncate">{product.category}</p>
       <div className="flex items-center justify-between mt-1.5">
         <span className="text-xs font-bold text-primary">
           {product.costPrice ? fmtCurrency(product.costPrice) : "—"}
         </span>
-        <span className="text-[10px] text-gray-400">
+        <span className="text-[length:var(--ts-2xs)] text-gray-400">
           Stock: {product.stock ?? "—"}
         </span>
       </div>
@@ -192,7 +192,7 @@ function QuantityStepper({
   min?: number;
 }) {
   return (
-    <div className="flex items-center gap-0 border border-gray-200 dark:border-gray-700 rounded-lg overflow-hidden">
+    <div className="flex items-center gap-0 border border-[var(--rule-base)] rounded-lg overflow-hidden">
       <button
         onClick={() => onChange(Math.max(min, value - 1))}
         className="p-1.5 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
@@ -206,7 +206,7 @@ function QuantityStepper({
           const n = parseInt(e.target.value, 10);
           if (!isNaN(n) && n >= min) onChange(n);
         }}
-        className="w-12 text-center text-sm font-medium bg-transparent border-x border-gray-200 dark:border-gray-700 focus:outline-none"
+        className="w-12 text-center text-sm font-medium bg-transparent border-x border-[var(--rule-base)] focus:outline-none"
       />
       <button
         onClick={() => onChange(value + 1)}
@@ -596,9 +596,9 @@ export default function PuntoDeCompraTab() {
       {/* ════════════════════════════════════════════════════════════════════
          LEFT PANEL — Product Catalog
          ════════════════════════════════════════════════════════════════════ */}
-      <div className="flex-1 flex flex-col min-w-0 bg-white dark:bg-card rounded-xl border border-gray-200 dark:border-card-border overflow-hidden">
+      <div className="flex-1 flex flex-col min-w-0 bg-white dark:bg-card rounded-xl border border-[var(--rule-base)] dark:border-card-border overflow-hidden">
         {/* Toolbar */}
-        <div className="p-3 border-b border-gray-100 dark:border-gray-800 space-y-2">
+        <div className="p-3 border-b border-[var(--rule-base)] space-y-2">
           {/* Search + Actions row */}
           <div className="flex items-center gap-2">
             <div className="relative flex-1">
@@ -609,7 +609,7 @@ export default function PuntoDeCompraTab() {
                 placeholder="Buscar producto, código de barras... (Ctrl+K)"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full pl-9 pr-3 py-2 text-sm bg-gray-50 dark:bg-white/5 border border-gray-200 dark:border-gray-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary"
+                className="w-full pl-9 pr-3 py-2 text-sm bg-gray-50 dark:bg-white/5 border border-[var(--rule-base)] rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary"
               />
               {searchQuery && (
                 <button
@@ -622,7 +622,7 @@ export default function PuntoDeCompraTab() {
             </div>
             <button
               onClick={() => setShowBarcode(true)}
-              className="p-2.5 rounded-lg border border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-white/5 transition-colors"
+              className="p-2.5 rounded-lg border border-[var(--rule-base)] hover:bg-gray-50 dark:hover:bg-white/5 transition-colors"
               title="Escanear código de barras"
             >
               <ScanBarcode className="h-4 w-4 text-gray-500" />
@@ -633,7 +633,7 @@ export default function PuntoDeCompraTab() {
                 "p-2.5 rounded-xl border transition-colors",
                 showFilters
                   ? "border-primary bg-primary/10 text-primary"
-                  : "border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-white/5 text-gray-500",
+                  : "border-[var(--rule-base)] hover:bg-gray-50 dark:hover:bg-white/5 text-gray-500",
               )}
               title="Filtros"
             >
@@ -641,7 +641,7 @@ export default function PuntoDeCompraTab() {
             </button>
             <button
               onClick={() => setShowHistory(true)}
-              className="p-2.5 rounded-lg border border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-white/5 transition-colors"
+              className="p-2.5 rounded-lg border border-[var(--rule-base)] hover:bg-gray-50 dark:hover:bg-white/5 transition-colors"
               title="Historial de compras"
             >
               <History className="h-4 w-4 text-gray-500" />
@@ -684,7 +684,7 @@ export default function PuntoDeCompraTab() {
                         "flex items-center gap-1.5 px-3 py-1.5 text-xs rounded-lg border transition-colors",
                         showLowStockOnly
                           ? "border-amber-300 bg-amber-50 dark:bg-amber-900/20 text-amber-700 dark:text-amber-400"
-                          : "border-gray-200 dark:border-gray-700 text-gray-500",
+                          : "border-[var(--rule-base)] text-gray-500",
                       )}
                     >
                       <AlertTriangle className="h-3 w-3" />
@@ -695,7 +695,7 @@ export default function PuntoDeCompraTab() {
                     <select
                       value={sortBy}
                       onChange={(e) => setSortBy(e.target.value)}
-                      className="text-xs px-2 py-1.5 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg focus:outline-none"
+                      className="text-xs px-2 py-1.5 bg-gray-50 dark:bg-gray-800 border border-[var(--rule-base)] rounded-lg focus:outline-none"
                     >
                       {SORT_OPTIONS.map((opt) => (
                         <option key={opt.value} value={opt.value}>
@@ -757,13 +757,13 @@ export default function PuntoDeCompraTab() {
          ════════════════════════════════════════════════════════════════════ */}
       <div
         className={cn(
-          "w-full lg:w-[420px] xl:w-[460px] flex flex-col bg-white dark:bg-card rounded-xl border border-gray-200 dark:border-card-border overflow-hidden",
+          "w-full lg:w-[420px] xl:w-[460px] flex flex-col bg-white dark:bg-card rounded-xl border border-[var(--rule-base)] dark:border-card-border overflow-hidden",
           "max-lg:fixed max-lg:inset-0 max-lg:z-50 max-lg:rounded-none",
           !showCartMobile && "max-lg:hidden",
         )}
       >
         {/* Cart Header */}
-        <div className="p-3 border-b border-gray-100 dark:border-gray-800">
+        <div className="p-3 border-b border-[var(--rule-base)]">
           <div className="flex items-center justify-between mb-2">
             <div className="flex items-center gap-2">
               <div className="p-2 bg-primary/10 rounded-xl">
@@ -771,7 +771,7 @@ export default function PuntoDeCompraTab() {
               </div>
               <div>
                 <h3 className="text-sm font-bold text-gray-900 dark:text-white">Orden de Compra</h3>
-                <p className="text-[10px] text-gray-400">
+                <p className="text-[length:var(--ts-2xs)] text-gray-400">
                   {cart.length} producto{cart.length !== 1 ? "s" : ""} · {totalItems} unidades
                 </p>
               </div>
@@ -797,7 +797,7 @@ export default function PuntoDeCompraTab() {
 
           {/* Supplier Selector */}
           <div className="relative">
-            <label className="text-[10px] font-semibold text-gray-500 mb-1 block">
+            <label className="text-[length:var(--ts-2xs)] font-semibold text-gray-500 mb-1 block">
               Proveedor
             </label>
             <div className="flex gap-1.5">
@@ -819,7 +819,7 @@ export default function PuntoDeCompraTab() {
                     "w-full pl-8 pr-3 py-2 text-sm border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/30",
                     selectedSupplier
                       ? "border-primary/40 bg-primary/5 dark:bg-primary/10"
-                      : "border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-white/5",
+                      : "border-[var(--rule-base)] bg-gray-50 dark:bg-white/5",
                   )}
                 />
                 {selectedSupplier && (
@@ -841,7 +841,7 @@ export default function PuntoDeCompraTab() {
                       initial={{ opacity: 0, y: -4 }}
                       animate={{ opacity: 1, y: 0 }}
                       exit={{ opacity: 0, y: -4 }}
-                      className="absolute top-full left-0 right-0 mt-1 z-30 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl max-h-48 overflow-y-auto"
+                      className="absolute top-full left-0 right-0 mt-1 z-30 bg-white dark:bg-gray-900 border border-[var(--rule-base)] rounded-xl max-h-48 overflow-y-auto"
                     >
                       {filteredSuppliers.length === 0 ? (
                         <div className="p-3 text-center text-xs text-gray-400">
@@ -859,14 +859,14 @@ export default function PuntoDeCompraTab() {
                             }}
                             className="w-full flex items-center gap-2.5 px-3 py-2 hover:bg-gray-50 dark:hover:bg-white/5 transition-colors text-left"
                           >
-                            <div className="h-7 w-7 rounded-full bg-primary/10 flex items-center justify-center text-[10px] font-bold text-primary shrink-0">
+                            <div className="h-7 w-7 rounded-full bg-primary/10 flex items-center justify-center text-[length:var(--ts-2xs)] font-bold text-primary shrink-0">
                               {getInitials(sup.name)}
                             </div>
                             <div className="min-w-0">
                               <p className="text-xs font-medium text-gray-900 dark:text-white truncate">
                                 {sup.name}
                               </p>
-                              <p className="text-[10px] text-gray-400 truncate">
+                              <p className="text-[length:var(--ts-2xs)] text-gray-400 truncate">
                                 {sup.ruc ? `RUC: ${sup.ruc}` : sup.phone || "Sin datos"}
                               </p>
                             </div>
@@ -881,7 +881,7 @@ export default function PuntoDeCompraTab() {
               {/* New supplier button */}
               <button
                 onClick={() => setShowSupplierForm(true)}
-                className="px-3 py-2 rounded-lg border border-dashed border-gray-300 dark:border-gray-600 hover:border-primary hover:bg-primary/5 transition-colors"
+                className="px-3 py-2 rounded-lg border border-dashed border-[var(--rule-base)] dark:border-gray-600 hover:border-primary hover:bg-primary/5 transition-colors"
                 title="Nuevo proveedor"
               >
                 <Plus className="h-4 w-4 text-gray-400" />
@@ -890,7 +890,7 @@ export default function PuntoDeCompraTab() {
 
             {/* Supplier info chip */}
             {selectedSupplier && (
-              <div className="mt-1.5 flex items-center gap-2 text-[10px] text-gray-500">
+              <div className="mt-1.5 flex items-center gap-2 text-[length:var(--ts-2xs)] text-gray-500">
                 {selectedSupplier.ruc && (
                   <span className="flex items-center gap-0.5">
                     <Hash className="h-2.5 w-2.5" /> {selectedSupplier.ruc}
@@ -934,7 +934,7 @@ export default function PuntoDeCompraTab() {
                 initial={{ opacity: 0, x: 20 }}
                 animate={{ opacity: 1, x: 0 }}
                 exit={{ opacity: 0, x: -20 }}
-                className="bg-gray-50 dark:bg-white/5 rounded-xl p-3 border border-gray-100 dark:border-gray-800"
+                className="bg-gray-50 dark:bg-white/5 rounded-xl p-3 border border-[var(--rule-base)]"
               >
                 <div className="flex gap-2.5">
                   {/* Image */}
@@ -961,7 +961,7 @@ export default function PuntoDeCompraTab() {
                         <Trash2 className="h-3 w-3 text-red-400" />
                       </button>
                     </div>
-                    <p className="text-[10px] text-gray-400">
+                    <p className="text-[length:var(--ts-2xs)] text-gray-400">
                       {item.category} · {item.unit}
                       {item.stock != null && ` · Stock: ${item.stock}`}
                     </p>
@@ -974,7 +974,7 @@ export default function PuntoDeCompraTab() {
                       />
                       <div className="flex-1">
                         <div className="relative">
-                          <span className="absolute left-2 top-1/2 -translate-y-1/2 text-[10px] text-gray-400">
+                          <span className="absolute left-2 top-1/2 -translate-y-1/2 text-[length:var(--ts-2xs)] text-gray-400">
                             S/
                           </span>
                           <input
@@ -985,11 +985,11 @@ export default function PuntoDeCompraTab() {
                               const v = parseFloat(e.target.value);
                               if (!isNaN(v) && v >= 0) updateCartItem(item.productId, { unitCost: v });
                             }}
-                            className="w-full pl-6 pr-2 py-1.5 text-xs bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg focus:outline-none focus:ring-1 focus:ring-primary/30 font-mono"
+                            className="w-full pl-6 pr-2 py-1.5 text-xs bg-white dark:bg-gray-900 border border-[var(--rule-base)] rounded-lg focus:outline-none focus:ring-1 focus:ring-primary/30 font-mono"
                           />
                         </div>
                         {item.lastCost != null && item.unitCost !== item.lastCost && (
-                          <p className="text-[9px] text-amber-600 dark:text-amber-400 mt-0.5">
+                          <p className="text-[length:var(--ts-2xs)] text-amber-600 dark:text-amber-400 mt-0.5">
                             Antes: {fmtCurrency(item.lastCost)}
                           </p>
                         )}
@@ -1007,7 +1007,7 @@ export default function PuntoDeCompraTab() {
 
         {/* Cart Footer */}
         {cart.length > 0 && (
-          <div className="border-t border-gray-100 dark:border-gray-800 p-3 space-y-3">
+          <div className="border-t border-[var(--rule-base)] p-3 space-y-3">
             {/* Notes + Payment + Discount */}
             <div className="grid grid-cols-2 gap-2">
               <div className="col-span-2">
@@ -1016,13 +1016,13 @@ export default function PuntoDeCompraTab() {
                   placeholder="Notas de la orden..."
                   value={orderNotes}
                   onChange={(e) => setOrderNotes(e.target.value)}
-                  className="w-full px-3 py-1.5 text-xs bg-gray-50 dark:bg-white/5 border border-gray-200 dark:border-gray-700 rounded-lg focus:outline-none focus:ring-1 focus:ring-primary/30"
+                  className="w-full px-3 py-1.5 text-xs bg-gray-50 dark:bg-white/5 border border-[var(--rule-base)] rounded-lg focus:outline-none focus:ring-1 focus:ring-primary/30"
                 />
               </div>
               <select
                 value={paymentCondition}
                 onChange={(e) => setPaymentCondition(e.target.value)}
-                className="px-2 py-1.5 text-xs bg-gray-50 dark:bg-white/5 border border-gray-200 dark:border-gray-700 rounded-lg focus:outline-none"
+                className="px-2 py-1.5 text-xs bg-gray-50 dark:bg-white/5 border border-[var(--rule-base)] rounded-lg focus:outline-none"
               >
                 {PAYMENT_CONDITIONS.map((c) => (
                   <option key={c.value} value={c.value}>
@@ -1043,7 +1043,7 @@ export default function PuntoDeCompraTab() {
                     const v = parseFloat(e.target.value);
                     setGlobalDiscount(isNaN(v) ? 0 : Math.min(100, Math.max(0, v)));
                   }}
-                  className="w-full pl-7 pr-2 py-1.5 text-xs bg-gray-50 dark:bg-white/5 border border-gray-200 dark:border-gray-700 rounded-lg focus:outline-none focus:ring-1 focus:ring-primary/30"
+                  className="w-full pl-7 pr-2 py-1.5 text-xs bg-gray-50 dark:bg-white/5 border border-[var(--rule-base)] rounded-lg focus:outline-none focus:ring-1 focus:ring-primary/30"
                 />
               </div>
             </div>
@@ -1060,7 +1060,7 @@ export default function PuntoDeCompraTab() {
                   <span className="font-mono">-{fmtCurrency(discountAmount)}</span>
                 </div>
               )}
-              <div className="flex justify-between text-base font-bold text-gray-900 dark:text-white pt-1 border-t border-gray-200 dark:border-gray-700">
+              <div className="flex justify-between text-base font-bold text-gray-900 dark:text-white pt-1 border-t border-[var(--rule-base)]">
                 <span>Total</span>
                 <span className="font-mono text-primary">{fmtCurrency(total)}</span>
               </div>
@@ -1133,7 +1133,7 @@ export default function PuntoDeCompraTab() {
               onClick={(e) => e.stopPropagation()}
               className="bg-white dark:bg-card rounded-xl w-full max-w-2xl max-h-[80vh] overflow-hidden flex flex-col"
             >
-              <div className="flex items-center justify-between p-4 border-b border-gray-100 dark:border-gray-800">
+              <div className="flex items-center justify-between p-4 border-b border-[var(--rule-base)]">
                 <div className="flex items-center gap-2">
                   <History className="h-5 w-5 text-primary" />
                   <h3 className="text-sm font-bold text-gray-900 dark:text-white">Historial de Compras</h3>
@@ -1149,7 +1149,7 @@ export default function PuntoDeCompraTab() {
                   history.slice(0, 30).map((order) => (
                     <div
                       key={order.id}
-                      className="bg-gray-50 dark:bg-white/5 rounded-xl border border-gray-100 dark:border-gray-800 overflow-hidden"
+                      className="bg-gray-50 dark:bg-white/5 rounded-xl border border-[var(--rule-base)] overflow-hidden"
                     >
                       <button
                         onClick={() =>
@@ -1158,14 +1158,14 @@ export default function PuntoDeCompraTab() {
                         className="w-full flex items-center justify-between p-3 text-left hover:bg-gray-100/50 dark:hover:bg-white/5 transition-colors"
                       >
                         <div className="flex items-center gap-3 min-w-0">
-                          <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center text-[10px] font-bold text-primary shrink-0">
+                          <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center text-[length:var(--ts-2xs)] font-bold text-primary shrink-0">
                             {getInitials(order.supplierName || "?")}
                           </div>
                           <div className="min-w-0">
                             <p className="text-xs font-semibold text-gray-900 dark:text-white truncate">
                               {order.supplierName || "Sin proveedor"}
                             </p>
-                            <p className="text-[10px] text-gray-400">
+                            <p className="text-[length:var(--ts-2xs)] text-gray-400">
                               {fmtDate(order.createdAt)} · {order.items.length} items ·{" "}
                               <span
                                 className={cn(
@@ -1225,7 +1225,7 @@ export default function PuntoDeCompraTab() {
                                     {order.items.map((item, idx) => (
                                       <tr
                                         key={idx}
-                                        className="border-t border-gray-100 dark:border-gray-800"
+                                        className="border-t border-[var(--rule-base)]"
                                       >
                                         <td className="px-2.5 py-1.5 text-gray-700 dark:text-gray-300">
                                           {item.name}
@@ -1300,7 +1300,7 @@ export default function PuntoDeCompraTab() {
 
               <form onSubmit={handleCreateSupplier} className="space-y-3">
                 <div>
-                  <label className="text-[10px] font-semibold text-gray-500 uppercase">
+                  <label className="text-[length:var(--ts-2xs)] font-semibold text-gray-500 uppercase">
                     Nombre / Razón Social *
                   </label>
                   <input
@@ -1308,59 +1308,59 @@ export default function PuntoDeCompraTab() {
                     required
                     value={newSupName}
                     onChange={(e) => setNewSupName(e.target.value)}
-                    className="w-full px-3 py-2 text-sm border border-gray-200 dark:border-gray-700 rounded-lg bg-gray-50 dark:bg-white/5 focus:outline-none focus:ring-2 focus:ring-primary/30"
+                    className="w-full px-3 py-2 text-sm border border-[var(--rule-base)] rounded-lg bg-gray-50 dark:bg-white/5 focus:outline-none focus:ring-2 focus:ring-primary/30"
                     placeholder="Distribuidora Lima SAC"
                   />
                 </div>
                 <div className="grid grid-cols-2 gap-3">
                   <div>
-                    <label className="text-[10px] font-semibold text-gray-500 uppercase">RUC</label>
+                    <label className="text-[length:var(--ts-2xs)] font-semibold text-gray-500 uppercase">RUC</label>
                     <input
                       type="text"
                       value={newSupRuc}
                       onChange={(e) => setNewSupRuc(e.target.value)}
-                      className="w-full px-3 py-2 text-sm border border-gray-200 dark:border-gray-700 rounded-lg bg-gray-50 dark:bg-white/5 focus:outline-none focus:ring-2 focus:ring-primary/30"
+                      className="w-full px-3 py-2 text-sm border border-[var(--rule-base)] rounded-lg bg-gray-50 dark:bg-white/5 focus:outline-none focus:ring-2 focus:ring-primary/30"
                       placeholder="20123456789"
                       maxLength={11}
                     />
                   </div>
                   <div>
-                    <label className="text-[10px] font-semibold text-gray-500 uppercase">Teléfono</label>
+                    <label className="text-[length:var(--ts-2xs)] font-semibold text-gray-500 uppercase">Teléfono</label>
                     <input
                       type="tel"
                       value={newSupPhone}
                       onChange={(e) => setNewSupPhone(e.target.value)}
-                      className="w-full px-3 py-2 text-sm border border-gray-200 dark:border-gray-700 rounded-lg bg-gray-50 dark:bg-white/5 focus:outline-none focus:ring-2 focus:ring-primary/30"
+                      className="w-full px-3 py-2 text-sm border border-[var(--rule-base)] rounded-lg bg-gray-50 dark:bg-white/5 focus:outline-none focus:ring-2 focus:ring-primary/30"
                       placeholder="961234567"
                     />
                   </div>
                 </div>
                 <div>
-                  <label className="text-[10px] font-semibold text-gray-500 uppercase">Email</label>
+                  <label className="text-[length:var(--ts-2xs)] font-semibold text-gray-500 uppercase">Email</label>
                   <input
                     type="email"
                     value={newSupEmail}
                     onChange={(e) => setNewSupEmail(e.target.value)}
-                    className="w-full px-3 py-2 text-sm border border-gray-200 dark:border-gray-700 rounded-lg bg-gray-50 dark:bg-white/5 focus:outline-none focus:ring-2 focus:ring-primary/30"
+                    className="w-full px-3 py-2 text-sm border border-[var(--rule-base)] rounded-lg bg-gray-50 dark:bg-white/5 focus:outline-none focus:ring-2 focus:ring-primary/30"
                     placeholder="ventas@proveedor.com"
                   />
                 </div>
                 <div>
-                  <label className="text-[10px] font-semibold text-gray-500 uppercase">Dirección</label>
+                  <label className="text-[length:var(--ts-2xs)] font-semibold text-gray-500 uppercase">Dirección</label>
                   <input
                     type="text"
                     value={newSupAddress}
                     onChange={(e) => setNewSupAddress(e.target.value)}
-                    className="w-full px-3 py-2 text-sm border border-gray-200 dark:border-gray-700 rounded-lg bg-gray-50 dark:bg-white/5 focus:outline-none focus:ring-2 focus:ring-primary/30"
+                    className="w-full px-3 py-2 text-sm border border-[var(--rule-base)] rounded-lg bg-gray-50 dark:bg-white/5 focus:outline-none focus:ring-2 focus:ring-primary/30"
                     placeholder="Av. Industrial 456, Lima"
                   />
                 </div>
                 <div>
-                  <label className="text-[10px] font-semibold text-gray-500 uppercase">Categoría</label>
+                  <label className="text-[length:var(--ts-2xs)] font-semibold text-gray-500 uppercase">Categoría</label>
                   <select
                     value={newSupCategoria}
                     onChange={(e) => setNewSupCategoria(e.target.value)}
-                    className="w-full px-3 py-2 text-sm border border-gray-200 dark:border-gray-700 rounded-lg bg-gray-50 dark:bg-white/5 focus:outline-none"
+                    className="w-full px-3 py-2 text-sm border border-[var(--rule-base)] rounded-lg bg-gray-50 dark:bg-white/5 focus:outline-none"
                   >
                     <option value="mayorista">Mayorista</option>
                     <option value="fabricante">Fabricante</option>
@@ -1411,7 +1411,7 @@ export default function PuntoDeCompraTab() {
                   <h3 className="text-sm font-bold text-gray-900 dark:text-white">
                     Confirmar Orden de Compra
                   </h3>
-                  <p className="text-[10px] text-gray-400">Revisa los datos antes de generar</p>
+                  <p className="text-[length:var(--ts-2xs)] text-gray-400">Revisa los datos antes de generar</p>
                 </div>
               </div>
 
@@ -1447,7 +1447,7 @@ export default function PuntoDeCompraTab() {
 
                 {/* Items summary */}
                 <div className="bg-gray-50 dark:bg-white/5 rounded-xl overflow-hidden max-h-40 overflow-y-auto">
-                  <table className="w-full text-[11px]">
+                  <table className="w-full text-[length:var(--ts-xs)]">
                     <thead>
                       <tr className="bg-gray-100 dark:bg-gray-800">
                         <th className="text-left px-2.5 py-1.5 text-gray-500">Producto</th>
@@ -1457,7 +1457,7 @@ export default function PuntoDeCompraTab() {
                     </thead>
                     <tbody>
                       {cart.map((item) => (
-                        <tr key={item.productId} className="border-t border-gray-100 dark:border-gray-800">
+                        <tr key={item.productId} className="border-t border-[var(--rule-base)]">
                           <td className="px-2.5 py-1.5 text-gray-700 dark:text-gray-300 truncate max-w-40">
                             {item.name}
                           </td>
@@ -1473,7 +1473,7 @@ export default function PuntoDeCompraTab() {
                   </table>
                 </div>
 
-                <div className="flex justify-between items-center pt-2 border-t border-gray-200 dark:border-gray-700">
+                <div className="flex justify-between items-center pt-2 border-t border-[var(--rule-base)]">
                   <span className="text-sm font-bold text-gray-900 dark:text-white">Total</span>
                   <span className="text-lg font-bold text-primary font-mono">{fmtCurrency(total)}</span>
                 </div>

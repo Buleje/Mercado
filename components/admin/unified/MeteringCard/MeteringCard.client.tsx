@@ -97,7 +97,7 @@ function QuotaBar({ used, limit, light, event }: QuotaBarProps) {
         aria-label={`${pct}% de cuota utilizada para ${label}`}
       >
         <div
-          className={`h-full rounded-full transition-all duration-300 ${LIGHT_COLORS[light]}`}
+          className={`h-full rounded-full transition-all duration-[var(--dur-base)] ${LIGHT_COLORS[light]}`}
           style={{ width: `${pct}%` }}
         />
       </div>
@@ -131,7 +131,7 @@ function MetricCell({ event, snapshot }: MetricCellProps) {
 
   return (
     <div
-      className="rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 p-4 flex flex-col gap-2 min-h-[44px]"
+      className="rounded-xl border border-[var(--rule-base)] bg-white dark:bg-gray-800 p-4 flex flex-col gap-2 min-h-[44px]"
       aria-label={`Métrica: ${label}`}
     >
       <div className="flex items-center justify-between">
@@ -214,7 +214,7 @@ export function MeteringCardClient({ snapshot, onUpgrade }: MeteringCardClientPr
   return (
     <section
       aria-label="Uso facturable del mes"
-      className="rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 p-6 flex flex-col gap-5"
+      className="rounded-xl border border-[var(--rule-base)] bg-white dark:bg-gray-900 p-6 flex flex-col gap-5"
     >
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">

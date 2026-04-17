@@ -60,12 +60,12 @@ const GROUP_ICONS: Record<ModuleGroup, LucideIcon> = {
 };
 
 const GROUP_COLORS: Record<ModuleGroup, { icon: string; bg: string; border: string }> = {
-  operaciones: { icon: "text-gray-400", bg: "bg-gray-100", border: "border-gray-200" },
-  gestion:     { icon: "text-gray-400", bg: "bg-gray-100", border: "border-gray-200" },
-  finanzas:    { icon: "text-gray-400", bg: "bg-gray-100", border: "border-gray-200" },
-  documentos:  { icon: "text-gray-400", bg: "bg-gray-100", border: "border-gray-200" },
-  inteligencia:{ icon: "text-gray-400", bg: "bg-gray-100", border: "border-gray-200" },
-  config:      { icon: "text-gray-400", bg: "bg-gray-100", border: "border-gray-200" },
+  operaciones: { icon: "text-gray-400", bg: "bg-gray-100", border: "border-[var(--rule-base)]" },
+  gestion:     { icon: "text-gray-400", bg: "bg-gray-100", border: "border-[var(--rule-base)]" },
+  finanzas:    { icon: "text-gray-400", bg: "bg-gray-100", border: "border-[var(--rule-base)]" },
+  documentos:  { icon: "text-gray-400", bg: "bg-gray-100", border: "border-[var(--rule-base)]" },
+  inteligencia:{ icon: "text-gray-400", bg: "bg-gray-100", border: "border-[var(--rule-base)]" },
+  config:      { icon: "text-gray-400", bg: "bg-gray-100", border: "border-[var(--rule-base)]" },
 };
 
 const GROUP_ORDER: ModuleGroup[] = ["operaciones", "gestion", "finanzas", "documentos", "inteligencia"];
@@ -345,7 +345,7 @@ function ModuleItem({
         onClick={handleClick}
         title={collapsed ? module.label : undefined}
         className={cn(
-          "w-full flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all duration-200 group relative",
+          "w-full flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all duration-[var(--dur-base)] group relative",
           isActive
             ? "bg-[#2563EB]/10 text-[#2563EB]"
             : "text-gray-600 hover:bg-gray-100"
@@ -377,7 +377,7 @@ function ModuleItem({
             {/* Mejora 19: Badge de pendientes para documentos */}
             {badgeCount != null && badgeCount > 0 && (
               <span className={cn(
-                "ml-1 inline-flex items-center justify-center h-5 min-w-5 px-1 rounded-full text-[10px] font-bold leading-none",
+                "ml-1 inline-flex items-center justify-center h-5 min-w-5 px-1 rounded-full text-[length:var(--ts-2xs)] font-bold leading-none",
                 module.id === "pedidos" ? "bg-red-500 text-white" :
                 module.id === "inventario" ? "bg-amber-500 text-white" :
                 module.id === "fiados" ? "bg-orange-500 text-white" :
@@ -441,7 +441,7 @@ function ModuleItem({
               transition={{ duration: 0.22, ease: "easeInOut" }}
               className="overflow-hidden"
             >
-              <div className="ml-6 mt-0.5 mb-1 border-l border-gray-200 pl-3 space-y-0.5">
+              <div className="ml-6 mt-0.5 mb-1 border-l border-[var(--rule-base)] pl-3 space-y-0.5">
                 {module.tabs.map((tab) => {
                   const isTabActive = activeTab === tab.id;
                   return (
@@ -449,7 +449,7 @@ function ModuleItem({
                       key={tab.id}
                       onClick={() => onTabChange(tab.id)}
                       className={cn(
-                        "w-full flex items-center gap-2 px-2 py-1.5 rounded-lg text-xs transition-all duration-150",
+                        "w-full flex items-center gap-2 px-2 py-1.5 rounded-lg text-xs transition-all duration-[var(--dur-fast)]",
                         isTabActive
                           ? "bg-[#2563EB]/10 text-[#2563EB] font-semibold"
                           : "text-gray-500 hover:text-gray-700 hover:bg-gray-100"
@@ -508,17 +508,17 @@ function FlyoutPanel({
       animate={{ opacity: 1, x: 0 }}
       exit={{ opacity: 0, x: -10 }}
       transition={{ duration: 0.16 }}
-      className="fixed z-300 bg-white border border-gray-200 rounded-xl overflow-hidden"
+      className="fixed z-300 bg-white border border-[var(--rule-base)] rounded-xl overflow-hidden"
       style={{ left: sidebarWidth + 8, top, width: 240 }}
       onMouseEnter={onHoverStart}
       onMouseLeave={onHoverEnd}
     >
       {/* Cabecera de categoría */}
-      <div className={cn("px-3 py-2.5 flex items-center gap-2.5 border-b border-gray-100", col.bg)}>
+      <div className={cn("px-3 py-2.5 flex items-center gap-2.5 border-b border-[var(--rule-soft)]", col.bg)}>
         <div className={cn("h-6 w-6 rounded-lg flex items-center justify-center", col.bg, col.border, "border")}>
           <Icon className={cn("h-3.5 w-3.5", col.icon)} />
         </div>
-        <span className={cn("text-[10px] font-bold", col.icon)}>
+        <span className={cn("text-[length:var(--ts-2xs)] font-bold", col.icon)}>
           {GROUP_LABELS[category]}
         </span>
       </div>
@@ -542,7 +542,7 @@ function FlyoutPanel({
               <Ic className="h-4 w-4 shrink-0" />
               <span className="flex-1 text-left text-xs truncate">{mod.label}</span>
               {badge > 0 && (
-                <span className="px-1.5 py-0.5 rounded-full text-[9px] font-bold bg-red-500 text-white min-w-4 text-center">
+                <span className="px-1.5 py-0.5 rounded-full text-[length:var(--ts-2xs)] font-bold bg-red-500 text-white min-w-4 text-center">
                   {badge > 99 ? "99+" : badge}
                 </span>
               )}
@@ -635,7 +635,7 @@ function CategorySection({
                 )}>
                   {GROUP_LABELS[group]}
                 </span>
-                <span className="text-[9px] text-gray-400">
+                <span className="text-[length:var(--ts-2xs)] text-gray-400">
                   {modules.length} módulo{modules.length !== 1 ? "s" : ""}
                 </span>
               </div>
@@ -898,15 +898,15 @@ export default function AdminSidebar({
     return (
       <div
         className={cn(
-          "flex flex-col h-full bg-white border-r border-gray-200",
-          "transition-all duration-300",
+          "flex flex-col h-full bg-white border-r border-[var(--rule-base)]",
+          "transition-all duration-[var(--dur-base)]",
           isMobile ? "w-72" : isCollapsed ? "w-16" : "w-70"
         )}
       >
         {/* Header: toggle + logo */}
         <div
           className={cn(
-            "flex items-center h-16 px-3 border-b border-gray-200 shrink-0",
+            "flex items-center h-16 px-3 border-b border-[var(--rule-base)] shrink-0",
             isCollapsed ? "justify-center" : "gap-3"
           )}
         >
@@ -937,7 +937,7 @@ export default function AdminSidebar({
                 <p className="text-sm font-bold text-gray-900 truncate leading-tight">
                   Buleje
                 </p>
-                <p className="text-[10px] text-gray-400 truncate leading-tight">
+                <p className="text-[length:var(--ts-2xs)] text-gray-400 truncate leading-tight">
                   Panel Admin
                 </p>
               </div>
@@ -948,7 +948,7 @@ export default function AdminSidebar({
         {/* User info */}
         <div
           className={cn(
-            "flex items-center px-3 py-3 border-b border-gray-100 shrink-0",
+            "flex items-center px-3 py-3 border-b border-[var(--rule-soft)] shrink-0",
             isCollapsed ? "justify-center" : "gap-3"
           )}
         >
@@ -964,7 +964,7 @@ export default function AdminSidebar({
               <p className="text-xs font-semibold text-gray-800 truncate">
                 Administrador
               </p>
-              <p className="text-[10px] text-gray-400 truncate">
+              <p className="text-[length:var(--ts-2xs)] text-gray-400 truncate">
                 Admin General
               </p>
             </m.div>
@@ -998,7 +998,7 @@ export default function AdminSidebar({
                 "w-full flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-colors",
                 editMode
                   ? "bg-[#2563EB] text-white"
-                  : "text-gray-500 hover:bg-gray-100 border border-gray-200"
+                  : "text-gray-500 hover:bg-gray-100 border border-[var(--rule-base)]"
               )}
             >
               <ArrowUpDown className="h-3.5 w-3.5" />
@@ -1017,7 +1017,7 @@ export default function AdminSidebar({
                 placeholder="Buscar módulo..."
                 value={search}
                 onChange={e => setSearch(e.target.value)}
-                className="w-full h-8 pl-8 pr-8 text-xs rounded-lg border border-gray-200 bg-gray-50 focus:outline-none focus:ring-1 focus:ring-[#2563EB] focus:border-[#2563EB] placeholder:text-gray-400 text-gray-700"
+                className="w-full h-8 pl-8 pr-8 text-xs rounded-lg border border-[var(--rule-base)] bg-gray-50 focus:outline-none focus:ring-1 focus:ring-[#2563EB] focus:border-[#2563EB] placeholder:text-gray-400 text-gray-700"
               />
               {search && (
                 <button
@@ -1150,7 +1150,7 @@ export default function AdminSidebar({
         </nav>
 
         {/* Config + Logout al fondo */}
-        <div className="shrink-0 border-t border-gray-200">
+        <div className="shrink-0 border-t border-[var(--rule-base)]">
           {/* Separador config */}
           <div className="px-2 pt-2">
             <ModuleItem
@@ -1169,7 +1169,7 @@ export default function AdminSidebar({
               className={cn(
                 "w-full flex items-center gap-3 px-3 py-2.5 rounded-xl",
                 "text-gray-500 hover:bg-red-50",
-                "hover:text-red-600 transition-all duration-200 group",
+                "hover:text-red-600 transition-all duration-[var(--dur-base)] group",
                 isCollapsed ? "justify-center" : ""
               )}
               title={isCollapsed ? "Cerrar sesion" : undefined}
@@ -1204,7 +1204,7 @@ export default function AdminSidebar({
         onClick={() => setMobileOpen(true)}
         className={cn(
           "md:hidden fixed top-4 left-4 z-40 p-2.5 rounded-xl",
-          "bg-white border border-gray-200",
+          "bg-white border border-[var(--rule-base)]",
           "text-gray-700 active:scale-95 transition-transform"
         )}
         aria-label="Abrir menu"

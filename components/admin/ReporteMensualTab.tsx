@@ -171,7 +171,7 @@ export default function ReporteMensualTab() {
       </div>
 
       {/* Selector de período + botón */}
-      <div className="flex flex-wrap items-end gap-4 p-4 rounded-xl bg-gray-50 dark:bg-gray-800/50 border border-gray-200 dark:border-gray-700">
+      <div className="flex flex-wrap items-end gap-4 p-4 rounded-xl bg-gray-50 dark:bg-gray-800/50 border border-[var(--rule-base)]">
         <div>
           <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">
             Mes
@@ -179,7 +179,7 @@ export default function ReporteMensualTab() {
           <select
             value={month}
             onChange={(e) => setMonth(Number(e.target.value))}
-            className="px-3 py-2 text-sm rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-[#00B4A6]"
+            className="px-3 py-2 text-sm rounded-lg border border-[var(--rule-base)] dark:border-gray-600 bg-white dark:bg-gray-900 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-[#00B4A6]"
           >
             {MONTH_NAMES.map((name, i) => (
               <option key={i + 1} value={i + 1}>
@@ -199,7 +199,7 @@ export default function ReporteMensualTab() {
             max={2030}
             value={year}
             onChange={(e) => setYear(Number(e.target.value))}
-            className="w-24 px-3 py-2 text-sm rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-[#00B4A6]"
+            className="w-24 px-3 py-2 text-sm rounded-lg border border-[var(--rule-base)] dark:border-gray-600 bg-white dark:bg-gray-900 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-[#00B4A6]"
           />
         </div>
 
@@ -289,7 +289,7 @@ export default function ReporteMensualTab() {
             {history.map((entry) => (
               <div
                 key={entry.id}
-                className="flex items-center justify-between gap-4 p-3 rounded-lg bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700"
+                className="flex items-center justify-between gap-4 p-3 rounded-lg bg-white dark:bg-gray-900 border border-[var(--rule-base)]"
               >
                 <div>
                   <p className="text-sm font-medium text-gray-900 dark:text-white">
@@ -298,7 +298,7 @@ export default function ReporteMensualTab() {
                   <p className="text-xs text-gray-500">
                     Ingresos: {fmt(entry.ingresos)} · Utilidad: {fmt(entry.utilidad)}
                   </p>
-                  <p className="text-[10px] text-gray-400">
+                  <p className="text-[length:var(--ts-2xs)] text-gray-400">
                     Generado: {new Date(entry.generatedAt).toLocaleString("es-PE")}
                   </p>
                 </div>
@@ -318,7 +318,7 @@ export default function ReporteMensualTab() {
       )}
 
       {/* Nota sobre automatización */}
-      <div className="p-3 rounded-lg bg-gray-50 dark:bg-gray-800/50 border border-gray-200 dark:border-gray-700 text-xs text-gray-500 flex items-start gap-2">
+      <div className="p-3 rounded-lg bg-gray-50 dark:bg-gray-800/50 border border-[var(--rule-base)] text-xs text-gray-500 flex items-start gap-2">
         <AlertCircle className="h-4 w-4 shrink-0 mt-0.5" />
         <span>
           El reporte se genera automáticamente el{" "}

@@ -576,7 +576,7 @@ export default function PuntoCompraView() {
           }}
           disabled={processing}
           aria-label="Seleccionar proveedor"
-          className="px-3 py-1.5 border border-gray-200 rounded-lg text-xs bg-white text-gray-700 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary disabled:opacity-50 disabled:cursor-not-allowed"
+          className="px-3 py-1.5 border border-[var(--rule-base)] rounded-lg text-xs bg-white text-gray-700 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary disabled:opacity-50 disabled:cursor-not-allowed"
         >
           <option value="">Todos los proveedores</option>
           {suppliers.map((s) => (
@@ -608,7 +608,7 @@ export default function PuntoCompraView() {
           onChange={(e) => setSearch(e.target.value)}
           placeholder="Buscar producto..."
           aria-label="Buscar producto por nombre o código"
-          className="flex-1 min-w-36 px-3 py-1.5 border border-gray-200 rounded-lg text-xs bg-white text-gray-900 placeholder-gray-400 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+          className="flex-1 min-w-36 px-3 py-1.5 border border-[var(--rule-base)] rounded-lg text-xs bg-white text-gray-900 placeholder-gray-400 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
         />
 
         {/* Botón escáner de código de barras */}
@@ -636,7 +636,7 @@ export default function PuntoCompraView() {
           type="button"
           onClick={() => setViewMode((v) => (v === "grid" ? "list" : "grid"))}
           aria-label={viewMode === "grid" ? "Cambiar a vista lista" : "Cambiar a vista cuadrícula"}
-          className="p-1.5 rounded-lg border border-gray-200 bg-white text-gray-600 hover:bg-gray-50 transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+          className="p-1.5 rounded-lg border border-[var(--rule-base)] bg-white text-gray-600 hover:bg-gray-50 transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
         >
           {viewMode === "grid" ? (
             <List className="h-4 w-4" />
@@ -650,7 +650,7 @@ export default function PuntoCompraView() {
           value={sortBy}
           onChange={(e) => setSortBy(e.target.value as SortBy)}
           aria-label="Ordenar por"
-          className="px-3 py-1.5 border border-gray-200 rounded-xl text-xs bg-white text-gray-700 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+          className="px-3 py-1.5 border border-[var(--rule-base)] rounded-xl text-xs bg-white text-gray-700 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
         >
           <option value="stock">Stock ↑</option>
           <option value="price">Precio</option>
@@ -738,7 +738,7 @@ export default function PuntoCompraView() {
             {appliedPromo && (
               <button
                 onClick={() => { setAppliedPromo(null); setDiscount(0); }}
-                className="ml-auto text-[10px] text-amber-600 hover:text-amber-800 underline"
+                className="ml-auto text-[length:var(--ts-2xs)] text-amber-600 hover:text-amber-800 underline"
               >
                 Quitar aplicada
               </button>
@@ -758,7 +758,7 @@ export default function PuntoCompraView() {
                   }
                 }}
                 className={cn(
-                  "text-[10px] px-2 py-1 rounded-lg font-medium border transition-all",
+                  "text-[length:var(--ts-2xs)] px-2 py-1 rounded-lg font-medium border transition-all",
                   appliedPromo?.id === promo.id
                     ? "bg-amber-500 text-white border-amber-500"
                     : "bg-white text-amber-700 border-amber-300 hover:bg-amber-100",
@@ -776,7 +776,7 @@ export default function PuntoCompraView() {
             ))}
           </div>
           {appliedPromo && (
-            <p className="text-[10px] text-amber-600 mt-1.5">
+            <p className="text-[length:var(--ts-2xs)] text-amber-600 mt-1.5">
               ✓ Aplicando: <strong>{appliedPromo.nombre}</strong>
               {appliedPromo.tipo === "porcentaje" && ` — ${appliedPromo.valor}% de descuento en esta OC`}
               {appliedPromo.tipo === "2x1" && " — compra 2, paga 1 (por cada 2 unidades, 1 es gratis)"}
@@ -826,7 +826,7 @@ export default function PuntoCompraView() {
           ) : (
             /* Vista lista */
             <div className="overflow-x-auto -mx-1">
-            <div className="border border-gray-200 rounded-xl overflow-hidden">
+            <div className="border border-[var(--rule-base)] rounded-xl overflow-hidden">
               <table className="w-full text-sm">
                 <thead className="bg-gray-50">
                   <tr>
@@ -852,12 +852,12 @@ export default function PuntoCompraView() {
                     return (
                       <tr
                         key={p.id}
-                        className="border-t border-gray-100 hover:bg-gray-50"
+                        className="border-t border-[var(--rule-soft)] hover:bg-gray-50"
                       >
                         <td className="p-3">
                           <div className="flex items-center gap-2">
                             {needs && (
-                              <span className="text-[9px] font-bold px-1 py-0.5 rounded bg-red-100 text-red-600">
+                              <span className="text-[length:var(--ts-2xs)] font-bold px-1 py-0.5 rounded bg-red-100 text-red-600">
                                 REPONER
                               </span>
                             )}
@@ -961,9 +961,9 @@ export default function PuntoCompraView() {
           aria-label="Canasta de compra"
           className="w-full lg:w-80 xl:w-96 shrink-0"
         >
-          <div className="sticky top-4 bg-white border border-gray-200 rounded-xl overflow-hidden ">
+          <div className="sticky top-4 bg-white border border-[var(--rule-base)] rounded-xl overflow-hidden ">
             {/* Header carrito */}
-            <div className="p-4 border-b border-gray-100 flex items-center justify-between">
+            <div className="p-4 border-b border-[var(--rule-soft)] flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <ShoppingBasket
                   aria-hidden="true"
@@ -973,7 +973,7 @@ export default function PuntoCompraView() {
                   Canasta
                 </span>
                 {hasDraft && cart.length === 0 && (
-                  <span className="text-[9px] bg-amber-100 text-amber-600 px-1.5 py-0.5 rounded-full font-medium">
+                  <span className="text-[length:var(--ts-2xs)] bg-amber-100 text-amber-600 px-1.5 py-0.5 rounded-full font-medium">
                     Borrador
                   </span>
                 )}
@@ -999,7 +999,7 @@ export default function PuntoCompraView() {
             </div>
 
             {/* Tabs: Carrito | Frecuentes | Paquetes */}
-            <div className="flex border-b border-gray-100" role="tablist" aria-label="Secciones del carrito">
+            <div className="flex border-b border-[var(--rule-soft)]" role="tablist" aria-label="Secciones del carrito">
               {([
                 { key: "carrito" as const, label: "Carrito" },
                 { key: "frecuentes" as const, label: "Frecuentes" },
@@ -1012,7 +1012,7 @@ export default function PuntoCompraView() {
                   aria-selected={cartTab === tab.key}
                   onClick={() => setCartTab(tab.key)}
                   className={cn(
-                    "flex-1 py-2 text-[10px] font-semibold transition-colors",
+                    "flex-1 py-2 text-[length:var(--ts-2xs)] font-semibold transition-colors",
                     cartTab === tab.key
                       ? "text-primary border-b-2 border-primary"
                       : "text-gray-400 hover:text-gray-600",
@@ -1054,11 +1054,11 @@ export default function PuntoCompraView() {
             <>
             {/* Historial del proveedor */}
             {selectedSupplier && supplierHistory.length > 0 && (
-              <div className="px-3 pt-2 pb-1 border-b border-gray-100">
-                <p className="text-[10px] font-semibold text-gray-400 mb-1.5">Últimas OC a {selectedSupplier.name}</p>
+              <div className="px-3 pt-2 pb-1 border-b border-[var(--rule-soft)]">
+                <p className="text-[length:var(--ts-2xs)] font-semibold text-gray-400 mb-1.5">Últimas OC a {selectedSupplier.name}</p>
                 <div className="space-y-1">
                   {supplierHistory.map(h => (
-                    <div key={h.id} className="flex items-center justify-between text-[10px]">
+                    <div key={h.id} className="flex items-center justify-between text-[length:var(--ts-2xs)]">
                       <span className="text-gray-500 truncate">{h.id.slice(0, 15)}...</span>
                       <span className="font-mono font-medium text-gray-700">S/{h.total.toFixed(2)}</span>
                       <span className="text-gray-400">{h.date ? new Date(h.date).toLocaleDateString("es-PE", { day: "2-digit", month: "short" }) : ""}</span>
@@ -1082,7 +1082,7 @@ export default function PuntoCompraView() {
                 cart.map((item) => (
                   <div
                     key={item.product.id}
-                    className="flex items-center gap-2 p-2 bg-gray-50 rounded-xl animate-in fade-in slide-in-from-left-2 duration-200"
+                    className="flex items-center gap-2 p-2 bg-gray-50 rounded-xl animate-in fade-in slide-in-from-left-2 duration-[var(--dur-base)]"
                   >
                     {/* Miniatura */}
                     <div
@@ -1109,7 +1109,7 @@ export default function PuntoCompraView() {
                       <p className="text-xs font-medium text-gray-900 truncate">
                         {item.product.name}
                       </p>
-                      <p className="text-[10px] text-gray-400 flex items-center gap-1 flex-wrap">
+                      <p className="text-[length:var(--ts-2xs)] text-gray-400 flex items-center gap-1 flex-wrap">
                         S/
                         {(
                           item.product.costPrice ?? item.product.price
@@ -1117,7 +1117,7 @@ export default function PuntoCompraView() {
                         / {item.product.unit}
                         {priceHistory[item.product.id] !== undefined && priceHistory[item.product.id] !== (item.product.costPrice ?? item.product.price) && (
                           <span className={cn(
-                            "text-[9px] font-bold px-1 rounded",
+                            "text-[length:var(--ts-2xs)] font-bold px-1 rounded",
                             (item.product.costPrice ?? item.product.price) > priceHistory[item.product.id]
                               ? "bg-red-100 text-red-600"
                               : "bg-green-100 text-green-600"
@@ -1129,7 +1129,7 @@ export default function PuntoCompraView() {
                         {appliedPromo && (appliedPromo.tipo === "2x1" || appliedPromo.tipo === "3x2") &&
                           itemMatchesPromo(item, appliedPromo) &&
                           freeUnits(item.quantity, appliedPromo.tipo) > 0 && (
-                          <span className="text-[9px] bg-amber-100 text-amber-700 px-1 rounded font-bold uppercase tracking-wider">
+                          <span className="text-[length:var(--ts-2xs)] bg-amber-100 text-amber-700 px-1 rounded font-bold uppercase tracking-wider">
                             +{freeUnits(item.quantity, appliedPromo.tipo)} gratis
                           </span>
                         )}
@@ -1170,7 +1170,7 @@ export default function PuntoCompraView() {
                        itemMatchesPromo(item, appliedPromo) &&
                        freeUnits(item.quantity, appliedPromo.tipo) > 0 ? (
                         <span className="flex flex-col items-end">
-                          <span className="line-through text-gray-400 text-[9px] font-normal">
+                          <span className="line-through text-gray-400 text-[length:var(--ts-2xs)] font-normal">
                             S/{((item.product.costPrice ?? item.product.price) * item.quantity).toFixed(2)}
                           </span>
                           <span className="text-amber-600">
@@ -1201,7 +1201,7 @@ export default function PuntoCompraView() {
 
             {/* Panel de totales y acciones */}
             {cart.length > 0 && (
-              <div className="p-4 space-y-3 border-t border-gray-100">
+              <div className="p-4 space-y-3 border-t border-[var(--rule-soft)]">
                 {/* Descuento */}
                 <div className="flex items-center gap-2">
                   <label
@@ -1221,7 +1221,7 @@ export default function PuntoCompraView() {
                         Math.min(100, Math.max(0, Number(e.target.value))),
                       )
                     }
-                    className="flex-1 px-2 py-1 border border-gray-200 rounded-lg text-xs text-right bg-white text-gray-900 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+                    className="flex-1 px-2 py-1 border border-[var(--rule-base)] rounded-lg text-xs text-right bg-white text-gray-900 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
                   />
                 </div>
 
@@ -1244,7 +1244,7 @@ export default function PuntoCompraView() {
                       type="button"
                       onClick={() => setShowIGV((v) => !v)}
                       aria-pressed={showIGV}
-                      className="text-[10px] underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary rounded"
+                      className="text-[length:var(--ts-2xs)] underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary rounded"
                     >
                       IGV 18%
                     </button>
@@ -1254,7 +1254,7 @@ export default function PuntoCompraView() {
                       </span>
                     )}
                   </div>
-                  <div className="flex justify-between font-bold text-base text-gray-900 pt-1 border-t border-gray-100">
+                  <div className="flex justify-between font-bold text-base text-gray-900 pt-1 border-t border-[var(--rule-soft)]">
                     <span>TOTAL</span>
                     <span className="font-mono text-primary">
                       S/{displayTotal.toFixed(2)}
@@ -1267,7 +1267,7 @@ export default function PuntoCompraView() {
                   value={paymentMethod}
                   onChange={(e) => setPaymentMethod(e.target.value as PaymentMethod)}
                   aria-label="Método de pago"
-                  className="w-full px-3 py-1.5 border border-gray-200 rounded-lg text-xs bg-white text-gray-900 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+                  className="w-full px-3 py-1.5 border border-[var(--rule-base)] rounded-lg text-xs bg-white text-gray-900 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
                 >
                   <option value="contado">Contado</option>
                   <option value="credito_7">Crédito 7 días</option>
@@ -1287,7 +1287,7 @@ export default function PuntoCompraView() {
                     value={deliveryDate}
                     onChange={(e) => setDeliveryDate(e.target.value)}
                     min={todayStr}
-                    className="w-full px-3 py-1.5 border border-gray-200 rounded-xl text-xs bg-white text-gray-500 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+                    className="w-full px-3 py-1.5 border border-[var(--rule-base)] rounded-xl text-xs bg-white text-gray-500 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
                   />
                 </div>
 
@@ -1303,15 +1303,15 @@ export default function PuntoCompraView() {
                     disabled={processing}
                     rows={2}
                     placeholder="Notas al proveedor..."
-                    className="w-full px-3 py-1.5 border border-gray-200 rounded-lg text-xs bg-white text-gray-900 placeholder-gray-400 resize-none focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="w-full px-3 py-1.5 border border-[var(--rule-base)] rounded-lg text-xs bg-white text-gray-900 placeholder-gray-400 resize-none focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary disabled:opacity-50 disabled:cursor-not-allowed"
                   />
                 </div>
 
                 {lastOC && (
                   <div className="bg-emerald-50 rounded-xl p-3 space-y-2">
                     <p className="text-xs font-bold text-emerald-700">✓ OC Creada</p>
-                    <p className="text-[10px] text-emerald-600">ID: {lastOC.id}</p>
-                    <p className="text-[10px] text-emerald-600">{lastOC.items} productos — S/{lastOC.total.toFixed(2)}</p>
+                    <p className="text-[length:var(--ts-2xs)] text-emerald-600">ID: {lastOC.id}</p>
+                    <p className="text-[length:var(--ts-2xs)] text-emerald-600">{lastOC.items} productos — S/{lastOC.total.toFixed(2)}</p>
                     <button
                       type="button"
                       onClick={() => {
@@ -1319,18 +1319,18 @@ export default function PuntoCompraView() {
                         const event = new CustomEvent("compras-navigate-tab", { detail: "ordenes-compra" });
                         window.dispatchEvent(event);
                       }}
-                      className="w-full text-center text-[10px] font-semibold text-emerald-700 bg-emerald-100 hover:bg-emerald-200 rounded-lg py-1.5 transition-colors"
+                      className="w-full text-center text-[length:var(--ts-2xs)] font-semibold text-emerald-700 bg-emerald-100 hover:bg-emerald-200 rounded-lg py-1.5 transition-colors"
                     >
                       Ver en Órdenes →
                     </button>
                   </div>
                 )}
                 {/* Plantillas de pedido */}
-                <div className="border-t border-gray-100 pt-2 space-y-1.5">
+                <div className="border-t border-[var(--rule-soft)] pt-2 space-y-1.5">
                   <div className="flex items-center justify-between">
-                    <p className="text-[10px] font-semibold text-gray-400">Plantillas</p>
+                    <p className="text-[length:var(--ts-2xs)] font-semibold text-gray-400">Plantillas</p>
                     {cart.length > 0 && (
-                      <button type="button" onClick={saveAsTemplate} disabled={processing} className="text-[10px] text-primary hover:underline font-medium">
+                      <button type="button" onClick={saveAsTemplate} disabled={processing} className="text-[length:var(--ts-2xs)] text-primary hover:underline font-medium">
                         + Guardar actual
                       </button>
                     )}
@@ -1339,15 +1339,15 @@ export default function PuntoCompraView() {
                     <div className="flex flex-wrap gap-1">
                       {savedTemplates.map((tpl, idx) => (
                         <div key={idx} className="flex items-center gap-1 bg-gray-100 rounded-lg px-2 py-1">
-                          <button type="button" onClick={() => loadTemplate(tpl)} className="text-[10px] font-medium text-gray-700 hover:text-primary">
+                          <button type="button" onClick={() => loadTemplate(tpl)} className="text-[length:var(--ts-2xs)] font-medium text-gray-700 hover:text-primary">
                             {tpl.name}
                           </button>
-                          <button type="button" onClick={() => deleteTemplate(idx)} className="text-[9px] text-gray-400 hover:text-red-500 ml-0.5">✕</button>
+                          <button type="button" onClick={() => deleteTemplate(idx)} className="text-[length:var(--ts-2xs)] text-gray-400 hover:text-red-500 ml-0.5">✕</button>
                         </div>
                       ))}
                     </div>
                   ) : (
-                    <p className="text-[10px] text-gray-400">Ninguna guardada</p>
+                    <p className="text-[length:var(--ts-2xs)] text-gray-400">Ninguna guardada</p>
                   )}
                 </div>
 
@@ -1431,7 +1431,7 @@ export default function PuntoCompraView() {
       {/* Modal preview de impresión / PDF */}
       {/* Toast flotante */}
       {toastMsg && (
-        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 bg-gray-900 text-white px-4 py-2.5 rounded-lg text-sm font-medium animate-in fade-in slide-in-from-bottom-4 duration-300">
+        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 bg-gray-900 text-white px-4 py-2.5 rounded-lg text-sm font-medium animate-in fade-in slide-in-from-bottom-4 duration-[var(--dur-base)]">
           {toastMsg}
         </div>
       )}

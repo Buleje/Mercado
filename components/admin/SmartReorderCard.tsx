@@ -135,7 +135,7 @@ export default function SmartReorderCard({ className }: Props) {
 
   return (
     <div className={cn(
-      "bg-white dark:bg-card rounded-xl border border-gray-200 dark:border-card-border p-5",
+      "bg-white dark:bg-card rounded-xl border border-[var(--rule-base)] dark:border-card-border p-5",
       className,
     )}>
       <div className="flex items-center justify-between mb-4">
@@ -143,7 +143,7 @@ export default function SmartReorderCard({ className }: Props) {
           Sugerencias de compra inteligente
         </h3>
         {!loading && suggestions.length > 0 && (
-          <span className="text-[10px] font-semibold text-gray-400 dark:text-muted">
+          <span className="text-[length:var(--ts-2xs)] font-semibold text-gray-400 dark:text-muted">
             {suggestions.length} producto{suggestions.length > 1 ? "s" : ""}
           </span>
         )}
@@ -181,7 +181,7 @@ export default function SmartReorderCard({ className }: Props) {
       {!loading && !error && visibleSuggestions.length > 0 && (
         <div className="space-y-3">
           {/* Header */}
-          <div className="hidden sm:grid grid-cols-[1fr_auto_auto_auto_auto_auto] gap-2 text-[10px] font-bold text-gray-400 dark:text-muted px-1">
+          <div className="hidden sm:grid grid-cols-[1fr_auto_auto_auto_auto_auto] gap-2 text-[length:var(--ts-2xs)] font-bold text-gray-400 dark:text-muted px-1">
             <span>Producto</span>
             <span className="text-right">Stock</span>
             <span className="text-right">Dias</span>
@@ -200,7 +200,7 @@ export default function SmartReorderCard({ className }: Props) {
                   "w-full flex sm:grid grid-cols-1 sm:grid-cols-[1fr_auto_auto_auto_auto_auto] gap-2 items-start sm:items-center p-3 rounded-xl border transition-colors text-left",
                   isSelected
                     ? "border-[#00B4A6]/40 bg-[#00B4A6]/5 dark:border-[#00B4A6]/30 dark:bg-[#00B4A6]/10"
-                    : "border-gray-100 dark:border-card-border bg-gray-50 dark:bg-surface hover:bg-gray-100 dark:hover:bg-card",
+                    : "border-[var(--rule-soft)] dark:border-card-border bg-gray-50 dark:bg-surface hover:bg-gray-100 dark:hover:bg-card",
                 )}
               >
                 {/* Checkbox + nombre */}
@@ -216,7 +216,7 @@ export default function SmartReorderCard({ className }: Props) {
                       {s.productName}
                     </p>
                     {/* Mobile: info en línea */}
-                    <div className="sm:hidden flex flex-wrap gap-x-3 gap-y-0.5 mt-1 text-[10px] text-gray-500 dark:text-muted">
+                    <div className="sm:hidden flex flex-wrap gap-x-3 gap-y-0.5 mt-1 text-[length:var(--ts-2xs)] text-gray-500 dark:text-muted">
                       <span>Stock: {s.currentStock}</span>
                       <span>Dias: {s.daysUntilEmpty >= 999 ? "—" : s.daysUntilEmpty}</span>
                       <span>Pedir: {s.suggestedQuantity} und</span>
@@ -245,7 +245,7 @@ export default function SmartReorderCard({ className }: Props) {
                 </span>
                 <div className="hidden sm:flex justify-center">
                   <span className={cn(
-                    "text-[9px] font-bold px-1.5 py-0.5 rounded-full",
+                    "text-[length:var(--ts-2xs)] font-bold px-1.5 py-0.5 rounded-full",
                     urgencyStyle[s.urgency],
                   )}>
                     {urgencyLabel[s.urgency]}
@@ -256,7 +256,7 @@ export default function SmartReorderCard({ className }: Props) {
           })}
 
           {/* Footer: total + botón */}
-          <div className="flex items-center justify-between pt-2 border-t border-gray-100 dark:border-card-border">
+          <div className="flex items-center justify-between pt-2 border-t border-[var(--rule-soft)] dark:border-card-border">
             <div>
               {selected.size > 0 && (
                 <p className="text-xs text-gray-500 dark:text-muted">

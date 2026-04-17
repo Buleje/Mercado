@@ -61,7 +61,7 @@ export function OrdersDetailPanel({
         onClick={e => e.stopPropagation()}
       >
         {/* Header */}
-        <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100 dark:border-card-border shrink-0">
+        <div className="flex items-center justify-between px-5 py-4 border-b border-[var(--rule-soft)] dark:border-card-border shrink-0">
           <div>
             <h3 className="font-extrabold text-gray-900 dark:text-foreground text-lg">Detalle del pedido</h3>
             <p className="text-xs text-gray-400 dark:text-muted mt-0.5">
@@ -87,8 +87,8 @@ export function OrdersDetailPanel({
 
         <div className="overflow-y-auto px-5 py-4 space-y-4 flex-1">
           {/* Visual Timeline */}
-          <div className="bg-linear-to-br from-emerald-50 to-indigo-50 dark:from-emerald-950/20 dark:to-indigo-950/20 rounded-xl p-4 border border-emerald-100 dark:border-emerald-900/30">
-            <p className="text-xs font-bold text-emerald-700 dark:text-emerald-400 mb-3">Estado del Pedido</p>
+          <div className="bg-[var(--surface-sunken)] rounded-xl p-4 border border-[var(--rule-base)]">
+            <p className="text-xs font-bold text-[var(--text-secondary)] mb-3">Estado del Pedido</p>
             <div className="flex items-center justify-between gap-2 relative">
               <div className="absolute top-5 left-0 right-0 h-0.5 bg-gray-200 dark:bg-gray-700" style={{ zIndex: 0 }} />
               {getOrderTimeline(order).map((step) => {
@@ -105,7 +105,7 @@ export function OrdersDetailPanel({
                           ? "bg-emerald-500 border-emerald-500 text-white animate-pulse"
                           : step.current && isCanceled
                           ? "bg-red-500 border-red-500 text-white"
-                          : "bg-white dark:bg-card border-gray-300 dark:border-gray-600 text-gray-400 dark:text-gray-500"
+                          : "bg-white dark:bg-card border-[var(--rule-base)] dark:border-gray-600 text-gray-400 dark:text-gray-500"
                       )}
                     >
                       <Icon className="h-5 w-5" />
@@ -126,7 +126,7 @@ export function OrdersDetailPanel({
                         {step.label}
                       </p>
                       {step.timestamp && (
-                        <p className="text-[10px] text-gray-500 dark:text-gray-400 mt-0.5">{step.timestamp}</p>
+                        <p className="text-[length:var(--ts-2xs)] text-gray-500 dark:text-gray-400 mt-0.5">{step.timestamp}</p>
                       )}
                     </div>
                   </div>
@@ -136,8 +136,8 @@ export function OrdersDetailPanel({
           </div>
 
           {/* Delivery Driver Assignment */}
-          <div className="bg-linear-to-br from-purple-50 to-pink-50 dark:from-purple-950/20 dark:to-pink-950/20 rounded-xl p-4 border border-purple-100 dark:border-purple-900/30">
-            <p className="text-xs font-bold text-purple-700 dark:text-purple-400 mb-3">Asignar Delivery</p>
+          <div className="bg-[var(--surface-sunken)] rounded-xl p-4 border border-[var(--rule-base)]">
+            <p className="text-xs font-bold text-[var(--text-secondary)] mb-3">Asignar Delivery</p>
             {currentDriver && (
               <div className="flex items-center gap-2 mb-3">
                 <span
@@ -148,7 +148,7 @@ export function OrdersDetailPanel({
                 </span>
                 <button
                   onClick={() => onPatchOrder(order.id, { deliveryDriver: "" } as Partial<DbOrder>)}
-                  className="text-xs text-purple-600 hover:text-purple-800 underline"
+                  className="text-xs text-[var(--text-secondary)] hover:text-[var(--text-primary)] underline"
                 >
                   Cambiar
                 </button>
@@ -222,7 +222,7 @@ export function OrdersDetailPanel({
               <div className="flex items-center gap-2 flex-wrap">
                 <span className={cn(
                   "inline-flex px-2 py-0.5 rounded-full text-xs font-bold",
-                  order.paymentMethod === "yape" ? "bg-purple-100 text-purple-700" : "bg-emerald-100 text-emerald-700"
+                  order.paymentMethod === "yape" ? "bg-[var(--surface-sunken)] text-[var(--text-primary)]" : "bg-emerald-100 text-emerald-700"
                 )}>
                   {order.paymentMethod === "yape" ? "Yape" : "Efectivo"}
                 </span>
@@ -289,7 +289,7 @@ export function OrdersDetailPanel({
                 onChange={e => onAdminNoteChange(e.target.value)}
                 onKeyDown={e => e.key === "Enter" && onSaveAdminNote(order.id)}
                 placeholder="Agregar nota interna..."
-                className="flex-1 px-3 py-2 rounded-lg border border-gray-200 dark:border-card-border text-sm text-gray-900 dark:text-foreground outline-none focus:border-primary"
+                className="flex-1 px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-card-border text-sm text-gray-900 dark:text-foreground outline-none focus:border-primary"
               />
               <button
                 onClick={() => onSaveAdminNote(order.id)}
@@ -315,7 +315,7 @@ export function OrdersDetailPanel({
           {/* Items */}
           <div className="space-y-2">
             <p className="text-xs font-bold text-gray-400 dark:text-muted">Productos</p>
-            <div className="rounded-xl border border-gray-100 dark:border-card-border divide-y divide-gray-100 overflow-hidden">
+            <div className="rounded-xl border border-[var(--rule-soft)] dark:border-card-border divide-y divide-gray-100 overflow-hidden">
               {order.items.map((item, i) => (
                 <div key={i} className="flex justify-between items-center px-3 py-2 text-sm">
                   <span className="text-gray-700 dark:text-foreground">

@@ -274,7 +274,7 @@ export default function PaymentCalendar() {
         ].map(({ label, amount, color }) => (
           <div
             key={label}
-            className="rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 px-3 py-3"
+            className="rounded-xl border border-[var(--rule-base)] bg-white dark:bg-gray-900 px-3 py-3"
           >
             <p className="text-xs text-gray-500 dark:text-gray-400">{label}</p>
             <p className={cn("text-base font-bold mt-0.5 tabular-nums", color)}>
@@ -285,9 +285,9 @@ export default function PaymentCalendar() {
       </div>
 
       {/* Calendar */}
-      <div className="rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 overflow-hidden">
+      <div className="rounded-xl border border-[var(--rule-base)] bg-white dark:bg-gray-900 overflow-hidden">
         {/* Month nav */}
-        <div className="flex items-center justify-between px-4 py-3 border-b border-gray-100 dark:border-gray-800">
+        <div className="flex items-center justify-between px-4 py-3 border-b border-[var(--rule-base)]">
           <button
             onClick={prevMonth}
             className="p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-500 dark:text-gray-400 transition-colors"
@@ -308,7 +308,7 @@ export default function PaymentCalendar() {
         </div>
 
         {/* Day headers */}
-        <div className="grid grid-cols-7 border-b border-gray-100 dark:border-gray-800">
+        <div className="grid grid-cols-7 border-b border-[var(--rule-base)]">
           {DAYS_ES.map((d) => (
             <div key={d} className="py-2 text-center text-xs font-medium text-gray-400 dark:text-gray-500">
               {d}
@@ -335,7 +335,7 @@ export default function PaymentCalendar() {
                   key={i}
                   onClick={() => setSelectedDay(day.payables.length > 0 ? (isSelected ? null : day) : null)}
                   className={cn(
-                    "relative min-h-[64px] p-1.5 text-left border-b border-r border-gray-100 dark:border-gray-800 transition-colors",
+                    "relative min-h-[64px] p-1.5 text-left border-b border-r border-[var(--rule-base)] transition-colors",
                     !day.isCurrentMonth && "opacity-35",
                     day.isToday && "bg-[#00B4A6]/5 dark:bg-[#00B4A6]/10",
                     isSelected && "bg-[#00B4A6]/10 dark:bg-[#00B4A6]/20",
@@ -363,7 +363,7 @@ export default function PaymentCalendar() {
                       </div>
                       <span
                         className={cn(
-                          "text-[10px] font-semibold tabular-nums",
+                          "text-[length:var(--ts-2xs)] font-semibold tabular-nums",
                           hasOverdue ? "text-red-500" : hasPending ? "text-amber-600 dark:text-amber-400" : "text-emerald-600 dark:text-emerald-400"
                         )}
                       >
@@ -380,8 +380,8 @@ export default function PaymentCalendar() {
 
       {/* Selected day detail */}
       {selectedDay && selectedDay.payables.length > 0 && (
-        <div className="rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 overflow-hidden">
-          <div className="px-4 py-3 border-b border-gray-100 dark:border-gray-800 flex items-center justify-between">
+        <div className="rounded-xl border border-[var(--rule-base)] bg-white dark:bg-gray-900 overflow-hidden">
+          <div className="px-4 py-3 border-b border-[var(--rule-base)] flex items-center justify-between">
             <div className="flex items-center gap-2">
               <DollarSign size={15} className="text-[#00B4A6]" />
               <h4 className="text-sm font-semibold text-gray-800 dark:text-white">

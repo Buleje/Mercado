@@ -182,11 +182,11 @@ export default function AICommandCenter() {
   }, [fetchData]);
 
   return (
-    <div className="flex min-h-[600px] bg-white dark:bg-gray-950 rounded-xl border border-gray-200 dark:border-gray-800 overflow-hidden">
+    <div className="flex min-h-[600px] bg-white dark:bg-gray-950 rounded-xl border border-[var(--rule-base)] overflow-hidden">
       {/* ── Inline sidebar ──────────────────────────────────────────── */}
-      <aside className="hidden sm:flex w-48 flex-col border-r border-gray-200 dark:border-gray-800 bg-gray-50/80 dark:bg-gray-900/60 shrink-0">
-        <div className="px-3 py-3.5 border-b border-gray-200 dark:border-gray-800">
-          <p className="text-[11px] font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider">
+      <aside className="hidden sm:flex w-48 flex-col border-r border-[var(--rule-base)] bg-gray-50/80 dark:bg-gray-900/60 shrink-0">
+        <div className="px-3 py-3.5 border-b border-[var(--rule-base)]">
+          <p className="text-[length:var(--ts-xs)] font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider">
             Centro IA
           </p>
         </div>
@@ -201,7 +201,7 @@ export default function AICommandCenter() {
                 key={s.id}
                 onClick={() => changeSection(s.id)}
                 className={cn(
-                  "w-full flex items-center gap-2.5 px-3 py-2.5 rounded-lg text-[13px] font-medium transition-all mb-0.5",
+                  "w-full flex items-center gap-2.5 px-3 py-2.5 rounded-lg text-[length:var(--ts-sm)] font-medium transition-all mb-0.5",
                   isActive
                     ? "bg-primary/10 text-primary dark:bg-primary/20 font-semibold border-l-[3px] border-primary"
                     : "text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 border-l-[3px] border-transparent",
@@ -211,7 +211,7 @@ export default function AICommandCenter() {
                 <span className="truncate flex-1 text-left">{s.label}</span>
                 {badge != null && badge > 0 && (
                   <span className={cn(
-                    "text-[10px] font-bold rounded-full px-1.5 py-0.5 min-w-5 text-center",
+                    "text-[length:var(--ts-2xs)] font-bold rounded-full px-1.5 py-0.5 min-w-5 text-center",
                     isActive ? "bg-primary/20 text-primary" : "bg-red-500 text-white",
                   )}>
                     {badge > 99 ? "99+" : badge}
@@ -222,15 +222,15 @@ export default function AICommandCenter() {
           })}
         </nav>
 
-        <div className="border-t border-gray-100 dark:border-gray-800 px-3 py-2">
-          <p className="text-[10px] text-gray-400 dark:text-gray-500 truncate">
+        <div className="border-t border-[var(--rule-base)] px-3 py-2">
+          <p className="text-[length:var(--ts-2xs)] text-gray-400 dark:text-gray-500 truncate">
             {lastRefresh ? getRelativeTime(lastRefresh) : "Cargando..."}
           </p>
         </div>
       </aside>
 
       {/* ── Mobile nav (visible < sm) ─────────────────────────────── */}
-      <div className="sm:hidden flex items-center gap-1 p-1 border-b border-gray-200 dark:border-gray-800 bg-gray-50 dark:bg-gray-900 overflow-x-auto scrollbar-hide w-full absolute top-0 left-0 z-10">
+      <div className="sm:hidden flex items-center gap-1 p-1 border-b border-[var(--rule-base)] bg-gray-50 dark:bg-gray-900 overflow-x-auto scrollbar-hide w-full absolute top-0 left-0 z-10">
         {SECTIONS.map(s => {
           const Icon = s.icon;
           const isActive = activeSection === s.id;
@@ -249,7 +249,7 @@ export default function AICommandCenter() {
               <Icon className="w-3.5 h-3.5" />
               {s.label}
               {badge != null && badge > 0 && (
-                <span className="absolute -top-1 -right-1 bg-red-500 text-white text-[9px] font-bold rounded-full px-1 min-w-4 text-center">
+                <span className="absolute -top-1 -right-1 bg-red-500 text-white text-[length:var(--ts-2xs)] font-bold rounded-full px-1 min-w-4 text-center">
                   {badge > 99 ? "99+" : badge}
                 </span>
               )}

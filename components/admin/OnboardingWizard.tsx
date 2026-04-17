@@ -72,8 +72,8 @@ const STEPS: WizardStep[] = [
     Icon: Users,
     href: "/admin#clientes",
     hrefLabel: "Ir a Clientes",
-    color: "text-purple-600 dark:text-purple-400",
-    bgLight: "bg-purple-50",
+    color: "text-[var(--text-secondary)] dark:text-[var(--text-primary)]",
+    bgLight: "bg-[var(--surface-sunken)]",
     bgDark: "dark:bg-purple-900/20",
   },
   {
@@ -134,7 +134,7 @@ function ProgressBar({ completed, total }: { completed: number; total: number })
       </div>
       <div className="h-2 bg-gray-100 dark:bg-gray-800 rounded-full overflow-hidden">
         <div
-          className="h-full bg-gradient-to-r from-[#2563EB] to-emerald-400 rounded-full transition-all duration-700 ease-out"
+          className="h-full bg-[var(--text-primary)] rounded-full transition-all duration-[var(--dur-slower)] ease-out"
           style={{ width: `${pct}%` }}
         />
       </div>
@@ -160,10 +160,10 @@ function StepRow({
   return (
     <div
       className={cn(
-        "flex items-center gap-3 p-3 rounded-xl border transition-all duration-200",
+        "flex items-center gap-3 p-3 rounded-xl border transition-all duration-[var(--dur-base)]",
         done
           ? "bg-emerald-50 dark:bg-emerald-900/15 border-emerald-100 dark:border-emerald-800/40"
-          : "bg-white dark:bg-gray-800/60 border-gray-100 dark:border-gray-700/60 hover:border-emerald-200 dark:hover:border-emerald-700"
+          : "bg-white dark:bg-gray-800/60 border-[var(--rule-base)] hover:border-emerald-200 dark:hover:border-emerald-700"
       )}
     >
       {/* Step number / check */}
@@ -196,7 +196,7 @@ function StepRow({
             {index + 1}. {step.title}
           </p>
           {done && (
-            <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-emerald-100 dark:bg-emerald-900/40 text-emerald-700 dark:text-emerald-400 flex-shrink-0">
+            <span className="text-[length:var(--ts-2xs)] font-bold px-1.5 py-0.5 rounded-full bg-emerald-100 dark:bg-emerald-900/40 text-emerald-700 dark:text-emerald-400 flex-shrink-0">
               Completado
             </span>
           )}
@@ -316,16 +316,16 @@ export default function OnboardingWizard({ tenantSlug, onClose }: OnboardingWiza
     >
       {/* Panel */}
       <div
-        className="relative w-full max-w-lg bg-white dark:bg-gray-900 rounded-3xl border border-gray-100 dark:border-gray-700 overflow-hidden"
+        className="relative w-full max-w-lg bg-white dark:bg-gray-900 rounded-3xl border border-[var(--rule-base)] overflow-hidden"
         onClick={(e) => e.stopPropagation()}
       >
         {allDone && <ConfettiOverlay />}
 
         {/* Header */}
-        <div className="relative px-6 pt-6 pb-4 bg-gradient-to-br from-emerald-50 to-white dark:from-emerald-900/20 dark:to-gray-900 border-b border-gray-100 dark:border-gray-800">
+        <div className="relative px-6 pt-6 pb-4 bg-[var(--surface-sunken)] border-b border-[var(--rule-base)]">
           <div className="flex items-start gap-3">
-            <div className="flex-shrink-0 w-10 h-10 rounded-xl bg-[#2563EB] flex items-center justify-center">
-              <Sparkles className="h-5 w-5 text-white" />
+            <div className="flex-shrink-0 w-10 h-10 rounded-xl bg-[var(--text-primary)] flex items-center justify-center">
+              <Sparkles className="h-5 w-5 text-[var(--surface-canvas)]" />
             </div>
             <div className="flex-1">
               <h2 className="text-base font-bold text-gray-900 dark:text-white leading-tight">
@@ -375,7 +375,7 @@ export default function OnboardingWizard({ tenantSlug, onClose }: OnboardingWiza
         </div>
 
         {/* Footer */}
-        <div className="px-5 py-4 border-t border-gray-100 dark:border-gray-800 bg-gray-50 dark:bg-gray-800/40 flex items-center gap-3">
+        <div className="px-5 py-4 border-t border-[var(--rule-base)] bg-gray-50 dark:bg-gray-800/40 flex items-center gap-3">
           {allDone ? (
             <button
               type="button"

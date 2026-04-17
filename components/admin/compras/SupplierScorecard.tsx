@@ -42,7 +42,7 @@ function MetricBar({ label, value, icon: Icon }: { label: string; value: number;
       </div>
       <div className="h-2 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
         <div
-          className={cn("h-full rounded-full transition-all duration-500", color)}
+          className={cn("h-full rounded-full transition-all duration-[var(--dur-slow)]", color)}
           style={{ width: `${Math.min(100, Math.max(0, value))}%` }}
         />
       </div>
@@ -52,7 +52,7 @@ function MetricBar({ label, value, icon: Icon }: { label: string; value: number;
 
 function SkeletonCard() {
   return (
-    <div className="animate-pulse bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl p-4 space-y-3">
+    <div className="animate-pulse bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl p-4 space-y-3">
       <div className="flex items-center gap-3">
         <div className="h-16 w-16 rounded-full bg-gray-200 dark:bg-gray-700" />
         <div className="space-y-2 flex-1">
@@ -91,7 +91,7 @@ export default function SupplierScorecard({ supplierId }: SupplierScorecardProps
 
   if (data.insufficient) {
     return (
-      <div className="bg-gray-50 dark:bg-accent/50 border border-gray-200 dark:border-card-border rounded-xl p-4 text-center">
+      <div className="bg-gray-50 dark:bg-accent/50 border border-[var(--rule-base)] dark:border-card-border rounded-xl p-4 text-center">
         <AlertTriangle className="h-6 w-6 text-gray-400 mx-auto mb-2" />
         <p className="text-sm text-gray-500 dark:text-muted">
           Sin historial suficiente para evaluar (min. 3 OC)
@@ -108,7 +108,7 @@ export default function SupplierScorecard({ supplierId }: SupplierScorecardProps
   const ringColor = score > 70 ? "stroke-emerald-500" : score > 55 ? "stroke-amber-500" : "stroke-red-500";
 
   return (
-    <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl p-4 space-y-4">
+    <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl p-4 space-y-4">
       {/* Score + Grade */}
       <div className="flex items-center gap-4">
         {/* Circular score */}

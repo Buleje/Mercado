@@ -39,7 +39,7 @@ const pct = (n: number) => n.toFixed(1) + "%";
 const TYPE_META: Record<CampaignType, { label: string; icon: typeof Mail; color: string }> = {
   email: { label: "Email", icon: Mail, color: "text-emerald-600" },
   sms:   { label: "SMS",   icon: Smartphone, color: "text-emerald-600" },
-  push:  { label: "Push",  icon: Megaphone, color: "text-violet-600" },
+  push:  { label: "Push",  icon: Megaphone, color: "text-[var(--text-secondary)]" },
   mixto: { label: "Mixto", icon: Users, color: "text-amber-600" },
 };
 
@@ -98,7 +98,7 @@ export default function MarketingAutomationTab() {
           </h1>
           <p className="text-sm text-gray-500 dark:text-muted mt-0.5">Campañas automáticas, segmentación y seguimiento de ROI</p>
         </div>
-        <button onClick={() => exportToCSV(campaigns.map(c => ({ nombre: c.name, tipo: TYPE_META[c.type].label, estado: STATUS_META[c.status].label, trigger: TRIGGER_LABELS[c.trigger], enviados: c.sentCount, apertura: c.openRate, clicks: c.clickRate, conversiones: c.conversions, revenue: c.revenue, costo: c.cost })), "marketing-campañas")} className="flex items-center gap-1.5 px-3 py-2 rounded-lg border border-gray-200 dark:border-card-border bg-white dark:bg-surface text-sm font-semibold text-gray-700 dark:text-foreground hover:bg-gray-50 dark:hover:bg-accent transition-colors">
+        <button onClick={() => exportToCSV(campaigns.map(c => ({ nombre: c.name, tipo: TYPE_META[c.type].label, estado: STATUS_META[c.status].label, trigger: TRIGGER_LABELS[c.trigger], enviados: c.sentCount, apertura: c.openRate, clicks: c.clickRate, conversiones: c.conversions, revenue: c.revenue, costo: c.cost })), "marketing-campañas")} className="flex items-center gap-1.5 px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-card-border bg-white dark:bg-surface text-sm font-semibold text-gray-700 dark:text-foreground hover:bg-gray-50 dark:hover:bg-accent transition-colors">
           <Download className="h-4 w-4" /> Exportar
         </button>
       </div>
@@ -107,7 +107,7 @@ export default function MarketingAutomationTab() {
         {[
           { label: "Campañas activas", value: String(stats.active), color: "text-emerald-600", bg: "bg-emerald-50 dark:bg-emerald-950/30" },
           { label: "Revenue total", value: fmt(stats.totalRevenue), color: "text-emerald-600", bg: "bg-emerald-50 dark:bg-emerald-950/30" },
-          { label: "Conversiones", value: stats.totalConversions.toLocaleString("es-PE"), color: "text-violet-600", bg: "bg-violet-50 dark:bg-violet-950/30" },
+          { label: "Conversiones", value: stats.totalConversions.toLocaleString("es-PE"), color: "text-[var(--text-secondary)]", bg: "bg-[var(--surface-sunken)]" },
           { label: "ROI campañas", value: pct(stats.roi), color: "text-amber-600", bg: "bg-amber-50 dark:bg-amber-950/30" },
         ].map(({ label, value, color, bg }) => (
           <div key={label} className={cn("rounded-xl p-4", bg)}>
@@ -120,22 +120,22 @@ export default function MarketingAutomationTab() {
       <div className="flex flex-col sm:flex-row gap-3 flex-wrap">
         <div className="relative flex-1 max-w-sm">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
-          <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Nombre, segmento..." className="w-full pl-9 pr-3 py-2 text-sm border border-gray-200 dark:border-card-border rounded-lg bg-white dark:bg-surface text-gray-700 dark:text-foreground" />
+          <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Nombre, segmento..." className="w-full pl-9 pr-3 py-2 text-sm border border-[var(--rule-base)] dark:border-card-border rounded-lg bg-white dark:bg-surface text-gray-700 dark:text-foreground" />
         </div>
-        <select value={filterStatus} onChange={e => setFilterStatus(e.target.value as CampaignStatus | "todos")} className="text-sm border border-gray-200 dark:border-card-border rounded-lg px-3 py-2 bg-white dark:bg-surface text-gray-700 dark:text-foreground">
+        <select value={filterStatus} onChange={e => setFilterStatus(e.target.value as CampaignStatus | "todos")} className="text-sm border border-[var(--rule-base)] dark:border-card-border rounded-lg px-3 py-2 bg-white dark:bg-surface text-gray-700 dark:text-foreground">
           <option value="todos">Todos los estados</option>
           {(Object.keys(STATUS_META) as CampaignStatus[]).map(s => <option key={s} value={s}>{STATUS_META[s].label}</option>)}
         </select>
-        <select value={filterType} onChange={e => setFilterType(e.target.value as CampaignType | "todos")} className="text-sm border border-gray-200 dark:border-card-border rounded-lg px-3 py-2 bg-white dark:bg-surface text-gray-700 dark:text-foreground">
+        <select value={filterType} onChange={e => setFilterType(e.target.value as CampaignType | "todos")} className="text-sm border border-[var(--rule-base)] dark:border-card-border rounded-lg px-3 py-2 bg-white dark:bg-surface text-gray-700 dark:text-foreground">
           <option value="todos">Todos los tipos</option>
           {(Object.keys(TYPE_META) as CampaignType[]).map(t => <option key={t} value={t}>{TYPE_META[t].label}</option>)}
         </select>
       </div>
 
-      <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl overflow-hidden">
+      <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full min-w-[600px] text-sm">
-            <thead className="bg-gray-50 dark:bg-surface/50 border-b border-gray-200 dark:border-card-border">
+            <thead className="bg-gray-50 dark:bg-surface/50 border-b border-[var(--rule-base)] dark:border-card-border">
               <tr>
                 <th className="px-2 sm:px-4 py-2 sm:py-3 text-left text-xs font-bold text-gray-500 dark:text-muted uppercase">Estado</th>
                 <th className="px-2 sm:px-4 py-2 sm:py-3 text-left text-xs font-bold text-gray-500 dark:text-muted uppercase">Campaña</th>
@@ -160,7 +160,7 @@ export default function MarketingAutomationTab() {
                     <td className="px-2 sm:px-4 py-2 sm:py-3"><span className={cn("text-xs font-bold px-2 py-0.5 rounded-full", st.bg, st.color)}>{st.label}</span></td>
                     <td className="px-2 sm:px-4 py-2 sm:py-3">
                       <p className="font-semibold text-gray-800 dark:text-foreground text-xs">{c.name}</p>
-                      <p className="text-[10px] text-gray-400">{c.segment}</p>
+                      <p className="text-[length:var(--ts-2xs)] text-gray-400">{c.segment}</p>
                     </td>
                     <td className="px-2 sm:px-4 py-2 sm:py-3"><span className={cn("inline-flex items-center gap-1 text-xs font-semibold", tp.color)}><TpIcon className="h-3 w-3" />{tp.label}</span></td>
                     <td className="px-2 sm:px-4 py-2 sm:py-3 text-xs text-gray-500">{TRIGGER_LABELS[c.trigger]}</td>
@@ -179,7 +179,7 @@ export default function MarketingAutomationTab() {
       </div>
 
       {/* Funnel */}
-      <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl p-3 sm:p-5 space-y-3">
+      <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl p-3 sm:p-5 space-y-3">
         <h3 className="font-extrabold text-sm text-gray-900 dark:text-foreground flex flex-wrap items-center gap-2"><BarChart3 className="h-4 w-4 text-primary" /> Embudo de conversión (campañas activas)</h3>
         {(() => {
           const active = campaigns.filter(c => c.status === "activa");
@@ -189,7 +189,7 @@ export default function MarketingAutomationTab() {
           const totalConv = active.reduce((s, c) => s + c.conversions, 0);
           const steps = [
             { label: "Enviados", value: totalSent, color: "bg-emerald-500" },
-            { label: "Abiertos", value: totalOpened, color: "bg-violet-500" },
+            { label: "Abiertos", value: totalOpened, color: "bg-[var(--text-primary)]" },
             { label: "Clicks", value: totalClicked, color: "bg-amber-500" },
             { label: "Conversiones", value: totalConv, color: "bg-emerald-500" },
           ];
@@ -211,7 +211,7 @@ export default function MarketingAutomationTab() {
 
       {detail && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4" onClick={() => setDetail(null)}>
-          <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl p-3 sm:p-6 w-full max-w-md space-y-3" onClick={e => e.stopPropagation()}>
+          <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl p-3 sm:p-6 w-full max-w-md space-y-3" onClick={e => e.stopPropagation()}>
             <div className="flex items-center justify-between">
               <h3 className="font-extrabold text-gray-900 dark:text-foreground text-sm">{detail.name}</h3>
               <button onClick={() => setDetail(null)}><X className="h-4 w-4 text-gray-400" /></button>

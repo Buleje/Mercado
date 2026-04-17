@@ -100,7 +100,7 @@ export default function MiNegocioHoyCard({ onNavigate }: MiNegocioHoyCardProps) 
     return (
       <button
         onClick={() => setCollapsed(false)}
-        className="w-full flex items-center gap-3 px-4 py-2.5 rounded-xl bg-white/80 dark:bg-card/80 border border-gray-200 dark:border-card-border backdrop-blur-sm text-sm hover:bg-gray-50 dark:hover:bg-card transition-colors"
+        className="w-full flex items-center gap-3 px-4 py-2.5 rounded-xl bg-white/80 dark:bg-card/80 border border-[var(--rule-base)] dark:border-card-border backdrop-blur-sm text-sm hover:bg-gray-50 dark:hover:bg-card transition-colors"
       >
         <Star className="h-4 w-4 text-primary" />
         <span className="font-semibold text-gray-700 dark:text-white">Hoy:</span>
@@ -132,7 +132,7 @@ export default function MiNegocioHoyCard({ onNavigate }: MiNegocioHoyCardProps) 
             <h2 className="text-sm font-bold text-gray-900 dark:text-white">
               Mi Negocio Hoy
             </h2>
-            <p className="text-[11px] text-gray-400">Actualizado a las {hora}</p>
+            <p className="text-[length:var(--ts-xs)] text-gray-400">Actualizado a las {hora}</p>
           </div>
         </div>
         <div className="flex items-center gap-1.5">
@@ -145,7 +145,7 @@ export default function MiNegocioHoyCard({ onNavigate }: MiNegocioHoyCardProps) 
           </button>
           <button
             onClick={() => setCollapsed(true)}
-            className="text-[11px] text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors px-2 py-1 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700/50"
+            className="text-[length:var(--ts-xs)] text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors px-2 py-1 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700/50"
           >
             Minimizar
           </button>
@@ -157,7 +157,7 @@ export default function MiNegocioHoyCard({ onNavigate }: MiNegocioHoyCardProps) 
         {/* Card 1: Ventas del día */}
         <button
           onClick={() => onNavigate?.("analytics-pro")}
-          className="group relative overflow-hidden rounded-xl bg-white dark:bg-card border border-gray-200 dark:border-card-border p-4 text-left hover:border-primary/30 transition-colors"
+          className="group relative overflow-hidden rounded-xl bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border p-4 text-left hover:border-primary/30 transition-colors"
         >
           <div className="flex items-center justify-between mb-2">
             <div className="w-9 h-9 rounded-xl bg-emerald-50 dark:bg-emerald-900/20 flex items-center justify-center">
@@ -188,7 +188,7 @@ export default function MiNegocioHoyCard({ onNavigate }: MiNegocioHoyCardProps) 
           <p className="text-xs text-gray-500 dark:text-muted mt-0.5">
             {data.ventas.cantidadVentas} ventas hoy
           </p>
-          <div className="mt-2 flex gap-3 text-[10px] tabular-nums">
+          <div className="mt-2 flex gap-3 text-[length:var(--ts-2xs)] tabular-nums">
             <span className="text-gray-400">
               <span className="text-gray-500 font-bold uppercase tracking-wider mr-1">Mostrador</span>
               {fmt(data.ventas.ventasMostrador)}
@@ -203,7 +203,7 @@ export default function MiNegocioHoyCard({ onNavigate }: MiNegocioHoyCardProps) 
         {/* Card 2: Pedidos */}
         <button
           onClick={() => onNavigate?.("pedidos")}
-          className="group relative overflow-hidden rounded-xl bg-white dark:bg-card border border-gray-200 dark:border-card-border p-4 text-left hover:border-primary/30 transition-colors"
+          className="group relative overflow-hidden rounded-xl bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border p-4 text-left hover:border-primary/30 transition-colors"
         >
           <div className="flex items-center justify-between mb-2">
             <div className="w-9 h-9 rounded-xl bg-emerald-50 dark:bg-emerald-900/20 flex items-center justify-center">
@@ -223,7 +223,7 @@ export default function MiNegocioHoyCard({ onNavigate }: MiNegocioHoyCardProps) 
             Pedidos hoy
           </p>
           {data.pedidos.pendientes > 0 && (
-            <p className="text-[11px] text-amber-600 dark:text-amber-400 mt-1 font-medium">
+            <p className="text-[length:var(--ts-xs)] text-amber-600 dark:text-amber-400 mt-1 font-medium">
               {data.pedidos.pendientes} esperan tu atención
             </p>
           )}
@@ -232,7 +232,7 @@ export default function MiNegocioHoyCard({ onNavigate }: MiNegocioHoyCardProps) 
         {/* Card 3: Alertas */}
         <button
           onClick={() => onNavigate?.("inventario")}
-          className="group relative overflow-hidden rounded-xl bg-white dark:bg-card border border-gray-200 dark:border-card-border p-4 text-left hover:border-primary/30 transition-colors"
+          className="group relative overflow-hidden rounded-xl bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border p-4 text-left hover:border-primary/30 transition-colors"
         >
           <div className="flex items-center justify-between mb-2">
             <div
@@ -257,7 +257,7 @@ export default function MiNegocioHoyCard({ onNavigate }: MiNegocioHoyCardProps) 
             {data.alertas.totalAlertas === 0 ? "Todo en orden" : "Alertas"}
           </p>
           {data.alertas.totalAlertas > 0 && (
-            <div className="mt-1.5 space-y-0.5 text-[10px] text-gray-500 dark:text-muted">
+            <div className="mt-1.5 space-y-0.5 text-[length:var(--ts-2xs)] text-gray-500 dark:text-muted">
               {data.alertas.sinStock > 0 && (
                 <p className="text-red-500">🚫 {data.alertas.sinStock} agotados</p>
               )}
@@ -272,10 +272,10 @@ export default function MiNegocioHoyCard({ onNavigate }: MiNegocioHoyCardProps) 
         </button>
 
         {/* Card 4: Top producto */}
-        <div className="relative overflow-hidden rounded-xl bg-white dark:bg-card border border-gray-200 dark:border-card-border p-4">
+        <div className="relative overflow-hidden rounded-xl bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border p-4">
           <div className="flex items-center mb-2">
-            <div className="w-9 h-9 rounded-xl bg-purple-50 dark:bg-purple-900/20 flex items-center justify-center">
-              <Star className="h-5 w-5 text-purple-600 dark:text-purple-400" />
+            <div className="w-9 h-9 rounded-xl bg-[var(--surface-sunken)] flex items-center justify-center">
+              <Star className="h-5 w-5 text-[var(--text-secondary)] dark:text-[var(--text-primary)]" />
             </div>
           </div>
           {data.topProducto ? (
@@ -283,10 +283,10 @@ export default function MiNegocioHoyCard({ onNavigate }: MiNegocioHoyCardProps) 
               <p className="text-sm font-bold text-gray-900 dark:text-white truncate">
                 {data.topProducto.nombre}
               </p>
-              <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-gray-400 mt-0.5">
+              <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-gray-400 mt-0.5">
                 Más vendido hoy
               </p>
-              <p className="text-lg font-extrabold text-purple-600 dark:text-purple-400 mt-1">
+              <p className="text-lg font-extrabold text-[var(--text-secondary)] dark:text-[var(--text-primary)] mt-1">
                 {data.topProducto.cantidad} {data.topProducto.cantidad === 1 ? "unidad" : "unidades"}
               </p>
             </>

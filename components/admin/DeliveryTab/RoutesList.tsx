@@ -117,7 +117,7 @@ export function RoutesList({
                   </span>
                 )}
                 {route.vehicleType !== "moto" && (
-                  <span className="text-[10px] uppercase">{route.vehicleType}</span>
+                  <span className="text-[length:var(--ts-2xs)] uppercase">{route.vehicleType}</span>
                 )}
               </div>
 

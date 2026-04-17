@@ -177,7 +177,7 @@ function SemaMesTab() {
       <WeeklyGoalCard sales={[]} />
 
       {/* Card mensual */}
-      <div className="rounded-xl border border-gray-200 bg-white p-5 space-y-4">
+      <div className="rounded-xl border border-[var(--rule-base)] bg-white p-5 space-y-4">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
             <span className="flex items-center justify-center w-8 h-8 rounded-lg bg-primary/10">
@@ -190,7 +190,7 @@ function SemaMesTab() {
           {!editing ? (
             <button
               onClick={() => { setTempGoal(String(monthlyGoal)); setEditing(true); }}
-              className="flex items-center gap-1 text-[10px] font-semibold text-gray-400 hover:text-primary transition-colors px-2 py-1 rounded-lg hover:bg-gray-50"
+              className="flex items-center gap-1 text-[length:var(--ts-2xs)] font-semibold text-gray-400 hover:text-primary transition-colors px-2 py-1 rounded-lg hover:bg-gray-50"
             >
               <Pencil className="w-3 h-3" /> Editar
             </button>
@@ -203,7 +203,7 @@ function SemaMesTab() {
                 onChange={(e) => setTempGoal(e.target.value)}
                 onKeyDown={(e) => e.key === "Enter" && handleSave()}
                 autoFocus
-                className="w-20 px-2 py-1 text-xs rounded-lg border border-gray-200 bg-white text-gray-900 outline-none focus:border-primary"
+                className="w-20 px-2 py-1 text-xs rounded-lg border border-[var(--rule-base)] bg-white text-gray-900 outline-none focus:border-primary"
               />
               <button onClick={handleSave} className="p-1 rounded-lg hover:bg-emerald-50 text-emerald-600">
                 <Check className="w-3.5 h-3.5" />
@@ -218,7 +218,7 @@ function SemaMesTab() {
         {/* Barra de progreso */}
         <div className="h-4 rounded-full bg-gray-100 overflow-hidden">
           <div
-            className={cn("h-full rounded-full transition-all duration-700 ease-out", barColor)}
+            className={cn("h-full rounded-full transition-all duration-[var(--dur-slower)] ease-out", barColor)}
             style={{ width: `${pct}%` }}
           />
         </div>
@@ -243,7 +243,7 @@ function SemaMesTab() {
           </p>
           <div className="grid grid-cols-7 gap-1">
             {["L","M","M","J","V","S","D"].map((d, i) => (
-              <div key={i} className="text-[9px] text-center text-gray-400 font-bold pb-0.5">{d}</div>
+              <div key={i} className="text-[length:var(--ts-2xs)] text-center text-gray-400 font-bold pb-0.5">{d}</div>
             ))}
             {/* Celdas vacías de offset */}
             {Array.from({ length: calendarDays.offset }).map((_, i) => (
@@ -261,7 +261,7 @@ function SemaMesTab() {
                   key={day}
                   title={key}
                   className={cn(
-                    "aspect-square rounded flex items-center justify-center text-[10px] font-semibold",
+                    "aspect-square rounded flex items-center justify-center text-[length:var(--ts-2xs)] font-semibold",
                     hit
                       ? "bg-emerald-500 text-white"
                       : isPast
@@ -350,7 +350,7 @@ function LogrosTab() {
         </p>
         <div className="h-2 w-32 rounded-full bg-gray-100 overflow-hidden">
           <div
-            className="h-full rounded-full bg-primary transition-all duration-500"
+            className="h-full rounded-full bg-primary transition-all duration-[var(--dur-slow)]"
             style={{ width: `${(totalUnlocked / ACHIEVEMENTS_DEF.length) * 100}%` }}
           />
         </div>
@@ -366,10 +366,10 @@ function LogrosTab() {
               <div
                 key={a.id}
                 className={cn(
-                  "relative rounded-xl border p-4 flex flex-col items-center text-center gap-2 transition-all duration-300",
+                  "relative rounded-xl border p-4 flex flex-col items-center text-center gap-2 transition-all duration-[var(--dur-base)]",
                   isUnlocked
-                    ? "border-primary/40 bg-gradient-to-b from-primary/5 to-primary/10 "
-                    : "border-gray-200 bg-gray-50 opacity-40"
+                    ? "border-[var(--text-primary)] bg-[var(--surface-raised)] elev-1"
+                    : "border-[var(--rule-base)] bg-[var(--surface-sunken)] opacity-40"
                 )}
               >
                 {/* Efecto brillo si desbloqueado */}
@@ -382,7 +382,7 @@ function LogrosTab() {
                   "h-10 w-10 shrink-0 rounded-lg flex items-center justify-center border",
                   isUnlocked
                     ? "bg-white border-primary/30 text-primary"
-                    : "bg-gray-100 border-gray-200 text-gray-400",
+                    : "bg-gray-100 border-[var(--rule-base)] text-gray-400",
                 )}>
                   <a.Icon className="h-5 w-5" strokeWidth={1.5} aria-hidden="true" />
                 </div>
@@ -393,16 +393,16 @@ function LogrosTab() {
                   )}>
                     {a.name}
                   </p>
-                  <p className="text-[10px] text-gray-400 mt-0.5 leading-tight">
+                  <p className="text-[length:var(--ts-2xs)] text-gray-400 mt-0.5 leading-tight">
                     {a.desc}
                   </p>
                 </div>
                 {isUnlocked ? (
-                  <span className="text-[9px] font-semibold text-primary bg-primary/10 px-2 py-0.5 rounded-full">
+                  <span className="text-[length:var(--ts-2xs)] font-semibold text-primary bg-primary/10 px-2 py-0.5 rounded-full">
                     {unlocked[a.id]}
                   </span>
                 ) : (
-                  <span className="text-[9px] font-semibold text-gray-400">
+                  <span className="text-[length:var(--ts-2xs)] font-semibold text-gray-400">
                     Bloqueado
                   </span>
                 )}

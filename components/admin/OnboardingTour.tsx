@@ -155,7 +155,7 @@ export function OnboardingTour({
 
   return (
     <TourSpotlight targetSelector={targetSelector}>
-      <div className="w-[320px] sm:w-[340px] bg-white dark:bg-[#1e293b] rounded-xl border border-gray-200 dark:border-gray-700 overflow-hidden">
+      <div className="w-[320px] sm:w-[340px] bg-white dark:bg-[#1e293b] rounded-xl border border-[var(--rule-base)] overflow-hidden">
         {/* Header with step counter */}
         <div className="flex items-center justify-between px-4 pt-3 pb-1">
           <div className="flex items-center gap-2">
@@ -176,7 +176,7 @@ export function OnboardingTour({
         <div className="px-4 pb-2">
           <div className="h-1 bg-gray-100 dark:bg-gray-700 rounded-full overflow-hidden">
             <div
-              className="h-full bg-[#2563EB] rounded-full transition-all duration-500 ease-out"
+              className="h-full bg-[#2563EB] rounded-full transition-all duration-[var(--dur-slow)] ease-out"
               style={{ width: `${((currentStep + 1) / totalSteps) * 100}%` }}
             />
           </div>
@@ -185,7 +185,7 @@ export function OnboardingTour({
         {/* Content */}
         <div className="px-4 pb-3">
           <div className="flex items-start gap-3 mb-2">
-            <div className="h-9 w-9 shrink-0 rounded-lg bg-gray-50 dark:bg-gray-950 border border-gray-200 dark:border-gray-800 flex items-center justify-center text-gray-700 dark:text-gray-200">
+            <div className="h-9 w-9 shrink-0 rounded-lg bg-gray-50 dark:bg-gray-950 border border-[var(--rule-base)] flex items-center justify-center text-gray-700 dark:text-gray-200">
               <step.Icon className="h-4 w-4" strokeWidth={1.5} aria-hidden="true" />
             </div>
             <div>
@@ -205,7 +205,7 @@ export function OnboardingTour({
         </div>
 
         {/* Footer with navigation */}
-        <div className="flex items-center justify-between px-4 py-3 bg-gray-50 dark:bg-gray-800/50 border-t border-gray-100 dark:border-gray-700">
+        <div className="flex items-center justify-between px-4 py-3 bg-gray-50 dark:bg-gray-800/50 border-t border-[var(--rule-base)]">
           <button
             onClick={onPrev}
             disabled={currentStep === 0}

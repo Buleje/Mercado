@@ -96,12 +96,12 @@ function WidgetCard({
   return (
     <div
       className={cn(
-        "rounded-xl border border-gray-200 bg-white dark:border-gray-700 dark:bg-card",
+        "rounded-xl border border-[var(--rule-base)] bg-white dark:border-[var(--rule-base)] dark:bg-card",
         " flex flex-col overflow-hidden",
         className
       )}
     >
-      <div className="flex items-center justify-between px-4 py-3 border-b border-gray-100 dark:border-gray-700">
+      <div className="flex items-center justify-between px-4 py-3 border-b border-[var(--rule-base)]">
         <span className="text-sm font-semibold text-gray-800 dark:text-foreground tracking-wide">
           {title}
         </span>
@@ -257,7 +257,7 @@ export default function AnalyticsProDashboard() {
               "px-3 py-1.5 rounded-lg text-sm font-medium transition-colors border",
               period === key
                 ? "bg-[#00B4A6] text-white border-[#00B4A6]"
-                : "bg-white dark:bg-card text-gray-700 dark:text-gray-300 border-gray-200 dark:border-gray-700 hover:border-[#00B4A6] hover:text-[#00B4A6]"
+                : "bg-white dark:bg-card text-gray-700 dark:text-gray-300 border-[var(--rule-base)] hover:border-[#00B4A6] hover:text-[#00B4A6]"
             )}
           >
             {PERIOD_LABELS[key]}
@@ -270,14 +270,14 @@ export default function AnalyticsProDashboard() {
               type="date"
               value={customFrom}
               onChange={(e) => setCustomFrom(e.target.value)}
-              className="px-2 py-1.5 text-sm rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-card text-gray-800 dark:text-foreground"
+              className="px-2 py-1.5 text-sm rounded-lg border border-[var(--rule-base)] bg-white dark:bg-card text-gray-800 dark:text-foreground"
             />
             <span className="text-gray-500 dark:text-gray-400 text-sm">hasta</span>
             <input
               type="date"
               value={customTo}
               onChange={(e) => setCustomTo(e.target.value)}
-              className="px-2 py-1.5 text-sm rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-card text-gray-800 dark:text-foreground"
+              className="px-2 py-1.5 text-sm rounded-lg border border-[var(--rule-base)] bg-white dark:bg-card text-gray-800 dark:text-foreground"
             />
           </div>
         )}

@@ -76,8 +76,8 @@ const BADGE_DEFINITIONS: BadgeDefinition[] = [
     progressLabel: "resenas con mencion",
     maxProgress: 1,
     iconSymbol: "R",
-    colorUnlocked: "text-pink-600 dark:text-pink-400",
-    colorBg: "bg-pink-50 dark:bg-pink-900/30 border-pink-300 dark:border-pink-700",
+    colorUnlocked: "text-[var(--text-secondary)] dark:text-[var(--text-primary)]",
+    colorBg: "bg-[var(--surface-sunken)] border-pink-300 dark:border-pink-700",
   },
   {
     id: "meta-cumplida",
@@ -153,20 +153,20 @@ function BadgeCard({
   return (
     <div
       className={cn(
-        "relative rounded-xl border-2 p-4 transition-all duration-300",
+        "relative rounded-xl border-2 p-4 transition-all duration-[var(--dur-base)]",
         unlocked
           ? definition.colorBg
-          : "border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 opacity-70"
+          : "border-[var(--rule-base)] bg-white dark:bg-gray-800 opacity-70"
       )}
     >
       {/* Icono principal */}
       <div className="flex flex-col items-center mb-3">
         <div
           className={cn(
-            "w-16 h-16 rounded-full flex items-center justify-center text-2xl font-black border-4 transition-all duration-300",
+            "w-16 h-16 rounded-full flex items-center justify-center text-2xl font-extrabold border-4 transition-all duration-[var(--dur-base)]",
             unlocked
               ? cn(definition.colorBg, definition.colorUnlocked, "border-current scale-105")
-              : "border-gray-200 dark:border-gray-600 bg-gray-100 dark:bg-gray-700 text-gray-400 dark:text-gray-500"
+              : "border-[var(--rule-base)] dark:border-gray-600 bg-gray-100 dark:bg-gray-700 text-gray-400 dark:text-gray-500"
           )}
         >
           {unlocked ? (
@@ -214,12 +214,12 @@ function BadgeCard({
         <div className="h-2 bg-gray-100 dark:bg-gray-700 rounded-full overflow-hidden">
           <div
             className={cn(
-              "h-full rounded-full transition-all duration-500",
+              "h-full rounded-full transition-all duration-[var(--dur-slow)]",
               unlocked
-                ? "bg-gradient-to-r from-[#00B4A6] to-[#2dd4bf]"
+                ? "bg-[var(--data-success)]"
                 : pct > 50
-                ? "bg-gradient-to-r from-[#f97316] to-[#e76f51]"
-                : "bg-gray-300 dark:bg-gray-600"
+                ? "bg-[var(--data-warning)]"
+                : "bg-[var(--rule-base)]"
             )}
             style={{ width: `${pct}%` }}
           />
@@ -233,7 +233,7 @@ function BadgeCard({
 
       {/* Controles de modo edicion (admin/testing) */}
       {editMode && (
-        <div className="flex items-center justify-center gap-2 mt-3 pt-3 border-t border-gray-200 dark:border-gray-700">
+        <div className="flex items-center justify-center gap-2 mt-3 pt-3 border-t border-[var(--rule-base)]">
           <button
             onClick={() => onAdjust(definition.id, -1)}
             disabled={current <= 0}
@@ -344,7 +344,7 @@ export default function AchievementBadges({
       </div>
 
       {/* Progreso global */}
-      <div className="rounded-xl bg-gray-50 dark:bg-gray-800 border border-gray-100 dark:border-gray-700 p-3">
+      <div className="rounded-xl bg-gray-50 dark:bg-gray-800 border border-[var(--rule-base)] p-3">
         <div className="flex justify-between text-xs mb-2">
           <span className="text-gray-500 dark:text-gray-400">Progreso total</span>
           <span className="font-semibold text-[#00B4A6] dark:text-green-400">
@@ -353,7 +353,7 @@ export default function AchievementBadges({
         </div>
         <div className="h-2.5 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
           <div
-            className="h-full bg-gradient-to-r from-[#00B4A6] to-[#2dd4bf] rounded-full transition-all duration-700"
+            className="h-full bg-[var(--data-success)] rounded-full transition-all duration-[var(--dur-slower)]"
             style={{ width: `${(unlockedCount / BADGE_DEFINITIONS.length) * 100}%` }}
           />
         </div>

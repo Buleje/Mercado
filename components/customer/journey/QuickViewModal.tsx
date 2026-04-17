@@ -111,7 +111,7 @@ export function QuickViewModal({
                 animate="show"
                 exit="exit"
               >
-                <div className="rounded-xl bg-[var(--surface-raised)] border border-[var(--rule-base)] overflow-hidden shadow-2xl">
+                <div className="rounded-xl bg-[var(--surface-raised)] border border-[var(--rule-base)] overflow-hidden shadow-[var(--shadow-xl)]">
                   <div className="grid grid-cols-1 md:grid-cols-2 max-h-[85vh] overflow-y-auto">
                     {/* Image side */}
                     <div className="relative aspect-square bg-[var(--surface-sunken)] overflow-hidden">
@@ -136,7 +136,7 @@ export function QuickViewModal({
                             <span
                               key={i}
                               className={cn(
-                                "inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-[0.18em]",
+                                "inline-flex items-center rounded-full px-2 py-0.5 text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)]",
                                 b.variant === "accent" && "bg-[var(--accent)] text-white",
                                 b.variant === "warning" && "bg-amber-500 text-white",
                                 !b.variant && "bg-[var(--text-primary)] text-[var(--surface-canvas)]",
@@ -169,13 +169,13 @@ export function QuickViewModal({
                       </Dialog.Close>
 
                       {product.category && (
-                        <span className="text-[10px] font-bold uppercase tracking-[0.25em] text-[var(--text-tertiary)]">
+                        <span className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)]">
                           {product.category}
                         </span>
                       )}
 
                       <div>
-                        <Dialog.Title className="text-xl sm:text-2xl font-extrabold tracking-[-0.02em] text-[var(--text-primary)] leading-tight pr-10">
+                        <Dialog.Title className="text-xl sm:text-2xl font-extrabold tracking-[var(--ls-tight)] text-[var(--text-primary)] leading-tight pr-10">
                           {product.name}
                         </Dialog.Title>
                         {storeName && (
@@ -187,11 +187,11 @@ export function QuickViewModal({
 
                       {/* Price */}
                       <div className="flex items-baseline gap-3">
-                        <span className="text-3xl font-extrabold tabular-nums tracking-[-0.02em] text-[var(--text-primary)]">
+                        <span className="text-3xl font-extrabold tabular-nums tracking-[var(--ls-tight)] text-[var(--text-primary)]">
                           S/ {product.price.toFixed(2)}
                         </span>
                         {product.unit && (
-                          <span className="text-xs text-[var(--text-tertiary)] font-bold uppercase tracking-[0.18em]">
+                          <span className="text-xs text-[var(--text-tertiary)] font-bold uppercase tracking-[var(--ls-wider)]">
                             / {product.unit}
                           </span>
                         )}
@@ -221,7 +221,7 @@ export function QuickViewModal({
                       {outOfStock && (
                         <div className="inline-flex items-center gap-2 rounded-full bg-[var(--surface-sunken)] border border-[var(--rule-base)] px-3 py-1.5 self-start">
                           <span className="h-1.5 w-1.5 rounded-full bg-[var(--text-tertiary)]" />
-                          <span className="text-xs font-bold text-[var(--text-tertiary)] uppercase tracking-[0.15em]">
+                          <span className="text-xs font-bold text-[var(--text-tertiary)] uppercase tracking-[var(--ls-wider)]">
                             Sin stock
                           </span>
                         </div>
@@ -230,7 +230,7 @@ export function QuickViewModal({
                       {/* Quantity selector */}
                       {!outOfStock && (
                         <div className="flex items-center gap-3 mt-2">
-                          <span className="text-[10px] font-bold uppercase tracking-[0.18em] text-[var(--text-tertiary)]">
+                          <span className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)]">
                             Cantidad
                           </span>
                           <div className="inline-flex items-center gap-0 rounded-full border border-[var(--rule-base)] overflow-hidden">

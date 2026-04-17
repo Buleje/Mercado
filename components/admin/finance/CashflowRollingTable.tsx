@@ -190,7 +190,7 @@ export default function CashflowRollingTable() {
 
       {/* Starting balance card */}
       {data && (
-        <div className="flex items-center justify-between p-4 rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-card">
+        <div className="flex items-center justify-between p-4 rounded-xl border border-[var(--rule-base)] dark:border-white/10 bg-white dark:bg-card">
           <div>
             <p className="text-xs font-bold text-gray-500 dark:text-gray-400">
               Saldo hoy
@@ -236,13 +236,13 @@ export default function CashflowRollingTable() {
 
       {/* Data table: 1 columna fija "Concepto" + 13 columnas semana */}
       {data && data.weeks.length > 0 && (
-        <div className="overflow-x-auto -mx-1 px-1 rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-card">
+        <div className="overflow-x-auto -mx-1 px-1 rounded-xl border border-[var(--rule-base)] dark:border-white/10 bg-white dark:bg-card">
           <table className="w-full min-w-[1100px] text-sm border-collapse">
             <thead>
-              <tr className="border-b border-gray-200 dark:border-white/10">
+              <tr className="border-b border-[var(--rule-base)] dark:border-white/10">
                 <th
                   scope="col"
-                  className="sticky left-0 z-10 bg-gray-50 dark:bg-card/80 text-left py-3 px-3 text-[10px] font-bold text-gray-500 dark:text-gray-400 border-r border-gray-200 dark:border-white/10"
+                  className="sticky left-0 z-10 bg-gray-50 dark:bg-card/80 text-left py-3 px-3 text-[length:var(--ts-2xs)] font-bold text-gray-500 dark:text-gray-400 border-r border-[var(--rule-base)] dark:border-white/10"
                 >
                   Concepto
                 </th>
@@ -251,7 +251,7 @@ export default function CashflowRollingTable() {
                     scope="col"
                     key={h.number}
                     className={cn(
-                      "py-3 px-2 text-right text-[10px] font-bold",
+                      "py-3 px-2 text-right text-[length:var(--ts-2xs)] font-bold",
                       h.isNegative
                         ? "text-red-600 dark:text-red-400 bg-red-50/50 dark:bg-red-900/10"
                         : "text-gray-500 dark:text-gray-400",
@@ -259,7 +259,7 @@ export default function CashflowRollingTable() {
                   >
                     <div className="flex flex-col items-end">
                       <span>S{h.number}</span>
-                      <span className="text-[9px] font-normal text-gray-400">
+                      <span className="text-[length:var(--ts-2xs)] font-normal text-gray-400">
                         {formatShortDate(h.start)}
                       </span>
                     </div>
@@ -274,15 +274,15 @@ export default function CashflowRollingTable() {
                   <tr
                     key={row.key}
                     className={cn(
-                      "border-b border-gray-100 dark:border-white/5",
+                      "border-b border-[var(--rule-soft)] dark:border-white/5",
                       isClosing &&
-                        "bg-gray-50 dark:bg-white/5 border-t-2 border-gray-300 dark:border-white/20",
+                        "bg-gray-50 dark:bg-white/5 border-t-2 border-[var(--rule-base)] dark:border-white/20",
                     )}
                   >
                     <th
                       scope="row"
                       className={cn(
-                        "sticky left-0 z-10 text-left py-3 px-3 text-xs font-bold border-r border-gray-200 dark:border-white/10",
+                        "sticky left-0 z-10 text-left py-3 px-3 text-xs font-bold border-r border-[var(--rule-base)] dark:border-white/10",
                         isClosing
                           ? "bg-gray-100 dark:bg-white/10 text-gray-900 dark:text-white"
                           : "bg-white dark:bg-card text-gray-700 dark:text-gray-300",

@@ -129,9 +129,9 @@ export default function AutoSegments() {
         label: "Nuevo",
         description: "Primera compra en los ultimos 30 dias",
         icon: UserPlus,
-        color: "text-purple-600 dark:text-purple-400",
-        bg: "bg-purple-50 dark:bg-purple-900/20",
-        border: "border-purple-200 dark:border-purple-800",
+        color: "text-[var(--text-secondary)] dark:text-[var(--text-primary)]",
+        bg: "bg-[var(--surface-sunken)]",
+        border: "border-[var(--rule-base)]",
       },
       {
         key: "inactivo",
@@ -140,7 +140,7 @@ export default function AutoSegments() {
         icon: Moon,
         color: "text-gray-500 dark:text-gray-400",
         bg: "bg-gray-50 dark:bg-gray-800",
-        border: "border-gray-200 dark:border-gray-700",
+        border: "border-[var(--rule-base)]",
       },
     ];
 
@@ -188,7 +188,7 @@ export default function AutoSegments() {
         <button
           onClick={fetchData}
           disabled={loading}
-          className="flex items-center gap-2 rounded-lg border border-gray-200 px-3 py-2 text-sm text-gray-600 transition hover:bg-gray-50 disabled:opacity-50 dark:border-gray-700 dark:text-gray-300 dark:hover:bg-gray-800"
+          className="flex items-center gap-2 rounded-lg border border-[var(--rule-base)] px-3 py-2 text-sm text-gray-600 transition hover:bg-gray-50 disabled:opacity-50 dark:border-[var(--rule-base)] dark:text-gray-300 dark:hover:bg-gray-800"
         >
           <RefreshCw className={cn("h-4 w-4", loading && "animate-spin")} />
           Actualizar
@@ -270,7 +270,7 @@ export default function AutoSegments() {
 
                 {/* Expanded customer list */}
                 {isExpanded && (
-                  <div className="border-t border-gray-200/50 p-4 dark:border-gray-700/50">
+                  <div className="border-t border-[var(--rule-base)]/50 p-4 dark:border-[var(--rule-base)]">
                     {seg.customers.length === 0 ? (
                       <p className="text-center text-sm text-gray-400">
                         No hay clientes en este segmento.

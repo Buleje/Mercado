@@ -102,7 +102,7 @@ export default function PurchaseApprovalTab() {
           </h1>
           <p className="text-sm text-gray-500 dark:text-muted mt-0.5">Flujo de aprobación multinivel para órdenes de compra</p>
         </div>
-        <button onClick={() => exportToCSV(APPROVALS.map(a => ({ ref: a.ref, desc: a.description, proveedor: a.supplier, total: a.total, solicitante: a.requestedBy, fecha: a.requestDate, urgencia: a.urgency, estado: STATUS_MAP[overallStatus(a.steps)].label })), "aprobacion-compras")} className="flex items-center gap-1.5 px-3 py-2 rounded-lg border border-gray-200 dark:border-card-border bg-white dark:bg-surface text-sm font-semibold text-gray-700 dark:text-foreground hover:bg-gray-50 dark:hover:bg-accent transition-colors">
+        <button onClick={() => exportToCSV(APPROVALS.map(a => ({ ref: a.ref, desc: a.description, proveedor: a.supplier, total: a.total, solicitante: a.requestedBy, fecha: a.requestDate, urgencia: a.urgency, estado: STATUS_MAP[overallStatus(a.steps)].label })), "aprobacion-compras")} className="flex items-center gap-1.5 px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-card-border bg-white dark:bg-surface text-sm font-semibold text-gray-700 dark:text-foreground hover:bg-gray-50 dark:hover:bg-accent transition-colors">
           <Download className="h-4 w-4" /> Exportar
         </button>
       </div>
@@ -127,15 +127,15 @@ export default function PurchaseApprovalTab() {
       <div className="flex flex-col sm:flex-row gap-3">
         <div className="relative flex-1 max-w-sm">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
-          <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Buscar OC, proveedor, descripción..." className="w-full pl-9 pr-3 py-2 text-sm border border-gray-200 dark:border-card-border rounded-lg bg-white dark:bg-surface text-gray-700 dark:text-foreground" />
+          <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Buscar OC, proveedor, descripción..." className="w-full pl-9 pr-3 py-2 text-sm border border-[var(--rule-base)] dark:border-card-border rounded-lg bg-white dark:bg-surface text-gray-700 dark:text-foreground" />
         </div>
-        <select value={filterStatus} onChange={e => setFilterStatus(e.target.value as typeof filterStatus)} className="px-3 py-2 text-sm border border-gray-200 dark:border-card-border rounded-lg bg-white dark:bg-surface text-gray-700 dark:text-foreground">
+        <select value={filterStatus} onChange={e => setFilterStatus(e.target.value as typeof filterStatus)} className="px-3 py-2 text-sm border border-[var(--rule-base)] dark:border-card-border rounded-lg bg-white dark:bg-surface text-gray-700 dark:text-foreground">
           <option value="todos">Todos los estados</option>
           {Object.entries(STATUS_MAP).map(([k, v]) => <option key={k} value={k}>{v.label}</option>)}
         </select>
       </div>
 
-      <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl overflow-hidden">
+      <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full min-w-[600px] text-sm">
             <thead><tr className="text-left text-xs font-bold text-gray-400 bg-gray-50 dark:bg-surface"><th className="px-2 sm:px-4 py-2 sm:py-3">OC</th><th className="px-2 sm:px-4 py-2 sm:py-3">Descripción</th><th className="px-2 sm:px-4 py-2 sm:py-3">Proveedor</th><th className="px-2 sm:px-4 py-2 sm:py-3">Total</th><th className="px-2 sm:px-4 py-2 sm:py-3">Urgencia</th><th className="px-2 sm:px-4 py-2 sm:py-3">Nivel actual</th><th className="px-2 sm:px-4 py-2 sm:py-3">Estado</th><th className="px-2 sm:px-4 py-2 sm:py-3"></th></tr></thead>
@@ -144,7 +144,7 @@ export default function PurchaseApprovalTab() {
                 const os = overallStatus(a.steps);
                 const StatusIcon = STATUS_MAP[os].icon;
                 return (
-                  <tr key={a.id} className="border-t border-gray-100 dark:border-card-border hover:bg-gray-50 dark:hover:bg-accent/20">
+                  <tr key={a.id} className="border-t border-[var(--rule-soft)] dark:border-card-border hover:bg-gray-50 dark:hover:bg-accent/20">
                     <td className="px-2 sm:px-4 py-2 sm:py-3 font-mono text-xs font-bold text-gray-700 dark:text-foreground">{a.ref}</td>
                     <td className="px-2 sm:px-4 py-2 sm:py-3 text-gray-800 dark:text-foreground max-w-50 truncate">{a.description}</td>
                     <td className="px-2 sm:px-4 py-2 sm:py-3 font-bold text-gray-800 dark:text-foreground">{a.supplier}</td>
@@ -164,7 +164,7 @@ export default function PurchaseApprovalTab() {
       {/* Detail Modal — Approval Pipeline */}
       {detail && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4" onClick={() => setDetail(null)}>
-          <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl p-3 sm:p-6 w-full max-w-md space-y-4 max-h-[80vh] overflow-auto" onClick={e => e.stopPropagation()}>
+          <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl p-3 sm:p-6 w-full max-w-md space-y-4 max-h-[80vh] overflow-auto" onClick={e => e.stopPropagation()}>
             <div className="flex items-center justify-between">
               <div>
                 <h3 className="font-extrabold text-gray-900 dark:text-foreground">{detail.ref}</h3>

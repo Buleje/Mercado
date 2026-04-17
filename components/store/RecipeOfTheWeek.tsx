@@ -104,7 +104,7 @@ export default function RecipeOfTheWeek() {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5 }}
-          className="rounded-3xl overflow-hidden shadow-xl border border-gray-100 dark:border-gray-800"
+          className="rounded-3xl overflow-hidden shadow-xl border border-[var(--rule-base)]"
           style={{
             background: `linear-gradient(135deg, ${colors.from}12, ${colors.to}12)`,
           }}

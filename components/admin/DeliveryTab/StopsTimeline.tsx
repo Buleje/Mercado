@@ -96,7 +96,7 @@ export function StopsTimeline({ stops, loading, onMarkStop }: StopsTimelineProps
               </div>
               <span
                 className={cn(
-                  "rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase",
+                  "rounded-full px-2 py-0.5 text-[length:var(--ts-2xs)] font-semibold uppercase",
                   STATUS_COLORS[stop.status],
                 )}
               >
@@ -109,7 +109,7 @@ export function StopsTimeline({ stops, loading, onMarkStop }: StopsTimelineProps
               <div>
                 <div>{stop.address}</div>
                 {stop.addressDetail && (
-                  <div className="text-[11px] text-slate-400">{stop.addressDetail}</div>
+                  <div className="text-[length:var(--ts-xs)] text-slate-400">{stop.addressDetail}</div>
                 )}
               </div>
             </div>

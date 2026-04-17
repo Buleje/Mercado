@@ -21,7 +21,7 @@ const FIELDS = [
   { id: "puntos",              label: "Puntos de fidelidad" },
 ];
 const OPERATORS = ["<", ">", "=", ">=", "<="];
-const COLORS = ["bg-emerald-500","bg-emerald-500","bg-amber-500","bg-red-500","bg-violet-500","bg-pink-500","bg-cyan-500"];
+const COLORS = ["bg-emerald-500","bg-emerald-500","bg-amber-500","bg-red-500","bg-[var(--text-primary)]","bg-[var(--text-primary)]","bg-cyan-500"];
 
 const DEFAULT_SEGMENTS: Omit<Segment, "customerCount" | "avgTicket" | "avgFrequency" | "matchedCustomers">[] = [
   { id: "sg-perdido",   name: "Clientes perdidos",    description: "Sin comprar en 60+ días",              rules: [{ field: "dias_sin_compra",    operator: ">",  value: "60"  }], lastUpdated: new Date().toISOString().split("T")[0], color: "bg-red-500",     active: true },
@@ -178,10 +178,10 @@ export default function AutoSegmentsTab() {
         {[
           { label: "Segmentos creados",    value: segments.length,      color: "text-emerald-500" },
           { label: "Segmentos activos",    value: activeCount,          color: "text-emerald-500" },
-          { label: "Clientes segmentados", value: totalSegmented,       color: "text-violet-500" },
+          { label: "Clientes segmentados", value: totalSegmented,       color: "text-[var(--text-secondary)]" },
           { label: "Total en base",        value: allCustomers.length,  color: "text-gray-500" },
         ].map(k => (
-          <div key={k.label} className="bg-white dark:bg-card rounded-xl border border-gray-200 dark:border-card-border p-4">
+          <div key={k.label} className="bg-white dark:bg-card rounded-xl border border-[var(--rule-base)] dark:border-card-border p-4">
             <p className="text-xs font-semibold text-gray-500 dark:text-muted">{k.label}</p>
             <p className={cn("text-xl sm:text-2xl font-extrabold mt-1", k.color)}>{k.value}</p>
           </div>
@@ -193,14 +193,14 @@ export default function AutoSegmentsTab() {
         {segments.map(sg => {
           const isExpanded = expandedId === sg.id;
           return (
-            <div key={sg.id} className={cn("bg-white dark:bg-card rounded-xl border border-gray-200 dark:border-card-border overflow-hidden transition-opacity", !sg.active && "opacity-50")}>
+            <div key={sg.id} className={cn("bg-white dark:bg-card rounded-xl border border-[var(--rule-base)] dark:border-card-border overflow-hidden transition-opacity", !sg.active && "opacity-50")}>
               {/* Card header */}
               <div className="p-3 sm:p-5">
                 <div className="flex items-start justify-between gap-2">
                   <div className="flex items-center gap-2 min-w-0">
                     <div className={cn("h-3 w-3 rounded-full shrink-0", sg.color)} />
                     <h3 className="font-bold text-gray-900 dark:text-foreground truncate">{sg.name}</h3>
-                    {!sg.active && <span className="text-[10px] font-bold bg-gray-100 dark:bg-surface text-gray-400 px-1.5 py-0.5 rounded">Inactivo</span>}
+                    {!sg.active && <span className="text-[length:var(--ts-2xs)] font-bold bg-gray-100 dark:bg-surface text-gray-400 px-1.5 py-0.5 rounded">Inactivo</span>}
                   </div>
                   <div className="flex items-center gap-1 shrink-0">
                     <button onClick={() => toggleActive(sg.id)} className={cn("text-gray-400 hover:text-primary transition-colors")} title={sg.active ? "Desactivar" : "Activar"}>
@@ -216,15 +216,15 @@ export default function AutoSegmentsTab() {
                 <div className="grid grid-cols-3 gap-2 mb-3">
                   <div className="text-center bg-gray-50 dark:bg-surface rounded-lg py-2">
                     <p className="text-lg font-extrabold text-gray-900 dark:text-foreground">{sg.customerCount}</p>
-                    <p className="text-[10px] text-gray-400">clientes</p>
+                    <p className="text-[length:var(--ts-2xs)] text-gray-400">clientes</p>
                   </div>
                   <div className="text-center bg-gray-50 dark:bg-surface rounded-lg py-2">
                     <p className="text-lg font-extrabold text-gray-900 dark:text-foreground">{fmt(sg.avgTicket)}</p>
-                    <p className="text-[10px] text-gray-400">ticket prom.</p>
+                    <p className="text-[length:var(--ts-2xs)] text-gray-400">ticket prom.</p>
                   </div>
                   <div className="text-center bg-gray-50 dark:bg-surface rounded-lg py-2">
                     <p className="text-lg font-extrabold text-gray-900 dark:text-foreground">{sg.avgFrequency.toFixed(1)}x</p>
-                    <p className="text-[10px] text-gray-400">pedidos prom.</p>
+                    <p className="text-[length:var(--ts-2xs)] text-gray-400">pedidos prom.</p>
                   </div>
                 </div>
 
@@ -233,7 +233,7 @@ export default function AutoSegmentsTab() {
                   {sg.rules.map((r, i) => {
                     const field = FIELDS.find(f => f.id === r.field);
                     return (
-                      <span key={i} className="text-[10px] bg-gray-100 dark:bg-surface px-2 py-1 rounded-lg text-gray-600 dark:text-muted font-mono">
+                      <span key={i} className="text-[length:var(--ts-2xs)] bg-gray-100 dark:bg-surface px-2 py-1 rounded-lg text-gray-600 dark:text-muted font-mono">
                         {field?.label ?? r.field} {r.operator} {r.value}
                       </span>
                     );
@@ -250,8 +250,8 @@ export default function AutoSegmentsTab() {
 
               {/* Preview de clientes */}
               {isExpanded && sg.matchedCustomers.length > 0 && (
-                <div className="border-t border-gray-100 dark:border-card-border px-3 sm:px-5 py-3 bg-gray-50/50 dark:bg-surface/30">
-                  <p className="text-[10px] font-bold text-gray-400 mb-2">Clientes en este segmento</p>
+                <div className="border-t border-[var(--rule-soft)] dark:border-card-border px-3 sm:px-5 py-3 bg-gray-50/50 dark:bg-surface/30">
+                  <p className="text-[length:var(--ts-2xs)] font-bold text-gray-400 mb-2">Clientes en este segmento</p>
                   <div className="space-y-1.5">
                     {sg.matchedCustomers.slice(0, 5).map(c => (
                       <div key={c.phone} className="flex items-center justify-between text-xs">
@@ -263,7 +263,7 @@ export default function AutoSegmentsTab() {
                           <span>{c.orderCount} pedidos</span>
                           <span className="font-semibold">S/{c.totalSpent.toFixed(0)}</span>
                           {c.daysSinceLast !== null && (
-                            <span className={cn("text-[10px] font-bold", c.daysSinceLast > 60 ? "text-red-500" : c.daysSinceLast > 30 ? "text-amber-500" : "text-gray-400")}>
+                            <span className={cn("text-[length:var(--ts-2xs)] font-bold", c.daysSinceLast > 60 ? "text-red-500" : c.daysSinceLast > 30 ? "text-amber-500" : "text-gray-400")}>
                               {c.daysSinceLast}d
                             </span>
                           )}
@@ -271,14 +271,14 @@ export default function AutoSegmentsTab() {
                       </div>
                     ))}
                     {sg.customerCount > 5 && (
-                      <p className="text-[10px] text-gray-400 text-center pt-1">...y {sg.customerCount - 5} más</p>
+                      <p className="text-[length:var(--ts-2xs)] text-gray-400 text-center pt-1">...y {sg.customerCount - 5} más</p>
                     )}
                   </div>
                 </div>
               )}
 
               {/* Footer */}
-              <div className="flex items-center justify-between px-3 sm:px-5 pb-3 text-[10px] text-gray-400">
+              <div className="flex items-center justify-between px-3 sm:px-5 pb-3 text-[length:var(--ts-2xs)] text-gray-400">
                 <span>{sg.active ? "Activo · " : "Inactivo · "}Act: {sg.lastUpdated}</span>
                 <span>{allCustomers.length > 0 ? ((sg.customerCount / allCustomers.length) * 100).toFixed(0) : 0}% de la base</span>
               </div>
@@ -287,7 +287,7 @@ export default function AutoSegmentsTab() {
         })}
 
         {segments.length === 0 && (
-          <div className="col-span-2 bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl flex flex-col items-center py-12 gap-3 text-gray-400 dark:text-muted">
+          <div className="col-span-2 bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl flex flex-col items-center py-12 gap-3 text-gray-400 dark:text-muted">
             <Users className="h-10 w-10 opacity-30" />
             <p className="text-sm">No hay segmentos definidos</p>
             <button onClick={openCreate} className="flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-bold bg-primary text-white hover:bg-primary/90">
@@ -300,16 +300,16 @@ export default function AutoSegmentsTab() {
       {/* Modal crear/editar */}
       {showModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4" onClick={() => setShowModal(false)}>
-          <div className="bg-white dark:bg-card rounded-xl p-4 sm:p-6 max-w-lg w-full border border-gray-200 dark:border-card-border max-h-[85vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
+          <div className="bg-white dark:bg-card rounded-xl p-4 sm:p-6 max-w-lg w-full border border-[var(--rule-base)] dark:border-card-border max-h-[85vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
             <h3 className="text-lg font-extrabold text-gray-900 dark:text-foreground mb-4">{editSegment ? "Editar segmento" : "Nuevo segmento"}</h3>
             <div className="space-y-6">
               <div>
                 <label className="text-xs font-bold text-gray-500 dark:text-muted">Nombre</label>
-                <input value={formName} onChange={e => setFormName(e.target.value)} className="w-full mt-1 px-3 py-2 rounded-lg border border-gray-200 dark:border-card-border bg-white dark:bg-surface text-sm" placeholder="ej. Clientes inactivos" />
+                <input value={formName} onChange={e => setFormName(e.target.value)} className="w-full mt-1 px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-card-border bg-white dark:bg-surface text-sm" placeholder="ej. Clientes inactivos" />
               </div>
               <div>
                 <label className="text-xs font-bold text-gray-500 dark:text-muted">Descripción</label>
-                <input value={formDesc} onChange={e => setFormDesc(e.target.value)} className="w-full mt-1 px-3 py-2 rounded-lg border border-gray-200 dark:border-card-border bg-white dark:bg-surface text-sm" placeholder="ej. Sin comprar en más de 30 días" />
+                <input value={formDesc} onChange={e => setFormDesc(e.target.value)} className="w-full mt-1 px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-card-border bg-white dark:bg-surface text-sm" placeholder="ej. Sin comprar en más de 30 días" />
               </div>
               <div>
                 <label className="text-xs font-bold text-gray-500 dark:text-muted block mb-1.5">Color</label>
@@ -323,13 +323,13 @@ export default function AutoSegmentsTab() {
                 <label className="text-xs font-bold text-gray-500 dark:text-muted mb-2 block">Reglas (se aplican todas)</label>
                 {formRules.map((r, i) => (
                   <div key={i} className="flex gap-2 mb-2 flex-wrap">
-                    <select value={r.field} onChange={e => { const nr = [...formRules]; nr[i] = { ...nr[i], field: e.target.value }; setFormRules(nr); }} className="flex-1 px-2 py-1.5 rounded-lg border border-gray-200 dark:border-card-border bg-white dark:bg-surface text-xs min-w-[120px]">
+                    <select value={r.field} onChange={e => { const nr = [...formRules]; nr[i] = { ...nr[i], field: e.target.value }; setFormRules(nr); }} className="flex-1 px-2 py-1.5 rounded-lg border border-[var(--rule-base)] dark:border-card-border bg-white dark:bg-surface text-xs min-w-[120px]">
                       {FIELDS.map(f => <option key={f.id} value={f.id}>{f.label}</option>)}
                     </select>
-                    <select value={r.operator} onChange={e => { const nr = [...formRules]; nr[i] = { ...nr[i], operator: e.target.value }; setFormRules(nr); }} className="w-14 px-2 py-1.5 rounded-lg border border-gray-200 dark:border-card-border bg-white dark:bg-surface text-xs">
+                    <select value={r.operator} onChange={e => { const nr = [...formRules]; nr[i] = { ...nr[i], operator: e.target.value }; setFormRules(nr); }} className="w-14 px-2 py-1.5 rounded-lg border border-[var(--rule-base)] dark:border-card-border bg-white dark:bg-surface text-xs">
                       {OPERATORS.map(o => <option key={o}>{o}</option>)}
                     </select>
-                    <input value={r.value} onChange={e => { const nr = [...formRules]; nr[i] = { ...nr[i], value: e.target.value }; setFormRules(nr); }} className="w-20 px-2 py-1.5 rounded-lg border border-gray-200 dark:border-card-border bg-white dark:bg-surface text-xs" placeholder="valor" />
+                    <input value={r.value} onChange={e => { const nr = [...formRules]; nr[i] = { ...nr[i], value: e.target.value }; setFormRules(nr); }} className="w-20 px-2 py-1.5 rounded-lg border border-[var(--rule-base)] dark:border-card-border bg-white dark:bg-surface text-xs" placeholder="valor" />
                     {formRules.length > 1 && <button onClick={() => setFormRules(formRules.filter((_, j) => j !== i))} className="text-red-400 hover:text-red-600"><X className="h-4 w-4" /></button>}
                   </div>
                 ))}

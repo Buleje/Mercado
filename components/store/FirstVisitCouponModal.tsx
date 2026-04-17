@@ -49,7 +49,7 @@ export default function FirstVisitCouponModal() {
         role="dialog"
         aria-modal="true"
         aria-label="Cupon de bienvenida"
-        className="relative bg-white dark:bg-card rounded-3xl shadow-2xl max-w-md w-full mx-4 overflow-hidden animate-[scaleIn_0.3s_ease-out]"
+        className="relative bg-white dark:bg-card rounded-3xl shadow-[var(--shadow-xl)] max-w-md w-full mx-4 overflow-hidden animate-[scaleIn_0.3s_ease-out]"
       >
         {/* Close button */}
         <button
@@ -61,18 +61,18 @@ export default function FirstVisitCouponModal() {
         </button>
 
         {/* Gradient header */}
-        <div className="relative h-36 bg-gradient-to-br from-[#00B4A6] via-[#33C4B8] to-[#f97316] overflow-hidden">
+        <div className="relative h-36 bg-[#00B4A6] overflow-hidden">
           <div className="absolute inset-0 bg-[radial-gradient(circle,rgba(255,255,255,0.12)_1px,transparent_1px)] bg-[length:20px_20px] opacity-40" />
           <div className="absolute inset-0 flex flex-col items-center justify-center text-white">
             <Gift className="h-14 w-14 mb-2 drop-shadow-lg" />
-            <p className="text-lg font-black tracking-wide drop-shadow-md">Bienvenido!</p>
+            <p className="text-lg font-extrabold tracking-wide drop-shadow-md">Bienvenido!</p>
           </div>
         </div>
 
         {/* Content */}
         <div className="p-8 text-center space-y-5">
           <div>
-            <h2 className="text-2xl font-black text-foreground mb-2">
+            <h2 className="text-2xl font-extrabold text-foreground mb-2">
               Bienvenido a Buleje!
             </h2>
             <p className="text-muted text-sm">
@@ -81,10 +81,10 @@ export default function FirstVisitCouponModal() {
           </div>
 
           {/* Coupon code */}
-          <div className="bg-gradient-to-r from-[#00B4A6]/5 to-[#f97316]/10 rounded-2xl p-5 border-2 border-dashed border-[#00B4A6]/20">
+          <div className="bg-[var(--surface-sunken)] rounded-2xl p-5 border-2 border-dashed border-[#00B4A6]/30">
             <p className="text-xs font-semibold text-muted mb-2">Codigo de descuento</p>
             <div className="flex items-center justify-center gap-3">
-              <p className="text-3xl font-black text-[#00B4A6] tracking-[0.2em] select-all">{COUPON_CODE}</p>
+              <p className="text-3xl font-extrabold text-[#00B4A6] tracking-[var(--ls-wider)] select-all">{COUPON_CODE}</p>
               <button
                 onClick={handleCopy}
                 className={`flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold transition-all ${
@@ -96,7 +96,7 @@ export default function FirstVisitCouponModal() {
                 {copied ? <><Check className="h-3.5 w-3.5" /> Copiado!</> : <><Copy className="h-3.5 w-3.5" /> Copiar</>}
               </button>
             </div>
-            <p className="text-[10px] text-muted mt-2">Valido en tu primer pedido</p>
+            <p className="text-[length:var(--ts-2xs)] text-muted mt-2">Valido en tu primer pedido</p>
           </div>
 
           {/* CTA */}

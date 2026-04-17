@@ -226,7 +226,7 @@ export default function SuppliersTab() {
 
       {/* Payment Alerts Banner */}
       {(overduePayables.length > 0 || approachingPayables.length > 0) && (
-        <div className="bg-linear-to-r from-red-50 to-amber-50 dark:from-red-950/20 dark:to-amber-950/20 border-l-4 border-red-500 dark:border-red-600 rounded-xl p-4 ">
+        <div className="bg-[var(--surface-sunken)] border-l-4 border-[var(--data-error)] rounded-xl p-4 ">
           <div className="flex flex-wrap items-start justify-between gap-2 sm:gap-4">
             <div className="flex-1">
               <div className="flex flex-wrap items-center gap-2 mb-2">
@@ -318,27 +318,27 @@ export default function SuppliersTab() {
 
       {/* Suppliers list */}
       {loading ? (
-        <TableSkeleton rows={4} cols={4} className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl" />
+        <TableSkeleton rows={4} cols={4} className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl" />
       ) : suppliers.length === 0 ? (
         <EmptyState
           icon={Plus}
           title="Sin proveedores registrados"
           description="No hay proveedores registrados. Agrega tu primer proveedor."
           action={{ label: "Nuevo proveedor", onClick: () => { setEditingSupplier(null); setShowProveedorModal(true); } }}
-          className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl"
+          className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl"
         />
       ) : (
         <div className="space-y-3">
           {suppliers.map((s) => (
-            <div key={s.id} className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl p-4 ">
+            <div key={s.id} className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl p-4 ">
               {editingId === s.id ? (
                 <div className="space-y-3">
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                    <input value={editForm.name ?? ""} onChange={(e) => setEditForm(f => ({ ...f, name: e.target.value }))} placeholder="Nombre" className="w-full px-3 py-2 rounded-lg border border-gray-200 dark:border-card-border text-gray-900 dark:text-foreground focus:border-primary outline-none text-sm" />
-                    <input value={editForm.ruc ?? ""} onChange={(e) => setEditForm(f => ({ ...f, ruc: e.target.value }))} placeholder="RUC" className="w-full px-3 py-2 rounded-lg border border-gray-200 dark:border-card-border text-gray-900 dark:text-foreground focus:border-primary outline-none text-sm font-mono" />
-                    <input value={editForm.phone ?? ""} onChange={(e) => setEditForm(f => ({ ...f, phone: e.target.value }))} placeholder="Teléfono" className="w-full px-3 py-2 rounded-lg border border-gray-200 dark:border-card-border text-gray-900 dark:text-foreground focus:border-primary outline-none text-sm" />
-                    <input value={editForm.email ?? ""} onChange={(e) => setEditForm(f => ({ ...f, email: e.target.value }))} placeholder="Email" className="w-full px-3 py-2 rounded-lg border border-gray-200 dark:border-card-border text-gray-900 dark:text-foreground focus:border-primary outline-none text-sm" />
-                    <input value={editForm.address ?? ""} onChange={(e) => setEditForm(f => ({ ...f, address: e.target.value }))} placeholder="Dirección" className="w-full px-3 py-2 rounded-lg border border-gray-200 dark:border-card-border text-gray-900 dark:text-foreground focus:border-primary outline-none text-sm sm:col-span-2" />
+                    <input value={editForm.name ?? ""} onChange={(e) => setEditForm(f => ({ ...f, name: e.target.value }))} placeholder="Nombre" className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-card-border text-gray-900 dark:text-foreground focus:border-primary outline-none text-sm" />
+                    <input value={editForm.ruc ?? ""} onChange={(e) => setEditForm(f => ({ ...f, ruc: e.target.value }))} placeholder="RUC" className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-card-border text-gray-900 dark:text-foreground focus:border-primary outline-none text-sm font-mono" />
+                    <input value={editForm.phone ?? ""} onChange={(e) => setEditForm(f => ({ ...f, phone: e.target.value }))} placeholder="Teléfono" className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-card-border text-gray-900 dark:text-foreground focus:border-primary outline-none text-sm" />
+                    <input value={editForm.email ?? ""} onChange={(e) => setEditForm(f => ({ ...f, email: e.target.value }))} placeholder="Email" className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-card-border text-gray-900 dark:text-foreground focus:border-primary outline-none text-sm" />
+                    <input value={editForm.address ?? ""} onChange={(e) => setEditForm(f => ({ ...f, address: e.target.value }))} placeholder="Dirección" className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-card-border text-gray-900 dark:text-foreground focus:border-primary outline-none text-sm sm:col-span-2" />
                   </div>
                   <div className="flex flex-wrap gap-2">
                     <button onClick={saveEdit} disabled={saving} className="px-2 sm:px-4 py-1.5 sm:py-2 rounded-lg bg-emerald-50 text-emerald-600 hover:bg-emerald-100 text-sm font-bold transition-colors">
@@ -358,7 +358,7 @@ export default function SuppliersTab() {
 
                       {/* Mejora 15: Proveedor mas confiable badge */}
                       {topSupplierId === s.id && (
-                        <span className="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400 border border-amber-300 dark:border-amber-700">
+                        <span className="inline-flex items-center gap-1 text-[length:var(--ts-2xs)] font-bold px-2 py-0.5 rounded bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400 border border-amber-300 dark:border-amber-700">
                           Mas confiable
                         </span>
                       )}
@@ -421,8 +421,8 @@ export default function SuppliersTab() {
                       if (!history.some((h) => h.total > 0)) return null;
                       const maxVal = Math.max(...history.map((h) => h.total), 1);
                       return (
-                        <div className="mt-3 pt-3 border-t border-gray-100 dark:border-card-border">
-                          <p className="text-[10px] font-bold text-gray-400 dark:text-muted mb-1.5">Compras últimos 6 meses</p>
+                        <div className="mt-3 pt-3 border-t border-[var(--rule-soft)] dark:border-card-border">
+                          <p className="text-[length:var(--ts-2xs)] font-bold text-gray-400 dark:text-muted mb-1.5">Compras últimos 6 meses</p>
                           <div className="flex flex-wrap items-end gap-1 h-10">
                             {history.map((h, i) => (
                               <div key={i} className="flex flex-col items-center gap-0.5 flex-1">
@@ -431,7 +431,7 @@ export default function SuppliersTab() {
                                   style={{ height: h.total > 0 ? `${Math.max((h.total / maxVal) * 28, 3)}px` : "3px", opacity: h.total > 0 ? 1 : 0.2 }}
                                   title={`S/ ${h.total.toFixed(0)}`}
                                 />
-                                <p className="text-[8px] text-gray-400 dark:text-muted leading-none">{h.label}</p>
+                                <p className="text-[length:var(--ts-2xs)] text-gray-400 dark:text-muted leading-none">{h.label}</p>
                               </div>
                             ))}
                           </div>
@@ -440,7 +440,7 @@ export default function SuppliersTab() {
                     })()}
 
                     {/* Scorecard toggle */}
-                    <div className="mt-3 pt-3 border-t border-gray-100 dark:border-card-border">
+                    <div className="mt-3 pt-3 border-t border-[var(--rule-soft)] dark:border-card-border">
                       <button
                         onClick={() => setExpandedScorecard(expandedScorecard === s.id ? null : s.id)}
                         className="flex items-center gap-1.5 text-xs font-bold text-primary hover:text-primary/80 transition-colors"
@@ -514,31 +514,31 @@ export default function SuppliersTab() {
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-4">
                 <div>
                   <label className="block text-xs font-semibold text-gray-500 dark:text-muted mb-1">Nombre / Razon social *</label>
-                  <input required value={addForm.name} onChange={(e) => setAddForm(f => ({ ...f, name: e.target.value }))} placeholder="Distribuidora Lima S.A.C." className="w-full px-3 py-2 rounded-lg border border-gray-200 dark:border-card-border text-gray-900 dark:text-foreground focus:border-primary outline-none text-sm" />
+                  <input required value={addForm.name} onChange={(e) => setAddForm(f => ({ ...f, name: e.target.value }))} placeholder="Distribuidora Lima S.A.C." className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-card-border text-gray-900 dark:text-foreground focus:border-primary outline-none text-sm" />
                 </div>
                 <div>
                   <label className="block text-xs font-semibold text-gray-500 dark:text-muted mb-1">RUC</label>
-                  <input value={addForm.ruc} onChange={(e) => setAddForm(f => ({ ...f, ruc: e.target.value }))} placeholder="20xxxxxxxxx" maxLength={11} className="w-full px-3 py-2 rounded-lg border border-gray-200 dark:border-card-border text-gray-900 dark:text-foreground focus:border-primary outline-none text-sm font-mono" />
+                  <input value={addForm.ruc} onChange={(e) => setAddForm(f => ({ ...f, ruc: e.target.value }))} placeholder="20xxxxxxxxx" maxLength={11} className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-card-border text-gray-900 dark:text-foreground focus:border-primary outline-none text-sm font-mono" />
                 </div>
                 <div>
                   <label className="block text-xs font-semibold text-gray-500 dark:text-muted mb-1">Telefono</label>
-                  <input value={addForm.phone} onChange={(e) => setAddForm(f => ({ ...f, phone: e.target.value }))} placeholder="999 999 999" className="w-full px-3 py-2 rounded-lg border border-gray-200 dark:border-card-border text-gray-900 dark:text-foreground focus:border-primary outline-none text-sm" />
+                  <input value={addForm.phone} onChange={(e) => setAddForm(f => ({ ...f, phone: e.target.value }))} placeholder="999 999 999" className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-card-border text-gray-900 dark:text-foreground focus:border-primary outline-none text-sm" />
                 </div>
                 <div>
                   <label className="block text-xs font-semibold text-gray-500 dark:text-muted mb-1">Email</label>
-                  <input type="email" value={addForm.email} onChange={(e) => setAddForm(f => ({ ...f, email: e.target.value }))} placeholder="ventas@empresa.com" className="w-full px-3 py-2 rounded-lg border border-gray-200 dark:border-card-border text-gray-900 dark:text-foreground focus:border-primary outline-none text-sm" />
+                  <input type="email" value={addForm.email} onChange={(e) => setAddForm(f => ({ ...f, email: e.target.value }))} placeholder="ventas@empresa.com" className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-card-border text-gray-900 dark:text-foreground focus:border-primary outline-none text-sm" />
                 </div>
                 <div className="sm:col-span-2">
                   <label className="block text-xs font-semibold text-gray-500 dark:text-muted mb-1">Direccion</label>
-                  <input value={addForm.address} onChange={(e) => setAddForm(f => ({ ...f, address: e.target.value }))} placeholder="Av. Colonial 1234, Lima" className="w-full px-3 py-2 rounded-lg border border-gray-200 dark:border-card-border text-gray-900 dark:text-foreground focus:border-primary outline-none text-sm" />
+                  <input value={addForm.address} onChange={(e) => setAddForm(f => ({ ...f, address: e.target.value }))} placeholder="Av. Colonial 1234, Lima" className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-card-border text-gray-900 dark:text-foreground focus:border-primary outline-none text-sm" />
                 </div>
                 <div className="sm:col-span-2">
                   <label className="block text-xs font-semibold text-gray-500 dark:text-muted mb-1">Notas</label>
-                  <textarea value={addForm.notes} onChange={(e) => setAddForm(f => ({ ...f, notes: e.target.value }))} rows={2} placeholder="Informacion adicional..." className="w-full px-3 py-2 rounded-lg border border-gray-200 dark:border-card-border text-gray-900 dark:text-foreground focus:border-primary outline-none text-sm resize-none" />
+                  <textarea value={addForm.notes} onChange={(e) => setAddForm(f => ({ ...f, notes: e.target.value }))} rows={2} placeholder="Informacion adicional..." className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-card-border text-gray-900 dark:text-foreground focus:border-primary outline-none text-sm resize-none" />
                 </div>
               </div>
               <div className="flex flex-wrap gap-3">
-                <button type="button" onClick={() => setShowAdd(false)} className="flex-1 py-2.5 rounded-lg border border-gray-200 dark:border-card-border text-sm font-semibold text-gray-600 dark:text-muted hover:bg-gray-50 dark:hover:bg-surface transition-colors">Cancelar</button>
+                <button type="button" onClick={() => setShowAdd(false)} className="flex-1 py-2.5 rounded-lg border border-[var(--rule-base)] dark:border-card-border text-sm font-semibold text-gray-600 dark:text-muted hover:bg-gray-50 dark:hover:bg-surface transition-colors">Cancelar</button>
                 <button type="submit" disabled={saving} className="flex-1 py-2.5 rounded-lg bg-primary text-white text-sm font-bold hover:bg-primary-dark transition-colors disabled:opacity-60">
                   {saving ? "Guardando..." : "Agregar proveedor"}
                 </button>

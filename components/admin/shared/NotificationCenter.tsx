@@ -184,7 +184,7 @@ export default function NotificationCenter() {
       >
         <Bell className="h-4 w-4" />
         {unreadCount > 0 && (
-          <span className="absolute -top-1 -right-1 min-w-4.5 h-4.5 flex items-center justify-center text-[10px] font-bold text-white bg-red-500 rounded-full px-1 ">
+          <span className="absolute -top-1 -right-1 min-w-4.5 h-4.5 flex items-center justify-center text-[length:var(--ts-2xs)] font-bold text-white bg-red-500 rounded-full px-1 ">
             {unreadCount > 9 ? "9+" : unreadCount}
           </span>
         )}
@@ -199,16 +199,16 @@ export default function NotificationCenter() {
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: -8, scale: 0.95 }}
             transition={{ duration: 0.15 }}
-            className="absolute right-0 top-full mt-2 w-80 max-h-[400px] flex flex-col bg-white dark:bg-zinc-900 rounded-xl border border-gray-100 dark:border-zinc-800 z-50 overflow-hidden"
+            className="absolute right-0 top-full mt-2 w-80 max-h-[400px] flex flex-col bg-white dark:bg-zinc-900 rounded-xl border border-[var(--rule-soft)] dark:border-zinc-800 z-50 overflow-hidden"
           >
             {/* Header */}
-            <div className="px-4 py-3 border-b border-gray-100 dark:border-zinc-800 flex items-center justify-between shrink-0">
+            <div className="px-4 py-3 border-b border-[var(--rule-soft)] dark:border-zinc-800 flex items-center justify-between shrink-0">
               <div className="flex items-center gap-2">
                 <h3 className="text-sm font-bold text-gray-900 dark:text-foreground">
                   Notificaciones
                 </h3>
                 {unreadCount > 0 && (
-                  <span className="text-[10px] font-bold text-white bg-red-500 rounded-full px-1.5 py-0.5 min-w-4 text-center">
+                  <span className="text-[length:var(--ts-2xs)] font-bold text-white bg-red-500 rounded-full px-1.5 py-0.5 min-w-4 text-center">
                     {unreadCount}
                   </span>
                 )}
@@ -216,7 +216,7 @@ export default function NotificationCenter() {
               {unreadCount > 0 && (
                 <button
                   onClick={markAllRead}
-                  className="flex items-center gap-1 text-[11px] font-medium text-primary hover:underline"
+                  className="flex items-center gap-1 text-[length:var(--ts-xs)] font-medium text-primary hover:underline"
                 >
                   <CheckCheck className="h-3 w-3" />
                   Marcar todas como leidas
@@ -285,7 +285,7 @@ export default function NotificationCenter() {
                         <p className="text-xs text-gray-500 dark:text-muted mt-0.5 truncate">
                           {notif.description}
                         </p>
-                        <span className="text-[11px] text-gray-400 dark:text-muted mt-1 block">
+                        <span className="text-[length:var(--ts-xs)] text-gray-400 dark:text-muted mt-1 block">
                           {timeAgo(notif.timestamp)}
                         </span>
                       </div>

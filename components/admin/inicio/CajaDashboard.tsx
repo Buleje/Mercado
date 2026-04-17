@@ -8,6 +8,7 @@ import {
 import { cn } from "@/lib/utils";
 import dynamic from "next/dynamic";
 import { useDashboardData } from "@/contexts/dashboard-data-context";
+import { UnifiedKPITile } from "@/components/admin/shared/UnifiedKPITile";
 import type { DateRange } from "./DashboardDateRange";
 
 const CajaCharts = dynamic(() => import("./CajaCharts"), { ssr: false });
@@ -206,18 +207,34 @@ export default function CajaDashboard({ dateRange }: CajaDashboardProps) {
 
   return (
     <div className="space-y-5">
-      {/* ── KPI Hero Row ── */}
+      {/* ── KPI Hero Row · ADR-068 armonía estricta ── */}
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
-        <KPICard label="Ingresos" value={fmt(data.ingresos)} Icon={ArrowUpFromLine} delta={data.dIngresos} accent="emerald" />
-        <KPICard label="Egresos" value={fmt(data.egresos)} Icon={ArrowDownToLine} delta={data.dEgresos} invertTrend accent="red" />
-        <KPICard label="Balance" value={fmt(data.balance)} Icon={Wallet} delta={data.dBalance} accent={data.balance >= 0 ? "blue" : "red"} />
-        <KPICard label="Utilidad Neta" value={fmt(data.utilidadNeta)} Icon={DollarSign} accent={data.utilidadNeta >= 0 ? "emerald" : "red"} />
-        <KPICard label="Margen Neto" value={`${data.margenNeto.toFixed(1)}%`} Icon={Percent} accent={data.margenNeto >= 15 ? "emerald" : data.margenNeto >= 5 ? "amber" : "red"} />
-        <KPICard label="Tickets" value={String(data.ticketsTotal)} Icon={Banknote} accent="violet" />
+        <UnifiedKPITile label="Ingresos" value={fmt(data.ingresos)} Icon={ArrowUpFromLine} delta={data.dIngresos} />
+        <UnifiedKPITile label="Egresos" value={fmt(data.egresos)} Icon={ArrowDownToLine} delta={data.dEgresos} invertTrend />
+        <UnifiedKPITile
+          label="Balance"
+          value={fmt(data.balance)}
+          Icon={Wallet}
+          delta={data.dBalance}
+          intent={data.balance >= 0 ? "neutral" : "danger"}
+        />
+        <UnifiedKPITile
+          label="Utilidad Neta"
+          value={fmt(data.utilidadNeta)}
+          Icon={DollarSign}
+          intent={data.utilidadNeta >= 0 ? "success" : "danger"}
+        />
+        <UnifiedKPITile
+          label="Margen Neto"
+          value={`${data.margenNeto.toFixed(1)}%`}
+          Icon={Percent}
+          intent={data.margenNeto >= 15 ? "success" : data.margenNeto >= 5 ? "warning" : "danger"}
+        />
+        <UnifiedKPITile label="Tickets" value={String(data.ticketsTotal)} Icon={Banknote} />
       </div>
 
       {/* ── Balance summary bar ── */}
-      <div className="flex items-center gap-3 bg-white dark:bg-card border border-gray-100 dark:border-card-border rounded-xl px-5 py-3">
+      <div className="flex items-center gap-3 bg-white dark:bg-card border border-[var(--rule-soft)] dark:border-card-border rounded-xl px-5 py-3">
         <Wallet className="h-4 w-4 text-gray-400" />
         <div className="flex-1 flex items-center gap-4 text-sm flex-wrap">
           <span className="text-gray-500 dark:text-muted">Ingresos:</span>
@@ -250,7 +267,7 @@ function KPICard({ label, value, Icon, delta, accent, invertTrend }: {
   const colorMap = {
     emerald: { bg: "bg-emerald-50 dark:bg-emerald-950/30", icon: "text-emerald-500" },
     blue: { bg: "bg-emerald-50 dark:bg-emerald-950/30", icon: "text-emerald-500" },
-    violet: { bg: "bg-violet-50 dark:bg-violet-950/30", icon: "text-violet-500" },
+    violet: { bg: "bg-[var(--surface-sunken)]", icon: "text-[var(--text-secondary)]" },
     cyan: { bg: "bg-cyan-50 dark:bg-cyan-950/30", icon: "text-cyan-500" },
     amber: { bg: "bg-amber-50 dark:bg-amber-950/30", icon: "text-amber-500" },
     red: { bg: "bg-red-50 dark:bg-red-950/30", icon: "text-red-500" },
@@ -258,7 +275,7 @@ function KPICard({ label, value, Icon, delta, accent, invertTrend }: {
   const c = colorMap[accent];
 
   return (
-    <div className="bg-white dark:bg-card border border-gray-100 dark:border-card-border rounded-xl p-4 hover:shadow-sm transition-shadow">
+    <div className="bg-white dark:bg-card border border-[var(--rule-soft)] dark:border-card-border rounded-xl p-4 hover:shadow-sm transition-shadow">
       <div className="flex items-start justify-between mb-3">
         <div className={cn("w-9 h-9 rounded-xl flex items-center justify-center", c.bg)}>
           <Icon className={cn("h-4.5 w-4.5", c.icon)} />
@@ -273,7 +290,7 @@ function KPICard({ label, value, Icon, delta, accent, invertTrend }: {
         )}
       </div>
       <p className="text-xl font-bold text-gray-900 dark:text-foreground tabular-nums leading-none mb-1">{value}</p>
-      <p className="text-[11px] font-medium text-gray-400 dark:text-muted">{label}</p>
+      <p className="text-[length:var(--ts-xs)] font-medium text-gray-400 dark:text-muted">{label}</p>
     </div>
   );
 }

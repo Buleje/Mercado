@@ -57,14 +57,14 @@ function formatLimit(max: number) {
 const PLAN_COLORS: Record<string, string> = {
   free: "bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-200",
   pro: "bg-emerald-100 dark:bg-emerald-900/40 text-emerald-700 dark:text-emerald-300",
-  business: "bg-violet-100 dark:bg-violet-900/40 text-violet-700 dark:text-violet-300",
+  business: "bg-[var(--surface-sunken)] text-[var(--text-secondary)] dark:text-[var(--text-primary)]",
   enterprise: "bg-amber-100 dark:bg-amber-900/40 text-amber-700 dark:text-amber-300",
 };
 
 const PLAN_BAR_COLOR: Record<string, string> = {
   free: "bg-gray-400",
   pro: "bg-emerald-500",
-  business: "bg-violet-500",
+  business: "bg-[var(--text-primary)]",
   enterprise: "bg-amber-500",
 };
 
@@ -160,14 +160,14 @@ function PlanCard({
       className={`rounded-xl border-2 p-3 sm:p-5 space-y-4 transition-all ${
         isActive
           ? "border-primary bg-primary/5"
-          : "border-gray-200 dark:border-gray-700 hover:border-primary/40"
+          : "border-[var(--rule-base)] hover:border-primary/40"
       }`}
     >
       {/* Header */}
       <div className="flex flex-wrap items-start justify-between gap-2">
         <div>
           <div className="flex flex-wrap items-center gap-2">
-            {(def.id === "business" || def.id === "enterprise") && <Crown className={`w-4 h-4 ${def.id === "enterprise" ? "text-amber-500" : "text-violet-500"}`} />}
+            {(def.id === "business" || def.id === "enterprise") && <Crown className={`w-4 h-4 ${def.id === "enterprise" ? "text-amber-500" : "text-[var(--text-secondary)]"}`} />}
             <h3 className="font-bold text-base">{def.name}</h3>
           </div>
           <div className="mt-1">
@@ -196,7 +196,7 @@ function PlanCard({
       </div>
 
       {/* Features */}
-      <div className="space-y-1.5 border-t border-gray-100 dark:border-gray-800 pt-3">
+      <div className="space-y-1.5 border-t border-[var(--rule-base)] pt-3">
         <FeatureRow label="Dominio propio" available={limits.customDomain} />
         <FeatureRow label="Analytics avanzado" available={limits.advancedAnalytics} />
         <FeatureRow label="API access" available={limits.apiAccess} />

@@ -85,7 +85,7 @@ export default function DeliveryTimeWidget() {
   const colors = {
     open: "bg-emerald-50 border-emerald-200 dark:bg-emerald-950/40 dark:border-emerald-800/50",
     closing: "bg-amber-50 border-amber-200 dark:bg-amber-950/40 dark:border-amber-800/50",
-    closed: "bg-gray-50 border-gray-200 dark:bg-gray-900 dark:border-gray-700",
+    closed: "bg-gray-50 border-[var(--rule-base)] dark:bg-gray-900 dark:border-[var(--rule-base)]",
   };
 
   const iconColors = {
@@ -96,7 +96,7 @@ export default function DeliveryTimeWidget() {
 
   return (
     <div className={cn(
-      "fixed bottom-20 left-4 z-40 rounded-2xl border shadow-lg transition-all duration-300 max-w-[220px]",
+      "fixed bottom-20 left-4 z-40 rounded-2xl border shadow-lg transition-all duration-[var(--dur-base)] max-w-[220px]",
       colors[status.icon],
     )}>
       {/* Collapsed view */}
@@ -109,15 +109,15 @@ export default function DeliveryTimeWidget() {
         </div>
         <div className="flex-1 min-w-0">
           <p className="text-xs font-bold text-gray-900 dark:text-white truncate">{status.text}</p>
-          <p className="text-[10px] text-gray-500 dark:text-gray-400 truncate">{status.sub}</p>
+          <p className="text-[length:var(--ts-2xs)] text-gray-500 dark:text-gray-400 truncate">{status.sub}</p>
         </div>
         {expanded ? <ChevronDown className="h-3 w-3 text-gray-400 shrink-0" /> : <ChevronUp className="h-3 w-3 text-gray-400 shrink-0" />}
       </button>
 
       {/* Expanded: today's schedule */}
       {expanded && (
-        <div className="px-3 pb-3 border-t border-gray-100 dark:border-gray-700 pt-2 space-y-1.5">
-          <p className="text-[10px] font-bold text-gray-600 dark:text-gray-300 uppercase tracking-wide">Horario hoy</p>
+        <div className="px-3 pb-3 border-t border-[var(--rule-base)] pt-2 space-y-1.5">
+          <p className="text-[length:var(--ts-2xs)] font-bold text-gray-600 dark:text-gray-300 uppercase tracking-wide">Horario hoy</p>
           {(() => {
             const dayKey = DAY_KEYS[new Date().getDay()];
             const hours = DEFAULT_HOURS[dayKey];
@@ -130,7 +130,7 @@ export default function DeliveryTimeWidget() {
           })()}
           <button
             onClick={() => setDismissed(true)}
-            className="text-[10px] text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 mt-1"
+            className="text-[length:var(--ts-2xs)] text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 mt-1"
           >
             Ocultar
           </button>

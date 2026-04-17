@@ -245,7 +245,7 @@ export default function PinLoginModal({ onSuccess, onClose, title = "Ingresa tu 
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm">
       <div
         className={cn(
-          "relative w-full max-w-sm rounded-xl bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 p-8",
+          "relative w-full max-w-sm rounded-xl bg-white dark:bg-gray-900 border border-[var(--rule-base)] p-8",
           shake && "animate-shake"
         )}
         style={
@@ -313,11 +313,11 @@ export default function PinLoginModal({ onSuccess, onClose, title = "Ingresa tu 
                   onKeyDown={(e) => handleKeyDown(i, e)}
                   disabled={loading}
                   className={cn(
-                    "w-14 h-14 rounded-xl border-2 text-center text-2xl font-bold outline-none transition-all duration-150",
+                    "w-14 h-14 rounded-xl border-2 text-center text-2xl font-bold outline-none transition-all duration-[var(--dur-fast)]",
                     "bg-gray-50 dark:bg-gray-800 text-gray-900 dark:text-white",
                     digit
                       ? "border-[#00B4A6] bg-[#00B4A6]/5 dark:bg-[#00B4A6]/10"
-                      : "border-gray-300 dark:border-gray-600",
+                      : "border-[var(--rule-base)] dark:border-gray-600",
                     "focus:border-[#00B4A6] focus:ring-2 focus:ring-[#00B4A6]/20",
                     "disabled:opacity-60"
                   )}
@@ -353,7 +353,7 @@ export default function PinLoginModal({ onSuccess, onClose, title = "Ingresa tu 
                   onClick={() => handleNumPad(key)}
                   disabled={loading || key === ""}
                   className={cn(
-                    "h-14 rounded-xl text-lg font-semibold transition-all duration-100 select-none",
+                    "h-14 rounded-xl text-lg font-semibold transition-all duration-[var(--dur-fast)] select-none",
                     key === ""
                       ? "invisible"
                       : key === "⌫"
@@ -372,7 +372,7 @@ export default function PinLoginModal({ onSuccess, onClose, title = "Ingresa tu 
               onClick={submitPin}
               disabled={digits.some((d) => !d) || loading}
               className={cn(
-                "mt-4 w-full h-12 rounded-lg font-semibold text-white transition-all duration-150",
+                "mt-4 w-full h-12 rounded-lg font-semibold text-white transition-all duration-[var(--dur-fast)]",
                 "bg-[#00B4A6] hover:bg-[#235c42] active:scale-[0.98]",
                 "disabled:opacity-40 disabled:cursor-not-allowed"
               )}

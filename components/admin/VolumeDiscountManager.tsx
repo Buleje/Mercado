@@ -123,7 +123,7 @@ function RuleForm({ initial, onSave, onCancel }: RuleFormProps) {
             value={form.productName}
             onChange={(e) => set("productName", e.target.value)}
             placeholder="Ej: Arroz Costeño 5kg"
-            className="w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm text-gray-900 outline-none focus:border-primary"
+            className="w-full rounded-lg border border-[var(--rule-base)] bg-white px-3 py-2 text-sm text-gray-900 outline-none focus:border-primary"
           />
         </div>
         <div>
@@ -136,7 +136,7 @@ function RuleForm({ initial, onSave, onCancel }: RuleFormProps) {
             step={0.5}
             value={form.basePrice}
             onChange={(e) => set("basePrice", Number(e.target.value))}
-            className="w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm text-gray-900 outline-none focus:border-primary"
+            className="w-full rounded-lg border border-[var(--rule-base)] bg-white px-3 py-2 text-sm text-gray-900 outline-none focus:border-primary"
           />
         </div>
         <div>
@@ -147,7 +147,7 @@ function RuleForm({ initial, onSave, onCancel }: RuleFormProps) {
             value={form.unit}
             onChange={(e) => set("unit", e.target.value)}
             placeholder="bolsa, caja, unidad..."
-            className="w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm text-gray-900 outline-none focus:border-primary"
+            className="w-full rounded-lg border border-[var(--rule-base)] bg-white px-3 py-2 text-sm text-gray-900 outline-none focus:border-primary"
           />
         </div>
         <div>
@@ -159,7 +159,7 @@ function RuleForm({ initial, onSave, onCancel }: RuleFormProps) {
             min={2}
             value={form.discountQty}
             onChange={(e) => set("discountQty", Number(e.target.value))}
-            className="w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm text-gray-900 outline-none focus:border-primary"
+            className="w-full rounded-lg border border-[var(--rule-base)] bg-white px-3 py-2 text-sm text-gray-900 outline-none focus:border-primary"
           />
         </div>
         <div>
@@ -172,7 +172,7 @@ function RuleForm({ initial, onSave, onCancel }: RuleFormProps) {
             step={0.5}
             value={form.discountPrice}
             onChange={(e) => set("discountPrice", Number(e.target.value))}
-            className="w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm text-gray-900 outline-none focus:border-primary"
+            className="w-full rounded-lg border border-[var(--rule-base)] bg-white px-3 py-2 text-sm text-gray-900 outline-none focus:border-primary"
           />
         </div>
       </div>
@@ -193,7 +193,7 @@ function RuleForm({ initial, onSave, onCancel }: RuleFormProps) {
         </button>
         <button
           onClick={onCancel}
-          className="px-4 py-2.5 rounded-lg border border-gray-200 text-sm font-semibold text-gray-600 hover:bg-gray-50"
+          className="px-4 py-2.5 rounded-lg border border-[var(--rule-base)] text-sm font-semibold text-gray-600 hover:bg-gray-50"
         >
           <X className="w-4 h-4" />
         </button>
@@ -242,9 +242,9 @@ export default function VolumeDiscountManager() {
   );
 
   return (
-    <div className="bg-white rounded-xl border border-gray-200 overflow-hidden ">
+    <div className="bg-white rounded-xl border border-[var(--rule-base)] overflow-hidden ">
       {/* Header */}
-      <div className="p-5 border-b border-gray-100 flex items-center justify-between">
+      <div className="p-5 border-b border-[var(--rule-soft)] flex items-center justify-between">
         <div className="flex items-center gap-3">
           <div className="p-2 rounded-xl bg-secondary/10">
             <Tag className="w-5 h-5 text-secondary" />
@@ -290,7 +290,7 @@ export default function VolumeDiscountManager() {
             ) : (
               <div
                 key={rule.id}
-                className="flex items-center justify-between gap-3 p-4 rounded-xl bg-gray-50 border border-gray-100"
+                className="flex items-center justify-between gap-3 p-4 rounded-xl bg-gray-50 border border-[var(--rule-soft)]"
               >
                 <div className="min-w-0">
                   <p className="font-semibold text-gray-900 text-sm truncate">

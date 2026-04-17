@@ -122,14 +122,14 @@ export function OnboardingChecklist({
                 }}
               />
             </svg>
-            <span className="absolute inset-0 flex items-center justify-center text-[10px] font-bold tabular-nums text-[var(--text-primary)]">
+            <span className="absolute inset-0 flex items-center justify-center text-[length:var(--ts-2xs)] font-bold tabular-nums text-[var(--text-primary)]">
               {done}/{total}
             </span>
           </div>
           <div className="min-w-0">
             <p
               id="onboarding-title"
-              className="text-[10px] font-bold uppercase tracking-[0.2em] text-[var(--text-tertiary)] mb-0.5"
+              className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)] mb-0.5"
             >
               {allComplete ? "Completado" : "Primeros pasos"}
             </p>
@@ -219,7 +219,7 @@ function ChecklistRowContent({ item, idx }: { item: OnboardingItem; idx: number 
         {item.done ? (
           <Check className="h-3 w-3" strokeWidth={2.5} />
         ) : (
-          <span className="text-[10px] font-bold">{idx + 1}</span>
+          <span className="text-[length:var(--ts-2xs)] font-bold">{idx + 1}</span>
         )}
       </span>
       <div className="flex-1 min-w-0">

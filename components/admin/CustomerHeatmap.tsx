@@ -124,19 +124,19 @@ export default function CustomerHeatmap() {
 
       {/* Stats row */}
       <div className="grid grid-cols-3 gap-3">
-        <div className="rounded-xl border border-gray-200 bg-white p-4">
+        <div className="rounded-xl border border-[var(--rule-base)] bg-white p-4">
           <p className="text-2xl font-bold text-primary">{total}</p>
           <p className="text-xs text-gray-500">
             Total clientes
           </p>
         </div>
-        <div className="rounded-xl border border-gray-200 bg-white p-4">
+        <div className="rounded-xl border border-[var(--rule-base)] bg-white p-4">
           <p className="text-2xl font-bold text-primary">
             {zones.filter((z) => z.zone !== "Sin ubicacion").length}
           </p>
           <p className="text-xs text-gray-500">Zonas</p>
         </div>
-        <div className="rounded-xl border border-gray-200 bg-white p-4">
+        <div className="rounded-xl border border-[var(--rule-base)] bg-white p-4">
           <p className="text-2xl font-bold text-primary">
             {zones.find((z) => z.zone === "Sin ubicacion")?.count ?? 0}
           </p>
@@ -157,7 +157,7 @@ export default function CustomerHeatmap() {
         </div>
       ) : (
         /* Horizontal bar chart */
-        <div className="rounded-xl border border-gray-200 bg-white p-5">
+        <div className="rounded-xl border border-[var(--rule-base)] bg-white p-5">
           <h3 className="mb-4 text-sm font-semibold text-gray-800">
             Clientes por zona
           </h3>
@@ -199,7 +199,7 @@ export default function CustomerHeatmap() {
                     <div className="relative h-6 w-full overflow-hidden rounded-full bg-gray-100">
                       <div
                         className={cn(
-                          "flex h-full items-center justify-end pr-2 transition-all duration-500",
+                          "flex h-full items-center justify-end pr-2 transition-all duration-[var(--dur-slow)]",
                           colorBar
                         )}
                         style={{ width: `${Math.max(pct, 4)}%` }}

@@ -156,14 +156,14 @@ export default function TrainingCenter() {
           <input
             value={user}
             onChange={(e) => setUser(e.target.value.trim() || "empleado")}
-            className="rounded-lg border border-gray-200 bg-gray-50 px-3 py-1.5 text-sm focus:border-[#00B4A6] focus:outline-none dark:border-gray-700 dark:bg-gray-800 dark:text-white"
+            className="rounded-lg border border-[var(--rule-base)] bg-gray-50 px-3 py-1.5 text-sm focus:border-[#00B4A6] focus:outline-none dark:border-[var(--rule-base)] dark:bg-gray-800 dark:text-white"
             placeholder="Tu nombre"
           />
         </div>
       </div>
 
       {/* Progress */}
-      <div className="rounded-xl border border-gray-200 bg-white p-5 dark:border-gray-700 dark:bg-gray-900">
+      <div className="rounded-xl border border-[var(--rule-base)] bg-white p-5 dark:border-[var(--rule-base)] dark:bg-gray-900">
         <div className="mb-2 flex items-center justify-between">
           <div className="flex items-center gap-2">
             <Award
@@ -188,7 +188,7 @@ export default function TrainingCenter() {
         <div className="h-3 w-full overflow-hidden rounded-full bg-gray-100 dark:bg-gray-800">
           <div
             className={cn(
-              "h-full transition-all duration-500",
+              "h-full transition-all duration-[var(--dur-slow)]",
               allDone ? "bg-amber-400" : "bg-[#00B4A6]"
             )}
             style={{ width: `${pct}%` }}
@@ -214,7 +214,7 @@ export default function TrainingCenter() {
                 "rounded-xl border transition",
                 isDone
                   ? "border-emerald-200 bg-emerald-50 dark:border-emerald-900/40 dark:bg-emerald-900/10"
-                  : "border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-900"
+                  : "border-[var(--rule-base)] bg-white dark:border-[var(--rule-base)] dark:bg-gray-900"
               )}
             >
               {/* Header row */}
@@ -268,7 +268,7 @@ export default function TrainingCenter() {
 
               {/* Steps */}
               {isExpanded && (
-                <div className="border-t border-gray-100 px-4 py-4 dark:border-gray-800">
+                <div className="border-t border-[var(--rule-soft)] px-4 py-4 dark:border-[var(--rule-base)]">
                   <ol className="space-y-3">
                     {tutorial.steps.map((step) => (
                       <li key={step.id} className="flex items-start gap-3">

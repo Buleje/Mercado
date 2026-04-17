@@ -20,7 +20,7 @@ const COLOR_MAP: Record<ChipColor, { chip: string; badge: string }> = {
     badge: "bg-emerald-600 text-white",
   },
   violet: {
-    chip: "bg-violet-50 dark:bg-violet-900/20 border-violet-200 dark:border-violet-800 text-violet-700 dark:text-violet-400",
+    chip: "bg-[var(--surface-sunken)] border-[var(--rule-base)] text-[var(--text-secondary)] dark:text-[var(--text-primary)]",
     badge: "bg-violet-600 text-white",
   },
   blue: {
@@ -66,14 +66,14 @@ export default function FilterChip({
         "inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-sm font-medium border transition-all",
         active
           ? palette.chip
-          : "border-gray-200 dark:border-zinc-700 text-gray-600 dark:text-zinc-400 bg-white dark:bg-zinc-900 hover:bg-gray-50 dark:hover:bg-zinc-800",
+          : "border-[var(--rule-base)] dark:border-zinc-700 text-gray-600 dark:text-zinc-400 bg-white dark:bg-zinc-900 hover:bg-gray-50 dark:hover:bg-zinc-800",
       )}
     >
       {label}
       {count !== undefined && count > 0 && (
         <span
           className={cn(
-            "text-[10px] font-bold rounded-full min-w-[18px] h-[18px] inline-flex items-center justify-center px-1",
+            "text-[length:var(--ts-2xs)] font-bold rounded-full min-w-[18px] h-[18px] inline-flex items-center justify-center px-1",
             active
               ? palette.badge
               : "bg-gray-200 dark:bg-zinc-700 text-gray-600 dark:text-zinc-300",

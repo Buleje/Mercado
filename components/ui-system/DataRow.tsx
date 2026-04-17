@@ -33,7 +33,7 @@ export function DataRow({
       onClick={onClick}
       className={cn(
         "w-full flex items-center gap-4",
-        "border-b border-gray-100 dark:border-gray-800",
+        "border-b border-[var(--rule-base)]",
         dense ? "py-2" : "py-3.5",
         onClick && "hover:bg-gray-50 dark:hover:bg-gray-900/50 transition-colors cursor-pointer text-left",
         className,
@@ -48,7 +48,7 @@ export function DataRow({
           {value}
         </p>
         {hint && (
-          <p className="text-[11px] text-gray-400 mt-0.5">{hint}</p>
+          <p className="text-[length:var(--ts-xs)] text-gray-400 mt-0.5">{hint}</p>
         )}
       </div>
       {trailing && <span className="shrink-0">{trailing}</span>}

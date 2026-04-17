@@ -4,6 +4,7 @@ import { memo } from "react";
 import { Check, Clock, MapPin, MessageCircle, ArrowRight, Gift } from "lucide-react";
 import Link from "next/link";
 import { cn } from "@/lib/utils";
+import { PrimaryButton, IconBadge } from "@buleje/design-system";
 
 /**
  * OrderConfirmationCard — pantalla de exito post-pago.
@@ -69,10 +70,10 @@ export const OrderConfirmationCard = memo(function OrderConfirmationCard({
           <Check className="h-10 w-10 text-white" strokeWidth={2.5} />
           <span className="absolute inset-0 rounded-full bg-[var(--data-success)] opacity-30 animate-ping" />
         </div>
-        <p className="text-[10px] font-bold uppercase tracking-[0.25em] text-white/55 mb-2">
+        <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-white/55 mb-2">
           Pedido confirmado
         </p>
-        <h1 className="text-3xl sm:text-4xl font-extrabold tracking-[-0.02em] text-white leading-tight mb-3">
+        <h1 className="text-3xl sm:text-4xl font-extrabold tracking-[var(--ls-tight)] text-white leading-tight mb-3">
           ¡Ya lo estamos preparando!
         </h1>
         <p className="text-white/65 text-sm sm:text-base leading-relaxed max-w-md mx-auto">
@@ -88,16 +89,16 @@ export const OrderConfirmationCard = memo(function OrderConfirmationCard({
       {/* Resumen del pedido */}
       <dl className="divide-y divide-[var(--rule-soft)]">
         <div className="flex items-center justify-between px-6 py-4">
-          <dt className="text-[10px] font-bold uppercase tracking-[0.2em] text-[var(--text-tertiary)]">
+          <dt className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)]">
             Total
           </dt>
-          <dd className="text-xl font-extrabold tabular-nums tracking-[-0.02em] text-[var(--text-primary)]">
+          <dd className="text-xl font-extrabold tabular-nums tracking-[var(--ls-tight)] text-[var(--text-primary)]">
             S/ {totalAmount.toFixed(2)}
           </dd>
         </div>
         {itemsCount != null && (
           <div className="flex items-center justify-between px-6 py-4">
-            <dt className="text-[10px] font-bold uppercase tracking-[0.2em] text-[var(--text-tertiary)]">
+            <dt className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)]">
               Productos
             </dt>
             <dd className="text-sm font-bold tabular-nums text-[var(--text-primary)]">
@@ -107,7 +108,7 @@ export const OrderConfirmationCard = memo(function OrderConfirmationCard({
         )}
         {paymentMethod && (
           <div className="flex items-center justify-between px-6 py-4">
-            <dt className="text-[10px] font-bold uppercase tracking-[0.2em] text-[var(--text-tertiary)]">
+            <dt className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)]">
               Pago
             </dt>
             <dd className="text-sm font-bold text-[var(--text-primary)]">
@@ -117,7 +118,7 @@ export const OrderConfirmationCard = memo(function OrderConfirmationCard({
         )}
         {etaMinutes != null && (
           <div className="flex items-center justify-between px-6 py-4">
-            <dt className="text-[10px] font-bold uppercase tracking-[0.2em] text-[var(--text-tertiary)] flex items-center gap-1.5">
+            <dt className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)] flex items-center gap-1.5">
               <Clock className="h-3 w-3" strokeWidth={1.75} aria-hidden />
               Entrega
             </dt>
@@ -128,7 +129,7 @@ export const OrderConfirmationCard = memo(function OrderConfirmationCard({
         )}
         {address && (
           <div className="px-6 py-4">
-            <dt className="text-[10px] font-bold uppercase tracking-[0.2em] text-[var(--text-tertiary)] flex items-center gap-1.5 mb-1">
+            <dt className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)] flex items-center gap-1.5 mb-1">
               <MapPin className="h-3 w-3" strokeWidth={1.75} aria-hidden />
               Dirección
             </dt>
@@ -139,13 +140,14 @@ export const OrderConfirmationCard = memo(function OrderConfirmationCard({
 
       {/* CTAs */}
       <div className="p-5 space-y-2.5">
-        <Link
-          href={`/mis-pedidos`}
-          className="w-full inline-flex items-center justify-center gap-2 rounded-full bg-[var(--text-primary)] text-[var(--surface-canvas)] py-3 text-sm font-bold hover:opacity-90 transition-opacity"
+        <PrimaryButton
+          asChild
+          size="lg"
+          className="w-full rounded-full"
+          rightIcon={<ArrowRight className="h-4 w-4" strokeWidth={2} />}
         >
-          Seguir mi pedido
-          <ArrowRight className="h-4 w-4" strokeWidth={2} />
-        </Link>
+          <Link href={`/mis-pedidos`}>Seguir mi pedido</Link>
+        </PrimaryButton>
         <a
           href={`https://wa.me/51916409675?text=${encodeURIComponent(`Hola, soy del pedido #${orderId.slice(-6).toUpperCase()}`)}`}
           target="_blank"
@@ -161,11 +163,9 @@ export const OrderConfirmationCard = memo(function OrderConfirmationCard({
       {referralCode && (
         <div className="p-5 border-t border-[var(--rule-soft)] bg-[var(--surface-sunken)]">
           <div className="flex items-start gap-3">
-            <span className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-[var(--text-primary)] text-[var(--surface-canvas)]">
-              <Gift className="h-4 w-4" strokeWidth={1.75} />
-            </span>
+            <IconBadge size="md" shape="square"><Gift className="h-4 w-4" strokeWidth={1.75} /></IconBadge>
             <div className="flex-1 min-w-0">
-              <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-[var(--text-tertiary)] mb-1">
+              <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)] mb-1">
                 Invitá a un amigo
               </p>
               <p className="text-sm text-[var(--text-primary)] leading-relaxed mb-3">

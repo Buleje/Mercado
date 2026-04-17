@@ -16,7 +16,7 @@ function ChartTooltip({ active, payload, label, prefix = "" }: {
 }) {
   if (!active || !payload?.length) return null;
   return (
-    <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl px-3 py-2 text-xs">
+    <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl px-3 py-2 text-xs">
       {label && <p className="font-semibold text-gray-700 dark:text-foreground mb-1">{label}</p>}
       {payload.map((p, i) => (
         <div key={i} className="flex items-center gap-2">
@@ -33,7 +33,7 @@ function ChartCard({ title, Icon, children, className }: {
   title: string; Icon: React.ComponentType<{ className?: string }>; children: React.ReactNode; className?: string;
 }) {
   return (
-    <div className={cn("bg-white dark:bg-card border border-gray-100 dark:border-card-border rounded-xl p-5 ", className)}>
+    <div className={cn("bg-white dark:bg-card border border-[var(--rule-soft)] dark:border-card-border rounded-xl p-5 ", className)}>
       <div className="flex items-center gap-2 mb-4">
         <Icon className="h-4 w-4 text-gray-400 dark:text-muted" />
         <h3 className="text-sm font-bold text-gray-700 dark:text-foreground">{title}</h3>
@@ -84,7 +84,7 @@ export default function ComprasCharts({ data }: { data: ComprasData }) {
               </ResponsiveContainer>
               <div className="flex flex-wrap gap-x-3 gap-y-1 mt-2 justify-center">
                 {data.comprasPorProveedor.slice(0, 5).map((p, i) => (
-                  <span key={i} className="flex items-center gap-1.5 text-[11px] text-gray-500 dark:text-muted">
+                  <span key={i} className="flex items-center gap-1.5 text-[length:var(--ts-xs)] text-gray-500 dark:text-muted">
                     <span className="w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: p.color }} />
                     {p.nombre}
                   </span>
@@ -122,14 +122,14 @@ export default function ComprasCharts({ data }: { data: ComprasData }) {
           {data.cuentasPorVencer.length > 0 ? (
             <div className="space-y-2 max-h-[250px] overflow-y-auto">
               {data.cuentasPorVencer.map((c, i) => (
-                <div key={i} className="flex items-center justify-between py-1.5 border-b border-gray-50 dark:border-gray-800 last:border-0">
+                <div key={i} className="flex items-center justify-between py-1.5 border-b border-gray-50 dark:border-[var(--rule-base)] last:border-0">
                   <div className="min-w-0 flex-1">
                     <p className="text-xs font-medium text-gray-700 dark:text-gray-300 truncate">{c.nombre}</p>
                   </div>
                   <div className="flex items-center gap-3 shrink-0">
                     <span className="text-xs font-bold text-gray-900 dark:text-foreground">S/ {c.monto.toFixed(2)}</span>
                     <span className={cn(
-                      "text-[10px] font-bold px-1.5 py-0.5 rounded whitespace-nowrap",
+                      "text-[length:var(--ts-2xs)] font-bold px-1.5 py-0.5 rounded whitespace-nowrap",
                       c.status === "vencido" ? "bg-red-50 text-red-600 dark:bg-red-950/30 dark:text-red-400"
                         : c.status === "urgente" ? "bg-amber-50 text-amber-600 dark:bg-amber-950/30 dark:text-amber-400"
                         : "bg-emerald-50 text-emerald-600 dark:bg-emerald-950/30 dark:text-emerald-400"
@@ -171,12 +171,12 @@ export default function ComprasCharts({ data }: { data: ComprasData }) {
               {data.topProveedores.map((p, i) => (
                 <div key={i} className="flex items-center gap-3">
                   <span className={cn(
-                    "w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold shrink-0",
+                    "w-5 h-5 rounded-full flex items-center justify-center text-[length:var(--ts-2xs)] font-bold shrink-0",
                     i < 3 ? "bg-gray-900 dark:bg-foreground text-white dark:text-background" : "bg-gray-100 dark:bg-gray-800 text-gray-400"
                   )}>{i + 1}</span>
                   <div className="flex-1 min-w-0">
                     <p className="text-xs font-medium text-gray-700 dark:text-gray-300 truncate">{p.nombre}</p>
-                    <p className="text-[10px] text-gray-400">{p.ordenes} órdenes</p>
+                    <p className="text-[length:var(--ts-2xs)] text-gray-400">{p.ordenes} órdenes</p>
                   </div>
                   <span className="text-xs font-bold text-gray-900 dark:text-foreground shrink-0">S/ {p.total.toFixed(2)}</span>
                 </div>

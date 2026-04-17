@@ -108,7 +108,7 @@ export default function DeliveryTimeSlots() {
           onClick={handleSave}
           disabled={saving}
           className={cn(
-            "flex items-center gap-1.5 px-4 py-2 text-sm font-medium rounded-lg transition-all duration-150",
+            "flex items-center gap-1.5 px-4 py-2 text-sm font-medium rounded-lg transition-all duration-[var(--dur-fast)]",
             saved ? "bg-emerald-500 text-white" : "bg-[#00B4A6] hover:bg-[#235c42] text-white",
             saving && "opacity-70 cursor-not-allowed"
           )}
@@ -124,10 +124,10 @@ export default function DeliveryTimeSlots() {
           <div
             key={slot.id}
             className={cn(
-              "rounded-xl border p-4 transition-all duration-150",
+              "rounded-xl border p-4 transition-all duration-[var(--dur-fast)]",
               slot.active
                 ? "border-[#00B4A6]/30 bg-[#00B4A6]/5 dark:bg-[#00B4A6]/10 dark:border-[#00B4A6]/40"
-                : "border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 opacity-60"
+                : "border-[var(--rule-base)] bg-white dark:bg-gray-900 opacity-60"
             )}
           >
             <div className="flex items-center justify-between mb-3">
@@ -150,7 +150,7 @@ export default function DeliveryTimeSlots() {
               <button
                 onClick={() => toggleSlot(slot.id)}
                 className={cn(
-                  "relative inline-flex h-5 w-9 items-center rounded-full transition-colors duration-200",
+                  "relative inline-flex h-5 w-9 items-center rounded-full transition-colors duration-[var(--dur-base)]",
                   slot.active ? "bg-[#00B4A6]" : "bg-gray-300 dark:bg-gray-600"
                 )}
                 role="switch"
@@ -159,7 +159,7 @@ export default function DeliveryTimeSlots() {
               >
                 <span
                   className={cn(
-                    "inline-block h-3.5 w-3.5 rounded-full bg-white shadow transition-transform duration-200",
+                    "inline-block h-3.5 w-3.5 rounded-full bg-white shadow transition-transform duration-[var(--dur-base)]",
                     slot.active ? "translate-x-4" : "translate-x-1"
                   )}
                 />
@@ -185,7 +185,7 @@ export default function DeliveryTimeSlots() {
                   value={slot.maxOrders}
                   disabled={!slot.active}
                   onChange={(e) => setMaxOrdersDirect(slot.id, parseInt(e.target.value) || 1)}
-                  className="w-10 h-6 text-center text-sm font-semibold rounded-md border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 text-gray-900 dark:text-white disabled:opacity-40 focus:outline-none focus:ring-1 focus:ring-[#00B4A6]"
+                  className="w-10 h-6 text-center text-sm font-semibold rounded-md border border-[var(--rule-base)] bg-white dark:bg-gray-900 text-gray-900 dark:text-white disabled:opacity-40 focus:outline-none focus:ring-1 focus:ring-[#00B4A6]"
                 />
                 <button
                   onClick={() => setMaxOrders(slot.id, 1)}
@@ -235,10 +235,10 @@ export function DeliverySlotPicker({ value, onChange, className }: DeliverySlotP
           type="button"
           onClick={() => onChange(slot.id)}
           className={cn(
-            "flex flex-col items-start px-3 py-2.5 rounded-xl border text-left transition-all duration-150",
+            "flex flex-col items-start px-3 py-2.5 rounded-xl border text-left transition-all duration-[var(--dur-fast)]",
             value === slot.id
               ? "border-[#00B4A6] bg-[#00B4A6]/10 dark:bg-[#00B4A6]/20 text-[#00B4A6] dark:text-emerald-400"
-              : "border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 text-gray-700 dark:text-gray-300 hover:border-[#00B4A6]/50 hover:bg-[#00B4A6]/5"
+              : "border-[var(--rule-base)] bg-white dark:bg-gray-900 text-gray-700 dark:text-gray-300 hover:border-[#00B4A6]/50 hover:bg-[#00B4A6]/5"
           )}
         >
           <span className="text-sm font-medium">{slot.label}</span>

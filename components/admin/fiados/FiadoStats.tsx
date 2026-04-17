@@ -170,7 +170,7 @@ export default function FiadoStats({ fiados, loading, totalSaldo, tendenciaMoros
         const cobrado = tendenciaMorosidad.cobradoEsteMes;
         const pct = meta > 0 ? Math.min(100, Math.round((cobrado / meta) * 100)) : 0;
         return (
-          <div className="rounded-xl border border-gray-200 bg-white p-4">
+          <div className="rounded-xl border border-[var(--rule-base)] bg-white p-4">
             <div className="flex items-center justify-between mb-2">
               <span className="text-sm font-bold text-gray-700">Cobro del mes: {formatCurrency(cobrado)} de {formatCurrency(meta)} ({pct}%)</span>
               {pct > 80 ? (
@@ -188,7 +188,7 @@ export default function FiadoStats({ fiados, loading, totalSaldo, tendenciaMoros
 
       {/* Mejora 19 (ronda 3): Proyeccion de cobro */}
       {!loading && fiados.length > 0 && (
-        <div className="bg-white border border-gray-200 rounded-xl p-4">
+        <div className="bg-white border border-[var(--rule-base)] rounded-xl p-4">
           <div className="flex items-center gap-2 mb-3">
             <TrendingUp className="h-4 w-4 text-primary" />
             <p className="text-xs font-bold text-gray-600">Proyeccion de cobro</p>
@@ -196,19 +196,19 @@ export default function FiadoStats({ fiados, loading, totalSaldo, tendenciaMoros
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-3">
             <div className="text-center">
               <p className="text-lg font-extrabold text-primary">{formatCurrency(proyeccionCobro.cobradoHoy)}</p>
-              <p className="text-[10px] text-gray-400 uppercase">Cobrado hoy</p>
+              <p className="text-[length:var(--ts-2xs)] text-gray-400 uppercase">Cobrado hoy</p>
             </div>
             <div className="text-center">
               <p className="text-lg font-extrabold text-gray-900">{formatCurrency(proyeccionCobro.cobradoSemana)}</p>
-              <p className="text-[10px] text-gray-400 uppercase">Esta semana</p>
+              <p className="text-[length:var(--ts-2xs)] text-gray-400 uppercase">Esta semana</p>
             </div>
             <div className="text-center">
               <p className="text-lg font-extrabold text-amber-600">{formatCurrency(proyeccionCobro.promedioDiario)}</p>
-              <p className="text-[10px] text-gray-400 uppercase">Promedio/dia</p>
+              <p className="text-[length:var(--ts-2xs)] text-gray-400 uppercase">Promedio/dia</p>
             </div>
             <div className="text-center">
               <p className="text-lg font-extrabold text-red-600">{formatCurrency(proyeccionCobro.totalPendiente)}</p>
-              <p className="text-[10px] text-gray-400 uppercase">Pendiente</p>
+              <p className="text-[length:var(--ts-2xs)] text-gray-400 uppercase">Pendiente</p>
             </div>
           </div>
           {/* Progress bar */}
@@ -231,7 +231,7 @@ export default function FiadoStats({ fiados, loading, totalSaldo, tendenciaMoros
         const TAG_MAP: Record<string, { Icon: LucideIcon; color: string; bg: string }> = {
           restaurante: { Icon: UtensilsCrossed, color: "text-orange-700", bg: "bg-orange-100" },
           vecino: { Icon: Home, color: "text-emerald-700", bg: "bg-emerald-100" },
-          mayorista: { Icon: Package, color: "text-purple-700", bg: "bg-purple-100" },
+          mayorista: { Icon: Package, color: "text-[var(--text-secondary)]", bg: "bg-[var(--surface-sunken)]" },
           otro: { Icon: User, color: "text-gray-700", bg: "bg-gray-100" },
         };
         // Agrupar activos por etiqueta del customerName (detectar palabras clave)
@@ -272,7 +272,7 @@ export default function FiadoStats({ fiados, loading, totalSaldo, tendenciaMoros
             ? "bg-emerald-100 text-emerald-700 border border-emerald-200"
             : pagosEstaSemana.pagaron > pagosEstaSemana.total / 2
             ? "bg-emerald-50 text-emerald-600 border border-emerald-100"
-            : "bg-gray-50 text-gray-600 border border-gray-200"
+            : "bg-gray-50 text-gray-600 border border-[var(--rule-base)]"
         )}>
           {pagosEstaSemana.pagaron === pagosEstaSemana.total
             ? `Todos al dia! (${pagosEstaSemana.total} clientes)`
@@ -333,13 +333,13 @@ export default function FiadoStats({ fiados, loading, totalSaldo, tendenciaMoros
               aria-label="Buscar fiados"
               value={search}
               onChange={e => setSearch(e.target.value)}
-              className="w-full pl-9 pr-3 py-2 rounded-lg border border-gray-200 bg-white text-sm text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-primary/30"
+              className="w-full pl-9 pr-3 py-2 rounded-lg border border-[var(--rule-base)] bg-white text-sm text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-primary/30"
             />
           </div>
           <button
             type="button"
             onClick={() => setShowQuickClient?.(true)}
-            className="shrink-0 h-[38px] w-[38px] flex items-center justify-center rounded-lg border border-gray-200 bg-white hover:bg-primary hover:text-white hover:border-primary text-gray-500 transition-colors"
+            className="shrink-0 h-[38px] w-[38px] flex items-center justify-center rounded-lg border border-[var(--rule-base)] bg-white hover:bg-primary hover:text-white hover:border-primary text-gray-500 transition-colors"
             title="Crear cliente rapido"
           >
             <Plus className="h-4 w-4" />
@@ -412,13 +412,13 @@ export default function FiadoStats({ fiados, loading, totalSaldo, tendenciaMoros
                   >
                     <div className="flex items-center justify-between mb-1.5">
                       <p className="text-xs font-bold text-gray-900 truncate">{f.customerName || f.customerId}</p>
-                      <span className={cn("text-[9px] font-extrabold px-1.5 py-0.5 rounded-full", colors.badge)}>
+                      <span className={cn("text-[length:var(--ts-2xs)] font-extrabold px-1.5 py-0.5 rounded-full", colors.badge)}>
                         {f.riskLevel}
                       </span>
                     </div>
                     <p className={cn("text-sm font-extrabold", colors.text)}>
                       {formatCurrency(f.saldo)}
-                      {f.diasVencido > 0 && <span className="text-[10px] font-normal ml-1">· {f.diasVencido}d vencido</span>}
+                      {f.diasVencido > 0 && <span className="text-[length:var(--ts-2xs)] font-normal ml-1">· {f.diasVencido}d vencido</span>}
                     </p>
                     <div className="flex gap-1.5 mt-2">
                       <button
@@ -426,7 +426,7 @@ export default function FiadoStats({ fiados, loading, totalSaldo, tendenciaMoros
                           e.stopPropagation();
                           openDetail(f);
                         }}
-                        className="flex-1 text-[10px] font-bold text-center py-1 rounded-lg bg-white/80 text-gray-700 hover:bg-white transition-colors"
+                        className="flex-1 text-[length:var(--ts-2xs)] font-bold text-center py-1 rounded-lg bg-white/80 text-gray-700 hover:bg-white transition-colors"
                       >
                         Cobrar
                       </button>
@@ -440,7 +440,7 @@ export default function FiadoStats({ fiados, loading, totalSaldo, tendenciaMoros
                             window.open(`https://wa.me/${cleanPhone}?text=${encodeURIComponent(msg)}`, "_blank");
                           }}
                           // TODO(#1): non-standard — WhatsApp brand color (#25D366), no token equivalent
-                          className="text-[10px] font-bold px-2 py-1 rounded-lg bg-[#25D366]/10 text-[#25D366] hover:bg-[#25D366]/20 transition-colors"
+                          className="text-[length:var(--ts-2xs)] font-bold px-2 py-1 rounded-lg bg-[#25D366]/10 text-[#25D366] hover:bg-[#25D366]/20 transition-colors"
                         >
                           <MessageCircle className="h-3 w-3" />
                         </button>
@@ -512,7 +512,7 @@ export default function FiadoStats({ fiados, loading, totalSaldo, tendenciaMoros
               {fiadosDia.length > 0 && (
                 <div className="flex items-center justify-center gap-0.5 mt-0.5">
                   <span className={cn("w-2 h-2 rounded-full", tieneVencidos ? "bg-red-500" : "bg-amber-500")} />
-                  <span className="text-[9px] font-bold text-gray-500">{fiadosDia.length}</span>
+                  <span className="text-[length:var(--ts-2xs)] font-bold text-gray-500">{fiadosDia.length}</span>
                 </div>
               )}
             </button>
@@ -529,7 +529,7 @@ export default function FiadoStats({ fiados, loading, totalSaldo, tendenciaMoros
                 Este mes: {countMes} fiados vencen · Total: {formatCurrency(totalMes)}
               </p>
             </div>
-            <div className="bg-white border border-gray-200 rounded-xl overflow-hidden p-3">
+            <div className="bg-white border border-[var(--rule-base)] rounded-xl overflow-hidden p-3">
               {/* Nav */}
               <div className="flex items-center justify-between mb-2">
                 <button onClick={() => setCalMes(p => { const d = new Date(p.year, p.month - 1); return { year: d.getFullYear(), month: d.getMonth() }; })} className="p-1 rounded-lg hover:bg-gray-100">
@@ -543,7 +543,7 @@ export default function FiadoStats({ fiados, loading, totalSaldo, tendenciaMoros
               {/* Header dias */}
               <div className="grid grid-cols-7 gap-0.5 mb-0.5">
                 {["Lun", "Mar", "Mie", "Jue", "Vie", "Sab", "Dom"].map(d => (
-                  <div key={d} className="text-center text-[10px] font-bold text-gray-400 py-1">{d}</div>
+                  <div key={d} className="text-center text-[length:var(--ts-2xs)] font-bold text-gray-400 py-1">{d}</div>
                 ))}
               </div>
               {/* Grid dias */}
@@ -551,12 +551,12 @@ export default function FiadoStats({ fiados, loading, totalSaldo, tendenciaMoros
                 {celdas}
               </div>
               {sinVence > 0 && (
-                <p className="text-[10px] text-amber-600 mt-2 text-center">{sinVence} fiados activos sin fecha de vencimiento</p>
+                <p className="text-[length:var(--ts-2xs)] text-amber-600 mt-2 text-center">{sinVence} fiados activos sin fecha de vencimiento</p>
               )}
             </div>
             {/* Detalle del dia seleccionado */}
             {calDiaSeleccionado && porDia[calDiaSeleccionado] && (
-              <div className="bg-white border border-gray-200 rounded-xl p-3 space-y-2">
+              <div className="bg-white border border-[var(--rule-base)] rounded-xl p-3 space-y-2">
                 <p className="text-xs font-bold text-gray-700">
                   Fiados que vencen el {new Date(calDiaSeleccionado).toLocaleDateString("es-PE", { day: "2-digit", month: "long" })}
                 </p>
@@ -573,7 +573,7 @@ export default function FiadoStats({ fiados, loading, totalSaldo, tendenciaMoros
                         window.open(`https://wa.me/${cleanPhone}?text=${encodeURIComponent(msg)}`, "_blank");
                       }}
                       // TODO(#1): non-standard — WhatsApp brand color (#25D366), no token equivalent
-                      className="shrink-0 px-2 py-1 rounded-lg text-[10px] font-bold bg-[#25D366]/10 text-[#25D366] hover:bg-[#25D366]/20 transition-colors"
+                      className="shrink-0 px-2 py-1 rounded-lg text-[length:var(--ts-2xs)] font-bold bg-[#25D366]/10 text-[#25D366] hover:bg-[#25D366]/20 transition-colors"
                     >
                       Cobrar
                     </button>

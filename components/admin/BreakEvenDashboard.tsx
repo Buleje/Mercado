@@ -151,7 +151,7 @@ export default function BreakEvenDashboard() {
         <>
           {/* Tarjetas principales */}
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-            <div className="rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 p-4">
+            <div className="rounded-xl border border-[var(--rule-base)] bg-white dark:bg-gray-800 p-4">
               <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">
                 Ventas de hoy
               </p>
@@ -163,7 +163,7 @@ export default function BreakEvenDashboard() {
               </p>
             </div>
 
-            <div className="rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 p-4">
+            <div className="rounded-xl border border-[var(--rule-base)] bg-white dark:bg-gray-800 p-4">
               <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">
                 Costo fijo diario
               </p>
@@ -219,7 +219,7 @@ export default function BreakEvenDashboard() {
           </div>
 
           {/* Barra de progreso */}
-          <div className="rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 p-4 space-y-3">
+          <div className="rounded-xl border border-[var(--rule-base)] bg-white dark:bg-gray-800 p-4 space-y-3">
             <div className="flex items-center justify-between text-sm">
               <span className="font-medium text-gray-700 dark:text-gray-300">
                 Progreso hacia el punto de equilibrio
@@ -239,7 +239,7 @@ export default function BreakEvenDashboard() {
             <div className="relative h-6 w-full rounded-full bg-gray-100 dark:bg-gray-700 overflow-hidden">
               <div
                 className={cn(
-                  "h-full rounded-full transition-all duration-700",
+                  "h-full rounded-full transition-all duration-[var(--dur-slower)]",
                   stats.reached
                     ? "bg-emerald-500 dark:bg-emerald-600"
                     : stats.progress > 60
@@ -300,7 +300,7 @@ export default function BreakEvenDashboard() {
           </div>
 
           {/* Ritmo de ventas */}
-          <div className="rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 p-4">
+          <div className="rounded-xl border border-[var(--rule-base)] bg-white dark:bg-gray-800 p-4">
             <div className="flex items-center gap-2 mb-2">
               <TrendingUp className="w-4 h-4 text-[#00B4A6]" />
               <span className="text-sm font-medium text-gray-700 dark:text-gray-300">

@@ -318,8 +318,8 @@ function SalesDashboard({ cachedData, onDataLoaded, onNavigate }: { cachedData?:
         // venga un cálculo real de trend vs periodo anterior desde el backend.
         const change = [12, 8, -3, -6, 15, 4][idx] ?? 0;
         return (
-          <div key={k.label} onClick={k.onClick} className={cn("bg-white rounded-lg border border-gray-200 p-4  transition-shadow", k.color, k.onClick && "cursor-pointer hover:shadow-sm")}>
-            <p className="text-[10px] text-gray-500 font-medium">{k.label}</p>
+          <div key={k.label} onClick={k.onClick} className={cn("bg-white rounded-lg border border-[var(--rule-base)] p-4  transition-shadow", k.color, k.onClick && "cursor-pointer hover:shadow-sm")}>
+            <p className="text-[length:var(--ts-2xs)] text-gray-500 font-medium">{k.label}</p>
             <div className="flex items-center gap-1.5">
               <p className="text-2xl font-mono font-bold mt-1 text-gray-900">{k.value}</p>
               <span className={`text-xs ${change >= 0 ? "text-green-600" : "text-red-500"}`}>{change >= 0 ? "\u2191" : "\u2193"} {Math.abs(change)}%</span>
@@ -338,7 +338,7 @@ function SalesDashboard({ cachedData, onDataLoaded, onNavigate }: { cachedData?:
       })}
     </div>,
     // Section 2: Ventas por hora
-    <div key="hourly" className="bg-white rounded-xl border border-gray-200 p-6  relative">
+    <div key="hourly" className="bg-white rounded-xl border border-[var(--rule-base)] p-6  relative">
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center gap-1"><FavStar id="ventas-hora" favs={salesFavs} /><h3 className="text-sm font-bold text-gray-700">Ventas por hora</h3></div>
         <button onClick={() => setExpandedChart("hourly")} className="p-1 hover:bg-gray-100 rounded transition-colors" title="Expandir">
@@ -360,7 +360,7 @@ function SalesDashboard({ cachedData, onDataLoaded, onNavigate }: { cachedData?:
     </div>,
     // Section 3: PieChart + Top5
     <div key="charts-row" className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-      <div className="bg-white rounded-xl border border-gray-200 p-6 ">
+      <div className="bg-white rounded-xl border border-[var(--rule-base)] p-6 ">
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center gap-1"><FavStar id="metodo-pago" favs={salesFavs} /><h3 className="text-sm font-bold text-gray-700">Por metodo de pago</h3></div>
           {pieFilter && (
@@ -383,7 +383,7 @@ function SalesDashboard({ cachedData, onDataLoaded, onNavigate }: { cachedData?:
           </ResponsiveContainer>
         ) : <EmptyState icon={BarChart3} title="Sin ventas en este periodo" description="Los datos apareceran cuando registres ventas" />}
       </div>
-      <div className="bg-white rounded-xl border border-gray-200 p-6 ">
+      <div className="bg-white rounded-xl border border-[var(--rule-base)] p-6 ">
         <div className="flex items-center gap-1 mb-4"><FavStar id="top-productos" favs={salesFavs} /><h3 className="text-sm font-bold text-gray-700">Top 5 productos</h3></div>
         {topProducts.length > 0 ? (
           <div className="space-y-2.5">
@@ -399,7 +399,7 @@ function SalesDashboard({ cachedData, onDataLoaded, onNavigate }: { cachedData?:
       </div>
     </div>,
     // Section 4: Tendencia semanal
-    <div key="weekly" className="bg-white rounded-xl border border-gray-200 p-6  relative">
+    <div key="weekly" className="bg-white rounded-xl border border-[var(--rule-base)] p-6  relative">
       <div className="flex items-center justify-between mb-4">
         <h3 className="text-sm font-bold text-gray-700">Tendencia de ventas &mdash; Ultimos 7 dias</h3>
         <button onClick={() => setExpandedChart("weekly")} className="p-1 hover:bg-gray-100 rounded transition-colors" title="Expandir">
@@ -423,7 +423,7 @@ function SalesDashboard({ cachedData, onDataLoaded, onNavigate }: { cachedData?:
       </ResponsiveContainer>
     </div>,
     // Section 5: Mejora 4 — Comparativo vs semana pasada
-    <div key="comparison" className="bg-white rounded-xl border border-gray-200 p-6 ">
+    <div key="comparison" className="bg-white rounded-xl border border-[var(--rule-base)] p-6 ">
       <h3 className="text-sm font-bold text-gray-700 mb-4">vs Semana Pasada</h3>
       {comparisonData.some(d => d.estaSemana > 0 || d.semanaPasada > 0) ? (
         <ResponsiveContainer width="100%" height={250}>
@@ -435,7 +435,7 @@ function SalesDashboard({ cachedData, onDataLoaded, onNavigate }: { cachedData?:
               content={({ active, payload, label }) => {
                 if (!active || !payload?.length) return null;
                 return (
-                  <div className="bg-white rounded-xl border border-gray-200 px-4 py-3 text-xs">
+                  <div className="bg-white rounded-xl border border-[var(--rule-base)] px-4 py-3 text-xs">
                     <p className="font-semibold mb-1">{label}</p>
                     <p className="text-primary font-mono font-bold">Esta semana: S/ {payload[0]?.value?.toLocaleString()}</p>
                     <p className="text-gray-400 font-mono">Semana pasada: S/ {payload[1]?.value?.toLocaleString()}</p>
@@ -451,7 +451,7 @@ function SalesDashboard({ cachedData, onDataLoaded, onNavigate }: { cachedData?:
       ) : <EmptyState icon={BarChart3} title="Sin datos comparativos" description="Los datos apareceran cuando registres ventas" />}
     </div>,
     // Section 6: Mejora 17 — Mapa de calor
-    <div key="heatmap" className="bg-white rounded-xl border border-gray-200 p-6 ">
+    <div key="heatmap" className="bg-white rounded-xl border border-[var(--rule-base)] p-6 ">
       <div className="flex items-center justify-between mb-4">
         <h3 className="text-sm font-bold text-gray-700">Mapa de Calor de Ventas</h3>
         <button onClick={() => setExpandedChart("heatmap")} className="p-1 hover:bg-gray-100 rounded transition-colors" title="Expandir">
@@ -462,12 +462,12 @@ function SalesDashboard({ cachedData, onDataLoaded, onNavigate }: { cachedData?:
         <div className="min-w-150">
           <div className="flex gap-0.5 mb-1 ml-10">
             {Array.from({ length: 24 }, (_, h) => (
-              <div key={h} className="flex-1 text-center text-[8px] text-gray-400">{h}</div>
+              <div key={h} className="flex-1 text-center text-[length:var(--ts-2xs)] text-gray-400">{h}</div>
             ))}
           </div>
           {["Lun", "Mar", "Mie", "Jue", "Vie", "Sab", "Dom"].map((day, di) => (
             <div key={day} className="flex gap-0.5 items-center mb-0.5">
-              <span className="w-9 text-[9px] text-gray-500 text-right pr-1 shrink-0">{day}</span>
+              <span className="w-9 text-[length:var(--ts-2xs)] text-gray-500 text-right pr-1 shrink-0">{day}</span>
               {Array.from({ length: 24 }, (_, h) => {
                 const val = heatmapData[di]?.[h] ?? 0;
                 const intensity = heatmapMax > 0 ? val / heatmapMax : 0;
@@ -483,22 +483,22 @@ function SalesDashboard({ cachedData, onDataLoaded, onNavigate }: { cachedData?:
             </div>
           ))}
           <div className="flex items-center gap-2 mt-2 justify-end">
-            <span className="text-[9px] text-gray-400">Menos</span>
+            <span className="text-[length:var(--ts-2xs)] text-gray-400">Menos</span>
             {[0.08, 0.25, 0.5, 0.75, 1].map((o, i) => (
               <div key={i} className="w-4 h-3 rounded-sm" style={{ backgroundColor: `rgba(45,106,79,${o})` }} />
             ))}
-            <span className="text-[9px] text-gray-400">Mas</span>
+            <span className="text-[length:var(--ts-2xs)] text-gray-400">Mas</span>
           </div>
         </div>
       </div>
     </div>,
     // Section 7: Mejora 18 — Forecast con IA
-    <div key="forecast" className="bg-white rounded-xl border border-gray-200 p-6 ">
+    <div key="forecast" className="bg-white rounded-xl border border-[var(--rule-base)] p-6 ">
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center gap-2">
-          <Brain className="h-4 w-4 text-purple-500" />
+          <Brain className="h-4 w-4 text-[var(--text-secondary)]" />
           <h3 className="text-sm font-bold text-gray-700">Pronostico 7 dias</h3>
-          <span className="text-[9px] bg-purple-100 text-purple-700 px-1.5 py-0.5 rounded-full font-bold">Pronostico IA</span>
+          <span className="text-[length:var(--ts-2xs)] bg-[var(--surface-sunken)] text-[var(--text-primary)] px-1.5 py-0.5 rounded-full font-bold">Pronostico IA</span>
         </div>
         <button onClick={() => setExpandedChart("forecast")} className="p-1 hover:bg-gray-100 rounded transition-colors" title="Expandir">
           <Maximize2 className="h-3.5 w-3.5 text-gray-400" />
@@ -517,36 +517,36 @@ function SalesDashboard({ cachedData, onDataLoaded, onNavigate }: { cachedData?:
       </ResponsiveContainer>
     </div>,
     // Section 8: Mejora 20 — Comparativo entre meses
-    <div key="month-compare" className="bg-white rounded-xl border border-gray-200 p-6 ">
+    <div key="month-compare" className="bg-white rounded-xl border border-[var(--rule-base)] p-6 ">
       <div className="flex items-center justify-between mb-4 flex-wrap gap-2">
         <h3 className="text-sm font-bold text-gray-700">Comparar Meses</h3>
         <div className="flex items-center gap-2">
-          <select value={month1} onChange={e => setMonth1(e.target.value)} className="text-xs border border-gray-200 rounded-lg px-2 py-1 bg-white text-gray-700">
+          <select value={month1} onChange={e => setMonth1(e.target.value)} className="text-xs border border-[var(--rule-base)] rounded-lg px-2 py-1 bg-white text-gray-700">
             {monthOptions.map(o => <option key={o} value={o}>{MESES_LABEL[o]}</option>)}
           </select>
           <span className="text-xs text-gray-400">vs</span>
-          <select value={month2} onChange={e => setMonth2(e.target.value)} className="text-xs border border-gray-200 rounded-lg px-2 py-1 bg-white text-gray-700">
+          <select value={month2} onChange={e => setMonth2(e.target.value)} className="text-xs border border-[var(--rule-base)] rounded-lg px-2 py-1 bg-white text-gray-700">
             {monthOptions.map(o => <option key={o} value={o}>{MESES_LABEL[o]}</option>)}
           </select>
         </div>
       </div>
       <div className="grid grid-cols-3 gap-3 mb-4">
         <div className="text-center p-2 bg-gray-50 rounded-xl">
-          <p className="text-[10px] text-gray-400 uppercase font-bold">{MESES_LABEL[month1]}</p>
+          <p className="text-[length:var(--ts-2xs)] text-gray-400 uppercase font-bold">{MESES_LABEL[month1]}</p>
           <p className={cn("text-lg font-extrabold", monthComparisonData.total1 === 0 ? "text-gray-300" : "text-primary")}>{formatCurrency(monthComparisonData.total1, { decimals: 0 })}</p>
-          <p className="text-[10px] text-gray-400">{monthComparisonData.count1} ventas</p>
+          <p className="text-[length:var(--ts-2xs)] text-gray-400">{monthComparisonData.count1} ventas</p>
         </div>
         <div className="text-center p-2 bg-gray-50 rounded-xl">
-          <p className="text-[10px] text-gray-400 uppercase font-bold">{MESES_LABEL[month2]}</p>
+          <p className="text-[length:var(--ts-2xs)] text-gray-400 uppercase font-bold">{MESES_LABEL[month2]}</p>
           <p className={cn("text-lg font-extrabold", monthComparisonData.total2 === 0 ? "text-gray-300" : "text-[#f97316]")}>{formatCurrency(monthComparisonData.total2, { decimals: 0 })}</p>
-          <p className="text-[10px] text-gray-400">{monthComparisonData.count2} ventas</p>
+          <p className="text-[length:var(--ts-2xs)] text-gray-400">{monthComparisonData.count2} ventas</p>
         </div>
         <div className="text-center p-2 bg-gray-50 rounded-xl">
-          <p className="text-[10px] text-gray-400 uppercase font-bold">Diferencia</p>
+          <p className="text-[length:var(--ts-2xs)] text-gray-400 uppercase font-bold">Diferencia</p>
           <p className={cn("text-lg font-extrabold", monthComparisonData.diffPct >= 0 ? "text-emerald-600" : "text-red-600")}>
             {monthComparisonData.diffPct >= 0 ? "+" : ""}{monthComparisonData.diffPct}%
           </p>
-          <p className="text-[10px] text-gray-400">ventas {monthComparisonData.diffPct >= 0 ? "arriba" : "abajo"}</p>
+          <p className="text-[length:var(--ts-2xs)] text-gray-400">ventas {monthComparisonData.diffPct >= 0 ? "arriba" : "abajo"}</p>
         </div>
       </div>
       {monthComparisonData.weekData.some(w => w.mes1 > 0 || w.mes2 > 0) ? (
@@ -617,7 +617,7 @@ function SalesDashboard({ cachedData, onDataLoaded, onNavigate }: { cachedData?:
             <div className="min-w-175">
               <div className="flex gap-1 mb-2 ml-14">
                 {Array.from({ length: 24 }, (_, h) => (
-                  <div key={h} className="flex-1 text-center text-[10px] text-gray-400">{h}h</div>
+                  <div key={h} className="flex-1 text-center text-[length:var(--ts-2xs)] text-gray-400">{h}h</div>
                 ))}
               </div>
               {["Lun", "Mar", "Mie", "Jue", "Vie", "Sab", "Dom"].map((day, di) => (
@@ -678,7 +678,7 @@ function SalesDashboard({ cachedData, onDataLoaded, onNavigate }: { cachedData?:
                       <div key={i} className="flex items-center justify-between py-2 px-3 bg-gray-50 rounded-xl text-xs">
                         <div>
                           <p className="font-medium text-gray-700">{new Date(String(s.createdAt ?? "")).toLocaleTimeString("es-PE", { hour: "2-digit", minute: "2-digit" })}</p>
-                          <p className="text-gray-400 text-[10px]">{String(s.payment ?? s.paymentMethod ?? "efectivo")}</p>
+                          <p className="text-gray-400 text-[length:var(--ts-2xs)]">{String(s.payment ?? s.paymentMethod ?? "efectivo")}</p>
                         </div>
                         <p className="font-mono font-bold text-gray-900">S/ {(Number(s.total) || 0).toFixed(2)}</p>
                       </div>
@@ -802,7 +802,7 @@ function ShiftCloseModal({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4">
-      <div className="bg-white border border-gray-200 rounded-xl w-full max-w-md overflow-hidden">
+      <div className="bg-white border border-[var(--rule-base)] rounded-xl w-full max-w-md overflow-hidden">
         {/* Header */}
         <div className="bg-primary px-6 py-4">
           <h3 className="text-lg font-extrabold text-white">Cerrar Turno</h3>
@@ -823,10 +823,10 @@ function ShiftCloseModal({
           ) : summary ? (
             <>
               {/* Big total */}
-              <div className="text-center pb-2 border-b border-gray-100">
+              <div className="text-center pb-2 border-b border-[var(--rule-soft)]">
                 <p className="text-xs font-bold text-gray-500 mb-1">Total vendido en el turno</p>
                 <div className="flex items-center justify-center gap-2">
-                  <p className="text-4xl font-black text-primary tracking-tight">{fmt(summary.totalVendido)}</p>
+                  <p className="text-4xl font-extrabold text-primary tracking-tight">{fmt(summary.totalVendido)}</p>
                 </div>
                 <div className="inline-flex items-center gap-1.5 mt-2 bg-primary/10 text-primary px-3 py-1 rounded-full text-xs font-bold">
                   <History className="h-3.5 w-3.5" />
@@ -847,17 +847,17 @@ function ShiftCloseModal({
                       </div>
                       <div>
                         <p className="text-xs font-bold text-emerald-600/80">Efectivo (Caja)</p>
-                        <p className="text-lg font-black text-emerald-700">{fmt(summary.efectivo)}</p>
+                        <p className="text-lg font-extrabold text-emerald-700">{fmt(summary.efectivo)}</p>
                       </div>
                     </div>
                   </div>
 
-                  <div className="bg-purple-50 border border-purple-100 rounded-xl p-3 sm:p-4">
+                  <div className="bg-[var(--surface-sunken)] border border-purple-100 rounded-xl p-3 sm:p-4">
                     <div className="flex items-center gap-2 mb-2">
-                      <div className="h-2 w-2 rounded-full bg-purple-500" />
-                      <p className="text-xs font-bold text-purple-700/80">Yape</p>
+                      <div className="h-2 w-2 rounded-full bg-[var(--text-primary)]" />
+                      <p className="text-xs font-bold text-[var(--text-secondary)]/80">Yape</p>
                     </div>
-                    <p className="text-base sm:text-lg font-black text-purple-700">{fmt(summary.yape)}</p>
+                    <p className="text-base sm:text-lg font-extrabold text-[var(--text-secondary)]">{fmt(summary.yape)}</p>
                   </div>
 
                   <div className="bg-emerald-50 border border-emerald-100 rounded-xl p-3 sm:p-4">
@@ -865,7 +865,7 @@ function ShiftCloseModal({
                       <div className="h-2 w-2 rounded-full bg-emerald-500" />
                       <p className="text-xs font-bold text-emerald-700/80">Plin</p>
                     </div>
-                    <p className="text-base sm:text-lg font-black text-emerald-700">{fmt(summary.plin)}</p>
+                    <p className="text-base sm:text-lg font-extrabold text-emerald-700">{fmt(summary.plin)}</p>
                   </div>
 
                   <div className="bg-emerald-50 border border-emerald-100 rounded-xl p-3 sm:p-4">
@@ -873,7 +873,7 @@ function ShiftCloseModal({
                       <CreditCard className="h-3 w-3 text-emerald-500" />
                       <p className="text-xs font-bold text-emerald-700/80">Tarjeta / POS</p>
                     </div>
-                    <p className="text-base sm:text-lg font-black text-emerald-700">{fmt(summary.tarjeta)}</p>
+                    <p className="text-base sm:text-lg font-extrabold text-emerald-700">{fmt(summary.tarjeta)}</p>
                   </div>
 
                   <div className="bg-amber-50 border border-amber-100 rounded-xl p-3 sm:p-4">
@@ -881,7 +881,7 @@ function ShiftCloseModal({
                       <Wallet className="h-3 w-3 text-amber-500" />
                       <p className="text-xs font-bold text-amber-700/80">Fiado</p>
                     </div>
-                    <p className="text-base sm:text-lg font-black text-amber-700">{fmt(summary.fiado)}</p>
+                    <p className="text-base sm:text-lg font-extrabold text-amber-700">{fmt(summary.fiado)}</p>
                   </div>
                 </div>
               </div>
@@ -893,7 +893,7 @@ function ShiftCloseModal({
         <div className="flex gap-3 px-6 pb-6">
           <button
             onClick={onClose}
-            className="flex-1 py-2.5 rounded-lg border border-gray-200 text-sm font-bold text-gray-600 hover:bg-gray-50 transition-colors"
+            className="flex-1 py-2.5 rounded-lg border border-[var(--rule-base)] text-sm font-bold text-gray-600 hover:bg-gray-50 transition-colors"
           >
             Cancelar
           </button>

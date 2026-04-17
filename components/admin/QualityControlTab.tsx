@@ -113,7 +113,7 @@ export default function QualityControlTab() {
           <button onClick={() => setShowForm(!showForm)} className="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-primary text-white text-sm font-bold hover:bg-primary/90 transition-colors">
             <Plus className="h-4 w-4" /> Nueva inspección
           </button>
-          <button onClick={() => exportToCSV(filtered.map(i => ({ fecha: i.date, producto: i.product, lote: i.batch, tipo: TYPE_META[i.type].label, inspector: i.inspector, resultado: i.result, temp: i.temp, apariencia: i.appearance, vencimiento: i.expiry, observaciones: i.observations, correctiva: i.corrective })), "control-calidad")} className="flex items-center gap-1.5 px-3 py-2 rounded-lg border border-gray-200 dark:border-card-border bg-white dark:bg-surface text-sm font-semibold text-gray-700 dark:text-foreground hover:bg-gray-50 dark:hover:bg-accent transition-colors">
+          <button onClick={() => exportToCSV(filtered.map(i => ({ fecha: i.date, producto: i.product, lote: i.batch, tipo: TYPE_META[i.type].label, inspector: i.inspector, resultado: i.result, temp: i.temp, apariencia: i.appearance, vencimiento: i.expiry, observaciones: i.observations, correctiva: i.corrective })), "control-calidad")} className="flex items-center gap-1.5 px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-card-border bg-white dark:bg-surface text-sm font-semibold text-gray-700 dark:text-foreground hover:bg-gray-50 dark:hover:bg-accent transition-colors">
             <Download className="h-4 w-4" /> Exportar
           </button>
         </div>
@@ -126,7 +126,7 @@ export default function QualityControlTab() {
           { label: "Aprobados", value: String(stats.aprobados), color: "text-emerald-600", bg: "bg-emerald-50 dark:bg-emerald-950/30" },
           { label: "Observados", value: String(stats.observados), color: "text-amber-600", bg: "bg-amber-50 dark:bg-amber-950/30" },
           { label: "Rechazados", value: String(stats.rechazados), color: "text-red-500", bg: "bg-red-50 dark:bg-red-950/30" },
-          { label: "% Aprobación", value: `${stats.pctAprobado.toFixed(0)}%`, color: "text-violet-600", bg: "bg-violet-50 dark:bg-violet-950/30" },
+          { label: "% Aprobación", value: `${stats.pctAprobado.toFixed(0)}%`, color: "text-[var(--text-secondary)]", bg: "bg-[var(--surface-sunken)]" },
         ].map(({ label, value, color, bg }) => (
           <div key={label} className={cn("rounded-xl p-4", bg)}>
             <p className="text-xs font-semibold text-gray-500 dark:text-muted mb-1">{label}</p>
@@ -148,23 +148,23 @@ export default function QualityControlTab() {
 
       {/* Form */}
       {showForm && (
-        <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl p-3 sm:p-5 space-y-3">
+        <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl p-3 sm:p-5 space-y-3">
           <h3 className="font-bold text-sm text-gray-900 dark:text-foreground">Nueva inspección</h3>
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-sm">
-            <input value={form.product} onChange={e => setForm(p => ({ ...p, product: e.target.value }))} placeholder="Producto *" className="px-3 py-2 border border-gray-200 dark:border-card-border rounded-lg bg-white dark:bg-surface text-gray-700 dark:text-foreground" />
-            <input value={form.batch} onChange={e => setForm(p => ({ ...p, batch: e.target.value }))} placeholder="Lote *" className="px-3 py-2 border border-gray-200 dark:border-card-border rounded-lg bg-white dark:bg-surface text-gray-700 dark:text-foreground" />
-            <select value={form.type} onChange={e => setForm(p => ({ ...p, type: e.target.value as InspectionType }))} className="px-3 py-2 border border-gray-200 dark:border-card-border rounded-lg bg-white dark:bg-surface text-gray-700 dark:text-foreground">
+            <input value={form.product} onChange={e => setForm(p => ({ ...p, product: e.target.value }))} placeholder="Producto *" className="px-3 py-2 border border-[var(--rule-base)] dark:border-card-border rounded-lg bg-white dark:bg-surface text-gray-700 dark:text-foreground" />
+            <input value={form.batch} onChange={e => setForm(p => ({ ...p, batch: e.target.value }))} placeholder="Lote *" className="px-3 py-2 border border-[var(--rule-base)] dark:border-card-border rounded-lg bg-white dark:bg-surface text-gray-700 dark:text-foreground" />
+            <select value={form.type} onChange={e => setForm(p => ({ ...p, type: e.target.value as InspectionType }))} className="px-3 py-2 border border-[var(--rule-base)] dark:border-card-border rounded-lg bg-white dark:bg-surface text-gray-700 dark:text-foreground">
               {(Object.keys(TYPE_META) as InspectionType[]).map(t => <option key={t} value={t}>{TYPE_META[t].label}</option>)}
             </select>
-            <input value={form.inspector} onChange={e => setForm(p => ({ ...p, inspector: e.target.value }))} placeholder="Inspector" className="px-3 py-2 border border-gray-200 dark:border-card-border rounded-lg bg-white dark:bg-surface text-gray-700 dark:text-foreground" />
-            <select value={form.result} onChange={e => setForm(p => ({ ...p, result: e.target.value as InspectionResult }))} className="px-3 py-2 border border-gray-200 dark:border-card-border rounded-lg bg-white dark:bg-surface text-gray-700 dark:text-foreground">
+            <input value={form.inspector} onChange={e => setForm(p => ({ ...p, inspector: e.target.value }))} placeholder="Inspector" className="px-3 py-2 border border-[var(--rule-base)] dark:border-card-border rounded-lg bg-white dark:bg-surface text-gray-700 dark:text-foreground" />
+            <select value={form.result} onChange={e => setForm(p => ({ ...p, result: e.target.value as InspectionResult }))} className="px-3 py-2 border border-[var(--rule-base)] dark:border-card-border rounded-lg bg-white dark:bg-surface text-gray-700 dark:text-foreground">
               {(Object.keys(RESULT_META) as InspectionResult[]).map(r => <option key={r} value={r}>{RESULT_META[r].label}</option>)}
             </select>
-            <input value={form.temp} onChange={e => setForm(p => ({ ...p, temp: e.target.value }))} placeholder="Temperatura" className="px-3 py-2 border border-gray-200 dark:border-card-border rounded-lg bg-white dark:bg-surface text-gray-700 dark:text-foreground" />
-            <input value={form.appearance} onChange={e => setForm(p => ({ ...p, appearance: e.target.value }))} placeholder="Apariencia" className="px-3 py-2 border border-gray-200 dark:border-card-border rounded-lg bg-white dark:bg-surface text-gray-700 dark:text-foreground" />
-            <input type="date" value={form.expiry} onChange={e => setForm(p => ({ ...p, expiry: e.target.value }))} className="px-3 py-2 border border-gray-200 dark:border-card-border rounded-lg bg-white dark:bg-surface text-gray-700 dark:text-foreground" title="Vencimiento" />
-            <input value={form.observations} onChange={e => setForm(p => ({ ...p, observations: e.target.value }))} placeholder="Observaciones" className="px-3 py-2 border border-gray-200 dark:border-card-border rounded-lg bg-white dark:bg-surface text-gray-700 dark:text-foreground" />
-            <input value={form.corrective} onChange={e => setForm(p => ({ ...p, corrective: e.target.value }))} placeholder="Acción correctiva" className="col-span-full sm:col-span-2 px-3 py-2 border border-gray-200 dark:border-card-border rounded-lg bg-white dark:bg-surface text-gray-700 dark:text-foreground" />
+            <input value={form.temp} onChange={e => setForm(p => ({ ...p, temp: e.target.value }))} placeholder="Temperatura" className="px-3 py-2 border border-[var(--rule-base)] dark:border-card-border rounded-lg bg-white dark:bg-surface text-gray-700 dark:text-foreground" />
+            <input value={form.appearance} onChange={e => setForm(p => ({ ...p, appearance: e.target.value }))} placeholder="Apariencia" className="px-3 py-2 border border-[var(--rule-base)] dark:border-card-border rounded-lg bg-white dark:bg-surface text-gray-700 dark:text-foreground" />
+            <input type="date" value={form.expiry} onChange={e => setForm(p => ({ ...p, expiry: e.target.value }))} className="px-3 py-2 border border-[var(--rule-base)] dark:border-card-border rounded-lg bg-white dark:bg-surface text-gray-700 dark:text-foreground" title="Vencimiento" />
+            <input value={form.observations} onChange={e => setForm(p => ({ ...p, observations: e.target.value }))} placeholder="Observaciones" className="px-3 py-2 border border-[var(--rule-base)] dark:border-card-border rounded-lg bg-white dark:bg-surface text-gray-700 dark:text-foreground" />
+            <input value={form.corrective} onChange={e => setForm(p => ({ ...p, corrective: e.target.value }))} placeholder="Acción correctiva" className="col-span-full sm:col-span-2 px-3 py-2 border border-[var(--rule-base)] dark:border-card-border rounded-lg bg-white dark:bg-surface text-gray-700 dark:text-foreground" />
           </div>
           <div className="flex flex-wrap gap-2 justify-end">
             <button onClick={() => setShowForm(false)} className="px-3 py-2 rounded-lg text-sm font-semibold text-gray-500 hover:bg-gray-100 dark:hover:bg-surface">Cancelar</button>
@@ -177,23 +177,23 @@ export default function QualityControlTab() {
       <div className="flex flex-col sm:flex-row gap-3">
         <div className="relative flex-1 max-w-sm">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
-          <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Producto, lote, inspector..." className="w-full pl-9 pr-3 py-2 text-sm border border-gray-200 dark:border-card-border rounded-lg bg-white dark:bg-surface text-gray-700 dark:text-foreground" />
+          <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Producto, lote, inspector..." className="w-full pl-9 pr-3 py-2 text-sm border border-[var(--rule-base)] dark:border-card-border rounded-lg bg-white dark:bg-surface text-gray-700 dark:text-foreground" />
         </div>
-        <select value={filterResult} onChange={e => setFilterResult(e.target.value as InspectionResult | "todos")} className="text-sm border border-gray-200 dark:border-card-border rounded-lg px-3 py-2 bg-white dark:bg-surface text-gray-700 dark:text-foreground">
+        <select value={filterResult} onChange={e => setFilterResult(e.target.value as InspectionResult | "todos")} className="text-sm border border-[var(--rule-base)] dark:border-card-border rounded-lg px-3 py-2 bg-white dark:bg-surface text-gray-700 dark:text-foreground">
           <option value="todos">Todos los resultados</option>
           {(Object.keys(RESULT_META) as InspectionResult[]).map(r => <option key={r} value={r}>{RESULT_META[r].label}</option>)}
         </select>
-        <select value={filterType} onChange={e => setFilterType(e.target.value as InspectionType | "todos")} className="text-sm border border-gray-200 dark:border-card-border rounded-lg px-3 py-2 bg-white dark:bg-surface text-gray-700 dark:text-foreground">
+        <select value={filterType} onChange={e => setFilterType(e.target.value as InspectionType | "todos")} className="text-sm border border-[var(--rule-base)] dark:border-card-border rounded-lg px-3 py-2 bg-white dark:bg-surface text-gray-700 dark:text-foreground">
           <option value="todos">Todos los tipos</option>
           {(Object.keys(TYPE_META) as InspectionType[]).map(t => <option key={t} value={t}>{TYPE_META[t].label}</option>)}
         </select>
       </div>
 
       {/* Table */}
-      <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl overflow-hidden">
+      <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full min-w-[600px] text-sm">
-            <thead className="bg-gray-50 dark:bg-surface/50 border-b border-gray-200 dark:border-card-border">
+            <thead className="bg-gray-50 dark:bg-surface/50 border-b border-[var(--rule-base)] dark:border-card-border">
               <tr>
                 <th className="px-2 sm:px-4 py-2 sm:py-3 text-left text-xs font-bold text-gray-500 dark:text-muted uppercase">Resultado</th>
                 <th className="px-2 sm:px-4 py-2 sm:py-3 text-left text-xs font-bold text-gray-500 dark:text-muted uppercase">Fecha</th>
@@ -233,7 +233,7 @@ export default function QualityControlTab() {
       {/* Detail modal */}
       {detail && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4" onClick={() => setDetail(null)}>
-          <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl p-3 sm:p-6 w-full max-w-md space-y-4" onClick={e => e.stopPropagation()}>
+          <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl p-3 sm:p-6 w-full max-w-md space-y-4" onClick={e => e.stopPropagation()}>
             <div className="flex items-center justify-between">
               <h3 className="font-extrabold text-gray-900 dark:text-foreground text-sm flex flex-wrap items-center gap-2"><Clipboard className="h-4 w-4 text-primary" /> Detalle de inspección</h3>
               <button onClick={() => setDetail(null)}><X className="h-4 w-4 text-gray-400" /></button>

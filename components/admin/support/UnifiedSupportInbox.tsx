@@ -131,7 +131,7 @@ export function UnifiedSupportInbox() {
               "min-h-[44px] px-3 py-1.5 rounded-xl text-sm font-semibold transition-colors border",
               sourceFilter === f
                 ? "bg-primary text-white border-primary"
-                : "bg-white dark:bg-card border-gray-200 dark:border-card-border text-gray-600 dark:text-muted hover:border-primary",
+                : "bg-white dark:bg-card border-[var(--rule-base)] dark:border-card-border text-gray-600 dark:text-muted hover:border-primary",
             ].join(" ")}
           >
             {f === "all" ? "Todos" : SOURCE_LABELS[f]?.label}
@@ -139,7 +139,7 @@ export function UnifiedSupportInbox() {
         ))}
         <button
           onClick={() => { void loadInbox(); }}
-          className="min-h-[44px] ml-auto p-2 rounded-lg border border-gray-200 dark:border-card-border hover:bg-gray-50 dark:hover:bg-surface transition"
+          className="min-h-[44px] ml-auto p-2 rounded-lg border border-[var(--rule-base)] dark:border-card-border hover:bg-gray-50 dark:hover:bg-surface transition"
           aria-label="Actualizar bandeja"
         >
           <RefreshCw className="w-4 h-4 text-gray-400" />
@@ -160,9 +160,9 @@ export function UnifiedSupportInbox() {
 
       {/* Tabla */}
       {filtered.length > 0 && (
-        <div className="rounded-xl border border-gray-200 dark:border-card-border overflow-hidden bg-white dark:bg-card">
+        <div className="rounded-xl border border-[var(--rule-base)] dark:border-card-border overflow-hidden bg-white dark:bg-card">
           {/* Header */}
-          <div className="hidden md:grid grid-cols-[120px_1fr_2fr_130px_110px_130px] gap-3 bg-gray-50 dark:bg-surface px-4 py-2.5 text-[11px] font-bold text-gray-400 dark:text-muted">
+          <div className="hidden md:grid grid-cols-[120px_1fr_2fr_130px_110px_130px] gap-3 bg-gray-50 dark:bg-surface px-4 py-2.5 text-[length:var(--ts-xs)] font-bold text-gray-400 dark:text-muted">
             <span>Fuente</span>
             <span>Cliente</span>
             <span>Mensaje</span>

@@ -48,7 +48,7 @@ const STATUS_COLOR: Record<InvoiceStatus, string> = {
   pagada:   "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400",
 };
 const TYPE_COLOR: Record<InvoiceType, string> = {
-  factura:      "bg-violet-100 text-violet-700 dark:bg-violet-900/30 dark:text-violet-400",
+  factura:      "bg-[var(--surface-sunken)] text-[var(--text-primary)]",
   boleta:       "bg-sky-100 text-sky-700 dark:bg-sky-900/30 dark:text-sky-400",
   nota_credito: "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400",
   nota_debito:  "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400",
@@ -192,7 +192,7 @@ export default function InvoicingTab() {
           <p className="text-sm text-gray-500 dark:text-muted mt-0.5">Facturas, boletas, notas de crédito y débito</p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
-          <button onClick={() => exportToCSV(filtered.map(i => ({ tipo: TYPE_LABEL[i.type], serie_numero: `${i.serie}-${i.number}`, cliente: i.customerName, ruc_dni: i.customerDoc, fecha: i.issueDate, subtotal: i.subtotal, igv: i.igv, total: i.total, estado: STATUS_LABEL[i.status] })), "comprobantes")} className="flex items-center gap-1.5 px-3 py-2 rounded-lg border border-gray-200 dark:border-card-border bg-white dark:bg-surface text-sm font-semibold text-gray-700 dark:text-foreground hover:bg-gray-50 dark:hover:bg-accent transition-colors">
+          <button onClick={() => exportToCSV(filtered.map(i => ({ tipo: TYPE_LABEL[i.type], serie_numero: `${i.serie}-${i.number}`, cliente: i.customerName, ruc_dni: i.customerDoc, fecha: i.issueDate, subtotal: i.subtotal, igv: i.igv, total: i.total, estado: STATUS_LABEL[i.status] })), "comprobantes")} className="flex items-center gap-1.5 px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-card-border bg-white dark:bg-surface text-sm font-semibold text-gray-700 dark:text-foreground hover:bg-gray-50 dark:hover:bg-accent transition-colors">
             <Download className="h-4 w-4" /> Exportar
           </button>
           <button onClick={() => setShowForm(v => !v)} className="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-primary text-white text-sm font-semibold hover:bg-primary/90 transition-colors">
@@ -219,7 +219,7 @@ export default function InvoicingTab() {
 
       {/* New invoice form */}
       {showForm && (
-        <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl p-3 sm:p-5 space-y-5">
+        <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl p-3 sm:p-5 space-y-5">
           <div className="flex items-center justify-between">
             <h3 className="font-bold text-gray-900 dark:text-foreground text-sm">Nuevo comprobante</h3>
             <button onClick={() => { setShowForm(false); setDniMsg(null); }}><X className="h-4 w-4 text-gray-400" /></button>
@@ -228,7 +228,7 @@ export default function InvoicingTab() {
           {/* Type selector */}
           <div className="flex gap-2 flex-wrap">
             {(["boleta", "factura", "nota_credito", "nota_debito"] as InvoiceType[]).map(t => (
-              <button key={t} onClick={() => setForm(p => ({ ...p, type: t }))} className={cn("px-3 py-1.5 text-xs font-semibold rounded-lg border transition-colors", form.type === t ? "bg-primary text-white border-primary" : "border-gray-200 dark:border-card-border text-gray-600 dark:text-muted hover:bg-gray-50 dark:hover:bg-accent")}>
+              <button key={t} onClick={() => setForm(p => ({ ...p, type: t }))} className={cn("px-3 py-1.5 text-xs font-semibold rounded-lg border transition-colors", form.type === t ? "bg-primary text-white border-primary" : "border-[var(--rule-base)] dark:border-card-border text-gray-600 dark:text-muted hover:bg-gray-50 dark:hover:bg-accent")}>
                 {TYPE_LABEL[t]}
               </button>
             ))}
@@ -237,11 +237,11 @@ export default function InvoicingTab() {
           <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
             <div>
               <label className="text-xs font-semibold text-gray-500 dark:text-muted block mb-1">Cliente</label>
-              <input type="text" value={form.customerName} onChange={e => setForm(p => ({ ...p, customerName: e.target.value }))} placeholder="Nombre o razón social" className="w-full text-sm border border-gray-200 dark:border-card-border rounded-lg px-3 py-2 bg-white dark:bg-surface text-gray-700 dark:text-foreground" />
+              <input type="text" value={form.customerName} onChange={e => setForm(p => ({ ...p, customerName: e.target.value }))} placeholder="Nombre o razón social" className="w-full text-sm border border-[var(--rule-base)] dark:border-card-border rounded-lg px-3 py-2 bg-white dark:bg-surface text-gray-700 dark:text-foreground" />
             </div>
             <div>
               <label className="text-xs font-semibold text-gray-500 dark:text-muted block mb-1">Tipo doc.</label>
-              <select value={form.customerDocType} onChange={e => setForm(p => ({ ...p, customerDocType: e.target.value as Invoice["customerDocType"] }))} className="w-full text-sm border border-gray-200 dark:border-card-border rounded-lg px-3 py-2 bg-white dark:bg-surface text-gray-700 dark:text-foreground">
+              <select value={form.customerDocType} onChange={e => setForm(p => ({ ...p, customerDocType: e.target.value as Invoice["customerDocType"] }))} className="w-full text-sm border border-[var(--rule-base)] dark:border-card-border rounded-lg px-3 py-2 bg-white dark:bg-surface text-gray-700 dark:text-foreground">
                 <option value="dni">DNI</option>
                 <option value="ruc">RUC</option>
                 <option value="ce">CE</option>
@@ -255,7 +255,7 @@ export default function InvoicingTab() {
                   value={form.customerDoc}
                   onChange={e => { setForm(p => ({ ...p, customerDoc: e.target.value })); setDniMsg(null); }}
                   placeholder="20XXXXXXXXX / 12345678"
-                  className="flex-1 min-w-0 text-sm border border-gray-200 dark:border-card-border rounded-lg px-3 py-2 bg-white dark:bg-surface text-gray-700 dark:text-foreground"
+                  className="flex-1 min-w-0 text-sm border border-[var(--rule-base)] dark:border-card-border rounded-lg px-3 py-2 bg-white dark:bg-surface text-gray-700 dark:text-foreground"
                 />
                 {form.customerDocType === "dni" && form.customerDoc.length === 8 && (
                   <button
@@ -277,15 +277,15 @@ export default function InvoicingTab() {
             </div>
             <div>
               <label className="text-xs font-semibold text-gray-500 dark:text-muted block mb-1">Email</label>
-              <input type="email" value={form.customerEmail} onChange={e => setForm(p => ({ ...p, customerEmail: e.target.value }))} placeholder="cliente@email.com" className="w-full text-sm border border-gray-200 dark:border-card-border rounded-lg px-3 py-2 bg-white dark:bg-surface text-gray-700 dark:text-foreground" />
+              <input type="email" value={form.customerEmail} onChange={e => setForm(p => ({ ...p, customerEmail: e.target.value }))} placeholder="cliente@email.com" className="w-full text-sm border border-[var(--rule-base)] dark:border-card-border rounded-lg px-3 py-2 bg-white dark:bg-surface text-gray-700 dark:text-foreground" />
             </div>
             <div>
               <label className="text-xs font-semibold text-gray-500 dark:text-muted block mb-1">Fecha emisión</label>
-              <input type="date" value={form.issueDate} onChange={e => setForm(p => ({ ...p, issueDate: e.target.value }))} className="w-full text-sm border border-gray-200 dark:border-card-border rounded-lg px-3 py-2 bg-white dark:bg-surface text-gray-700 dark:text-foreground" />
+              <input type="date" value={form.issueDate} onChange={e => setForm(p => ({ ...p, issueDate: e.target.value }))} className="w-full text-sm border border-[var(--rule-base)] dark:border-card-border rounded-lg px-3 py-2 bg-white dark:bg-surface text-gray-700 dark:text-foreground" />
             </div>
             <div>
               <label className="text-xs font-semibold text-gray-500 dark:text-muted block mb-1">Fecha vencimiento</label>
-              <input type="date" value={form.dueDate} onChange={e => setForm(p => ({ ...p, dueDate: e.target.value }))} className="w-full text-sm border border-gray-200 dark:border-card-border rounded-lg px-3 py-2 bg-white dark:bg-surface text-gray-700 dark:text-foreground" />
+              <input type="date" value={form.dueDate} onChange={e => setForm(p => ({ ...p, dueDate: e.target.value }))} className="w-full text-sm border border-[var(--rule-base)] dark:border-card-border rounded-lg px-3 py-2 bg-white dark:bg-surface text-gray-700 dark:text-foreground" />
             </div>
           </div>
 
@@ -299,15 +299,15 @@ export default function InvoicingTab() {
               <div key={idx} className="grid grid-cols-4 sm:grid-cols-6 lg:grid-cols-12 gap-2 items-start">
                 <div className="col-span-4">
                   {idx === 0 && <label className="text-xs text-gray-400 dark:text-muted block mb-1">Descripción</label>}
-                  <input type="text" value={item.description} onChange={e => handleUpdateItem(idx, "description", e.target.value)} placeholder="Producto/Servicio" className="w-full text-sm border border-gray-200 dark:border-card-border rounded-lg px-3 py-2 bg-white dark:bg-surface text-gray-700 dark:text-foreground" />
+                  <input type="text" value={item.description} onChange={e => handleUpdateItem(idx, "description", e.target.value)} placeholder="Producto/Servicio" className="w-full text-sm border border-[var(--rule-base)] dark:border-card-border rounded-lg px-3 py-2 bg-white dark:bg-surface text-gray-700 dark:text-foreground" />
                 </div>
                 <div className="col-span-2">
                   {idx === 0 && <label className="text-xs text-gray-400 dark:text-muted block mb-1">Cant.</label>}
-                  <input type="number" value={item.quantity} onChange={e => handleUpdateItem(idx, "quantity", parseFloat(e.target.value) || 0)} min="0" step="1" className="w-full text-sm border border-gray-200 dark:border-card-border rounded-lg px-3 py-2 bg-white dark:bg-surface text-gray-700 dark:text-foreground" />
+                  <input type="number" value={item.quantity} onChange={e => handleUpdateItem(idx, "quantity", parseFloat(e.target.value) || 0)} min="0" step="1" className="w-full text-sm border border-[var(--rule-base)] dark:border-card-border rounded-lg px-3 py-2 bg-white dark:bg-surface text-gray-700 dark:text-foreground" />
                 </div>
                 <div className="col-span-3">
                   {idx === 0 && <label className="text-xs text-gray-400 dark:text-muted block mb-1">Precio unit.</label>}
-                  <input type="number" value={item.unitPrice} onChange={e => handleUpdateItem(idx, "unitPrice", parseFloat(e.target.value) || 0)} min="0" step="0.01" className="w-full text-sm border border-gray-200 dark:border-card-border rounded-lg px-3 py-2 bg-white dark:bg-surface text-gray-700 dark:text-foreground" />
+                  <input type="number" value={item.unitPrice} onChange={e => handleUpdateItem(idx, "unitPrice", parseFloat(e.target.value) || 0)} min="0" step="0.01" className="w-full text-sm border border-[var(--rule-base)] dark:border-card-border rounded-lg px-3 py-2 bg-white dark:bg-surface text-gray-700 dark:text-foreground" />
                 </div>
                 <div className="col-span-2">
                   {idx === 0 && <label className="text-xs text-gray-400 dark:text-muted block mb-1">Total</label>}
@@ -320,7 +320,7 @@ export default function InvoicingTab() {
                 </div>
               </div>
             ))}
-            <div className="flex justify-end space-y-1 text-sm pt-2 border-t border-gray-100 dark:border-card-border">
+            <div className="flex justify-end space-y-1 text-sm pt-2 border-t border-[var(--rule-soft)] dark:border-card-border">
               <div className="space-y-1 text-right">
                 <p className="text-gray-500 dark:text-muted">Subtotal: <span className="font-semibold text-gray-700 dark:text-foreground">{fmt(subtotal)}</span></p>
                 <p className="text-gray-500 dark:text-muted">IGV (18%): <span className="font-semibold text-amber-600">{fmt(igv)}</span></p>
@@ -330,7 +330,7 @@ export default function InvoicingTab() {
           </div>
 
           <div className="flex flex-wrap gap-2 justify-end">
-            <button onClick={() => setShowForm(false)} className="px-2 sm:px-4 py-1.5 sm:py-2 text-sm rounded-lg border border-gray-200 dark:border-card-border text-gray-600 dark:text-muted">Cancelar</button>
+            <button onClick={() => setShowForm(false)} className="px-2 sm:px-4 py-1.5 sm:py-2 text-sm rounded-lg border border-[var(--rule-base)] dark:border-card-border text-gray-600 dark:text-muted">Cancelar</button>
             <button onClick={handleCreate} className="px-2 sm:px-4 py-1.5 sm:py-2 text-sm rounded-lg bg-primary text-white font-semibold hover:bg-primary/90">Crear comprobante</button>
           </div>
         </div>
@@ -340,11 +340,11 @@ export default function InvoicingTab() {
       <div className="flex items-center gap-3 flex-wrap">
         <div className="relative flex-1 min-w-48">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
-          <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Buscar cliente o N° comprobante..." className="w-full pl-9 pr-3 py-2 text-sm border border-gray-200 dark:border-card-border rounded-lg bg-white dark:bg-surface text-gray-700 dark:text-foreground" />
+          <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Buscar cliente o N° comprobante..." className="w-full pl-9 pr-3 py-2 text-sm border border-[var(--rule-base)] dark:border-card-border rounded-lg bg-white dark:bg-surface text-gray-700 dark:text-foreground" />
         </div>
         <div className="flex gap-1 flex-wrap">
           {(["all", "boleta", "factura", "nota_credito", "nota_debito"] as const).map(t => (
-            <button key={t} onClick={() => setTypeFilter(t)} className={cn("px-3 py-1.5 text-xs font-semibold rounded-lg border transition-colors", typeFilter === t ? "bg-primary text-white border-primary" : "border-gray-200 dark:border-card-border text-gray-600 dark:text-muted hover:bg-gray-50 dark:hover:bg-accent")}>
+            <button key={t} onClick={() => setTypeFilter(t)} className={cn("px-3 py-1.5 text-xs font-semibold rounded-lg border transition-colors", typeFilter === t ? "bg-primary text-white border-primary" : "border-[var(--rule-base)] dark:border-card-border text-gray-600 dark:text-muted hover:bg-gray-50 dark:hover:bg-accent")}>
               {t === "all" ? "Todos" : TYPE_LABEL[t]}
             </button>
           ))}
@@ -352,9 +352,9 @@ export default function InvoicingTab() {
       </div>
 
       {/* Table */}
-      <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl overflow-y-hidden overflow-x-auto">
+      <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl overflow-y-hidden overflow-x-auto">
         <table className="w-full min-w-[600px] text-sm">
-          <thead className="bg-gray-50 dark:bg-surface border-b border-gray-100 dark:border-card-border">
+          <thead className="bg-gray-50 dark:bg-surface border-b border-[var(--rule-soft)] dark:border-card-border">
             <tr>
               <th className="text-left px-3 sm:px-6 py-3 font-bold text-gray-500 dark:text-muted text-xs uppercase">Serie-Núm.</th>
               <th className="text-left px-2 sm:px-4 py-2 sm:py-3 font-bold text-gray-500 dark:text-muted text-xs uppercase">Tipo</th>
@@ -408,7 +408,7 @@ export default function InvoicingTab() {
       {/* Detail panel */}
       {selected && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4" onClick={() => setSelected(null)}>
-          <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl p-3 sm:p-6 w-full max-w-lg space-y-4" onClick={e => e.stopPropagation()}>
+          <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl p-3 sm:p-6 w-full max-w-lg space-y-4" onClick={e => e.stopPropagation()}>
             <div className="flex items-center justify-between">
               <div>
                 <p className="font-extrabold text-gray-900 dark:text-foreground">{TYPE_LABEL[selected.type]} {selected.serie}-{selected.number}</p>
@@ -433,7 +433,7 @@ export default function InvoicingTab() {
                 </div>
               ))}
             </div>
-            <div className="border-t border-gray-100 dark:border-card-border pt-3 space-y-1 text-sm">
+            <div className="border-t border-[var(--rule-soft)] dark:border-card-border pt-3 space-y-1 text-sm">
               <div className="flex justify-between text-gray-500 dark:text-muted"><span>Subtotal</span><span>{fmt(selected.subtotal)}</span></div>
               <div className="flex justify-between text-amber-600"><span>IGV (18%)</span><span>{fmt(selected.igv)}</span></div>
               <div className="flex justify-between font-extrabold text-gray-900 dark:text-foreground text-base"><span>Total</span><span>{fmt(selected.total)}</span></div>

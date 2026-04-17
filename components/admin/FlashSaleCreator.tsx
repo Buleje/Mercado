@@ -231,7 +231,7 @@ export function FlashSaleCreator({ className }: { className?: string }) {
     <div
       className={cn(
         "rounded-xl border bg-white dark:bg-gray-900",
-        "border-gray-200 dark:border-gray-700",
+        "border-[var(--rule-base)]",
         "p-5 ",
         className
       )}
@@ -267,7 +267,7 @@ export function FlashSaleCreator({ className }: { className?: string }) {
               className={cn(
                 "w-full rounded-lg border py-2 pl-9 pr-9 text-sm",
                 "bg-white dark:bg-gray-800",
-                "border-gray-300 dark:border-gray-600",
+                "border-[var(--rule-base)] dark:border-gray-600",
                 "text-gray-900 dark:text-white placeholder-gray-400",
                 "focus:outline-none focus:ring-2 focus:ring-[#00B4A6] focus:border-transparent",
                 selected && "border-[#00B4A6] dark:border-[#3a8a65]"
@@ -291,7 +291,7 @@ export function FlashSaleCreator({ className }: { className?: string }) {
           {/* Resultados de busqueda */}
           {products.length > 0 && !selected && (
             <ul
-              className="mt-1 max-h-48 overflow-y-auto rounded-lg border border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-800"
+              className="mt-1 max-h-48 overflow-y-auto rounded-lg border border-[var(--rule-base)] bg-white dark:border-[var(--rule-base)] dark:bg-gray-800"
               role="listbox"
               aria-label="Resultados de busqueda"
             >
@@ -318,7 +318,7 @@ export function FlashSaleCreator({ className }: { className?: string }) {
               <label className="mb-1.5 block text-xs font-medium text-gray-600 dark:text-gray-400">
                 Precio original
               </label>
-              <div className="flex items-center gap-1.5 rounded-lg border border-gray-200 bg-gray-50 dark:border-gray-700 dark:bg-gray-800 px-3 py-2">
+              <div className="flex items-center gap-1.5 rounded-lg border border-[var(--rule-base)] bg-gray-50 dark:border-[var(--rule-base)] dark:bg-gray-800 px-3 py-2">
                 <Tag className="h-4 w-4 text-gray-400" aria-hidden="true" />
                 <span className="text-sm font-medium text-gray-500 dark:text-gray-400 line-through">
                   {fmtPrice(selected.price)}
@@ -373,7 +373,7 @@ export function FlashSaleCreator({ className }: { className?: string }) {
                   "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#00B4A6]",
                   duration.hours === d.hours
                     ? "border-[#00B4A6] bg-[#00B4A6] text-white dark:bg-[#00B4A6]"
-                    : "border-gray-200 bg-white text-gray-600 hover:border-[#00B4A6]/50 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-400"
+                    : "border-[var(--rule-base)] bg-white text-gray-600 hover:border-[#00B4A6]/50 dark:border-[var(--rule-base)] dark:bg-gray-800 dark:text-gray-400"
                 )}
               >
                 <Clock className="h-3 w-3" aria-hidden="true" />
@@ -410,7 +410,7 @@ export function FlashSaleCreator({ className }: { className?: string }) {
             disabled={saving || !selected || salePriceNum <= 0}
             className={cn(
               "flex flex-1 items-center justify-center gap-2 rounded-lg py-2.5 text-sm font-semibold",
-              "transition-colors duration-150",
+              "transition-colors duration-[var(--dur-fast)]",
               "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#f97316]",
               saving || !selected || salePriceNum <= 0
                 ? "cursor-not-allowed bg-gray-100 text-gray-400 dark:bg-gray-800 dark:text-gray-600"
@@ -431,7 +431,7 @@ export function FlashSaleCreator({ className }: { className?: string }) {
               onClick={() => setShowPreview((v) => !v)}
               className={cn(
                 "flex items-center gap-1.5 rounded-lg border px-3 py-2.5 text-sm font-medium",
-                "border-gray-300 dark:border-gray-600",
+                "border-[var(--rule-base)] dark:border-gray-600",
                 "text-gray-600 dark:text-gray-400",
                 "hover:bg-gray-50 dark:hover:bg-gray-800",
                 "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#00B4A6]"

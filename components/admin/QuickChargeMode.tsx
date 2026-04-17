@@ -156,9 +156,9 @@ export default function QuickChargeMode({ className }: QuickChargeModeProps) {
   const dailyCount = history.length;
 
   return (
-    <div className={cn("rounded-xl border border-gray-200 dark:border-card-border bg-white dark:bg-card overflow-hidden", className)}>
+    <div className={cn("rounded-xl border border-[var(--rule-base)] dark:border-card-border bg-white dark:bg-card overflow-hidden", className)}>
       {/* Header */}
-      <div className="flex items-center gap-2 px-4 py-3 border-b border-gray-100 dark:border-card-border bg-gray-50 dark:bg-gray-900/50">
+      <div className="flex items-center gap-2 px-4 py-3 border-b border-[var(--rule-soft)] dark:border-card-border bg-gray-50 dark:bg-gray-900/50">
         <Zap className="h-4 w-4 text-secondary" />
         <span className="text-sm font-semibold text-gray-900 dark:text-foreground">Cobro Rapido</span>
         <span className="ml-auto text-xs text-gray-400 dark:text-muted">Para ventas rapidas sin producto</span>
@@ -182,7 +182,7 @@ export default function QuickChargeMode({ className }: QuickChargeModeProps) {
 
         {/* History panel */}
         {showHistory && history.length > 0 && (
-          <div className="rounded-xl border border-gray-100 dark:border-card-border divide-y divide-gray-50 dark:divide-card-border overflow-hidden">
+          <div className="rounded-xl border border-[var(--rule-soft)] dark:border-card-border divide-y divide-gray-50 dark:divide-card-border overflow-hidden">
             {history.slice(0, 10).map((charge) => (
               <div key={charge.id} className="flex items-center gap-2 px-3 py-2 text-xs bg-white dark:bg-card">
                 <Clock className="h-3.5 w-3.5 text-gray-300 shrink-0" />
@@ -209,7 +209,7 @@ export default function QuickChargeMode({ className }: QuickChargeModeProps) {
               onChange={(e) => { setAmount(e.target.value); setError(""); }}
               onKeyDown={handleKeyDown}
               placeholder="0.00"
-              className="w-full pl-12 pr-4 py-4 text-3xl font-black rounded-xl border-2 border-gray-200 dark:border-card-border bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-foreground focus:outline-none focus:border-primary transition-colors text-center"
+              className="w-full pl-12 pr-4 py-4 text-3xl font-extrabold rounded-xl border-2 border-[var(--rule-base)] dark:border-card-border bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-foreground focus:outline-none focus:border-primary transition-colors text-center"
             />
           </div>
 
@@ -224,7 +224,7 @@ export default function QuickChargeMode({ className }: QuickChargeModeProps) {
                   "px-2.5 py-1 rounded-lg text-xs font-semibold border transition-colors",
                   parsed === v
                     ? "bg-primary text-white border-primary"
-                    : "bg-gray-50 dark:bg-gray-900 text-gray-600 dark:text-muted border-gray-200 dark:border-card-border hover:border-primary"
+                    : "bg-gray-50 dark:bg-gray-900 text-gray-600 dark:text-muted border-[var(--rule-base)] dark:border-card-border hover:border-primary"
                 )}
               >
                 S/{v}
@@ -243,7 +243,7 @@ export default function QuickChargeMode({ className }: QuickChargeModeProps) {
             onKeyDown={handleKeyDown}
             placeholder="Ej: agua, pan, cargador..."
             maxLength={80}
-            className="w-full px-3 py-2 text-sm rounded-lg border border-gray-200 dark:border-card-border bg-gray-50 dark:bg-gray-900 text-gray-800 dark:text-foreground focus:outline-none focus:border-primary"
+            className="w-full px-3 py-2 text-sm rounded-lg border border-[var(--rule-base)] dark:border-card-border bg-gray-50 dark:bg-gray-900 text-gray-800 dark:text-foreground focus:outline-none focus:border-primary"
           />
         </div>
 
@@ -260,7 +260,7 @@ export default function QuickChargeMode({ className }: QuickChargeModeProps) {
                   "flex flex-col items-center gap-1 py-2.5 rounded-xl border-2 text-xs font-semibold transition-all",
                   payment === key
                     ? "border-primary bg-primary/5 text-primary"
-                    : "border-gray-100 dark:border-card-border text-gray-500 dark:text-muted hover:border-gray-300"
+                    : "border-[var(--rule-soft)] dark:border-card-border text-gray-500 dark:text-muted hover:border-gray-300"
                 )}
               >
                 <Icon className="h-4 w-4" />
@@ -292,7 +292,7 @@ export default function QuickChargeMode({ className }: QuickChargeModeProps) {
           onClick={handleCharge}
           disabled={!validAmount || loading || success}
           className={cn(
-            "w-full py-4 rounded-xl font-black text-xl transition-all flex items-center justify-center gap-3",
+            "w-full py-4 rounded-xl font-extrabold text-xl transition-all flex items-center justify-center gap-3",
             success
               ? "bg-emerald-500 text-white"
               : validAmount && !loading

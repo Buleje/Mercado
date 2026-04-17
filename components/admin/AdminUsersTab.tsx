@@ -221,7 +221,7 @@ export default function AdminUsersTab() {
       )}
 
       {/* Users list */}
-      <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl  overflow-y-hidden overflow-x-auto">
+      <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl  overflow-y-hidden overflow-x-auto">
         {loading ? (
           <div className="h-40 flex flex-wrap items-center justify-center text-gray-400 dark:text-muted gap-2">
             <Loader2 className="h-5 w-5 animate-spin" /> Cargando…
@@ -235,7 +235,7 @@ export default function AdminUsersTab() {
           <div className="overflow-x-auto -mx-2 px-2">
           <table className="w-full min-w-[600px] text-sm">
             <thead>
-              <tr className="border-b border-gray-100 dark:border-card-border bg-gray-50 dark:bg-surface">
+              <tr className="border-b border-[var(--rule-soft)] dark:border-card-border bg-gray-50 dark:bg-surface">
                 <th className="text-left px-5 py-3 text-xs font-bold text-gray-500 dark:text-muted">Usuario</th>
                 <th className="text-left px-5 py-3 text-xs font-bold text-gray-500 dark:text-muted hidden sm:table-cell">Rol</th>
                 <th className="text-left px-5 py-3 text-xs font-bold text-gray-500 dark:text-muted hidden md:table-cell">Estado</th>
@@ -438,7 +438,7 @@ export default function AdminUsersTab() {
 
 // ── Sub-components ─────────────────────────────────────────────────────────────
 
-const inputCls = "w-full px-3 py-2.5 text-sm bg-gray-50 dark:bg-surface border border-gray-200 dark:border-card-border rounded-lg outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-colors text-gray-900 dark:text-foreground placeholder:text-gray-400 dark:placeholder:text-muted";
+const inputCls = "w-full px-3 py-2.5 text-sm bg-gray-50 dark:bg-surface border border-[var(--rule-base)] dark:border-card-border rounded-lg outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-colors text-gray-900 dark:text-foreground placeholder:text-gray-400 dark:placeholder:text-muted";
 
 function Field({ label, children }: { label: string; children: React.ReactNode }) {
   return (
@@ -491,7 +491,7 @@ function ModalWrapper({ title, onClose, children }: { title: string; onClose: ()
   return (
     <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4" onClick={onClose}>
       <div className="bg-white dark:bg-card rounded-xl w-full max-w-md" onClick={e => e.stopPropagation()}>
-        <div className="flex items-center justify-between px-3 sm:px-6 py-4 border-b border-gray-100 dark:border-card-border">
+        <div className="flex items-center justify-between px-3 sm:px-6 py-4 border-b border-[var(--rule-soft)] dark:border-card-border">
           <h3 className="font-extrabold text-gray-900 dark:text-foreground flex flex-wrap items-center gap-2">
             <UserCog className="h-5 w-5 text-primary" />
             {title}

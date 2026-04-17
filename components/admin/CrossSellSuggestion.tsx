@@ -160,7 +160,7 @@ export default function CrossSellSuggestion({ currentItems, onAddProduct, classN
     <div
       ref={containerRef}
       className={cn(
-        "overflow-hidden transition-all duration-300",
+        "overflow-hidden transition-all duration-[var(--dur-base)]",
         visible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4",
         className
       )}
@@ -197,7 +197,7 @@ export default function CrossSellSuggestion({ currentItems, onAddProduct, classN
             visibleSuggestions.map((product) => (
               <div
                 key={product.id}
-                className="flex items-center gap-2 bg-white dark:bg-card rounded-xl px-3 py-2 border border-gray-100 dark:border-card-border "
+                className="flex items-center gap-2 bg-white dark:bg-card rounded-xl px-3 py-2 border border-[var(--rule-soft)] dark:border-card-border "
               >
                 <ShoppingBasket className="h-4 w-4 text-secondary shrink-0" />
                 <div className="flex-1 min-w-0">

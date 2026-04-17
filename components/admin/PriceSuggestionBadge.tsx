@@ -77,7 +77,7 @@ export default function PriceSuggestionBadge({
     : "bg-emerald-50 dark:bg-emerald-950/20 border-emerald-200 dark:border-emerald-800/30 text-emerald-700 dark:text-emerald-400";
 
   return (
-    <div className={cn("inline-flex items-center gap-1.5 px-2 py-1 rounded-lg border text-[10px] font-bold", colors, className)}>
+    <div className={cn("inline-flex items-center gap-1.5 px-2 py-1 rounded-lg border text-[length:var(--ts-2xs)] font-bold", colors, className)}>
       <Lightbulb className="h-3 w-3 shrink-0" />
       <span className="truncate max-w-48">{suggestion.reason}</span>
       <button onClick={() => setDismissed(true)} className="shrink-0 opacity-50 hover:opacity-100">

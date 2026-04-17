@@ -74,7 +74,7 @@ function daysBetween(from: string, to: Date): number {
 function DonutTooltip({ active, payload }: { active?: boolean; payload?: Array<{ name: string; value: number }> }) {
   if (!active || !payload?.[0]) return null;
   return (
-    <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-100 dark:border-gray-700 px-4 py-3 min-w-[160px]">
+    <div className="bg-white dark:bg-gray-800 rounded-xl border border-[var(--rule-base)] px-4 py-3 min-w-[160px]">
       <p className="text-xs font-semibold text-gray-900 dark:text-white mb-1.5">{payload[0].name}</p>
       <p className="text-xs text-gray-500 flex justify-between gap-4">
         <span>Monto</span>
@@ -91,7 +91,7 @@ function TrendTooltip({ active, payload }: { active?: boolean; payload?: Array<{
   const d = payload[0].payload;
   const neto = d.cobrados - d.nuevos;
   return (
-    <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-100 dark:border-gray-700 px-4 py-3 min-w-[180px]">
+    <div className="bg-white dark:bg-gray-800 rounded-xl border border-[var(--rule-base)] px-4 py-3 min-w-[180px]">
       <p className="text-xs font-semibold text-gray-900 dark:text-white mb-1.5">{d.mes}</p>
       <p className="text-xs text-gray-500 flex justify-between gap-4">
         <span>Cobrados</span>
@@ -101,7 +101,7 @@ function TrendTooltip({ active, payload }: { active?: boolean; payload?: Array<{
         <span>Nuevos</span>
         <span className="font-mono font-medium text-[#e63946]">{formatCurrency(d.nuevos)}</span>
       </p>
-      <div className="border-t border-gray-200 dark:border-gray-600 mt-1.5 pt-1.5">
+      <div className="border-t border-[var(--rule-base)] dark:border-gray-600 mt-1.5 pt-1.5">
         <p className="text-xs flex justify-between gap-4">
           <span className="font-semibold text-gray-700 dark:text-gray-300">Neto</span>
           <span className={cn("font-mono font-bold", neto >= 0 ? "text-[#00B4A6]" : "text-[#e63946]")}>{formatCurrency(neto)}</span>
@@ -218,7 +218,7 @@ export default function FiadoAnalyticsPanel() {
   // ── Loading ──
   if (loading) {
     return (
-      <div className="rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 p-4 space-y-4">
+      <div className="rounded-xl border border-[var(--rule-base)] bg-white dark:bg-gray-900 p-4 space-y-4">
         <div className="h-5 w-40 bg-gray-200 dark:bg-gray-700 rounded animate-pulse" />
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
           {Array.from({ length: 4 }).map((_, i) => (
@@ -252,7 +252,7 @@ export default function FiadoAnalyticsPanel() {
   // ── Empty ──
   if (!totales) {
     return (
-      <div className="rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 p-6 flex items-center justify-center h-64">
+      <div className="rounded-xl border border-[var(--rule-base)] bg-white dark:bg-gray-900 p-6 flex items-center justify-center h-64">
         <p className="text-sm text-gray-500 dark:text-gray-400">No hay datos de fiados registrados</p>
       </div>
     );
@@ -268,7 +268,7 @@ export default function FiadoAnalyticsPanel() {
   const donutData = (distribucion ?? []).filter((d) => d.monto > 0);
 
   return (
-    <div className="rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 p-4 space-y-4">
+    <div className="rounded-xl border border-[var(--rule-base)] bg-white dark:bg-gray-900 p-4 space-y-4">
       <h3 className="text-sm font-semibold text-gray-900 dark:text-white">
         Analisis de Fiados
       </h3>
@@ -280,11 +280,11 @@ export default function FiadoAnalyticsPanel() {
           return (
             <div
               key={kpi.label}
-              className="rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/50 p-3 "
+              className="rounded-xl border border-[var(--rule-base)] bg-gray-50 dark:bg-gray-800/50 p-3 "
             >
               <div className="flex items-center gap-1.5 mb-1">
                 <Icon className="h-3.5 w-3.5 text-gray-400" />
-                <span className="text-[10px] text-gray-500 dark:text-gray-400 font-medium">
+                <span className="text-[length:var(--ts-2xs)] text-gray-500 dark:text-gray-400 font-medium">
                   {kpi.label}
                 </span>
               </div>
@@ -332,7 +332,7 @@ export default function FiadoAnalyticsPanel() {
                   <p className="text-xl font-mono font-bold text-gray-900 dark:text-white" style={{ fontVariantNumeric: "tabular-nums" }}>
                     {formatCurrency(totales.pendiente)}
                   </p>
-                  <p className="text-[10px] text-gray-400">Pendiente</p>
+                  <p className="text-[length:var(--ts-2xs)] text-gray-400">Pendiente</p>
                 </div>
               </div>
             </div>
@@ -346,7 +346,7 @@ export default function FiadoAnalyticsPanel() {
             {donutData.map((seg) => (
               <div key={seg.rango} className="flex items-center gap-1">
                 <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: seg.color }} />
-                <span className="text-[10px] text-gray-500 dark:text-gray-400">{seg.rango}</span>
+                <span className="text-[length:var(--ts-2xs)] text-gray-500 dark:text-gray-400">{seg.rango}</span>
               </div>
             ))}
           </div>
@@ -422,7 +422,7 @@ export default function FiadoAnalyticsPanel() {
         <div className="overflow-x-auto">
           <table className="w-full text-xs">
             <thead>
-              <tr className="border-b border-gray-200 dark:border-gray-700">
+              <tr className="border-b border-[var(--rule-base)]">
                 <th className="text-left py-2 text-gray-500 dark:text-gray-400 font-medium">Cliente</th>
                 <th className="text-right py-2 text-gray-500 dark:text-gray-400 font-medium">Saldo</th>
                 <th className="text-right py-2 text-gray-500 dark:text-gray-400 font-medium">Dias</th>
@@ -431,7 +431,7 @@ export default function FiadoAnalyticsPanel() {
             </thead>
             <tbody>
               {(topDeudores ?? []).map((d, idx) => (
-                <tr key={d.nombre} className={cn("border-b border-gray-100 dark:border-gray-800 hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors", idx % 2 === 1 && "bg-gray-50/50 dark:bg-gray-800/20")}>
+                <tr key={d.nombre} className={cn("border-b border-[var(--rule-base)] hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors", idx % 2 === 1 && "bg-gray-50/50 dark:bg-gray-800/20")}>
                   <td className="py-1.5 text-gray-700 dark:text-gray-300 truncate max-w-[150px]">
                     {d.nombre}
                   </td>
@@ -446,7 +446,7 @@ export default function FiadoAnalyticsPanel() {
                   </td>
                   <td className="py-1.5 text-right">
                     <span className={cn(
-                      "text-[10px] px-1.5 py-0.5 rounded-full font-medium",
+                      "text-[length:var(--ts-2xs)] px-1.5 py-0.5 rounded-full font-medium",
                       d.status === "vencido" ? "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400"
                         : d.status === "riesgo" ? "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400"
                         : "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400"

@@ -25,7 +25,7 @@ function ChartTooltip({ active, payload, label, prefix = "S/" }: {
 }) {
   if (!active || !payload?.length) return null;
   return (
-    <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl px-3 py-2 text-xs">
+    <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl px-3 py-2 text-xs">
       {label && <p className="font-semibold text-gray-700 dark:text-foreground mb-1">{label}</p>}
       {payload.map((p, i) => (
         <div key={i} className="flex items-center gap-2">
@@ -44,7 +44,7 @@ function ChartCard({ title, Icon, children, className, badge }: {
   title: string; Icon: React.ComponentType<{ className?: string }>; children: React.ReactNode; className?: string; badge?: React.ReactNode;
 }) {
   return (
-    <div className={cn("bg-white dark:bg-card border border-gray-100 dark:border-card-border rounded-xl p-5 ", className)}>
+    <div className={cn("bg-white dark:bg-card border border-[var(--rule-soft)] dark:border-card-border rounded-xl p-5 ", className)}>
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center gap-2">
           <Icon className="h-4 w-4 text-gray-400 dark:text-muted" />
@@ -104,7 +104,7 @@ export default function ProductosCharts({ data }: { data: ProductosData }) {
               </ResponsiveContainer>
               <div className="flex flex-wrap gap-x-4 gap-y-1 mt-2 justify-center">
                 {data.ventasPorCategoria.map((c, i) => (
-                  <span key={i} className="flex items-center gap-1.5 text-[11px] text-gray-500 dark:text-muted">
+                  <span key={i} className="flex items-center gap-1.5 text-[length:var(--ts-xs)] text-gray-500 dark:text-muted">
                     <span className="w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: c.color }} />
                     {c.nombre}
                   </span>
@@ -121,7 +121,7 @@ export default function ProductosCharts({ data }: { data: ProductosData }) {
           title="Análisis Pareto ABC (80/20)"
           Icon={Target}
           badge={
-            <div className="flex items-center gap-2 text-[10px]">
+            <div className="flex items-center gap-2 text-[length:var(--ts-2xs)]">
               <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-emerald-500" />A</span>
               <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-emerald-500" />B</span>
               <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-gray-400" />C</span>
@@ -155,7 +155,7 @@ export default function ProductosCharts({ data }: { data: ProductosData }) {
                     <div className="flex items-center justify-between mb-1">
                       <p className="text-xs font-medium text-gray-700 dark:text-gray-300 truncate">{p.nombre}</p>
                       <span className={cn(
-                        "text-[10px] font-bold whitespace-nowrap px-1.5 py-0.5 rounded",
+                        "text-[length:var(--ts-2xs)] font-bold whitespace-nowrap px-1.5 py-0.5 rounded",
                         p.status === "critico" ? "bg-red-50 text-red-600 dark:bg-red-950/30 dark:text-red-400"
                           : p.status === "alerta" ? "bg-amber-50 text-amber-600 dark:bg-amber-950/30 dark:text-amber-400"
                           : "bg-emerald-50 text-emerald-600 dark:bg-emerald-950/30 dark:text-emerald-400"
@@ -172,7 +172,7 @@ export default function ProductosCharts({ data }: { data: ProductosData }) {
                           style={{ width: `${Math.min((p.diasRestantes / 30) * 100, 100)}%` }}
                         />
                       </div>
-                      <span className="text-[10px] text-gray-400 whitespace-nowrap">{p.stock} uds</span>
+                      <span className="text-[length:var(--ts-2xs)] text-gray-400 whitespace-nowrap">{p.stock} uds</span>
                     </div>
                   </div>
                 </div>
@@ -193,14 +193,14 @@ export default function ProductosCharts({ data }: { data: ProductosData }) {
           {data.productosSinMov.length > 0 ? (
             <div className="space-y-2">
               {data.productosSinMov.map((p, i) => (
-                <div key={i} className="flex items-center justify-between py-1.5 border-b border-gray-50 dark:border-gray-800 last:border-0">
+                <div key={i} className="flex items-center justify-between py-1.5 border-b border-gray-50 dark:border-[var(--rule-base)] last:border-0">
                   <div className="min-w-0 flex-1">
                     <p className="text-xs font-medium text-gray-700 dark:text-gray-300 truncate">{p.nombre}</p>
-                    <p className="text-[10px] text-gray-400">{p.categoria}</p>
+                    <p className="text-[length:var(--ts-2xs)] text-gray-400">{p.categoria}</p>
                   </div>
                   <div className="flex items-center gap-3 shrink-0">
-                    <span className="text-[10px] text-gray-400">{p.stock} uds</span>
-                    <span className="text-[10px] font-semibold text-gray-600 dark:text-gray-300">S/ {p.precio.toFixed(2)}</span>
+                    <span className="text-[length:var(--ts-2xs)] text-gray-400">{p.stock} uds</span>
+                    <span className="text-[length:var(--ts-2xs)] font-semibold text-gray-600 dark:text-gray-300">S/ {p.precio.toFixed(2)}</span>
                   </div>
                 </div>
               ))}
@@ -217,9 +217,9 @@ export default function ProductosCharts({ data }: { data: ProductosData }) {
           {data.afinidades.length > 0 ? (
             <div className="space-y-2.5">
               {data.afinidades.map((a, i) => (
-                <div key={i} className="flex items-center gap-3 py-1.5 border-b border-gray-50 dark:border-gray-800 last:border-0">
+                <div key={i} className="flex items-center gap-3 py-1.5 border-b border-gray-50 dark:border-[var(--rule-base)] last:border-0">
                   <span className={cn(
-                    "w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold shrink-0",
+                    "w-5 h-5 rounded-full flex items-center justify-center text-[length:var(--ts-2xs)] font-bold shrink-0",
                     i < 3 ? "bg-gray-900 dark:bg-foreground text-white dark:text-background" : "bg-gray-100 dark:bg-gray-800 text-gray-400"
                   )}>{i + 1}</span>
                   <div className="flex-1 min-w-0">
@@ -229,7 +229,7 @@ export default function ProductosCharts({ data }: { data: ProductosData }) {
                       <span className="font-medium">{a.productoB}</span>
                     </p>
                   </div>
-                  <span className="text-[10px] font-bold text-violet-600 dark:text-violet-400 bg-violet-50 dark:bg-violet-950/30 px-1.5 py-0.5 rounded shrink-0">
+                  <span className="text-[length:var(--ts-2xs)] font-bold text-[var(--text-secondary)] dark:text-[var(--text-primary)] bg-[var(--surface-sunken)] px-1.5 py-0.5 rounded shrink-0">
                     {a.coCompras}x juntos
                   </span>
                 </div>

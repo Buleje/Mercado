@@ -26,7 +26,7 @@ function StepDot({
   return (
     <div
       className={cn(
-        "relative flex h-7 w-7 items-center justify-center rounded-full border-2 transition-all duration-500",
+        "relative flex h-7 w-7 items-center justify-center rounded-full border-2 transition-all duration-[var(--dur-slow)]",
         filled
           ? "border-[#00B4A6] bg-[#00B4A6]"
           : "border-border bg-background dark:bg-background",
@@ -179,7 +179,7 @@ export default function FrequencyRewardCard({
       <div className="h-1.5 w-full rounded-full bg-muted dark:bg-muted/50 overflow-hidden">
         <div
           className={cn(
-            "h-full rounded-full transition-all duration-700 ease-out",
+            "h-full rounded-full transition-all duration-[var(--dur-slower)] ease-out",
             completed ? "bg-[#00B4A6]" : "bg-[#00B4A6]/70"
           )}
           style={{ width: `${progressPct}%` }}

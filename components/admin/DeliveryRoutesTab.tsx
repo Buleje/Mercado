@@ -147,7 +147,7 @@ function DeliveryMap({ routes, onStatusChange }: DeliveryMapProps) {
     <div
       ref={containerRef}
       style={{ height: 280, width: "100%" }}
-      className="rounded-xl overflow-hidden border border-gray-200 dark:border-card-border  bg-gray-100"
+      className="rounded-xl overflow-hidden border border-[var(--rule-base)] dark:border-card-border  bg-gray-100"
     />
   );
 }
@@ -212,7 +212,7 @@ const FALLBACK_ZONES: Zone[] = [
   { id: "z-1", name: "Zona Centro", color: "bg-emerald-500", deliveryFee: 3, estimatedMin: 20, neighborhoods: ["Jr. Progreso", "Jr. Inmaculada", "Plaza de Armas", "Mercado Central"] },
   { id: "z-2", name: "Zona Norte", color: "bg-emerald-500", deliveryFee: 5, estimatedMin: 35, neighborhoods: ["Yarinacocha", "San Juan", "Manantay", "Nueva Requena"] },
   { id: "z-3", name: "Zona Sur", color: "bg-amber-500", deliveryFee: 4, estimatedMin: 30, neighborhoods: ["Campo Verde", "Puírto Callao", "Masisea", "Iparia"] },
-  { id: "z-4", name: "Zona Este", color: "bg-violet-500", deliveryFee: 6, estimatedMin: 45, neighborhoods: ["Contamana", "Padre Abad", "Von Humboldt"] },
+  { id: "z-4", name: "Zona Este", color: "bg-[var(--text-primary)]", deliveryFee: 6, estimatedMin: 45, neighborhoods: ["Contamana", "Padre Abad", "Von Humboldt"] },
 ];
 
 const STATUS_LABELS: Record<string, string> = { "en-ruta": "En Ruta", completada: "Completada", pendiente: "Pendiente", cancelada: "Cancelada" };
@@ -339,7 +339,7 @@ export default function DeliveryRoutesTab() {
           <p className="text-sm text-gray-500 dark:text-muted mt-0.5">Gestión de zonas, rutas y asignación de repartidores</p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
-          <button onClick={() => { setLoadingData(true); loadRoutes(); }} disabled={loadingData} title="Actualizar rutas" className="p-2 rounded-lg border border-gray-200 dark:border-card-border bg-white dark:bg-surface text-gray-500 hover:text-primary disabled:opacity-40 transition-colors"><RefreshCw className={cn("h-4 w-4", loadingData && "animate-spin")} /></button>
+          <button onClick={() => { setLoadingData(true); loadRoutes(); }} disabled={loadingData} title="Actualizar rutas" className="p-2 rounded-lg border border-[var(--rule-base)] dark:border-card-border bg-white dark:bg-surface text-gray-500 hover:text-primary disabled:opacity-40 transition-colors"><RefreshCw className={cn("h-4 w-4", loadingData && "animate-spin")} /></button>
           <button onClick={() => setView("routes")} className={cn("px-3 py-1.5 rounded-lg text-xs font-bold transition-colors", view === "routes" ? "bg-primary text-white" : "bg-gray-100 dark:bg-surface text-gray-600 dark:text-muted")}>Rutas</button>
           <button onClick={() => setView("zones")} className={cn("px-3 py-1.5 rounded-lg text-xs font-bold transition-colors", view === "zones" ? "bg-primary text-white" : "bg-gray-100 dark:bg-surface text-gray-600 dark:text-muted")}>Zonas</button>
         </div>
@@ -363,7 +363,7 @@ export default function DeliveryRoutesTab() {
           <DeliveryMap routes={routes} onStatusChange={updateRouteStatus} />
         )}
         {showMap && !loadingData && (
-          <div className="flex flex-wrap gap-3 text-[10px] font-semibold text-gray-500 dark:text-muted items-center">
+          <div className="flex flex-wrap gap-3 text-[length:var(--ts-2xs)] font-semibold text-gray-500 dark:text-muted items-center">
             {GPS_ZONES.filter(z => z.maxKm !== Infinity).map(z => (
               <span key={z.name} className="flex items-center gap-1">
                 <span className="inline-block w-2.5 h-2.5 rounded-full border" style={{ background: z.color, borderColor: z.color }} />
@@ -387,7 +387,7 @@ export default function DeliveryRoutesTab() {
       </div>
 
       {/* Panel de geolocalización para nuevo pedido */}
-      <div className="bg-white dark:bg-card rounded-xl border border-gray-200 dark:border-card-border p-4 space-y-3">
+      <div className="bg-white dark:bg-card rounded-xl border border-[var(--rule-base)] dark:border-card-border p-4 space-y-3">
         <p className="text-xs font-bold text-gray-700 dark:text-foreground flex items-center gap-1.5">
           <Navigation className="h-3.5 w-3.5 text-primary" />
           Calcular zona y tarifa del cliente
@@ -433,10 +433,10 @@ export default function DeliveryRoutesTab() {
         {[
           { label: "Rutas activas", value: activeRoutes, color: "text-emerald-500" },
           { label: "Completadas hoy", value: completedToday, color: "text-emerald-500" },
-          { label: "Paradas totales", value: totalStops, color: "text-violet-500" },
+          { label: "Paradas totales", value: totalStops, color: "text-[var(--text-secondary)]" },
           { label: "% Entregadas", value: `${routes.length ? Math.round(completedToday / routes.length * 100) : 0}%`, color: "text-emerald-600" },
         ].map(k => (
-          <div key={k.label} className="bg-white dark:bg-card rounded-xl border border-gray-200 dark:border-card-border p-4">
+          <div key={k.label} className="bg-white dark:bg-card rounded-xl border border-[var(--rule-base)] dark:border-card-border p-4">
             <p className="text-xs font-semibold text-gray-500 dark:text-muted">{k.label}</p>
             <p className={cn("text-xl sm:text-2xl font-extrabold", k.color)}>{k.value}</p>
           </div>
@@ -447,13 +447,13 @@ export default function DeliveryRoutesTab() {
       {riderKpis.length > 0 && (
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
           {riderKpis.map(rk => (
-            <button key={rk.name} onClick={() => setFilterRider(prev => prev === rk.name ? "all" : rk.name)} className={cn("text-left bg-white dark:bg-card rounded-lg border p-3 transition-all", filterRider === rk.name ? "border-primary ring-1 ring-primary" : "border-gray-200 dark:border-card-border hover:border-primary/50")}>
+            <button key={rk.name} onClick={() => setFilterRider(prev => prev === rk.name ? "all" : rk.name)} className={cn("text-left bg-white dark:bg-card rounded-lg border p-3 transition-all", filterRider === rk.name ? "border-primary ring-1 ring-primary" : "border-[var(--rule-base)] dark:border-card-border hover:border-primary/50")}>
               <div className="flex items-center gap-1.5 mb-1">
-                <Users className="h-3.5 w-3.5 text-indigo-500 shrink-0" />
+                <Users className="h-3.5 w-3.5 text-[var(--text-secondary)] shrink-0" />
                 <p className="text-xs font-bold text-gray-800 dark:text-foreground truncate">{rk.name}</p>
               </div>
-              <p className="text-lg font-extrabold text-indigo-600 dark:text-indigo-400">{rk.total} <span className="text-xs font-semibold text-gray-400">pedidos</span></p>
-              <p className="text-[10px] text-gray-400 mt-0.5">{rk.completadas} entregados · {rk.total ? Math.round(rk.completadas / rk.total * 100) : 0}%</p>
+              <p className="text-lg font-extrabold text-[var(--text-secondary)] dark:text-[var(--text-primary)]">{rk.total} <span className="text-xs font-semibold text-gray-400">pedidos</span></p>
+              <p className="text-[length:var(--ts-2xs)] text-gray-400 mt-0.5">{rk.completadas} entregados · {rk.total ? Math.round(rk.completadas / rk.total * 100) : 0}%</p>
             </button>
           ))}
         </div>
@@ -463,7 +463,7 @@ export default function DeliveryRoutesTab() {
       {loadingData && (
         <div className="space-y-3">
           {[1,2,3].map(i => (
-            <div key={i} className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl p-4 animate-pulse">
+            <div key={i} className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl p-4 animate-pulse">
               <div className="flex flex-wrap items-center gap-3">
                 <div className="h-10 w-10 rounded-xl bg-gray-200 dark:bg-surface" />
                 <div className="flex-1 space-y-2">
@@ -483,13 +483,13 @@ export default function DeliveryRoutesTab() {
               <button key={s} onClick={() => setFilterStatus(s)} className={cn("px-3 py-1.5 rounded-lg text-xs font-bold transition-colors", filterStatus === s ? "bg-primary text-white" : "bg-gray-100 dark:bg-surface text-gray-600 dark:text-muted")}>{s === "all" ? "Todas" : STATUS_LABELS[s]}</button>
             ))}
             {riderKpis.length > 0 && (
-              <select value={filterRider} onChange={e => setFilterRider(e.target.value)} className="text-xs border border-gray-200 dark:border-card-border rounded-lg px-2 py-1.5 bg-white dark:bg-surface text-gray-700 dark:text-foreground font-semibold">
+              <select value={filterRider} onChange={e => setFilterRider(e.target.value)} className="text-xs border border-[var(--rule-base)] dark:border-card-border rounded-lg px-2 py-1.5 bg-white dark:bg-surface text-gray-700 dark:text-foreground font-semibold">
                 <option value="all">Todos los repartidores</option>
                 {riderKpis.map(rk => <option key={rk.name} value={rk.name}>{rk.name}</option>)}
               </select>
             )}
             {filterRider !== "all" && (
-              <button onClick={() => setFilterRider("all")} className="text-[10px] font-bold text-indigo-600 bg-indigo-50 dark:bg-indigo-950/30 dark:text-indigo-400 px-2 py-1 rounded-full flex items-center gap-1">
+              <button onClick={() => setFilterRider("all")} className="text-[length:var(--ts-2xs)] font-bold text-[var(--text-secondary)] bg-[var(--surface-sunken)] dark:text-[var(--text-primary)] px-2 py-1 rounded-full flex items-center gap-1">
                 <Users className="h-2.5 w-2.5" /> {filterRider} ×
               </button>
             )}
@@ -497,7 +497,7 @@ export default function DeliveryRoutesTab() {
           </div>
           <div className="space-y-3">
             {filtered.map(r => (
-              <div key={r.id} className="bg-white dark:bg-card rounded-xl border border-gray-200 dark:border-card-border p-4">
+              <div key={r.id} className="bg-white dark:bg-card rounded-xl border border-[var(--rule-base)] dark:border-card-border p-4">
                 <div className="flex items-center justify-between gap-3 flex-wrap">
                   <div className="flex flex-wrap items-center gap-3">
                     <div className="h-10 w-10 rounded-xl bg-primary/10 flex items-center justify-center"><Navigation className="h-5 w-5 text-primary" /></div>
@@ -506,14 +506,14 @@ export default function DeliveryRoutesTab() {
                       <p className="text-xs text-gray-500 dark:text-muted">{r.zone} · {assignedRiders[r.id] ?? r.rider}</p>
                       {r.customerName && <p className="text-xs text-primary font-semibold mt-0.5">{r.customerName}{r.customerPhone ? <span className="text-gray-400 font-normal"> · {r.customerPhone}</span> : null}</p>}
                       {(r.status === "completada" || r.status === "cancelada") && (assignedRiders[r.id] || r.riderName) && (assignedRiders[r.id] || r.riderName) !== "Repartidor" && (
-                        <span className="inline-flex items-center gap-1 mt-1 text-[10px] font-semibold px-2 py-0.5 rounded-full bg-indigo-50 dark:bg-indigo-950/30 text-indigo-600 dark:text-indigo-400">
+                        <span className="inline-flex items-center gap-1 mt-1 text-[length:var(--ts-2xs)] font-semibold px-2 py-0.5 rounded-full bg-[var(--surface-sunken)] text-[var(--text-secondary)] dark:text-[var(--text-primary)]">
                           <Users className="h-2.5 w-2.5" /> {assignedRiders[r.id] ?? r.riderName}
                         </span>
                       )}
                       {riders.length > 0 && r.status !== "completada" && r.status !== "cancelada" && (
                         <div className="mt-1.5 flex items-center gap-1">
                           <Users className="h-3 w-3 text-gray-400 shrink-0" />
-                          <select value={assignedRiders[r.id] ?? r.riderName ?? ""} onChange={e => setAssignedRiders(prev => ({ ...prev, [r.id]: e.target.value }))} className="text-xs border border-gray-200 dark:border-card-border rounded-lg px-2 py-0.5 bg-white dark:bg-surface text-gray-700 dark:text-foreground">
+                          <select value={assignedRiders[r.id] ?? r.riderName ?? ""} onChange={e => setAssignedRiders(prev => ({ ...prev, [r.id]: e.target.value }))} className="text-xs border border-[var(--rule-base)] dark:border-card-border rounded-lg px-2 py-0.5 bg-white dark:bg-surface text-gray-700 dark:text-foreground">
                             <option value="">Sin repartidor</option>
                             {riders.map(u => <option key={u.id} value={u.name}>{u.name} · {u.role}</option>)}
                           </select>
@@ -526,15 +526,15 @@ export default function DeliveryRoutesTab() {
                       <p className="text-gray-500 dark:text-muted">{r.stops} paradas · ~{r.estimatedTime} min</p>
                       {r.startTime && <p className="text-gray-400">Salida: {fmtDate(r.startTime)}</p>}
                     </div>
-                    <span className={cn("text-[10px] font-bold px-2.5 py-1 rounded-full", STATUS_COLORS[r.status])}>{STATUS_LABELS[r.status]}</span>
+                    <span className={cn("text-[length:var(--ts-2xs)] font-bold px-2.5 py-1 rounded-full", STATUS_COLORS[r.status])}>{STATUS_LABELS[r.status]}</span>
                   </div>
                 </div>
                 {r.status === "en-ruta" && (
-                  <div className="mt-3 pt-3 border-t border-gray-100 dark:border-card-border">
+                  <div className="mt-3 pt-3 border-t border-[var(--rule-soft)] dark:border-card-border">
                     <div className="w-full h-2 bg-gray-100 dark:bg-surface rounded-full overflow-hidden">
                       <div className="h-full bg-emerald-500 rounded-full animate-pulse" style={{ width: "60%" }} />
                     </div>
-                    <p className="text-[10px] text-gray-400 mt-1">Estimado: ~{r.estimatedTime - 15} min restantes</p>
+                    <p className="text-[length:var(--ts-2xs)] text-gray-400 mt-1">Estimado: ~{r.estimatedTime - 15} min restantes</p>
                   </div>
                 )}
                 {r.status === "completada" && r.actualTime && (
@@ -547,7 +547,7 @@ export default function DeliveryRoutesTab() {
                 )}
                 {/* Action buttons */}
                 {r.status !== "completada" && r.status !== "cancelada" && (
-                  <div className="mt-3 pt-3 border-t border-gray-100 dark:border-card-border flex items-center gap-2 flex-wrap">
+                  <div className="mt-3 pt-3 border-t border-[var(--rule-soft)] dark:border-card-border flex items-center gap-2 flex-wrap">
                     {r.status === "pendiente" && (
                       <button onClick={() => updateRouteStatus(r.id, "en-ruta")} className="px-3 py-1.5 rounded-lg text-xs font-bold bg-emerald-500 text-white hover:bg-emerald-600 transition-colors">Enviar a ruta</button>
                     )}
@@ -566,7 +566,7 @@ export default function DeliveryRoutesTab() {
       {view === "zones" && !loadingData && (
         <div className="space-y-3">
           {zones.map(z => (
-            <div key={z.id} className="bg-white dark:bg-card rounded-xl border border-gray-200 dark:border-card-border overflow-hidden">
+            <div key={z.id} className="bg-white dark:bg-card rounded-xl border border-[var(--rule-base)] dark:border-card-border overflow-hidden">
               <button onClick={() => setExpandedZone(expandedZone === z.id ? null : z.id)} className="w-full flex items-center justify-between px-5 py-4 hover:bg-gray-50 dark:hover:bg-surface/50 transition-colors">
                 <div className="flex flex-wrap items-center gap-3">
                   <div className={cn("h-4 w-4 rounded-full", z.color)} />
@@ -578,7 +578,7 @@ export default function DeliveryRoutesTab() {
                 {expandedZone === z.id ? <ChevronUp className="h-4 w-4 text-gray-400" /> : <ChevronDown className="h-4 w-4 text-gray-400" />}
               </button>
               {expandedZone === z.id && (
-                <div className="px-5 pb-4 border-t border-gray-100 dark:border-card-border pt-3">
+                <div className="px-5 pb-4 border-t border-[var(--rule-soft)] dark:border-card-border pt-3">
                   <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
                     {z.neighborhoods.map(n => (
                       <span key={n} className="px-3 py-1.5 bg-gray-50 dark:bg-surface rounded-lg text-xs font-semibold text-gray-700 dark:text-foreground">{n}</span>

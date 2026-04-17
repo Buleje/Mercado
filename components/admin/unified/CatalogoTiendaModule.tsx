@@ -53,7 +53,7 @@ type LocalChartTooltipProps = Partial<TooltipContentProps<ValueType, NameType>>;
 function ChartTooltip({ active, payload, label }: LocalChartTooltipProps) {
   if (!active || !payload?.length) return null;
   return (
-    <div className="min-w-40 bg-white rounded-xl border border-gray-100 px-4 py-3">
+    <div className="min-w-40 bg-white rounded-xl border border-[var(--rule-soft)] px-4 py-3">
       <p className="text-xs font-semibold text-gray-900 mb-1">{String(label ?? "")}</p>
       {payload.map((p, i) => (
         <p key={i} className="text-xs flex justify-between gap-4">
@@ -270,7 +270,7 @@ function ProductsDashboard() {
 
       {/* === SECCION 2: Distribucion (RadialBarChart + PieChart inventario) === */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <div className="bg-white rounded-xl border border-gray-100 p-6 ">
+        <div className="bg-white rounded-xl border border-[var(--rule-soft)] p-6 ">
           <div className="flex items-center gap-2 mb-4"><FavStar id="distribucion-cat" favs={catFavs} /><h3 className="text-sm font-bold text-gray-900">Distribucion por categoria</h3></div>
           <ResponsiveContainer width="100%" height={280}>
             <RadialBarChart cx="50%" cy="50%" innerRadius="20%" outerRadius="90%" data={radialData} startAngle={180} endAngle={-180}>
@@ -281,7 +281,7 @@ function ProductsDashboard() {
           </ResponsiveContainer>
         </div>
 
-        <div className="bg-white rounded-xl border border-gray-100 p-6 ">
+        <div className="bg-white rounded-xl border border-[var(--rule-soft)] p-6 ">
           <div className="flex items-center justify-between mb-4">
             <h3 className="text-sm font-bold text-gray-900">Valor del inventario por categoria</h3>
             <div className="flex items-center gap-2">
@@ -310,7 +310,7 @@ function ProductsDashboard() {
               <text x="50%" y="48%" textAnchor="middle" dominantBaseline="central" className="fill-gray-900 text-lg font-bold font-mono">
                 S/ {totalInventoryValue.toLocaleString()}
               </text>
-              <text x="50%" y="57%" textAnchor="middle" dominantBaseline="central" className="fill-gray-400 text-[10px]">
+              <text x="50%" y="57%" textAnchor="middle" dominantBaseline="central" className="fill-gray-400 text-[length:var(--ts-2xs)]">
                 Total inv.
               </text>
             </PieChart>
@@ -319,7 +319,7 @@ function ProductsDashboard() {
       </div>
 
       {/* === SECCION 3: Histograma de precios === */}
-      <div className="bg-white rounded-xl border border-gray-100 p-6 ">
+      <div className="bg-white rounded-xl border border-[var(--rule-soft)] p-6 ">
         <h3 className="text-sm font-bold text-gray-900 mb-4">Rango de precios</h3>
         <ResponsiveContainer width="100%" height={240}>
           <BarChart data={priceHistogram}>
@@ -332,7 +332,7 @@ function ProductsDashboard() {
               const rawVal = payload[0]?.value;
               const val = typeof rawVal === "number" ? rawVal : 0;
               return (
-                <div className="bg-white rounded-xl border border-gray-100 px-4 py-3">
+                <div className="bg-white rounded-xl border border-[var(--rule-soft)] px-4 py-3">
                   <p className="text-xs font-semibold text-gray-900">{String(label ?? "")}</p>
                   <p className="text-xs text-gray-500 mt-1">{val} productos ({((val / total) * 100).toFixed(0)}%)</p>
                 </div>
@@ -348,7 +348,7 @@ function ProductsDashboard() {
       </div>
 
       {/* === SECCION 4: Top 10 por valor en stock (ComposedChart) === */}
-      <div className="bg-white rounded-xl border border-gray-100 p-6 ">
+      <div className="bg-white rounded-xl border border-[var(--rule-soft)] p-6 ">
         <h3 className="text-sm font-bold text-gray-900 mb-4">Top 10 productos por valor en stock</h3>
         <ResponsiveContainer width="100%" height={300}>
           <ComposedChart data={top10Stock} layout="vertical">
@@ -364,9 +364,9 @@ function ProductsDashboard() {
       </div>
 
       {/* === SECCION 5: Scatter de margenes === */}
-      <div className="bg-white rounded-xl border border-gray-100 p-6 ">
+      <div className="bg-white rounded-xl border border-[var(--rule-soft)] p-6 ">
         <h3 className="text-sm font-bold text-gray-900 mb-1">Analisis de margenes</h3>
-        <p className="text-[10px] text-gray-400 mb-4">Precio venta vs margen % — tamano = stock</p>
+        <p className="text-[length:var(--ts-2xs)] text-gray-400 mb-4">Precio venta vs margen % — tamano = stock</p>
         <ResponsiveContainer width="100%" height={300}>
           <ScatterChart>
             <CartesianGrid strokeDasharray="3 3" stroke="rgba(0,0,0,0.06)" />
@@ -382,7 +382,7 @@ function ProductsDashboard() {
               if (!d) return null;
               const margen = d.margen ?? 0;
               return (
-                <div className="min-w-45 bg-white rounded-xl border border-gray-100 px-4 py-3">
+                <div className="min-w-45 bg-white rounded-xl border border-[var(--rule-soft)] px-4 py-3">
                   <p className="text-xs font-bold text-gray-900 mb-1">{d.name}</p>
                   <p className="text-xs text-gray-500">Precio: <span className="font-mono font-medium text-gray-800">S/ {d.precio?.toFixed(2)}</span></p>
                   <p className="text-xs text-gray-500">Costo: <span className="font-mono font-medium text-gray-800">S/ {d.costo?.toFixed(2)}</span></p>
@@ -402,14 +402,14 @@ function ProductsDashboard() {
           </ScatterChart>
         </ResponsiveContainer>
         <div className="flex items-center gap-4 mt-3 justify-center">
-          <span className="flex items-center gap-1.5 text-[10px] text-gray-500"><span className="h-2.5 w-2.5 rounded-full bg-primary" /> {">"}25% margen</span>
-          <span className="flex items-center gap-1.5 text-[10px] text-gray-500"><span className="h-2.5 w-2.5 rounded-full bg-[#f97316]" /> 10-25%</span>
-          <span className="flex items-center gap-1.5 text-[10px] text-gray-500"><span className="h-2.5 w-2.5 rounded-full bg-[#e63946]" /> {"<"}10%</span>
+          <span className="flex items-center gap-1.5 text-[length:var(--ts-2xs)] text-gray-500"><span className="h-2.5 w-2.5 rounded-full bg-primary" /> {">"}25% margen</span>
+          <span className="flex items-center gap-1.5 text-[length:var(--ts-2xs)] text-gray-500"><span className="h-2.5 w-2.5 rounded-full bg-[#f97316]" /> 10-25%</span>
+          <span className="flex items-center gap-1.5 text-[length:var(--ts-2xs)] text-gray-500"><span className="h-2.5 w-2.5 rounded-full bg-[#e63946]" /> {"<"}10%</span>
         </div>
       </div>
 
       {/* === SECCION 6: Estado de stock (Gauge donut) === */}
-      <div className="bg-white rounded-xl border border-gray-100 p-6 ">
+      <div className="bg-white rounded-xl border border-[var(--rule-soft)] p-6 ">
         <h3 className="text-sm font-bold text-gray-900 mb-4">Productos por estado de stock</h3>
         <ResponsiveContainer width="100%" height={200}>
           <PieChart>
@@ -423,7 +423,7 @@ function ProductsDashboard() {
             <text x="50%" y="70%" textAnchor="middle" dominantBaseline="central" className="fill-gray-900 text-2xl font-bold font-mono">
               {kpis.total}
             </text>
-            <text x="50%" y="82%" textAnchor="middle" dominantBaseline="central" className="fill-gray-400 text-[10px]">
+            <text x="50%" y="82%" textAnchor="middle" dominantBaseline="central" className="fill-gray-400 text-[length:var(--ts-2xs)]">
               total
             </text>
           </PieChart>
@@ -440,7 +440,7 @@ function ProductsDashboard() {
             <div className="flex-1 min-w-0">
               <p className="text-sm font-bold text-amber-800">{kpis.sinImagen} sin imagen</p>
               <p className="text-xs text-amber-600 mt-0.5">Productos sin foto se venden menos</p>
-              <button className="mt-2 text-[10px] font-semibold text-amber-700 bg-amber-100 px-3 py-1 rounded-full hover:bg-amber-200 transition-colors">
+              <button className="mt-2 text-[length:var(--ts-2xs)] font-semibold text-amber-700 bg-amber-100 px-3 py-1 rounded-full hover:bg-amber-200 transition-colors">
                 Completar
               </button>
             </div>
@@ -454,21 +454,21 @@ function ProductsDashboard() {
             <div className="flex-1 min-w-0">
               <p className="text-sm font-bold text-red-800">{kpis.sinCosto} sin costo</p>
               <p className="text-xs text-red-600 mt-0.5">Sin costo no se calcula el margen</p>
-              <button className="mt-2 text-[10px] font-semibold text-red-700 bg-red-100 px-3 py-1 rounded-full hover:bg-red-200 transition-colors">
+              <button className="mt-2 text-[length:var(--ts-2xs)] font-semibold text-red-700 bg-red-100 px-3 py-1 rounded-full hover:bg-red-200 transition-colors">
                 Agregar costos
               </button>
             </div>
           </div>
         )}
         {kpis.sinStock > 0 && (
-          <div className="bg-gray-50 border border-gray-200 rounded-xl p-4 flex items-start gap-3">
+          <div className="bg-gray-50 border border-[var(--rule-base)] rounded-xl p-4 flex items-start gap-3">
             <div className="h-10 w-10 rounded-full bg-gray-100 flex items-center justify-center shrink-0">
               <Eye className="h-5 w-5 text-gray-600" />
             </div>
             <div className="flex-1 min-w-0">
               <p className="text-sm font-bold text-gray-800">{kpis.sinStock} sin stock</p>
               <p className="text-xs text-gray-500 mt-0.5">Estos productos no se muestran en la tienda</p>
-              <button className="mt-2 text-[10px] font-semibold text-gray-700 bg-gray-100 px-3 py-1 rounded-full hover:bg-gray-200 transition-colors">
+              <button className="mt-2 text-[length:var(--ts-2xs)] font-semibold text-gray-700 bg-gray-100 px-3 py-1 rounded-full hover:bg-gray-200 transition-colors">
                 Ver productos
               </button>
             </div>

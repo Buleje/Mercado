@@ -79,7 +79,7 @@ export default function SuggestionBox() {
 
   if (submitted) {
     return (
-      <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-700 p-8 text-center shadow-sm">
+      <div className="bg-white dark:bg-gray-900 rounded-2xl border border-[var(--rule-base)] p-8 text-center shadow-sm">
         <div className="flex justify-center mb-4">
           <div className="p-4 rounded-full bg-[#00B4A6]/10">
             <CheckCircle2 className="w-10 h-10 text-[#00B4A6]" />
@@ -103,9 +103,9 @@ export default function SuggestionBox() {
   }
 
   return (
-    <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-700 overflow-hidden shadow-sm">
+    <div className="bg-white dark:bg-gray-900 rounded-2xl border border-[var(--rule-base)] overflow-hidden shadow-sm">
       {/* Header */}
-      <div className="p-5 border-b border-gray-100 dark:border-gray-800 flex items-center gap-3">
+      <div className="p-5 border-b border-[var(--rule-base)] flex items-center gap-3">
         <div className="p-2 rounded-xl bg-[#00B4A6]/10">
           <MessageSquare className="w-5 h-5 text-[#00B4A6]" />
         </div>
@@ -167,7 +167,7 @@ export default function SuggestionBox() {
                   "px-3 py-1.5 rounded-full text-sm font-medium border transition-colors",
                   category === cat.value
                     ? "bg-[#00B4A6] text-white border-[#00B4A6]"
-                    : "border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-400 hover:border-[#00B4A6] hover:text-[#00B4A6]"
+                    : "border-[var(--rule-base)] text-gray-600 dark:text-gray-400 hover:border-[#00B4A6] hover:text-[#00B4A6]"
                 )}
               >
                 {cat.label}
@@ -187,7 +187,7 @@ export default function SuggestionBox() {
             placeholder="Que podemos mejorar? Que te gusto? Que necesitas?"
             rows={4}
             maxLength={500}
-            className="w-full rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 px-4 py-3 text-sm text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-600 outline-none focus:border-[#00B4A6] resize-none"
+            className="w-full rounded-xl border border-[var(--rule-base)] bg-gray-50 dark:bg-gray-800 px-4 py-3 text-sm text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-600 outline-none focus:border-[#00B4A6] resize-none"
           />
           <p className="text-xs text-gray-400 text-right mt-1">
             {message.length}/500

@@ -59,7 +59,7 @@ function BarChart({
         return (
           <div key={i} className="group relative flex flex-1 flex-col items-center">
             {/* Tooltip */}
-            <div className="absolute -top-16 left-1/2 z-10 hidden -translate-x-1/2 rounded-lg border border-gray-200 bg-white px-2 py-1 text-center group-hover:block">
+            <div className="absolute -top-16 left-1/2 z-10 hidden -translate-x-1/2 rounded-lg border border-[var(--rule-base)] bg-white px-2 py-1 text-center group-hover:block">
               <p className="text-xs font-semibold text-gray-800">
                 {fmt(p.price)}
               </p>
@@ -76,7 +76,7 @@ function BarChart({
               )}
               style={{ height: `${Math.max(pct, 2)}%` }}
             />
-            <span className="mt-1 text-center text-[9px] leading-tight text-gray-500">
+            <span className="mt-1 text-center text-[length:var(--ts-2xs)] leading-tight text-gray-500">
               {fmt(p.price).replace("S/ ", "")}
             </span>
           </div>
@@ -173,7 +173,7 @@ export default function ProfitabilityCalculator() {
     <div className="flex flex-col gap-6">
       <div className="grid gap-6 md:grid-cols-2">
         {/* Inputs */}
-        <div className="rounded-xl border border-gray-200 bg-white p-5">
+        <div className="rounded-xl border border-[var(--rule-base)] bg-white p-5">
           <div className="mb-4 flex items-center gap-2">
             <Calculator className="h-5 w-5 text-primary" />
             <h3 className="text-sm font-semibold text-gray-800">
@@ -192,7 +192,7 @@ export default function ProfitabilityCalculator() {
                 onChange={(e) => setSelectedId(Number(e.target.value))}
                 disabled={loadingProds}
                 className={cn(
-                  "w-full appearance-none rounded-lg border border-gray-200 bg-gray-50 py-2 pl-3 pr-8 text-sm",
+                  "w-full appearance-none rounded-lg border border-[var(--rule-base)] bg-gray-50 py-2 pl-3 pr-8 text-sm",
                   "text-gray-800 outline-none focus:border-primary focus:ring-2 focus:ring-primary/20",
                   ""
                 )}
@@ -228,7 +228,7 @@ export default function ProfitabilityCalculator() {
                   value={value}
                   onChange={(e) => setter(Number(e.target.value))}
                   className={cn(
-                    "w-full rounded-lg border border-gray-200 bg-gray-50 px-3 py-2 text-sm",
+                    "w-full rounded-lg border border-[var(--rule-base)] bg-gray-50 px-3 py-2 text-sm",
                     "text-gray-800 outline-none focus:border-primary focus:ring-2 focus:ring-primary/20",
                     ""
                   )}
@@ -284,7 +284,7 @@ export default function ProfitabilityCalculator() {
         </div>
 
         {/* Chart + optimal */}
-        <div className="rounded-xl border border-gray-200 bg-white p-5">
+        <div className="rounded-xl border border-[var(--rule-base)] bg-white p-5">
           <div className="mb-4 flex items-center gap-2">
             <TrendingUp className="h-5 w-5 text-secondary" />
             <h3 className="text-sm font-semibold text-gray-800">
@@ -353,8 +353,8 @@ export default function ProfitabilityCalculator() {
 
       {/* Simulation table */}
       {simPoints.length > 0 && currentPoint && (
-        <div className="rounded-xl border border-gray-200 bg-white">
-          <div className="border-b border-gray-100 px-5 py-3">
+        <div className="rounded-xl border border-[var(--rule-base)] bg-white">
+          <div className="border-b border-[var(--rule-soft)] px-5 py-3">
             <p className="text-sm font-semibold text-gray-800">
               Tabla de simulación
             </p>
@@ -362,7 +362,7 @@ export default function ProfitabilityCalculator() {
           <div className="overflow-x-auto">
             <table className="w-full text-xs">
               <thead>
-                <tr className="border-b border-gray-100">
+                <tr className="border-b border-[var(--rule-soft)]">
                   {["Precio", "Variación", "Ventas/mes", "Ganancia/mes", "vs Actual"].map((h) => (
                     <th
                       key={h}
@@ -393,7 +393,7 @@ export default function ProfitabilityCalculator() {
                           <Star className="ml-1 inline h-3 w-3 text-secondary" />
                         )}
                         {isCurrent && (
-                          <span className="ml-1 text-[10px] text-primary">(actual)</span>
+                          <span className="ml-1 text-[length:var(--ts-2xs)] text-primary">(actual)</span>
                         )}
                       </td>
                       <td className="px-4 py-2 text-gray-500">{p.label}</td>

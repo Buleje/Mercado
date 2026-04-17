@@ -110,21 +110,21 @@ function ExpirySection({
       {/* Table */}
       {!collapsed && (
         rows.length === 0 ? (
-          <div className="px-4 py-6 text-center border-t border-gray-100 dark:border-card-border">
+          <div className="px-4 py-6 text-center border-t border-[var(--rule-soft)] dark:border-card-border">
             <Package className="h-7 w-7 text-gray-300 dark:text-gray-600 mx-auto mb-2" />
             <p className="text-xs text-gray-400 dark:text-muted">Sin productos en este rango</p>
           </div>
         ) : (
-          <div className="overflow-x-auto border-t border-gray-100 dark:border-card-border">
+          <div className="overflow-x-auto border-t border-[var(--rule-soft)] dark:border-card-border">
             <table className="w-full min-w-[640px] text-sm">
               <thead>
                 <tr className="bg-gray-50 dark:bg-white/5">
-                  <th className="px-4 py-2.5 text-left text-[11px] font-bold uppercase text-gray-400">Producto</th>
-                  <th className="px-4 py-2.5 text-left text-[11px] font-bold uppercase text-gray-400 hidden sm:table-cell">Lote</th>
-                  <th className="px-4 py-2.5 text-left text-[11px] font-bold uppercase text-gray-400">Vence</th>
-                  <th className="px-4 py-2.5 text-right text-[11px] font-bold uppercase text-gray-400">Cantidad</th>
-                  <th className="px-4 py-2.5 text-right text-[11px] font-bold uppercase text-gray-400 hidden md:table-cell">Valor riesgo</th>
-                  <th className="px-4 py-2.5 text-center text-[11px] font-bold uppercase text-gray-400">Acciones</th>
+                  <th className="px-4 py-2.5 text-left text-[length:var(--ts-xs)] font-bold uppercase text-gray-400">Producto</th>
+                  <th className="px-4 py-2.5 text-left text-[length:var(--ts-xs)] font-bold uppercase text-gray-400 hidden sm:table-cell">Lote</th>
+                  <th className="px-4 py-2.5 text-left text-[length:var(--ts-xs)] font-bold uppercase text-gray-400">Vence</th>
+                  <th className="px-4 py-2.5 text-right text-[length:var(--ts-xs)] font-bold uppercase text-gray-400">Cantidad</th>
+                  <th className="px-4 py-2.5 text-right text-[length:var(--ts-xs)] font-bold uppercase text-gray-400 hidden md:table-cell">Valor riesgo</th>
+                  <th className="px-4 py-2.5 text-center text-[length:var(--ts-xs)] font-bold uppercase text-gray-400">Acciones</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-100 dark:divide-card-border">
@@ -132,14 +132,14 @@ function ExpirySection({
                   <tr key={row.id} className="hover:bg-gray-50 dark:hover:bg-white/5 transition-colors">
                     <td className="px-4 py-2.5">
                       <p className="font-medium text-gray-900 dark:text-white text-xs">{row.productName}</p>
-                      <p className="text-[10px] text-gray-400 dark:text-muted">{row.productCategory}</p>
+                      <p className="text-[length:var(--ts-2xs)] text-gray-400 dark:text-muted">{row.productCategory}</p>
                     </td>
                     <td className="px-4 py-2.5 hidden sm:table-cell">
                       <span className="text-xs font-mono text-gray-600 dark:text-gray-400">{row.lote}</span>
                     </td>
                     <td className="px-4 py-2.5">
                       <p className="text-xs text-gray-700 dark:text-gray-300">{fmtDate(row.expiryDate)}</p>
-                      <p className={cn("text-[10px] font-bold", colorClass)}>{row.daysUntilExpiry}d</p>
+                      <p className={cn("text-[length:var(--ts-2xs)] font-bold", colorClass)}>{row.daysUntilExpiry}d</p>
                     </td>
                     <td className="px-4 py-2.5 text-right">
                       <span className="text-xs font-bold text-gray-900 dark:text-white">{row.quantity} {row.unit}</span>
@@ -152,14 +152,14 @@ function ExpirySection({
                         <button
                           onClick={() => onLiquidar(row)}
                           title="Liquidar — crear promoción"
-                          className="flex items-center gap-1 px-2 py-1 rounded-lg text-[10px] font-bold text-amber-700 dark:text-amber-400 bg-amber-50 dark:bg-amber-900/20 hover:bg-amber-100 dark:hover:bg-amber-900/30 transition-colors min-h-[32px]"
+                          className="flex items-center gap-1 px-2 py-1 rounded-lg text-[length:var(--ts-2xs)] font-bold text-amber-700 dark:text-amber-400 bg-amber-50 dark:bg-amber-900/20 hover:bg-amber-100 dark:hover:bg-amber-900/30 transition-colors min-h-[32px]"
                         >
                           <Tag className="h-3 w-3" /> Liquidar
                         </button>
                         <button
                           onClick={() => onDarBaja(row)}
                           title="Dar de baja"
-                          className="flex items-center gap-1 px-2 py-1 rounded-lg text-[10px] font-bold text-red-700 dark:text-red-400 bg-red-50 dark:bg-red-900/20 hover:bg-red-100 dark:hover:bg-red-900/30 transition-colors min-h-[32px]"
+                          className="flex items-center gap-1 px-2 py-1 rounded-lg text-[length:var(--ts-2xs)] font-bold text-red-700 dark:text-red-400 bg-red-50 dark:bg-red-900/20 hover:bg-red-100 dark:hover:bg-red-900/30 transition-colors min-h-[32px]"
                         >
                           <Trash2 className="h-3 w-3" /> Dar baja
                         </button>
@@ -321,25 +321,25 @@ export default function ExpiryAlertsDashboard() {
 
       {/* KPIs */}
       <div className="grid grid-cols-3 gap-3">
-        <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl p-3 border-b-4 border-b-amber-500">
+        <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl p-3 border-b-4 border-b-amber-500">
           <div className="flex items-center gap-2 mb-1">
             <Package className="h-4 w-4 text-amber-500 shrink-0" />
-            <p className="text-[10px] uppercase font-bold text-gray-400">Productos</p>
+            <p className="text-[length:var(--ts-2xs)] uppercase font-bold text-gray-400">Productos</p>
           </div>
           <p className="text-2xl font-extrabold text-amber-600 dark:text-amber-400">{batches.length}</p>
-          <p className="text-[10px] text-gray-400 mt-0.5">por vencer en 30d</p>
+          <p className="text-[length:var(--ts-2xs)] text-gray-400 mt-0.5">por vencer en 30d</p>
         </div>
-        <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl p-3 border-b-4 border-b-red-500">
+        <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl p-3 border-b-4 border-b-red-500">
           <div className="flex items-center gap-2 mb-1">
             <DollarSign className="h-4 w-4 text-red-500 shrink-0" />
-            <p className="text-[10px] uppercase font-bold text-gray-400">Valor en riesgo</p>
+            <p className="text-[length:var(--ts-2xs)] uppercase font-bold text-gray-400">Valor en riesgo</p>
           </div>
           <p className="text-lg font-extrabold font-mono text-red-600 dark:text-red-400">{fmt(totalValor)}</p>
         </div>
-        <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl p-3 border-b-4 border-b-orange-500">
+        <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl p-3 border-b-4 border-b-orange-500">
           <div className="flex items-center gap-2 mb-1">
             <AlertTriangle className="h-4 w-4 text-orange-500 shrink-0" />
-            <p className="text-[10px] uppercase font-bold text-gray-400">Lotes afectados</p>
+            <p className="text-[length:var(--ts-2xs)] uppercase font-bold text-gray-400">Lotes afectados</p>
           </div>
           <p className="text-2xl font-extrabold text-orange-600 dark:text-orange-400">{lotesAfectados}</p>
         </div>
@@ -393,7 +393,7 @@ export default function ExpiryAlertsDashboard() {
 
       {/* Empty */}
       {batches.length === 0 && (
-        <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl py-16 text-center">
+        <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl py-16 text-center">
           <Package className="h-10 w-10 text-gray-300 dark:text-gray-600 mx-auto mb-3" />
           <p className="text-sm font-medium text-gray-500 dark:text-muted">Sin productos por vencer en los próximos 30 días</p>
         </div>

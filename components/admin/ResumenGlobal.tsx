@@ -81,7 +81,7 @@ export default function ResumenGlobal({ onNavigate }: { onNavigate?: (tab: strin
     <div className="space-y-3">
       <div className="flex items-center justify-between">
         <h2 className="text-lg font-bold text-gray-900">Resumen del día</h2>
-        <span className="text-[10px] text-gray-400 font-medium">
+        <span className="text-[length:var(--ts-2xs)] text-gray-400 font-medium">
           {new Date().toLocaleDateString("es-PE", { weekday: "long", day: "numeric", month: "long" })}
         </span>
       </div>
@@ -96,7 +96,7 @@ export default function ResumenGlobal({ onNavigate }: { onNavigate?: (tab: strin
               onClick={() => onNavigate?.(c.tab)}
               className={cn(
                 "bg-white border rounded-xl p-3 sm:p-4 text-left transition-all hover:shadow-sm hover:scale-[1.01]",
-                c.alert ? "border-red-200 bg-red-50/50" : "border-gray-200",
+                c.alert ? "border-red-200 bg-red-50/50" : "border-[var(--rule-base)]",
               )}
             >
               {loading ? (
@@ -115,7 +115,7 @@ export default function ResumenGlobal({ onNavigate }: { onNavigate?: (tab: strin
                   )}>
                     {c.value}
                   </p>
-                  <p className="text-[10px] text-gray-500 font-medium mt-0.5">{c.label}</p>
+                  <p className="text-[length:var(--ts-2xs)] text-gray-500 font-medium mt-0.5">{c.label}</p>
                 </>
               )}
             </button>

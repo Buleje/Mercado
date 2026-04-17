@@ -150,20 +150,9 @@ export default function WeatherDemandPredictor() {
   const suggestions = weather ? SUGGESTIONS[weather.condition] : [];
 
   return (
-    <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-700 overflow-hidden ">
+    <div className="bg-white dark:bg-gray-900 rounded-xl border border-[var(--rule-base)] overflow-hidden ">
       {/* Header */}
-      <div
-        className={cn(
-          "p-5 flex items-center justify-between",
-          weather?.condition === "hot"
-            ? "bg-gradient-to-r from-orange-50 to-yellow-50 dark:from-orange-950/30 dark:to-yellow-950/30"
-            : weather?.condition === "rainy"
-              ? "bg-gradient-to-r from-emerald-50 to-cyan-50 dark:from-emerald-950/30 dark:to-cyan-950/30"
-              : weather?.condition === "cold"
-                ? "bg-gradient-to-r from-cyan-50 to-slate-50 dark:from-cyan-950/30 dark:to-slate-950/30"
-                : "bg-gradient-to-r from-green-50 to-emerald-50 dark:from-green-950/30 dark:to-emerald-950/30"
-        )}
-      >
+      <div className="p-5 flex items-center justify-between bg-[var(--surface-sunken)]">
         <div className="flex items-center gap-4">
           {loading ? (
             <div className="w-12 h-12 rounded-full bg-gray-200 dark:bg-gray-700 animate-pulse" />
@@ -176,7 +165,7 @@ export default function WeatherDemandPredictor() {
             </h2>
             {weather && (
               <>
-                <p className="text-2xl font-black text-gray-900 dark:text-white">
+                <p className="text-2xl font-extrabold text-gray-900 dark:text-white">
                   {weather.temp} C
                 </p>
                 <p className="text-sm text-gray-500 dark:text-gray-400">
@@ -218,7 +207,7 @@ export default function WeatherDemandPredictor() {
             suggestions.map((sug, i) => (
               <div
                 key={i}
-                className="flex items-center justify-between gap-3 p-3 rounded-xl bg-gray-50 dark:bg-gray-800/50 border border-gray-100 dark:border-gray-700"
+                className="flex items-center justify-between gap-3 p-3 rounded-xl bg-gray-50 dark:bg-gray-800/50 border border-[var(--rule-base)]"
               >
                 <div className="flex items-center gap-3 min-w-0">
                   <Thermometer className="w-4 h-4 text-[#00B4A6] flex-shrink-0" />

@@ -61,7 +61,7 @@ const ACTION_COLOR: Record<ActionType, string> = {
   create_alert:   "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400",
   send_whatsapp:  "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400",
   create_order:   "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400",
-  apply_discount: "bg-violet-100 text-violet-700 dark:bg-violet-900/30 dark:text-violet-400",
+  apply_discount: "bg-[var(--surface-sunken)] text-[var(--text-primary)]",
 };
 
 const STORAGE_KEY = "buleje_business_rules";
@@ -180,7 +180,7 @@ export default function BusinessRuleBuilder() {
 
       {/* Form */}
       {showForm && (
-        <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl p-5  space-y-5">
+        <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl p-5  space-y-5">
           <p className="text-sm font-semibold text-gray-700 dark:text-gray-300">Nueva regla automatica</p>
 
           {/* Condition row */}
@@ -190,7 +190,7 @@ export default function BusinessRuleBuilder() {
               <select
                 value={form.conditionType}
                 onChange={e => setForm(f => ({ ...f, conditionType: e.target.value as ConditionType, conditionValue: "" }))}
-                className="flex-1 min-w-[200px] px-3 py-2 rounded-lg border border-gray-200 dark:border-card-border bg-white dark:bg-card text-gray-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-[#00B4A6]/40"
+                className="flex-1 min-w-[200px] px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-card-border bg-white dark:bg-card text-gray-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-[#00B4A6]/40"
               >
                 {CONDITION_OPTIONS.map(o => (
                   <option key={o.value} value={o.value}>{o.label}</option>
@@ -205,7 +205,7 @@ export default function BusinessRuleBuilder() {
                     placeholder={conditionMeta.placeholder}
                     className={cn(
                       "w-full px-3 py-2 rounded-lg border bg-white dark:bg-card text-gray-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-[#00B4A6]/40",
-                      errors.conditionValue ? "border-red-400 dark:border-red-500" : "border-gray-200 dark:border-card-border"
+                      errors.conditionValue ? "border-red-400 dark:border-red-500" : "border-[var(--rule-base)] dark:border-card-border"
                     )}
                   />
                   <span className="text-xs text-gray-400 whitespace-nowrap">{conditionMeta.unit}</span>
@@ -222,7 +222,7 @@ export default function BusinessRuleBuilder() {
               <select
                 value={form.actionType}
                 onChange={e => setForm(f => ({ ...f, actionType: e.target.value as ActionType, actionValue: "" }))}
-                className="flex-1 min-w-[200px] px-3 py-2 rounded-lg border border-gray-200 dark:border-card-border bg-white dark:bg-card text-gray-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-[#00B4A6]/40"
+                className="flex-1 min-w-[200px] px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-card-border bg-white dark:bg-card text-gray-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-[#00B4A6]/40"
               >
                 {ACTION_OPTIONS.map(o => (
                   <option key={o.value} value={o.value}>{o.label}</option>
@@ -236,7 +236,7 @@ export default function BusinessRuleBuilder() {
                   placeholder={actionMeta.valuePlaceholder}
                   className={cn(
                     "w-full px-3 py-2 rounded-lg border bg-white dark:bg-card text-gray-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-[#00B4A6]/40",
-                    errors.actionValue ? "border-red-400 dark:border-red-500" : "border-gray-200 dark:border-card-border"
+                    errors.actionValue ? "border-red-400 dark:border-red-500" : "border-[var(--rule-base)] dark:border-card-border"
                   )}
                 />
                 {errors.actionValue && <p className="text-xs text-red-500">{errors.actionValue}</p>}
@@ -275,7 +275,7 @@ export default function BusinessRuleBuilder() {
             key={rule.id}
             className={cn(
               "bg-white dark:bg-card border rounded-xl p-4  transition-opacity",
-              rule.enabled ? "border-gray-200 dark:border-card-border" : "border-gray-100 dark:border-card-border/50 opacity-60"
+              rule.enabled ? "border-[var(--rule-base)] dark:border-card-border" : "border-[var(--rule-soft)] dark:border-card-border/50 opacity-60"
             )}
           >
             <div className="flex flex-wrap items-center gap-3">

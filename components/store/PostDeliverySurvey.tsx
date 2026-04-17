@@ -42,13 +42,13 @@ function StarRating({
             onMouseEnter={() => setHovered(star)}
             aria-label={STAR_LABELS[i]}
             className={cn(
-              "transition-transform duration-100 disabled:cursor-default",
+              "transition-transform duration-[var(--dur-fast)] disabled:cursor-default",
               !disabled && "hover:scale-110 focus:outline-none"
             )}
           >
             <Star
               className={cn(
-                "h-8 w-8 transition-colors duration-150",
+                "h-8 w-8 transition-colors duration-[var(--dur-fast)]",
                 star <= active
                   ? "fill-yellow-400 text-yellow-400"
                   : "fill-muted text-muted-foreground"

@@ -71,7 +71,7 @@ export default function KanbanBoardTab() {
           <p className="text-sm text-gray-500 dark:text-muted mt-1">Organiza tareas del equipo en columnas de estado</p>
         </div>
         <div className="flex flex-wrap items-center gap-3">
-          <select value={filterAssignee} onChange={e => setFilterAssignee(e.target.value)} className="px-2 sm:px-4 py-1.5 sm:py-2.5 rounded-lg border-2 border-gray-200 dark:border-card-border bg-white dark:bg-card text-sm font-semibold outline-none focus:border-primary">
+          <select value={filterAssignee} onChange={e => setFilterAssignee(e.target.value)} className="px-2 sm:px-4 py-1.5 sm:py-2.5 rounded-lg border-2 border-[var(--rule-base)] dark:border-card-border bg-white dark:bg-card text-sm font-semibold outline-none focus:border-primary">
             <option value="">Todos</option>
             {assignees.map(a => <option key={a} value={a}>{a}</option>)}
           </select>
@@ -92,7 +92,7 @@ export default function KanbanBoardTab() {
           const c = COL_CONFIG[col];
           const count = getColumnTasks(col).length;
           return (
-            <div key={col} className={cn("rounded-xl border border-gray-200 dark:border-card-border p-4", c.bg)}>
+            <div key={col} className={cn("rounded-xl border border-[var(--rule-base)] dark:border-card-border p-4", c.bg)}>
               <p className={cn("text-sm font-extrabold", c.color)}>{c.label}</p>
               <p className="text-xl sm:text-2xl font-extrabold text-gray-900 dark:text-foreground mt-1">{count}</p>
             </div>
@@ -102,15 +102,15 @@ export default function KanbanBoardTab() {
 
       {/* New task form */}
       {showForm && (
-        <div className="bg-white dark:bg-card rounded-xl border border-gray-200 dark:border-card-border p-3 sm:p-5 space-y-4">
+        <div className="bg-white dark:bg-card rounded-xl border border-[var(--rule-base)] dark:border-card-border p-3 sm:p-5 space-y-4">
           <h3 className="font-bold text-gray-900 dark:text-foreground">Nueva Tarea</h3>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-2 sm:gap-4">
-            <input value={form.title} onChange={e => setForm({ ...form, title: e.target.value })} placeholder="Título de la tarea" className="px-2 sm:px-4 py-1.5 sm:py-2.5 rounded-lg border-2 border-gray-200 dark:border-card-border bg-white dark:bg-card text-sm outline-none focus:border-primary" />
-            <input value={form.assignee} onChange={e => setForm({ ...form, assignee: e.target.value })} placeholder="Responsable" className="px-2 sm:px-4 py-1.5 sm:py-2.5 rounded-lg border-2 border-gray-200 dark:border-card-border bg-white dark:bg-card text-sm outline-none focus:border-primary" />
-            <input value={form.description} onChange={e => setForm({ ...form, description: e.target.value })} placeholder="Descripción" className="px-2 sm:px-4 py-1.5 sm:py-2.5 rounded-lg border-2 border-gray-200 dark:border-card-border bg-white dark:bg-card text-sm outline-none focus:border-primary" />
+            <input value={form.title} onChange={e => setForm({ ...form, title: e.target.value })} placeholder="Título de la tarea" className="px-2 sm:px-4 py-1.5 sm:py-2.5 rounded-lg border-2 border-[var(--rule-base)] dark:border-card-border bg-white dark:bg-card text-sm outline-none focus:border-primary" />
+            <input value={form.assignee} onChange={e => setForm({ ...form, assignee: e.target.value })} placeholder="Responsable" className="px-2 sm:px-4 py-1.5 sm:py-2.5 rounded-lg border-2 border-[var(--rule-base)] dark:border-card-border bg-white dark:bg-card text-sm outline-none focus:border-primary" />
+            <input value={form.description} onChange={e => setForm({ ...form, description: e.target.value })} placeholder="Descripción" className="px-2 sm:px-4 py-1.5 sm:py-2.5 rounded-lg border-2 border-[var(--rule-base)] dark:border-card-border bg-white dark:bg-card text-sm outline-none focus:border-primary" />
             <div className="flex flex-wrap gap-3">
-              <input type="date" value={form.dueDate} onChange={e => setForm({ ...form, dueDate: e.target.value })} className="flex-1 px-2 sm:px-4 py-1.5 sm:py-2.5 rounded-lg border-2 border-gray-200 dark:border-card-border bg-white dark:bg-card text-sm outline-none focus:border-primary" />
-              <select value={form.priority} onChange={e => setForm({ ...form, priority: e.target.value as Priority })} className="px-2 sm:px-4 py-1.5 sm:py-2.5 rounded-lg border-2 border-gray-200 dark:border-card-border bg-white dark:bg-card text-sm font-semibold outline-none focus:border-primary">
+              <input type="date" value={form.dueDate} onChange={e => setForm({ ...form, dueDate: e.target.value })} className="flex-1 px-2 sm:px-4 py-1.5 sm:py-2.5 rounded-lg border-2 border-[var(--rule-base)] dark:border-card-border bg-white dark:bg-card text-sm outline-none focus:border-primary" />
+              <select value={form.priority} onChange={e => setForm({ ...form, priority: e.target.value as Priority })} className="px-2 sm:px-4 py-1.5 sm:py-2.5 rounded-lg border-2 border-[var(--rule-base)] dark:border-card-border bg-white dark:bg-card text-sm font-semibold outline-none focus:border-primary">
                 <option value="baja">Baja</option><option value="media">Media</option>
                 <option value="alta">Alta</option><option value="urgente">Urgente</option>
               </select>
@@ -129,25 +129,25 @@ export default function KanbanBoardTab() {
           const conf = COL_CONFIG[col];
           const colTasks = getColumnTasks(col);
           return (
-            <div key={col} className={cn("rounded-xl border-2 border-dashed p-4 min-h-[300px]", conf.bg, "border-gray-200 dark:border-card-border")}
+            <div key={col} className={cn("rounded-xl border-2 border-dashed p-4 min-h-[300px]", conf.bg, "border-[var(--rule-base)] dark:border-card-border")}
               onDragOver={e => e.preventDefault()}
               onDrop={() => { if (dragTask !== null) { moveTask(dragTask, col); setDragTask(null); } }}>
               <h3 className={cn("text-sm font-extrabold mb-4", conf.color)}>{conf.label} ({colTasks.length})</h3>
               <div className="space-y-3">
                 {colTasks.map(t => (
-                  <div key={t.id} draggable onDragStart={() => setDragTask(t.id)} className="bg-white dark:bg-card rounded-xl border border-gray-200 dark:border-card-border p-4  hover:shadow-sm transition-shadow cursor-grab active:cursor-grabbing">
+                  <div key={t.id} draggable onDragStart={() => setDragTask(t.id)} className="bg-white dark:bg-card rounded-xl border border-[var(--rule-base)] dark:border-card-border p-4  hover:shadow-sm transition-shadow cursor-grab active:cursor-grabbing">
                     <div className="flex flex-wrap items-start justify-between gap-2">
                       <div className="flex flex-wrap items-center gap-2">
                         <GripVertical className="h-4 w-4 text-gray-300 dark:text-gray-600 shrink-0" />
                         <h4 className="font-bold text-sm text-gray-900 dark:text-foreground">{t.title}</h4>
                       </div>
-                      <span className={cn("text-[10px] font-bold px-2 py-0.5 rounded-full shrink-0", PRIORITY_CONFIG[t.priority].color)}>
+                      <span className={cn("text-[length:var(--ts-2xs)] font-bold px-2 py-0.5 rounded-full shrink-0", PRIORITY_CONFIG[t.priority].color)}>
                         {PRIORITY_CONFIG[t.priority].label}
                       </span>
                     </div>
                     {t.description && <p className="text-xs text-gray-500 dark:text-muted mt-1 ml-6">{t.description}</p>}
                     <div className="flex items-center justify-between mt-3 ml-6">
-                      <div className="flex flex-wrap items-center gap-3 text-[11px] text-gray-400 dark:text-muted">
+                      <div className="flex flex-wrap items-center gap-3 text-[length:var(--ts-xs)] text-gray-400 dark:text-muted">
                         <span className="flex items-center gap-1"><User className="h-3 w-3" />{t.assignee}</span>
                         <span className="flex items-center gap-1"><Clock className="h-3 w-3" />{t.dueDate}</span>
                       </div>
@@ -175,22 +175,22 @@ export default function KanbanBoardTab() {
       {editing && (
         <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4" onClick={() => setEditing(null)}>
           <div className="bg-white dark:bg-card rounded-xl w-full max-w-md" onClick={e => e.stopPropagation()}>
-            <div className="px-3 sm:px-6 py-4 border-b border-gray-100 dark:border-card-border flex items-center justify-between">
+            <div className="px-3 sm:px-6 py-4 border-b border-[var(--rule-soft)] dark:border-card-border flex items-center justify-between">
               <h3 className="font-extrabold text-gray-900 dark:text-foreground">Editar Tarea</h3>
               <button onClick={() => setEditing(null)} className="text-base sm:text-xl font-bold text-gray-400">×</button>
             </div>
             <div className="px-3 sm:px-6 py-5 space-y-3">
-              <input value={editing.title} onChange={e => setEditing({ ...editing, title: e.target.value })} className="w-full px-2 sm:px-4 py-1.5 sm:py-2.5 rounded-lg border-2 border-gray-200 dark:border-card-border bg-white dark:bg-card text-sm font-bold outline-none focus:border-primary" />
-              <input value={editing.description} onChange={e => setEditing({ ...editing, description: e.target.value })} className="w-full px-2 sm:px-4 py-1.5 sm:py-2.5 rounded-lg border-2 border-gray-200 dark:border-card-border bg-white dark:bg-card text-sm outline-none focus:border-primary" />
+              <input value={editing.title} onChange={e => setEditing({ ...editing, title: e.target.value })} className="w-full px-2 sm:px-4 py-1.5 sm:py-2.5 rounded-lg border-2 border-[var(--rule-base)] dark:border-card-border bg-white dark:bg-card text-sm font-bold outline-none focus:border-primary" />
+              <input value={editing.description} onChange={e => setEditing({ ...editing, description: e.target.value })} className="w-full px-2 sm:px-4 py-1.5 sm:py-2.5 rounded-lg border-2 border-[var(--rule-base)] dark:border-card-border bg-white dark:bg-card text-sm outline-none focus:border-primary" />
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <input value={editing.assignee} onChange={e => setEditing({ ...editing, assignee: e.target.value })} className="px-2 sm:px-4 py-1.5 sm:py-2.5 rounded-lg border-2 border-gray-200 dark:border-card-border bg-white dark:bg-card text-sm outline-none focus:border-primary" />
-                <select value={editing.priority} onChange={e => setEditing({ ...editing, priority: e.target.value as Priority })} className="px-2 sm:px-4 py-1.5 sm:py-2.5 rounded-lg border-2 border-gray-200 dark:border-card-border bg-white dark:bg-card text-sm font-semibold outline-none focus:border-primary">
+                <input value={editing.assignee} onChange={e => setEditing({ ...editing, assignee: e.target.value })} className="px-2 sm:px-4 py-1.5 sm:py-2.5 rounded-lg border-2 border-[var(--rule-base)] dark:border-card-border bg-white dark:bg-card text-sm outline-none focus:border-primary" />
+                <select value={editing.priority} onChange={e => setEditing({ ...editing, priority: e.target.value as Priority })} className="px-2 sm:px-4 py-1.5 sm:py-2.5 rounded-lg border-2 border-[var(--rule-base)] dark:border-card-border bg-white dark:bg-card text-sm font-semibold outline-none focus:border-primary">
                   <option value="baja">Baja</option><option value="media">Media</option>
                   <option value="alta">Alta</option><option value="urgente">Urgente</option>
                 </select>
               </div>
             </div>
-            <div className="px-3 sm:px-6 py-4 border-t border-gray-100 dark:border-card-border flex flex-wrap justify-end gap-2">
+            <div className="px-3 sm:px-6 py-4 border-t border-[var(--rule-soft)] dark:border-card-border flex flex-wrap justify-end gap-2">
               <button onClick={() => setEditing(null)} className="px-2 sm:px-4 py-1.5 sm:py-2 rounded-lg text-sm font-bold text-gray-500">Cancelar</button>
               <button onClick={saveEdit} className="px-2 sm:px-4 py-1.5 sm:py-2 rounded-lg bg-primary text-white text-sm font-bold hover:bg-primary/90">Guardar</button>
             </div>

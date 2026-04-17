@@ -78,7 +78,7 @@ export function BusinessOverviewHero({
         <div className="flex items-start justify-between gap-4">
           <div>
             <p className="text-xs font-bold text-gray-500 dark:text-zinc-400">{eyebrow}</p>
-            <h2 className="text-xl font-black text-gray-900 dark:text-zinc-100 mt-1">{title}</h2>
+            <h2 className="text-xl font-extrabold text-gray-900 dark:text-zinc-100 mt-1">{title}</h2>
             <p className="text-sm text-gray-600 dark:text-zinc-300 mt-1 max-w-2xl">{description}</p>
           </div>
           <div className="h-12 w-12 rounded-xl bg-white/80 dark:bg-zinc-900/60 border border-white/70 dark:border-zinc-800 flex items-center justify-center shrink-0">
@@ -93,7 +93,7 @@ export function BusinessOverviewHero({
               className={cn("rounded-xl border p-4", getEmphasisClasses(metric.emphasis ?? "default"))}
             >
               <p className="text-xs font-semibold text-gray-500 dark:text-zinc-400">{metric.label}</p>
-              <p className="text-2xl font-black font-mono mt-1">{metric.value}</p>
+              <p className="text-2xl font-extrabold font-mono mt-1">{metric.value}</p>
               <p className="text-xs mt-1 text-gray-500 dark:text-zinc-400">{metric.detail}</p>
             </div>
           ))}
@@ -115,11 +115,11 @@ export function BusinessOverviewHero({
         )}
       </div>
 
-      <div className="rounded-xl border border-gray-200 dark:border-zinc-700 bg-white dark:bg-zinc-900/70 p-5 ">
+      <div className="rounded-xl border border-[var(--rule-base)] dark:border-zinc-700 bg-white dark:bg-zinc-900/70 p-5 ">
         <div className="flex items-start justify-between gap-3 mb-4">
           <div>
             <p className="text-xs font-bold text-gray-500 dark:text-zinc-400">Foco inmediato</p>
-            <h3 className="text-lg font-black text-gray-900 dark:text-zinc-100 mt-1">{actionsTitle}</h3>
+            <h3 className="text-lg font-extrabold text-gray-900 dark:text-zinc-100 mt-1">{actionsTitle}</h3>
             <p className="text-sm text-gray-500 dark:text-zinc-400 mt-1">{actionsDescription}</p>
           </div>
           <AlertTriangle className="h-5 w-5 text-amber-500 shrink-0" />
@@ -146,7 +146,7 @@ export function BusinessOverviewHero({
                     <div className="min-w-0 flex-1">
                       <div className="flex items-baseline justify-between gap-3">
                         <p className="text-sm font-bold truncate">{action.label}</p>
-                        <span className="text-lg font-black font-mono shrink-0">{action.value}</span>
+                        <span className="text-lg font-extrabold font-mono shrink-0">{action.value}</span>
                       </div>
                       <p className="text-xs mt-1 opacity-80">{action.detail}</p>
                     </div>

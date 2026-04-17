@@ -107,7 +107,7 @@ interface ToggleRowProps {
 function ToggleRow({ alertType, enabled, onToggle, onPreview }: ToggleRowProps) {
   const meta = ALERT_META[alertType];
   return (
-    <div className="flex items-center justify-between gap-3 p-4 rounded-xl bg-gray-50 dark:bg-gray-800/50 border border-gray-100 dark:border-gray-700">
+    <div className="flex items-center justify-between gap-3 p-4 rounded-xl bg-gray-50 dark:bg-gray-800/50 border border-[var(--rule-base)]">
       <div className="flex items-center gap-3 min-w-0">
         {enabled ? (
           <Bell className="w-4 h-4 text-[#00B4A6] flex-shrink-0" />
@@ -186,9 +186,9 @@ export default function WhatsAppAlertManager() {
   const alertTypes: AlertType[] = ["bigSale", "stockOut", "goalMet", "newCredit"];
 
   return (
-    <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-700 overflow-hidden ">
+    <div className="bg-white dark:bg-gray-900 rounded-xl border border-[var(--rule-base)] overflow-hidden ">
       {/* Header */}
-      <div className="p-5 border-b border-gray-100 dark:border-gray-800 flex items-center gap-3">
+      <div className="p-5 border-b border-[var(--rule-base)] flex items-center gap-3">
         <div className="p-2 rounded-xl bg-green-100 dark:bg-green-900/30">
           <MessageCircle className="w-5 h-5 text-green-600 dark:text-green-400" />
         </div>
@@ -211,7 +211,7 @@ export default function WhatsAppAlertManager() {
             value={config.phone}
             onChange={(e) => setConfig((p) => ({ ...p, phone: e.target.value }))}
             placeholder="51999999999"
-            className="w-full rounded-lg border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 px-3 py-2.5 text-sm text-gray-900 dark:text-white outline-none focus:border-[#00B4A6]"
+            className="w-full rounded-lg border border-[var(--rule-base)] bg-gray-50 dark:bg-gray-800 px-3 py-2.5 text-sm text-gray-900 dark:text-white outline-none focus:border-[#00B4A6]"
           />
         </div>
 
@@ -227,7 +227,7 @@ export default function WhatsAppAlertManager() {
             onChange={(e) =>
               setConfig((p) => ({ ...p, bigSaleThreshold: Number(e.target.value) }))
             }
-            className="w-full rounded-lg border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 px-3 py-2.5 text-sm text-gray-900 dark:text-white outline-none focus:border-[#00B4A6]"
+            className="w-full rounded-lg border border-[var(--rule-base)] bg-gray-50 dark:bg-gray-800 px-3 py-2.5 text-sm text-gray-900 dark:text-white outline-none focus:border-[#00B4A6]"
           />
         </div>
 
@@ -298,7 +298,7 @@ export default function WhatsAppAlertManager() {
               {history.map((h) => (
                 <div
                   key={h.id}
-                  className="flex items-start gap-2 p-3 rounded-xl bg-gray-50 dark:bg-gray-800/50 border border-gray-100 dark:border-gray-700"
+                  className="flex items-start gap-2 p-3 rounded-xl bg-gray-50 dark:bg-gray-800/50 border border-[var(--rule-base)]"
                 >
                   <Clock className="w-3.5 h-3.5 text-gray-400 flex-shrink-0 mt-0.5" />
                   <div className="min-w-0">

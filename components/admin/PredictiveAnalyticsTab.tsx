@@ -61,7 +61,7 @@ function PredCard({
   children: React.ReactNode;
 }) {
   return (
-    <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-100 dark:border-gray-800 p-5 space-y-4">
+    <div className="bg-white dark:bg-gray-900 rounded-xl border border-[var(--rule-base)] p-5 space-y-4">
       <div className="flex items-center gap-3">
         <div className={cn("w-9 h-9 rounded-xl flex items-center justify-center shrink-0", iconBg)}>
           <Icon className="h-4.5 w-4.5 text-white" />
@@ -211,10 +211,10 @@ export default function PredictiveAnalyticsTab() {
                 </div>
                 <div className="flex-1 min-w-0">
                   <p className="text-sm font-semibold text-gray-800 dark:text-gray-200 truncate">{p.name}</p>
-                  <p className="text-[11px] text-gray-400 dark:text-gray-500">{p.stock} unidades restantes</p>
+                  <p className="text-[length:var(--ts-xs)] text-gray-400 dark:text-gray-500">{p.stock} unidades restantes</p>
                 </div>
                 <span className={cn(
-                  "shrink-0 text-[10px] font-bold px-2 py-0.5 rounded-full",
+                  "shrink-0 text-[length:var(--ts-2xs)] font-bold px-2 py-0.5 rounded-full",
                   p.daysLeft <= 2
                     ? "bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400"
                     : "bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400",
@@ -242,7 +242,7 @@ export default function PredictiveAnalyticsTab() {
       </PredCard>
 
       {/* Card 4: Clientes por recuperar */}
-      <PredCard icon={Users} title="Clientes que no regresan" iconBg="bg-rose-500">
+      <PredCard icon={Users} title="Clientes que no regresan" iconBg="bg-[var(--text-primary)]">
         {data.churnRisk.length === 0 ? (
           <p className="text-sm text-gray-400 dark:text-gray-500">Todos los clientes compraron recientemente</p>
         ) : (
@@ -251,7 +251,7 @@ export default function PredictiveAnalyticsTab() {
               <div key={c.id} className="flex items-center gap-3">
                 <div className="flex-1 min-w-0">
                   <p className="text-sm font-semibold text-gray-800 dark:text-gray-200 truncate">{c.name}</p>
-                  <p className="text-[11px] text-gray-400 dark:text-gray-500">
+                  <p className="text-[length:var(--ts-xs)] text-gray-400 dark:text-gray-500">
                     {c.daysAgo !== null ? `Sin comprar hace ${c.daysAgo} dias` : "Sin historial reciente"}
                   </p>
                 </div>
@@ -260,7 +260,7 @@ export default function PredictiveAnalyticsTab() {
                     href={c.whatsappUrl}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="shrink-0 flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-green-600 text-white text-[11px] font-bold hover:bg-green-500 transition-colors min-h-[44px]"
+                    className="shrink-0 flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-green-600 text-white text-[length:var(--ts-xs)] font-bold hover:bg-green-500 transition-colors min-h-[44px]"
                   >
                     <ExternalLink className="h-3 w-3" />
                     WhatsApp
@@ -276,7 +276,7 @@ export default function PredictiveAnalyticsTab() {
       </PredCard>
 
       {/* Card 5: Hora pico */}
-      <PredCard icon={Clock} title="Hora con mas clientes" iconBg="bg-violet-500">
+      <PredCard icon={Clock} title="Hora con mas clientes" iconBg="bg-[var(--text-primary)]">
         <ClockVisual hour={data.peakHour.hour} />
         <p className="text-xs text-gray-400 dark:text-gray-500">
           En los ultimos 28 dias, la hora con mas ventas fue a las {data.peakHour.label} con {data.peakHour.salesCount} transacciones

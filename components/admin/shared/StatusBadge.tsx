@@ -35,8 +35,8 @@ const variantStyles: Record<BadgeVariant, { badge: string; dot: string }> = {
     dot: "bg-gray-400 dark:bg-zinc-500",
   },
   pending: {
-    badge: "bg-violet-50 text-violet-700 dark:bg-violet-900/20 dark:text-violet-400",
-    dot: "bg-violet-500 dark:bg-violet-400",
+    badge: "bg-[var(--surface-sunken)] text-[var(--text-secondary)] dark:bg-violet-900/20 dark:text-[var(--text-primary)]",
+    dot: "bg-[var(--text-primary)] dark:bg-violet-400",
   },
 };
 
@@ -51,7 +51,7 @@ function StatusBadge({ variant, label, size = "md", dot = false, icon: Icon, pul
       className={cn(
         "rounded-full font-medium inline-flex items-center gap-1",
         styles.badge,
-        size === "sm" ? "px-2 py-0.5 text-[10px]" : "px-2.5 py-0.5 text-xs",
+        size === "sm" ? "px-2 py-0.5 text-[length:var(--ts-2xs)]" : "px-2.5 py-0.5 text-xs",
         pulse && "animate-pulse",
         onClick && "cursor-pointer hover:opacity-80 transition-opacity",
       )}

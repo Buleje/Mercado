@@ -96,7 +96,7 @@ export default function RFQTab() {
           </h1>
           <p className="text-sm text-gray-500 dark:text-muted mt-0.5">Solicita y compara cotizaciones de múltiples proveedores</p>
         </div>
-        <button onClick={() => exportToCSV(RFQS.map(r => ({ ref: r.ref, producto: r.product, cantidad: r.quantity, unidad: r.unit, creado: r.createdAt, limite: r.deadline, estado: STATUS_MAP[r.status].label, cotizaciones: r.quotes.length, ganador: r.winner || "-" })), "cotizaciones-rfq")} className="flex items-center gap-1.5 px-3 py-2 rounded-lg border border-gray-200 dark:border-card-border bg-white dark:bg-surface text-sm font-semibold text-gray-700 dark:text-foreground hover:bg-gray-50 dark:hover:bg-accent transition-colors">
+        <button onClick={() => exportToCSV(RFQS.map(r => ({ ref: r.ref, producto: r.product, cantidad: r.quantity, unidad: r.unit, creado: r.createdAt, limite: r.deadline, estado: STATUS_MAP[r.status].label, cotizaciones: r.quotes.length, ganador: r.winner || "-" })), "cotizaciones-rfq")} className="flex items-center gap-1.5 px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-card-border bg-white dark:bg-surface text-sm font-semibold text-gray-700 dark:text-foreground hover:bg-gray-50 dark:hover:bg-accent transition-colors">
           <Download className="h-4 w-4" /> Exportar
         </button>
       </div>
@@ -107,7 +107,7 @@ export default function RFQTab() {
           { label: "Abiertas", value: String(stats.open), color: "text-emerald-600", bg: "bg-emerald-50 dark:bg-emerald-950/30", icon: Send },
           { label: "Evaluando", value: String(stats.evaluating), color: "text-amber-600", bg: "bg-amber-50 dark:bg-amber-950/30", icon: Clock },
           { label: "Adjudicadas/Cerradas", value: String(stats.awarded), color: "text-emerald-600", bg: "bg-emerald-50 dark:bg-emerald-950/30", icon: Trophy },
-          { label: "Promedio cotizaciones", value: stats.avgQuotes, color: "text-violet-600", bg: "bg-violet-50 dark:bg-violet-950/30", icon: ArrowUpDown },
+          { label: "Promedio cotizaciones", value: stats.avgQuotes, color: "text-[var(--text-secondary)]", bg: "bg-[var(--surface-sunken)]", icon: ArrowUpDown },
         ].map(({ label, value, color, bg, icon: Icon }) => (
           <div key={label} className={cn("rounded-xl p-4 flex items-start gap-3", bg)}>
             <Icon className={cn("h-5 w-5 mt-0.5", color)} />
@@ -123,22 +123,22 @@ export default function RFQTab() {
       <div className="flex flex-col sm:flex-row gap-3">
         <div className="relative flex-1 max-w-sm">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
-          <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Buscar producto o referencia..." className="w-full pl-9 pr-3 py-2 text-sm border border-gray-200 dark:border-card-border rounded-lg bg-white dark:bg-surface text-gray-700 dark:text-foreground" />
+          <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Buscar producto o referencia..." className="w-full pl-9 pr-3 py-2 text-sm border border-[var(--rule-base)] dark:border-card-border rounded-lg bg-white dark:bg-surface text-gray-700 dark:text-foreground" />
         </div>
-        <select value={filterStatus} onChange={e => setFilterStatus(e.target.value as RFQStatus | "todos")} className="px-3 py-2 text-sm border border-gray-200 dark:border-card-border rounded-lg bg-white dark:bg-surface text-gray-700 dark:text-foreground">
+        <select value={filterStatus} onChange={e => setFilterStatus(e.target.value as RFQStatus | "todos")} className="px-3 py-2 text-sm border border-[var(--rule-base)] dark:border-card-border rounded-lg bg-white dark:bg-surface text-gray-700 dark:text-foreground">
           <option value="todos">Todos los estados</option>
           {Object.entries(STATUS_MAP).map(([k, v]) => <option key={k} value={k}>{v.label}</option>)}
         </select>
       </div>
 
       {/* Table */}
-      <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl overflow-hidden">
+      <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full min-w-[600px] text-sm">
             <thead><tr className="text-left text-xs font-bold text-gray-400 bg-gray-50 dark:bg-surface"><th className="px-2 sm:px-4 py-2 sm:py-3">Ref</th><th className="px-2 sm:px-4 py-2 sm:py-3">Producto</th><th className="px-2 sm:px-4 py-2 sm:py-3">Cant.</th><th className="px-2 sm:px-4 py-2 sm:py-3">Creado</th><th className="px-2 sm:px-4 py-2 sm:py-3">Límite</th><th className="px-2 sm:px-4 py-2 sm:py-3">Cotizaciones</th><th className="px-2 sm:px-4 py-2 sm:py-3">Estado</th><th className="px-2 sm:px-4 py-2 sm:py-3">Ganador</th><th className="px-2 sm:px-4 py-2 sm:py-3"></th></tr></thead>
             <tbody>
               {filtered.map(r => (
-                <tr key={r.id} className="border-t border-gray-100 dark:border-card-border hover:bg-gray-50 dark:hover:bg-accent/20">
+                <tr key={r.id} className="border-t border-[var(--rule-soft)] dark:border-card-border hover:bg-gray-50 dark:hover:bg-accent/20">
                   <td className="px-2 sm:px-4 py-2 sm:py-3 font-mono text-xs font-bold text-gray-700 dark:text-foreground">{r.ref}</td>
                   <td className="px-2 sm:px-4 py-2 sm:py-3 font-bold text-gray-800 dark:text-foreground">{r.product}</td>
                   <td className="px-2 sm:px-4 py-2 sm:py-3 text-gray-600 dark:text-muted">{r.quantity} {r.unit}</td>
@@ -158,7 +158,7 @@ export default function RFQTab() {
       {/* Detail Modal — Comparison Matrix */}
       {detail && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4" onClick={() => setDetail(null)}>
-          <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl p-3 sm:p-6 w-full max-w-2xl space-y-4 max-h-[80vh] overflow-auto" onClick={e => e.stopPropagation()}>
+          <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl p-3 sm:p-6 w-full max-w-2xl space-y-4 max-h-[80vh] overflow-auto" onClick={e => e.stopPropagation()}>
             <div className="flex items-center justify-between">
               <div>
                 <h3 className="font-extrabold text-gray-900 dark:text-foreground">{detail.ref} — {detail.product}</h3>
@@ -184,7 +184,7 @@ export default function RFQTab() {
                     <thead><tr className="text-left text-xs font-bold text-gray-400 bg-gray-50 dark:bg-surface"><th className="px-3 py-2">Proveedor</th><th className="px-3 py-2">Precio unit.</th><th className="px-3 py-2">Total</th><th className="px-3 py-2">Plazo</th><th className="px-3 py-2">Calidad</th><th className="px-3 py-2">Pago</th></tr></thead>
                     <tbody>
                       {sortedQuotes.map((q, i) => (
-                        <tr key={q.supplier} className={cn("border-t border-gray-100 dark:border-card-border", i === 0 && sortBy === "price" && "bg-emerald-50 dark:bg-emerald-950/20", detail.winner === q.supplier && "ring-2 ring-primary ring-inset")}>
+                        <tr key={q.supplier} className={cn("border-t border-[var(--rule-soft)] dark:border-card-border", i === 0 && sortBy === "price" && "bg-emerald-50 dark:bg-emerald-950/20", detail.winner === q.supplier && "ring-2 ring-primary ring-inset")}>
                           <td className="px-3 py-2 font-bold text-gray-800 dark:text-foreground flex items-center gap-1">{detail.winner === q.supplier && <Trophy className="h-3.5 w-3.5 text-amber-500" />}{q.supplier}</td>
                           <td className="px-3 py-2 font-bold text-gray-700 dark:text-foreground">{fmt(q.unitPrice)}</td>
                           <td className="px-3 py-2 font-bold text-gray-700 dark:text-foreground">{fmt(q.unitPrice * detail.quantity)}</td>

@@ -102,7 +102,7 @@ export default function POSOfflineBar({
             Sin conexion — Las ventas se guardan localmente
           </p>
           {pendingCount > 0 && (
-            <span className="text-[10px] font-bold bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-300 px-2 py-0.5 rounded-full">
+            <span className="text-[length:var(--ts-2xs)] font-bold bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-300 px-2 py-0.5 rounded-full">
               {pendingCount} pendientes
             </span>
           )}

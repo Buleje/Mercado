@@ -70,8 +70,8 @@ export default function CRMClientesModule() {
         title="Mis Clientes"
         description="CRM, segmentación y fidelización"
         icon={Users}
-        bgTint="bg-violet-50 dark:bg-violet-900/20"
-        iconColorClass="text-violet-600 dark:text-violet-400"
+        bgTint="bg-[var(--surface-sunken)]"
+        iconColorClass="text-[var(--text-secondary)] dark:text-[var(--text-primary)]"
       />
 
       <AdminTabBar

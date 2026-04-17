@@ -173,21 +173,21 @@ export default function CouponsTab() {
   if (loading) return <div className="flex justify-center py-20"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>;
 
   const ruleConfigs = {
-    birthday: { label: "Cumpleaños", icon: PartyPopper, color: "from-pink-500 to-rose-600", desc: "Cupón automático en cumpleaños del cliente" },
-    "first-purchase": { label: "Primera compra", icon: UserPlus, color: "from-emerald-500 to-teal-600", desc: "Bienvenida para nuevos clientes" },
-    inactive: { label: "Cliente inactivo", icon: Zap, color: "from-amber-500 to-orange-600", desc: "Reactivar clientes sin compras recientes" },
-    "min-spend": { label: "Gasto mínimo", icon: Gift, color: "from-purple-500 to-indigo-600", desc: "Recompensa por alcanzar monto acumulado" },
-    referral: { label: "Referidos", icon: Sparkles, color: "from-emerald-500 to-cyan-600", desc: "Cupón para referidor y referido" },
+    birthday: { label: "Cumpleaños", icon: PartyPopper, desc: "Cupón automático en cumpleaños del cliente" },
+    "first-purchase": { label: "Primera compra", icon: UserPlus, desc: "Bienvenida para nuevos clientes" },
+    inactive: { label: "Cliente inactivo", icon: Zap, desc: "Reactivar clientes sin compras recientes" },
+    "min-spend": { label: "Gasto mínimo", icon: Gift, desc: "Recompensa por alcanzar monto acumulado" },
+    referral: { label: "Referidos", icon: Sparkles, desc: "Cupón para referidor y referido" },
   };
 
   return (
     <div className="space-y-3 sm:space-y-6">
       {/* ── Reglas Automáticas ────────────────────────────────────────────── */}
-      <div className="bg-linear-to-br from-purple-50 to-pink-50 dark:from-purple-950/30 dark:to-pink-950/30 border border-purple-200 dark:border-purple-900/50 rounded-xl p-3 sm:p-6">
+      <div className="bg-[var(--surface-sunken)] border border-[var(--rule-base)] rounded-xl p-3 sm:p-6">
         <div className="flex items-center justify-between mb-4">
           <div className="flex flex-wrap items-center gap-2">
-            <div className="w-10 h-10 rounded-xl bg-linear-to-br from-purple-500 to-pink-600 flex items-center justify-center">
-              <Sparkles className="h-5 w-5 text-white" />
+            <div className="w-10 h-10 rounded-xl bg-[var(--text-primary)] flex items-center justify-center">
+              <Sparkles className="h-5 w-5 text-[var(--surface-canvas)]" />
             </div>
             <div>
               <h3 className="font-extrabold text-gray-900 dark:text-foreground">Reglas Automáticas</h3>
@@ -196,7 +196,7 @@ export default function CouponsTab() {
           </div>
           <button
             onClick={() => setShowTemplateBuilder(true)}
-            className="flex flex-wrap items-center gap-2 bg-white dark:bg-card border border-purple-300 dark:border-purple-700 text-purple-700 dark:text-purple-300 px-2 sm:px-4 py-1.5 sm:py-2 rounded-lg text-sm font-bold hover:bg-purple-50 dark:hover:bg-purple-900/20 transition"
+            className="flex flex-wrap items-center gap-2 bg-white dark:bg-card border border-purple-300 dark:border-purple-700 text-[var(--text-secondary)] dark:text-[var(--text-primary)] px-2 sm:px-4 py-1.5 sm:py-2 rounded-lg text-sm font-bold hover:bg-[var(--surface-sunken)] dark:hover:bg-purple-900/20 transition"
           >
             <Calendar className="h-4 w-4" /> Plantilla
           </button>
@@ -207,10 +207,10 @@ export default function CouponsTab() {
             const config = ruleConfigs[rule.type];
             const Icon = config.icon;
             return (
-              <div key={rule.id} className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl p-4">
+              <div key={rule.id} className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl p-4">
                 <div className="flex flex-wrap items-center gap-3">
-                  <div className={cn("w-10 h-10 rounded-lg bg-linear-to-br flex items-center justify-center shrink-0", config.color)}>
-                    <Icon className="h-5 w-5 text-white" />
+                  <div className="w-10 h-10 rounded-lg bg-[var(--text-primary)] flex items-center justify-center shrink-0">
+                    <Icon className="h-5 w-5 text-[var(--surface-canvas)]" />
                   </div>
                   <div className="flex-1 min-w-0">
                     <div className="flex flex-wrap items-center gap-2 mb-1">
@@ -252,7 +252,7 @@ export default function CouponsTab() {
 
       {/* ── Cupones Generados Automáticamente ─────────────────────────────── */}
       {generatedLogs.length > 0 && (
-        <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl p-3 sm:p-6">
+        <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl p-3 sm:p-6">
           <h3 className="font-extrabold text-gray-900 dark:text-foreground mb-4 flex flex-wrap items-center gap-2">
             <Calendar className="h-5 w-5 text-primary" />
             Historial de cupones auto-generados
@@ -287,7 +287,7 @@ export default function CouponsTab() {
       </div>
 
       {showForm && (
-        <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl p-3 sm:p-6 space-y-4">
+        <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl p-3 sm:p-6 space-y-4">
           {/* Scope toggle: Tienda vs Plataforma */}
           <div>
             <label className="text-xs font-bold text-gray-500 dark:text-muted mb-2 block">Alcance del cupon</label>
@@ -319,7 +319,7 @@ export default function CouponsTab() {
                 Cupon de plataforma
               </button>
             </div>
-            <p className="text-[10px] text-gray-400 dark:text-muted mt-1">
+            <p className="text-[length:var(--ts-2xs)] text-gray-400 dark:text-muted mt-1">
               {couponScope === "tienda"
                 ? "Este cupon sera valido solo para tu tienda"
                 : "Este cupon sera valido en toda la plataforma"}
@@ -328,15 +328,15 @@ export default function CouponsTab() {
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-4">
             <div>
               <label className="text-xs font-bold text-gray-500 dark:text-muted">Código *</label>
-              <input value={form.code} onChange={e => setForm(f => ({ ...f, code: e.target.value.toUpperCase() }))} placeholder="DESCUENTO10" className="w-full mt-1 px-3 py-2 border border-gray-200 dark:border-card-border rounded-lg bg-white dark:bg-surface text-sm" />
+              <input value={form.code} onChange={e => setForm(f => ({ ...f, code: e.target.value.toUpperCase() }))} placeholder="DESCUENTO10" className="w-full mt-1 px-3 py-2 border border-[var(--rule-base)] dark:border-card-border rounded-lg bg-white dark:bg-surface text-sm" />
             </div>
             <div>
               <label className="text-xs font-bold text-gray-500 dark:text-muted">Descripción</label>
-              <input value={form.description} onChange={e => setForm(f => ({ ...f, description: e.target.value }))} placeholder="10% de descuento" className="w-full mt-1 px-3 py-2 border border-gray-200 dark:border-card-border rounded-lg bg-white dark:bg-surface text-sm" />
+              <input value={form.description} onChange={e => setForm(f => ({ ...f, description: e.target.value }))} placeholder="10% de descuento" className="w-full mt-1 px-3 py-2 border border-[var(--rule-base)] dark:border-card-border rounded-lg bg-white dark:bg-surface text-sm" />
             </div>
             <div>
               <label className="text-xs font-bold text-gray-500 dark:text-muted">Tipo</label>
-              <select value={form.discountType} onChange={e => setForm(f => ({ ...f, discountType: e.target.value as "percent" | "fixed" | "giftcard" }))} className="w-full mt-1 px-3 py-2 border border-gray-200 dark:border-card-border rounded-lg bg-white dark:bg-surface text-sm">
+              <select value={form.discountType} onChange={e => setForm(f => ({ ...f, discountType: e.target.value as "percent" | "fixed" | "giftcard" }))} className="w-full mt-1 px-3 py-2 border border-[var(--rule-base)] dark:border-card-border rounded-lg bg-white dark:bg-surface text-sm">
                 <option value="percent">Porcentaje (%)</option>
                 <option value="fixed">Monto fijo (S/)</option>
                 <option value="giftcard">Gift Card (saldo)</option>
@@ -344,19 +344,19 @@ export default function CouponsTab() {
             </div>
             <div>
               <label className="text-xs font-bold text-gray-500 dark:text-muted">{form.discountType === "giftcard" ? "Saldo inicial (S/) *" : "Valor *"}</label>
-              <input type="number" value={form.discountValue} onChange={e => setForm(f => ({ ...f, discountValue: Number(e.target.value) }))} className="w-full mt-1 px-3 py-2 border border-gray-200 dark:border-card-border rounded-lg bg-white dark:bg-surface text-sm" />
+              <input type="number" value={form.discountValue} onChange={e => setForm(f => ({ ...f, discountValue: Number(e.target.value) }))} className="w-full mt-1 px-3 py-2 border border-[var(--rule-base)] dark:border-card-border rounded-lg bg-white dark:bg-surface text-sm" />
             </div>
             <div>
               <label className="text-xs font-bold text-gray-500 dark:text-muted">Compra mínima (S/)</label>
-              <input type="number" value={form.minPurchase} onChange={e => setForm(f => ({ ...f, minPurchase: Number(e.target.value) }))} className="w-full mt-1 px-3 py-2 border border-gray-200 dark:border-card-border rounded-lg bg-white dark:bg-surface text-sm" />
+              <input type="number" value={form.minPurchase} onChange={e => setForm(f => ({ ...f, minPurchase: Number(e.target.value) }))} className="w-full mt-1 px-3 py-2 border border-[var(--rule-base)] dark:border-card-border rounded-lg bg-white dark:bg-surface text-sm" />
             </div>
             <div>
               <label className="text-xs font-bold text-gray-500 dark:text-muted">Usos máximos (0 = ilimitado)</label>
-              <input type="number" value={form.maxUses} onChange={e => setForm(f => ({ ...f, maxUses: Number(e.target.value) }))} className="w-full mt-1 px-3 py-2 border border-gray-200 dark:border-card-border rounded-lg bg-white dark:bg-surface text-sm" />
+              <input type="number" value={form.maxUses} onChange={e => setForm(f => ({ ...f, maxUses: Number(e.target.value) }))} className="w-full mt-1 px-3 py-2 border border-[var(--rule-base)] dark:border-card-border rounded-lg bg-white dark:bg-surface text-sm" />
             </div>
             <div>
               <label className="text-xs font-bold text-gray-500 dark:text-muted">Fecha expiración</label>
-              <input type="date" value={form.expiresAt ? form.expiresAt.slice(0, 10) : ""} onChange={e => setForm(f => ({ ...f, expiresAt: e.target.value ? new Date(e.target.value).toISOString() : "" }))} className="w-full mt-1 px-3 py-2 border border-gray-200 dark:border-card-border rounded-lg bg-white dark:bg-surface text-sm" />
+              <input type="date" value={form.expiresAt ? form.expiresAt.slice(0, 10) : ""} onChange={e => setForm(f => ({ ...f, expiresAt: e.target.value ? new Date(e.target.value).toISOString() : "" }))} className="w-full mt-1 px-3 py-2 border border-[var(--rule-base)] dark:border-card-border rounded-lg bg-white dark:bg-surface text-sm" />
             </div>
           </div>
           <div className="flex flex-wrap gap-2 pt-2">
@@ -369,15 +369,15 @@ export default function CouponsTab() {
       <div className="space-y-3">
         {coupons.length === 0 && <p className="text-center text-gray-400 dark:text-muted py-8">No hay cupones creados</p>}
         {coupons.map(c => (
-          <div key={c.id} className={cn("bg-white dark:bg-card border rounded-xl p-4 flex flex-col sm:flex-row sm:items-center gap-3", c.active ? "border-gray-200 dark:border-card-border" : "border-red-200 dark:border-red-900/30 opacity-60")}>
+          <div key={c.id} className={cn("bg-white dark:bg-card border rounded-xl p-4 flex flex-col sm:flex-row sm:items-center gap-3", c.active ? "border-[var(--rule-base)] dark:border-card-border" : "border-red-200 dark:border-red-900/30 opacity-60")}>
             <div className="flex-1 min-w-0">
               <div className="flex flex-wrap items-center gap-2">
                 <span className="font-mono font-extrabold text-primary text-lg">{c.code}</span>
                 <button onClick={() => navigator.clipboard.writeText(c.code)} className="text-gray-400 hover:text-primary"><Copy className="h-3.5 w-3.5" /></button>
                 {c.storeId ? (
-                  <span className="text-[10px] bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400 px-2 py-0.5 rounded-full font-bold">Tienda</span>
+                  <span className="text-[length:var(--ts-2xs)] bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400 px-2 py-0.5 rounded-full font-bold">Tienda</span>
                 ) : (
-                  <span className="text-[10px] bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-400 px-2 py-0.5 rounded-full font-bold">Plataforma</span>
+                  <span className="text-[length:var(--ts-2xs)] bg-[var(--surface-sunken)] text-[var(--text-secondary)] dark:text-[var(--text-primary)] px-2 py-0.5 rounded-full font-bold">Plataforma</span>
                 )}
                 {!c.active && <span className="text-xs bg-red-100 text-red-600 px-2 py-0.5 rounded-full font-bold">Inactivo</span>}
               </div>
@@ -417,7 +417,7 @@ export default function CouponsTab() {
       {showRuleConfig && editingRule && (
         <div className="fixed inset-0 flex items-center justify-center bg-black/50 p-4" style={{ zIndex: 100 }} onClick={() => setShowRuleConfig(false)}>
           <div className="bg-white dark:bg-card rounded-xl w-full max-w-lg" onClick={e => e.stopPropagation()}>
-            <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100 dark:border-card-border">
+            <div className="flex items-center justify-between px-5 py-4 border-b border-[var(--rule-soft)] dark:border-card-border">
               <div>
                 <h3 className="font-extrabold text-gray-900 dark:text-foreground text-lg">Configurar Regla</h3>
                 <p className="text-xs text-gray-500 dark:text-muted">{ruleConfigs[editingRule.type].label}</p>
@@ -430,7 +430,7 @@ export default function CouponsTab() {
               <div>
                 <label className="text-xs font-bold text-gray-500 dark:text-muted">Tipo de descuento</label>
                 <select value={editingRule.config.discountType} onChange={e => setEditingRule({ ...editingRule, config: { ...editingRule.config, discountType: e.target.value as "percent" | "fixed" } })}
-                  className="w-full mt-1 px-3 py-2 text-sm rounded-xl border border-gray-200 dark:border-card-border outline-none focus:border-primary bg-white dark:bg-surface">
+                  className="w-full mt-1 px-3 py-2 text-sm rounded-xl border border-[var(--rule-base)] dark:border-card-border outline-none focus:border-primary bg-white dark:bg-surface">
                   <option value="percent">Porcentaje (%)</option>
                   <option value="fixed">Monto fijo (S/)</option>
                 </select>
@@ -438,38 +438,38 @@ export default function CouponsTab() {
               <div>
                 <label className="text-xs font-bold text-gray-500 dark:text-muted">Valor del descuento</label>
                 <input type="number" value={editingRule.config.discountValue} onChange={e => setEditingRule({ ...editingRule, config: { ...editingRule.config, discountValue: Number(e.target.value) } })}
-                  className="w-full mt-1 px-3 py-2 text-sm rounded-xl border border-gray-200 dark:border-card-border outline-none focus:border-primary" />
+                  className="w-full mt-1 px-3 py-2 text-sm rounded-xl border border-[var(--rule-base)] dark:border-card-border outline-none focus:border-primary" />
               </div>
               {editingRule.type !== "min-spend" && (
                 <div>
                   <label className="text-xs font-bold text-gray-500 dark:text-muted">Días de validez</label>
                   <input type="number" value={editingRule.config.validityDays} onChange={e => setEditingRule({ ...editingRule, config: { ...editingRule.config, validityDays: Number(e.target.value) } })}
-                    className="w-full mt-1 px-3 py-2 text-sm rounded-xl border border-gray-200 dark:border-card-border outline-none focus:border-primary" />
+                    className="w-full mt-1 px-3 py-2 text-sm rounded-xl border border-[var(--rule-base)] dark:border-card-border outline-none focus:border-primary" />
                 </div>
               )}
               {editingRule.type === "inactive" && (
                 <div>
                   <label className="text-xs font-bold text-gray-500 dark:text-muted">Días de inactividad antes de activar</label>
                   <input type="number" value={editingRule.config.inactiveDays} onChange={e => setEditingRule({ ...editingRule, config: { ...editingRule.config, inactiveDays: Number(e.target.value) } })}
-                    className="w-full mt-1 px-3 py-2 text-sm rounded-xl border border-gray-200 dark:border-card-border outline-none focus:border-primary" />
+                    className="w-full mt-1 px-3 py-2 text-sm rounded-xl border border-[var(--rule-base)] dark:border-card-border outline-none focus:border-primary" />
                 </div>
               )}
               {editingRule.type === "min-spend" && (
                 <div>
                   <label className="text-xs font-bold text-gray-500 dark:text-muted">Gasto mínimo acumulado (S/)</label>
                   <input type="number" value={editingRule.config.minSpend} onChange={e => setEditingRule({ ...editingRule, config: { ...editingRule.config, minSpend: Number(e.target.value) } })}
-                    className="w-full mt-1 px-3 py-2 text-sm rounded-xl border border-gray-200 dark:border-card-border outline-none focus:border-primary" />
+                    className="w-full mt-1 px-3 py-2 text-sm rounded-xl border border-[var(--rule-base)] dark:border-card-border outline-none focus:border-primary" />
                 </div>
               )}
               <div className="flex flex-wrap items-center gap-3 p-3 bg-gray-50 dark:bg-surface rounded-xl">
                 <input type="checkbox" id="ruleAutoSend" checked={editingRule.config.autoSend} onChange={e => setEditingRule({ ...editingRule, config: { ...editingRule.config, autoSend: e.target.checked } })}
-                  className="rounded border-gray-300 text-primary focus:ring-primary" />
+                  className="rounded border-[var(--rule-base)] text-primary focus:ring-primary" />
                 <label htmlFor="ruleAutoSend" className="text-sm font-medium text-gray-700 dark:text-foreground cursor-pointer flex-1">
                   Enviar automáticamente por WhatsApp
                 </label>
               </div>
             </div>
-            <div className="px-5 py-4 border-t border-gray-100 dark:border-card-border flex flex-wrap gap-3">
+            <div className="px-5 py-4 border-t border-[var(--rule-soft)] dark:border-card-border flex flex-wrap gap-3">
               <button onClick={() => setShowRuleConfig(false)} className="flex-1 py-2.5 rounded-lg text-sm font-semibold text-gray-700 dark:text-foreground bg-gray-100 dark:bg-accent hover:bg-gray-200 transition-colors">Cancelar</button>
               <button onClick={saveRuleConfig} className="flex-1 py-2.5 rounded-lg text-sm font-semibold text-white bg-primary hover:bg-primary-dark transition-colors">Guardar</button>
             </div>
@@ -481,7 +481,7 @@ export default function CouponsTab() {
       {whatsappCoupon && (
         <div className="fixed inset-0 flex items-center justify-center bg-black/50 p-4" style={{ zIndex: 100 }} onClick={() => setWhatsappCoupon(null)}>
           <div className="bg-white dark:bg-card rounded-xl w-full max-w-md" onClick={e => e.stopPropagation()}>
-            <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100 dark:border-card-border">
+            <div className="flex items-center justify-between px-5 py-4 border-b border-[var(--rule-soft)] dark:border-card-border">
               <div>
                 <h3 className="font-extrabold text-gray-900 dark:text-foreground text-lg">Enviar cupon por WhatsApp</h3>
                 <p className="text-xs text-gray-500 dark:text-muted">Codigo: <span className="font-mono font-bold text-primary">{whatsappCoupon.code}</span></p>
@@ -504,7 +504,7 @@ export default function CouponsTab() {
                     value={whatsappPhone}
                     onChange={e => setWhatsappPhone(e.target.value)}
                     placeholder="Ej: 916409675"
-                    className="flex-1 px-3 py-2 text-sm rounded-xl border border-gray-200 dark:border-card-border outline-none focus:border-primary bg-white dark:bg-surface"
+                    className="flex-1 px-3 py-2 text-sm rounded-xl border border-[var(--rule-base)] dark:border-card-border outline-none focus:border-primary bg-white dark:bg-surface"
                   />
                   <button
                     onClick={() => { if (whatsappPhone.trim()) { sendWhatsapp(whatsappPhone, buildWhatsappMsg(whatsappCoupon)); } }}
@@ -523,7 +523,7 @@ export default function CouponsTab() {
                 <Copy className="h-4 w-4" /> Copiar mensaje al portapapeles
               </button>
             </div>
-            <div className="px-5 py-3 border-t border-gray-100 dark:border-card-border">
+            <div className="px-5 py-3 border-t border-[var(--rule-soft)] dark:border-card-border">
               <button onClick={() => setWhatsappCoupon(null)} className="w-full py-2.5 rounded-lg text-sm font-semibold text-gray-700 dark:text-foreground bg-gray-100 dark:bg-accent hover:bg-gray-200 transition-colors">Cerrar</button>
             </div>
           </div>
@@ -534,7 +534,7 @@ export default function CouponsTab() {
       {showTemplateBuilder && (
         <div className="fixed inset-0 flex items-center justify-center bg-black/50 p-4" style={{ zIndex: 100 }} onClick={() => setShowTemplateBuilder(false)}>
           <div className="bg-white dark:bg-card rounded-xl w-full max-w-lg" onClick={e => e.stopPropagation()}>
-            <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100 dark:border-card-border">
+            <div className="flex items-center justify-between px-5 py-4 border-b border-[var(--rule-soft)] dark:border-card-border">
               <div>
                 <h3 className="font-extrabold text-gray-900 dark:text-foreground text-lg">Constructor de Plantilla</h3>
                 <p className="text-xs text-gray-500 dark:text-muted">Define el patrón de códigos automáticos</p>
@@ -547,7 +547,7 @@ export default function CouponsTab() {
               <div>
                 <label className="text-xs font-bold text-gray-500 dark:text-muted">Patrón</label>
                 <input type="text" value={templatePattern} onChange={e => setTemplatePattern(e.target.value.toUpperCase())}
-                  className="w-full mt-1 px-3 py-2 text-sm rounded-xl border border-gray-200 dark:border-card-border outline-none focus:border-primary font-mono" placeholder="BDAY{MMDD}{RND3}" />
+                  className="w-full mt-1 px-3 py-2 text-sm rounded-xl border border-[var(--rule-base)] dark:border-card-border outline-none focus:border-primary font-mono" placeholder="BDAY{MMDD}{RND3}" />
                 <p className="text-xs text-gray-400 dark:text-muted mt-2">
                   Variables: <span className="font-mono">{"{MMDD}"}</span> (mes/día), <span className="font-mono">{"{RND3}"}</span> (3 dígitos random)
                 </p>
@@ -557,7 +557,7 @@ export default function CouponsTab() {
                 <div className="space-y-1">
                   {["BDAY{MMDD}{RND3}", "NEW{RND3}", "REACT{MMDD}", "GIFT{RND3}", "VIP{MMDD}{RND3}"].map(p => (
                     <button key={p} onClick={() => setTemplatePattern(p)}
-                      className="w-full text-left px-3 py-2 rounded-lg text-sm font-mono bg-white dark:bg-card border border-gray-200 dark:border-card-border hover:border-primary transition-colors">
+                      className="w-full text-left px-3 py-2 rounded-lg text-sm font-mono bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border hover:border-primary transition-colors">
                       {p}
                     </button>
                   ))}
@@ -568,7 +568,7 @@ export default function CouponsTab() {
                 Generar código de prueba
               </button>
             </div>
-            <div className="px-5 py-4 border-t border-gray-100 dark:border-card-border">
+            <div className="px-5 py-4 border-t border-[var(--rule-soft)] dark:border-card-border">
               <button onClick={() => setShowTemplateBuilder(false)} className="w-full py-2.5 rounded-lg text-sm font-semibold text-white bg-primary hover:bg-primary-dark transition-colors">Cerrar</button>
             </div>
           </div>

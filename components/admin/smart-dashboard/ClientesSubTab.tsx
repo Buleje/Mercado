@@ -119,7 +119,7 @@ export function ClientesSubTab(props: ClientesSubTabProps) {
             {upcomingPayables.overdue > 0 && (
               <div className="flex items-center gap-1.5 mb-2 px-2 py-1 rounded-lg bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800">
                 <AlertTriangle className="w-3 h-3 text-red-500" />
-                <span className="text-[10px] font-bold text-red-600 dark:text-red-400">{upcomingPayables.overdue} vencido{upcomingPayables.overdue !== 1 ? "s" : ""}</span>
+                <span className="text-[length:var(--ts-2xs)] font-bold text-red-600 dark:text-red-400">{upcomingPayables.overdue} vencido{upcomingPayables.overdue !== 1 ? "s" : ""}</span>
               </div>
             )}
             {upcomingPayables.upcoming.length > 0 ? (
@@ -130,7 +130,7 @@ export function ClientesSubTab(props: ClientesSubTabProps) {
                     <li key={p.id} className="flex items-center justify-between text-xs">
                       <span className="truncate text-gray-600 dark:text-zinc-300 flex-1">{p.supplierName || "Proveedor"}</span>
                       <span className="font-bold text-gray-900 dark:text-zinc-100 ml-2">{fmtR(p.amount - p.paidAmount)}</span>
-                      <span className="text-[10px] text-gray-400 ml-1.5">{daysLeft}d</span>
+                      <span className="text-[length:var(--ts-2xs)] text-gray-400 ml-1.5">{daysLeft}d</span>
                     </li>
                   );
                 })}
@@ -138,7 +138,7 @@ export function ClientesSubTab(props: ClientesSubTabProps) {
             ) : upcomingPayables.overdue === 0 ? (
               <p className="text-xs text-emerald-500 font-medium">Sin pagos pendientes esta semana</p>
             ) : null}
-            <a href="/admin?module=compras" className="text-[10px] font-bold text-primary hover:underline mt-2 block">Ver todos &rarr;</a>
+            <a href="/admin?module=compras" className="text-[length:var(--ts-2xs)] font-bold text-primary hover:underline mt-2 block">Ver todos &rarr;</a>
           </AdminCard>
 
           {/* Clientes del dia */}
@@ -153,11 +153,11 @@ export function ClientesSubTab(props: ClientesSubTabProps) {
             <p className="text-xs text-gray-400 mt-0.5">Promedio: {clientesPromedio}/dia</p>
             <div className="flex items-center gap-1.5 mt-2">
               {clientesHoy > clientesAyer ? (
-                <span className="text-[10px] font-bold text-emerald-600 bg-emerald-50 dark:bg-emerald-900/30 px-1.5 py-0.5 rounded-full">+{clientesHoy - clientesAyer} vs ayer</span>
+                <span className="text-[length:var(--ts-2xs)] font-bold text-emerald-600 bg-emerald-50 dark:bg-emerald-900/30 px-1.5 py-0.5 rounded-full">+{clientesHoy - clientesAyer} vs ayer</span>
               ) : clientesHoy < clientesAyer ? (
-                <span className="text-[10px] font-bold text-red-500 bg-red-50 dark:bg-red-900/30 px-1.5 py-0.5 rounded-full">{clientesHoy - clientesAyer} vs ayer</span>
+                <span className="text-[length:var(--ts-2xs)] font-bold text-red-500 bg-red-50 dark:bg-red-900/30 px-1.5 py-0.5 rounded-full">{clientesHoy - clientesAyer} vs ayer</span>
               ) : (
-                <span className="text-[10px] font-bold text-gray-400 bg-gray-50 dark:bg-zinc-700 px-1.5 py-0.5 rounded-full">Igual que ayer</span>
+                <span className="text-[length:var(--ts-2xs)] font-bold text-gray-400 bg-gray-50 dark:bg-zinc-700 px-1.5 py-0.5 rounded-full">Igual que ayer</span>
               )}
             </div>
           </AdminCard>
@@ -177,7 +177,7 @@ export function ClientesSubTab(props: ClientesSubTabProps) {
                     <span className="truncate text-gray-600 dark:text-zinc-300 flex-1">{p.name}</span>
                     <span className="text-gray-400 ml-1">quedan {p.stock}</span>
                     <span className={cn(
-                      "text-[10px] font-bold px-1.5 py-0.5 rounded-full ml-1.5",
+                      "text-[length:var(--ts-2xs)] font-bold px-1.5 py-0.5 rounded-full ml-1.5",
                       p.daysLeft < 3 ? "bg-red-100 text-red-600 dark:bg-red-900/30 dark:text-red-400" :
                       p.daysLeft <= 5 ? "bg-amber-100 text-amber-600 dark:bg-amber-900/30 dark:text-amber-400" :
                       "bg-orange-100 text-orange-600 dark:bg-orange-900/30 dark:text-orange-400"
@@ -191,7 +191,7 @@ export function ClientesSubTab(props: ClientesSubTabProps) {
               <p className="text-xs text-emerald-500 font-medium">Stock estable para esta semana</p>
             )}
             {productsRunningOut.length > 0 && (
-              <a href="/admin?module=compras" className="text-[10px] font-bold text-primary hover:underline mt-2 block">Crear OC &rarr;</a>
+              <a href="/admin?module=compras" className="text-[length:var(--ts-2xs)] font-bold text-primary hover:underline mt-2 block">Crear OC &rarr;</a>
             )}
           </AdminCard>
         </div>
@@ -243,11 +243,11 @@ export function ClientesSubTab(props: ClientesSubTabProps) {
                     <ol className="space-y-2">
                       {topCustomers.map((c, idx) => (
                         <li key={c.phone ?? c.name} className="flex items-center gap-2 text-sm">
-                          <span className="flex items-center justify-center w-5 h-5 rounded-full text-[10px] font-bold shrink-0 text-white" style={{ backgroundColor: idx === 0 ? "var(--color-primary)" : "#94a3b8" }}>
+                          <span className="flex items-center justify-center w-5 h-5 rounded-full text-[length:var(--ts-2xs)] font-bold shrink-0 text-white" style={{ backgroundColor: idx === 0 ? "var(--color-primary)" : "#94a3b8" }}>
                             {idx + 1}
                           </span>
                           <span className="flex-1 truncate text-gray-700 dark:text-zinc-300 text-xs" title={c.name}>{c.name}</span>
-                          <span className="text-[10px] text-gray-400 dark:text-zinc-500 shrink-0">{c.orderCount} ped.</span>
+                          <span className="text-[length:var(--ts-2xs)] text-gray-400 dark:text-zinc-500 shrink-0">{c.orderCount} ped.</span>
                           <span className="text-xs font-semibold tabular-nums shrink-0" style={{ color: "var(--color-primary)" }}>{fmtR(c.total)}</span>
                         </li>
                       ))}
@@ -304,7 +304,7 @@ export function ClientesSubTab(props: ClientesSubTabProps) {
                 Promedio: {fmtR(bestDay.best.avg)} {bestDay.pctVsOthers > 0 && <span className="text-emerald-600 dark:text-emerald-400 font-bold">(+{bestDay.pctVsOthers}% vs otros dias)</span>}
               </p>
               {bestDay.worst && (
-                <p className="text-[10px] text-gray-400 dark:text-zinc-500 mt-1.5">Peor dia: {bestDay.worst.name} -- {fmtR(bestDay.worst.avg)}</p>
+                <p className="text-[length:var(--ts-2xs)] text-gray-400 dark:text-zinc-500 mt-1.5">Peor dia: {bestDay.worst.name} -- {fmtR(bestDay.worst.avg)}</p>
               )}
             </AdminCard>
           )}
@@ -317,7 +317,7 @@ export function ClientesSubTab(props: ClientesSubTabProps) {
               <p className="text-sm font-bold text-gray-900 dark:text-zinc-100">{growingCategory.top.cat} crecio {growingCategory.top.pct.toFixed(0)}% esta semana</p>
               <p className="text-xs text-gray-500 dark:text-zinc-400 mt-0.5">De {fmtR(growingCategory.top.lastWeek)} a {fmtR(growingCategory.top.thisWeek)}</p>
               {growingCategory.bottom && (
-                <p className="text-[10px] text-orange-500 dark:text-orange-400 mt-1.5 font-medium">{growingCategory.bottom.cat} bajo {Math.abs(growingCategory.bottom.pct).toFixed(0)}%</p>
+                <p className="text-[length:var(--ts-2xs)] text-orange-500 dark:text-orange-400 mt-1.5 font-medium">{growingCategory.bottom.cat} bajo {Math.abs(growingCategory.bottom.pct).toFixed(0)}%</p>
               )}
             </AdminCard>
           )}
@@ -336,7 +336,7 @@ export function ClientesSubTab(props: ClientesSubTabProps) {
               <p className="text-xs text-gray-500 dark:text-zinc-400 mt-1">
                 {topClientMonth.orderCount} compras &middot; {fmtR(topClientMonth.total)} &middot; Ticket: {fmtR(topClientMonth.avg)}
               </p>
-              <span className="inline-block text-[10px] font-bold bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400 px-1.5 py-0.5 rounded-full mt-1.5 capitalize">
+              <span className="inline-block text-[length:var(--ts-2xs)] font-bold bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400 px-1.5 py-0.5 rounded-full mt-1.5 capitalize">
                 Cliente mas fiel de {topClientMonth.monthName}
               </span>
             </AdminCard>

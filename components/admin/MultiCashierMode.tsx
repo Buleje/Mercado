@@ -82,7 +82,7 @@ function sessionStats(session: CashierSession) {
 function StatBadge({ label, value }: { label: string; value: string }) {
   return (
     <div className="flex flex-col items-center px-3 py-2 rounded-xl bg-gray-50 dark:bg-gray-900/50">
-      <span className="text-base font-black text-primary">{value}</span>
+      <span className="text-base font-extrabold text-primary">{value}</span>
       <span className="text-xs text-gray-500 dark:text-muted">{label}</span>
     </div>
   );
@@ -183,9 +183,9 @@ export default function MultiCashierMode({ onCashierChange, className }: MultiCa
   }, [registerSale]);
 
   return (
-    <div className={cn("rounded-xl border border-gray-200 dark:border-card-border bg-white dark:bg-card overflow-hidden", className)}>
+    <div className={cn("rounded-xl border border-[var(--rule-base)] dark:border-card-border bg-white dark:bg-card overflow-hidden", className)}>
       {/* Header */}
-      <div className="flex items-center gap-2 px-4 py-3 border-b border-gray-100 dark:border-card-border bg-gray-50 dark:bg-gray-900/50">
+      <div className="flex items-center gap-2 px-4 py-3 border-b border-[var(--rule-soft)] dark:border-card-border bg-gray-50 dark:bg-gray-900/50">
         <Users className="h-4 w-4 text-primary" />
         <span className="text-sm font-semibold text-gray-900 dark:text-foreground">Multi-Cajero</span>
         <div className="ml-auto flex items-center gap-2">
@@ -246,7 +246,7 @@ export default function MultiCashierMode({ onCashierChange, className }: MultiCa
                       key={session.id}
                       type="button"
                       onClick={() => selectCashier(session)}
-                      className="w-full flex items-center gap-3 px-3 py-3 rounded-xl border border-gray-100 dark:border-card-border hover:border-primary bg-white dark:bg-card transition-all group"
+                      className="w-full flex items-center gap-3 px-3 py-3 rounded-xl border border-[var(--rule-soft)] dark:border-card-border hover:border-primary bg-white dark:bg-card transition-all group"
                     >
                       <div className="w-9 h-9 rounded-xl bg-primary/10 flex items-center justify-center shrink-0">
                         <User className="h-4 w-4 text-primary" />
@@ -274,14 +274,14 @@ export default function MultiCashierMode({ onCashierChange, className }: MultiCa
                   onKeyDown={(e) => { if (e.key === "Enter") addCashier(); if (e.key === "Escape") setShowAddForm(false); }}
                   placeholder="Nombre del cajero"
                   autoFocus
-                  className="flex-1 px-3 py-2 text-sm rounded-lg border border-gray-200 dark:border-card-border bg-gray-50 dark:bg-gray-900 text-gray-800 dark:text-foreground focus:outline-none focus:border-primary"
+                  className="flex-1 px-3 py-2 text-sm rounded-lg border border-[var(--rule-base)] dark:border-card-border bg-gray-50 dark:bg-gray-900 text-gray-800 dark:text-foreground focus:outline-none focus:border-primary"
                 />
                 <button type="button" onClick={addCashier}
                   className="px-3 py-2 rounded-lg bg-primary text-white text-sm font-semibold hover:bg-primary/90">
                   <Plus className="h-4 w-4" />
                 </button>
                 <button type="button" onClick={() => setShowAddForm(false)}
-                  className="px-3 py-2 rounded-xl border border-gray-200 dark:border-card-border text-gray-500 hover:text-gray-700">
+                  className="px-3 py-2 rounded-xl border border-[var(--rule-base)] dark:border-card-border text-gray-500 hover:text-gray-700">
                   <X className="h-4 w-4" />
                 </button>
               </div>
@@ -289,7 +289,7 @@ export default function MultiCashierMode({ onCashierChange, className }: MultiCa
               <button
                 type="button"
                 onClick={() => setShowAddForm(true)}
-                className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl border-2 border-dashed border-gray-200 dark:border-card-border text-sm text-gray-500 dark:text-muted hover:border-primary hover:text-primary transition-colors"
+                className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl border-2 border-dashed border-[var(--rule-base)] dark:border-card-border text-sm text-gray-500 dark:text-muted hover:border-primary hover:text-primary transition-colors"
               >
                 <Plus className="h-4 w-4" />
                 Agregar cajero
@@ -315,7 +315,7 @@ export default function MultiCashierMode({ onCashierChange, className }: MultiCa
               <button
                 type="button"
                 onClick={() => { setView("selector"); setActiveCashierIdState(null); setActiveCashierId(null); onCashierChange?.(null, null); }}
-                className="ml-auto text-xs px-2 py-1.5 rounded-lg border border-gray-200 dark:border-card-border text-gray-500 dark:text-muted hover:border-gray-300 flex items-center gap-1"
+                className="ml-auto text-xs px-2 py-1.5 rounded-lg border border-[var(--rule-base)] dark:border-card-border text-gray-500 dark:text-muted hover:border-gray-300 flex items-center gap-1"
               >
                 <RefreshCw className="h-3 w-3" />
                 Cambiar
@@ -382,7 +382,7 @@ export default function MultiCashierMode({ onCashierChange, className }: MultiCa
                 {sessions.map((session) => {
                   const { total, count, avg } = sessionStats(session);
                   return (
-                    <div key={session.id} className="rounded-xl border border-gray-100 dark:border-card-border p-3 space-y-2">
+                    <div key={session.id} className="rounded-xl border border-[var(--rule-soft)] dark:border-card-border p-3 space-y-2">
                       <div className="flex items-center gap-2">
                         <User className="h-4 w-4 text-primary shrink-0" />
                         <span className="text-sm font-semibold text-gray-800 dark:text-foreground flex-1">{session.name}</span>
@@ -424,7 +424,7 @@ export default function MultiCashierMode({ onCashierChange, className }: MultiCa
                 <div className="flex items-center justify-between px-3 py-2.5 rounded-xl bg-primary/5 dark:bg-primary/10 border border-primary/20">
                   <span className="text-sm font-semibold text-gray-700 dark:text-foreground">Total del dia</span>
                   <div className="text-right">
-                    <p className="text-base font-black text-primary">{fmt(grandTotal)}</p>
+                    <p className="text-base font-extrabold text-primary">{fmt(grandTotal)}</p>
                     <p className="text-xs text-gray-500 dark:text-muted">{grandCount} ventas</p>
                   </div>
                 </div>

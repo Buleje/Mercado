@@ -110,7 +110,7 @@ export default function ReferidosTiendasTab() {
           ].map((kpi) => (
             <div
               key={kpi.label}
-              className="rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 p-4 text-center"
+              className="rounded-xl border border-[var(--rule-base)] bg-white dark:bg-gray-900 p-4 text-center"
             >
               <p className="text-2xl font-bold text-[#00B4A6]">{kpi.value}</p>
               <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">{kpi.label}</p>
@@ -120,7 +120,7 @@ export default function ReferidosTiendasTab() {
       )}
 
       {/* Codigo de referido */}
-      <div className="rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 p-5 space-y-4">
+      <div className="rounded-xl border border-[var(--rule-base)] bg-white dark:bg-gray-900 p-5 space-y-4">
         <div>
           <h3 className="font-semibold text-gray-900 dark:text-white">Mi codigo de referido</h3>
           <p className="text-sm text-gray-500 dark:text-gray-400 mt-0.5">
@@ -135,7 +135,7 @@ export default function ReferidosTiendasTab() {
             </div>
             <button
               onClick={copyCode}
-              className="px-4 py-3 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-sm font-medium hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+              className="px-4 py-3 rounded-lg border border-[var(--rule-base)] bg-white dark:bg-gray-800 text-sm font-medium hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
             >
               {copied ? "Copiado" : "Copiar"}
             </button>
@@ -171,8 +171,8 @@ export default function ReferidosTiendasTab() {
       )}
 
       {/* Tabla de tiendas referidas */}
-      <div className="rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 overflow-hidden">
-        <div className="px-5 py-4 border-b border-gray-100 dark:border-gray-800">
+      <div className="rounded-xl border border-[var(--rule-base)] bg-white dark:bg-gray-900 overflow-hidden">
+        <div className="px-5 py-4 border-b border-[var(--rule-base)]">
           <h3 className="font-semibold text-gray-900 dark:text-white">Tiendas que invite</h3>
         </div>
 

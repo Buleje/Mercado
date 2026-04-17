@@ -70,7 +70,7 @@ export default function SeasonalityTab() {
           <p className="text-sm text-gray-500 dark:text-muted mt-1">Patrones estacionales de ventas y demanda por producto</p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
-          <div className="flex rounded-xl border border-gray-200 dark:border-card-border overflow-hidden">
+          <div className="flex rounded-xl border border-[var(--rule-base)] dark:border-card-border overflow-hidden">
             {(["mensual", "productos"] as const).map(v => (
               <button key={v} onClick={() => setView(v)} className={cn("px-2 sm:px-4 py-1.5 sm:py-2 text-sm font-semibold transition-colors capitalize", view === v ? "bg-primary text-white" : "text-gray-600 dark:text-muted hover:bg-gray-50 dark:hover:bg-surface")}>{v}</button>
             ))}
@@ -86,21 +86,21 @@ export default function SeasonalityTab() {
 
       {/* KPIs */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-4">
-        <div className="bg-white dark:bg-card rounded-xl border border-gray-200 dark:border-card-border p-4 ">
+        <div className="bg-white dark:bg-card rounded-xl border border-[var(--rule-base)] dark:border-card-border p-4 ">
           <p className="text-xs text-gray-500 dark:text-muted font-semibold">Mejor mes</p>
           <p className="text-lg font-extrabold text-emerald-600 mt-1">{bestMonth.shortMonth}</p>
           <p className="text-xs text-gray-500 dark:text-muted">{fmt(bestMonth.sales)}</p>
         </div>
-        <div className="bg-white dark:bg-card rounded-xl border border-gray-200 dark:border-card-border p-4 ">
+        <div className="bg-white dark:bg-card rounded-xl border border-[var(--rule-base)] dark:border-card-border p-4 ">
           <p className="text-xs text-gray-500 dark:text-muted font-semibold">Peor mes</p>
           <p className="text-lg font-extrabold text-red-600 mt-1">{worstMonth.shortMonth}</p>
           <p className="text-xs text-gray-500 dark:text-muted">{fmt(worstMonth.sales)}</p>
         </div>
-        <div className="bg-white dark:bg-card rounded-xl border border-gray-200 dark:border-card-border p-4 ">
+        <div className="bg-white dark:bg-card rounded-xl border border-[var(--rule-base)] dark:border-card-border p-4 ">
           <p className="text-xs text-gray-500 dark:text-muted font-semibold">Promedio mensual</p>
           <p className="text-lg font-extrabold text-gray-900 dark:text-foreground mt-1">{fmt(avgSales)}</p>
         </div>
-        <div className="bg-white dark:bg-card rounded-xl border border-gray-200 dark:border-card-border p-4 ">
+        <div className="bg-white dark:bg-card rounded-xl border border-[var(--rule-base)] dark:border-card-border p-4 ">
           <p className="text-xs text-gray-500 dark:text-muted font-semibold">Variación estacional</p>
           <p className="text-lg font-extrabold text-amber-600 mt-1">{seasonVariation.toFixed(1)}%</p>
         </div>
@@ -108,7 +108,7 @@ export default function SeasonalityTab() {
 
       {/* Monthly view */}
       {view === "mensual" && (
-        <div className="bg-white dark:bg-card rounded-xl border border-gray-200 dark:border-card-border p-3 sm:p-6 ">
+        <div className="bg-white dark:bg-card rounded-xl border border-[var(--rule-base)] dark:border-card-border p-3 sm:p-6 ">
           <h3 className="text-lg font-extrabold text-gray-900 dark:text-foreground mb-4">Ventas por mes</h3>
           <div className="space-y-3">
             {MONTHLY_DATA.map(m => {
@@ -138,15 +138,15 @@ export default function SeasonalityTab() {
       {view === "productos" && (
         <>
           <div className="flex flex-wrap items-center gap-3">
-            <select value={categoryFilter} onChange={e => setCategoryFilter(e.target.value)} className="px-3 py-2.5 rounded-lg border-2 border-gray-200 dark:border-card-border bg-white dark:bg-surface text-gray-900 dark:text-foreground text-sm outline-none focus:border-primary">
+            <select value={categoryFilter} onChange={e => setCategoryFilter(e.target.value)} className="px-3 py-2.5 rounded-lg border-2 border-[var(--rule-base)] dark:border-card-border bg-white dark:bg-surface text-gray-900 dark:text-foreground text-sm outline-none focus:border-primary">
               <option value="all">Todas las categorías</option>
               {categories.map(c => <option key={c} value={c}>{c}</option>)}
             </select>
           </div>
-          <div className="bg-white dark:bg-card rounded-xl border border-gray-200 dark:border-card-border  overflow-y-hidden overflow-x-auto">
+          <div className="bg-white dark:bg-card rounded-xl border border-[var(--rule-base)] dark:border-card-border  overflow-y-hidden overflow-x-auto">
             <table className="w-full min-w-[600px] text-sm">
               <thead>
-                <tr className="bg-gray-50 dark:bg-surface border-b border-gray-200 dark:border-card-border">
+                <tr className="bg-gray-50 dark:bg-surface border-b border-[var(--rule-base)] dark:border-card-border">
                   <th className="text-left px-2 sm:px-4 py-2 sm:py-3 text-gray-500 dark:text-muted font-semibold">Producto</th>
                   <th className="text-left px-2 sm:px-4 py-2 sm:py-3 text-gray-500 dark:text-muted font-semibold">Categoría</th>
                   <th className="text-left px-2 sm:px-4 py-2 sm:py-3 text-gray-500 dark:text-muted font-semibold">Meses pico</th>
@@ -157,7 +157,7 @@ export default function SeasonalityTab() {
               </thead>
               <tbody>
                 {filteredProducts.map(p => (
-                  <tr key={p.product} className="border-b border-gray-100 dark:border-card-border hover:bg-gray-50 dark:hover:bg-surface transition-colors">
+                  <tr key={p.product} className="border-b border-[var(--rule-soft)] dark:border-card-border hover:bg-gray-50 dark:hover:bg-surface transition-colors">
                     <td className="px-2 sm:px-4 py-2 sm:py-3 font-semibold text-gray-900 dark:text-foreground">{p.product}</td>
                     <td className="px-2 sm:px-4 py-2 sm:py-3 text-gray-500 dark:text-muted">{p.category}</td>
                     <td className="px-2 sm:px-4 py-2 sm:py-3">

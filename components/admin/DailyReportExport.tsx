@@ -194,27 +194,27 @@ export default function DailyReportExport({ className }: DailyReportExportProps)
           <div className="bg-emerald-50 dark:bg-emerald-900/20 rounded-xl p-4">
             <div className="flex items-center gap-1.5 mb-1">
               <TrendingUp className="h-4 w-4 text-emerald-600" />
-              <p className="text-[10px] font-semibold text-gray-500 dark:text-muted uppercase">Ventas hoy</p>
+              <p className="text-[length:var(--ts-2xs)] font-semibold text-gray-500 dark:text-muted uppercase">Ventas hoy</p>
             </div>
             <p className="text-lg font-extrabold text-emerald-600">{fmt(stats.totalSales)}</p>
-            <p className="text-[10px] text-gray-400">{stats.orderCount} pedido{stats.orderCount !== 1 ? "s" : ""}</p>
+            <p className="text-[length:var(--ts-2xs)] text-gray-400">{stats.orderCount} pedido{stats.orderCount !== 1 ? "s" : ""}</p>
           </div>
           <div className="bg-emerald-50 dark:bg-emerald-900/20 rounded-xl p-4">
             <div className="flex items-center gap-1.5 mb-1">
               <Package className="h-4 w-4 text-emerald-600" />
-              <p className="text-[10px] font-semibold text-gray-500 dark:text-muted uppercase">Top producto</p>
+              <p className="text-[length:var(--ts-2xs)] font-semibold text-gray-500 dark:text-muted uppercase">Top producto</p>
             </div>
             <p className="text-sm font-bold text-emerald-600 truncate">
               {stats.topProducts[0]?.name ?? "—"}
             </p>
-            <p className="text-[10px] text-gray-400">
+            <p className="text-[length:var(--ts-2xs)] text-gray-400">
               {stats.topProducts[0] ? `${stats.topProducts[0].qty} unidades` : "Sin ventas"}
             </p>
           </div>
           <div className="bg-red-50 dark:bg-red-900/20 rounded-xl p-4">
             <div className="flex items-center gap-1.5 mb-1">
               <Download className="h-4 w-4 text-red-500" />
-              <p className="text-[10px] font-semibold text-gray-500 dark:text-muted uppercase">Gastos hoy</p>
+              <p className="text-[length:var(--ts-2xs)] font-semibold text-gray-500 dark:text-muted uppercase">Gastos hoy</p>
             </div>
             <p className="text-lg font-extrabold text-red-500">{fmt(stats.totalExpenses)}</p>
           </div>
@@ -226,7 +226,7 @@ export default function DailyReportExport({ className }: DailyReportExportProps)
           )}>
             <div className="flex items-center gap-1.5 mb-1">
               <Wallet className={cn("h-4 w-4", stats.estimatedProfit >= 0 ? "text-primary" : "text-red-500")} />
-              <p className="text-[10px] font-semibold text-gray-500 dark:text-muted uppercase">Utilidad est.</p>
+              <p className="text-[length:var(--ts-2xs)] font-semibold text-gray-500 dark:text-muted uppercase">Utilidad est.</p>
             </div>
             <p className={cn(
               "text-lg font-extrabold",

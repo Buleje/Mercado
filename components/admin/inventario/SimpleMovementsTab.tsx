@@ -166,10 +166,10 @@ export default function SimpleMovementsTab() {
             value={search}
             onChange={e => setSearch(e.target.value)}
             placeholder="Buscar producto..."
-            className="w-full pl-9 pr-3 py-2 rounded-lg border border-gray-200 dark:border-card-border bg-white dark:bg-surface text-sm focus:outline-none focus:ring-2 focus:ring-primary/20"
+            className="w-full pl-9 pr-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-card-border bg-white dark:bg-surface text-sm focus:outline-none focus:ring-2 focus:ring-primary/20"
           />
         </div>
-        <div className="flex gap-1 rounded-xl border border-gray-200 dark:border-card-border p-0.5">
+        <div className="flex gap-1 rounded-xl border border-[var(--rule-base)] dark:border-card-border p-0.5">
           {([["all", "Todos"], ["in", "Entradas"], ["out", "Salidas"]] as const).map(([v, l]) => (
             <button
               key={v}
@@ -184,7 +184,7 @@ export default function SimpleMovementsTab() {
         </div>
         <button
           onClick={() => void loadData()}
-          className="p-2 rounded-lg border border-gray-200 dark:border-card-border text-gray-500 hover:bg-gray-50 dark:hover:bg-surface transition-colors"
+          className="p-2 rounded-lg border border-[var(--rule-base)] dark:border-card-border text-gray-500 hover:bg-gray-50 dark:hover:bg-surface transition-colors"
           title="Refrescar"
         >
           <RefreshCw className="h-4 w-4" />
@@ -195,17 +195,17 @@ export default function SimpleMovementsTab() {
             tipo: m.label, cantidad: m.dir === "in" ? `+${m.quantity}` : `-${m.quantity}`,
             stock_resultado: m.newStock,
           })), `movimientos_${new Date().toISOString().slice(0, 10)}.csv`)}
-          className="flex items-center gap-1 px-3 py-2 rounded-lg border border-gray-200 dark:border-card-border text-xs font-bold text-gray-600 dark:text-muted hover:bg-gray-50 dark:hover:bg-surface transition-colors"
+          className="flex items-center gap-1 px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-card-border text-xs font-bold text-gray-600 dark:text-muted hover:bg-gray-50 dark:hover:bg-surface transition-colors"
         >
           <Download className="h-3.5 w-3.5" /> Excel
         </button>
       </div>
 
       {/* Table */}
-      <div className="rounded-xl border border-gray-200 dark:border-card-border bg-white dark:bg-card overflow-hidden">
+      <div className="rounded-xl border border-[var(--rule-base)] dark:border-card-border bg-white dark:bg-card overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
-            <thead className="bg-gray-50 dark:bg-surface border-b border-gray-200 dark:border-card-border">
+            <thead className="bg-gray-50 dark:bg-surface border-b border-[var(--rule-base)] dark:border-card-border">
               <tr>
                 <th className="px-4 py-3 text-left text-xs font-bold text-gray-500 dark:text-muted uppercase">Cuándo</th>
                 <th className="px-4 py-3 text-left text-xs font-bold text-gray-500 dark:text-muted uppercase">Producto</th>
@@ -227,7 +227,7 @@ export default function SimpleMovementsTab() {
                 <tr key={m.id} className="hover:bg-gray-50/50 dark:hover:bg-surface/30 transition-colors">
                   <td className="px-4 py-3">
                     <p className="text-xs font-semibold text-gray-700 dark:text-foreground">{fmtRelative(m.createdAt)}</p>
-                    <p className="text-[10px] text-gray-400 dark:text-muted">{fmtDate(m.createdAt)}</p>
+                    <p className="text-[length:var(--ts-2xs)] text-gray-400 dark:text-muted">{fmtDate(m.createdAt)}</p>
                   </td>
                   <td className="px-4 py-3">
                     <span className="font-semibold text-gray-900 dark:text-foreground truncate max-w-[180px] block">{m.productName}</span>
@@ -261,7 +261,7 @@ export default function SimpleMovementsTab() {
           </table>
         </div>
         {filtered.length > 0 && (
-          <div className="px-4 py-2 border-t border-gray-100 dark:border-card-border bg-gray-50 dark:bg-surface text-xs text-gray-400">
+          <div className="px-4 py-2 border-t border-[var(--rule-soft)] dark:border-card-border bg-gray-50 dark:bg-surface text-xs text-gray-400">
             Mostrando {filtered.length} de {enriched.length} movimientos
           </div>
         )}

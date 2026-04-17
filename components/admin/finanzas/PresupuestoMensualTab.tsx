@@ -217,7 +217,7 @@ export default function PresupuestoMensualTab() {
           return (
             <div
               key={cat.nombre}
-              className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl p-4  space-y-3"
+              className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl p-4  space-y-3"
             >
               <div className="flex items-center justify-between">
                 <p className="text-sm font-bold text-gray-900 dark:text-white">{cat.nombre}</p>
@@ -238,7 +238,7 @@ export default function PresupuestoMensualTab() {
               {/* Progress bar */}
               <div className={cn("h-2.5 rounded-full overflow-hidden", getBarTrack(cat.porcentaje))}>
                 <div
-                  className={cn("h-full rounded-full transition-all duration-500", getBarColor(cat.porcentaje))}
+                  className={cn("h-full rounded-full transition-all duration-[var(--dur-slow)]", getBarColor(cat.porcentaje))}
                   style={{ width: `${barWidth}%` }}
                 />
               </div>
@@ -262,7 +262,7 @@ export default function PresupuestoMensualTab() {
               </p>
 
               {cat.porcentaje > 100 && (
-                <p className="text-[10px] font-bold text-red-600 dark:text-red-400 animate-pulse">
+                <p className="text-[length:var(--ts-2xs)] font-bold text-red-600 dark:text-red-400 animate-pulse">
                   Excedido
                 </p>
               )}
@@ -272,18 +272,18 @@ export default function PresupuestoMensualTab() {
       </div>
 
       {/* Resumen inferior */}
-      <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl p-4 ">
+      <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl p-4 ">
         <div className="grid grid-cols-3 gap-4">
           <div>
-            <p className="text-[10px] uppercase font-bold text-gray-400">Total presupuestado</p>
+            <p className="text-[length:var(--ts-2xs)] uppercase font-bold text-gray-400">Total presupuestado</p>
             <p className="text-lg font-bold text-gray-900 dark:text-white">{formatCurrency(totalPresupuestado)}</p>
           </div>
           <div>
-            <p className="text-[10px] uppercase font-bold text-gray-400">Total gastado</p>
+            <p className="text-[length:var(--ts-2xs)] uppercase font-bold text-gray-400">Total gastado</p>
             <p className="text-lg font-bold text-gray-900 dark:text-white">{formatCurrency(totalGastado)}</p>
           </div>
           <div>
-            <p className="text-[10px] uppercase font-bold text-gray-400">% del presupuesto</p>
+            <p className="text-[length:var(--ts-2xs)] uppercase font-bold text-gray-400">% del presupuesto</p>
             <p className={cn(
               "text-lg font-bold",
               porcentajeTotal > 100
@@ -298,7 +298,7 @@ export default function PresupuestoMensualTab() {
         </div>
         <div className={cn("h-2 rounded-full overflow-hidden mt-3", getBarTrack(porcentajeTotal))}>
           <div
-            className={cn("h-full rounded-full transition-all duration-500", getBarColor(porcentajeTotal))}
+            className={cn("h-full rounded-full transition-all duration-[var(--dur-slow)]", getBarColor(porcentajeTotal))}
             style={{ width: `${Math.min(porcentajeTotal, 100)}%` }}
           />
         </div>
@@ -312,7 +312,7 @@ export default function PresupuestoMensualTab() {
             className="fixed inset-0 z-50 flex items-center justify-center p-4"
             onClick={e => e.target === e.currentTarget && setShowEdit(false)}
           >
-            <div className="w-full max-w-lg bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl p-5 space-y-4 max-h-[85vh] overflow-y-auto">
+            <div className="w-full max-w-lg bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl p-5 space-y-4 max-h-[85vh] overflow-y-auto">
               <div className="flex items-center justify-between">
                 <h3 className="text-lg font-bold text-gray-900 dark:text-white">Editar Presupuesto</h3>
                 <button onClick={() => setShowEdit(false)} className="p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-white/5">
@@ -324,17 +324,17 @@ export default function PresupuestoMensualTab() {
                 {draft.map((d, i) => (
                   <div key={i} className="flex gap-2 items-end bg-gray-50 dark:bg-white/5 rounded-xl p-3">
                     <div className="flex-1">
-                      <label className="block text-[10px] font-bold text-gray-400 mb-0.5">Categoria</label>
+                      <label className="block text-[length:var(--ts-2xs)] font-bold text-gray-400 mb-0.5">Categoria</label>
                       <input
                         type="text"
                         value={d.nombre}
                         onChange={e => updateDraft(i, "nombre", e.target.value)}
                         placeholder="Ej: Mercaderia"
-                        className="w-full px-2 py-1.5 rounded-lg border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 text-xs text-gray-900 dark:text-white focus:outline-none focus:ring-1 focus:ring-[#00B4A6]/30"
+                        className="w-full px-2 py-1.5 rounded-lg border border-[var(--rule-base)] dark:border-white/10 bg-white dark:bg-white/5 text-xs text-gray-900 dark:text-white focus:outline-none focus:ring-1 focus:ring-[#00B4A6]/30"
                       />
                     </div>
                     <div className="w-28">
-                      <label className="block text-[10px] font-bold text-gray-400 mb-0.5">Limite (S/)</label>
+                      <label className="block text-[length:var(--ts-2xs)] font-bold text-gray-400 mb-0.5">Limite (S/)</label>
                       <input
                         type="number"
                         step="0.01"
@@ -342,7 +342,7 @@ export default function PresupuestoMensualTab() {
                         value={d.limite}
                         onChange={e => updateDraft(i, "limite", e.target.value)}
                         placeholder="0.00"
-                        className="w-full px-2 py-1.5 rounded-lg border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 text-xs text-gray-900 dark:text-white focus:outline-none focus:ring-1 focus:ring-[#00B4A6]/30"
+                        className="w-full px-2 py-1.5 rounded-lg border border-[var(--rule-base)] dark:border-white/10 bg-white dark:bg-white/5 text-xs text-gray-900 dark:text-white focus:outline-none focus:ring-1 focus:ring-[#00B4A6]/30"
                       />
                     </div>
                     <button

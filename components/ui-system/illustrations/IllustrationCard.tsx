@@ -75,11 +75,11 @@ export const IllustrationCard = memo(function IllustrationCard({
         transition={{ duration: DURATION.base, ease: EASE.editorial, delay: 0.15 }}
       >
         {kicker && (
-          <p className="text-[10px] font-bold uppercase tracking-[0.25em] text-[var(--text-tertiary)] mb-2">
+          <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)] mb-2">
             {kicker}
           </p>
         )}
-        <h3 className="text-xl sm:text-2xl font-extrabold tracking-[-0.02em] text-[var(--text-primary)] max-w-md mx-auto">
+        <h3 className="text-xl sm:text-2xl font-extrabold tracking-[var(--ls-tight)] text-[var(--text-primary)] max-w-md mx-auto">
           {title}
         </h3>
         {description && (

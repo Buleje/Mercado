@@ -22,9 +22,9 @@ interface Goal {
 const CATEGORY_META: Record<GoalCategory, { label: string; color: string; bg: string; icon: React.ElementType }> = {
   ventas:    { label: "Ventas",    color: "text-emerald-600", bg: "bg-emerald-50",  icon: TrendingUp },
   pedidos:   { label: "Pedidos",   color: "text-amber-600",   bg: "bg-amber-50",    icon: BarChart3 },
-  clientes:  { label: "Clientes",  color: "text-violet-600",  bg: "bg-violet-50",   icon: Target },
+  clientes:  { label: "Clientes",  color: "text-[var(--text-secondary)]",  bg: "bg-[var(--surface-sunken)]",   icon: Target },
   productos: { label: "Productos", color: "text-emerald-600",    bg: "bg-emerald-50",     icon: BarChart3 },
-  caja:      { label: "Caja",      color: "text-pink-600",    bg: "bg-pink-50",     icon: TrendingUp },
+  caja:      { label: "Caja",      color: "text-[var(--text-secondary)]",    bg: "bg-[var(--surface-sunken)]",     icon: TrendingUp },
 };
 
 const PERIOD_LABELS: Record<GoalPeriod, string> = {
@@ -41,7 +41,7 @@ function ProgressBar({ current, target }: { current: number; target: number }) {
       </div>
       <div className="h-2.5 rounded-full bg-gray-100 dark:bg-surface overflow-hidden">
         <div
-          className={cn("h-full rounded-full transition-all duration-500", pct >= 100 ? "bg-emerald-500" : pct >= 70 ? "bg-amber-400" : "bg-red-400")}
+          className={cn("h-full rounded-full transition-all duration-[var(--dur-slow)]", pct >= 100 ? "bg-emerald-500" : pct >= 70 ? "bg-amber-400" : "bg-red-400")}
           style={{ width: `${pct}%` }}
         />
       </div>
@@ -160,7 +160,7 @@ export default function GoalsTab() {
       {loading ? (
         <div className="h-40 flex items-center justify-center text-gray-400 dark:text-muted">Cargando…</div>
       ) : goals.length === 0 ? (
-        <div className="bg-white dark:bg-card border-2 border-dashed border-gray-200 dark:border-card-border rounded-xl p-12 text-center">
+        <div className="bg-white dark:bg-card border-2 border-dashed border-[var(--rule-base)] dark:border-card-border rounded-xl p-12 text-center">
           <Target className="h-12 w-12 text-gray-300 dark:text-muted mx-auto mb-3" />
           <p className="text-gray-500 dark:text-muted font-semibold mb-1">Todavía no hay metas</p>
           <p className="text-gray-400 dark:text-muted text-sm mb-4">Crea tu primera meta para trackear el progreso del negocio.</p>
@@ -175,7 +175,7 @@ export default function GoalsTab() {
             const Icon = meta.icon;
             const pct = Math.min(100, g.target > 0 ? Math.round((g.current / g.target) * 100) : 0);
             return (
-              <div key={g.id} className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl p-3 sm:p-5 space-y-4 hover:shadow-sm transition-shadow">
+              <div key={g.id} className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl p-3 sm:p-5 space-y-4 hover:shadow-sm transition-shadow">
                 <div className="flex flex-wrap items-start justify-between gap-2">
                   <div className="flex flex-wrap items-center gap-2.5">
                     <div className={cn("w-9 h-9 rounded-xl flex items-center justify-center shrink-0", meta.bg)}>
@@ -184,9 +184,9 @@ export default function GoalsTab() {
                     <div>
                       <p className="font-bold text-sm text-gray-900 dark:text-foreground leading-tight">{g.name}</p>
                       <div className="flex items-center gap-1.5 mt-0.5">
-                        <span className={cn("text-[10px] font-bold", meta.color)}>{meta.label}</span>
+                        <span className={cn("text-[length:var(--ts-2xs)] font-bold", meta.color)}>{meta.label}</span>
                         <span className="text-gray-200 dark:text-card-border text-xs">·</span>
-                        <span className="text-[10px] text-gray-400 dark:text-muted">{PERIOD_LABELS[g.period]}</span>
+                        <span className="text-[length:var(--ts-2xs)] text-gray-400 dark:text-muted">{PERIOD_LABELS[g.period]}</span>
                       </div>
                     </div>
                   </div>
@@ -220,7 +220,7 @@ export default function GoalsTab() {
                       const v = parseFloat(e.target.value);
                       if (!isNaN(v) && v !== g.current) updateProgress(g.id, v);
                     }}
-                    className="w-full px-3 py-1.5 text-xs rounded-lg border border-gray-200 dark:border-card-border bg-gray-50 dark:bg-surface text-gray-700 dark:text-foreground outline-none focus:border-primary focus:ring-1 focus:ring-primary/20 transition-all"
+                    className="w-full px-3 py-1.5 text-xs rounded-lg border border-[var(--rule-base)] dark:border-card-border bg-gray-50 dark:bg-surface text-gray-700 dark:text-foreground outline-none focus:border-primary focus:ring-1 focus:ring-primary/20 transition-all"
                     placeholder="Actualizar progreso"
                   />
                   <span className="text-xs text-gray-400 dark:text-muted font-mono shrink-0">{g.unit}</span>
@@ -250,7 +250,7 @@ export default function GoalsTab() {
                   value={form.name}
                   onChange={e => setForm(f => ({ ...f, name: e.target.value }))}
                   placeholder="ej. Ventas del mes"
-                  className="w-full px-2 sm:px-4 py-1.5 sm:py-2.5 text-sm rounded-lg border border-gray-200 dark:border-card-border bg-gray-50 dark:bg-surface text-gray-900 dark:text-foreground outline-none focus:border-primary focus:ring-1 focus:ring-primary/20 transition-all"
+                  className="w-full px-2 sm:px-4 py-1.5 sm:py-2.5 text-sm rounded-lg border border-[var(--rule-base)] dark:border-card-border bg-gray-50 dark:bg-surface text-gray-900 dark:text-foreground outline-none focus:border-primary focus:ring-1 focus:ring-primary/20 transition-all"
                 />
               </div>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -259,7 +259,7 @@ export default function GoalsTab() {
                   <select
                     value={form.category}
                     onChange={e => setForm(f => ({ ...f, category: e.target.value as GoalCategory }))}
-                    className="w-full px-3 py-2.5 text-sm rounded-xl border border-gray-200 dark:border-card-border bg-gray-50 dark:bg-surface text-gray-900 dark:text-foreground outline-none focus:border-primary transition-all"
+                    className="w-full px-3 py-2.5 text-sm rounded-xl border border-[var(--rule-base)] dark:border-card-border bg-gray-50 dark:bg-surface text-gray-900 dark:text-foreground outline-none focus:border-primary transition-all"
                   >
                     {Object.entries(CATEGORY_META).map(([k, v]) => (
                       <option key={k} value={k}>{v.label}</option>
@@ -271,7 +271,7 @@ export default function GoalsTab() {
                   <select
                     value={form.period}
                     onChange={e => setForm(f => ({ ...f, period: e.target.value as GoalPeriod }))}
-                    className="w-full px-3 py-2.5 text-sm rounded-xl border border-gray-200 dark:border-card-border bg-gray-50 dark:bg-surface text-gray-900 dark:text-foreground outline-none focus:border-primary transition-all"
+                    className="w-full px-3 py-2.5 text-sm rounded-xl border border-[var(--rule-base)] dark:border-card-border bg-gray-50 dark:bg-surface text-gray-900 dark:text-foreground outline-none focus:border-primary transition-all"
                   >
                     {Object.entries(PERIOD_LABELS).map(([k, v]) => (
                       <option key={k} value={k}>{v}</option>
@@ -288,7 +288,7 @@ export default function GoalsTab() {
                     value={form.target}
                     onChange={e => setForm(f => ({ ...f, target: e.target.value }))}
                     placeholder="5000"
-                    className="w-full px-3 py-2.5 text-sm rounded-xl border border-gray-200 dark:border-card-border bg-gray-50 dark:bg-surface text-gray-900 dark:text-foreground outline-none focus:border-primary transition-all"
+                    className="w-full px-3 py-2.5 text-sm rounded-xl border border-[var(--rule-base)] dark:border-card-border bg-gray-50 dark:bg-surface text-gray-900 dark:text-foreground outline-none focus:border-primary transition-all"
                   />
                 </div>
                 <div>
@@ -298,7 +298,7 @@ export default function GoalsTab() {
                     value={form.unit}
                     onChange={e => setForm(f => ({ ...f, unit: e.target.value }))}
                     placeholder="S/ ó pedidos"
-                    className="w-full px-3 py-2.5 text-sm rounded-xl border border-gray-200 dark:border-card-border bg-gray-50 dark:bg-surface text-gray-900 dark:text-foreground outline-none focus:border-primary transition-all"
+                    className="w-full px-3 py-2.5 text-sm rounded-xl border border-[var(--rule-base)] dark:border-card-border bg-gray-50 dark:bg-surface text-gray-900 dark:text-foreground outline-none focus:border-primary transition-all"
                   />
                 </div>
               </div>
@@ -308,13 +308,13 @@ export default function GoalsTab() {
                   type="date"
                   value={form.dueDate}
                   onChange={e => setForm(f => ({ ...f, dueDate: e.target.value }))}
-                  className="w-full px-3 py-2.5 text-sm rounded-xl border border-gray-200 dark:border-card-border bg-gray-50 dark:bg-surface text-gray-900 dark:text-foreground outline-none focus:border-primary transition-all"
+                  className="w-full px-3 py-2.5 text-sm rounded-xl border border-[var(--rule-base)] dark:border-card-border bg-gray-50 dark:bg-surface text-gray-900 dark:text-foreground outline-none focus:border-primary transition-all"
                 />
               </div>
             </div>
 
             <div className="flex flex-wrap gap-3 pt-1">
-              <button onClick={() => setShowForm(false)} className="flex-1 py-2.5 rounded-lg border border-gray-200 dark:border-card-border text-gray-700 dark:text-foreground text-sm font-semibold hover:bg-gray-50 dark:hover:bg-surface transition-colors">
+              <button onClick={() => setShowForm(false)} className="flex-1 py-2.5 rounded-lg border border-[var(--rule-base)] dark:border-card-border text-gray-700 dark:text-foreground text-sm font-semibold hover:bg-gray-50 dark:hover:bg-surface transition-colors">
                 Cancelar
               </button>
               <button

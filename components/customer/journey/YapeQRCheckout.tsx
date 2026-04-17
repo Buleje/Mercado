@@ -6,6 +6,7 @@ import { Upload, Check, Copy, Smartphone, Loader2, X } from "lucide-react";
 import { m, AnimatePresence } from "framer-motion";
 import { cn } from "@/lib/utils";
 import { BTN } from "@/lib/copy";
+import { PrimaryButton, IconBadge } from "@buleje/design-system";
 
 /**
  * YapeQRCheckout — Yape QR embebido + upload captura de pago.
@@ -106,10 +107,10 @@ export function YapeQRCheckout({
       {/* Header */}
       <div className="p-5 border-b border-[var(--rule-soft)] flex items-start justify-between gap-3">
         <div>
-          <p className="text-[10px] font-bold uppercase tracking-[0.25em] text-[var(--text-tertiary)] mb-1">
+          <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)] mb-1">
             Pago con Yape
           </p>
-          <h3 className="text-lg font-extrabold tracking-[-0.02em] text-[var(--text-primary)]">
+          <h3 className="text-lg font-extrabold tracking-[var(--ls-tight)] text-[var(--text-primary)]">
             Pedido #{orderId}
           </h3>
         </div>
@@ -143,13 +144,13 @@ export function YapeQRCheckout({
         {/* Data rows */}
         <div className="space-y-3">
           <div>
-            <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-[var(--text-tertiary)] mb-1">
+            <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)] mb-1">
               Nombre
             </p>
             <p className="text-sm font-extrabold text-[var(--text-primary)]">{recipientName}</p>
           </div>
           <div>
-            <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-[var(--text-tertiary)] mb-1">
+            <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)] mb-1">
               Celular Yape
             </p>
             <button
@@ -166,13 +167,13 @@ export function YapeQRCheckout({
             </button>
           </div>
           <div>
-            <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-[var(--text-tertiary)] mb-1">
+            <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)] mb-1">
               Monto exacto
             </p>
             <button
               type="button"
               onClick={() => copyToClipboard(amount.toFixed(2), "amount")}
-              className="inline-flex items-center gap-2 text-2xl font-extrabold tabular-nums tracking-[-0.02em] text-[var(--text-primary)] hover:opacity-70 transition-opacity"
+              className="inline-flex items-center gap-2 text-2xl font-extrabold tabular-nums tracking-[var(--ls-tight)] text-[var(--text-primary)] hover:opacity-70 transition-opacity"
             >
               S/ {amount.toFixed(2)}
               {copiedField === "amount" ? (
@@ -187,32 +188,24 @@ export function YapeQRCheckout({
 
       {/* Steps */}
       <div className="p-5 border-b border-[var(--rule-soft)] bg-[var(--surface-sunken)]">
-        <p className="text-[10px] font-bold uppercase tracking-[0.25em] text-[var(--text-tertiary)] mb-3">
+        <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)] mb-3">
           Cómo pagar
         </p>
         <ol className="space-y-2 text-sm text-[var(--text-secondary)]">
           <li className="flex items-start gap-2">
-            <span className="inline-flex h-4 w-4 shrink-0 items-center justify-center rounded-full bg-[var(--text-primary)] text-[var(--surface-canvas)] text-[10px] font-bold tabular-nums mt-0.5">
-              1
-            </span>
+            <IconBadge size="xs" className="mt-0.5">1</IconBadge>
             Abrí tu app de Yape y tocá &ldquo;Pagar con QR&rdquo; o &ldquo;Yapear&rdquo;
           </li>
           <li className="flex items-start gap-2">
-            <span className="inline-flex h-4 w-4 shrink-0 items-center justify-center rounded-full bg-[var(--text-primary)] text-[var(--surface-canvas)] text-[10px] font-bold tabular-nums mt-0.5">
-              2
-            </span>
+            <IconBadge size="xs" className="mt-0.5">2</IconBadge>
             Escaneá el código o ingresá el celular <span className="font-semibold tabular-nums">{recipientPhone}</span>
           </li>
           <li className="flex items-start gap-2">
-            <span className="inline-flex h-4 w-4 shrink-0 items-center justify-center rounded-full bg-[var(--text-primary)] text-[var(--surface-canvas)] text-[10px] font-bold tabular-nums mt-0.5">
-              3
-            </span>
+            <IconBadge size="xs" className="mt-0.5">3</IconBadge>
             Pagá exacto <span className="font-semibold tabular-nums">S/ {amount.toFixed(2)}</span> y tomá captura
           </li>
           <li className="flex items-start gap-2">
-            <span className="inline-flex h-4 w-4 shrink-0 items-center justify-center rounded-full bg-[var(--text-primary)] text-[var(--surface-canvas)] text-[10px] font-bold tabular-nums mt-0.5">
-              4
-            </span>
+            <IconBadge size="xs" className="mt-0.5">4</IconBadge>
             Subí la captura abajo — validamos en 5 segundos
           </li>
         </ol>
@@ -309,23 +302,24 @@ export function YapeQRCheckout({
                   {errorMsg}
                 </p>
               </div>
-              <button
+              <PrimaryButton
                 type="button"
                 onClick={() => {
                   setStatus("idle");
                   setErrorMsg(null);
                 }}
-                className="w-full inline-flex items-center justify-center gap-2 rounded-full bg-[var(--text-primary)] text-[var(--surface-canvas)] py-3 text-sm font-bold hover:opacity-90 transition-opacity"
+                size="lg"
+                className="w-full rounded-full"
+                leftIcon={<Upload className="h-4 w-4" strokeWidth={1.75} />}
               >
-                <Upload className="h-4 w-4" strokeWidth={1.75} />
                 Probar otra captura
-              </button>
+              </PrimaryButton>
             </m.div>
           )}
         </AnimatePresence>
 
         {/* Footer note */}
-        <p className="mt-4 text-[11px] text-[var(--text-tertiary)] text-center leading-relaxed">
+        <p className="mt-4 text-[length:var(--ts-xs)] text-[var(--text-tertiary)] text-center leading-relaxed">
           <Smartphone className="inline h-3 w-3 -mt-0.5" strokeWidth={1.75} aria-hidden />{" "}
           Si tenés problemas, escribinos por WhatsApp y te ayudamos con el pago
         </p>

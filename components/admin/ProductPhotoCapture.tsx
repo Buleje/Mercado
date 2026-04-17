@@ -131,8 +131,8 @@ export default function ProductPhotoCapture({ onCapture, onClose, className }: P
   return (
     <div
       className={cn(
-        "flex flex-col gap-4 rounded-xl border border-gray-200 bg-white p-4",
-        "dark:border-gray-700 dark:bg-gray-900",
+        "flex flex-col gap-4 rounded-xl border border-[var(--rule-base)] bg-white p-4",
+        "dark:border-[var(--rule-base)] dark:bg-gray-900",
         className
       )}
     >
@@ -205,7 +205,7 @@ export default function ProductPhotoCapture({ onCapture, onClose, className }: P
       {/* Idle placeholder */}
       {state === "idle" && !error && (
         <div
-          className="flex flex-col items-center justify-center gap-3 rounded-lg border-2 border-dashed border-gray-200 bg-gray-50 dark:border-gray-700 dark:bg-gray-800/50"
+          className="flex flex-col items-center justify-center gap-3 rounded-lg border-2 border-dashed border-[var(--rule-base)] bg-gray-50 dark:border-[var(--rule-base)] dark:bg-gray-800/50"
           style={{ aspectRatio: "16/9" }}
         >
           <Camera className="h-10 w-10 text-gray-300 dark:text-gray-600" />
@@ -234,7 +234,7 @@ export default function ProductPhotoCapture({ onCapture, onClose, className }: P
             <button
               onClick={() => fileInputRef.current?.click()}
               className={cn(
-                "flex items-center justify-center gap-2 rounded-lg border border-gray-200 px-4 py-2 text-sm font-medium",
+                "flex items-center justify-center gap-2 rounded-lg border border-[var(--rule-base)] px-4 py-2 text-sm font-medium",
                 "text-gray-700 transition hover:bg-gray-50 dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-800",
                 !cameraSupported && "flex-1"
               )}
@@ -262,7 +262,7 @@ export default function ProductPhotoCapture({ onCapture, onClose, className }: P
             </button>
             <button
               onClick={retake}
-              className="flex items-center justify-center gap-2 rounded-lg border border-gray-200 px-4 py-2 text-sm font-medium text-gray-700 transition hover:bg-gray-50 dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-800"
+              className="flex items-center justify-center gap-2 rounded-lg border border-[var(--rule-base)] px-4 py-2 text-sm font-medium text-gray-700 transition hover:bg-gray-50 dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-800"
             >
               <RotateCcw className="h-4 w-4" />
               Retomar

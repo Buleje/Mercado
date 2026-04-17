@@ -27,14 +27,14 @@ export default function PuntoCompraLotSelector({ product, open, onClose, onSelec
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
       <div className="bg-white dark:bg-gray-900 rounded-xl w-full max-w-xs overflow-hidden">
         {/* Header */}
-        <div className="flex items-center justify-between p-3 border-b border-gray-200 dark:border-card-border">
+        <div className="flex items-center justify-between p-3 border-b border-[var(--rule-base)] dark:border-card-border">
           <div className="flex items-center gap-2 min-w-0">
             <Package className="h-4 w-4 text-[#00B4A6] shrink-0" />
             <div className="min-w-0">
               <h3 className="text-xs font-bold text-gray-900 dark:text-white truncate">
                 Seleccionar lote
               </h3>
-              <p className="text-[10px] text-gray-400 truncate">{product.name}</p>
+              <p className="text-[length:var(--ts-2xs)] text-gray-400 truncate">{product.name}</p>
             </div>
           </div>
           <button
@@ -48,7 +48,7 @@ export default function PuntoCompraLotSelector({ product, open, onClose, onSelec
 
         {/* Unit price reference */}
         <div className="px-3 pt-2 pb-1">
-          <p className="text-[10px] text-gray-400">
+          <p className="text-[length:var(--ts-2xs)] text-gray-400">
             Precio unitario: <span className="font-mono font-medium text-gray-600 dark:text-gray-300">S/{unitPrice.toFixed(2)}</span>
           </p>
         </div>
@@ -65,7 +65,7 @@ export default function PuntoCompraLotSelector({ product, open, onClose, onSelec
                 onClick={() => onSelect(lot.units, totalPrice)}
                 className={cn(
                   "w-full flex items-center gap-3 p-2.5 rounded-xl text-left transition-all",
-                  "border border-gray-200 dark:border-card-border",
+                  "border border-[var(--rule-base)] dark:border-card-border",
                   "hover:border-[#00B4A6] hover:bg-[#00B4A6]/5 dark:hover:bg-[#00B4A6]/10",
                   "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#00B4A6]",
                 )}
@@ -80,7 +80,7 @@ export default function PuntoCompraLotSelector({ product, open, onClose, onSelec
                   <p className="text-xs font-medium text-gray-900 dark:text-white">
                     {lot.label}
                   </p>
-                  <p className="text-[10px] text-gray-400">
+                  <p className="text-[length:var(--ts-2xs)] text-gray-400">
                     {lot.units} unidad{lot.units !== 1 ? "es" : ""}
                   </p>
                 </div>
@@ -91,7 +91,7 @@ export default function PuntoCompraLotSelector({ product, open, onClose, onSelec
                     S/{totalPrice.toFixed(2)}
                   </p>
                   {savingsPct > 0 && (
-                    <p className="text-[9px] text-green-600 dark:text-green-400 font-medium">
+                    <p className="text-[length:var(--ts-2xs)] text-green-600 dark:text-green-400 font-medium">
                       Mayor volumen
                     </p>
                   )}

@@ -62,7 +62,7 @@ export function AdminMobileBottomBar({
 
   return (
     <nav
-      className="sm:hidden fixed bottom-0 inset-x-0 z-30 bg-white dark:bg-card border-t border-gray-200 dark:border-card-border flex items-stretch"
+      className="sm:hidden fixed bottom-0 inset-x-0 z-30 bg-white dark:bg-card border-t border-[var(--rule-base)] dark:border-card-border flex items-stretch"
       style={{ paddingBottom: "max(env(safe-area-inset-bottom), 4px)" }}
       aria-label="Navegación rápida"
     >
@@ -71,7 +71,7 @@ export function AdminMobileBottomBar({
           key={id}
           onClick={() => onNavigate(id)}
           className={cn(
-            "flex-1 flex flex-col items-center justify-center gap-0.5 py-1.5 text-[10px] font-semibold transition-colors relative",
+            "flex-1 flex flex-col items-center justify-center gap-0.5 py-1.5 text-[length:var(--ts-2xs)] font-semibold transition-colors relative",
             currentTab === id ? "text-primary" : "text-gray-400 dark:text-muted"
           )}
           aria-current={currentTab === id ? "page" : undefined}
@@ -79,7 +79,7 @@ export function AdminMobileBottomBar({
           {alerts[id] ? (
             <span className="relative inline-flex">
               <Icon className="h-5 w-5" />
-              <span className="absolute -top-1 -right-2 min-w-4 h-4 rounded-full bg-red-500 text-white text-[9px] font-extrabold flex items-center justify-center px-0.5">
+              <span className="absolute -top-1 -right-2 min-w-4 h-4 rounded-full bg-red-500 text-white text-[length:var(--ts-2xs)] font-extrabold flex items-center justify-center px-0.5">
                 {alerts[id]}
               </span>
             </span>
@@ -93,13 +93,13 @@ export function AdminMobileBottomBar({
 
       <button
         onClick={onOpenMobileNav}
-        className="flex-1 flex flex-col items-center justify-center gap-0.5 py-1.5 text-[10px] font-semibold text-gray-400 dark:text-muted transition-colors"
+        className="flex-1 flex flex-col items-center justify-center gap-0.5 py-1.5 text-[length:var(--ts-2xs)] font-semibold text-gray-400 dark:text-muted transition-colors"
         aria-label="Más opciones"
       >
         <span className="relative inline-flex">
           <Menu className="h-5 w-5" />
           {otherAlerts > 0 && (
-            <span className="absolute -top-1 -right-2 min-w-4 h-4 rounded-full bg-red-500 text-white text-[9px] font-extrabold flex items-center justify-center px-0.5">
+            <span className="absolute -top-1 -right-2 min-w-4 h-4 rounded-full bg-red-500 text-white text-[length:var(--ts-2xs)] font-extrabold flex items-center justify-center px-0.5">
               {otherAlerts}
             </span>
           )}

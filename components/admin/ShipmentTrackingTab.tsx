@@ -102,7 +102,7 @@ function ProgressBar({ status }: { status: OrderStatus }) {
           <div key={stage.key} className="flex-1 flex flex-col items-center relative">
             {i > 0 && (
               <div className={cn(
-                "absolute top-3 right-1/2 w-full h-0.5 transition-colors duration-500",
+                "absolute top-3 right-1/2 w-full h-0.5 transition-colors duration-[var(--dur-slow)]",
                 done ? "bg-primary" : "bg-gray-200 dark:bg-gray-700"
               )} />
             )}
@@ -119,7 +119,7 @@ function ProgressBar({ status }: { status: OrderStatus }) {
               {i === 2 && <CheckCircle className="h-3 w-3" />}
             </m.div>
             <span className={cn(
-              "text-[9px] mt-1 font-semibold",
+              "text-[length:var(--ts-2xs)] mt-1 font-semibold",
               done ? "text-primary" : "text-gray-400"
             )}>{stage.label}</span>
           </div>
@@ -153,7 +153,7 @@ function OrderCard({
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, y: -8 }}
       transition={{ duration: 0.25 }}
-      className="bg-white dark:bg-card rounded-xl border border-gray-200 dark:border-card-border overflow-hidden"
+      className="bg-white dark:bg-card rounded-xl border border-[var(--rule-base)] dark:border-card-border overflow-hidden"
     >
       {/* Header */}
       <div className="p-3 sm:p-5">
@@ -168,11 +168,11 @@ function OrderCard({
                 key={order.status}
                 initial={{ scale: 0.85, opacity: 0 }}
                 animate={{ scale: 1, opacity: 1 }}
-                className={cn("text-[10px] font-bold px-2 py-0.5 rounded-full", cfg.bg, cfg.color)}
+                className={cn("text-[length:var(--ts-2xs)] font-bold px-2 py-0.5 rounded-full", cfg.bg, cfg.color)}
               >
                 {cfg.label}
               </m.span>
-              <span className="text-[10px] text-gray-400 flex items-center gap-0.5">
+              <span className="text-[length:var(--ts-2xs)] text-gray-400 flex items-center gap-0.5">
                 <TimerReset className="h-3 w-3" /> {mins}min
               </span>
             </div>
@@ -191,7 +191,7 @@ function OrderCard({
             <p className="text-xs text-gray-500 dark:text-muted mt-1">
               {itemCount} producto{itemCount !== 1 ? "s" : ""} · {fmtMoney(order.total)}
               {order.paymentMethod && (
-                <span className="ml-2 text-[10px] bg-gray-100 dark:bg-surface px-1.5 py-0.5 rounded font-semibold uppercase">
+                <span className="ml-2 text-[length:var(--ts-2xs)] bg-gray-100 dark:bg-surface px-1.5 py-0.5 rounded font-semibold uppercase">
                   {order.paymentMethod}
                 </span>
               )}
@@ -255,7 +255,7 @@ function OrderCard({
         {/* Expand toggle */}
         <button
           onClick={() => setExpanded(v => !v)}
-          className="mt-2 flex items-center gap-1 text-[11px] text-gray-400 hover:text-primary transition-colors"
+          className="mt-2 flex items-center gap-1 text-[length:var(--ts-xs)] text-gray-400 hover:text-primary transition-colors"
         >
           {expanded ? <ChevronUp className="h-3.5 w-3.5" /> : <ChevronDown className="h-3.5 w-3.5" />}
           {expanded ? "Ocultar" : "Ver historial"}
@@ -270,7 +270,7 @@ function OrderCard({
             animate={{ height: "auto", opacity: 1 }}
             exit={{ height: 0, opacity: 0 }}
             transition={{ duration: 0.25 }}
-            className="overflow-hidden border-t border-gray-100 dark:border-card-border"
+            className="overflow-hidden border-t border-[var(--rule-soft)] dark:border-card-border"
           >
             <div className="p-3 sm:p-5">
               <OrderTrackingTimeline orderId={order.id} currentStatus={order.status} />
@@ -445,7 +445,7 @@ export default function ShipmentTrackingTab() {
               "flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-colors border",
               autoRefresh
                 ? "bg-primary/10 text-primary border-primary/20"
-                : "bg-gray-100 dark:bg-surface text-gray-500 border-gray-200 dark:border-card-border"
+                : "bg-gray-100 dark:bg-surface text-gray-500 border-[var(--rule-base)] dark:border-card-border"
             )}
           >
             <RefreshCw className={cn("h-3.5 w-3.5", autoRefresh && "animate-spin")} style={autoRefresh ? { animationDuration: "3s" } : {}} />
@@ -453,7 +453,7 @@ export default function ShipmentTrackingTab() {
           </button>
           <button
             onClick={fetchOrders}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold text-gray-600 dark:text-muted hover:bg-gray-100 dark:hover:bg-surface border border-gray-200 dark:border-card-border"
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold text-gray-600 dark:text-muted hover:bg-gray-100 dark:hover:bg-surface border border-[var(--rule-base)] dark:border-card-border"
           >
             <RefreshCw className="h-3.5 w-3.5" /> Actualizar
           </button>
@@ -480,9 +480,9 @@ export default function ShipmentTrackingTab() {
             icon: Clock,
           },
         ].map(k => (
-          <div key={k.label} className="bg-white dark:bg-card rounded-xl border border-gray-200 dark:border-card-border p-3 text-center">
+          <div key={k.label} className="bg-white dark:bg-card rounded-xl border border-[var(--rule-base)] dark:border-card-border p-3 text-center">
             <k.icon className={cn("h-4 w-4 mx-auto mb-1", k.color)} />
-            <p className="text-[10px] font-semibold text-gray-500 dark:text-muted">{k.label}</p>
+            <p className="text-[length:var(--ts-2xs)] font-semibold text-gray-500 dark:text-muted">{k.label}</p>
             <p className={cn("text-xl font-extrabold", k.color)}>{k.value}</p>
           </div>
         ))}
@@ -496,7 +496,7 @@ export default function ShipmentTrackingTab() {
           <input
             value={search}
             onChange={e => setSearch(e.target.value)}
-            className="w-full pl-9 pr-3 py-2 rounded-xl border border-gray-200 dark:border-card-border bg-white dark:bg-surface text-sm"
+            className="w-full pl-9 pr-3 py-2 rounded-xl border border-[var(--rule-base)] dark:border-card-border bg-white dark:bg-surface text-sm"
             placeholder="Buscar pedido, cliente, dirección…"
           />
         </div>
@@ -532,7 +532,7 @@ export default function ShipmentTrackingTab() {
           <select
             value={filterRider}
             onChange={e => setFilterRider(e.target.value)}
-            className="px-3 py-2 rounded-xl border border-gray-200 dark:border-card-border bg-white dark:bg-surface text-xs font-semibold text-gray-700 dark:text-foreground"
+            className="px-3 py-2 rounded-xl border border-[var(--rule-base)] dark:border-card-border bg-white dark:bg-surface text-xs font-semibold text-gray-700 dark:text-foreground"
           >
             <option value="all">Todos los repartidores</option>
             {riders.map(r => (
@@ -579,7 +579,7 @@ export default function ShipmentTrackingTab() {
             </AnimatePresence>
           )}
 
-          <p className="text-center text-[11px] text-gray-400 pt-1">
+          <p className="text-center text-[length:var(--ts-xs)] text-gray-400 pt-1">
             {filtered.length} pedido{filtered.length !== 1 ? "s" : ""} mostrado{filtered.length !== 1 ? "s" : ""}
           </p>
         </>

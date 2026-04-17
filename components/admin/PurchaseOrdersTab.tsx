@@ -30,7 +30,7 @@ const STATUS_COLORS: Record<PurchaseStatus, string> = {
   recibido: "bg-emerald-100 text-emerald-700",
   parcial: "bg-emerald-100 text-emerald-700",
   cancelado: "bg-red-100 text-red-500",
-  auto_generated: "bg-purple-100 text-purple-700",
+  auto_generated: "bg-[var(--surface-sunken)] text-[var(--text-primary)]",
 };
 
 // ── Mejora 13: Progress bar visual de status OC ─────────────────────────────
@@ -67,7 +67,7 @@ function OCProgressBar({ status }: { status: string }) {
       </div>
       <div className="flex justify-between px-0">
         {labels.map((label, idx) => (
-          <span key={idx} className={cn("text-[8px] font-medium", !isCancelled && (idx + 1) <= currentStep ? "text-[#00B4A6] dark:text-emerald-400" : "text-gray-400")} style={{ width: idx < 3 ? undefined : "auto" }}>
+          <span key={idx} className={cn("text-[length:var(--ts-2xs)] font-medium", !isCancelled && (idx + 1) <= currentStep ? "text-[#00B4A6] dark:text-emerald-400" : "text-gray-400")} style={{ width: idx < 3 ? undefined : "auto" }}>
             {label}
           </span>
         ))}
@@ -405,7 +405,7 @@ export default function PurchaseOrdersTab() {
           <select
             value={selectedSupplierId ?? ""}
             onChange={(e) => setSelectedSupplierId(e.target.value || null)}
-            className="text-sm font-semibold rounded-lg border border-gray-200 dark:border-card-border px-3 py-2 outline-none focus:border-primary text-gray-700 dark:text-foreground bg-white dark:bg-card"
+            className="text-sm font-semibold rounded-lg border border-[var(--rule-base)] dark:border-card-border px-3 py-2 outline-none focus:border-primary text-gray-700 dark:text-foreground bg-white dark:bg-card"
           >
             <option value="">Ver todo</option>
             {suppliers.map(s => (
@@ -458,15 +458,15 @@ export default function PurchaseOrdersTab() {
 
       {/* Mejora 15: Badge y cards de pedidos recurrentes */}
       {upcomingRecurring.length > 0 && (
-        <div className="bg-purple-50 dark:bg-purple-950/20 border border-purple-200 dark:border-purple-800 rounded-xl p-4 space-y-3">
+        <div className="bg-[var(--surface-sunken)] border border-[var(--rule-base)] rounded-xl p-4 space-y-3">
           <div className="flex items-center justify-between">
-            <p className="text-xs font-bold text-purple-700 dark:text-purple-400 flex items-center gap-1.5">
+            <p className="text-xs font-bold text-[var(--text-secondary)] dark:text-[var(--text-primary)] flex items-center gap-1.5">
               <History className="h-3.5 w-3.5" /> {upcomingRecurring.length} pedido{upcomingRecurring.length > 1 ? "s" : ""} recurrente{upcomingRecurring.length > 1 ? "s" : ""}
             </p>
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
             {upcomingRecurring.map(r => (
-              <div key={r.ocId} className="bg-white dark:bg-card rounded-xl border border-purple-100 dark:border-purple-800/30 p-3">
+              <div key={r.ocId} className="bg-white dark:bg-card rounded-xl border border-[var(--rule-base)] p-3">
                 <div className="flex items-center justify-between mb-1">
                   <p className="text-sm font-bold text-gray-900 dark:text-foreground truncate">OC a {r.supplierName}</p>
                   <button onClick={() => removeRecurring(r.ocId)} className="text-gray-400 hover:text-red-500 transition-colors" title="Eliminar recurrencia">
@@ -481,7 +481,7 @@ export default function PurchaseOrdersTab() {
                     const oc = orders.find(o => o.id === r.ocId);
                     if (oc) duplicateOrder(oc);
                   }}
-                  className="mt-2 w-full text-xs font-bold text-center py-1.5 rounded-lg bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-400 hover:bg-purple-200 transition-colors"
+                  className="mt-2 w-full text-xs font-bold text-center py-1.5 rounded-lg bg-[var(--surface-sunken)] text-[var(--text-secondary)] dark:text-[var(--text-primary)] hover:bg-purple-200 transition-colors"
                 >
                   Crear OC ahora
                 </button>
@@ -527,7 +527,7 @@ export default function PurchaseOrdersTab() {
               <select
                 value={recurringNotifyDays}
                 onChange={e => setRecurringNotifyDays(Number(e.target.value))}
-                className="w-full rounded-xl border border-gray-200 dark:border-card-border px-3 py-2 text-sm bg-white dark:bg-surface text-gray-900 dark:text-foreground"
+                className="w-full rounded-xl border border-[var(--rule-base)] dark:border-card-border px-3 py-2 text-sm bg-white dark:bg-surface text-gray-900 dark:text-foreground"
               >
                 <option value={1}>1 dia antes</option>
                 <option value={2}>2 dias antes</option>
@@ -556,7 +556,7 @@ export default function PurchaseOrdersTab() {
             const maxMonthAmount = Math.max(...stats.monthlyData.map(m => m.amount), 1);
             
             return (
-              <div key={supplier.id} className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl overflow-hidden">
+              <div key={supplier.id} className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl overflow-hidden">
                 <div className="p-4">
                   <div className="flex items-start justify-between mb-3">
                     <div className="flex-1">
@@ -580,26 +580,26 @@ export default function PurchaseOrdersTab() {
                   {/* Stats Grid */}
                   <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-3">
                     <div className="bg-emerald-50 dark:bg-emerald-950/20 rounded-xl p-3 border border-emerald-100 dark:border-emerald-900/30">
-                      <p className="text-[10px] font-bold text-emerald-600 dark:text-emerald-400 uppercase mb-1">Órdenes</p>
+                      <p className="text-[length:var(--ts-2xs)] font-bold text-emerald-600 dark:text-emerald-400 uppercase mb-1">Órdenes</p>
                       <p className="text-lg font-extrabold text-gray-900 dark:text-foreground">{stats.count}</p>
                     </div>
                     <div className="bg-emerald-50 dark:bg-emerald-950/20 rounded-xl p-3 border border-emerald-100 dark:border-emerald-900/30">
-                      <p className="text-[10px] font-bold text-emerald-600 dark:text-emerald-400 uppercase mb-1">Total gastado</p>
+                      <p className="text-[length:var(--ts-2xs)] font-bold text-emerald-600 dark:text-emerald-400 uppercase mb-1">Total gastado</p>
                       <p className="text-lg font-extrabold text-gray-900 dark:text-foreground">S/{stats.totalAmount.toFixed(2)}</p>
                     </div>
-                    <div className="bg-purple-50 dark:bg-purple-950/20 rounded-xl p-3 border border-purple-100 dark:border-purple-900/30">
-                      <p className="text-[10px] font-bold text-purple-600 dark:text-purple-400 uppercase mb-1">Promedio</p>
+                    <div className="bg-[var(--surface-sunken)] rounded-xl p-3 border border-[var(--rule-base)]">
+                      <p className="text-[length:var(--ts-2xs)] font-bold text-[var(--text-secondary)] dark:text-[var(--text-primary)] uppercase mb-1">Promedio</p>
                       <p className="text-lg font-extrabold text-gray-900 dark:text-foreground">S/{stats.avgAmount.toFixed(2)}</p>
                     </div>
                     <div className="bg-amber-50 dark:bg-amber-950/20 rounded-xl p-3 border border-amber-100 dark:border-amber-900/30">
-                      <p className="text-[10px] font-bold text-amber-600 dark:text-amber-400 uppercase mb-1">Última compra</p>
+                      <p className="text-[length:var(--ts-2xs)] font-bold text-amber-600 dark:text-amber-400 uppercase mb-1">Última compra</p>
                       <p className="text-xs font-extrabold text-gray-900 dark:text-foreground">{stats.lastPurchase ? formatDate(stats.lastPurchase) : "—"}</p>
                     </div>
                   </div>
 
                   {/* Top Products */}
                   {stats.topProducts.length > 0 && (
-                    <div className="bg-gray-50 dark:bg-surface rounded-xl p-3 mb-3 border border-gray-200 dark:border-card-border">
+                    <div className="bg-gray-50 dark:bg-surface rounded-xl p-3 mb-3 border border-[var(--rule-base)] dark:border-card-border">
                       <p className="text-xs font-bold text-gray-500 dark:text-muted uppercase mb-2 flex items-center gap-1">
                         <TrendingUp className="h-3.5 w-3.5" />
                         Top 3 productos más comprados
@@ -620,7 +620,7 @@ export default function PurchaseOrdersTab() {
                   )}
 
                   {/* Monthly Chart */}
-                  <div className="bg-linear-to-br from-indigo-50 to-purple-50 dark:from-indigo-950/20 dark:to-purple-950/20 rounded-xl p-3 border border-indigo-100 dark:border-indigo-900/30">
+                  <div className="bg-[var(--surface-sunken)] rounded-xl p-3 border border-[var(--rule-base)]">
                     <p className="text-xs font-bold text-gray-700 dark:text-foreground uppercase mb-2 flex items-center gap-1">
                       <BarChart3 className="h-3.5 w-3.5 text-primary" />
                       Gastos mensuales (últimos 6 meses)
@@ -632,12 +632,12 @@ export default function PurchaseOrdersTab() {
                           <div key={idx} className="flex-1 flex flex-col items-center gap-1">
                             <div className="w-full flex items-end justify-center" style={{ height: "64px" }}>
                               <div
-                                className="w-full bg-gradient-to-t from-primary to-primary/60 rounded-t transition-all hover:from-primary-dark hover:to-primary"
+                                className="w-full bg-[var(--text-primary)] rounded-t transition-all hover:opacity-80"
                                 style={{ height: `${height}%` }}
                                 title={`${m.month}: S/${m.amount.toFixed(2)}`}
                               ></div>
                             </div>
-                            <p className="text-[9px] font-bold text-gray-500 dark:text-muted uppercase">{m.month}</p>
+                            <p className="text-[length:var(--ts-2xs)] font-bold text-gray-500 dark:text-muted uppercase">{m.month}</p>
                           </div>
                         );
                       })}
@@ -647,14 +647,14 @@ export default function PurchaseOrdersTab() {
 
                 {/* Expanded Timeline */}
                 {isExpanded && (
-                  <div className="border-t border-gray-200 dark:border-card-border bg-gray-50 dark:bg-surface p-4">
+                  <div className="border-t border-[var(--rule-base)] dark:border-card-border bg-gray-50 dark:bg-surface p-4">
                     <p className="text-xs font-bold text-gray-500 dark:text-muted uppercase mb-3">Cronología completa de compras</p>
                     <div className="space-y-2 max-h-80 overflow-y-auto">
                       {orders.filter(o => o.supplierId === supplier.id).map(order => (
-                        <div key={order.id} className="bg-white dark:bg-card rounded-xl p-3 border border-gray-200 dark:border-card-border">
+                        <div key={order.id} className="bg-white dark:bg-card rounded-xl p-3 border border-[var(--rule-base)] dark:border-card-border">
                           <div className="flex items-center justify-between mb-1">
                             <span className="text-xs font-bold text-gray-900 dark:text-foreground">{formatDate(order.createdAt)}</span>
-                            <span className={cn("px-2 py-0.5 rounded-full text-[10px] font-bold", STATUS_COLORS[order.status])}>
+                            <span className={cn("px-2 py-0.5 rounded-full text-[length:var(--ts-2xs)] font-bold", STATUS_COLORS[order.status])}>
                               {STATUS_LABELS[order.status]}
                             </span>
                           </div>
@@ -692,14 +692,14 @@ export default function PurchaseOrdersTab() {
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-4">
                 <div>
                   <label className="block text-xs font-semibold text-gray-500 dark:text-muted mb-1">Proveedor *</label>
-                  <select required value={supplierId} onChange={(e) => setSupplierId(e.target.value)} className="w-full px-3 py-2 rounded-lg border border-gray-200 dark:border-card-border text-gray-900 dark:text-foreground focus:border-primary outline-none text-sm">
+                  <select required value={supplierId} onChange={(e) => setSupplierId(e.target.value)} className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-card-border text-gray-900 dark:text-foreground focus:border-primary outline-none text-sm">
                     <option value="">Seleccionar proveedor</option>
                     {suppliers.map(s => <option key={s.id} value={s.id}>{s.name}{s.ruc ? ` (${s.ruc})` : ""}</option>)}
                   </select>
                 </div>
                 <div>
                   <label className="block text-xs font-semibold text-gray-500 dark:text-muted mb-1">Notas</label>
-                  <input value={notes} onChange={(e) => setNotes(e.target.value)} placeholder="Notas opcionales…" className="w-full px-3 py-2 rounded-lg border border-gray-200 dark:border-card-border text-gray-900 dark:text-foreground focus:border-primary outline-none text-sm" />
+                  <input value={notes} onChange={(e) => setNotes(e.target.value)} placeholder="Notas opcionales…" className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-card-border text-gray-900 dark:text-foreground focus:border-primary outline-none text-sm" />
                 </div>
               </div>
 
@@ -708,7 +708,7 @@ export default function PurchaseOrdersTab() {
                 <div className="flex items-center justify-between mb-2">
                   <label className="text-xs font-semibold text-gray-500 dark:text-muted">Productos de la orden</label>
                   <div className="flex flex-wrap gap-2">
-                    <button type="button" onClick={() => setShowScanner(true)} className="text-xs font-bold text-gray-600 dark:text-muted hover:text-primary flex items-center gap-1 border border-gray-200 dark:border-card-border rounded-lg px-2.5 py-1 transition-colors">
+                    <button type="button" onClick={() => setShowScanner(true)} className="text-xs font-bold text-gray-600 dark:text-muted hover:text-primary flex items-center gap-1 border border-[var(--rule-base)] dark:border-card-border rounded-lg px-2.5 py-1 transition-colors">
                       <ScanBarcode className="h-3.5 w-3.5" /> Escanear
                     </button>
                     <button type="button" onClick={() => { setAddItemMode("search"); setAddItemSearch(""); setAddItemSel(null); setShowAddItemModal(true); }} className="text-xs font-bold text-primary hover:text-primary-dark flex items-center gap-1">
@@ -739,16 +739,16 @@ export default function PurchaseOrdersTab() {
                               onFocus={() => setOpenSearchIdx(idx)}
                               onBlur={() => setTimeout(() => setOpenSearchIdx(null), 120)}
                               placeholder="Buscar producto…"
-                              className="w-full px-2 py-1.5 rounded-lg border border-gray-200 dark:border-card-border text-sm text-gray-900 dark:text-foreground outline-none focus:border-primary"
+                              className="w-full px-2 py-1.5 rounded-lg border border-[var(--rule-base)] dark:border-card-border text-sm text-gray-900 dark:text-foreground outline-none focus:border-primary"
                             />
                             {openSearchIdx === idx && filtered.length > 0 && (
-                              <div className="absolute top-full left-0 right-0 z-20 bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl mt-0.5 max-h-48 overflow-y-auto">
+                              <div className="absolute top-full left-0 right-0 z-20 bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl mt-0.5 max-h-48 overflow-y-auto">
                                 {filtered.map(p => (
                                   <button
                                     key={p.id}
                                     type="button"
                                     onMouseDown={() => { changeProduct(idx, p.id); setItemQueries(prev => prev.map((_, i) => i === idx ? p.name : _)); setOpenSearchIdx(null); }}
-                                    className="w-full text-left px-3 py-2 hover:bg-gray-50 dark:hover:bg-surface flex flex-wrap items-center gap-2 text-sm border-b border-gray-100 dark:border-card-border last:border-0"
+                                    className="w-full text-left px-3 py-2 hover:bg-gray-50 dark:hover:bg-surface flex flex-wrap items-center gap-2 text-sm border-b border-[var(--rule-soft)] dark:border-card-border last:border-0"
                                   >
                                     <div>
                                       <div className="font-medium text-gray-900 dark:text-foreground">{p.name}</div>
@@ -763,7 +763,7 @@ export default function PurchaseOrdersTab() {
                             type="number" min="1" step="1"
                             value={item.quantity}
                             onChange={(e) => updateItem(idx, { quantity: Number(e.target.value) })}
-                            className="w-16 px-2 py-1.5 rounded-lg border border-gray-200 dark:border-card-border text-sm text-right text-gray-900 dark:text-foreground outline-none focus:border-primary"
+                            className="w-16 px-2 py-1.5 rounded-lg border border-[var(--rule-base)] dark:border-card-border text-sm text-right text-gray-900 dark:text-foreground outline-none focus:border-primary"
                             placeholder="Cant"
                           />
                           <span className="text-xs text-gray-400 dark:text-muted w-8 pt-2">{item.unit}</span>
@@ -773,7 +773,7 @@ export default function PurchaseOrdersTab() {
                               type="number" min="0" step="0.01"
                               value={item.unitCost}
                               onChange={(e) => updateItem(idx, { unitCost: Number(e.target.value) })}
-                              className="w-20 px-2 py-1.5 rounded-lg border border-gray-200 dark:border-card-border text-sm text-right text-gray-900 dark:text-foreground outline-none focus:border-primary"
+                              className="w-20 px-2 py-1.5 rounded-lg border border-[var(--rule-base)] dark:border-card-border text-sm text-right text-gray-900 dark:text-foreground outline-none focus:border-primary"
                               placeholder="Costo"
                             />
                           </div>
@@ -792,7 +792,7 @@ export default function PurchaseOrdersTab() {
               </div>
 
               <div className="flex flex-wrap gap-3 pt-1">
-                <button type="button" onClick={() => setShowCreate(false)} className="flex-1 py-2 rounded-lg border border-gray-200 dark:border-card-border text-sm font-semibold text-gray-600 dark:text-muted hover:bg-gray-50 dark:hover:bg-surface transition-colors">Cancelar</button>
+                <button type="button" onClick={() => setShowCreate(false)} className="flex-1 py-2 rounded-lg border border-[var(--rule-base)] dark:border-card-border text-sm font-semibold text-gray-600 dark:text-muted hover:bg-gray-50 dark:hover:bg-surface transition-colors">Cancelar</button>
                 <button type="submit" disabled={saving || !supplierId || items.length === 0} className="flex-1 py-2 rounded-lg bg-primary text-white text-sm font-bold hover:bg-primary-dark transition-colors disabled:opacity-60">
                   {saving ? "Guardando…" : "Crear orden de compra"}
                 </button>
@@ -804,25 +804,25 @@ export default function PurchaseOrdersTab() {
 
       {/* Orders list */}
       {loading ? (
-        <TableSkeleton rows={4} cols={5} className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl" />
+        <TableSkeleton rows={4} cols={5} className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl" />
       ) : filteredOrders.length === 0 ? (
         <EmptyState
           icon={ShoppingBag}
           title={selectedSupplierId ? "Sin órdenes para este proveedor" : "Sin órdenes de compra"}
           description={selectedSupplierId ? "Este proveedor no tiene órdenes registradas." : "Crea órdenes de compra a tus proveedores."}
-          className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl"
+          className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl"
         />
       ) : (
         <div className="space-y-3">
           {filteredOrders.map((o) => (
-            <div key={o.id} className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl  overflow-hidden">
+            <div key={o.id} className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl  overflow-hidden">
               <div className="p-4 flex flex-col sm:flex-row sm:items-center gap-3">
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2 flex-wrap">
                     <span className="font-bold text-gray-900 dark:text-foreground">{o.supplierName}</span>
                     {/* Mejora 13: Progress bar visual */}
                     <OCProgressBar status={o.status} />
-                    <span className={cn("inline-flex px-2 py-0.5 rounded-full text-[10px] font-bold", STATUS_COLORS[o.status])}>
+                    <span className={cn("inline-flex px-2 py-0.5 rounded-full text-[length:var(--ts-2xs)] font-bold", STATUS_COLORS[o.status])}>
                       {STATUS_LABELS[o.status]}
                     </span>
                   </div>
@@ -836,7 +836,7 @@ export default function PurchaseOrdersTab() {
                   <select
                     value={o.status}
                     onChange={(e) => updateStatus(o.id, e.target.value as PurchaseStatus)}
-                    className="text-xs font-semibold rounded-lg border border-gray-200 dark:border-card-border px-2 py-1.5 outline-none focus:border-primary text-gray-700 dark:text-foreground bg-white dark:bg-card"
+                    className="text-xs font-semibold rounded-lg border border-[var(--rule-base)] dark:border-card-border px-2 py-1.5 outline-none focus:border-primary text-gray-700 dark:text-foreground bg-white dark:bg-card"
                   >
                     {(Object.keys(STATUS_LABELS) as PurchaseStatus[]).map(s => (
                       <option key={s} value={s}>{STATUS_LABELS[s]}</option>
@@ -867,7 +867,7 @@ export default function PurchaseOrdersTab() {
                   {(o.status === "recibido" || o.status === "parcial") && (
                     <button
                       onClick={() => { setShowRecurringModal(o); setRecurringInterval(15); setRecurringNotifyDays(2); }}
-                      className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-purple-50 dark:bg-purple-950/30 text-purple-600 dark:text-purple-400 hover:bg-purple-100 dark:hover:bg-purple-900/30 text-xs font-bold transition-colors"
+                      className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-[var(--surface-sunken)] text-[var(--text-secondary)] dark:text-[var(--text-primary)] hover:bg-[var(--surface-sunken)] dark:hover:bg-purple-900/30 text-xs font-bold transition-colors"
                       title="Hacer pedido recurrente"
                     >
                       <History className="h-3.5 w-3.5" /> Recurrente
@@ -884,7 +884,7 @@ export default function PurchaseOrdersTab() {
 
               {/* Expanded details */}
               {expanded === o.id && (
-                <div className="border-t border-gray-100 dark:border-card-border px-2 sm:px-4 py-2 sm:py-3 bg-gray-50 dark:bg-surface">
+                <div className="border-t border-[var(--rule-soft)] dark:border-card-border px-2 sm:px-4 py-2 sm:py-3 bg-gray-50 dark:bg-surface">
                   <p className="text-xs font-bold text-gray-400 dark:text-muted mb-2">Detalle de productos</p>
                   <div className="space-y-1.5">
                     {o.items.map((item, i) => {
@@ -929,7 +929,7 @@ export default function PurchaseOrdersTab() {
                         </div>
                       );
                     })}
-                    <div className="flex justify-between items-center text-sm font-bold border-t border-gray-200 dark:border-card-border pt-1.5 mt-1">
+                    <div className="flex justify-between items-center text-sm font-bold border-t border-[var(--rule-base)] dark:border-card-border pt-1.5 mt-1">
                       <span className="text-gray-800 dark:text-foreground">Total</span>
                       <span className="text-primary">S/{o.total.toFixed(2)}</span>
                     </div>
@@ -1013,7 +1013,7 @@ export default function PurchaseOrdersTab() {
                     value={addItemSearch}
                     onChange={(e) => { setAddItemSearch(e.target.value); setAddItemSel(null); }}
                     placeholder="Buscar por nombre o código de barras…"
-                    className="w-full px-3 py-2 rounded-lg border border-gray-200 dark:border-card-border text-sm text-gray-900 dark:text-foreground focus:border-primary outline-none"
+                    className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-card-border text-sm text-gray-900 dark:text-foreground focus:border-primary outline-none"
                   />
                   <div className="space-y-1 max-h-52 overflow-y-auto">
                     {(addItemSearch.length > 0
@@ -1028,7 +1028,7 @@ export default function PurchaseOrdersTab() {
                           "w-full text-left px-3 py-2 rounded-lg border text-sm transition-colors",
                           addItemSel?.id === p.id
                             ? "border-primary bg-primary/5"
-                            : "border-gray-100 dark:border-card-border hover:border-gray-300"
+                            : "border-[var(--rule-soft)] dark:border-card-border hover:border-gray-300"
                         )}
                       >
                         <div className="font-medium text-gray-900 dark:text-foreground">{p.name}</div>
@@ -1038,7 +1038,7 @@ export default function PurchaseOrdersTab() {
                     {products.length === 0 && <p className="text-sm text-gray-400 dark:text-muted text-center py-6">No hay productos</p>}
                   </div>
                   {addItemSel && (
-                    <div className="bg-gray-50 dark:bg-surface rounded-xl p-4 space-y-3 border border-gray-200 dark:border-card-border">
+                    <div className="bg-gray-50 dark:bg-surface rounded-xl p-4 space-y-3 border border-[var(--rule-base)] dark:border-card-border">
                       <p className="text-sm font-semibold text-gray-800 dark:text-foreground">{addItemSel.name}</p>
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                         <div>
@@ -1046,7 +1046,7 @@ export default function PurchaseOrdersTab() {
                           <input
                             type="number" min="1" step="1" value={addItemQty}
                             onChange={(e) => setAddItemQty(Number(e.target.value))}
-                            className="w-full px-3 py-2 rounded-lg border border-gray-200 dark:border-card-border text-sm text-gray-900 dark:text-foreground outline-none focus:border-primary"
+                            className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-card-border text-sm text-gray-900 dark:text-foreground outline-none focus:border-primary"
                           />
                         </div>
                         <div>
@@ -1054,7 +1054,7 @@ export default function PurchaseOrdersTab() {
                           <input
                             type="number" min="0" step="0.01" value={addItemCost}
                             onChange={(e) => setAddItemCost(Number(e.target.value))}
-                            className="w-full px-3 py-2 rounded-lg border border-gray-200 dark:border-card-border text-sm text-gray-900 dark:text-foreground outline-none focus:border-primary"
+                            className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-card-border text-sm text-gray-900 dark:text-foreground outline-none focus:border-primary"
                           />
                         </div>
                       </div>
@@ -1098,13 +1098,13 @@ export default function PurchaseOrdersTab() {
                         required value={newProdForm.name}
                         onChange={(e) => setNewProdForm(p => ({ ...p, name: e.target.value }))}
                         placeholder="Nombre del producto"
-                        className="w-full px-3 py-2 rounded-lg border border-gray-200 dark:border-card-border text-sm text-gray-900 dark:text-foreground focus:border-primary outline-none"
+                        className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-card-border text-sm text-gray-900 dark:text-foreground focus:border-primary outline-none"
                       />
                     </div>
                     <div>
                       <label className="text-xs font-semibold text-gray-500 dark:text-muted block mb-1">Categoría</label>
                       <select value={newProdForm.category} onChange={(e) => setNewProdForm(p => ({ ...p, category: e.target.value }))}
-                        className="w-full px-3 py-2 rounded-lg border border-gray-200 dark:border-card-border text-sm text-gray-900 dark:text-foreground focus:border-primary outline-none">
+                        className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-card-border text-sm text-gray-900 dark:text-foreground focus:border-primary outline-none">
                         <option value="abarrotes">Abarrotes</option>
                         <option value="bebidas">Bebidas</option>
                         <option value="lacteos">Lácteos</option>
@@ -1119,35 +1119,35 @@ export default function PurchaseOrdersTab() {
                       <label className="text-xs font-semibold text-gray-500 dark:text-muted block mb-1">Unidad</label>
                       <input value={newProdForm.unit} onChange={(e) => setNewProdForm(p => ({ ...p, unit: e.target.value }))}
                         placeholder="und, kg, L…"
-                        className="w-full px-3 py-2 rounded-lg border border-gray-200 dark:border-card-border text-sm text-gray-900 dark:text-foreground focus:border-primary outline-none"
+                        className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-card-border text-sm text-gray-900 dark:text-foreground focus:border-primary outline-none"
                       />
                     </div>
                     <div>
                       <label className="text-xs font-semibold text-gray-500 dark:text-muted block mb-1">Precio venta (S/)</label>
                       <input type="number" min="0" step="0.01" value={newProdForm.price}
                         onChange={(e) => setNewProdForm(p => ({ ...p, price: Number(e.target.value) }))}
-                        className="w-full px-3 py-2 rounded-lg border border-gray-200 dark:border-card-border text-sm text-gray-900 dark:text-foreground focus:border-primary outline-none"
+                        className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-card-border text-sm text-gray-900 dark:text-foreground focus:border-primary outline-none"
                       />
                     </div>
                     <div>
                       <label className="text-xs font-semibold text-gray-500 dark:text-muted block mb-1">Costo compra (S/)</label>
                       <input type="number" min="0" step="0.01" value={newProdForm.costPrice}
                         onChange={(e) => setNewProdForm(p => ({ ...p, costPrice: Number(e.target.value) }))}
-                        className="w-full px-3 py-2 rounded-lg border border-gray-200 dark:border-card-border text-sm text-gray-900 dark:text-foreground focus:border-primary outline-none"
+                        className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-card-border text-sm text-gray-900 dark:text-foreground focus:border-primary outline-none"
                       />
                     </div>
                     <div>
                       <label className="text-xs font-semibold text-gray-500 dark:text-muted block mb-1">Cantidad inicial</label>
                       <input type="number" min="0" step="1" value={newProdForm.stock}
                         onChange={(e) => setNewProdForm(p => ({ ...p, stock: Number(e.target.value) }))}
-                        className="w-full px-3 py-2 rounded-lg border border-gray-200 dark:border-card-border text-sm text-gray-900 dark:text-foreground focus:border-primary outline-none"
+                        className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-card-border text-sm text-gray-900 dark:text-foreground focus:border-primary outline-none"
                       />
                     </div>
                     <div>
                       <label className="text-xs font-semibold text-gray-500 dark:text-muted block mb-1">Código de barras</label>
                       <input value={newProdForm.barcode} onChange={(e) => setNewProdForm(p => ({ ...p, barcode: e.target.value }))}
                         placeholder="Opcional"
-                        className="w-full px-3 py-2 rounded-lg border border-gray-200 dark:border-card-border text-sm text-gray-900 dark:text-foreground focus:border-primary outline-none"
+                        className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-card-border text-sm text-gray-900 dark:text-foreground focus:border-primary outline-none"
                       />
                     </div>
                   </div>

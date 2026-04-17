@@ -156,7 +156,7 @@ export default function VolumePricingEditor({
 
       {/* Tabla de tramos */}
       {tiers.length > 0 ? (
-        <div className="overflow-x-auto rounded-lg border border-gray-200 dark:border-gray-700">
+        <div className="overflow-x-auto rounded-lg border border-[var(--rule-base)]">
           <table className="w-full text-sm">
             <thead>
               <tr className="bg-gray-50 dark:bg-gray-800 text-xs font-medium text-gray-500 dark:text-gray-400">
@@ -177,7 +177,7 @@ export default function VolumePricingEditor({
                       step={1}
                       value={tier.minQty}
                       onChange={(e) => handleChangeTier(i, "minQty", e.target.value)}
-                      className="w-24 px-2 py-1 text-sm rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-[#00B4A6]"
+                      className="w-24 px-2 py-1 text-sm rounded-lg border border-[var(--rule-base)] dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-[#00B4A6]"
                     />
                   </td>
                   {/* Descuento % */}
@@ -190,7 +190,7 @@ export default function VolumePricingEditor({
                         step={0.5}
                         value={tier.discount}
                         onChange={(e) => handleChangeTier(i, "discount", e.target.value)}
-                        className="w-20 px-2 py-1 text-sm rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-[#00B4A6]"
+                        className="w-20 px-2 py-1 text-sm rounded-lg border border-[var(--rule-base)] dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-[#00B4A6]"
                       />
                       <span className="text-gray-400 text-xs">%</span>
                     </div>
@@ -208,7 +208,7 @@ export default function VolumePricingEditor({
                       {calcResultingPrice(wholesalePrice, tier.discount)}
                     </span>
                     {tier.discount > 0 && wholesalePrice != null && (
-                      <p className="text-[10px] text-gray-400 mt-0.5">
+                      <p className="text-[length:var(--ts-2xs)] text-gray-400 mt-0.5">
                         en vez de S/ {wholesalePrice.toFixed(2)}
                       </p>
                     )}
@@ -229,7 +229,7 @@ export default function VolumePricingEditor({
           </table>
         </div>
       ) : (
-        <p className="text-sm text-gray-400 text-center py-6 border border-dashed border-gray-200 dark:border-gray-700 rounded-lg">
+        <p className="text-sm text-gray-400 text-center py-6 border border-dashed border-[var(--rule-base)] rounded-lg">
           Sin tramos de precio por volumen. Agrega uno para empezar.
         </p>
       )}

@@ -157,19 +157,19 @@ export default function TaxTab() {
           <p className="text-sm text-gray-500 dark:text-muted mt-0.5">Registro de ventas y compras, libro tributario, IGV a pagar</p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
-          <select value={month} onChange={e => setMonth(Number(e.target.value))} className="text-sm border border-gray-200 dark:border-card-border rounded-lg px-3 py-2 bg-white dark:bg-surface text-gray-700 dark:text-foreground">
+          <select value={month} onChange={e => setMonth(Number(e.target.value))} className="text-sm border border-[var(--rule-base)] dark:border-card-border rounded-lg px-3 py-2 bg-white dark:bg-surface text-gray-700 dark:text-foreground">
             {MONTHS.map((m, i) => <option key={i} value={i}>{m}</option>)}
           </select>
-          <select value={year} onChange={e => setYear(Number(e.target.value))} className="text-sm border border-gray-200 dark:border-card-border rounded-lg px-3 py-2 bg-white dark:bg-surface text-gray-700 dark:text-foreground">
+          <select value={year} onChange={e => setYear(Number(e.target.value))} className="text-sm border border-[var(--rule-base)] dark:border-card-border rounded-lg px-3 py-2 bg-white dark:bg-surface text-gray-700 dark:text-foreground">
             {[now.getFullYear() - 1, now.getFullYear()].map(y => <option key={y} value={y}>{y}</option>)}
           </select>
-          <button onClick={() => setTick(t => t + 1)} className="p-2 rounded-lg border border-gray-200 dark:border-card-border bg-white dark:bg-surface hover:bg-gray-50 dark:hover:bg-accent transition-colors">
+          <button onClick={() => setTick(t => t + 1)} className="p-2 rounded-lg border border-[var(--rule-base)] dark:border-card-border bg-white dark:bg-surface hover:bg-gray-50 dark:hover:bg-accent transition-colors">
             <RefreshCw className="h-4 w-4 text-gray-500 dark:text-muted" />
           </button>
-          <button onClick={() => handleExportBook("ventas")} className="flex items-center gap-1.5 px-3 py-2 rounded-lg border border-gray-200 dark:border-card-border bg-white dark:bg-surface text-sm font-semibold text-gray-700 dark:text-foreground hover:bg-gray-50 dark:hover:bg-accent transition-colors">
+          <button onClick={() => handleExportBook("ventas")} className="flex items-center gap-1.5 px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-card-border bg-white dark:bg-surface text-sm font-semibold text-gray-700 dark:text-foreground hover:bg-gray-50 dark:hover:bg-accent transition-colors">
             <BookOpen className="h-4 w-4" /> Libro ventas
           </button>
-          <button onClick={() => handleExportBook("compras")} className="flex items-center gap-1.5 px-3 py-2 rounded-lg border border-gray-200 dark:border-card-border bg-white dark:bg-surface text-sm font-semibold text-gray-700 dark:text-foreground hover:bg-gray-50 dark:hover:bg-accent transition-colors">
+          <button onClick={() => handleExportBook("compras")} className="flex items-center gap-1.5 px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-card-border bg-white dark:bg-surface text-sm font-semibold text-gray-700 dark:text-foreground hover:bg-gray-50 dark:hover:bg-accent transition-colors">
             <BookOpen className="h-4 w-4" /> Libro compras
           </button>
         </div>
@@ -209,16 +209,16 @@ export default function TaxTab() {
           {/* Tabs */}
           <div className="flex flex-wrap items-center gap-2">
             {(["resumen", "ventas", "compras"] as const).map(v => (
-              <button key={v} onClick={() => setView(v)} className={cn("px-2 sm:px-4 py-1.5 sm:py-2 text-sm font-semibold rounded-lg transition-colors capitalize", view === v ? "bg-primary text-white" : "bg-white dark:bg-card border border-gray-200 dark:border-card-border text-gray-600 dark:text-muted hover:bg-gray-50 dark:hover:bg-accent")}>
+              <button key={v} onClick={() => setView(v)} className={cn("px-2 sm:px-4 py-1.5 sm:py-2 text-sm font-semibold rounded-lg transition-colors capitalize", view === v ? "bg-primary text-white" : "bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border text-gray-600 dark:text-muted hover:bg-gray-50 dark:hover:bg-accent")}>
                 {v === "resumen" ? "Todos" : v === "ventas" ? "Libro de ventas" : "Libro de compras"}
               </button>
             ))}
           </div>
 
           {/* Table */}
-          <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl overflow-y-hidden overflow-x-auto">
+          <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl overflow-y-hidden overflow-x-auto">
             <table className="w-full min-w-[600px] text-sm">
-              <thead className="bg-gray-50 dark:bg-surface border-b border-gray-100 dark:border-card-border">
+              <thead className="bg-gray-50 dark:bg-surface border-b border-[var(--rule-soft)] dark:border-card-border">
                 <tr>
                   <th className="text-left px-5 py-3 font-bold text-gray-500 dark:text-muted text-xs uppercase">Fecha</th>
                   <th className="text-left px-3 py-3 font-bold text-gray-500 dark:text-muted text-xs uppercase">Tipo</th>
@@ -236,7 +236,7 @@ export default function TaxTab() {
                   <tr key={line.id} className="hover:bg-gray-50 dark:hover:bg-surface/50 transition-colors">
                     <td className="px-5 py-3 text-xs text-gray-500 dark:text-muted">{fmtDate(line.date)}</td>
                     <td className="px-3 py-3">
-                      <span className={cn("text-xs font-bold px-2 py-0.5 rounded-full", line.type === "venta" ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400" : "bg-violet-100 text-violet-700 dark:bg-violet-900/30 dark:text-violet-400")}>
+                      <span className={cn("text-xs font-bold px-2 py-0.5 rounded-full", line.type === "venta" ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400" : "bg-[var(--surface-sunken)] text-[var(--text-primary)]")}>
                         {line.type === "venta" ? "V" : "C"}
                       </span>
                     </td>

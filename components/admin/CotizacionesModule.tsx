@@ -49,7 +49,7 @@ const STATUS_META: Record<CotizacionStatus, { label: string; color: string; bg: 
   ACEPTADA:   { label: "Aceptada",   color: "text-emerald-700", bg: "bg-emerald-100" },
   RECHAZADA:  { label: "Rechazada",  color: "text-red-700",        bg: "bg-red-100" },
   VENCIDA:    { label: "Vencida",    color: "text-red-700",        bg: "bg-red-100" },
-  CONVERTIDA: { label: "Convertida", color: "text-purple-700",  bg: "bg-purple-100" },
+  CONVERTIDA: { label: "Convertida", color: "text-[var(--text-secondary)]",  bg: "bg-[var(--surface-sunken)]" },
 };
 
 function formatCurrency(n: number) { return `S/${n.toFixed(2)}`; }
@@ -64,21 +64,21 @@ const PER_PAGE = 10;
 function CotizacionPreview({ cotizacion }: { cotizacion: Cotizacion }) {
   const meta = STATUS_META[cotizacion.status];
   return (
-    <div className="w-[300px] bg-white border border-gray-200 rounded-xl p-4 space-y-2">
+    <div className="w-[300px] bg-white border border-[var(--rule-base)] rounded-xl p-4 space-y-2">
       <div className="flex items-center justify-between">
         <span className="font-mono text-xs text-gray-500">COT-{String(cotizacion.numero).padStart(4, "0")}</span>
-        <span className={cn("inline-flex items-center px-2 py-0.5 rounded-lg text-[10px] font-bold", meta.bg, meta.color)}>{meta.label}</span>
+        <span className={cn("inline-flex items-center px-2 py-0.5 rounded-lg text-[length:var(--ts-2xs)] font-bold", meta.bg, meta.color)}>{meta.label}</span>
       </div>
       <p className="font-bold text-gray-900 text-sm">{cotizacion.clienteNombre}</p>
-      {cotizacion.clienteRuc && <p className="text-[10px] text-gray-400">RUC: {cotizacion.clienteRuc}</p>}
-      <div className="border-t border-gray-100 pt-2">
-        <p className="text-[10px] font-bold text-gray-500 uppercase mb-1">Items</p>
+      {cotizacion.clienteRuc && <p className="text-[length:var(--ts-2xs)] text-gray-400">RUC: {cotizacion.clienteRuc}</p>}
+      <div className="border-t border-[var(--rule-soft)] pt-2">
+        <p className="text-[length:var(--ts-2xs)] font-bold text-gray-500 uppercase mb-1">Items</p>
         {cotizacion.items.slice(0, 3).map((it, i) => (
           <p key={i} className="text-xs text-gray-600 truncate">{it.cantidad}x {it.descripcion}</p>
         ))}
-        {cotizacion.items.length > 3 && <p className="text-[10px] text-gray-400">y {cotizacion.items.length - 3} mas...</p>}
+        {cotizacion.items.length > 3 && <p className="text-[length:var(--ts-2xs)] text-gray-400">y {cotizacion.items.length - 3} mas...</p>}
       </div>
-      <div className="flex items-center justify-between pt-1 border-t border-gray-100">
+      <div className="flex items-center justify-between pt-1 border-t border-[var(--rule-soft)]">
         <span className="text-xs text-gray-500">{formatDate(cotizacion.createdAt)}</span>
         <span className="font-bold text-sm text-primary">{formatCurrency(cotizacion.total)}</span>
       </div>
@@ -101,7 +101,7 @@ function HoverPreviewRow({ children, preview }: { children: React.ReactNode; pre
     <div className="relative" onMouseEnter={handleEnter} onMouseLeave={handleLeave}>
       {children}
       {show && (
-        <div className="absolute left-1/2 -translate-x-1/2 bottom-full mb-2 z-50 pointer-events-none animate-in fade-in zoom-in-95 duration-150">
+        <div className="absolute left-1/2 -translate-x-1/2 bottom-full mb-2 z-50 pointer-events-none animate-in fade-in zoom-in-95 duration-[var(--dur-fast)]">
           {preview}
         </div>
       )}
@@ -207,8 +207,8 @@ function CotizacionesDashboard({ cotizaciones, loading: parentLoading }: { cotiz
           { label: "Tasa conversion", value: `${tasaConversion.toFixed(1)}%`, border: tasaConversion > 30 ? "border-b-4 border-emerald-500" : "border-b-4 border-amber-500" },
           { label: "Monto cotizado", value: formatCurrency(montoCotizado), border: "border-b-4 border-primary" },
         ].map(k => (
-          <div key={k.label} className={cn("bg-white rounded-xl border border-gray-200 p-4 ", k.border)}>
-            <p className="text-[10px] text-gray-500 font-medium">{k.label}</p>
+          <div key={k.label} className={cn("bg-white rounded-xl border border-[var(--rule-base)] p-4 ", k.border)}>
+            <p className="text-[length:var(--ts-2xs)] text-gray-500 font-medium">{k.label}</p>
             <p className="text-2xl font-mono font-bold mt-1 text-gray-900">{k.value}</p>
           </div>
         ))}
@@ -217,7 +217,7 @@ function CotizacionesDashboard({ cotizaciones, loading: parentLoading }: { cotiz
 
       {/* Funnel */}
       <m.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 1 * 0.1 }}>
-      <div className="bg-white border border-gray-200 rounded-xl p-6 ">
+      <div className="bg-white border border-[var(--rule-base)] rounded-xl p-6 ">
         <h3 className="text-sm font-bold text-gray-700 mb-4">Funnel de conversion</h3>
         {cotizaciones.length > 0 ? (
           <div className="space-y-2.5">
@@ -230,7 +230,7 @@ function CotizacionesDashboard({ cotizaciones, loading: parentLoading }: { cotiz
                   <div className={cn("rounded-lg px-3 py-2 text-xs font-bold transition-all", stage.bg, stage.text)} style={{ width: `${widthPct}%`, minWidth: "fit-content" }}>
                     {stage.label} ({stage.count})
                   </div>
-                  {i > 0 && prevCount > 0 && <span className="text-[10px] text-gray-400 shrink-0">{convPct}%</span>}
+                  {i > 0 && prevCount > 0 && <span className="text-[length:var(--ts-2xs)] text-gray-400 shrink-0">{convPct}%</span>}
                 </div>
               );
             })}
@@ -242,7 +242,7 @@ function CotizacionesDashboard({ cotizaciones, loading: parentLoading }: { cotiz
       <m.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 2 * 0.1 }}>
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* AreaChart: cotizaciones emitidas por mes */}
-        <div className="bg-white rounded-xl border border-gray-200 p-6 ">
+        <div className="bg-white rounded-xl border border-[var(--rule-base)] p-6 ">
           <h3 className="text-sm font-bold text-gray-700 mb-4">Cotizaciones por mes</h3>
           {monthlyData.some(d => d.count > 0) ? (
             <ResponsiveContainer width="100%" height={220}>
@@ -264,7 +264,7 @@ function CotizacionesDashboard({ cotizaciones, loading: parentLoading }: { cotiz
         </div>
 
         {/* Top 5 clientes */}
-        <div className="bg-white rounded-xl border border-gray-200 p-6 ">
+        <div className="bg-white rounded-xl border border-[var(--rule-base)] p-6 ">
           <h3 className="text-sm font-bold text-gray-700 mb-4">Top 5 clientes por monto</h3>
           {topClientes.length > 0 ? (
             <ResponsiveContainer width="100%" height={220}>
@@ -614,7 +614,7 @@ export default function CotizacionesModule() {
             {id === "dashboard" && <BarChart3 className="h-3.5 w-3.5" />}
             {label}
             {id === "lista" && cotizaciones.length > 0 && (
-              <span className="bg-gray-200 text-[9px] px-1.5 rounded-full">{cotizaciones.length}</span>
+              <span className="bg-gray-200 text-[length:var(--ts-2xs)] px-1.5 rounded-full">{cotizaciones.length}</span>
             )}
           </button>
         ))}
@@ -646,13 +646,13 @@ export default function CotizacionesModule() {
 
             return (
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-                <div className="bg-white border border-gray-200 rounded-xl p-3">
-                  <p className="text-[10px] uppercase font-bold text-gray-400">Total cotizaciones</p>
+                <div className="bg-white border border-[var(--rule-base)] rounded-xl p-3">
+                  <p className="text-[length:var(--ts-2xs)] uppercase font-bold text-gray-400">Total cotizaciones</p>
                   <p className="text-lg font-extrabold text-gray-900">{total}</p>
                 </div>
-                <div className="bg-white border border-gray-200 rounded-xl p-3">
-                  <p className="text-[10px] uppercase font-bold text-gray-400">Convertidas</p>
-                  <p className="text-lg font-extrabold text-purple-600">{convertidas}</p>
+                <div className="bg-white border border-[var(--rule-base)] rounded-xl p-3">
+                  <p className="text-[length:var(--ts-2xs)] uppercase font-bold text-gray-400">Convertidas</p>
+                  <p className="text-lg font-extrabold text-[var(--text-secondary)]">{convertidas}</p>
                 </div>
                 <div className={cn(
                   "bg-white border rounded-xl p-3",
@@ -660,7 +660,7 @@ export default function CotizacionesModule() {
                   tasaConversion >= 15 ? "border-amber-200" :
                   "border-red-200"
                 )}>
-                  <p className="text-[10px] uppercase font-bold text-gray-400">Tasa conversion</p>
+                  <p className="text-[length:var(--ts-2xs)] uppercase font-bold text-gray-400">Tasa conversion</p>
                   <p className={cn("text-lg font-extrabold",
                     tasaConversion > 30 ? "text-emerald-600" :
                     tasaConversion >= 15 ? "text-amber-600" :
@@ -669,14 +669,14 @@ export default function CotizacionesModule() {
                     {tasaConversion.toFixed(1)}%
                   </p>
                   {cotsMesAnterior.length > 0 && (
-                    <p className="text-[10px] text-gray-400 mt-0.5">
+                    <p className="text-[length:var(--ts-2xs)] text-gray-400 mt-0.5">
                       Este mes: {tasaMesActual.toFixed(0)}% vs anterior: {tasaMesAnterior.toFixed(0)}%
                       {tasaMesActual > tasaMesAnterior ? " ↑" : tasaMesActual < tasaMesAnterior ? " ↓" : ""}
                     </p>
                   )}
                 </div>
-                <div className="bg-white border border-gray-200 rounded-xl p-3">
-                  <p className="text-[10px] uppercase font-bold text-gray-400">Monto cotizado</p>
+                <div className="bg-white border border-[var(--rule-base)] rounded-xl p-3">
+                  <p className="text-[length:var(--ts-2xs)] uppercase font-bold text-gray-400">Monto cotizado</p>
                   <p className="text-lg font-extrabold text-primary">{formatCurrency(montoTotal)}</p>
                 </div>
               </div>
@@ -693,8 +693,8 @@ export default function CotizacionesModule() {
             ];
             const maxCount = Math.max(...stages.map(s => s.count), 1);
             return (
-              <div className="bg-white border border-gray-200 rounded-xl p-4 ">
-                <p className="text-[10px] uppercase font-bold text-gray-400 mb-3">Funnel de conversion</p>
+              <div className="bg-white border border-[var(--rule-base)] rounded-xl p-4 ">
+                <p className="text-[length:var(--ts-2xs)] uppercase font-bold text-gray-400 mb-3">Funnel de conversion</p>
                 <div className="space-y-2">
                   {stages.map((stage, i) => {
                     const widthPct = Math.max(15, (stage.count / maxCount) * 100);
@@ -709,7 +709,7 @@ export default function CotizacionesModule() {
                           {stage.label} ({stage.count})
                         </div>
                         {i > 0 && prevCount > 0 && (
-                          <span className="text-[10px] text-gray-400 shrink-0">{convPct}%</span>
+                          <span className="text-[length:var(--ts-2xs)] text-gray-400 shrink-0">{convPct}%</span>
                         )}
                       </div>
                     );
@@ -730,13 +730,13 @@ export default function CotizacionesModule() {
                   aria-label="Buscar cotizaciones"
                   value={search}
                   onChange={e => setSearch(e.target.value)}
-                  className="w-full pl-9 pr-3 py-2 rounded-lg border border-gray-200 bg-white text-sm text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-primary/30"
+                  className="w-full pl-9 pr-3 py-2 rounded-lg border border-[var(--rule-base)] bg-white text-sm text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-primary/30"
                 />
               </div>
               <button
                 type="button"
                 onClick={() => setShowQuickClient(true)}
-                className="shrink-0 h-[38px] w-[38px] flex items-center justify-center rounded-lg border border-gray-200 bg-white hover:bg-primary hover:text-white hover:border-primary text-gray-500 transition-colors"
+                className="shrink-0 h-[38px] w-[38px] flex items-center justify-center rounded-lg border border-[var(--rule-base)] bg-white hover:bg-primary hover:text-white hover:border-primary text-gray-500 transition-colors"
                 title="Crear cliente rapido"
               >
                 <Plus className="h-4 w-4" />
@@ -822,7 +822,7 @@ export default function CotizacionesModule() {
           </AnimatePresence>
 
           {/* Table */}
-          <div className="bg-white border border-gray-200 rounded-xl overflow-hidden ">
+          <div className="bg-white border border-[var(--rule-base)] rounded-xl overflow-hidden ">
             {loading ? (
               <div className="flex items-center justify-center py-12">
                 <Loader2 className="h-6 w-6 animate-spin text-primary" />
@@ -862,18 +862,18 @@ export default function CotizacionesModule() {
                       const headerColor = c.status === "BORRADOR" ? "bg-gray-100" : c.status === "ENVIADA" ? "bg-emerald-50" : c.status === "ACEPTADA" || c.status === "CONVERTIDA" ? "bg-emerald-50" : "bg-red-50";
                       const diasValidez = Math.max(0, Math.ceil((new Date(c.validoHasta).getTime() - Date.now()) / 86400000));
                       return (
-                        <div key={c.id} onClick={() => openDetail(c)} className="bg-white border border-gray-200 rounded-xl overflow-hidden  hover:shadow-lg cursor-pointer transition-all group">
+                        <div key={c.id} onClick={() => openDetail(c)} className="bg-white border border-[var(--rule-base)] rounded-xl overflow-hidden  hover:shadow-lg cursor-pointer transition-all group">
                           <div className={cn("px-4 py-2 flex items-center justify-between", headerColor)}>
                             <span className="font-mono text-xs font-bold text-gray-600">COT-{String(c.numero).padStart(4, "0")}</span>
-                            <span className={cn("inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold", meta.bg, meta.color)}>{meta.label}</span>
+                            <span className={cn("inline-flex items-center px-2 py-0.5 rounded-full text-[length:var(--ts-2xs)] font-bold", meta.bg, meta.color)}>{meta.label}</span>
                           </div>
                           <div className="p-4 space-y-2">
                             <p className="font-bold text-gray-900 truncate group-hover:text-primary transition-colors">{c.clienteNombre}</p>
                             <div className="flex items-center justify-between">
                               <span className="text-lg font-extrabold text-primary">{formatCurrency(c.total)}</span>
-                              <span className="text-[10px] text-gray-400">{formatDate(c.createdAt)} · {diasValidez > 0 ? `${diasValidez}d válido` : "Vencida"}</span>
+                              <span className="text-[length:var(--ts-2xs)] text-gray-400">{formatDate(c.createdAt)} · {diasValidez > 0 ? `${diasValidez}d válido` : "Vencida"}</span>
                             </div>
-                            <div className="flex gap-2 pt-2 border-t border-gray-100">
+                            <div className="flex gap-2 pt-2 border-t border-[var(--rule-soft)]">
                               <button onClick={(e) => { e.stopPropagation(); openDetail(c); }} className="flex-1 text-xs font-bold text-primary bg-primary/10 hover:bg-primary/20 py-1.5 rounded-lg transition-colors">Ver</button>
                               <button onClick={(e) => { e.stopPropagation(); window.open(`https://wa.me/?text=${encodeURIComponent(`Cotización COT-${String(c.numero).padStart(4, "0")} por ${formatCurrency(c.total)}`)}`, "_blank"); }} className="flex-1 text-xs font-bold text-emerald-600 bg-emerald-50 hover:bg-emerald-100 py-1.5 rounded-lg transition-colors">WhatsApp</button>
                             </div>
@@ -886,7 +886,7 @@ export default function CotizacionesModule() {
                 <div className="overflow-x-auto -mx-4 sm:mx-0">
                   <table className="w-full min-w-[600px] sm:min-w-0 text-sm">
                     <thead>
-                      <tr className="border-b border-gray-100 text-left">
+                      <tr className="border-b border-[var(--rule-soft)] text-left">
                         <th className="px-4 py-3 font-semibold text-gray-500">N°</th>
                         <th className="px-4 py-3 font-semibold text-gray-500">Cliente</th>
                         <th className="px-4 py-3 font-semibold text-gray-500 text-right">Total</th>
@@ -935,7 +935,7 @@ export default function CotizacionesModule() {
                 </div>
                 )}
                 {totalPages > 1 && (
-                  <div className="flex items-center justify-between px-4 py-3 border-t border-gray-100">
+                  <div className="flex items-center justify-between px-4 py-3 border-t border-[var(--rule-soft)]">
                     <p className="text-xs text-gray-500">
                       {cotizaciones.length} cotizaci{cotizaciones.length !== 1 ? "ones" : "ón"} — Pág. {page}/{totalPages}
                     </p>
@@ -957,7 +957,7 @@ export default function CotizacionesModule() {
 
       {/* ── TAB: NUEVA COTIZACIÓN (multi-step) ──────────────────────────── */}
       {activeTab === "nueva" && (
-        <div className="bg-white border border-gray-200 rounded-xl  p-5 space-y-5">
+        <div className="bg-white border border-[var(--rule-base)] rounded-xl  p-5 space-y-5">
           {/* Step indicators */}
           <div className="flex items-center gap-2">
             {[1, 2, 3].map(s => (
@@ -988,7 +988,7 @@ export default function CotizacionesModule() {
                     value={clienteNombre}
                     onChange={e => setClienteNombre(e.target.value)}
                     placeholder="Nombre o razón social"
-                    className="w-full pl-9 pr-3 py-2 rounded-lg border border-gray-200 bg-white text-sm text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-primary/30"
+                    className="w-full pl-9 pr-3 py-2 rounded-lg border border-[var(--rule-base)] bg-white text-sm text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-primary/30"
                   />
                 </div>
               </div>
@@ -1002,7 +1002,7 @@ export default function CotizacionesModule() {
                     onChange={e => setClienteRuc(e.target.value)}
                     placeholder="20XXXXXXXXX"
                     maxLength={20}
-                    className="w-full pl-9 pr-3 py-2 rounded-lg border border-gray-200 bg-white text-sm text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-primary/30"
+                    className="w-full pl-9 pr-3 py-2 rounded-lg border border-[var(--rule-base)] bg-white text-sm text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-primary/30"
                   />
                 </div>
               </div>
@@ -1064,10 +1064,10 @@ export default function CotizacionesModule() {
                               onChange={e => { updateItem(idx, "descripcion", e.target.value); setProductSearch(e.target.value); setActiveItemIdx(idx); }}
                               onFocus={() => setActiveItemIdx(idx)}
                               placeholder="Buscar producto o escribir..."
-                              className="w-full px-2 py-1.5 rounded-lg border border-gray-200 bg-white text-sm text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-1 focus:ring-primary/30"
+                              className="w-full px-2 py-1.5 rounded-lg border border-[var(--rule-base)] bg-white text-sm text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-1 focus:ring-primary/30"
                             />
                             {activeItemIdx === idx && productResults.length > 0 && (
-                              <div className="absolute top-full left-0 right-0 z-10 mt-1 bg-white border border-gray-200 rounded-xl max-h-40 overflow-y-auto">
+                              <div className="absolute top-full left-0 right-0 z-10 mt-1 bg-white border border-[var(--rule-base)] rounded-xl max-h-40 overflow-y-auto">
                                 {productResults.map(p => (
                                   <button
                                     key={p.id}
@@ -1083,16 +1083,16 @@ export default function CotizacionesModule() {
                           </td>
                           <td className="py-2 pr-2">
                             <input type="number" min="1" step="1" value={item.cantidad} onChange={e => updateItem(idx, "cantidad", e.target.value)}
-                              className="w-full px-2 py-1.5 rounded-lg border border-gray-200 bg-white text-sm text-gray-900 focus:outline-none focus:ring-1 focus:ring-primary/30 text-center" />
+                              className="w-full px-2 py-1.5 rounded-lg border border-[var(--rule-base)] bg-white text-sm text-gray-900 focus:outline-none focus:ring-1 focus:ring-primary/30 text-center" />
                           </td>
                           <td className="py-2 pr-2">
                             <input type="number" min="0" step="0.01" value={item.precioUnit} onChange={e => updateItem(idx, "precioUnit", e.target.value)}
                               placeholder="0.00"
-                              className="w-full px-2 py-1.5 rounded-lg border border-gray-200 bg-white text-sm text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-1 focus:ring-primary/30 text-right" />
+                              className="w-full px-2 py-1.5 rounded-lg border border-[var(--rule-base)] bg-white text-sm text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-1 focus:ring-primary/30 text-right" />
                           </td>
                           <td className="py-2 pr-2">
                             <input type="number" min="0" max="100" step="1" value={item.descuento} onChange={e => updateItem(idx, "descuento", e.target.value)}
-                              className="w-full px-2 py-1.5 rounded-lg border border-gray-200 bg-white text-sm text-gray-900 focus:outline-none focus:ring-1 focus:ring-primary/30 text-center" />
+                              className="w-full px-2 py-1.5 rounded-lg border border-[var(--rule-base)] bg-white text-sm text-gray-900 focus:outline-none focus:ring-1 focus:ring-primary/30 text-center" />
                           </td>
                           <td className="py-2 text-right font-medium text-gray-900">{formatCurrency(sub)}</td>
                           <td className="py-2 pl-1">
@@ -1120,7 +1120,7 @@ export default function CotizacionesModule() {
                 <div className="flex justify-between text-sm text-gray-600">
                   <span>IGV (18%)</span><span>{formatCurrency(computedIgv)}</span>
                 </div>
-                <div className="flex justify-between text-base font-bold text-gray-900 border-t border-gray-200 pt-1">
+                <div className="flex justify-between text-base font-bold text-gray-900 border-t border-[var(--rule-base)] pt-1">
                   <span>TOTAL</span><span>{formatCurrency(computedTotal)}</span>
                 </div>
               </div>
@@ -1152,7 +1152,7 @@ export default function CotizacionesModule() {
                     type="date"
                     value={validoHasta}
                     onChange={e => setValidoHasta(e.target.value)}
-                    className="w-full pl-9 pr-3 py-2 rounded-lg border border-gray-200 bg-white text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-primary/30"
+                    className="w-full pl-9 pr-3 py-2 rounded-lg border border-[var(--rule-base)] bg-white text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-primary/30"
                   />
                 </div>
               </div>
@@ -1163,7 +1163,7 @@ export default function CotizacionesModule() {
                   onChange={e => setNotas(e.target.value)}
                   placeholder="Condiciones, observaciones..."
                   rows={2}
-                  className="w-full px-3 py-2 rounded-lg border border-gray-200 bg-white text-sm text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-primary/30 resize-none"
+                  className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] bg-white text-sm text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-primary/30 resize-none"
                 />
               </div>
 
@@ -1205,7 +1205,7 @@ export default function CotizacionesModule() {
               animate={{ x: 0 }}
               exit={{ x: "100%" }}
               transition={{ type: "spring", damping: 25, stiffness: 250 }}
-              className="fixed inset-y-0 right-0 z-50 w-full max-w-lg bg-white border-l border-gray-200 overflow-y-auto"
+              className="fixed inset-y-0 right-0 z-50 w-full max-w-lg bg-white border-l border-[var(--rule-base)] overflow-y-auto"
             >
               <div className="p-4 sm:p-6 space-y-5">
                 <div className="flex items-center justify-between">
@@ -1229,10 +1229,10 @@ export default function CotizacionesModule() {
                       {STATUS_META[selected.status].label}
                     </span>
                   </div>
-                  <div className="grid grid-cols-3 gap-3 pt-2 border-t border-gray-200">
-                    <div><p className="text-[10px] uppercase font-bold text-gray-400">Subtotal</p><p className="text-sm font-bold text-gray-900">{formatCurrency(selected.subtotal)}</p></div>
-                    <div><p className="text-[10px] uppercase font-bold text-gray-400">IGV</p><p className="text-sm font-bold text-gray-900">{formatCurrency(selected.igv)}</p></div>
-                    <div><p className="text-[10px] uppercase font-bold text-gray-400">Total</p><p className="text-sm font-bold text-primary">{formatCurrency(selected.total)}</p></div>
+                  <div className="grid grid-cols-3 gap-3 pt-2 border-t border-[var(--rule-base)]">
+                    <div><p className="text-[length:var(--ts-2xs)] uppercase font-bold text-gray-400">Subtotal</p><p className="text-sm font-bold text-gray-900">{formatCurrency(selected.subtotal)}</p></div>
+                    <div><p className="text-[length:var(--ts-2xs)] uppercase font-bold text-gray-400">IGV</p><p className="text-sm font-bold text-gray-900">{formatCurrency(selected.igv)}</p></div>
+                    <div><p className="text-[length:var(--ts-2xs)] uppercase font-bold text-gray-400">Total</p><p className="text-sm font-bold text-primary">{formatCurrency(selected.total)}</p></div>
                   </div>
                   <div className="flex items-center gap-2 text-xs text-gray-500">
                     <Calendar className="h-3.5 w-3.5" />
@@ -1277,15 +1277,15 @@ export default function CotizacionesModule() {
                       return (
                         <div key={idx} className="flex gap-3 items-start">
                           <div className="flex flex-col items-center">
-                            <div className={cn("h-5 w-5 rounded-full flex items-center justify-center text-[10px]", isDone ? "bg-emerald-100 text-emerald-600" : "bg-gray-100 text-gray-400")}>
+                            <div className={cn("h-5 w-5 rounded-full flex items-center justify-center text-[length:var(--ts-2xs)]", isDone ? "bg-emerald-100 text-emerald-600" : "bg-gray-100 text-gray-400")}>
                               {isDone ? <Check className="h-3 w-3" /> : <Clock className="h-3 w-3" />}
                             </div>
                             {idx < 3 && <div className={cn("w-0.5 h-6", isDone ? "bg-emerald-200" : "bg-gray-200")} />}
                           </div>
                           <div className="pb-3">
                             <p className={cn("text-xs font-bold", isDone ? "text-gray-900" : "text-gray-400")}>{step.label}</p>
-                            {step.date && isDone && <p className="text-[10px] text-gray-400">{formatDate(step.date)}</p>}
-                            {!isDone && <p className="text-[10px] text-gray-400 italic">pendiente</p>}
+                            {step.date && isDone && <p className="text-[length:var(--ts-2xs)] text-gray-400">{formatDate(step.date)}</p>}
+                            {!isDone && <p className="text-[length:var(--ts-2xs)] text-gray-400 italic">pendiente</p>}
                           </div>
                         </div>
                       );
@@ -1437,7 +1437,7 @@ export default function CotizacionesModule() {
                       onChange={e => setTemplateName(e.target.value)}
                       placeholder="Nombre de la plantilla..."
                       maxLength={60}
-                      className="w-full px-3 py-2 rounded-lg border border-gray-200 bg-white text-sm text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-primary/30"
+                      className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] bg-white text-sm text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-primary/30"
                       onKeyDown={e => e.key === "Enter" && handleSaveTemplate()}
                     />
                     <div className="flex gap-2">
@@ -1483,7 +1483,7 @@ export default function CotizacionesModule() {
               className="fixed inset-0 z-[60] flex items-center justify-center p-4"
               onClick={e => e.target === e.currentTarget && setShowTemplateModal(false)}
             >
-              <div className="w-full max-w-md bg-white border border-gray-200 rounded-xl p-5 space-y-4 max-h-[80vh] overflow-y-auto">
+              <div className="w-full max-w-md bg-white border border-[var(--rule-base)] rounded-xl p-5 space-y-4 max-h-[80vh] overflow-y-auto">
                 <div className="flex items-center justify-between">
                   <h3 className="text-lg font-bold text-gray-900">Seleccionar plantilla</h3>
                   <button onClick={() => setShowTemplateModal(false)} className="p-1.5 rounded-lg hover:bg-gray-100">
@@ -1506,7 +1506,7 @@ export default function CotizacionesModule() {
                           </div>
                           <div className="flex-1 min-w-0">
                             <p className="text-sm font-bold text-gray-900 truncate">{tpl.nombre}</p>
-                            <p className="text-[10px] text-gray-400">
+                            <p className="text-[length:var(--ts-2xs)] text-gray-400">
                               {tpl.items.length} item{tpl.items.length !== 1 ? "s" : ""} &middot; {formatDate(tpl.createdAt)}
                             </p>
                           </div>
@@ -1541,7 +1541,7 @@ export default function CotizacionesModule() {
               className="fixed inset-0 z-[60] flex items-center justify-center p-4"
               onClick={e => e.target === e.currentTarget && setShowTemplateList(false)}
             >
-              <div className="w-full max-w-md bg-white border border-gray-200 rounded-xl p-5 space-y-4 max-h-[80vh] overflow-y-auto">
+              <div className="w-full max-w-md bg-white border border-[var(--rule-base)] rounded-xl p-5 space-y-4 max-h-[80vh] overflow-y-auto">
                 <div className="flex items-center justify-between">
                   <h3 className="text-lg font-bold text-gray-900">Plantillas guardadas</h3>
                   <button onClick={() => setShowTemplateList(false)} className="p-1.5 rounded-lg hover:bg-gray-100">
@@ -1563,13 +1563,13 @@ export default function CotizacionesModule() {
                         </div>
                         <div className="flex-1 min-w-0">
                           <p className="text-sm font-bold text-gray-900 truncate">{tpl.nombre}</p>
-                          <p className="text-[10px] text-gray-400">
+                          <p className="text-[length:var(--ts-2xs)] text-gray-400">
                             {tpl.items.length} item{tpl.items.length !== 1 ? "s" : ""} &middot; {formatDate(tpl.createdAt)}
                           </p>
                         </div>
                         <button
                           onClick={() => handleLoadTemplate(tpl)}
-                          className="px-2 py-1 rounded-lg text-[10px] font-bold text-primary bg-primary/10 hover:bg-primary/20 transition-colors shrink-0"
+                          className="px-2 py-1 rounded-lg text-[length:var(--ts-2xs)] font-bold text-primary bg-primary/10 hover:bg-primary/20 transition-colors shrink-0"
                         >
                           Usar
                         </button>

@@ -175,7 +175,7 @@ function KpiCard({ label, value, sub, icon, danger }: KpiCardProps) {
         "rounded-lg border bg-white p-4  dark:bg-card " +
         (danger
           ? "border-amber-300 dark:border-amber-700"
-          : "border-gray-200 dark:border-gray-800")
+          : "border-[var(--rule-base)]")
       }
     >
       <div className="flex items-center justify-between text-gray-500 dark:text-gray-400">

@@ -25,7 +25,7 @@ interface Props {
 function CustomAreaTooltip({ active, payload, label, fmt }: any) {
   if (!active || !payload?.length) return null;
   return (
-    <div className="bg-white dark:bg-zinc-800 border border-gray-200 dark:border-zinc-700 rounded-lg px-3 py-2">
+    <div className="bg-white dark:bg-zinc-800 border border-[var(--rule-base)] dark:border-zinc-700 rounded-lg px-3 py-2">
       <p className="text-xs font-semibold text-gray-700 dark:text-zinc-300">{label}</p>
       <p className="text-sm font-bold font-mono text-primary">{fmt(Number(payload[0].value))}</p>
     </div>

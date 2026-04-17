@@ -8,6 +8,7 @@ import {
 import { cn } from "@/lib/utils";
 import dynamic from "next/dynamic";
 import { useDashboardData } from "@/contexts/dashboard-data-context";
+import { UnifiedKPITile } from "@/components/admin/shared/UnifiedKPITile";
 import type { DateRange } from "./DashboardDateRange";
 
 const ComprasCharts = dynamic(() => import("./ComprasCharts"), { ssr: false });
@@ -178,14 +179,24 @@ export default function ComprasDashboard({ dateRange }: ComprasDashboardProps) {
 
   return (
     <div className="space-y-5">
-      {/* ── KPI Hero Row ── */}
+      {/* ── KPI Hero Row · ADR-068 armonía estricta ── */}
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
-        <KPICard label="Total Compras" value={fmt(data.totalCompras)} Icon={DollarSign} delta={data.dCompras} accent="blue" />
-        <KPICard label="Órdenes" value={String(data.cantidadOrdenes)} Icon={ShoppingCart} accent="violet" />
-        <KPICard label="Proveedores" value={String(data.totalProveedores)} Icon={Truck} accent="emerald" />
-        <KPICard label="Deuda Pendiente" value={fmt(data.deudaPendiente)} Icon={CreditCard} accent={data.deudaPendiente > 0 ? "amber" : "emerald"} />
-        <KPICard label="Cuentas Vencidas" value={String(data.cuentasVencidas)} Icon={AlertTriangle} accent={data.cuentasVencidas > 0 ? "red" : "emerald"} />
-        <KPICard label="Prom. Orden" value={fmt(data.promedioOrden)} Icon={CalendarDays} accent="cyan" />
+        <UnifiedKPITile label="Total Compras" value={fmt(data.totalCompras)} Icon={DollarSign} delta={data.dCompras} />
+        <UnifiedKPITile label="Órdenes" value={String(data.cantidadOrdenes)} Icon={ShoppingCart} />
+        <UnifiedKPITile label="Proveedores" value={String(data.totalProveedores)} Icon={Truck} />
+        <UnifiedKPITile
+          label="Deuda Pendiente"
+          value={fmt(data.deudaPendiente)}
+          Icon={CreditCard}
+          intent={data.deudaPendiente > 0 ? "warning" : "success"}
+        />
+        <UnifiedKPITile
+          label="Cuentas Vencidas"
+          value={String(data.cuentasVencidas)}
+          Icon={AlertTriangle}
+          intent={data.cuentasVencidas > 0 ? "danger" : "success"}
+        />
+        <UnifiedKPITile label="Prom. Orden" value={fmt(data.promedioOrden)} Icon={CalendarDays} />
       </div>
 
       {/* ── Alert bar ── */}
@@ -216,7 +227,7 @@ function KPICard({ label, value, Icon, delta, accent }: {
   const colorMap = {
     emerald: { bg: "bg-emerald-50 dark:bg-emerald-950/30", icon: "text-emerald-500" },
     blue: { bg: "bg-emerald-50 dark:bg-emerald-950/30", icon: "text-emerald-500" },
-    violet: { bg: "bg-violet-50 dark:bg-violet-950/30", icon: "text-violet-500" },
+    violet: { bg: "bg-[var(--surface-sunken)]", icon: "text-[var(--text-secondary)]" },
     cyan: { bg: "bg-cyan-50 dark:bg-cyan-950/30", icon: "text-cyan-500" },
     amber: { bg: "bg-amber-50 dark:bg-amber-950/30", icon: "text-amber-500" },
     red: { bg: "bg-red-50 dark:bg-red-950/30", icon: "text-red-500" },
@@ -224,7 +235,7 @@ function KPICard({ label, value, Icon, delta, accent }: {
   const c = colorMap[accent];
 
   return (
-    <div className="bg-white dark:bg-card border border-gray-100 dark:border-card-border rounded-xl p-4 hover:shadow-sm transition-shadow">
+    <div className="bg-white dark:bg-card border border-[var(--rule-soft)] dark:border-card-border rounded-xl p-4 hover:shadow-sm transition-shadow">
       <div className="flex items-start justify-between mb-3">
         <div className={cn("w-9 h-9 rounded-xl flex items-center justify-center", c.bg)}>
           <Icon className={cn("h-4.5 w-4.5", c.icon)} />
@@ -239,7 +250,7 @@ function KPICard({ label, value, Icon, delta, accent }: {
         )}
       </div>
       <p className="text-xl font-bold text-gray-900 dark:text-foreground tabular-nums leading-none mb-1">{value}</p>
-      <p className="text-[11px] font-medium text-gray-400 dark:text-muted">{label}</p>
+      <p className="text-[length:var(--ts-xs)] font-medium text-gray-400 dark:text-muted">{label}</p>
     </div>
   );
 }

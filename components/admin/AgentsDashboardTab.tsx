@@ -310,7 +310,7 @@ export default function AgentsDashboardTab() {
             fetchRecentTasks();
             fetchHistory(historyPage, historyDomain);
           }}
-          className="flex items-center gap-1.5 px-3 py-2 rounded-lg border border-gray-200 dark:border-card-border bg-white dark:bg-surface text-sm font-semibold text-gray-700 dark:text-foreground hover:bg-gray-50 dark:hover:bg-accent transition-colors"
+          className="flex items-center gap-1.5 px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-card-border bg-white dark:bg-surface text-sm font-semibold text-gray-700 dark:text-foreground hover:bg-gray-50 dark:hover:bg-accent transition-colors"
         >
           <RefreshCw className="h-4 w-4" />
           Actualizar
@@ -369,9 +369,9 @@ export default function AgentsDashboardTab() {
                 <p className="text-xs font-semibold text-gray-500 dark:text-muted mb-1">Agentes</p>
                 <p className="text-xl font-extrabold text-emerald-600">{health.agents.length}</p>
               </div>
-              <div className="rounded-xl p-4 bg-violet-50 dark:bg-violet-950/30">
+              <div className="rounded-xl p-4 bg-[var(--surface-sunken)]">
                 <p className="text-xs font-semibold text-gray-500 dark:text-muted mb-1">Tareas Activas</p>
-                <p className="text-xl font-extrabold text-violet-600">{health.activeTasks}</p>
+                <p className="text-xl font-extrabold text-[var(--text-secondary)]">{health.activeTasks}</p>
               </div>
               <div className="rounded-xl p-4 bg-gray-50 dark:bg-gray-800/50">
                 <p className="text-xs font-semibold text-gray-500 dark:text-muted mb-1">Uptime</p>
@@ -388,7 +388,7 @@ export default function AgentsDashboardTab() {
                 return (
                   <div
                     key={agent.domain}
-                    className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl p-4 space-y-3"
+                    className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl p-4 space-y-3"
                   >
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-2">
@@ -399,7 +399,7 @@ export default function AgentsDashboardTab() {
                       </div>
                       <span
                         className={cn(
-                          "text-[10px] font-bold px-2 py-0.5 rounded-full",
+                          "text-[length:var(--ts-2xs)] font-bold px-2 py-0.5 rounded-full",
                           agent.status === "active"
                             ? "bg-emerald-100 dark:bg-emerald-900/30 text-emerald-600"
                             : "bg-red-100 dark:bg-red-900/30 text-red-600"
@@ -436,7 +436,7 @@ export default function AgentsDashboardTab() {
         <h2 className="text-sm font-bold text-gray-500 dark:text-muted">
           Ejecutar Tarea
         </h2>
-        <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl p-4 space-y-4">
+        <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl p-4 space-y-4">
           <div className="flex flex-col sm:flex-row gap-3">
             {/* Domain selector */}
             <div className="flex-1">
@@ -446,7 +446,7 @@ export default function AgentsDashboardTab() {
               <select
                 value={execDomain}
                 onChange={(e) => setExecDomain(e.target.value as AgentDomain)}
-                className="w-full text-sm border border-gray-200 dark:border-card-border rounded-xl px-3 py-2 bg-white dark:bg-surface text-gray-700 dark:text-foreground"
+                className="w-full text-sm border border-[var(--rule-base)] dark:border-card-border rounded-xl px-3 py-2 bg-white dark:bg-surface text-gray-700 dark:text-foreground"
               >
                 {Object.entries(DOMAIN_LABELS).map(([key, label]) => (
                   <option key={key} value={key}>
@@ -464,7 +464,7 @@ export default function AgentsDashboardTab() {
               <select
                 value={execAction}
                 onChange={(e) => setExecActionOverride(prev => ({ ...prev, [execDomain]: e.target.value }))}
-                className="w-full text-sm border border-gray-200 dark:border-card-border rounded-xl px-3 py-2 bg-white dark:bg-surface text-gray-700 dark:text-foreground"
+                className="w-full text-sm border border-[var(--rule-base)] dark:border-card-border rounded-xl px-3 py-2 bg-white dark:bg-surface text-gray-700 dark:text-foreground"
               >
                 {(DOMAIN_ACTIONS[execDomain] ?? []).map((action) => (
                   <option key={action} value={action}>
@@ -511,7 +511,7 @@ export default function AgentsDashboardTab() {
                 </span>
                 <span
                   className={cn(
-                    "text-[10px] font-bold px-2 py-0.5 rounded-full ml-auto",
+                    "text-[length:var(--ts-2xs)] font-bold px-2 py-0.5 rounded-full ml-auto",
                     STATUS_META[execResult.status].bg,
                     STATUS_META[execResult.status].color
                   )}
@@ -562,7 +562,7 @@ export default function AgentsDashboardTab() {
             Tareas Recientes
           </h2>
           {recentTasks.some((t) => t.status === "running" || t.status === "pending") && (
-            <span className="inline-flex items-center gap-1 text-[10px] font-semibold text-emerald-600 dark:text-emerald-400">
+            <span className="inline-flex items-center gap-1 text-[length:var(--ts-2xs)] font-semibold text-emerald-600 dark:text-emerald-400">
               <RefreshCw className="h-3 w-3 animate-spin" />
               Auto-actualizando
             </span>
@@ -577,7 +577,7 @@ export default function AgentsDashboardTab() {
         )}
 
         {!recentLoading && recentTasks.length === 0 && (
-          <div className="bg-white dark:bg-card border-2 border-dashed border-gray-200 dark:border-card-border rounded-xl p-10 text-center text-gray-400 dark:text-muted">
+          <div className="bg-white dark:bg-card border-2 border-dashed border-[var(--rule-base)] dark:border-card-border rounded-xl p-10 text-center text-gray-400 dark:text-muted">
             <Clock className="h-10 w-10 mx-auto mb-3" />
             <p className="font-semibold">Sin tareas recientes</p>
             <p className="text-xs mt-1">
@@ -587,11 +587,11 @@ export default function AgentsDashboardTab() {
         )}
 
         {!recentLoading && recentTasks.length > 0 && (
-          <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl overflow-hidden ">
+          <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl overflow-hidden ">
             <div className="overflow-x-auto">
               <table className="w-full min-w-[700px] text-sm">
                 <thead>
-                  <tr className="border-b border-gray-100 dark:border-card-border text-left">
+                  <tr className="border-b border-[var(--rule-soft)] dark:border-card-border text-left">
                     <th className="px-2 sm:px-4 py-2 sm:py-3 text-xs font-bold text-gray-500 dark:text-muted">
                       ID
                     </th>
@@ -637,7 +637,7 @@ export default function AgentsDashboardTab() {
             onChange={(e) =>
               handleHistoryDomainChange(e.target.value as AgentDomain | "todos")
             }
-            className="text-sm border border-gray-200 dark:border-card-border rounded-xl px-3 py-2 bg-white dark:bg-surface text-gray-700 dark:text-foreground"
+            className="text-sm border border-[var(--rule-base)] dark:border-card-border rounded-xl px-3 py-2 bg-white dark:bg-surface text-gray-700 dark:text-foreground"
           >
             <option value="todos">Todos los dominios</option>
             {Object.entries(DOMAIN_LABELS).map(([key, label]) => (
@@ -656,7 +656,7 @@ export default function AgentsDashboardTab() {
         )}
 
         {!historyLoading && historyTasks.length === 0 && (
-          <div className="bg-white dark:bg-card border-2 border-dashed border-gray-200 dark:border-card-border rounded-xl p-10 text-center text-gray-400 dark:text-muted">
+          <div className="bg-white dark:bg-card border-2 border-dashed border-[var(--rule-base)] dark:border-card-border rounded-xl p-10 text-center text-gray-400 dark:text-muted">
             <Zap className="h-10 w-10 mx-auto mb-3" />
             <p className="font-semibold">Sin historial</p>
             <p className="text-xs mt-1">
@@ -667,11 +667,11 @@ export default function AgentsDashboardTab() {
 
         {!historyLoading && historyTasks.length > 0 && (
           <>
-            <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl overflow-hidden ">
+            <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl overflow-hidden ">
               <div className="overflow-x-auto">
                 <table className="w-full min-w-[700px] text-sm">
                   <thead>
-                    <tr className="border-b border-gray-100 dark:border-card-border text-left">
+                    <tr className="border-b border-[var(--rule-soft)] dark:border-card-border text-left">
                       <th className="px-2 sm:px-4 py-2 sm:py-3 text-xs font-bold text-gray-500 dark:text-muted">
                         ID
                       </th>
@@ -709,7 +709,7 @@ export default function AgentsDashboardTab() {
               <button
                 onClick={() => handleHistoryPageChange(historyPage - 1)}
                 disabled={historyPage <= 1}
-                className="flex items-center gap-1 px-3 py-1.5 rounded-lg border border-gray-200 dark:border-card-border text-sm font-semibold text-gray-600 dark:text-muted hover:bg-gray-50 dark:hover:bg-surface/50 disabled:opacity-40 transition-colors"
+                className="flex items-center gap-1 px-3 py-1.5 rounded-lg border border-[var(--rule-base)] dark:border-card-border text-sm font-semibold text-gray-600 dark:text-muted hover:bg-gray-50 dark:hover:bg-surface/50 disabled:opacity-40 transition-colors"
               >
                 <ChevronLeft className="h-4 w-4" />
                 Anterior
@@ -720,7 +720,7 @@ export default function AgentsDashboardTab() {
               <button
                 onClick={() => handleHistoryPageChange(historyPage + 1)}
                 disabled={historyPage >= totalHistoryPages}
-                className="flex items-center gap-1 px-3 py-1.5 rounded-lg border border-gray-200 dark:border-card-border text-sm font-semibold text-gray-600 dark:text-muted hover:bg-gray-50 dark:hover:bg-surface/50 disabled:opacity-40 transition-colors"
+                className="flex items-center gap-1 px-3 py-1.5 rounded-lg border border-[var(--rule-base)] dark:border-card-border text-sm font-semibold text-gray-600 dark:text-muted hover:bg-gray-50 dark:hover:bg-surface/50 disabled:opacity-40 transition-colors"
               >
                 Siguiente
                 <ChevronRight className="h-4 w-4" />
@@ -766,7 +766,7 @@ function TaskRow({ task }: { task: AgentTask }) {
       <td className="px-2 sm:px-4 py-1.5 sm:py-2.5">
         <span
           className={cn(
-            "inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full",
+            "inline-flex items-center gap-1 text-[length:var(--ts-2xs)] font-bold px-2 py-0.5 rounded-full",
             statusMeta.bg,
             statusMeta.color
           )}

@@ -127,7 +127,7 @@ function SalesBarChart({ stores }: { stores: StoreRow[] }) {
             </span>
             <div className="relative h-5 flex-1 overflow-hidden rounded-full bg-gray-100 dark:bg-gray-800">
               <div
-                className="h-full rounded-full bg-primary transition-all duration-700"
+                className="h-full rounded-full bg-primary transition-all duration-[var(--dur-slower)]"
                 style={{ width: `${pct}%` }}
               />
             </div>
@@ -229,7 +229,7 @@ function StoresMapInner({ stores }: { stores: StoreRow[] }) {
   return (
     <div
       ref={containerRef}
-      className="rounded-xl border border-gray-200 dark:border-gray-700"
+      className="rounded-xl border border-[var(--rule-base)]"
       style={{ height: 280, width: "100%" }}
     />
   );
@@ -363,7 +363,7 @@ export default function MultiStoreDashboard() {
 
         <div className="flex items-center gap-2">
           {/* Selector de período */}
-          <div className="flex rounded-lg border border-gray-200 dark:border-gray-700">
+          <div className="flex rounded-lg border border-[var(--rule-base)]">
             {(Object.entries(PERIOD_LABELS) as [PeriodKey, string][]).map(([key, label]) => (
               <button
                 key={key}
@@ -384,7 +384,7 @@ export default function MultiStoreDashboard() {
           <button
             type="button"
             onClick={() => fetchStores(true)}
-            className="flex h-9 w-9 items-center justify-center rounded-lg border border-gray-200 bg-white text-gray-500 hover:text-primary dark:border-gray-700 dark:bg-gray-900 dark:text-gray-400"
+            className="flex h-9 w-9 items-center justify-center rounded-lg border border-[var(--rule-base)] bg-white text-gray-500 hover:text-primary dark:border-[var(--rule-base)] dark:bg-gray-900 dark:text-gray-400"
             title="Actualizar"
           >
             <RefreshCw className={cn("h-4 w-4", refreshing && "animate-spin")} />
@@ -410,7 +410,7 @@ export default function MultiStoreDashboard() {
         ].map(({ label, value, icon: Icon, color }) => (
           <div
             key={label}
-            className="rounded-xl border border-gray-200 bg-white p-3  dark:border-gray-700 dark:bg-gray-900"
+            className="rounded-xl border border-[var(--rule-base)] bg-white p-3  dark:border-[var(--rule-base)] dark:bg-gray-900"
           >
             <div className="flex items-center gap-2">
               <Icon className={cn("h-4 w-4", color)} />
@@ -423,7 +423,7 @@ export default function MultiStoreDashboard() {
 
       {/* Empty state */}
       {stores.length === 0 && !error && (
-        <div className="flex flex-col items-center justify-center gap-3 rounded-xl border border-gray-200 bg-white py-16 dark:border-gray-700 dark:bg-gray-900">
+        <div className="flex flex-col items-center justify-center gap-3 rounded-xl border border-[var(--rule-base)] bg-white py-16 dark:border-[var(--rule-base)] dark:bg-gray-900">
           <Store className="h-10 w-10 text-gray-300 dark:text-gray-600" />
           <p className="text-sm text-gray-500 dark:text-gray-400">
             No hay tiendas registradas en el marketplace.
@@ -461,11 +461,11 @@ export default function MultiStoreDashboard() {
 
           {/* ── Vista: Tabla comparativa ────────────────────────────── */}
           {viewTab === "tabla" && (
-            <div className="overflow-hidden rounded-xl border border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-900">
+            <div className="overflow-hidden rounded-xl border border-[var(--rule-base)] bg-white dark:border-[var(--rule-base)] dark:bg-gray-900">
               <div className="overflow-x-auto">
                 <table className="w-full min-w-[600px] text-sm">
                   <thead>
-                    <tr className="border-b border-gray-200 bg-gray-50 dark:border-gray-700 dark:bg-gray-800/50">
+                    <tr className="border-b border-[var(--rule-base)] bg-gray-50 dark:border-[var(--rule-base)] dark:bg-gray-800/50">
                       <th className="px-3 py-2.5 text-left text-xs font-bold text-gray-500 dark:text-gray-400">
                         <button
                           type="button"
@@ -574,7 +574,7 @@ export default function MultiStoreDashboard() {
 
           {/* ── Vista: Gráfico de barras ────────────────────────────── */}
           {viewTab === "grafico" && (
-            <div className="rounded-xl border border-gray-200 bg-white p-5 dark:border-gray-700 dark:bg-gray-900">
+            <div className="rounded-xl border border-[var(--rule-base)] bg-white p-5 dark:border-[var(--rule-base)] dark:bg-gray-900">
               <div className="mb-4 flex items-center gap-2">
                 <BarChart3 className="h-4 w-4 text-primary" />
                 <h3 className="text-sm font-bold text-gray-800 dark:text-white">
@@ -587,7 +587,7 @@ export default function MultiStoreDashboard() {
 
           {/* ── Vista: Mapa ─────────────────────────────────────────── */}
           {viewTab === "mapa" && (
-            <div className="rounded-xl border border-gray-200 bg-white p-4 dark:border-gray-700 dark:bg-gray-900">
+            <div className="rounded-xl border border-[var(--rule-base)] bg-white p-4 dark:border-[var(--rule-base)] dark:bg-gray-900">
               <div className="mb-3 flex items-center gap-2">
                 <MapPin className="h-4 w-4 text-primary" />
                 <h3 className="text-sm font-bold text-gray-800 dark:text-white">

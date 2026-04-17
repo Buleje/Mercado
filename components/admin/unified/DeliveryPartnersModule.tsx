@@ -170,7 +170,7 @@ function PartnerModal({
         className="bg-white rounded-xl w-full max-w-md"
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100">
+        <div className="flex items-center justify-between px-5 py-4 border-b border-[var(--rule-soft)]">
           <h3 className="font-extrabold text-gray-900">
             {partner?.id ? "Editar repartidor" : "Nuevo repartidor"}
           </h3>
@@ -197,7 +197,7 @@ function PartnerModal({
                 value={form.name}
                 onChange={(e) => setForm((p) => ({ ...p, name: e.target.value }))}
                 placeholder="Juan Pérez"
-                className="w-full px-3 py-2.5 rounded-lg border border-gray-200 bg-white text-sm text-gray-900 outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all"
+                className="w-full px-3 py-2.5 rounded-lg border border-[var(--rule-base)] bg-white text-sm text-gray-900 outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all"
                 autoFocus
               />
             </div>
@@ -209,7 +209,7 @@ function PartnerModal({
                 value={form.phone}
                 onChange={(e) => setForm((p) => ({ ...p, phone: e.target.value }))}
                 placeholder="987654321"
-                className="w-full px-3 py-2.5 rounded-lg border border-gray-200 bg-white text-sm text-gray-900 outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all"
+                className="w-full px-3 py-2.5 rounded-lg border border-[var(--rule-base)] bg-white text-sm text-gray-900 outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all"
               />
             </div>
 
@@ -221,7 +221,7 @@ function PartnerModal({
                 step={0.5}
                 value={form.fee}
                 onChange={(e) => setForm((p) => ({ ...p, fee: parseFloat(e.target.value) || 0 }))}
-                className="w-full px-3 py-2.5 rounded-lg border border-gray-200 bg-white text-sm text-gray-900 outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all"
+                className="w-full px-3 py-2.5 rounded-lg border border-[var(--rule-base)] bg-white text-sm text-gray-900 outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all"
               />
             </div>
 
@@ -231,7 +231,7 @@ function PartnerModal({
                 <select
                   value={form.zone}
                   onChange={(e) => setForm((p) => ({ ...p, zone: e.target.value }))}
-                  className="w-full px-3 py-2.5 rounded-lg border border-gray-200 bg-white text-sm text-gray-900 outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary appearance-none transition-all"
+                  className="w-full px-3 py-2.5 rounded-lg border border-[var(--rule-base)] bg-white text-sm text-gray-900 outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary appearance-none transition-all"
                 >
                   {ZONAS.map((z) => <option key={z} value={z}>{z}</option>)}
                 </select>
@@ -245,7 +245,7 @@ function PartnerModal({
                 <select
                   value={form.vehicleType}
                   onChange={(e) => setForm((p) => ({ ...p, vehicleType: e.target.value }))}
-                  className="w-full px-3 py-2.5 rounded-lg border border-gray-200 bg-white text-sm text-gray-900 outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary appearance-none transition-all"
+                  className="w-full px-3 py-2.5 rounded-lg border border-[var(--rule-base)] bg-white text-sm text-gray-900 outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary appearance-none transition-all"
                 >
                   {VEHICLE_TYPES.map((v) => <option key={v} value={v}>{v}</option>)}
                 </select>
@@ -255,7 +255,7 @@ function PartnerModal({
           </div>
 
           {/* Activo toggle */}
-          <div className="flex items-center justify-between p-3 bg-gray-50 rounded-xl border border-gray-200">
+          <div className="flex items-center justify-between p-3 bg-gray-50 rounded-xl border border-[var(--rule-base)]">
             <p className="text-sm font-bold text-gray-900">Activo</p>
             <button
               type="button"
@@ -378,10 +378,10 @@ function RepartidoresTab() {
       {partners.length === 0 && !error ? (
         <EmptyState icon={Truck} title="Sin repartidores registrados" description="Agrega tu primer repartidor para empezar a gestionar entregas." />
       ) : (
-        <div className="bg-white border border-gray-200 rounded-xl  overflow-hidden">
+        <div className="bg-white border border-[var(--rule-base)] rounded-xl  overflow-hidden">
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
-              <thead className="bg-gray-50 border-b border-gray-200">
+              <thead className="bg-gray-50 border-b border-[var(--rule-base)]">
                 <tr>
                   <th className="text-left px-4 py-3 text-xs font-bold text-gray-500">Repartidor</th>
                   <th className="text-left px-4 py-3 text-xs font-bold text-gray-500 hidden sm:table-cell">Zona / Vehículo</th>
@@ -579,10 +579,10 @@ function AsignacionesTab() {
       {assignments.length === 0 && !error ? (
         <EmptyState icon={ClipboardList} title="Sin asignaciones registradas" description="Asigna repartidores a ordenes pendientes." />
       ) : (
-        <div className="bg-white border border-gray-200 rounded-xl  overflow-hidden">
+        <div className="bg-white border border-[var(--rule-base)] rounded-xl  overflow-hidden">
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
-              <thead className="bg-gray-50 border-b border-gray-200">
+              <thead className="bg-gray-50 border-b border-[var(--rule-base)]">
                 <tr>
                   <th className="text-left px-4 py-3 text-xs font-bold text-gray-500">Orden</th>
                   <th className="text-left px-4 py-3 text-xs font-bold text-gray-500">Repartidor</th>
@@ -651,7 +651,7 @@ function AsignacionesTab() {
                 value={assignModal.orderId ?? ""}
                 onChange={(e) => setAssignModal((p) => ({ ...p, orderId: e.target.value }))}
                 placeholder="Ej: ORD-12345"
-                className="w-full px-3 py-2.5 rounded-lg border border-gray-200 bg-white text-sm text-gray-900 outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all"
+                className="w-full px-3 py-2.5 rounded-lg border border-[var(--rule-base)] bg-white text-sm text-gray-900 outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all"
               />
             </div>
 
@@ -661,7 +661,7 @@ function AsignacionesTab() {
                 <select
                   value={selectedPartner}
                   onChange={(e) => setSelectedPartner(e.target.value)}
-                  className="w-full px-3 py-2.5 rounded-lg border border-gray-200 bg-white text-sm text-gray-900 outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary appearance-none transition-all"
+                  className="w-full px-3 py-2.5 rounded-lg border border-[var(--rule-base)] bg-white text-sm text-gray-900 outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary appearance-none transition-all"
                 >
                   <option value="">Seleccionar repartidor...</option>
                   {partners.map((p) => (
@@ -763,10 +763,10 @@ function PermisosTab() {
       {permissions.length === 0 && !error ? (
         <EmptyState icon={Shield} title="Sin permisos configurados" description="Los permisos de acceso a la tienda apareceran aqui." />
       ) : (
-        <div className="bg-white border border-gray-200 rounded-xl  overflow-hidden">
+        <div className="bg-white border border-[var(--rule-base)] rounded-xl  overflow-hidden">
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
-              <thead className="bg-gray-50 border-b border-gray-200">
+              <thead className="bg-gray-50 border-b border-[var(--rule-base)]">
                 <tr>
                   <th className="text-left px-4 py-3 text-xs font-bold text-gray-500">Usuario</th>
                   <th className="text-left px-4 py-3 text-xs font-bold text-gray-500 hidden sm:table-cell">Tipo</th>
@@ -798,7 +798,7 @@ function PermisosTab() {
                             "w-5 h-5 rounded border-2 flex items-center justify-center mx-auto transition-colors",
                             p.permissions.includes(perm)
                               ? "bg-primary border-primary"
-                              : "bg-white border-gray-300 hover:border-primary",
+                              : "bg-white border-[var(--rule-base)] hover:border-primary",
                             savingId === p.id && "opacity-50 cursor-not-allowed"
                           )}
                           title={p.permissions.includes(perm) ? `Quitar permiso ${perm}` : `Otorgar permiso ${perm}`}
@@ -935,7 +935,7 @@ function RankingTab() {
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
-              <tr className="border-b border-gray-100 text-left text-xs text-gray-500">
+              <tr className="border-b border-[var(--rule-soft)] text-left text-xs text-gray-500">
                 <th className="pb-2 pr-2">#</th>
                 <th className="pb-2 pr-3">Repartidor</th>
                 <th className="pb-2 pr-3">Zona</th>
@@ -970,7 +970,7 @@ function RankingTab() {
                       </div>
                       <div>
                         <p className="font-semibold text-gray-900 text-xs">{entry.name}</p>
-                        <p className="text-[10px] text-gray-400">{entry.vehicleType}</p>
+                        <p className="text-[length:var(--ts-2xs)] text-gray-400">{entry.vehicleType}</p>
                       </div>
                     </div>
                   </td>
@@ -989,7 +989,7 @@ function RankingTab() {
                   <td className="py-2.5 pr-3 text-center">
                     <span className="text-xs font-semibold text-gray-800">{entry.deliveries}</span>
                     {entry.pending > 0 && (
-                      <span className="ml-1 text-[10px] text-amber-500">+{entry.pending} pen.</span>
+                      <span className="ml-1 text-[length:var(--ts-2xs)] text-amber-500">+{entry.pending} pen.</span>
                     )}
                   </td>
                   <td className="py-2.5 pr-3 text-center">
@@ -1123,7 +1123,7 @@ function SolicitudesTab() {
                 key={app.id}
                 className={cn(
                   "bg-white border rounded-xl p-4  transition-all",
-                  isPending ? "border-amber-200 bg-amber-50/30" : "border-gray-200 opacity-70"
+                  isPending ? "border-amber-200 bg-amber-50/30" : "border-[var(--rule-base)] opacity-70"
                 )}
               >
                 <div className="flex items-start justify-between gap-3">
@@ -1131,11 +1131,11 @@ function SolicitudesTab() {
                     <div className="flex items-center gap-2 mb-1">
                       <h4 className="font-bold text-gray-900 text-sm truncate">{data.name}</h4>
                       {isPending ? (
-                        <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-100 text-amber-700">
+                        <span className="px-2 py-0.5 rounded-full text-[length:var(--ts-2xs)] font-bold bg-amber-100 text-amber-700">
                           Pendiente
                         </span>
                       ) : (
-                        <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-gray-100 text-gray-500">
+                        <span className="px-2 py-0.5 rounded-full text-[length:var(--ts-2xs)] font-bold bg-gray-100 text-gray-500">
                           Revisado
                         </span>
                       )}
@@ -1154,7 +1154,7 @@ function SolicitudesTab() {
                         <Clock className="h-3 w-3" /> {AVAILABILITY_LABELS[data.availability] ?? data.availability}
                       </span>
                     </div>
-                    <p className="text-[10px] text-gray-400 mt-1">
+                    <p className="text-[length:var(--ts-2xs)] text-gray-400 mt-1">
                       {new Date(app.createdAt).toLocaleDateString("es-PE", {
                         year: "numeric", month: "short", day: "numeric", hour: "2-digit", minute: "2-digit",
                       })}
@@ -1243,14 +1243,14 @@ export default function DeliveryPartnersModule() {
         ].map(({ label, value, color }) => (
           <div
             key={label}
-            className="bg-white border border-gray-200 rounded-xl p-3 sm:p-4  text-center"
+            className="bg-white border border-[var(--rule-base)] rounded-xl p-3 sm:p-4  text-center"
           >
             {kpisLoading ? (
               <div className="h-7 w-12 mx-auto bg-gray-200 rounded animate-pulse" />
             ) : (
               <p className={cn("text-2xl font-extrabold", color)}>{value}</p>
             )}
-            <p className="text-[10px] sm:text-xs text-gray-500 mt-0.5 leading-tight">{label}</p>
+            <p className="text-[length:var(--ts-2xs)] sm:text-xs text-gray-500 mt-0.5 leading-tight">{label}</p>
           </div>
         ))}
       </div>

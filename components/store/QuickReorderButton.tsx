@@ -148,8 +148,8 @@ export default function QuickReorderButton() {
     <div className="fixed bottom-24 right-4 z-40 sm:bottom-6 sm:right-6">
       {/* Expanded card */}
       {expanded && (
-        <div className="mb-3 w-72 rounded-2xl border border-gray-200 bg-white shadow-2xl dark:border-card-border dark:bg-card animate-[fadeUp_0.2s_ease-out]">
-          <div className="flex items-center justify-between border-b border-gray-100 px-4 py-3 dark:border-card-border">
+        <div className="mb-3 w-72 rounded-2xl border border-[var(--rule-base)] bg-white shadow-[var(--shadow-xl)] dark:border-card-border dark:bg-card animate-[fadeUp_0.2s_ease-out]">
+          <div className="flex items-center justify-between border-b border-[var(--rule-soft)] px-4 py-3 dark:border-card-border">
             <h4 className="text-sm font-bold text-foreground">
               Repetir pedido
             </h4>

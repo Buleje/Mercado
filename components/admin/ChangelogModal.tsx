@@ -77,9 +77,9 @@ export default function ChangelogModal({ open, onClose }: ChangelogModalProps) {
     <div className="fixed inset-0 z-100 overflow-y-auto">
       <div className="fixed inset-0 bg-black/40 backdrop-blur-sm" onClick={onClose} />
       <div className="relative z-10 min-h-screen flex items-center justify-center p-4">
-        <div className="bg-white dark:bg-card rounded-xl border border-gray-200 dark:border-card-border w-full max-w-lg max-h-[85vh] flex flex-col">
+        <div className="bg-white dark:bg-card rounded-xl border border-[var(--rule-base)] dark:border-card-border w-full max-w-lg max-h-[85vh] flex flex-col">
           {/* Header */}
-          <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200 dark:border-card-border">
+          <div className="flex items-center justify-between px-6 py-4 border-b border-[var(--rule-base)] dark:border-card-border">
             <div className="flex items-center gap-2">
               <Sparkles className="h-5 w-5 text-primary" />
               <h2 className="font-extrabold text-gray-900 dark:text-foreground text-lg">Novedades</h2>
@@ -104,7 +104,7 @@ export default function ChangelogModal({ open, onClose }: ChangelogModalProps) {
                     {release.fecha}
                   </span>
                   {release.version === CURRENT_VERSION && (
-                    <span className="text-[10px] font-bold text-emerald-600 bg-emerald-50 dark:bg-emerald-900/20 px-2 py-0.5 rounded-full uppercase">
+                    <span className="text-[length:var(--ts-2xs)] font-bold text-emerald-600 bg-emerald-50 dark:bg-emerald-900/20 px-2 py-0.5 rounded-full uppercase">
                       Actual
                     </span>
                   )}
@@ -125,7 +125,7 @@ export default function ChangelogModal({ open, onClose }: ChangelogModalProps) {
           </div>
 
           {/* Footer */}
-          <div className="px-6 py-3 border-t border-gray-200 dark:border-card-border">
+          <div className="px-6 py-3 border-t border-[var(--rule-base)] dark:border-card-border">
             <button
               onClick={onClose}
               className={cn(

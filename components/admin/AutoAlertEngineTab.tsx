@@ -140,7 +140,7 @@ export default function AutoAlertEngineTab() {
           <button onClick={() => { setLoading(true); loadAlerts(); }} disabled={loading} title="Actualizar alertas" className="p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-accent text-gray-400 hover:text-primary disabled:opacity-40 transition-colors"><RefreshCw className={cn("h-4 w-4", loading && "animate-spin")} /></button>
           <button onClick={() => setView("rules")} className={cn("px-3 py-1.5 rounded-lg text-xs font-bold transition-colors", view === "rules" ? "bg-primary text-white" : "bg-gray-100 dark:bg-surface text-gray-600 dark:text-muted")}>Reglas</button>
           <button onClick={() => setView("logs")} className={cn("px-3 py-1.5 rounded-lg text-xs font-bold transition-colors", view === "logs" ? "bg-primary text-white" : "bg-gray-100 dark:bg-surface text-gray-600 dark:text-muted")}>
-            Historial {logs.filter(l => !l.acknowledged).length > 0 && <span className="ml-1 bg-red-500 text-white rounded-full px-1.5 text-[10px]">{logs.filter(l => !l.acknowledged).length}</span>}
+            Historial {logs.filter(l => !l.acknowledged).length > 0 && <span className="ml-1 bg-red-500 text-white rounded-full px-1.5 text-[length:var(--ts-2xs)]">{logs.filter(l => !l.acknowledged).length}</span>}
           </button>
           {view === "rules" && <button onClick={openCreate} className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold bg-primary text-white hover:bg-primary/90 transition-colors"><Plus className="h-3.5 w-3.5" /> Nueva regla</button>}
         </div>
@@ -154,7 +154,7 @@ export default function AutoAlertEngineTab() {
           { label: "Sin reconocer", value: logs.filter(l => !l.acknowledged).length, color: "text-red-500" },
           { label: "Total disparos", value: rules.reduce((s, r) => s + r.triggered, 0), color: "text-emerald-500" },
         ].map(k => (
-          <div key={k.label} className="bg-white dark:bg-card rounded-xl border border-gray-200 dark:border-card-border p-4">
+          <div key={k.label} className="bg-white dark:bg-card rounded-xl border border-[var(--rule-base)] dark:border-card-border p-4">
             <p className="text-xs font-semibold text-gray-500 dark:text-muted">{k.label}</p>
             <p className={cn("text-xl sm:text-2xl font-extrabold", k.color)}>{k.value}{k.total !== undefined && <span className="text-sm text-gray-400">/{k.total}</span>}</p>
           </div>
@@ -162,7 +162,7 @@ export default function AutoAlertEngineTab() {
       </div>
 
       {view === "rules" ? (
-        <div className="bg-white dark:bg-card rounded-xl border border-gray-200 dark:border-card-border overflow-hidden">
+        <div className="bg-white dark:bg-card rounded-xl border border-[var(--rule-base)] dark:border-card-border overflow-hidden">
           <div className="overflow-x-auto">
             <table className="w-full min-w-[600px] text-sm">
               <thead><tr className="bg-gray-50 dark:bg-surface text-left">
@@ -175,7 +175,7 @@ export default function AutoAlertEngineTab() {
               </tr></thead>
               <tbody>
                 {rules.map(r => (
-                  <tr key={r.id} className="border-t border-gray-100 dark:border-card-border hover:bg-gray-50 dark:hover:bg-surface/50">
+                  <tr key={r.id} className="border-t border-[var(--rule-soft)] dark:border-card-border hover:bg-gray-50 dark:hover:bg-surface/50">
                     <td className="px-2 sm:px-4 py-2 sm:py-3">
                       <div className="flex flex-wrap items-center gap-2">
                         <span className={cn("h-2 w-2 rounded-full", r.severity === "critical" ? "bg-red-500" : r.severity === "warning" ? "bg-amber-500" : "bg-emerald-500")} />
@@ -222,12 +222,12 @@ export default function AutoAlertEngineTab() {
                 <p className="text-xs text-gray-400 mt-1">Todas las reglas están dentro de sus umbrales</p>
               </div>
             ) : filteredLogs.map(l => (
-              <div key={l.id} className={cn("bg-white dark:bg-card rounded-xl border p-4 flex items-start gap-3", l.severity === "critical" ? "border-red-200 dark:border-red-900/30" : l.severity === "warning" ? "border-amber-200 dark:border-amber-900/30" : "border-gray-200 dark:border-card-border")}>
+              <div key={l.id} className={cn("bg-white dark:bg-card rounded-xl border p-4 flex items-start gap-3", l.severity === "critical" ? "border-red-200 dark:border-red-900/30" : l.severity === "warning" ? "border-amber-200 dark:border-amber-900/30" : "border-[var(--rule-base)] dark:border-card-border")}>
                 <AlertTriangle className={cn("h-4 w-4 shrink-0 mt-0.5", l.severity === "critical" ? "text-red-500" : l.severity === "warning" ? "text-amber-500" : "text-emerald-500")} />
                 <div className="flex-1 min-w-0">
                   <p className="text-sm font-bold text-gray-900 dark:text-foreground">{l.ruleName}</p>
                   <p className="text-xs text-gray-500 dark:text-muted mt-0.5">{l.message}</p>
-                  <p className="text-[10px] text-gray-400 dark:text-muted mt-1">{fmtDate(l.timestamp)}</p>
+                  <p className="text-[length:var(--ts-2xs)] text-gray-400 dark:text-muted mt-1">{fmtDate(l.timestamp)}</p>
                 </div>
                 {!l.acknowledged && (
                   <button onClick={() => setLogs(prev => prev.map(x => x.id === l.id ? { ...x, acknowledged: true } : x))} className="px-2 py-1 rounded-lg text-xs font-bold bg-primary/10 text-primary hover:bg-primary/20 transition-colors flex items-center gap-1"><Check className="h-3 w-3" /> OK</button>
@@ -241,20 +241,20 @@ export default function AutoAlertEngineTab() {
       {/* Modal */}
       {showModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40" onClick={() => setShowModal(false)}>
-          <div className="bg-white dark:bg-card rounded-xl p-3 sm:p-6 max-w-md w-full mx-4 border border-gray-200 dark:border-card-border" onClick={e => e.stopPropagation()}>
+          <div className="bg-white dark:bg-card rounded-xl p-3 sm:p-6 max-w-md w-full mx-4 border border-[var(--rule-base)] dark:border-card-border" onClick={e => e.stopPropagation()}>
             <h3 className="text-lg font-extrabold text-gray-900 dark:text-foreground mb-4">{editRule ? "Editar regla" : "Nueva regla"}</h3>
             <div className="space-y-3">
-              <div><label className="text-xs font-bold text-gray-500 dark:text-muted">Nombre</label><input value={formName} onChange={e => setFormName(e.target.value)} className="w-full mt-1 px-3 py-2 rounded-lg border border-gray-200 dark:border-card-border bg-white dark:bg-surface text-sm" placeholder="Nombre de la regla" /></div>
+              <div><label className="text-xs font-bold text-gray-500 dark:text-muted">Nombre</label><input value={formName} onChange={e => setFormName(e.target.value)} className="w-full mt-1 px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-card-border bg-white dark:bg-surface text-sm" placeholder="Nombre de la regla" /></div>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <div><label className="text-xs font-bold text-gray-500 dark:text-muted">Módulo</label><select value={formModule} onChange={e => setFormModule(e.target.value)} className="w-full mt-1 px-3 py-2 rounded-lg border border-gray-200 dark:border-card-border bg-white dark:bg-surface text-sm">{MODULES.map(m => <option key={m}>{m}</option>)}</select></div>
-                <div><label className="text-xs font-bold text-gray-500 dark:text-muted">Severidad</label><select value={formSeverity} onChange={e => setFormSeverity(e.target.value as AlertRule["severity"])} className="w-full mt-1 px-3 py-2 rounded-lg border border-gray-200 dark:border-card-border bg-white dark:bg-surface text-sm"><option value="info">Info</option><option value="warning">Warning</option><option value="critical">Crítico</option></select></div>
+                <div><label className="text-xs font-bold text-gray-500 dark:text-muted">Módulo</label><select value={formModule} onChange={e => setFormModule(e.target.value)} className="w-full mt-1 px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-card-border bg-white dark:bg-surface text-sm">{MODULES.map(m => <option key={m}>{m}</option>)}</select></div>
+                <div><label className="text-xs font-bold text-gray-500 dark:text-muted">Severidad</label><select value={formSeverity} onChange={e => setFormSeverity(e.target.value as AlertRule["severity"])} className="w-full mt-1 px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-card-border bg-white dark:bg-surface text-sm"><option value="info">Info</option><option value="warning">Warning</option><option value="critical">Crítico</option></select></div>
               </div>
-              <div><label className="text-xs font-bold text-gray-500 dark:text-muted">Campo/condición</label><input value={formCondition} onChange={e => setFormCondition(e.target.value)} className="w-full mt-1 px-3 py-2 rounded-lg border border-gray-200 dark:border-card-border bg-white dark:bg-surface text-sm" placeholder="ej: stock_actual" /></div>
+              <div><label className="text-xs font-bold text-gray-500 dark:text-muted">Campo/condición</label><input value={formCondition} onChange={e => setFormCondition(e.target.value)} className="w-full mt-1 px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-card-border bg-white dark:bg-surface text-sm" placeholder="ej: stock_actual" /></div>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <div><label className="text-xs font-bold text-gray-500 dark:text-muted">Operador</label><select value={formOperator} onChange={e => setFormOperator(e.target.value as AlertRule["operator"])} className="w-full mt-1 px-3 py-2 rounded-lg border border-gray-200 dark:border-card-border bg-white dark:bg-surface text-sm">{OPERATORS.map(o => <option key={o}>{o}</option>)}</select></div>
-                <div><label className="text-xs font-bold text-gray-500 dark:text-muted">Umbral</label><input type="number" value={formThreshold} onChange={e => setFormThreshold(+e.target.value)} className="w-full mt-1 px-3 py-2 rounded-lg border border-gray-200 dark:border-card-border bg-white dark:bg-surface text-sm" /></div>
+                <div><label className="text-xs font-bold text-gray-500 dark:text-muted">Operador</label><select value={formOperator} onChange={e => setFormOperator(e.target.value as AlertRule["operator"])} className="w-full mt-1 px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-card-border bg-white dark:bg-surface text-sm">{OPERATORS.map(o => <option key={o}>{o}</option>)}</select></div>
+                <div><label className="text-xs font-bold text-gray-500 dark:text-muted">Umbral</label><input type="number" value={formThreshold} onChange={e => setFormThreshold(+e.target.value)} className="w-full mt-1 px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-card-border bg-white dark:bg-surface text-sm" /></div>
               </div>
-              <div><label className="text-xs font-bold text-gray-500 dark:text-muted">Acción</label><select value={formAction} onChange={e => setFormAction(e.target.value as AlertRule["action"])} className="w-full mt-1 px-3 py-2 rounded-lg border border-gray-200 dark:border-card-border bg-white dark:bg-surface text-sm">{Object.entries(ACTIONS).map(([k, v]) => <option key={k} value={k}>{v}</option>)}</select></div>
+              <div><label className="text-xs font-bold text-gray-500 dark:text-muted">Acción</label><select value={formAction} onChange={e => setFormAction(e.target.value as AlertRule["action"])} className="w-full mt-1 px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-card-border bg-white dark:bg-surface text-sm">{Object.entries(ACTIONS).map(([k, v]) => <option key={k} value={k}>{v}</option>)}</select></div>
             </div>
             <div className="flex flex-wrap justify-end gap-2 mt-5">
               <button onClick={() => setShowModal(false)} className="px-2 sm:px-4 py-1.5 sm:py-2 rounded-lg text-sm font-bold text-gray-500 hover:bg-gray-100 dark:hover:bg-accent"><X className="h-4 w-4 inline mr-1" />Cancelar</button>

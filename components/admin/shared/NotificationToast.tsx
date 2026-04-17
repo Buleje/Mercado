@@ -55,7 +55,7 @@ export default function NotificationToast({ onNavigate }: NotificationToastProps
       {activeOrders.slice(0, 3).map((order) => (
         <div
           key={order.id}
-          className="flex items-start gap-3 p-4 rounded-xl bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 animate-in slide-in-from-right"
+          className="flex items-start gap-3 p-4 rounded-xl bg-white dark:bg-gray-900 border border-[var(--rule-base)] animate-in slide-in-from-right"
         >
           <div className="h-10 w-10 rounded-xl bg-emerald-50 dark:bg-emerald-950/30 flex items-center justify-center shrink-0">
             <ShoppingBag className="h-5 w-5 text-emerald-600" />

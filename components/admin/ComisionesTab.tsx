@@ -258,10 +258,10 @@ export default function ComisionesTab() {
           <p className="text-sm text-gray-500 dark:text-muted mt-0.5">Seguimiento de ventas por cajero y cálculo de comisiones</p>
         </div>
         <div className="flex gap-2 flex-wrap">
-          <button onClick={() => setShowConfig(!showConfig)} className={cn("px-2 sm:px-4 py-1.5 sm:py-2 border rounded-lg text-sm font-bold flex items-center gap-2 transition-all", showConfig ? "border-primary text-primary bg-primary/10" : "border-gray-300 dark:border-card-border text-gray-700 dark:text-foreground hover:bg-gray-50 dark:hover:bg-accent")}>
+          <button onClick={() => setShowConfig(!showConfig)} className={cn("px-2 sm:px-4 py-1.5 sm:py-2 border rounded-lg text-sm font-bold flex items-center gap-2 transition-all", showConfig ? "border-primary text-primary bg-primary/10" : "border-[var(--rule-base)] dark:border-card-border text-gray-700 dark:text-foreground hover:bg-gray-50 dark:hover:bg-accent")}>
             <Settings className="h-4 w-4" /> Tasas
           </button>
-          <button onClick={handleExport} className="px-2 sm:px-4 py-1.5 sm:py-2 border border-gray-300 dark:border-card-border rounded-lg text-sm font-bold text-gray-700 dark:text-foreground hover:bg-gray-50 dark:hover:bg-accent flex flex-wrap items-center gap-2">
+          <button onClick={handleExport} className="px-2 sm:px-4 py-1.5 sm:py-2 border border-[var(--rule-base)] dark:border-card-border rounded-lg text-sm font-bold text-gray-700 dark:text-foreground hover:bg-gray-50 dark:hover:bg-accent flex flex-wrap items-center gap-2">
             <Download className="h-4 w-4" /> Exportar
           </button>
           <button onClick={loadData} disabled={loading} className="px-2 sm:px-4 py-1.5 sm:py-2 bg-primary text-white rounded-lg text-sm font-bold hover:bg-primary/90 flex flex-wrap items-center gap-2 disabled:opacity-60">
@@ -271,22 +271,22 @@ export default function ComisionesTab() {
       </div>
 
       {/* Period selector */}
-      <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl p-4">
+      <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl p-4">
         <div className="flex items-center gap-2 flex-wrap">
           <Calendar className="h-4 w-4 text-gray-500 dark:text-muted shrink-0" />
           <span className="text-sm font-bold text-gray-700 dark:text-foreground shrink-0">Período:</span>
           <div className="flex gap-2 flex-wrap">
             {PERIOD_OPTIONS.map(p => (
-              <button key={p.id} onClick={() => setPeriod(p.id)} className={cn("px-3 py-1.5 rounded-lg text-xs font-bold border-2 transition-all", period === p.id ? "border-primary bg-primary/10 text-primary" : "border-gray-200 dark:border-card-border text-gray-500 dark:text-muted hover:border-gray-400")}>
+              <button key={p.id} onClick={() => setPeriod(p.id)} className={cn("px-3 py-1.5 rounded-lg text-xs font-bold border-2 transition-all", period === p.id ? "border-primary bg-primary/10 text-primary" : "border-[var(--rule-base)] dark:border-card-border text-gray-500 dark:text-muted hover:border-gray-400")}>
                 {p.label}
               </button>
             ))}
           </div>
           {period === "personalizado" && (
             <div className="flex gap-2 items-center flex-wrap">
-              <input type="date" value={customFrom} onChange={e => setCustomFrom(e.target.value)} className="border border-gray-300 dark:border-card-border rounded-lg px-3 py-1.5 text-xs bg-white dark:bg-surface text-gray-900 dark:text-foreground" />
+              <input type="date" value={customFrom} onChange={e => setCustomFrom(e.target.value)} className="border border-[var(--rule-base)] dark:border-card-border rounded-lg px-3 py-1.5 text-xs bg-white dark:bg-surface text-gray-900 dark:text-foreground" />
               <span className="text-xs text-gray-500">—</span>
-              <input type="date" value={customTo} onChange={e => setCustomTo(e.target.value)} className="border border-gray-300 dark:border-card-border rounded-lg px-3 py-1.5 text-xs bg-white dark:bg-surface text-gray-900 dark:text-foreground" />
+              <input type="date" value={customTo} onChange={e => setCustomTo(e.target.value)} className="border border-[var(--rule-base)] dark:border-card-border rounded-lg px-3 py-1.5 text-xs bg-white dark:bg-surface text-gray-900 dark:text-foreground" />
               <button onClick={loadData} className="px-3 py-1.5 bg-primary text-white rounded-lg text-xs font-bold hover:bg-primary/90">Aplicar</button>
             </div>
           )}
@@ -298,10 +298,10 @@ export default function ComisionesTab() {
         {[
           { label: "Ingresos totales", value: fmt(totals.revenue), icon: TrendingUp, color: "text-emerald-600 dark:text-emerald-400" },
           { label: "Ganancia neta", value: fmt(totals.profit), icon: BarChart3, color: "text-emerald-600 dark:text-emerald-400" },
-          { label: "Comisiones totales", value: fmt(totals.commission), icon: DollarSign, color: "text-violet-600 dark:text-violet-400" },
+          { label: "Comisiones totales", value: fmt(totals.commission), icon: DollarSign, color: "text-[var(--text-secondary)] dark:text-[var(--text-primary)]" },
           { label: "Por pagar", value: fmt(totals.pending), icon: Wallet, color: "text-amber-600 dark:text-amber-400" },
         ].map(k => (
-          <div key={k.label} className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl p-4">
+          <div key={k.label} className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl p-4">
             <div className="flex flex-wrap items-center gap-2 mb-1">
               <k.icon className={cn("h-4 w-4", k.color)} />
               <p className="text-xs text-gray-500 dark:text-muted font-bold">{k.label}</p>
@@ -344,27 +344,27 @@ export default function ComisionesTab() {
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div>
                 <label className="block text-xs font-bold text-gray-700 dark:text-foreground mb-1">Cajero ID</label>
-                <select value={newTier.cashierId} onChange={e => setNewTier(v => ({ ...v, cashierId: e.target.value }))} className="w-full border border-gray-300 dark:border-card-border rounded-lg px-3 py-2 text-sm bg-white dark:bg-surface text-gray-900 dark:text-foreground">
+                <select value={newTier.cashierId} onChange={e => setNewTier(v => ({ ...v, cashierId: e.target.value }))} className="w-full border border-[var(--rule-base)] dark:border-card-border rounded-lg px-3 py-2 text-sm bg-white dark:bg-surface text-gray-900 dark:text-foreground">
                   <option value="">Seleccionar cajero…</option>
                   {stats.map(s => <option key={s.cashierId} value={s.cashierId}>{s.cashierName} ({s.cashierId})</option>)}
                 </select>
               </div>
               <div>
                 <label className="block text-xs font-bold text-gray-700 dark:text-foreground mb-1">Etiqueta (opcional)</label>
-                <input value={newTier.label} onChange={e => setNewTier(v => ({ ...v, label: e.target.value }))} placeholder="ej: Objetivo Q1" className="w-full border border-gray-300 dark:border-card-border rounded-lg px-3 py-2 text-sm bg-white dark:bg-surface text-gray-900 dark:text-foreground" />
+                <input value={newTier.label} onChange={e => setNewTier(v => ({ ...v, label: e.target.value }))} placeholder="ej: Objetivo Q1" className="w-full border border-[var(--rule-base)] dark:border-card-border rounded-lg px-3 py-2 text-sm bg-white dark:bg-surface text-gray-900 dark:text-foreground" />
               </div>
               <div>
                 <label className="block text-xs font-bold text-gray-700 dark:text-foreground mb-1">Ingresos mín. (S/)</label>
-                <input type="number" min={0} value={newTier.minSales} onChange={e => setNewTier(v => ({ ...v, minSales: Number(e.target.value) }))} className="w-full border border-gray-300 dark:border-card-border rounded-lg px-3 py-2 text-sm bg-white dark:bg-surface text-gray-900 dark:text-foreground" />
+                <input type="number" min={0} value={newTier.minSales} onChange={e => setNewTier(v => ({ ...v, minSales: Number(e.target.value) }))} className="w-full border border-[var(--rule-base)] dark:border-card-border rounded-lg px-3 py-2 text-sm bg-white dark:bg-surface text-gray-900 dark:text-foreground" />
               </div>
               <div>
                 <label className="block text-xs font-bold text-gray-700 dark:text-foreground mb-1">Ingresos máx. (S/, vacío = sin límite)</label>
-                <input type="number" min={0} value={newTier.maxSales} onChange={e => setNewTier(v => ({ ...v, maxSales: e.target.value }))} placeholder="Sin límite" className="w-full border border-gray-300 dark:border-card-border rounded-lg px-3 py-2 text-sm bg-white dark:bg-surface text-gray-900 dark:text-foreground" />
+                <input type="number" min={0} value={newTier.maxSales} onChange={e => setNewTier(v => ({ ...v, maxSales: e.target.value }))} placeholder="Sin límite" className="w-full border border-[var(--rule-base)] dark:border-card-border rounded-lg px-3 py-2 text-sm bg-white dark:bg-surface text-gray-900 dark:text-foreground" />
               </div>
               <div className="sm:col-span-2 flex flex-wrap items-end gap-3">
                 <div className="flex-1">
                   <label className="block text-xs font-bold text-gray-700 dark:text-foreground mb-1">Tasa (%)</label>
-                  <input type="number" min={0} max={20} step={0.5} value={newTier.rate} onChange={e => setNewTier(v => ({ ...v, rate: Number(e.target.value) }))} className="w-full border border-gray-300 dark:border-card-border rounded-lg px-3 py-2 text-sm bg-white dark:bg-surface text-gray-900 dark:text-foreground" />
+                  <input type="number" min={0} max={20} step={0.5} value={newTier.rate} onChange={e => setNewTier(v => ({ ...v, rate: Number(e.target.value) }))} className="w-full border border-[var(--rule-base)] dark:border-card-border rounded-lg px-3 py-2 text-sm bg-white dark:bg-surface text-gray-900 dark:text-foreground" />
                 </div>
                 <button onClick={handleAddTier} disabled={savingRule || !newTier.cashierId || newTier.rate <= 0} className="px-2 sm:px-4 py-1.5 sm:py-2 bg-primary text-white rounded-lg text-sm font-bold hover:bg-primary/90 flex flex-wrap items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed">
                   {savingRule ? <RefreshCw className="h-4 w-4 animate-spin" /> : <Plus className="h-4 w-4" />} Guardar
@@ -386,7 +386,7 @@ export default function ComisionesTab() {
                       <p className="text-xs text-gray-500 dark:text-muted">{ROLE_LABEL[cashier?.role ?? ""] ?? cashier?.role}</p>
                     </div>
                     <div className="flex flex-wrap items-center gap-2">
-                      <input type="number" min={0} max={20} step={0.5} value={r.rate} onChange={e => updateRate(r.cashierId, Number(e.target.value))} className="w-16 border border-gray-300 dark:border-card-border rounded-lg px-2 py-1.5 text-sm text-center bg-white dark:bg-surface text-gray-900 dark:text-foreground" />
+                      <input type="number" min={0} max={20} step={0.5} value={r.rate} onChange={e => updateRate(r.cashierId, Number(e.target.value))} className="w-16 border border-[var(--rule-base)] dark:border-card-border rounded-lg px-2 py-1.5 text-sm text-center bg-white dark:bg-surface text-gray-900 dark:text-foreground" />
                       <span className="text-sm font-bold text-gray-500 dark:text-muted">%</span>
                     </div>
                   </div>
@@ -400,8 +400,8 @@ export default function ComisionesTab() {
       )}
 
       {/* Table */}
-      <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl overflow-hidden">
-        <div className="p-4 border-b border-gray-100 dark:border-card-border">
+      <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl overflow-hidden">
+        <div className="p-4 border-b border-[var(--rule-soft)] dark:border-card-border">
           <h3 className="font-extrabold text-gray-900 dark:text-foreground flex flex-wrap items-center gap-2">
             <Users className="h-4 w-4 text-primary" /> Detalle por empleado
           </h3>
@@ -413,7 +413,7 @@ export default function ComisionesTab() {
             {/* Desktop table */}
             <div className="hidden sm:block overflow-x-auto">
               <table className="w-full min-w-[600px] text-sm">
-                <thead className="bg-gray-50 dark:bg-surface border-b border-gray-100 dark:border-card-border">
+                <thead className="bg-gray-50 dark:bg-surface border-b border-[var(--rule-soft)] dark:border-card-border">
                   <tr>
                     {["Empleado", "Rol", "Ventas", "Ingresos", "Ganancia", "Tasa", "Comisión", "Estado"].map(h => (
                       <th key={h} className="px-2 sm:px-4 py-2 sm:py-3 text-left text-xs font-extrabold text-gray-500 dark:text-muted">{h}</th>
@@ -431,7 +431,7 @@ export default function ComisionesTab() {
                       <td className="px-2 sm:px-4 py-2 sm:py-3 text-gray-500 dark:text-muted">
                         {s.rate}%{s.tierLabel && <span className="ml-1 text-xs text-primary font-normal">({s.tierLabel})</span>}
                       </td>
-                      <td className="px-2 sm:px-4 py-2 sm:py-3 font-extrabold text-violet-600 dark:text-violet-400">{fmt(s.commission)}</td>
+                      <td className="px-2 sm:px-4 py-2 sm:py-3 font-extrabold text-[var(--text-secondary)] dark:text-[var(--text-primary)]">{fmt(s.commission)}</td>
                       <td className="px-2 sm:px-4 py-2 sm:py-3">
                         <button onClick={() => togglePaid(s.cashierId)} className={cn("px-2.5 py-1 rounded-lg text-xs font-bold transition-all", s.paid ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400" : "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400")}>
                           {s.paid ? "Pagado" : "Pendiente"}
@@ -440,13 +440,13 @@ export default function ComisionesTab() {
                     </tr>
                   ))}
                 </tbody>
-                <tfoot className="bg-gray-50 dark:bg-surface border-t border-gray-200 dark:border-card-border">
+                <tfoot className="bg-gray-50 dark:bg-surface border-t border-[var(--rule-base)] dark:border-card-border">
                   <tr>
                     <td colSpan={3} className="px-2 sm:px-4 py-2 sm:py-3 font-extrabold text-gray-900 dark:text-foreground text-xs uppercase">TOTAL</td>
                     <td className="px-2 sm:px-4 py-2 sm:py-3 font-extrabold text-emerald-600 dark:text-emerald-400">{fmt(totals.revenue)}</td>
                     <td className="px-2 sm:px-4 py-2 sm:py-3 font-extrabold text-emerald-600 dark:text-emerald-400">{fmt(totals.profit)}</td>
                     <td className="px-2 sm:px-4 py-2 sm:py-3" />
-                    <td className="px-2 sm:px-4 py-2 sm:py-3 font-extrabold text-violet-600 dark:text-violet-400">{fmt(totals.commission)}</td>
+                    <td className="px-2 sm:px-4 py-2 sm:py-3 font-extrabold text-[var(--text-secondary)] dark:text-[var(--text-primary)]">{fmt(totals.commission)}</td>
                     <td className="px-2 sm:px-4 py-2 sm:py-3 text-amber-600 dark:text-amber-400 font-bold text-xs">
                       {fmt(totals.pending)} por pagar
                     </td>
@@ -471,7 +471,7 @@ export default function ComisionesTab() {
                   <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2 text-xs">
                     <div><p className="text-gray-500 dark:text-muted font-bold">Ingresos</p><p className="font-extrabold text-emerald-600 dark:text-emerald-400">{fmtCompact(s.revenue)}</p></div>
                     <div><p className="text-gray-500 dark:text-muted font-bold">Ganancia</p><p className="font-extrabold text-emerald-600 dark:text-emerald-400">{fmtCompact(s.profit)}</p></div>
-                    <div><p className="text-gray-500 dark:text-muted font-bold">Comisión ({s.rate}%{s.tierLabel ? ` · ${s.tierLabel}` : ""})</p><p className="font-extrabold text-violet-600 dark:text-violet-400">{fmt(s.commission)}</p></div>
+                    <div><p className="text-gray-500 dark:text-muted font-bold">Comisión ({s.rate}%{s.tierLabel ? ` · ${s.tierLabel}` : ""})</p><p className="font-extrabold text-[var(--text-secondary)] dark:text-[var(--text-primary)]">{fmt(s.commission)}</p></div>
                   </div>
                 </div>
               ))}

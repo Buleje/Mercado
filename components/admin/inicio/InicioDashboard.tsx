@@ -404,7 +404,7 @@ export default function InicioDashboard({ dateRange }: { dateRange: DateRange })
       </div>
 
       {/* ── Margen bar ── */}
-      <div className="bg-white dark:bg-card border border-gray-100 dark:border-card-border rounded-xl p-4 ">
+      <div className="bg-white dark:bg-card border border-[var(--rule-soft)] dark:border-card-border rounded-xl p-4 ">
         <div className="flex items-center justify-between mb-2">
           <span className="text-xs font-semibold text-gray-500 dark:text-muted">Margen bruto {periodLabel}</span>
           <span className={cn(
@@ -417,13 +417,13 @@ export default function InicioDashboard({ dateRange }: { dateRange: DateRange })
         <div className="h-3 bg-gray-100 dark:bg-gray-800 rounded-full overflow-hidden">
           <div
             className={cn(
-              "h-full rounded-full transition-all duration-700",
+              "h-full rounded-full transition-all duration-[var(--dur-slower)]",
               data.margenHoy >= 30 ? "bg-emerald-500" : data.margenHoy >= 15 ? "bg-amber-500" : "bg-red-500"
             )}
             style={{ width: `${Math.min(data.margenHoy, 100)}%` }}
           />
         </div>
-        <div className="flex justify-between mt-1 text-[10px] text-gray-400">
+        <div className="flex justify-between mt-1 text-[length:var(--ts-2xs)] text-gray-400">
           <span>0%</span>
           <span>Objetivo: 30%</span>
           <span>100%</span>
@@ -441,7 +441,7 @@ export default function InicioDashboard({ dateRange }: { dateRange: DateRange })
 const COLOR_MAP = {
   blue: { bg: "bg-emerald-50 dark:bg-emerald-950/20", icon: "text-emerald-500", badge: "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300" },
   emerald: { bg: "bg-emerald-50 dark:bg-emerald-950/20", icon: "text-emerald-500", badge: "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300" },
-  violet: { bg: "bg-violet-50 dark:bg-violet-950/20", icon: "text-violet-500", badge: "bg-violet-100 text-violet-700 dark:bg-violet-900/30 dark:text-violet-300" },
+  violet: { bg: "bg-[var(--surface-sunken)]", icon: "text-[var(--text-secondary)]", badge: "bg-[var(--surface-sunken)] text-[var(--text-primary)]" },
   amber: { bg: "bg-amber-50 dark:bg-amber-950/20", icon: "text-amber-500", badge: "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300" },
   red: { bg: "bg-red-50 dark:bg-red-950/20", icon: "text-red-500", badge: "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-300" },
 } as const;
@@ -460,7 +460,7 @@ function KPICard({
 }) {
   const c = COLOR_MAP[color];
   return (
-    <div className="bg-white dark:bg-card border border-gray-100 dark:border-card-border rounded-xl p-4  flex flex-col gap-2 relative overflow-hidden group hover:shadow-sm transition-shadow">
+    <div className="bg-white dark:bg-card border border-[var(--rule-soft)] dark:border-card-border rounded-xl p-4  flex flex-col gap-2 relative overflow-hidden group hover:shadow-sm transition-shadow">
       {/* Sparkline background (decorative) */}
       {spark && spark.length > 1 && (
         <svg className="absolute bottom-0 left-0 right-0 h-10 opacity-10 pointer-events-none" viewBox={`0 0 ${spark.length - 1} 1`} preserveAspectRatio="none" aria-hidden="true">
@@ -485,18 +485,18 @@ function KPICard({
           <DeltaBadge value={delta} />
         )}
         {badge && (
-          <span className={cn("text-[10px] font-bold px-2 py-0.5 rounded-full", c.badge)}>{badge}</span>
+          <span className={cn("text-[length:var(--ts-2xs)] font-bold px-2 py-0.5 rounded-full", c.badge)}>{badge}</span>
         )}
       </div>
 
       <p className="text-xl font-extrabold text-gray-900 dark:text-foreground leading-none tracking-tight">
         {value}
       </p>
-      <p className="text-[11px] font-medium text-gray-400 dark:text-muted leading-tight">
+      <p className="text-[length:var(--ts-xs)] font-medium text-gray-400 dark:text-muted leading-tight">
         {label}
       </p>
       {subtitle && (
-        <p className="text-[10px] text-gray-400 dark:text-gray-600">{subtitle}</p>
+        <p className="text-[length:var(--ts-2xs)] text-gray-400 dark:text-gray-600">{subtitle}</p>
       )}
     </div>
   );
@@ -511,7 +511,7 @@ function DeltaBadge({ value }: { value: number }) {
       : "text-red-600 bg-red-50 dark:bg-red-900/20 dark:text-red-400";
 
   return (
-    <span className={cn("inline-flex items-center gap-0.5 text-[10px] font-bold px-1.5 py-0.5 rounded-full", color)}>
+    <span className={cn("inline-flex items-center gap-0.5 text-[length:var(--ts-2xs)] font-bold px-1.5 py-0.5 rounded-full", color)}>
       <Icon className="h-3 w-3" />
       {Math.abs(value).toFixed(0)}%
     </span>

@@ -85,7 +85,7 @@ export default function BranchesTab() {
           </h1>
           <p className="text-sm text-gray-500 dark:text-muted mt-0.5">Gestión de sucursales, inventario y transferencias inter-sede</p>
         </div>
-        <button onClick={() => exportToCSV(branches.map(b => ({ codigo: b.code, nombre: b.name, distrito: b.district, estado: b.status, venta_mensual: b.monthlyRevenue, responsable: b.responsible })), "sucursales")} className="flex items-center gap-1.5 px-3 py-2 rounded-lg border border-gray-200 dark:border-card-border bg-white dark:bg-surface text-sm font-semibold text-gray-700 dark:text-foreground hover:bg-gray-50 dark:hover:bg-accent transition-colors">
+        <button onClick={() => exportToCSV(branches.map(b => ({ codigo: b.code, nombre: b.name, distrito: b.district, estado: b.status, venta_mensual: b.monthlyRevenue, responsable: b.responsible })), "sucursales")} className="flex items-center gap-1.5 px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-card-border bg-white dark:bg-surface text-sm font-semibold text-gray-700 dark:text-foreground hover:bg-gray-50 dark:hover:bg-accent transition-colors">
           <Download className="h-4 w-4" /> Exportar
         </button>
       </div>
@@ -95,7 +95,7 @@ export default function BranchesTab() {
         {[
           { label: "Sucursales activas", value: String(stats.active), color: "text-emerald-600", bg: "bg-emerald-50 dark:bg-emerald-950/30" },
           { label: "Venta mensual total", value: fmt(stats.totalRevenue), color: "text-emerald-600", bg: "bg-emerald-50 dark:bg-emerald-950/30" },
-          { label: "Stock consolidado", value: stats.totalStock.toLocaleString("es-PE") + " uds", color: "text-violet-600", bg: "bg-violet-50 dark:bg-violet-950/30" },
+          { label: "Stock consolidado", value: stats.totalStock.toLocaleString("es-PE") + " uds", color: "text-[var(--text-secondary)]", bg: "bg-[var(--surface-sunken)]" },
           { label: "Transferencias activas", value: String(stats.pendingTransfers), color: "text-amber-600", bg: "bg-amber-50 dark:bg-amber-950/30" },
         ].map(({ label, value, color, bg }) => (
           <div key={label} className={cn("rounded-xl p-4", bg)}>
@@ -118,12 +118,12 @@ export default function BranchesTab() {
         <>
           <div className="relative max-w-sm">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
-            <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Buscar sucursal..." className="w-full pl-9 pr-3 py-2 text-sm border border-gray-200 dark:border-card-border rounded-lg bg-white dark:bg-surface text-gray-700 dark:text-foreground" />
+            <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Buscar sucursal..." className="w-full pl-9 pr-3 py-2 text-sm border border-[var(--rule-base)] dark:border-card-border rounded-lg bg-white dark:bg-surface text-gray-700 dark:text-foreground" />
           </div>
 
           <div className="grid gap-2 sm:gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {filteredBranches.map(b => (
-              <div key={b.id} className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl p-4 space-y-3 hover:shadow-lg transition-shadow">
+              <div key={b.id} className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl p-4 space-y-3 hover:shadow-lg transition-shadow">
                 <div className="flex flex-wrap items-start justify-between gap-2">
                   <div>
                     <p className="font-bold text-sm text-gray-900 dark:text-foreground">{b.name}</p>
@@ -156,10 +156,10 @@ export default function BranchesTab() {
       )}
 
       {view === "transfers" && (
-        <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl overflow-hidden">
+        <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl overflow-hidden">
           <div className="overflow-x-auto">
             <table className="w-full min-w-[600px] text-sm">
-              <thead className="bg-gray-50 dark:bg-surface/50 border-b border-gray-200 dark:border-card-border">
+              <thead className="bg-gray-50 dark:bg-surface/50 border-b border-[var(--rule-base)] dark:border-card-border">
                 <tr>
                   <th className="px-2 sm:px-4 py-2 sm:py-3 text-left text-xs font-bold text-gray-500 dark:text-muted uppercase">Fecha</th>
                   <th className="px-2 sm:px-4 py-2 sm:py-3 text-left text-xs font-bold text-gray-500 dark:text-muted uppercase">Origen → Destino</th>
@@ -189,7 +189,7 @@ export default function BranchesTab() {
 
       {/* Revenue comparison */}
       {view === "branches" && (
-        <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl p-3 sm:p-5 space-y-3">
+        <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl p-3 sm:p-5 space-y-3">
           <h3 className="font-extrabold text-sm text-gray-900 dark:text-foreground flex flex-wrap items-center gap-2"><BarChart3 className="h-4 w-4 text-primary" /> Comparativa de ventas mensuales</h3>
           <div className="space-y-2">
             {activeBranches.sort((a, b) => b.monthlyRevenue - a.monthlyRevenue).map(b => {
@@ -214,7 +214,7 @@ export default function BranchesTab() {
       {/* Branch inventory modal */}
       {detail && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4" onClick={() => setDetail(null)}>
-          <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl p-3 sm:p-6 w-full max-w-md space-y-4" onClick={e => e.stopPropagation()}>
+          <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl p-3 sm:p-6 w-full max-w-md space-y-4" onClick={e => e.stopPropagation()}>
             <div className="flex items-center justify-between">
               <h3 className="font-extrabold text-gray-900 dark:text-foreground text-sm">{detail.name}</h3>
               <button onClick={() => setDetail(null)}><X className="h-4 w-4 text-gray-400" /></button>

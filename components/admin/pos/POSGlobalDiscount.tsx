@@ -58,13 +58,13 @@ export default function POSGlobalDiscount({
   const quickValues = mode === "percent" ? quickPercent : quickFixed;
 
   return (
-    <div className="space-y-2 bg-gray-50 dark:bg-surface rounded-xl p-2.5 border border-gray-100 dark:border-card-border">
+    <div className="space-y-2 bg-gray-50 dark:bg-surface rounded-xl p-2.5 border border-[var(--rule-soft)] dark:border-card-border">
       <div className="flex items-center gap-2">
         <span className="text-xs font-bold text-gray-600 dark:text-muted">
           Descuento:
         </span>
         {/* Toggle % / S/ */}
-        <div className="flex bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-lg overflow-hidden">
+        <div className="flex bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-lg overflow-hidden">
           <button
             onClick={() => {
               setMode("percent");
@@ -104,7 +104,7 @@ export default function POSGlobalDiscount({
           value={value}
           onChange={(e) => handleValueChange(e.target.value)}
           placeholder="0"
-          className="w-16 px-2 py-1 text-xs font-bold border border-gray-200 dark:border-card-border rounded-lg text-gray-900 dark:text-foreground outline-none focus:border-primary text-center"
+          className="w-16 px-2 py-1 text-xs font-bold border border-[var(--rule-base)] dark:border-card-border rounded-lg text-gray-900 dark:text-foreground outline-none focus:border-primary text-center"
         />
       </div>
 
@@ -115,10 +115,10 @@ export default function POSGlobalDiscount({
             key={q}
             onClick={() => applyQuick(q)}
             className={cn(
-              "px-2 py-1 rounded-lg text-[11px] font-bold border transition-colors",
+              "px-2 py-1 rounded-lg text-[length:var(--ts-xs)] font-bold border transition-colors",
               Number(value) === q
                 ? "border-primary bg-primary/10 text-primary"
-                : "border-gray-200 dark:border-card-border text-gray-500 dark:text-muted hover:bg-gray-100"
+                : "border-[var(--rule-base)] dark:border-card-border text-gray-500 dark:text-muted hover:bg-gray-100"
             )}
           >
             {mode === "percent" ? `${q}%` : `S/${q}`}
@@ -139,7 +139,7 @@ export default function POSGlobalDiscount({
             </span>
             <span>-{fmt(discountAmount)}</span>
           </div>
-          <div className="flex justify-between text-gray-900 dark:text-foreground font-extrabold border-t border-gray-200 dark:border-card-border pt-1">
+          <div className="flex justify-between text-gray-900 dark:text-foreground font-extrabold border-t border-[var(--rule-base)] dark:border-card-border pt-1">
             <span>Total</span>
             <span>{fmt(total)}</span>
           </div>

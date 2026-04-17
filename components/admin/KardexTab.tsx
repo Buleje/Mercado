@@ -62,8 +62,8 @@ const TYPE_META: Record<string, { label: string; color: string; bg: string; dir:
   venta: { label: "Venta POS", color: "text-amber-700 dark:text-amber-400", bg: "bg-amber-100 dark:bg-amber-900/30", dir: "out" },
   venta_online: { label: "Venta Online", color: "text-orange-700 dark:text-orange-400", bg: "bg-orange-100 dark:bg-orange-900/30", dir: "out" },
   ajuste_negativo: { label: "Ajuste (-)", color: "text-red-700 dark:text-red-400", bg: "bg-red-100 dark:bg-red-900/30", dir: "out" },
-  merma: { label: "Pérdida", color: "text-rose-700 dark:text-rose-400", bg: "bg-rose-100 dark:bg-rose-900/30", dir: "out" },
-  transferencia: { label: "Transferencia", color: "text-violet-700 dark:text-violet-400", bg: "bg-violet-100 dark:bg-violet-900/30", dir: "out" },
+  merma: { label: "Pérdida", color: "text-[var(--text-secondary)] dark:text-[var(--text-primary)]", bg: "bg-[var(--surface-sunken)]", dir: "out" },
+  transferencia: { label: "Transferencia", color: "text-[var(--text-secondary)] dark:text-[var(--text-primary)]", bg: "bg-[var(--surface-sunken)]", dir: "out" },
 };
 
 function fmt(n: number) {
@@ -94,7 +94,7 @@ function ModuleTooltip() {
         <Info className="h-4 w-4" />
       </button>
       {open && (
-        <div className="pointer-events-none absolute left-6 top-0 z-50 w-80 rounded-xl border border-gray-200 bg-white p-4 text-xs leading-relaxed dark:border-card-border dark:bg-card">
+        <div className="pointer-events-none absolute left-6 top-0 z-50 w-80 rounded-xl border border-[var(--rule-base)] bg-white p-4 text-xs leading-relaxed dark:border-card-border dark:bg-card">
           <p className="mb-2 text-sm font-extrabold text-gray-900 dark:text-foreground">Movimientos del Producto</p>
           <p className="mb-3 text-gray-600 dark:text-muted">Te muestra todo lo que entró y salió de cada producto, para que sepas exactamente cuánto tienes.</p>
           <p className="text-gray-500 dark:text-muted">Ejemplo: si entra una compra de 24 unidades y luego se venden 5, aquí puedes ver ambas operaciones y el saldo exacto.</p>
@@ -287,13 +287,13 @@ export default function KardexTab() {
         </div>
         <button
           onClick={() => exportToCSV(lines.map((line) => ({ fecha: line.date, tipo: TYPE_META[line.type]?.label || line.type, referencia: line.reference, descripcion: line.description, entrada: line.qtyIn || "", salida: line.qtyOut || "", saldo: line.balance, costo_unit: line.costUnit, costo_total: line.totalCost, almacen: line.warehouse })), `kardex-${product.name}`)}
-          className="flex items-center gap-1.5 rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm font-semibold text-gray-700 transition-colors hover:bg-gray-50 dark:border-card-border dark:bg-surface dark:text-foreground dark:hover:bg-accent"
+          className="flex items-center gap-1.5 rounded-lg border border-[var(--rule-base)] bg-white px-3 py-2 text-sm font-semibold text-gray-700 transition-colors hover:bg-gray-50 dark:border-card-border dark:bg-surface dark:text-foreground dark:hover:bg-accent"
         >
           <Download className="h-4 w-4" /> Descargar movimientos
         </button>
       </div>
 
-      <div className="rounded-xl border border-gray-200 bg-white p-4 dark:border-card-border dark:bg-card">
+      <div className="rounded-xl border border-[var(--rule-base)] bg-white p-4 dark:border-card-border dark:bg-card">
         <label className="mb-2 block text-xs font-bold text-gray-500 dark:text-muted">Seleccionar producto</label>
 
         {/* Selected product display */}
@@ -310,7 +310,7 @@ export default function KardexTab() {
                 setDropdownOpen(true);
                 setTimeout(() => productInputRef.current?.focus(), 0);
               }}
-              className="shrink-0 rounded-lg border border-gray-200 bg-white px-3 py-1.5 text-xs font-semibold text-gray-600 transition-colors hover:bg-gray-50 dark:border-card-border dark:bg-surface dark:text-foreground dark:hover:bg-accent"
+              className="shrink-0 rounded-lg border border-[var(--rule-base)] bg-white px-3 py-1.5 text-xs font-semibold text-gray-600 transition-colors hover:bg-gray-50 dark:border-card-border dark:bg-surface dark:text-foreground dark:hover:bg-accent"
             >
               Cambiar
             </button>
@@ -331,13 +331,13 @@ export default function KardexTab() {
               }}
               onFocus={() => setDropdownOpen(true)}
               placeholder="Buscar producto..."
-              className="w-full rounded-lg border border-gray-200 bg-white py-2.5 pl-9 pr-10 text-sm text-gray-700 transition-colors focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20 dark:border-card-border dark:bg-surface dark:text-foreground dark:focus:border-primary"
+              className="w-full rounded-lg border border-[var(--rule-base)] bg-white py-2.5 pl-9 pr-10 text-sm text-gray-700 transition-colors focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20 dark:border-card-border dark:bg-surface dark:text-foreground dark:focus:border-primary"
             />
             <ChevronDown className={cn("absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400 transition-transform", dropdownOpen && "rotate-180")} />
           </div>
 
           {dropdownOpen && (
-            <div className="absolute z-40 mt-1 max-h-64 w-full overflow-y-auto rounded-xl border border-gray-200 bg-white dark:border-card-border dark:bg-card">
+            <div className="absolute z-40 mt-1 max-h-64 w-full overflow-y-auto rounded-xl border border-[var(--rule-base)] bg-white dark:border-card-border dark:bg-card">
               {filteredProducts.length === 0 ? (
                 <div className="px-4 py-6 text-center text-sm text-gray-400 dark:text-muted">
                   No se encontraron productos
@@ -377,39 +377,39 @@ export default function KardexTab() {
         <KCard label="Saldo actual" value={`${stats.lastBalance} ${product.unit}`} sub={fmt(stats.lastBalance * (product.costPrice ?? 0))} icon={RefreshCw} color="text-emerald-600" bg="bg-emerald-50 dark:bg-emerald-950/30" />
         <KCard label="Total entradas" value={`+${stats.inTotal} ${product.unit}`} sub="del periodo" icon={ArrowUpCircle} color="text-emerald-600" bg="bg-emerald-50 dark:bg-emerald-950/30" />
         <KCard label="Total salidas" value={`-${stats.outTotal} ${product.unit}`} sub="del periodo" icon={ArrowDownCircle} color="text-amber-600" bg="bg-amber-50 dark:bg-amber-950/30" />
-        <KCard label="Costo compras" value={fmt(stats.costTotal)} sub="periodo actual" icon={TrendingUp} color="text-violet-600" bg="bg-violet-50 dark:bg-violet-950/30" />
+        <KCard label="Costo compras" value={fmt(stats.costTotal)} sub="periodo actual" icon={TrendingUp} color="text-[var(--text-secondary)]" bg="bg-[var(--surface-sunken)]" />
       </div>
 
       <div className="flex flex-col gap-3 sm:flex-row">
         <div className="relative max-w-xs flex-1">
           <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
-          <input value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Buscar ref. o descripcion..." className="w-full rounded-lg border border-gray-200 bg-white py-2 pl-9 pr-3 text-sm text-gray-700 dark:border-card-border dark:bg-surface dark:text-foreground" />
+          <input value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Buscar ref. o descripcion..." className="w-full rounded-lg border border-[var(--rule-base)] bg-white py-2 pl-9 pr-3 text-sm text-gray-700 dark:border-card-border dark:bg-surface dark:text-foreground" />
         </div>
-        <select value={filterType} onChange={(event) => setFilterType(event.target.value)} className="rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm text-gray-700 dark:border-card-border dark:bg-surface dark:text-foreground">
+        <select value={filterType} onChange={(event) => setFilterType(event.target.value)} className="rounded-lg border border-[var(--rule-base)] bg-white px-3 py-2 text-sm text-gray-700 dark:border-card-border dark:bg-surface dark:text-foreground">
           <option value="todos">Todos los tipos</option>
           {Object.keys(TYPE_META).map((type) => (
             <option key={type} value={type}>{TYPE_META[type].label}</option>
           ))}
         </select>
         {warehouses.length > 0 && (
-          <select value={filterWarehouse} onChange={(event) => setFilterWarehouse(event.target.value)} className="rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm text-gray-700 dark:border-card-border dark:bg-surface dark:text-foreground">
+          <select value={filterWarehouse} onChange={(event) => setFilterWarehouse(event.target.value)} className="rounded-lg border border-[var(--rule-base)] bg-white px-3 py-2 text-sm text-gray-700 dark:border-card-border dark:bg-surface dark:text-foreground">
             <option value="todos">Todos los almacenes</option>
             {warehouses.map(w => <option key={w.id} value={w.id}>{w.name}</option>)}
             <option value="sin-almacen">Sin almacén asignado</option>
           </select>
         )}
-        <input type="date" value={dateFrom} onChange={(event) => setDateFrom(event.target.value)} className="rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm text-gray-700 dark:border-card-border dark:bg-surface dark:text-foreground" />
-        <input type="date" value={dateTo} onChange={(event) => setDateTo(event.target.value)} className="rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm text-gray-700 dark:border-card-border dark:bg-surface dark:text-foreground" />
+        <input type="date" value={dateFrom} onChange={(event) => setDateFrom(event.target.value)} className="rounded-lg border border-[var(--rule-base)] bg-white px-3 py-2 text-sm text-gray-700 dark:border-card-border dark:bg-surface dark:text-foreground" />
+        <input type="date" value={dateTo} onChange={(event) => setDateTo(event.target.value)} className="rounded-lg border border-[var(--rule-base)] bg-white px-3 py-2 text-sm text-gray-700 dark:border-card-border dark:bg-surface dark:text-foreground" />
       </div>
 
-      <div className="overflow-hidden rounded-xl border border-gray-200 bg-white dark:border-card-border dark:bg-card">
-        <div className="flex items-center justify-between border-b border-gray-100 px-5 py-3 dark:border-card-border">
+      <div className="overflow-hidden rounded-xl border border-[var(--rule-base)] bg-white dark:border-card-border dark:bg-card">
+        <div className="flex items-center justify-between border-b border-[var(--rule-soft)] px-5 py-3 dark:border-card-border">
           <span className="text-sm font-bold text-gray-700 dark:text-foreground">{product.name} - {product.unit}</span>
           <span className="text-xs text-gray-400 dark:text-muted">{lines.length} movimientos</span>
         </div>
         <div className="overflow-x-auto">
           <table className="w-full min-w-[600px] text-sm">
-            <thead className="border-b border-gray-200 bg-gray-50 dark:border-card-border dark:bg-surface/50">
+            <thead className="border-b border-[var(--rule-base)] bg-gray-50 dark:border-card-border dark:bg-surface/50">
               <tr>
                 <th className="px-2 sm:px-4 py-2 sm:py-3 text-left text-xs font-bold text-gray-500 dark:text-muted">Fecha</th>
                 <th className="px-2 sm:px-4 py-2 sm:py-3 text-left text-xs font-bold text-gray-500 dark:text-muted">Tipo</th>

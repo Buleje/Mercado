@@ -261,7 +261,7 @@ export default function DeclaracionInventarioModule() {
 
       {/* Mejora 18: Resumen ejecutivo siempre visible */}
       {resumenLoading ? (
-        <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl p-6  animate-pulse">
+        <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl p-6  animate-pulse">
           <div className="h-4 bg-gray-200 dark:bg-white/10 rounded w-1/3 mb-3" />
           <div className="h-8 bg-gray-200 dark:bg-white/10 rounded w-1/2 mb-2" />
           <div className="h-3 bg-gray-200 dark:bg-white/10 rounded w-2/3" />
@@ -274,7 +274,7 @@ export default function DeclaracionInventarioModule() {
         const isUp = diff > 0;
         const isDown = diff < 0;
         return (
-          <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl p-5 ">
+          <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl p-5 ">
             <div className="flex items-center gap-2 mb-2">
               <Package className="h-5 w-5 text-[#00B4A6]" />
               <p className="text-sm font-bold text-gray-600 dark:text-gray-400">Tu inventario</p>
@@ -305,7 +305,7 @@ export default function DeclaracionInventarioModule() {
               type="date"
               value={fecha}
               onChange={e => setFecha(e.target.value)}
-              className="pl-9 pr-3 py-2 rounded-lg border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 text-sm text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-[#00B4A6]/30"
+              className="pl-9 pr-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-white/10 bg-white dark:bg-white/5 text-sm text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-[#00B4A6]/30"
             />
           </div>
         </div>
@@ -344,17 +344,17 @@ export default function DeclaracionInventarioModule() {
               { label: "Total Productos", value: (data.totalProductos ?? 0).toLocaleString(), icon: Package, color: "text-emerald-600 dark:text-emerald-400", bg: "bg-emerald-100 dark:bg-emerald-900/30" },
               { label: "Total Unidades", value: (data.totalUnidades ?? 0).toLocaleString(), icon: Layers, color: "text-amber-600 dark:text-amber-400", bg: "bg-amber-100 dark:bg-amber-900/30" },
               { label: "Valor a Costo", value: formatCurrency(data.valorCosto ?? 0), icon: DollarSign, color: "text-emerald-600 dark:text-emerald-400", bg: "bg-emerald-100 dark:bg-emerald-900/30" },
-              { label: "Valor a Precio Venta", value: formatCurrency(data.valorPrecio ?? 0), icon: DollarSign, color: "text-purple-600 dark:text-purple-400", bg: "bg-purple-100 dark:bg-purple-900/30" },
+              { label: "Valor a Precio Venta", value: formatCurrency(data.valorPrecio ?? 0), icon: DollarSign, color: "text-[var(--text-secondary)] dark:text-[var(--text-primary)]", bg: "bg-[var(--surface-sunken)]" },
             ].map(card => {
               const CardIcon = card.icon;
               return (
-                <div key={card.label} className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl p-4 ">
+                <div key={card.label} className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl p-4 ">
                   <div className="flex items-center gap-2 mb-2">
                     <div className={cn("h-8 w-8 rounded-lg flex items-center justify-center", card.bg)}>
                       <CardIcon className={cn("h-4 w-4", card.color)} />
                     </div>
                   </div>
-                  <p className="text-[10px] uppercase font-bold text-gray-400">{card.label}</p>
+                  <p className="text-[length:var(--ts-2xs)] uppercase font-bold text-gray-400">{card.label}</p>
                   <p className="text-lg font-bold text-gray-900 dark:text-white">{card.value}</p>
                 </div>
               );
@@ -366,7 +366,7 @@ export default function DeclaracionInventarioModule() {
             <button onClick={handleExport}
               className="inline-flex flex-col items-start gap-0.5 px-4 py-2 rounded-lg text-sm font-bold text-[#00B4A6] bg-[#00B4A6]/10 hover:bg-[#00B4A6]/20 transition-colors">
               <span className="inline-flex items-center gap-2"><Download className="h-4 w-4" /> Descargar para mi Contador</span>
-              <span className="text-[10px] font-normal text-gray-500">Tu contador puede usar este archivo para la declaracion ante SUNAT</span>
+              <span className="text-[length:var(--ts-2xs)] font-normal text-gray-500">Tu contador puede usar este archivo para la declaracion ante SUNAT</span>
             </button>
             <button onClick={handlePrint}
               className="inline-flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-bold text-gray-600 dark:text-gray-300 bg-gray-100 dark:bg-white/5 hover:bg-gray-200 dark:hover:bg-white/10 transition-colors">
@@ -391,7 +391,7 @@ export default function DeclaracionInventarioModule() {
             const pctTotal = prevTotal > 0 ? ((diffTotal / prevTotal) * 100) : 0;
 
             return (
-              <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl overflow-hidden ">
+              <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl overflow-hidden ">
                 <div className="px-4 py-3 bg-emerald-50 dark:bg-emerald-900/20 border-b border-emerald-200 dark:border-emerald-800">
                   <p className="text-sm font-bold text-emerald-800 dark:text-emerald-300">
                     Comparativa con declaracion anterior ({formatDate(prevDecl.fecha + "T00:00:00")})
@@ -400,7 +400,7 @@ export default function DeclaracionInventarioModule() {
                 <div className="overflow-x-auto">
                   <table className="w-full text-sm">
                     <thead>
-                      <tr className="border-b border-gray-100 dark:border-white/5 text-left">
+                      <tr className="border-b border-[var(--rule-soft)] dark:border-white/5 text-left">
                         <th className="px-4 py-2 font-semibold text-gray-500 dark:text-gray-400 text-xs">Categoria</th>
                         <th className="px-4 py-2 font-semibold text-gray-500 dark:text-gray-400 text-xs text-right">Anterior</th>
                         <th className="px-4 py-2 font-semibold text-gray-500 dark:text-gray-400 text-xs text-right">Actual</th>
@@ -434,7 +434,7 @@ export default function DeclaracionInventarioModule() {
                     </tbody>
                   </table>
                 </div>
-                <div className="px-4 py-3 border-t border-gray-100 dark:border-white/5 flex items-center justify-between text-xs">
+                <div className="px-4 py-3 border-t border-[var(--rule-soft)] dark:border-white/5 flex items-center justify-between text-xs">
                   <span className="text-gray-500">Valor total anterior: <strong>{formatCurrency(prevTotal)}</strong></span>
                   <span className="text-gray-500">Actual: <strong>{formatCurrency(currentTotal)}</strong></span>
                   <span className={cn("font-bold", diffTotal > 0 ? "text-emerald-600" : diffTotal < 0 ? "text-red-600" : "text-gray-500")}>
@@ -444,7 +444,7 @@ export default function DeclaracionInventarioModule() {
               </div>
             );
           })() : (
-            <div className="bg-gray-50 dark:bg-white/5 border border-gray-200 dark:border-card-border rounded-xl p-4 text-center">
+            <div className="bg-gray-50 dark:bg-white/5 border border-[var(--rule-base)] dark:border-card-border rounded-xl p-4 text-center">
               <p className="text-xs text-gray-400">Primera declaracion -- sin datos anteriores para comparar</p>
             </div>
           )}
@@ -457,9 +457,9 @@ export default function DeclaracionInventarioModule() {
               const catPrecio = productItems.reduce((s: number, p: ProductItem) => s + p.stock * p.price, 0);
               const catUnidades = productItems.reduce((s: number, p: ProductItem) => s + p.stock, 0);
               return (
-                <div key={category} className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl overflow-hidden ">
+                <div key={category} className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl overflow-hidden ">
                   {/* Category header */}
-                  <div className="px-4 py-3 bg-gray-50 dark:bg-white/5 border-b border-gray-100 dark:border-white/5 flex items-center justify-between">
+                  <div className="px-4 py-3 bg-gray-50 dark:bg-white/5 border-b border-[var(--rule-soft)] dark:border-white/5 flex items-center justify-between">
                     <div className="flex items-center gap-2">
                       <Layers className="h-4 w-4 text-[#00B4A6]" />
                       <span className="font-bold text-sm text-gray-900 dark:text-white">{category}</span>
@@ -475,7 +475,7 @@ export default function DeclaracionInventarioModule() {
                   <div className="overflow-x-auto">
                     <table className="w-full text-sm">
                       <thead>
-                        <tr className="border-b border-gray-100 dark:border-white/5 text-left">
+                        <tr className="border-b border-[var(--rule-soft)] dark:border-white/5 text-left">
                           <th className="px-4 py-2 font-semibold text-gray-500 dark:text-gray-400 text-xs">SKU</th>
                           <th className="px-4 py-2 font-semibold text-gray-500 dark:text-gray-400 text-xs">Nombre</th>
                           <th className="px-4 py-2 font-semibold text-gray-500 dark:text-gray-400 text-xs text-right">Stock</th>
@@ -508,7 +508,7 @@ export default function DeclaracionInventarioModule() {
       )}
 
       {/* Mejora 17: Historial de declaraciones */}
-      <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl  overflow-hidden">
+      <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl  overflow-hidden">
         <button
           onClick={() => setShowHistorial(!showHistorial)}
           className="w-full px-4 py-3 flex items-center justify-between hover:bg-gray-50 dark:hover:bg-white/5 transition-colors"
@@ -517,13 +517,13 @@ export default function DeclaracionInventarioModule() {
             <BarChart3 className="h-4 w-4 text-[#00B4A6]" />
             <span className="text-sm font-bold text-gray-900 dark:text-white">Declaraciones anteriores</span>
             {historial.length > 0 && (
-              <span className="px-1.5 py-0.5 rounded-full bg-[#00B4A6]/10 text-[#00B4A6] text-[10px] font-bold">{historial.length}</span>
+              <span className="px-1.5 py-0.5 rounded-full bg-[#00B4A6]/10 text-[#00B4A6] text-[length:var(--ts-2xs)] font-bold">{historial.length}</span>
             )}
           </div>
           <span className="text-xs text-gray-400">{showHistorial ? "Ocultar" : "Mostrar"}</span>
         </button>
         {showHistorial && (
-          <div className="border-t border-gray-100 dark:border-white/5">
+          <div className="border-t border-[var(--rule-soft)] dark:border-white/5">
             {historial.length === 0 ? (
               <div className="text-center py-8 px-4">
                 <p className="text-sm text-gray-400">Genera tu primera declaración para empezar el historial</p>
@@ -532,7 +532,7 @@ export default function DeclaracionInventarioModule() {
               <div className="overflow-x-auto -mx-4 sm:mx-0">
                 <table className="w-full min-w-[500px] sm:min-w-0 text-sm">
                   <thead>
-                    <tr className="border-b border-gray-100 dark:border-white/5 text-left">
+                    <tr className="border-b border-[var(--rule-soft)] dark:border-white/5 text-left">
                       <th className="px-4 py-2 text-xs font-semibold text-gray-500">Fecha</th>
                       <th className="px-4 py-2 text-xs font-semibold text-gray-500 text-right">Productos</th>
                       <th className="px-4 py-2 text-xs font-semibold text-gray-500 text-right hidden sm:table-cell">Unidades</th>
@@ -554,7 +554,7 @@ export default function DeclaracionInventarioModule() {
                           <td className="px-4 py-2 text-right font-medium text-gray-900 dark:text-white">
                             {formatCurrency(h.valorCosto)}
                             {prev && (
-                              <span className={cn("ml-1 text-[10px]", diff > 0 ? "text-emerald-600" : diff < 0 ? "text-red-600" : "text-gray-400")}>
+                              <span className={cn("ml-1 text-[length:var(--ts-2xs)]", diff > 0 ? "text-emerald-600" : diff < 0 ? "text-red-600" : "text-gray-400")}>
                                 {diff > 0 ? "+" : ""}{((diff / (prev.valorCosto || 1)) * 100).toFixed(0)}%
                               </span>
                             )}

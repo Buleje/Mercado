@@ -23,7 +23,7 @@ interface Props {
 function CustomTooltip({ active, payload, label, fmtR }: any) {
   if (!active || !payload?.length) return null;
   return (
-    <div className="bg-white dark:bg-zinc-800 border border-gray-200 dark:border-zinc-700 rounded-xl px-4 py-3" style={{ boxShadow: "0 4px 12px rgba(0,0,0,0.08)" }}>
+    <div className="bg-white dark:bg-zinc-800 border border-[var(--rule-base)] dark:border-zinc-700 rounded-xl px-4 py-3" style={{ boxShadow: "0 4px 12px rgba(0,0,0,0.08)" }}>
       <p className="text-xs font-semibold text-gray-700 dark:text-zinc-300 mb-1">{label}</p>
       {payload.map((entry: { dataKey: string; value: number; color: string }, i: number) => (
         <p key={i} className="text-sm font-mono" style={{ color: entry.color }}>

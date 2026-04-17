@@ -162,7 +162,7 @@ async function fetchMeteringSnapshot(
 function MeteringCardSkeleton() {
   return (
     <div
-      className="rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 p-6 animate-pulse"
+      className="rounded-xl border border-[var(--rule-base)] bg-white dark:bg-gray-900 p-6 animate-pulse"
       aria-busy="true"
       aria-label="Cargando métricas de facturación"
     >

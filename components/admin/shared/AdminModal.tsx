@@ -69,7 +69,7 @@ export default function AdminModal({ open, onClose, title, variant = "default", 
       >
         {/* Header */}
         {(title || !hideCloseButton) && (
-          <div className="flex items-center justify-between p-4 border-b border-gray-100 dark:border-gray-800 shrink-0">
+          <div className="flex items-center justify-between p-4 border-b border-[var(--rule-base)] shrink-0">
             {title && <h2 className="text-sm font-bold text-gray-900 dark:text-white">{title}</h2>}
             {!hideCloseButton && (
               <button

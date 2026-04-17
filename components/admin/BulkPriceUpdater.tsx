@@ -194,7 +194,7 @@ export default function BulkPriceUpdater() {
       {step === "config" && (
         <div className="space-y-5">
           {/* Mode switcher */}
-          <div className="flex gap-2 rounded-lg border border-gray-200 dark:border-gray-700 p-1 w-fit">
+          <div className="flex gap-2 rounded-lg border border-[var(--rule-base)] p-1 w-fit">
             {(["percent", "csv"] as Mode[]).map((m) => (
               <button
                 key={m}
@@ -212,7 +212,7 @@ export default function BulkPriceUpdater() {
           </div>
 
           {mode === "percent" && (
-            <div className="rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 p-6 space-y-4">
+            <div className="rounded-xl border border-[var(--rule-base)] bg-white dark:bg-gray-900 p-6 space-y-4">
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                 <div className="space-y-1">
                   <label className="text-xs font-medium text-gray-600 dark:text-gray-400">
@@ -221,7 +221,7 @@ export default function BulkPriceUpdater() {
                   <select
                     value={selectedCategory}
                     onChange={(e) => setSelectedCategory(e.target.value)}
-                    className="w-full rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 px-3 py-2 text-sm text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-[#00B4A6]"
+                    className="w-full rounded-lg border border-[var(--rule-base)] bg-white dark:bg-gray-800 px-3 py-2 text-sm text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-[#00B4A6]"
                   >
                     <option value="__all__">Todas las categorias ({products.length})</option>
                     {categories.map((c) => (
@@ -239,7 +239,7 @@ export default function BulkPriceUpdater() {
                   <select
                     value={direction}
                     onChange={(e) => setDirection(e.target.value as "increase" | "decrease")}
-                    className="w-full rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 px-3 py-2 text-sm text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-[#00B4A6]"
+                    className="w-full rounded-lg border border-[var(--rule-base)] bg-white dark:bg-gray-800 px-3 py-2 text-sm text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-[#00B4A6]"
                   >
                     <option value="increase">Aumentar</option>
                     <option value="decrease">Reducir</option>
@@ -257,7 +257,7 @@ export default function BulkPriceUpdater() {
                       max={100}
                       value={percentChange}
                       onChange={(e) => setPercentChange(parseFloat(e.target.value) || 0)}
-                      className="w-full rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 px-3 py-2 pr-8 text-sm text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-[#00B4A6]"
+                      className="w-full rounded-lg border border-[var(--rule-base)] bg-white dark:bg-gray-800 px-3 py-2 pr-8 text-sm text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-[#00B4A6]"
                     />
                     <Percent className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
                   </div>
@@ -280,7 +280,7 @@ export default function BulkPriceUpdater() {
           )}
 
           {mode === "csv" && (
-            <div className="rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 p-6 space-y-4">
+            <div className="rounded-xl border border-[var(--rule-base)] bg-white dark:bg-gray-900 p-6 space-y-4">
               <p className="text-sm text-gray-600 dark:text-gray-400">
                 El CSV debe tener dos columnas: <code className="bg-gray-100 dark:bg-gray-800 px-1 rounded">nombre_producto</code> y{" "}
                 <code className="bg-gray-100 dark:bg-gray-800 px-1 rounded">precio_nuevo</code>
@@ -296,7 +296,7 @@ export default function BulkPriceUpdater() {
                     "flex flex-col items-center justify-center gap-3 rounded-lg border-2 border-dashed p-10 cursor-pointer transition-colors",
                     dragging
                       ? "border-[#00B4A6] bg-[#00B4A6]/5"
-                      : "border-gray-200 dark:border-gray-700 hover:border-[#00B4A6]"
+                      : "border-[var(--rule-base)] hover:border-[#00B4A6]"
                   )}
                 >
                   <Upload className="h-8 w-8 text-gray-400" />
@@ -344,7 +344,7 @@ export default function BulkPriceUpdater() {
             Se actualizaran <strong className="text-gray-900 dark:text-gray-100">{changes.length}</strong> productos. Revisa antes de confirmar.
           </div>
 
-          <div className="overflow-x-auto rounded-xl border border-gray-200 dark:border-gray-700 max-h-96">
+          <div className="overflow-x-auto rounded-xl border border-[var(--rule-base)] max-h-96">
             <table className="min-w-full text-sm">
               <thead className="bg-gray-50 dark:bg-gray-800 sticky top-0">
                 <tr>
@@ -380,7 +380,7 @@ export default function BulkPriceUpdater() {
             </button>
             <button
               onClick={() => setStep("config")}
-              className="px-5 py-2 rounded-lg text-sm font-medium text-gray-600 dark:text-gray-400 border border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800"
+              className="px-5 py-2 rounded-lg text-sm font-medium text-gray-600 dark:text-gray-400 border border-[var(--rule-base)] hover:bg-gray-50 dark:hover:bg-gray-800"
             >
               Cancelar
             </button>
@@ -390,11 +390,11 @@ export default function BulkPriceUpdater() {
 
       {/* Applying */}
       {step === "applying" && (
-        <div className="rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 p-8 flex flex-col items-center gap-4">
+        <div className="rounded-xl border border-[var(--rule-base)] bg-white dark:bg-gray-900 p-8 flex flex-col items-center gap-4">
           <Loader2 className="h-8 w-8 animate-spin text-[#00B4A6]" />
           <p className="font-medium text-gray-700 dark:text-gray-300">Actualizando precios...</p>
           <div className="w-full max-w-sm bg-gray-100 dark:bg-gray-800 rounded-full h-3">
-            <div className="bg-[#00B4A6] h-3 rounded-full transition-all duration-300" style={{ width: `${progress}%` }} />
+            <div className="bg-[#00B4A6] h-3 rounded-full transition-all duration-[var(--dur-base)]" style={{ width: `${progress}%` }} />
           </div>
           <p className="text-sm text-gray-500">{progress}% completado</p>
         </div>
@@ -402,7 +402,7 @@ export default function BulkPriceUpdater() {
 
       {/* Done */}
       {step === "done" && (
-        <div className="rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 p-6 space-y-3">
+        <div className="rounded-xl border border-[var(--rule-base)] bg-white dark:bg-gray-900 p-6 space-y-3">
           <div className="flex items-center gap-3">
             <CheckCircle className="h-6 w-6 text-green-500" />
             <div>

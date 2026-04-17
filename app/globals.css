@@ -1387,6 +1387,34 @@ button,
   --fs-caption: 0.75rem;
   --fs-kicker: 0.625rem;
 
+  /* ─── Type scale fija (ADR-070) ─── */
+  /* Usar en admin/dashboards donde el fluid no es deseable (tabular data). */
+  --ts-2xs: 0.625rem;   /* 10px — badges, sparklines, kickers */
+  --ts-xs: 0.75rem;     /* 12px — labels, timestamps */
+  --ts-sm: 0.875rem;    /* 14px — body default admin */
+  --ts-base: 1rem;      /* 16px — reading body */
+  --ts-lg: 1.125rem;    /* 18px — subtitulos */
+  --ts-xl: 1.25rem;     /* 20px — titulos seccion */
+  --ts-2xl: 1.5rem;     /* 24px — H2 modulo */
+  --ts-3xl: 1.875rem;   /* 30px — hero KPI */
+
+  /* Font weights semanticos (ADR-070) */
+  --fw-regular: 400;
+  --fw-medium: 500;
+  --fw-bold: 700;
+  --fw-extrabold: 800;  /* exclusivo KPI values */
+
+  /* Line heights (ADR-070) */
+  --lh-tight: 1.2;
+  --lh-snug: 1.4;
+  --lh-normal: 1.6;
+
+  /* Letter spacings (ADR-070) */
+  --ls-tight: -0.01em;   /* headings */
+  --ls-normal: 0;
+  --ls-wide: 0.06em;     /* section kickers */
+  --ls-wider: 0.2em;     /* uppercase labels */
+
   /* ─── Motion curves v4 ─── */
   --ease-editorial: cubic-bezier(0.22, 1, 0.36, 1);
   --ease-snap: cubic-bezier(0.4, 0, 0.1, 1);
@@ -1394,6 +1422,35 @@ button,
   --ease-entrance: cubic-bezier(0.16, 1, 0.3, 1);
   --ease-exit: cubic-bezier(0.7, 0, 0.84, 0);
   --ease-bounce: cubic-bezier(0.34, 1.56, 0.64, 1);
+
+  /* ─── Motion duration scale (ADR-071) ─── */
+  --dur-instant: 0ms;        /* No animar — reduced motion */
+  --dur-micro: 80ms;         /* Hover feedback inmediato */
+  --dur-fast: 160ms;         /* Small transitions (button press, tooltip) */
+  --dur-base: 240ms;         /* UI default (modal open, tab switch) */
+  --dur-slow: 400ms;         /* Complex transitions (accordion, drawer) */
+  --dur-slower: 600ms;       /* Page transitions, celebration */
+
+  /* ─── Shadow scale (ADR-072) ─── */
+  /* Alias semanticos para shadows editoriales. Los --elev-N ya existen;
+     estos tokens son para usar como bg-* / shadow-[var(--shadow-*)]. */
+  --shadow-none: none;
+  --shadow-sm: var(--elev-1);       /* Hover subtle, card flat */
+  --shadow-md: var(--elev-2);       /* Dropdown, popover */
+  --shadow-lg: var(--elev-3);       /* Modal, drawer */
+  --shadow-xl: var(--elev-4);       /* Toast elevado, hero lift */
+
+  /* ─── ADR-067 Ola P — Paleta Amazónica Pucallpa (light) ───
+     Uso: 5% del diseño — accents culturales específicos.
+     Regla 60-30-10-5: 60% neutro · 30% slate · 10% teal · 5% amazónico.
+     NUNCA reemplazar tokens existentes — complementar en contexts específicos. */
+  --amazon-earth: #8B5A3C;      /* Tierra húmeda — accents finanzas */
+  --amazon-sunset: #E8824A;     /* Atardecer río — alerts amigables */
+  --amazon-jungle: #3D5D3F;     /* Verde selva — success/delivery */
+  --amazon-river: #4A6A7A;      /* Agua Ucayali — info/links regional */
+  --shipibo-red: #A84333;       /* Textil shipibo — accent cultural */
+  --cushma-cream: #F0E4CC;      /* Textil sagrado — backgrounds cálidos */
+  --clay-terracotta: #C77746;   /* Cerámica shipiba — highlights */
 }
 
 .dark {
@@ -1434,6 +1491,15 @@ button,
   --elev-2: 0 4px 12px rgba(0, 0, 0, 0.35), 0 1px 3px rgba(0, 0, 0, 0.25);
   --elev-3: 0 12px 32px rgba(0, 0, 0, 0.45), 0 2px 6px rgba(0, 0, 0, 0.25);
   --elev-4: 0 24px 48px rgba(0, 0, 0, 0.55), 0 8px 16px rgba(0, 0, 0, 0.35);
+
+  /* ADR-067 Ola P — Paleta Amazónica (dark adjusted) */
+  --amazon-earth: #A6724D;
+  --amazon-sunset: #F0975F;
+  --amazon-jungle: #6B8F6D;
+  --amazon-river: #7A96A6;
+  --shipibo-red: #C46050;
+  --cushma-cream: #2A2920;
+  --clay-terracotta: #D89766;
 }
 
 /* ─── Tipografia utility editorial ─── */
@@ -1669,6 +1735,15 @@ button,
 
 /* Prefers-reduced-motion global — desactiva cualquier animacion decorativa */
 @media (prefers-reduced-motion: reduce) {
+  /* ADR-071: desactivar tokens de duracion para consumers que lean var(--dur-*)
+     directamente en inline styles o framer-motion. */
+  :root {
+    --dur-micro: 0ms;
+    --dur-fast: 0ms;
+    --dur-base: 0ms;
+    --dur-slow: 0ms;
+    --dur-slower: 0ms;
+  }
   *, *::before, *::after {
     animation-duration: 0.01ms !important;
     animation-iteration-count: 1 !important;

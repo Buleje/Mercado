@@ -52,7 +52,7 @@ function SubTabBar({
   onChange: (t: SubTab) => void;
 }) {
   return (
-    <div className="flex gap-0 border-b border-gray-200 dark:border-gray-700 mb-4">
+    <div className="flex gap-0 border-b border-[var(--rule-base)] mb-4">
       {SUBTABS.map((tab) => (
         <button
           key={tab.id}
@@ -92,7 +92,7 @@ function MargenesTab({ products }: { products: ProductWithMargin[] }) {
       <div className="overflow-x-auto">
         <table className="w-full text-sm">
           <thead>
-            <tr className="border-b border-gray-200 dark:border-gray-700">
+            <tr className="border-b border-[var(--rule-base)]">
               <th className="text-left py-2 pr-4 text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">
                 Producto
               </th>
@@ -117,7 +117,7 @@ function MargenesTab({ products }: { products: ProductWithMargin[] }) {
               return (
                 <tr
                   key={p.id}
-                  className="border-b border-gray-100 dark:border-gray-800 hover:bg-gray-50 dark:hover:bg-gray-800/50"
+                  className="border-b border-[var(--rule-base)] hover:bg-gray-50 dark:hover:bg-gray-800/50"
                 >
                   <td className="py-2.5 pr-4 text-gray-800 dark:text-gray-200 max-w-[180px] truncate">
                     {p.name}
@@ -256,7 +256,7 @@ function SimuladorTab({
               setSelectedId(e.target.value);
               setResult(null);
             }}
-            className="w-full border border-gray-200 dark:border-gray-700 rounded-lg px-3 py-2 text-sm bg-white dark:bg-gray-900 text-gray-800 dark:text-gray-200 focus:outline-none focus:ring-1 focus:ring-emerald-500"
+            className="w-full border border-[var(--rule-base)] rounded-lg px-3 py-2 text-sm bg-white dark:bg-gray-900 text-gray-800 dark:text-gray-200 focus:outline-none focus:ring-1 focus:ring-emerald-500"
           >
             {products.map((p) => (
               <option key={p.id} value={String(p.id)}>
@@ -279,7 +279,7 @@ function SimuladorTab({
                 setResult(null);
               }}
               placeholder="5"
-              className="w-full border border-gray-200 dark:border-gray-700 rounded-lg pl-3 pr-7 py-2 text-sm bg-white dark:bg-gray-900 text-gray-800 dark:text-gray-200 focus:outline-none focus:ring-1 focus:ring-emerald-500"
+              className="w-full border border-[var(--rule-base)] rounded-lg pl-3 pr-7 py-2 text-sm bg-white dark:bg-gray-900 text-gray-800 dark:text-gray-200 focus:outline-none focus:ring-1 focus:ring-emerald-500"
             />
             <span className="absolute right-2.5 top-1/2 -translate-y-1/2 text-xs text-gray-400">
               %
@@ -298,7 +298,7 @@ function SimuladorTab({
 
       {/* Result card */}
       {result && selectedProduct && (
-        <div className="border border-gray-200 dark:border-gray-700 rounded-lg p-4 space-y-3">
+        <div className="border border-[var(--rule-base)] rounded-lg p-4 space-y-3">
           <div className="grid grid-cols-2 gap-4">
             <div>
               <p className="text-xs text-gray-500 dark:text-gray-400 mb-0.5">
@@ -341,7 +341,7 @@ function SimuladorTab({
             </div>
           </div>
 
-          <div className="border-t border-gray-100 dark:border-gray-800 pt-3">
+          <div className="border-t border-[var(--rule-base)] pt-3">
             <p className="text-xs text-gray-500 dark:text-gray-400 mb-0.5">
               Impacto mensual estimado
               <span className="text-gray-400 dark:text-gray-500">
@@ -389,7 +389,7 @@ function CalculadoraTab() {
 
   return (
     <div className="max-w-sm">
-      <div className="border border-gray-200 dark:border-gray-700 rounded-lg p-4 space-y-4">
+      <div className="border border-[var(--rule-base)] rounded-lg p-4 space-y-4">
         <p className="text-sm font-medium text-gray-800 dark:text-gray-200">
           Calculadora de margen
         </p>
@@ -405,7 +405,7 @@ function CalculadoraTab() {
             value={cost}
             onChange={(e) => setCost(e.target.value)}
             placeholder="0.00"
-            className="w-full border border-gray-200 dark:border-gray-700 rounded-lg px-3 py-2 text-sm bg-white dark:bg-gray-900 text-gray-800 dark:text-gray-200 focus:outline-none focus:ring-1 focus:ring-emerald-500"
+            className="w-full border border-[var(--rule-base)] rounded-lg px-3 py-2 text-sm bg-white dark:bg-gray-900 text-gray-800 dark:text-gray-200 focus:outline-none focus:ring-1 focus:ring-emerald-500"
           />
         </div>
 
@@ -424,7 +424,7 @@ function CalculadoraTab() {
               "w-full border rounded-lg px-3 py-2 text-sm bg-white dark:bg-gray-900 text-gray-800 dark:text-gray-200 focus:outline-none focus:ring-1 focus:ring-emerald-500",
               showWarning
                 ? "border-red-300 dark:border-red-700"
-                : "border-gray-200 dark:border-gray-700",
+                : "border-[var(--rule-base)]",
             )}
           />
           {showWarning && (
@@ -434,7 +434,7 @@ function CalculadoraTab() {
           )}
         </div>
 
-        <div className="border-t border-gray-100 dark:border-gray-800 pt-3 space-y-2">
+        <div className="border-t border-[var(--rule-base)] pt-3 space-y-2">
           {calc ? (
             <>
               <div className="flex justify-between items-center">

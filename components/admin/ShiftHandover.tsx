@@ -104,7 +104,7 @@ export default function ShiftHandover() {
           </h2>
         </div>
 
-        <div className="flex items-center gap-1 rounded-lg border border-gray-200 dark:border-gray-700 p-1 bg-gray-50 dark:bg-gray-800">
+        <div className="flex items-center gap-1 rounded-lg border border-[var(--rule-base)] p-1 bg-gray-50 dark:bg-gray-800">
           {(["current", "close", "history"] as const).map((v) => (
             <button
               key={v}
@@ -168,13 +168,13 @@ export default function ShiftHandover() {
           )}
           {!loading && !error && (
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div className="rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 p-4">
+              <div className="rounded-xl border border-[var(--rule-base)] bg-white dark:bg-gray-800 p-4">
                 <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">Ventas del turno</p>
                 <p className="text-2xl font-bold text-[#00B4A6] dark:text-[#2dd4bf]">
                   {fmt(todayStats.total)}
                 </p>
               </div>
-              <div className="rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 p-4">
+              <div className="rounded-xl border border-[var(--rule-base)] bg-white dark:bg-gray-800 p-4">
                 <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">Transacciones</p>
                 <p className="text-2xl font-bold text-gray-900 dark:text-gray-100">
                   {todayStats.count}
@@ -184,8 +184,8 @@ export default function ShiftHandover() {
           )}
 
           {!loading && sales.length > 0 && (
-            <div className="rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 overflow-hidden">
-              <div className="px-4 py-3 border-b border-gray-100 dark:border-gray-700">
+            <div className="rounded-xl border border-[var(--rule-base)] bg-white dark:bg-gray-800 overflow-hidden">
+              <div className="px-4 py-3 border-b border-[var(--rule-base)]">
                 <p className="text-sm font-medium text-gray-700 dark:text-gray-300">
                   Ultimas ventas del turno
                 </p>
@@ -215,7 +215,7 @@ export default function ShiftHandover() {
 
       {/* Vista: Cerrar turno */}
       {view === "close" && (
-        <div className="rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 p-5 space-y-4">
+        <div className="rounded-xl border border-[var(--rule-base)] bg-white dark:bg-gray-800 p-5 space-y-4">
           <p className="text-sm font-medium text-gray-700 dark:text-gray-300">
             Resumen de cierre
           </p>
@@ -244,7 +244,7 @@ export default function ShiftHandover() {
               value={cashierName}
               onChange={(e) => setCashierName(e.target.value)}
               placeholder="Ej: Maria Lopez"
-              className="w-full rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 px-3 py-2 text-sm text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-[#00B4A6]"
+              className="w-full rounded-lg border border-[var(--rule-base)] bg-white dark:bg-gray-800 px-3 py-2 text-sm text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-[#00B4A6]"
             />
           </div>
 
@@ -257,7 +257,7 @@ export default function ShiftHandover() {
               onChange={(e) => setNotes(e.target.value)}
               rows={4}
               placeholder="Ej: Queda poco azucar, hay un pedido pendiente de Juan, la impresora falla..."
-              className="w-full rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 px-3 py-2 text-sm text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-[#00B4A6] resize-none"
+              className="w-full rounded-lg border border-[var(--rule-base)] bg-white dark:bg-gray-800 px-3 py-2 text-sm text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-[#00B4A6] resize-none"
             />
           </div>
 
@@ -282,7 +282,7 @@ export default function ShiftHandover() {
             handovers.map((h) => (
               <div
                 key={h.id}
-                className="rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 overflow-hidden"
+                className="rounded-xl border border-[var(--rule-base)] bg-white dark:bg-gray-800 overflow-hidden"
               >
                 <button
                   onClick={() =>
@@ -316,7 +316,7 @@ export default function ShiftHandover() {
                   </div>
                 </button>
                 {expandedId === h.id && (
-                  <div className="px-4 pb-4 pt-1 border-t border-gray-100 dark:border-gray-700 space-y-2">
+                  <div className="px-4 pb-4 pt-1 border-t border-[var(--rule-base)] space-y-2">
                     <div className="grid grid-cols-2 gap-2 text-sm">
                       <div className="rounded-lg bg-gray-50 dark:bg-gray-750 px-3 py-2">
                         <p className="text-xs text-gray-500 dark:text-gray-400">Ventas</p>

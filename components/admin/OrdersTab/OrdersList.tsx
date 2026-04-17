@@ -58,7 +58,7 @@ export function OrdersList({
     return (
       <div className="space-y-3 animate-pulse">
         {[1, 2, 3, 4].map(i => (
-          <div key={i} className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl p-4 flex items-center gap-4">
+          <div key={i} className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl p-4 flex items-center gap-4">
             <div className="h-5 w-5 bg-gray-200 dark:bg-surface rounded shrink-0" />
             <div className="flex-1 space-y-2">
               <div className="h-4 bg-gray-200 dark:bg-surface rounded w-1/4" />
@@ -101,7 +101,7 @@ export function OrdersList({
             <div
               key={o.id}
               className={cn(
-                "bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl  overflow-hidden",
+                "bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl  overflow-hidden",
                 urgencyBorder,
                 selectedOrderIds.has(o.id) && "ring-2 ring-primary"
               )}
@@ -116,7 +116,7 @@ export function OrdersList({
                   checked={selectedOrderIds.has(o.id)}
                   onClick={e => e.stopPropagation()}
                   onChange={() => onToggleSelect(o.id)}
-                  className="rounded border-gray-300 text-primary focus:ring-primary shrink-0 self-start mt-1"
+                  className="rounded border-[var(--rule-base)] text-primary focus:ring-primary shrink-0 self-start mt-1"
                 />
 
                 {/* Left: customer info */}
@@ -142,7 +142,7 @@ export function OrdersList({
                     {o.paymentMethod && (
                       <span className={cn(
                         "inline-flex px-2 py-0.5 rounded-full text-xs font-bold",
-                        o.paymentMethod === "yape" ? "bg-purple-100 text-purple-700" : "bg-emerald-100 text-emerald-700"
+                        o.paymentMethod === "yape" ? "bg-[var(--surface-sunken)] text-[var(--text-primary)]" : "bg-emerald-100 text-emerald-700"
                       )}>
                         {o.paymentMethod === "yape" ? "Yape" : "Efectivo"}
                       </span>
@@ -222,7 +222,7 @@ export function OrdersList({
                   <select
                     value={o.status}
                     onChange={e => onUpdateStatus(o.id, e.target.value as OrderStatus)}
-                    className="text-xs font-semibold rounded-lg border border-gray-200 dark:border-card-border px-2 py-2 outline-none focus:border-primary text-gray-700 dark:text-foreground bg-white dark:bg-card"
+                    className="text-xs font-semibold rounded-lg border border-[var(--rule-base)] dark:border-card-border px-2 py-2 outline-none focus:border-primary text-gray-700 dark:text-foreground bg-white dark:bg-card"
                     disabled={!VALID_TRANSITIONS[o.status]?.length}
                   >
                     <option value={o.status}>{STATUS_LABELS[o.status]}</option>
@@ -250,7 +250,7 @@ export function OrdersList({
           <button
             disabled={safeOrdPage <= 1}
             onClick={() => onPageChange(Math.max(1, safeOrdPage - 1))}
-            className="px-3 py-1.5 text-xs font-semibold rounded-lg border border-gray-200 dark:border-card-border bg-white dark:bg-card disabled:opacity-40 hover:bg-gray-50 dark:hover:bg-surface transition-colors"
+            className="px-3 py-1.5 text-xs font-semibold rounded-lg border border-[var(--rule-base)] dark:border-card-border bg-white dark:bg-card disabled:opacity-40 hover:bg-gray-50 dark:hover:bg-surface transition-colors"
           >
             Anterior
           </button>
@@ -260,7 +260,7 @@ export function OrdersList({
           <button
             disabled={safeOrdPage >= ordTotalPages}
             onClick={() => onPageChange(safeOrdPage + 1)}
-            className="px-3 py-1.5 text-xs font-semibold rounded-lg border border-gray-200 dark:border-card-border bg-white dark:bg-card disabled:opacity-40 hover:bg-gray-50 dark:hover:bg-surface transition-colors"
+            className="px-3 py-1.5 text-xs font-semibold rounded-lg border border-[var(--rule-base)] dark:border-card-border bg-white dark:bg-card disabled:opacity-40 hover:bg-gray-50 dark:hover:bg-surface transition-colors"
           >
             Siguiente
           </button>

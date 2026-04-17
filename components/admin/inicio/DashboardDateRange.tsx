@@ -137,26 +137,26 @@ export default function DashboardDateRange({ value, onChange, className }: Dashb
 
       {/* Custom range inputs */}
       {showCustom && (
-        <div className="flex items-center gap-1.5 animate-in fade-in slide-in-from-left-2 duration-200">
+        <div className="flex items-center gap-1.5 animate-in fade-in slide-in-from-left-2 duration-[var(--dur-base)]">
           <input
             type="date"
             value={toInputDate(value.from)}
             onChange={handleCustomFrom}
-            className="px-2 py-1.5 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-card text-xs text-gray-700 dark:text-foreground focus:outline-none focus:ring-2 focus:ring-[var(--brand-primary)]/30 focus:border-[var(--brand-primary)]"
+            className="px-2 py-1.5 rounded-lg border border-[var(--rule-base)] bg-white dark:bg-card text-xs text-gray-700 dark:text-foreground focus:outline-none focus:ring-2 focus:ring-[var(--brand-primary)]/30 focus:border-[var(--brand-primary)]"
           />
           <span className="text-xs text-gray-400 dark:text-muted font-medium">a</span>
           <input
             type="date"
             value={toInputDate(value.to)}
             onChange={handleCustomTo}
-            className="px-2 py-1.5 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-card text-xs text-gray-700 dark:text-foreground focus:outline-none focus:ring-2 focus:ring-[var(--brand-primary)]/30 focus:border-[var(--brand-primary)]"
+            className="px-2 py-1.5 rounded-lg border border-[var(--rule-base)] bg-white dark:bg-card text-xs text-gray-700 dark:text-foreground focus:outline-none focus:ring-2 focus:ring-[var(--brand-primary)]/30 focus:border-[var(--brand-primary)]"
           />
         </div>
       )}
 
       {/* Range label for custom */}
       {rangeLabel && !showCustom && (
-        <span className="text-[10px] text-gray-400 dark:text-muted">{rangeLabel}</span>
+        <span className="text-[length:var(--ts-2xs)] text-gray-400 dark:text-muted">{rangeLabel}</span>
       )}
     </div>
   );

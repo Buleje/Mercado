@@ -162,14 +162,14 @@ function AddForm({ onAdd, onCancel }: AddFormProps) {
             }}
             onFocus={() => search.length >= 2 && setShowDropdown(true)}
             placeholder="Buscar producto..."
-            className="w-full pl-9 pr-3 py-2 text-sm rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-[#00B4A6]/40"
+            className="w-full pl-9 pr-3 py-2 text-sm rounded-lg border border-[var(--rule-base)] dark:border-gray-600 bg-white dark:bg-gray-900 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-[#00B4A6]/40"
           />
           {searching && (
             <div className="absolute right-3 top-1/2 -translate-y-1/2 w-3 h-3 border border-[#00B4A6] border-t-transparent rounded-full animate-spin" />
           )}
         </div>
         {showDropdown && products.length > 0 && !selected && (
-          <div className="absolute z-20 left-0 right-0 mt-1 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 overflow-hidden">
+          <div className="absolute z-20 left-0 right-0 mt-1 rounded-xl border border-[var(--rule-base)] bg-white dark:bg-gray-900 overflow-hidden">
             {products.map((p) => (
               <button
                 key={p.id}
@@ -194,7 +194,7 @@ function AddForm({ onAdd, onCancel }: AddFormProps) {
               readOnly
               value={selected ? selected.price.toFixed(2) : ""}
               placeholder="—"
-              className="w-full px-2 py-2 text-sm rounded-lg border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 text-gray-500 dark:text-gray-400 focus:outline-none"
+              className="w-full px-2 py-2 text-sm rounded-lg border border-[var(--rule-base)] bg-gray-50 dark:bg-gray-800 text-gray-500 dark:text-gray-400 focus:outline-none"
             />
           </div>
         </div>
@@ -216,7 +216,7 @@ function AddForm({ onAdd, onCancel }: AddFormProps) {
               value={newPrice}
               onChange={(e) => setNewPrice(e.target.value)}
               placeholder="0.00"
-              className="w-full px-2 py-2 text-sm rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-[#00B4A6]/40"
+              className="w-full px-2 py-2 text-sm rounded-lg border border-[var(--rule-base)] dark:border-gray-600 bg-white dark:bg-gray-900 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-[#00B4A6]/40"
             />
           </div>
         </div>
@@ -230,7 +230,7 @@ function AddForm({ onAdd, onCancel }: AddFormProps) {
             type="datetime-local"
             value={startAt}
             onChange={(e) => setStartAt(e.target.value)}
-            className="w-full px-2 py-2 text-sm rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-[#00B4A6]/40"
+            className="w-full px-2 py-2 text-sm rounded-lg border border-[var(--rule-base)] dark:border-gray-600 bg-white dark:bg-gray-900 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-[#00B4A6]/40"
           />
         </div>
         <div>
@@ -241,7 +241,7 @@ function AddForm({ onAdd, onCancel }: AddFormProps) {
             type="datetime-local"
             value={endAt}
             onChange={(e) => setEndAt(e.target.value)}
-            className="w-full px-2 py-2 text-sm rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-[#00B4A6]/40"
+            className="w-full px-2 py-2 text-sm rounded-lg border border-[var(--rule-base)] dark:border-gray-600 bg-white dark:bg-gray-900 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-[#00B4A6]/40"
           />
         </div>
       </div>
@@ -335,7 +335,7 @@ export default function ScheduledPriceChange() {
 
       {/* Active events */}
       {activeEvents.length === 0 && !showForm && (
-        <div className="rounded-xl border border-dashed border-gray-200 dark:border-gray-700 py-10 text-center">
+        <div className="rounded-xl border border-dashed border-[var(--rule-base)] py-10 text-center">
           <Calendar size={28} className="mx-auto text-gray-300 dark:text-gray-600 mb-2" />
           <p className="text-sm text-gray-400 dark:text-gray-500">No hay cambios programados</p>
         </div>
@@ -351,7 +351,7 @@ export default function ScheduledPriceChange() {
           return (
             <div
               key={event.id}
-              className="rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 px-4 py-3"
+              className="rounded-xl border border-[var(--rule-base)] bg-white dark:bg-gray-900 px-4 py-3"
             >
               <div className="flex items-start justify-between gap-3">
                 <div className="min-w-0">
@@ -422,7 +422,7 @@ export default function ScheduledPriceChange() {
                 return (
                   <div
                     key={event.id}
-                    className="rounded-xl border border-gray-100 dark:border-gray-800 bg-gray-50 dark:bg-gray-900/50 px-4 py-3 opacity-70"
+                    className="rounded-xl border border-[var(--rule-base)] bg-gray-50 dark:bg-gray-900/50 px-4 py-3 opacity-70"
                   >
                     <div className="flex items-center gap-2">
                       <span className={cn("inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium", cls)}>

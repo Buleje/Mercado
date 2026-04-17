@@ -146,11 +146,11 @@ export default function WishListAdminTab() {
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
         {[
           { label: "Listas activas",        value: String(lists.length),         color: "text-emerald-500" },
-          { label: "Productos deseados",     value: String(totalItems),           color: "text-violet-500" },
+          { label: "Productos deseados",     value: String(totalItems),           color: "text-[var(--text-secondary)]" },
           { label: "Agotados en wishlists",  value: String(outOfStock),           color: "text-red-500" },
           { label: "Tasa conversión",        value: `${conversionRate}%`,         color: "text-emerald-500" },
         ].map(k => (
-          <div key={k.label} className="bg-white dark:bg-card rounded-xl border border-gray-200 dark:border-card-border p-4">
+          <div key={k.label} className="bg-white dark:bg-card rounded-xl border border-[var(--rule-base)] dark:border-card-border p-4">
             <p className="text-xs font-semibold text-gray-500 dark:text-muted">{k.label}</p>
             <p className={cn("text-xl font-extrabold mt-1", k.color)}>{k.value}</p>
           </div>
@@ -158,7 +158,7 @@ export default function WishListAdminTab() {
       </div>
 
       {/* Ingreso potencial destacado */}
-      <div className="bg-gradient-to-r from-primary/10 to-secondary/10 dark:from-primary/20 dark:to-secondary/20 border border-primary/20 rounded-xl p-4 flex items-center justify-between">
+      <div className="bg-[var(--surface-sunken)] border border-[var(--rule-base)] rounded-xl p-4 flex items-center justify-between">
         <div>
           <p className="text-xs font-bold text-primary">Ingreso potencial total en wishlists</p>
           <p className="text-2xl font-extrabold text-gray-900 dark:text-foreground">{fmt(potentialRevenue)}</p>
@@ -168,7 +168,7 @@ export default function WishListAdminTab() {
 
       {/* Ranking de productos más deseados */}
       {productCounts.length > 0 && (
-        <div className="bg-white dark:bg-card rounded-xl border border-gray-200 dark:border-card-border p-4 sm:p-5">
+        <div className="bg-white dark:bg-card rounded-xl border border-[var(--rule-base)] dark:border-card-border p-4 sm:p-5">
           <h3 className="font-bold text-sm text-gray-900 dark:text-foreground mb-4 flex items-center gap-2">
             <TrendingUp className="h-4 w-4 text-primary" /> Productos más deseados
           </h3>
@@ -189,18 +189,18 @@ export default function WishListAdminTab() {
                           <button
                             onClick={() => handleNotify(p.productId, p.name)}
                             disabled={isNotified}
-                            className={cn("flex items-center gap-1 px-2 py-0.5 rounded-lg text-[10px] font-bold transition-colors", isNotified ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400" : "bg-red-100 text-red-600 dark:bg-red-900/30 dark:text-red-400 hover:bg-red-200")}
+                            className={cn("flex items-center gap-1 px-2 py-0.5 rounded-lg text-[length:var(--ts-2xs)] font-bold transition-colors", isNotified ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400" : "bg-red-100 text-red-600 dark:bg-red-900/30 dark:text-red-400 hover:bg-red-200")}
                           >
                             {isNotified ? <><BellOff className="h-3 w-3" />Notificado</> : <><Bell className="h-3 w-3" />Notificar</>}
                           </button>
                         )}
-                        {p.inStock && <span className="text-[10px] font-bold text-emerald-600 bg-emerald-50 dark:bg-emerald-900/20 px-2 py-0.5 rounded-lg">En stock</span>}
+                        {p.inStock && <span className="text-[length:var(--ts-2xs)] font-bold text-emerald-600 bg-emerald-50 dark:bg-emerald-900/20 px-2 py-0.5 rounded-lg">En stock</span>}
                       </div>
                     </div>
                     <div className="h-1.5 bg-gray-100 dark:bg-surface rounded-full overflow-hidden">
                       <div className={cn("h-full rounded-full transition-all", p.inStock ? "bg-primary" : "bg-red-400")} style={{ width: `${barPct}%` }} />
                     </div>
-                    <p className="text-[10px] text-gray-400 mt-0.5">{p.count} cliente{p.count !== 1 ? "s" : ""} lo desean</p>
+                    <p className="text-[length:var(--ts-2xs)] text-gray-400 mt-0.5">{p.count} cliente{p.count !== 1 ? "s" : ""} lo desean</p>
                   </div>
                 </div>
               );
@@ -213,7 +213,7 @@ export default function WishListAdminTab() {
       <div className="flex flex-col sm:flex-row gap-2">
         <div className="relative flex-1">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
-          <input value={search} onChange={e => setSearch(e.target.value)} className="w-full pl-9 pr-3 py-2 rounded-lg border border-gray-200 dark:border-card-border bg-white dark:bg-surface text-sm" placeholder="Buscar cliente o producto..." />
+          <input value={search} onChange={e => setSearch(e.target.value)} className="w-full pl-9 pr-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-card-border bg-white dark:bg-surface text-sm" placeholder="Buscar cliente o producto..." />
         </div>
         <div className="flex items-center gap-2">
           <button onClick={() => setFilterType("all")} className={cn("px-3 py-1.5 rounded-lg text-xs font-bold transition-colors", filterType === "all" ? "bg-primary text-white" : "bg-gray-100 dark:bg-surface text-gray-600 dark:text-muted")}>Todas</button>
@@ -225,7 +225,7 @@ export default function WishListAdminTab() {
 
       {/* Lista de wishlists */}
       {filtered.length === 0 ? (
-        <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl flex flex-col items-center py-12 gap-2 text-gray-400 dark:text-muted">
+        <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl flex flex-col items-center py-12 gap-2 text-gray-400 dark:text-muted">
           <Heart className="h-10 w-10 opacity-30" />
           <p className="text-sm">Sin listas de deseos</p>
         </div>
@@ -235,11 +235,11 @@ export default function WishListAdminTab() {
             const totalValue = l.items.reduce((s, i) => s + i.price, 0);
             const convRate = l.items.length > 0 ? ((l.convertedItems / l.items.length) * 100).toFixed(0) : "0";
             return (
-              <div key={l.id} className="bg-white dark:bg-card rounded-xl border border-gray-200 dark:border-card-border overflow-hidden">
+              <div key={l.id} className="bg-white dark:bg-card rounded-xl border border-[var(--rule-base)] dark:border-card-border overflow-hidden">
                 <button onClick={() => setExpandedId(expandedId === l.id ? null : l.id)} className="w-full flex items-center justify-between px-4 sm:px-5 py-4 hover:bg-gray-50 dark:hover:bg-surface/50 transition-colors">
                   <div className="flex items-center gap-3">
-                    <div className="h-10 w-10 rounded-xl bg-pink-100 dark:bg-pink-900/20 flex items-center justify-center shrink-0">
-                      <Heart className="h-5 w-5 text-pink-500" />
+                    <div className="h-10 w-10 rounded-xl bg-[var(--surface-sunken)] flex items-center justify-center shrink-0">
+                      <Heart className="h-5 w-5 text-[var(--text-secondary)]" />
                     </div>
                     <div className="text-left">
                       <h4 className="font-bold text-sm text-gray-900 dark:text-foreground">{l.customer}</h4>
@@ -248,17 +248,17 @@ export default function WishListAdminTab() {
                   </div>
                   <div className="flex items-center gap-2 flex-wrap justify-end">
                     {l.items.some(i => !i.inStock) && (
-                      <span className="text-[10px] font-bold bg-red-100 text-red-600 dark:bg-red-900/30 dark:text-red-400 px-2 py-0.5 rounded-full">
+                      <span className="text-[length:var(--ts-2xs)] font-bold bg-red-100 text-red-600 dark:bg-red-900/30 dark:text-red-400 px-2 py-0.5 rounded-full">
                         {l.items.filter(i => !i.inStock).length} agotado{l.items.filter(i => !i.inStock).length !== 1 ? "s" : ""}
                       </span>
                     )}
-                    <span className="text-[10px] text-gray-400">Act: {fmtDate(l.lastUpdated)}</span>
+                    <span className="text-[length:var(--ts-2xs)] text-gray-400">Act: {fmtDate(l.lastUpdated)}</span>
                     <Eye className="h-4 w-4 text-gray-400" />
                   </div>
                 </button>
 
                 {expandedId === l.id && (
-                  <div className="px-4 sm:px-5 pb-4 border-t border-gray-100 dark:border-card-border pt-3 space-y-2">
+                  <div className="px-4 sm:px-5 pb-4 border-t border-[var(--rule-soft)] dark:border-card-border pt-3 space-y-2">
                     {l.items.map(i => (
                       <div key={i.productId} className="flex items-center justify-between py-2 px-3 rounded-xl bg-gray-50 dark:bg-surface">
                         <div className="flex items-center gap-2 min-w-0">
@@ -267,11 +267,11 @@ export default function WishListAdminTab() {
                         </div>
                         <div className="flex items-center gap-2 shrink-0 ml-2">
                           <span className="text-sm font-bold text-gray-700 dark:text-foreground">{fmt(i.price)}</span>
-                          <span className={cn("text-[10px] font-bold px-2 py-0.5 rounded-full", i.inStock ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400" : "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400")}>
+                          <span className={cn("text-[length:var(--ts-2xs)] font-bold px-2 py-0.5 rounded-full", i.inStock ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400" : "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400")}>
                             {i.inStock ? "En stock" : "Agotado"}
                           </span>
                           {!i.inStock && (
-                            <button onClick={() => handleNotify(i.productId, i.productName)} disabled={notified.has(i.productId)} className={cn("flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full transition-colors", notified.has(i.productId) ? "text-gray-400" : "text-primary hover:underline")}>
+                            <button onClick={() => handleNotify(i.productId, i.productName)} disabled={notified.has(i.productId)} className={cn("flex items-center gap-1 text-[length:var(--ts-2xs)] font-bold px-2 py-0.5 rounded-full transition-colors", notified.has(i.productId) ? "text-gray-400" : "text-primary hover:underline")}>
                               <Bell className="h-3 w-3" />{notified.has(i.productId) ? "Notificado" : "Avisar precio"}
                             </button>
                           )}

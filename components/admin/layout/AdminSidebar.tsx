@@ -258,9 +258,9 @@ export function AdminSidebar({
           bg: "bg-gray-50 dark:bg-zinc-800",
           text: "text-gray-600 dark:text-zinc-300",
           hover: "hover:bg-gray-100 dark:hover:bg-zinc-700",
-          border: "border-gray-200 dark:border-zinc-700",
+          border: "border-[var(--rule-base)] dark:border-zinc-700",
           activeItem: "bg-gray-100 dark:bg-zinc-700/50",
-          headerBorder: "border-gray-200 dark:border-zinc-700",
+          headerBorder: "border-[var(--rule-base)] dark:border-zinc-700",
         };
       case "dark":
         return {
@@ -276,9 +276,9 @@ export function AdminSidebar({
           bg: "bg-white dark:bg-card",
           text: "text-gray-700 dark:text-gray-400",
           hover: "hover:bg-gray-50 dark:hover:bg-gray-800/40",
-          border: "border-gray-100 dark:border-card-border",
+          border: "border-[var(--rule-soft)] dark:border-card-border",
           activeItem: "bg-gray-50 dark:bg-zinc-800/50",
-          headerBorder: "border-gray-100 dark:border-card-border",
+          headerBorder: "border-[var(--rule-soft)] dark:border-card-border",
         };
     }
   }, [sidebarTheme]);
@@ -413,7 +413,7 @@ export function AdminSidebar({
     <>
       {/* Desktop permanent sidebar */}
       <aside className={cn(
-        "hidden md:flex fixed left-0 bottom-0 z-40 flex-col transition-[width] duration-200 ease-in-out overflow-hidden border-r",
+        "hidden md:flex fixed left-0 bottom-0 z-40 flex-col transition-[width] duration-[var(--dur-base)] ease-in-out overflow-hidden border-r",
         themeClasses.bg,
         themeClasses.border,
         effectiveCompact ? "w-[60px]" : "w-[260px]",
@@ -439,7 +439,7 @@ export function AdminSidebar({
         {/* Normal sidebar content (hidden when configMode) */}
         {(!configMode || effectiveCompact) && (<>
         <div className={cn(
-          "flex items-center gap-3 h-16 border-b transition-all duration-300",
+          "flex items-center gap-3 h-16 border-b transition-all duration-[var(--dur-base)]",
           themeClasses.headerBorder,
           effectiveCompact ? "px-3 justify-center" : "px-4"
         )}>
@@ -452,7 +452,7 @@ export function AdminSidebar({
               className="h-9 w-9 rounded-xl object-cover ring-2 ring-gray-100 dark:ring-card-border shrink-0"
             />
           ) : (
-            <div className="h-9 w-9 rounded-lg bg-gradient-to-br from-emerald-500 to-emerald-700 text-white flex items-center justify-center shrink-0 ">
+            <div className="h-9 w-9 rounded-lg bg-[var(--text-primary)] text-[var(--surface-canvas)] flex items-center justify-center shrink-0 ">
               <ShoppingBasket className="h-4.5 w-4.5" />
             </div>
           )}
@@ -461,10 +461,10 @@ export function AdminSidebar({
               <p className="font-bold text-gray-900 dark:text-foreground text-sm leading-tight truncate">
                 {activeTenantName ?? "Mi Bodega"}
               </p>
-              <p className="text-[11px] text-gray-400 dark:text-muted leading-tight mt-0.5">
+              <p className="text-[length:var(--ts-xs)] text-gray-400 dark:text-muted leading-tight mt-0.5">
                 <span className="capitalize">{userName}</span>
                 {" · "}
-                <span className="uppercase text-[10px] font-semibold text-emerald-500">{userRole}</span>
+                <span className="uppercase text-[length:var(--ts-2xs)] font-semibold text-emerald-500">{userRole}</span>
               </p>
             </div>
           )}
@@ -472,7 +472,7 @@ export function AdminSidebar({
 
         {/* ── Navigation ── */}
         <nav className={cn(
-          "flex-1 overflow-y-auto py-2 transition-all duration-300 scrollbar-hide",
+          "flex-1 overflow-y-auto py-2 transition-all duration-[var(--dur-base)] scrollbar-hide",
           effectiveCompact ? "px-1.5" : "px-2.5"
         )}>
           {/* ── Main modules (expanded mode) ── */}
@@ -514,10 +514,10 @@ export function AdminSidebar({
                       className="w-full flex items-center gap-1.5 px-3 mt-3 mb-1 group/section"
                     >
                       <ChevronDown className={cn(
-                        "h-3 w-3 text-gray-300 dark:text-gray-600 transition-transform duration-200",
+                        "h-3 w-3 text-gray-300 dark:text-gray-600 transition-transform duration-[var(--dur-base)]",
                         isSectionCollapsed && "-rotate-90"
                       )} />
-                      <span className="text-[10px] font-semibold text-gray-300 dark:text-gray-600 group-hover/section:text-gray-400 dark:group-hover/section:text-gray-500 transition-colors">
+                      <span className="text-[length:var(--ts-2xs)] font-semibold text-gray-300 dark:text-gray-600 group-hover/section:text-gray-400 dark:group-hover/section:text-gray-500 transition-colors">
                         {sectionLabel}
                       </span>
                     </button>
@@ -526,7 +526,7 @@ export function AdminSidebar({
 
                 {/* ── Category items with grid animation for collapse ── */}
                 <div
-                  className="grid transition-[grid-template-rows] duration-200 ease-in-out"
+                  className="grid transition-[grid-template-rows] duration-[var(--dur-base)] ease-in-out"
                   style={{ gridTemplateRows: (sectionLabel && isSectionCollapsed) ? "0fr" : "1fr" }}
                 >
                   <div className="overflow-hidden">
@@ -553,7 +553,7 @@ export function AdminSidebar({
                         }
                       }}
                       className={cn(
-                        "group relative w-full flex items-center gap-3 rounded-lg text-[13px] font-medium transition-all duration-150 mb-px",
+                        "group relative w-full flex items-center gap-3 rounded-lg text-[length:var(--ts-sm)] font-medium transition-all duration-[var(--dur-fast)] mb-px",
                         "px-3 py-2.5",
                         isActive
                           ? cn(themeClasses.activeItem, sidebarTheme === "dark" ? "text-white font-semibold" : "text-gray-900 dark:text-gray-100 font-semibold")
@@ -566,14 +566,14 @@ export function AdminSidebar({
                       )}
 
                       <DisplayIcon className={cn(
-                        "h-[18px] w-[18px] shrink-0 transition-all duration-200 group-hover:scale-110",
+                        "h-[18px] w-[18px] shrink-0 transition-all duration-[var(--dur-base)] group-hover:scale-110",
                         isActive ? "text-emerald-600 dark:text-emerald-400" : iconColor
                       )} />
 
                       <span className="truncate flex-1 text-left">{displayLabel}</span>
 
                       {totalAlerts > 0 && (
-                        <span className="text-[10px] font-bold min-w-[18px] h-[18px] rounded-full flex items-center justify-center bg-red-500 text-white leading-none animate-pulse">
+                        <span className="text-[length:var(--ts-2xs)] font-bold min-w-[18px] h-[18px] rounded-full flex items-center justify-center bg-red-500 text-white leading-none animate-pulse">
                           {totalAlerts}
                         </span>
                       )}
@@ -610,7 +610,7 @@ export function AdminSidebar({
                     {/* Animated sub-tabs for multi-tab categories */}
                     {!isSingleTab && (
                       <div
-                        className="grid transition-[grid-template-rows] duration-200 ease-in-out"
+                        className="grid transition-[grid-template-rows] duration-[var(--dur-base)] ease-in-out"
                         style={{ gridTemplateRows: expandedCategories.has(category.id) ? "1fr" : "0fr" }}
                       >
                         <div className="overflow-hidden">
@@ -626,7 +626,7 @@ export function AdminSidebar({
                                   key={subTabId}
                                   onClick={() => navigateTab(subTabId as Tab)}
                                   className={cn(
-                                    "group relative w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-[13px] transition-all",
+                                    "group relative w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-[length:var(--ts-sm)] transition-all",
                                     isSubActive
                                       ? cn(themeClasses.activeItem, sidebarTheme === "dark" ? "text-white font-semibold" : "text-gray-900 dark:text-gray-100 font-semibold")
                                       : cn(themeClasses.text, themeClasses.hover, "font-medium")
@@ -636,12 +636,12 @@ export function AdminSidebar({
                                     <span className="absolute left-0 top-1/2 -translate-y-1/2 w-[3px] h-4 rounded-r-full bg-emerald-500" />
                                   )}
                                   <SubIcon className={cn(
-                                    "h-4 w-4 shrink-0 transition-transform duration-200 group-hover:scale-110",
+                                    "h-4 w-4 shrink-0 transition-transform duration-[var(--dur-base)] group-hover:scale-110",
                                     isSubActive ? "text-emerald-500" : "text-gray-400"
                                   )} />
                                   <span className="truncate">{subTabInfo.label}</span>
                                   {subAlertCount > 0 && (
-                                    <span className="text-[10px] font-bold min-w-[18px] h-[18px] rounded-full flex items-center justify-center bg-red-500 text-white leading-none ml-auto animate-pulse">
+                                    <span className="text-[length:var(--ts-2xs)] font-bold min-w-[18px] h-[18px] rounded-full flex items-center justify-center bg-red-500 text-white leading-none ml-auto animate-pulse">
                                       {subAlertCount}
                                     </span>
                                   )}
@@ -667,7 +667,7 @@ export function AdminSidebar({
                 data-tour-tab={id}
                 onClick={() => navigateTab(id)}
                 className={cn(
-                  "group relative w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-[13px] font-medium transition-all mb-px",
+                  "group relative w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-[length:var(--ts-sm)] font-medium transition-all mb-px",
                   tab === id
                     ? "bg-gray-50 dark:bg-zinc-800/50 text-gray-900 dark:text-gray-100 font-semibold"
                     : "text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800/40"
@@ -676,10 +676,10 @@ export function AdminSidebar({
                 {tab === id && (
                   <span className="absolute left-0 top-1/2 -translate-y-1/2 w-[3px] h-5 rounded-r-full bg-emerald-500" />
                 )}
-                <Icon className={cn("h-[18px] w-[18px] shrink-0 transition-transform duration-200 group-hover:scale-110", tab === id ? "text-emerald-500" : "")} />
+                <Icon className={cn("h-[18px] w-[18px] shrink-0 transition-transform duration-[var(--dur-base)] group-hover:scale-110", tab === id ? "text-emerald-500" : "")} />
                 <span className="truncate flex-1 text-left">{label}</span>
                 {alertCount > 0 && (
-                  <span className="text-[10px] font-bold min-w-[18px] h-[18px] rounded-full flex items-center justify-center bg-red-500 text-white leading-none animate-pulse">
+                  <span className="text-[length:var(--ts-2xs)] font-bold min-w-[18px] h-[18px] rounded-full flex items-center justify-center bg-red-500 text-white leading-none animate-pulse">
                     {alertCount}
                   </span>
                 )}
@@ -704,9 +704,9 @@ export function AdminSidebar({
                   )}
                 >
                   {tab === id && <span className="absolute left-0 top-1/2 -translate-y-1/2 w-[3px] h-5 rounded-r-full bg-emerald-500" />}
-                  <Icon className="h-5 w-5 shrink-0 transition-transform duration-200 group-hover/tip:scale-110" />
+                  <Icon className="h-5 w-5 shrink-0 transition-transform duration-[var(--dur-base)] group-hover/tip:scale-110" />
                   {alertCount > 0 && (
-                    <span className="absolute top-1 right-1 text-[8px] font-bold rounded-full w-4 h-4 flex items-center justify-center bg-red-500 text-white leading-none animate-pulse">
+                    <span className="absolute top-1 right-1 text-[length:var(--ts-2xs)] font-bold rounded-full w-4 h-4 flex items-center justify-center bg-red-500 text-white leading-none animate-pulse">
                       {alertCount > 9 ? "9+" : alertCount}
                     </span>
                   )}
@@ -722,7 +722,7 @@ export function AdminSidebar({
 
         {/* ── Footer: mode toggle + external links + compact toggle ── */}
         <div className={cn(
-          "py-3 border-t space-y-0.5 transition-all duration-300",
+          "py-3 border-t space-y-0.5 transition-all duration-[var(--dur-base)]",
           themeClasses.headerBorder,
           effectiveCompact ? "px-1.5" : "px-2.5"
         )}>
@@ -730,7 +730,7 @@ export function AdminSidebar({
           {!effectiveCompact && (
             <button
               onClick={onToggleAdminMode}
-              className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-[13px] font-medium transition-all text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800/40 group"
+              className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-[length:var(--ts-sm)] font-medium transition-all text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800/40 group"
             >
               <div className={cn(
                 "relative h-5 w-9 rounded-full transition-colors shrink-0",
@@ -768,7 +768,7 @@ export function AdminSidebar({
             target="_blank"
             title={effectiveCompact ? "Marketplace" : undefined}
             className={cn(
-              "flex items-center rounded-lg text-[13px] font-medium text-gray-500 dark:text-gray-400 hover:text-emerald-600 hover:bg-emerald-50/50 dark:hover:bg-emerald-950/20 transition-all",
+              "flex items-center rounded-lg text-[length:var(--ts-sm)] font-medium text-gray-500 dark:text-gray-400 hover:text-emerald-600 hover:bg-emerald-50/50 dark:hover:bg-emerald-950/20 transition-all",
               effectiveCompact ? "justify-center px-0 py-2.5" : "gap-3 px-3 py-2.5"
             )}
           >
@@ -780,7 +780,7 @@ export function AdminSidebar({
             rel="noopener noreferrer"
             title={effectiveCompact ? "Mi Tienda" : undefined}
             className={cn(
-              "flex items-center rounded-lg text-[13px] font-medium text-gray-500 dark:text-gray-400 hover:text-emerald-600 hover:bg-emerald-50/50 dark:hover:bg-emerald-950/20 transition-all",
+              "flex items-center rounded-lg text-[length:var(--ts-sm)] font-medium text-gray-500 dark:text-gray-400 hover:text-emerald-600 hover:bg-emerald-50/50 dark:hover:bg-emerald-950/20 transition-all",
               effectiveCompact ? "justify-center px-0 py-2.5" : "gap-3 px-3 py-2.5"
             )}
           >
@@ -795,7 +795,7 @@ export function AdminSidebar({
                 onClick={toggleCompact}
                 title={isCompact ? "Expandir sidebar" : "Compactar sidebar"}
                 className={cn(
-                  "flex items-center rounded-lg text-[13px] font-medium transition-all",
+                  "flex items-center rounded-lg text-[length:var(--ts-sm)] font-medium transition-all",
                   themeClasses.text, themeClasses.hover,
                   effectiveCompact ? "justify-center w-full px-0 py-2.5" : "gap-3 px-3 py-2.5 w-full"
                 )}
@@ -819,7 +819,7 @@ export function AdminSidebar({
               <button
                 onClick={() => setConfigMode(true)}
                 className={cn(
-                  "flex items-center gap-3 px-3 py-2.5 w-full rounded-lg text-[13px] font-medium transition-all",
+                  "flex items-center gap-3 px-3 py-2.5 w-full rounded-lg text-[length:var(--ts-sm)] font-medium transition-all",
                   themeClasses.text, themeClasses.hover
                 )}
               >
@@ -833,7 +833,7 @@ export function AdminSidebar({
               onClick={() => setConfigMode(true)}
               title="Configurar barra lateral"
               className={cn(
-                "flex items-center justify-center w-full px-0 py-2.5 rounded-lg text-[13px] font-medium transition-all",
+                "flex items-center justify-center w-full px-0 py-2.5 rounded-lg text-[length:var(--ts-sm)] font-medium transition-all",
                 themeClasses.text, themeClasses.hover
               )}
             >
@@ -859,7 +859,7 @@ export function AdminSidebar({
             style={{ position: "fixed", top: sidebarFlyout.top, left: 264, zIndex: 50 }}
             onMouseEnter={() => { if (flyoutTimerRef.current) clearTimeout(flyoutTimerRef.current); }}
             onMouseLeave={() => { flyoutTimerRef.current = setTimeout(() => onSidebarFlyoutChange(null), 150); }}
-            className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl py-2 w-60 max-h-[80vh] overflow-y-auto"
+            className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl py-2 w-60 max-h-[80vh] overflow-y-auto"
           >
             {catTabs.map(tabId => {
               const tabInfo = allTabs.find(t => t.id === tabId);

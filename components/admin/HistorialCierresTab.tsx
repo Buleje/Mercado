@@ -116,7 +116,7 @@ export default function HistorialCierresTab() {
 
       {/* Table */}
       {loading ? (
-        <TableSkeleton rows={5} cols={4} className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl" />
+        <TableSkeleton rows={5} cols={4} className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl" />
       ) : !data?.items.length ? (
         <EmptyState
           icon={CalendarOff}
@@ -124,11 +124,11 @@ export default function HistorialCierresTab() {
           description="No hay cierres de caja registrados aún. Usa el botón «Cerrar día» en la barra superior para crear el primer cierre."
         />
       ) : (
-        <div className="bg-white dark:bg-card rounded-xl border border-gray-200 dark:border-card-border overflow-hidden">
+        <div className="bg-white dark:bg-card rounded-xl border border-[var(--rule-base)] dark:border-card-border overflow-hidden">
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
-                <tr className="bg-gray-50 dark:bg-surface border-b border-gray-200 dark:border-card-border">
+                <tr className="bg-gray-50 dark:bg-surface border-b border-[var(--rule-base)] dark:border-card-border">
                   <th className="text-left px-4 py-3 font-semibold text-gray-600 dark:text-muted">Fecha</th>
                   <th className="text-right px-4 py-3 font-semibold text-gray-600 dark:text-muted">Ventas</th>
                   <th className="text-right px-4 py-3 font-semibold text-gray-600 dark:text-muted hidden sm:table-cell">Caja</th>
@@ -142,7 +142,7 @@ export default function HistorialCierresTab() {
                   return (
                     <tr
                       key={s.id}
-                      className="border-b border-gray-100 dark:border-card-border last:border-0 hover:bg-gray-50 dark:hover:bg-accent transition-colors"
+                      className="border-b border-[var(--rule-soft)] dark:border-card-border last:border-0 hover:bg-gray-50 dark:hover:bg-accent transition-colors"
                     >
                       <td className="px-4 py-3 font-medium text-gray-900 dark:text-foreground whitespace-nowrap">
                         {formatFecha(s.fecha)}
@@ -184,7 +184,7 @@ export default function HistorialCierresTab() {
 
           {/* Pagination */}
           {totalPages > 1 && (
-            <div className="flex items-center justify-between px-4 py-3 border-t border-gray-200 dark:border-card-border">
+            <div className="flex items-center justify-between px-4 py-3 border-t border-[var(--rule-base)] dark:border-card-border">
               <button
                 onClick={() => setPage((p) => Math.max(1, p - 1))}
                 disabled={page <= 1}
@@ -216,9 +216,9 @@ export default function HistorialCierresTab() {
               initial={{ scale: 0.9, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
               exit={{ scale: 0.9, opacity: 0 }}
-              className="relative bg-white dark:bg-card rounded-xl border border-gray-200 dark:border-card-border w-full max-w-lg max-h-[85vh] overflow-y-auto z-10 mx-4"
+              className="relative bg-white dark:bg-card rounded-xl border border-[var(--rule-base)] dark:border-card-border w-full max-w-lg max-h-[85vh] overflow-y-auto z-10 mx-4"
             >
-              <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200 dark:border-card-border sticky top-0 bg-white dark:bg-card">
+              <div className="flex items-center justify-between px-6 py-4 border-b border-[var(--rule-base)] dark:border-card-border sticky top-0 bg-white dark:bg-card">
                 <h3 className="text-lg font-bold text-gray-900 dark:text-foreground">
                   Cierre &mdash; {formatFecha(detail.fecha)}
                 </h3>

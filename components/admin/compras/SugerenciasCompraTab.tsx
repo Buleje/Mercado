@@ -30,7 +30,7 @@ const URGENCY_CONFIG: Record<Urgency, { label: string; bg: string; border: strin
 
 function SkeletonCard() {
   return (
-    <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl p-4 animate-pulse">
+    <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl p-4 animate-pulse">
       <div className="flex gap-3">
         <div className="h-5 w-5 rounded bg-gray-200 dark:bg-gray-700" />
         <div className="flex-1 space-y-2">
@@ -251,7 +251,7 @@ export default function SugerenciasCompraTab() {
                       "bg-white dark:bg-card border rounded-lg p-3 transition-all cursor-pointer",
                       selected.has(s.productId)
                         ? "border-primary ring-1 ring-primary/30"
-                        : "border-gray-200 dark:border-card-border hover:border-gray-300",
+                        : "border-[var(--rule-base)] dark:border-card-border hover:border-gray-300",
                     )}
                     onClick={() => toggleSelect(s.productId)}
                   >
@@ -262,7 +262,7 @@ export default function SugerenciasCompraTab() {
                           "mt-0.5 h-5 w-5 rounded border-2 flex items-center justify-center shrink-0 transition-colors",
                           selected.has(s.productId)
                             ? "bg-primary border-primary"
-                            : "border-gray-300 dark:border-gray-600",
+                            : "border-[var(--rule-base)] dark:border-gray-600",
                         )}
                       >
                         {selected.has(s.productId) && <Check className="h-3 w-3 text-white" />}
@@ -274,7 +274,7 @@ export default function SugerenciasCompraTab() {
                           <span className="font-bold text-sm text-gray-900 dark:text-foreground truncate">
                             {s.productName}
                           </span>
-                          <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded-full bg-gray-100 dark:bg-accent text-gray-600 dark:text-muted">
+                          <span className="text-[length:var(--ts-2xs)] font-semibold px-1.5 py-0.5 rounded-full bg-gray-100 dark:bg-accent text-gray-600 dark:text-muted">
                             {s.category}
                           </span>
                         </div>
@@ -312,7 +312,7 @@ export default function SugerenciasCompraTab() {
       })}
 
       {/* Sticky bottom bar */}
-      <div className="sticky bottom-0 bg-white dark:bg-card border-t border-gray-200 dark:border-card-border -mx-4 px-4 py-3 flex items-center justify-between gap-3 z-10 shadow-[0_-4px_6px_-1px_rgb(0,0,0,0.05)]">
+      <div className="sticky bottom-0 bg-white dark:bg-card border-t border-[var(--rule-base)] dark:border-card-border -mx-4 px-4 py-3 flex items-center justify-between gap-3 z-10 shadow-[0_-4px_6px_-1px_rgb(0,0,0,0.05)]">
         <p className="text-sm font-semibold text-gray-600 dark:text-muted">
           {selected.size} producto{selected.size !== 1 ? "s" : ""} seleccionado{selected.size !== 1 ? "s" : ""}
         </p>

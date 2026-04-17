@@ -609,7 +609,7 @@ export default function ReportsTab() {
           const isFullMetrics = r.type === "metricas-completas";
           const isPdfOnly = r.pdfOnly;
           return (
-            <div key={r.type} className={r.type === "informe-mensual" ? "sm:col-span-2 bg-gradient-to-br from-emerald-50 to-indigo-50 dark:from-emerald-950/30 dark:to-indigo-950/30 border border-emerald-200 dark:border-emerald-800 rounded-xl p-3 sm:p-6 flex flex-col" : "bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl p-3 sm:p-6 flex flex-col"}>
+            <div key={r.type} className={r.type === "informe-mensual" ? "sm:col-span-2 bg-[var(--surface-sunken)] border border-[var(--rule-base)] rounded-xl p-3 sm:p-6 flex flex-col" : "bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl p-3 sm:p-6 flex flex-col"}>
               <div className="flex flex-wrap items-center gap-3 mb-2">
                 <div className={r.type === "informe-mensual" ? "p-2 rounded-xl bg-emerald-600/10" : "p-2 rounded-xl bg-primary/10"}>
                   <Icon className={r.type === "informe-mensual" ? "h-6 w-6 text-emerald-600" : "h-6 w-6 text-primary"} />
@@ -632,7 +632,7 @@ export default function ReportsTab() {
                 )}
               </div>
               {isFullMetrics && (
-                <p className="text-[10px] text-gray-400 dark:text-muted text-center mt-2">
+                <p className="text-[length:var(--ts-2xs)] text-gray-400 dark:text-muted text-center mt-2">
                   💼 Export completo en formato CSV. Ideal para análisis en Excel o importar a otros sistemas.
                 </p>
               )}

@@ -137,7 +137,7 @@ export default function PeriodComparatorTab() {
       </div>
 
       {/* Summary */}
-      <div className="bg-white dark:bg-card rounded-xl border border-gray-200 dark:border-card-border p-3 sm:p-5">
+      <div className="bg-white dark:bg-card rounded-xl border border-[var(--rule-base)] dark:border-card-border p-3 sm:p-5">
         <div className="flex items-center justify-between mb-4">
           <h3 className="font-bold text-gray-900 dark:text-foreground flex flex-wrap items-center gap-2"><BarChart3 className="h-4 w-4 text-primary" /> Resumen</h3>
           <span className="text-xs font-semibold text-emerald-600">{improvements}/{data.length} métricas mejoraron</span>
@@ -145,7 +145,7 @@ export default function PeriodComparatorTab() {
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 text-center text-xs font-bold text-gray-500 dark:text-muted mb-3">
           <span>Métrica</span>
           <span className="text-emerald-600">{current.aLabel}</span>
-          <span className="text-violet-600">{current.bLabel}</span>
+          <span className="text-[var(--text-secondary)]">{current.bLabel}</span>
         </div>
       </div>
 
@@ -167,7 +167,7 @@ export default function PeriodComparatorTab() {
           const maxVal = Math.max(m.periodA, m.periodB);
 
           return (
-            <div key={m.label} className="bg-white dark:bg-card rounded-xl border border-gray-200 dark:border-card-border p-4">
+            <div key={m.label} className="bg-white dark:bg-card rounded-xl border border-[var(--rule-base)] dark:border-card-border p-4">
               <div className="flex items-center justify-between mb-3">
                 <span className="text-sm font-bold text-gray-900 dark:text-foreground">{m.label}</span>
                 <span className={cn("flex items-center gap-0.5 text-xs font-bold", isGood ? "text-emerald-500" : "text-red-500")}>
@@ -187,11 +187,11 @@ export default function PeriodComparatorTab() {
                 </div>
                 <div>
                   <div className="flex justify-between text-xs mb-1">
-                    <span className="text-violet-600 font-semibold">{current.bLabel}</span>
+                    <span className="text-[var(--text-secondary)] font-semibold">{current.bLabel}</span>
                     <span className="font-bold text-gray-900 dark:text-foreground">{fmtNum(m.periodB, m.format)}</span>
                   </div>
                   <div className="w-full h-2 bg-gray-100 dark:bg-surface rounded-full overflow-hidden">
-                    <div className="h-full bg-violet-500 rounded-full transition-all" style={{ width: `${(m.periodB / maxVal) * 100}%` }} />
+                    <div className="h-full bg-[var(--text-primary)] rounded-full transition-all" style={{ width: `${(m.periodB / maxVal) * 100}%` }} />
                   </div>
                 </div>
               </div>

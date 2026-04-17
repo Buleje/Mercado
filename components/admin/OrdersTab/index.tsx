@@ -276,7 +276,7 @@ export default function OrdersTab() {
           </thead>
           <tbody>
             {activeOrders.map(o => (
-              <tr key={o.id} className="border-b border-gray-300">
+              <tr key={o.id} className="border-b border-[var(--rule-base)]">
                 <td className="py-1.5 pr-2 font-mono">{o.id.slice(-6)}</td>
                 <td className="py-1.5 pr-2">{o.customer.name}</td>
                 <td className="py-1.5 pr-2">{o.customer.phone || "—"}</td>

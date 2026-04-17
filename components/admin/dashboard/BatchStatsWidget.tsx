@@ -36,7 +36,7 @@ function StatCard({
 }) {
   if (loading) {
     return (
-      <div className="rounded-xl border border-gray-100 dark:border-card-border bg-white dark:bg-card p-3 sm:p-4 animate-pulse">
+      <div className="rounded-xl border border-[var(--rule-soft)] dark:border-card-border bg-white dark:bg-card p-3 sm:p-4 animate-pulse">
         <div className="h-3 w-20 bg-gray-200 dark:bg-surface rounded mb-3" />
         <div className="h-8 w-12 bg-gray-200 dark:bg-surface rounded" />
       </div>
@@ -48,13 +48,13 @@ function StatCard({
       initial={{ opacity: 0, y: 8 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.25 }}
-      className="rounded-xl border border-gray-100 dark:border-card-border bg-white dark:bg-card p-3 sm:p-4"
+      className="rounded-xl border border-[var(--rule-soft)] dark:border-card-border bg-white dark:bg-card p-3 sm:p-4"
     >
       <div className="flex items-center gap-2 mb-2">
         <div className={cn("w-6 h-6 rounded-lg flex items-center justify-center", bgClass)}>
           <Icon className={cn("h-3.5 w-3.5", colorClass)} />
         </div>
-        <span className="text-[11px] font-medium text-gray-500 dark:text-muted leading-tight">{label}</span>
+        <span className="text-[length:var(--ts-xs)] font-medium text-gray-500 dark:text-muted leading-tight">{label}</span>
       </div>
       <span className={cn("text-2xl font-bold", colorClass)}>{value.toLocaleString("es-PE")}</span>
     </m.div>

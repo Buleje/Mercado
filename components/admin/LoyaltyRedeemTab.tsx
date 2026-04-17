@@ -181,7 +181,7 @@ export default function LoyaltyRedeemTab() {
       )}
 
       {/* Buscador de cliente */}
-      <div className="rounded-xl border border-gray-200 bg-white p-5">
+      <div className="rounded-xl border border-[var(--rule-base)] bg-white p-5">
         <h3 className="mb-4 flex items-center gap-2 font-semibold text-gray-800">
           <Search className="h-5 w-5 text-primary" />
           Buscar cliente
@@ -194,7 +194,7 @@ export default function LoyaltyRedeemTab() {
             onChange={(e) => setPhone(e.target.value)}
             onKeyDown={handleKeyDown}
             maxLength={12}
-            className="min-h-[44px] flex-1 rounded-lg border border-gray-200 px-4 text-sm text-gray-800 outline-none transition focus:border-primary focus:ring-1 focus:ring-primary"
+            className="min-h-[44px] flex-1 rounded-lg border border-[var(--rule-base)] px-4 text-sm text-gray-800 outline-none transition focus:border-primary focus:ring-1 focus:ring-primary"
           />
           <button
             onClick={searchCustomer}
@@ -270,7 +270,7 @@ export default function LoyaltyRedeemTab() {
                     "flex flex-col gap-3 rounded-xl border p-5 transition",
                     hasEnough
                       ? "border-primary/30 bg-green-50"
-                      : "border-gray-200 bg-white",
+                      : "border-[var(--rule-base)] bg-white",
                   )}
                 >
                   <div className="text-3xl">{reward.icon}</div>
@@ -323,7 +323,7 @@ export default function LoyaltyRedeemTab() {
             <Award className="h-5 w-5 text-primary" />
             Canjes recientes (esta sesión)
           </h3>
-          <div className="divide-y divide-gray-100 overflow-hidden rounded-xl border border-gray-200">
+          <div className="divide-y divide-gray-100 overflow-hidden rounded-xl border border-[var(--rule-base)]">
             {history.map((h, i) => (
               <div
                 key={i}

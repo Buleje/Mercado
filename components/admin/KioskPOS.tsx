@@ -305,7 +305,7 @@ export default function KioskPOS() {
             <span className="text-xs font-extrabold text-white">B</span>
           </div>
           <span className="text-base font-extrabold tracking-wide text-white">Buleje POS</span>
-          <span className="px-2 py-0.5 rounded-full bg-teal-900/60 text-teal-300 text-[10px] font-bold">POS</span>
+          <span className="px-2 py-0.5 rounded-full bg-teal-900/60 text-teal-300 text-[length:var(--ts-2xs)] font-bold">POS</span>
         </div>
 
         {/* Acciones */}

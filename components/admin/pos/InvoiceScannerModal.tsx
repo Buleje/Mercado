@@ -251,9 +251,9 @@ export default function InvoiceScannerModal({ open, onClose, onConfirm }: Props)
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
-      <div className="relative w-full max-w-lg max-h-[90vh] overflow-y-auto bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-700">
+      <div className="relative w-full max-w-lg max-h-[90vh] overflow-y-auto bg-white dark:bg-gray-900 rounded-xl border border-[var(--rule-base)]">
         {/* Header */}
-        <div className="sticky top-0 z-10 flex items-center justify-between px-5 py-4 border-b border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 rounded-t-2xl">
+        <div className="sticky top-0 z-10 flex items-center justify-between px-5 py-4 border-b border-[var(--rule-base)] bg-white dark:bg-gray-900 rounded-t-2xl">
           <div className="flex items-center gap-2">
             <FileText className="h-5 w-5 text-primary" />
             <h2 className="text-base font-semibold text-gray-900 dark:text-white">
@@ -282,7 +282,7 @@ export default function InvoiceScannerModal({ open, onClose, onConfirm }: Props)
                 <button
                   type="button"
                   onClick={startCamera}
-                  className="flex flex-col items-center gap-2 p-6 rounded-lg border-2 border-dashed border-gray-300 dark:border-gray-600 hover:border-primary dark:hover:border-primary hover:bg-emerald-50 dark:hover:bg-emerald-950/20 transition-colors group"
+                  className="flex flex-col items-center gap-2 p-6 rounded-lg border-2 border-dashed border-[var(--rule-base)] dark:border-gray-600 hover:border-primary dark:hover:border-primary hover:bg-emerald-50 dark:hover:bg-emerald-950/20 transition-colors group"
                 >
                   <Camera className="h-8 w-8 text-gray-400 group-hover:text-primary transition-colors" />
                   <span className="text-sm font-medium text-gray-600 dark:text-gray-400 group-hover:text-primary">
@@ -292,7 +292,7 @@ export default function InvoiceScannerModal({ open, onClose, onConfirm }: Props)
                 <button
                   type="button"
                   onClick={() => fileInputRef.current?.click()}
-                  className="flex flex-col items-center gap-2 p-6 rounded-lg border-2 border-dashed border-gray-300 dark:border-gray-600 hover:border-primary dark:hover:border-primary hover:bg-emerald-50 dark:hover:bg-emerald-950/20 transition-colors group"
+                  className="flex flex-col items-center gap-2 p-6 rounded-lg border-2 border-dashed border-[var(--rule-base)] dark:border-gray-600 hover:border-primary dark:hover:border-primary hover:bg-emerald-50 dark:hover:bg-emerald-950/20 transition-colors group"
                 >
                   <Upload className="h-8 w-8 text-gray-400 group-hover:text-primary transition-colors" />
                   <span className="text-sm font-medium text-gray-600 dark:text-gray-400 group-hover:text-primary">
@@ -329,7 +329,7 @@ export default function InvoiceScannerModal({ open, onClose, onConfirm }: Props)
                 <button
                   type="button"
                   onClick={reset}
-                  className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg border border-gray-300 dark:border-gray-600 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
+                  className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg border border-[var(--rule-base)] dark:border-gray-600 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
                 >
                   <X className="h-4 w-4" /> Cancelar
                 </button>
@@ -376,7 +376,7 @@ export default function InvoiceScannerModal({ open, onClose, onConfirm }: Props)
               <button
                 type="button"
                 onClick={reset}
-                className="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg border border-gray-300 dark:border-gray-600 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
+                className="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg border border-[var(--rule-base)] dark:border-gray-600 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
               >
                 <RotateCcw className="h-4 w-4" /> Intentar de nuevo
               </button>
@@ -404,7 +404,7 @@ export default function InvoiceScannerModal({ open, onClose, onConfirm }: Props)
               </div>
 
               {/* Items table */}
-              <div className="border border-gray-200 dark:border-gray-700 rounded-xl overflow-hidden">
+              <div className="border border-[var(--rule-base)] rounded-xl overflow-hidden">
                 <table className="w-full text-sm">
                   <thead>
                     <tr className="bg-gray-50 dark:bg-gray-800">
@@ -489,7 +489,7 @@ export default function InvoiceScannerModal({ open, onClose, onConfirm }: Props)
                 </table>
 
                 {/* Total row */}
-                <div className="flex items-center justify-between px-3 py-2.5 bg-gray-50 dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700">
+                <div className="flex items-center justify-between px-3 py-2.5 bg-gray-50 dark:bg-gray-800 border-t border-[var(--rule-base)]">
                   <span className="text-sm font-medium text-gray-600 dark:text-gray-400">
                     Total ({editItems.length} items)
                   </span>
@@ -511,14 +511,14 @@ export default function InvoiceScannerModal({ open, onClose, onConfirm }: Props)
         {/* Footer */}
         <div
           className={cn(
-            "sticky bottom-0 flex gap-2 px-5 py-4 border-t border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 rounded-b-2xl",
+            "sticky bottom-0 flex gap-2 px-5 py-4 border-t border-[var(--rule-base)] bg-white dark:bg-gray-900 rounded-b-2xl",
             state !== "results" && "hidden",
           )}
         >
           <button
             type="button"
             onClick={reset}
-            className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg border border-gray-300 dark:border-gray-600 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
+            className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg border border-[var(--rule-base)] dark:border-gray-600 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
           >
             <RotateCcw className="h-4 w-4" /> Otra foto
           </button>

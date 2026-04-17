@@ -45,7 +45,7 @@ function KpiCard({
   color: string;
 }) {
   return (
-    <div className="bg-white dark:bg-gray-900 rounded-xl p-4 border border-gray-200 dark:border-gray-800 flex items-center gap-4">
+    <div className="bg-white dark:bg-gray-900 rounded-xl p-4 border border-[var(--rule-base)] flex items-center gap-4">
       <div className={cn("w-10 h-10 rounded-xl flex items-center justify-center shrink-0", color)}>
         <Icon className="h-5 w-5 text-white" />
       </div>
@@ -134,7 +134,7 @@ export default function ProductAnalyticsPanel({ productId, productName }: Produc
           <h3 className="font-semibold text-gray-900 dark:text-gray-100">{productName}</h3>
           <p className="text-xs text-gray-500 dark:text-gray-400">Analytics del producto</p>
         </div>
-        <div className="flex gap-1 rounded-xl border border-gray-200 dark:border-gray-700 p-1">
+        <div className="flex gap-1 rounded-xl border border-[var(--rule-base)] p-1">
           {RANGES.map((r) => (
             <button
               key={r.value}
@@ -173,7 +173,7 @@ export default function ProductAnalyticsPanel({ productId, productName }: Produc
               label="Clicks totales"
               value={data!.totalClicks.toLocaleString()}
               icon={MousePointer}
-              color="bg-purple-500"
+              color="bg-[var(--text-primary)]"
             />
             <KpiCard
               label="Tasa de conversión"
@@ -190,7 +190,7 @@ export default function ProductAnalyticsPanel({ productId, productName }: Produc
           </div>
 
           {/* Gráfico de líneas */}
-          <div className="bg-white dark:bg-gray-900 rounded-xl p-4 border border-gray-200 dark:border-gray-800">
+          <div className="bg-white dark:bg-gray-900 rounded-xl p-4 border border-[var(--rule-base)]">
             <h4 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-4">
               Tendencia — últimos {days} días
             </h4>
@@ -250,12 +250,12 @@ export default function ProductAnalyticsPanel({ productId, productName }: Produc
 
           {/* Top productos */}
           {data!.topProducts.length > 0 && (
-            <div className="bg-white dark:bg-gray-900 rounded-xl p-4 border border-gray-200 dark:border-gray-800">
+            <div className="bg-white dark:bg-gray-900 rounded-xl p-4 border border-[var(--rule-base)]">
               <h4 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3">Top productos</h4>
               <div className="overflow-x-auto">
                 <table className="min-w-full text-sm">
                   <thead>
-                    <tr className="text-xs text-gray-500 dark:text-gray-400 border-b border-gray-100 dark:border-gray-800">
+                    <tr className="text-xs text-gray-500 dark:text-gray-400 border-b border-[var(--rule-base)]">
                       <th className="pb-2 text-left">Producto</th>
                       <th className="pb-2 text-right">Visitas</th>
                       <th className="pb-2 text-right">Ingresos</th>

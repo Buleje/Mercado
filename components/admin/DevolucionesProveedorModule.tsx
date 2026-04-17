@@ -281,7 +281,7 @@ export default function DevolucionesProveedorModule() {
             onClick={fetchDevoluciones}
             disabled={loading}
             aria-label="Recargar devoluciones"
-            className="h-9 w-9 flex items-center justify-center rounded-lg border border-gray-200 hover:bg-gray-100 transition-colors disabled:opacity-50"
+            className="h-9 w-9 flex items-center justify-center rounded-lg border border-[var(--rule-base)] hover:bg-gray-100 transition-colors disabled:opacity-50"
           >
             <RefreshCw className={cn("h-4 w-4 text-gray-500", loading && "animate-spin")} />
           </button>
@@ -305,7 +305,7 @@ export default function DevolucionesProveedorModule() {
               "px-3 py-1.5 rounded-full text-xs font-medium border transition-colors min-h-[36px]",
               filtroEstado === estado
                 ? "bg-primary text-white border-primary"
-                : "bg-white text-gray-600 border-gray-200 hover:bg-gray-50"
+                : "bg-white text-gray-600 border-[var(--rule-base)] hover:bg-gray-50"
             )}
           >
             {estado === "" ? `Todas (${devoluciones.length})` : `${estado} (${conteos[estado as DevolucionEstado]})`}
@@ -315,7 +315,7 @@ export default function DevolucionesProveedorModule() {
 
       {/* Formulario nueva devolución */}
       {mostrarFormulario && (
-        <div className="bg-white border border-gray-200 rounded-xl p-4 space-y-4">
+        <div className="bg-white border border-[var(--rule-base)] rounded-xl p-4 space-y-4">
           <div className="flex items-center justify-between">
             <h3 className="font-semibold text-gray-900 text-sm">Nueva devolución</h3>
             <button
@@ -336,7 +336,7 @@ export default function DevolucionesProveedorModule() {
                 <select
                   value={proveedorId}
                   onChange={e => setProveedorId(e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm bg-white text-gray-900 focus:outline-none focus:ring-2 focus:ring-secondary/40"
+                  className="w-full px-3 py-2 border border-[var(--rule-base)] rounded-lg text-sm bg-white text-gray-900 focus:outline-none focus:ring-2 focus:ring-secondary/40"
                 >
                   <option value="">Seleccionar proveedor...</option>
                   {proveedores.map(p => (
@@ -350,7 +350,7 @@ export default function DevolucionesProveedorModule() {
               <select
                 value={motivo}
                 onChange={e => setMotivo(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm bg-white text-gray-900 focus:outline-none focus:ring-2 focus:ring-secondary/40"
+                className="w-full px-3 py-2 border border-[var(--rule-base)] rounded-lg text-sm bg-white text-gray-900 focus:outline-none focus:ring-2 focus:ring-secondary/40"
               >
                 {MOTIVOS.map(m => <option key={m} value={m}>{m}</option>)}
               </select>
@@ -375,19 +375,19 @@ export default function DevolucionesProveedorModule() {
                   placeholder="Nombre del producto"
                   value={item.nombre}
                   onChange={e => actualizarItem(index, "nombre", e.target.value)}
-                  className="flex-1 px-3 py-2 border border-gray-200 rounded-lg text-sm bg-white text-gray-900 focus:outline-none focus:ring-2 focus:ring-secondary/40"
+                  className="flex-1 px-3 py-2 border border-[var(--rule-base)] rounded-lg text-sm bg-white text-gray-900 focus:outline-none focus:ring-2 focus:ring-secondary/40"
                 />
                 <input
                   type="number"
                   min={1}
                   value={item.cantidad}
                   onChange={e => actualizarItem(index, "cantidad", Number(e.target.value))}
-                  className="w-16 px-2 py-2 border border-gray-200 rounded-lg text-sm bg-white text-gray-900 text-center focus:outline-none focus:ring-2 focus:ring-secondary/40"
+                  className="w-16 px-2 py-2 border border-[var(--rule-base)] rounded-lg text-sm bg-white text-gray-900 text-center focus:outline-none focus:ring-2 focus:ring-secondary/40"
                 />
                 <select
                   value={item.unidad}
                   onChange={e => actualizarItem(index, "unidad", e.target.value)}
-                  className="w-20 px-2 py-2 border border-gray-200 rounded-lg text-sm bg-white text-gray-900 focus:outline-none focus:ring-2 focus:ring-secondary/40"
+                  className="w-20 px-2 py-2 border border-[var(--rule-base)] rounded-lg text-sm bg-white text-gray-900 focus:outline-none focus:ring-2 focus:ring-secondary/40"
                 >
                   <option value="und">und</option>
                   <option value="kg">kg</option>
@@ -415,7 +415,7 @@ export default function DevolucionesProveedorModule() {
               onChange={e => setNotas(e.target.value)}
               rows={2}
               placeholder="Información adicional sobre la devolución..."
-              className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm bg-white text-gray-900 resize-none focus:outline-none focus:ring-2 focus:ring-secondary/40"
+              className="w-full px-3 py-2 border border-[var(--rule-base)] rounded-lg text-sm bg-white text-gray-900 resize-none focus:outline-none focus:ring-2 focus:ring-secondary/40"
             />
           </div>
 
@@ -447,7 +447,7 @@ export default function DevolucionesProveedorModule() {
       ) : (
         <div className="space-y-2">
           {devolucionesFiltradas.length === 0 ? (
-            <div className="bg-white border border-gray-200 rounded-xl p-8 text-center">
+            <div className="bg-white border border-[var(--rule-base)] rounded-xl p-8 text-center">
               <RotateCcw className="h-8 w-8 mx-auto mb-2 text-gray-300" />
               <p className="text-sm text-gray-400">
                 {filtroEstado ? `No hay devoluciones con estado ${filtroEstado}` : "No hay devoluciones registradas"}
@@ -465,7 +465,7 @@ export default function DevolucionesProveedorModule() {
             devolucionesFiltradas.map(dev => (
               <div
                 key={dev.id}
-                className="bg-white border border-gray-200 rounded-xl overflow-hidden"
+                className="bg-white border border-[var(--rule-base)] rounded-xl overflow-hidden"
               >
                 {/* Cabecera de la tarjeta */}
                 <div className="flex items-center gap-3 p-3">
@@ -477,7 +477,7 @@ export default function DevolucionesProveedorModule() {
                       <span className="text-sm font-semibold text-gray-900 truncate">
                         {dev.proveedorNombre}
                       </span>
-                      <span className={cn("text-[10px] font-bold px-2 py-0.5 rounded-full shrink-0", ESTADO_STYLES[dev.estado])}>
+                      <span className={cn("text-[length:var(--ts-2xs)] font-bold px-2 py-0.5 rounded-full shrink-0", ESTADO_STYLES[dev.estado])}>
                         {dev.estado}
                       </span>
                     </div>
@@ -513,7 +513,7 @@ export default function DevolucionesProveedorModule() {
 
                 {/* Detalle expandido */}
                 {expandedId === dev.id && (
-                  <div className="border-t border-gray-100 px-4 py-3 space-y-3 bg-gray-50/50">
+                  <div className="border-t border-[var(--rule-soft)] px-4 py-3 space-y-3 bg-gray-50/50">
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                       <div>
                         <p className="text-xs font-medium text-gray-500 mb-1">Motivo</p>
@@ -562,7 +562,7 @@ export default function DevolucionesProveedorModule() {
       )}
 
       {/* ── Panel de Reportes ─────────────────────────────────────────── */}
-      <div className="mt-6 border border-gray-200 rounded-xl overflow-hidden">
+      <div className="mt-6 border border-[var(--rule-base)] rounded-xl overflow-hidden">
         <button
           type="button"
           onClick={() => setShowReportes(v => !v)}
@@ -600,7 +600,7 @@ export default function DevolucionesProveedorModule() {
                 { label: "Enviadas", value: devoluciones.filter(d => d.estado === "ENVIADA").length, color: "text-emerald-600" },
                 { label: "Resueltas", value: devoluciones.filter(d => d.estado === "RESUELTA").length, color: "text-emerald-600" },
               ].map(({ label, value, color }) => (
-                <div key={label} className="bg-white border border-gray-100 rounded-xl p-3 text-center">
+                <div key={label} className="bg-white border border-[var(--rule-soft)] rounded-xl p-3 text-center">
                   <p className={`text-2xl font-bold ${color}`}>{value}</p>
                   <p className="text-xs text-gray-500 mt-0.5">{label}</p>
                 </div>

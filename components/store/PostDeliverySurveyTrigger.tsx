@@ -90,7 +90,7 @@ export default function PostDeliverySurveyTrigger() {
 
   return (
     <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
-      <div className="bg-white dark:bg-zinc-900 rounded-2xl shadow-2xl max-w-sm w-full p-5 relative animate-in fade-in zoom-in-95">
+      <div className="bg-white dark:bg-zinc-900 rounded-2xl shadow-[var(--shadow-xl)] max-w-sm w-full p-5 relative animate-in fade-in zoom-in-95">
         {/* Close button */}
         <button
           onClick={handleDismiss}

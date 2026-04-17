@@ -69,12 +69,12 @@ const URGENCY_STYLES: Record<PlanItem["urgency"], { badge: string; row: string; 
   },
   medium: {
     badge: "bg-emerald-100 text-emerald-700",
-    row: "border-gray-200 bg-white",
+    row: "border-[var(--rule-base)] bg-white",
     label: "Esta semana",
   },
   low: {
     badge: "bg-gray-100 text-gray-600",
-    row: "border-gray-100 bg-gray-50",
+    row: "border-[var(--rule-soft)] bg-gray-50",
     label: "Monitorear",
   },
 };
@@ -180,9 +180,9 @@ export default function WeeklyPurchasePlanner() {
   }, [plan]);
 
   return (
-    <div className="bg-white rounded-xl border border-gray-200 overflow-hidden ">
+    <div className="bg-white rounded-xl border border-[var(--rule-base)] overflow-hidden ">
       {/* Header */}
-      <div className="p-5 border-b border-gray-100">
+      <div className="p-5 border-b border-[var(--rule-soft)]">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
             <div className="p-2 rounded-xl bg-primary/10">

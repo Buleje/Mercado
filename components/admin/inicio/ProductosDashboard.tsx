@@ -9,6 +9,7 @@ import {
 import { cn } from "@/lib/utils";
 import dynamic from "next/dynamic";
 import { useDashboardData } from "@/contexts/dashboard-data-context";
+import { UnifiedKPITile } from "@/components/admin/shared/UnifiedKPITile";
 import type { DateRange } from "./DashboardDateRange";
 
 const ProductosCharts = dynamic(() => import("./ProductosCharts"), { ssr: false });
@@ -228,26 +229,41 @@ export default function ProductosDashboard({ dateRange }: { dateRange: DateRange
 
   return (
     <div className="space-y-5">
-      {/* ── KPI Hero Row ── */}
+      {/* ── KPI Hero Row · ADR-068 armonía estricta ── */}
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
-        <KPICard label="Productos Activos" value={String(data.productosActivos)} Icon={Package} accent="blue" />
-        <KPICard label="Uds. Vendidas" value={String(data.unidadesVendidas)} Icon={ShoppingCart} delta={data.dUnidades} accent="emerald" />
-        <KPICard label="Sin Movimiento" value={String(data.sinMovimiento)} Icon={Timer} accent={data.sinMovimiento > 5 ? "amber" : "emerald"} />
-        <KPICard label="Stock Crítico" value={String(data.stockCritico)} Icon={AlertTriangle} accent={data.stockCritico > 0 ? "red" : "emerald"} />
-        <KPICard label="Agotados" value={String(data.agotados)} Icon={Package} accent={data.agotados > 0 ? "red" : "emerald"} />
-        <KPICard label="Valor Inventario" value={fmt(data.valorInventario)} Icon={Layers} accent="violet" />
+        <UnifiedKPITile label="Productos Activos" value={String(data.productosActivos)} Icon={Package} />
+        <UnifiedKPITile label="Uds. Vendidas" value={String(data.unidadesVendidas)} Icon={ShoppingCart} delta={data.dUnidades} />
+        <UnifiedKPITile
+          label="Sin Movimiento"
+          value={String(data.sinMovimiento)}
+          Icon={Timer}
+          intent={data.sinMovimiento > 5 ? "warning" : "neutral"}
+        />
+        <UnifiedKPITile
+          label="Stock Crítico"
+          value={String(data.stockCritico)}
+          Icon={AlertTriangle}
+          intent={data.stockCritico > 0 ? "danger" : "success"}
+        />
+        <UnifiedKPITile
+          label="Agotados"
+          value={String(data.agotados)}
+          Icon={Package}
+          intent={data.agotados > 0 ? "danger" : "success"}
+        />
+        <UnifiedKPITile label="Valor Inventario" value={fmt(data.valorInventario)} Icon={Layers} />
       </div>
 
       {/* ── Rotación indicator ── */}
-      <div className="flex items-center gap-3 bg-white dark:bg-card border border-gray-100 dark:border-card-border rounded-xl px-5 py-3">
+      <div className="flex items-center gap-3 bg-white dark:bg-card border border-[var(--rule-soft)] dark:border-card-border rounded-xl px-5 py-3">
         <RefreshCw className={cn("h-4 w-4", refreshing ? "animate-spin text-gray-400" : "text-gray-400")} />
         <div className="flex-1 flex items-center gap-4 text-sm">
           <span className="text-gray-500 dark:text-muted">Rotación promedio:</span>
           <span className="font-bold text-gray-900 dark:text-foreground">{data.rotacionPromedio.toFixed(1)}x</span>
-          <span className="text-[11px] text-gray-400">(uds vendidas / stock promedio)</span>
+          <span className="text-[length:var(--ts-xs)] text-gray-400">(uds vendidas / stock promedio)</span>
         </div>
         {data.claseA > 0 && (
-          <div className="hidden sm:flex items-center gap-3 text-[11px]">
+          <div className="hidden sm:flex items-center gap-3 text-[length:var(--ts-xs)]">
             <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-emerald-500" />A: {data.claseA}</span>
             <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-emerald-500" />B: {data.claseB}</span>
             <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-gray-400" />C: {data.claseC}</span>
@@ -273,7 +289,7 @@ function KPICard({ label, value, Icon, delta, accent }: {
   const colorMap = {
     emerald: { bg: "bg-emerald-50 dark:bg-emerald-950/30", icon: "text-emerald-500" },
     blue: { bg: "bg-emerald-50 dark:bg-emerald-950/30", icon: "text-emerald-500" },
-    violet: { bg: "bg-violet-50 dark:bg-violet-950/30", icon: "text-violet-500" },
+    violet: { bg: "bg-[var(--surface-sunken)]", icon: "text-[var(--text-secondary)]" },
     cyan: { bg: "bg-cyan-50 dark:bg-cyan-950/30", icon: "text-cyan-500" },
     amber: { bg: "bg-amber-50 dark:bg-amber-950/30", icon: "text-amber-500" },
     red: { bg: "bg-red-50 dark:bg-red-950/30", icon: "text-red-500" },
@@ -281,7 +297,7 @@ function KPICard({ label, value, Icon, delta, accent }: {
   const c = colorMap[accent];
 
   return (
-    <div className="relative bg-white dark:bg-card border border-gray-100 dark:border-card-border rounded-xl p-4 overflow-hidden hover:shadow-sm transition-shadow">
+    <div className="relative bg-white dark:bg-card border border-[var(--rule-soft)] dark:border-card-border rounded-xl p-4 overflow-hidden hover:shadow-sm transition-shadow">
       <div className="flex items-start justify-between mb-3">
         <div className={cn("w-9 h-9 rounded-xl flex items-center justify-center", c.bg)}>
           <Icon className={cn("h-4.5 w-4.5", c.icon)} />
@@ -296,7 +312,7 @@ function KPICard({ label, value, Icon, delta, accent }: {
         )}
       </div>
       <p className="text-xl font-bold text-gray-900 dark:text-foreground tabular-nums leading-none mb-1">{value}</p>
-      <p className="text-[11px] font-medium text-gray-400 dark:text-muted">{label}</p>
+      <p className="text-[length:var(--ts-xs)] font-medium text-gray-400 dark:text-muted">{label}</p>
     </div>
   );
 }

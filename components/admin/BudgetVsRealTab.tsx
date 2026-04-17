@@ -163,7 +163,7 @@ function ProgressBar({
       </div>
       <div className="w-full h-4 bg-gray-100 rounded-full overflow-hidden">
         <div
-          className={cn("h-full rounded-full transition-all duration-500", color)}
+          className={cn("h-full rounded-full transition-all duration-[var(--dur-slow)]", color)}
           style={{ width: `${display}%` }}
         />
       </div>
@@ -205,24 +205,24 @@ function CategoryChart({
               </span>
             </div>
             <div className="flex items-center gap-2">
-              <span className="text-[10px] text-gray-400 w-14 shrink-0">Presup.</span>
+              <span className="text-[length:var(--ts-2xs)] text-gray-400 w-14 shrink-0">Presup.</span>
               <div className="flex-1 h-3 bg-gray-100 rounded-full overflow-hidden">
                 <div
                   className="h-full rounded-full bg-emerald-300"
                   style={{ width: `${(c.budgeted / max) * 100}%` }}
                 />
               </div>
-              <span className="text-[10px] text-gray-500 w-20 text-right shrink-0">{fmt(c.budgeted)}</span>
+              <span className="text-[length:var(--ts-2xs)] text-gray-500 w-20 text-right shrink-0">{fmt(c.budgeted)}</span>
             </div>
             <div className="flex items-center gap-2">
-              <span className="text-[10px] text-gray-400 w-14 shrink-0">Real</span>
+              <span className="text-[length:var(--ts-2xs)] text-gray-400 w-14 shrink-0">Real</span>
               <div className="flex-1 h-3 bg-gray-100 rounded-full overflow-hidden">
                 <div
                   className={cn("h-full rounded-full", isOver ? "bg-red-500" : isUnder ? "bg-emerald-500" : "bg-primary")}
                   style={{ width: `${Math.min((c.actual / max) * 100, 100)}%` }}
                 />
               </div>
-              <span className="text-[10px] font-bold text-gray-700 w-20 text-right shrink-0">
+              <span className="text-[length:var(--ts-2xs)] font-bold text-gray-700 w-20 text-right shrink-0">
                 {fmt(c.actual)}
               </span>
             </div>
@@ -452,7 +452,7 @@ export default function BudgetVsRealTab() {
       </div>
 
       {/* ── 1. Configurador de metas mensuales ── */}
-      <div className="bg-white rounded-xl border border-gray-200 p-4">
+      <div className="bg-white rounded-xl border border-[var(--rule-base)] p-4">
         <div className="flex items-center gap-2 mb-3">
           <Target className="h-4 w-4 text-primary" />
           <h3 className="text-sm font-bold text-gray-700">
@@ -470,7 +470,7 @@ export default function BudgetVsRealTab() {
               value={formSalesGoal}
               onChange={(e) => setFormSalesGoal(e.target.value)}
               placeholder="Ej: 15000"
-              className="w-full px-3 py-2.5 rounded-xl border-2 border-gray-200 bg-white text-gray-900 text-sm outline-none focus:border-primary transition-colors min-h-[44px]"
+              className="w-full px-3 py-2.5 rounded-xl border-2 border-[var(--rule-base)] bg-white text-gray-900 text-sm outline-none focus:border-primary transition-colors min-h-[44px]"
             />
           </div>
           <div>
@@ -483,7 +483,7 @@ export default function BudgetVsRealTab() {
               value={formExpensesGoal}
               onChange={(e) => setFormExpensesGoal(e.target.value)}
               placeholder="Ej: 8000"
-              className="w-full px-3 py-2.5 rounded-xl border-2 border-gray-200 bg-white text-gray-900 text-sm outline-none focus:border-primary transition-colors min-h-[44px]"
+              className="w-full px-3 py-2.5 rounded-xl border-2 border-[var(--rule-base)] bg-white text-gray-900 text-sm outline-none focus:border-primary transition-colors min-h-[44px]"
             />
           </div>
         </div>
@@ -505,7 +505,7 @@ export default function BudgetVsRealTab() {
       {(budgetConfig.salesGoal > 0 || budgetConfig.expensesGoal > 0) && (
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           {budgetConfig.salesGoal > 0 && (
-            <div className="bg-white rounded-xl border border-gray-200 p-4">
+            <div className="bg-white rounded-xl border border-[var(--rule-base)] p-4">
               <ProgressBar
                 label="Ventas del mes"
                 current={currentMonthSales}
@@ -515,7 +515,7 @@ export default function BudgetVsRealTab() {
             </div>
           )}
           {budgetConfig.expensesGoal > 0 && (
-            <div className="bg-white rounded-xl border border-gray-200 p-4">
+            <div className="bg-white rounded-xl border border-[var(--rule-base)] p-4">
               <ProgressBar
                 label="Gastos del mes"
                 current={currentMonthExpenses}
@@ -529,7 +529,7 @@ export default function BudgetVsRealTab() {
 
       {/* ── 4. Proyección fin de mes ── */}
       {(currentMonthSales > 0 || currentMonthExpenses > 0) && (
-        <div className="bg-white rounded-xl border border-gray-200 p-4">
+        <div className="bg-white rounded-xl border border-[var(--rule-base)] p-4">
           <h3 className="text-sm font-bold text-gray-700 mb-3">
             Proyeccion al {totalDays} de {monthName}
           </h3>
@@ -585,13 +585,13 @@ export default function BudgetVsRealTab() {
 
       {/* KPIs de gastos */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-4">
-        <div className="bg-white rounded-xl border border-gray-200 p-4">
+        <div className="bg-white rounded-xl border border-[var(--rule-base)] p-4">
           <p className="text-xs text-gray-500 font-semibold">Total presupuestado</p>
           <p className="text-xl font-extrabold text-gray-900 mt-1">
             {fmt(totals.budgeted)}
           </p>
         </div>
-        <div className="bg-white rounded-xl border border-gray-200 p-4">
+        <div className="bg-white rounded-xl border border-[var(--rule-base)] p-4">
           <p className="text-xs text-gray-500 font-semibold">Total ejecutado</p>
           <p className="text-xl font-extrabold text-gray-900 mt-1">
             {fmt(totals.actual)}
@@ -609,7 +609,7 @@ export default function BudgetVsRealTab() {
             {fmtPct(totals.pct)}
           </p>
         </div>
-        <div className="bg-white rounded-xl border border-gray-200 p-4">
+        <div className="bg-white rounded-xl border border-[var(--rule-base)] p-4">
           <p className="text-xs text-gray-500 font-semibold">Alertas</p>
           <div className="flex items-center gap-3 mt-1">
             <span className="text-red-600 font-extrabold text-lg">{overBudgetCount}</span>
@@ -621,7 +621,7 @@ export default function BudgetVsRealTab() {
       </div>
 
       {/* ── 3. Gráfico de barras por categoría principal ── */}
-      <div className="bg-white rounded-xl border border-gray-200 p-4">
+      <div className="bg-white rounded-xl border border-[var(--rule-base)] p-4">
         <h3 className="text-sm font-bold text-gray-700 mb-4">
           Ventas · Gastos · Ganancia · Por departamento
         </h3>
@@ -641,12 +641,12 @@ export default function BudgetVsRealTab() {
           placeholder="Buscar categoría..."
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          className="px-4 py-2 rounded-xl border-2 border-gray-200 bg-white text-gray-900 text-sm outline-none focus:border-primary transition-colors w-48 min-h-[44px]"
+          className="px-4 py-2 rounded-xl border-2 border-[var(--rule-base)] bg-white text-gray-900 text-sm outline-none focus:border-primary transition-colors w-48 min-h-[44px]"
         />
         <select
           value={effectiveMonthFilter}
           onChange={(e) => setMonthFilter(e.target.value)}
-          className="px-3 py-2 rounded-xl border-2 border-gray-200 bg-white text-gray-900 text-sm outline-none focus:border-primary min-h-[44px]"
+          className="px-3 py-2 rounded-xl border-2 border-[var(--rule-base)] bg-white text-gray-900 text-sm outline-none focus:border-primary min-h-[44px]"
         >
           <option value="all">Todos los meses</option>
           {MONTHS.filter((m) => m !== "all").map((m) => (
@@ -656,14 +656,14 @@ export default function BudgetVsRealTab() {
         <select
           value={deptFilter}
           onChange={(e) => setDeptFilter(e.target.value)}
-          className="px-3 py-2 rounded-xl border-2 border-gray-200 bg-white text-gray-900 text-sm outline-none focus:border-primary min-h-[44px]"
+          className="px-3 py-2 rounded-xl border-2 border-[var(--rule-base)] bg-white text-gray-900 text-sm outline-none focus:border-primary min-h-[44px]"
         >
           <option value="all">Todos los dptos</option>
           {DEPARTMENTS.map((d) => (
             <option key={d} value={d}>{d}</option>
           ))}
         </select>
-        <div className="flex rounded-xl border border-gray-200 overflow-hidden">
+        <div className="flex rounded-xl border border-[var(--rule-base)] overflow-hidden">
           {(
             [
               ["all", "Todos"],
@@ -689,11 +689,11 @@ export default function BudgetVsRealTab() {
       </div>
 
       {/* Tabla de detalle por categoría */}
-      <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
+      <div className="bg-white rounded-xl border border-[var(--rule-base)] overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full min-w-[600px] text-sm">
             <thead>
-              <tr className="bg-gray-50 border-b border-gray-200">
+              <tr className="bg-gray-50 border-b border-[var(--rule-base)]">
                 <th className="text-left px-4 py-3 text-gray-500 font-semibold">Categoría</th>
                 <th className="text-left px-4 py-3 text-gray-500 font-semibold">Depto</th>
                 <th className="text-left px-4 py-3 text-gray-500 font-semibold">Mes</th>
@@ -712,7 +712,7 @@ export default function BudgetVsRealTab() {
                 return (
                   <tr
                     key={b.id}
-                    className="border-b border-gray-100 hover:bg-gray-50 transition-colors"
+                    className="border-b border-[var(--rule-soft)] hover:bg-gray-50 transition-colors"
                   >
                     <td className="px-4 py-3 font-semibold text-gray-900">{b.category}</td>
                     <td className="px-4 py-3 text-gray-500">{b.department}</td>

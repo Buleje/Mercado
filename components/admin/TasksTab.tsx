@@ -117,7 +117,7 @@ export default function TasksTab() {
             key={s}
             onClick={() => setFilterStatus(s as TaskStatus | "todas")}
             className={cn("px-3 py-1.5 rounded-xl text-xs font-bold transition-all border",
-              filterStatus === s ? "bg-primary text-white border-transparent " : "bg-white dark:bg-card text-gray-500 dark:text-muted border-gray-200 dark:border-card-border hover:border-gray-300"
+              filterStatus === s ? "bg-primary text-white border-transparent " : "bg-white dark:bg-card text-gray-500 dark:text-muted border-[var(--rule-base)] dark:border-card-border hover:border-gray-300"
             )}
           >
             {label}
@@ -129,7 +129,7 @@ export default function TasksTab() {
       {loading ? (
         <div className="h-40 flex items-center justify-center text-gray-400 dark:text-muted">Cargando…</div>
       ) : filtered.length === 0 ? (
-        <div className="bg-white dark:bg-card border-2 border-dashed border-gray-200 dark:border-card-border rounded-xl p-12 text-center">
+        <div className="bg-white dark:bg-card border-2 border-dashed border-[var(--rule-base)] dark:border-card-border rounded-xl p-12 text-center">
           <ListChecks className="h-12 w-12 text-gray-300 dark:text-muted mx-auto mb-3" />
           <p className="text-gray-500 dark:text-muted font-semibold">No hay tareas{filterStatus !== "todas" ? ` con estado "${filterStatus}"` : ""}</p>
         </div>
@@ -143,7 +143,7 @@ export default function TasksTab() {
               <div
                 key={t.id}
                 className={cn(
-                  "bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl p-4 hover:shadow-sm transition-shadow",
+                  "bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl p-4 hover:shadow-sm transition-shadow",
                   t.status === "completada" && "opacity-70"
                 )}
               >
@@ -152,7 +152,7 @@ export default function TasksTab() {
                   <button
                     onClick={() => changeStatus(t.id, t.status === "completada" ? "pendiente" : "completada")}
                     className={cn("mt-0.5 w-5 h-5 rounded-full border-2 shrink-0 flex items-center justify-center transition-all",
-                      t.status === "completada" ? "border-emerald-500 bg-emerald-500" : "border-gray-300 dark:border-card-border hover:border-emerald-400"
+                      t.status === "completada" ? "border-emerald-500 bg-emerald-500" : "border-[var(--rule-base)] dark:border-card-border hover:border-emerald-400"
                     )}
                   >
                     {t.status === "completada" && <Check className="h-3 w-3 text-white" />}
@@ -172,18 +172,18 @@ export default function TasksTab() {
                     </div>
                     {t.description && <p className="text-xs text-gray-500 dark:text-muted mt-0.5 line-clamp-2">{t.description}</p>}
                     <div className="flex items-center gap-2 mt-2 flex-wrap">
-                      <span className={cn("px-2 py-0.5 rounded-full text-[10px] font-bold", pm.bg, pm.color)}>{pm.label}</span>
-                      <span className={cn("flex items-center gap-1 text-[10px] font-semibold", sm.color)}>
+                      <span className={cn("px-2 py-0.5 rounded-full text-[length:var(--ts-2xs)] font-bold", pm.bg, pm.color)}>{pm.label}</span>
+                      <span className={cn("flex items-center gap-1 text-[length:var(--ts-2xs)] font-semibold", sm.color)}>
                         <StatusIcon className="h-3 w-3" />{sm.label}
                       </span>
                       {t.assignedTo && (
-                        <span className="flex items-center gap-1 text-[10px] text-gray-400 dark:text-muted">
+                        <span className="flex items-center gap-1 text-[length:var(--ts-2xs)] text-gray-400 dark:text-muted">
                           <User className="h-3 w-3" />{t.assignedTo}
                         </span>
                       )}
-                      {t.module && <span className="text-[10px] bg-emerald-50 dark:bg-emerald-950/30 text-emerald-600 px-2 py-0.5 rounded-full font-semibold">{t.module}</span>}
+                      {t.module && <span className="text-[length:var(--ts-2xs)] bg-emerald-50 dark:bg-emerald-950/30 text-emerald-600 px-2 py-0.5 rounded-full font-semibold">{t.module}</span>}
                       {t.dueDate && (
-                        <span className={cn("flex items-center gap-1 text-[10px]", new Date(t.dueDate) < new Date() && t.status !== "completada" ? "text-red-500 font-bold" : "text-gray-400 dark:text-muted")}>
+                        <span className={cn("flex items-center gap-1 text-[length:var(--ts-2xs)]", new Date(t.dueDate) < new Date() && t.status !== "completada" ? "text-red-500 font-bold" : "text-gray-400 dark:text-muted")}>
                           <Clock className="h-3 w-3" />{new Date(t.dueDate).toLocaleDateString("es-PE")}
                         </span>
                       )}
@@ -191,10 +191,10 @@ export default function TasksTab() {
                     {/* Status change dropdown */}
                     {t.status !== "completada" && (
                       <div className="flex items-center gap-1.5 mt-2">
-                        <span className="text-[10px] text-gray-400 dark:text-muted">Cambiar estado:</span>
+                        <span className="text-[length:var(--ts-2xs)] text-gray-400 dark:text-muted">Cambiar estado:</span>
                         {(["pendiente", "en_progreso", "completada"] as TaskStatus[]).filter(s => s !== t.status).map(s => (
                           <button key={s} onClick={() => changeStatus(t.id, s)}
-                            className="text-[10px] px-2 py-0.5 rounded-full border border-gray-200 dark:border-card-border text-gray-500 dark:text-muted hover:bg-gray-50 dark:hover:bg-surface transition-colors">
+                            className="text-[length:var(--ts-2xs)] px-2 py-0.5 rounded-full border border-[var(--rule-base)] dark:border-card-border text-gray-500 dark:text-muted hover:bg-gray-50 dark:hover:bg-surface transition-colors">
                             {STATUS_META[s].label}
                           </button>
                         ))}
@@ -216,18 +216,18 @@ export default function TasksTab() {
               <h3 className="text-lg font-extrabold text-gray-900 dark:text-foreground">{editId ? "Editar tarea" : "Nueva tarea"}</h3>
               <button onClick={() => setShowForm(false)} className="p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-surface transition-colors"><X className="h-5 w-5 text-gray-400" /></button>
             </div>
-            <input type="text" value={form.title} onChange={e => setForm(f => ({ ...f, title: e.target.value }))} placeholder="Título de la tarea" className="w-full px-2 sm:px-4 py-1.5 sm:py-2.5 text-sm rounded-lg border border-gray-200 dark:border-card-border bg-gray-50 dark:bg-surface text-gray-900 dark:text-foreground outline-none focus:border-primary focus:ring-1 focus:ring-primary/20 transition-all" />
-            <textarea value={form.description} onChange={e => setForm(f => ({ ...f, description: e.target.value }))} placeholder="Descripción (opcional)" rows={2} className="w-full px-2 sm:px-4 py-1.5 sm:py-2.5 text-sm rounded-lg border border-gray-200 dark:border-card-border bg-gray-50 dark:bg-surface text-gray-900 dark:text-foreground outline-none focus:border-primary focus:ring-1 focus:ring-primary/20 transition-all resize-none" />
+            <input type="text" value={form.title} onChange={e => setForm(f => ({ ...f, title: e.target.value }))} placeholder="Título de la tarea" className="w-full px-2 sm:px-4 py-1.5 sm:py-2.5 text-sm rounded-lg border border-[var(--rule-base)] dark:border-card-border bg-gray-50 dark:bg-surface text-gray-900 dark:text-foreground outline-none focus:border-primary focus:ring-1 focus:ring-primary/20 transition-all" />
+            <textarea value={form.description} onChange={e => setForm(f => ({ ...f, description: e.target.value }))} placeholder="Descripción (opcional)" rows={2} className="w-full px-2 sm:px-4 py-1.5 sm:py-2.5 text-sm rounded-lg border border-[var(--rule-base)] dark:border-card-border bg-gray-50 dark:bg-surface text-gray-900 dark:text-foreground outline-none focus:border-primary focus:ring-1 focus:ring-primary/20 transition-all resize-none" />
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div>
                 <label className="text-xs font-bold text-gray-500 dark:text-muted mb-1 block">Prioridad</label>
-                <select value={form.priority} onChange={e => setForm(f => ({ ...f, priority: e.target.value as Priority }))} className="w-full px-3 py-2.5 text-sm rounded-lg border border-gray-200 dark:border-card-border bg-gray-50 dark:bg-surface text-gray-900 dark:text-foreground outline-none focus:border-primary transition-all">
+                <select value={form.priority} onChange={e => setForm(f => ({ ...f, priority: e.target.value as Priority }))} className="w-full px-3 py-2.5 text-sm rounded-lg border border-[var(--rule-base)] dark:border-card-border bg-gray-50 dark:bg-surface text-gray-900 dark:text-foreground outline-none focus:border-primary transition-all">
                   {Object.entries(PRIORITY_META).map(([k, v]) => <option key={k} value={k}>{v.label}</option>)}
                 </select>
               </div>
               <div>
                 <label className="text-xs font-bold text-gray-500 dark:text-muted mb-1 block">Módulo</label>
-                <select value={form.module} onChange={e => setForm(f => ({ ...f, module: e.target.value }))} className="w-full px-3 py-2.5 text-sm rounded-lg border border-gray-200 dark:border-card-border bg-gray-50 dark:bg-surface text-gray-900 dark:text-foreground outline-none focus:border-primary transition-all">
+                <select value={form.module} onChange={e => setForm(f => ({ ...f, module: e.target.value }))} className="w-full px-3 py-2.5 text-sm rounded-lg border border-[var(--rule-base)] dark:border-card-border bg-gray-50 dark:bg-surface text-gray-900 dark:text-foreground outline-none focus:border-primary transition-all">
                   <option value="">Sin módulo</option>
                   {MODULES.map(m => <option key={m} value={m}>{m}</option>)}
                 </select>
@@ -236,15 +236,15 @@ export default function TasksTab() {
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div>
                 <label className="text-xs font-bold text-gray-500 dark:text-muted mb-1 block">Asignado a</label>
-                <input type="text" value={form.assignedTo} onChange={e => setForm(f => ({ ...f, assignedTo: e.target.value }))} placeholder="Nombre del encargado" className="w-full px-3 py-2.5 text-sm rounded-lg border border-gray-200 dark:border-card-border bg-gray-50 dark:bg-surface text-gray-900 dark:text-foreground outline-none focus:border-primary transition-all" />
+                <input type="text" value={form.assignedTo} onChange={e => setForm(f => ({ ...f, assignedTo: e.target.value }))} placeholder="Nombre del encargado" className="w-full px-3 py-2.5 text-sm rounded-lg border border-[var(--rule-base)] dark:border-card-border bg-gray-50 dark:bg-surface text-gray-900 dark:text-foreground outline-none focus:border-primary transition-all" />
               </div>
               <div>
                 <label className="text-xs font-bold text-gray-500 dark:text-muted mb-1 block">Fecha límite</label>
-                <input type="date" value={form.dueDate} onChange={e => setForm(f => ({ ...f, dueDate: e.target.value }))} className="w-full px-3 py-2.5 text-sm rounded-lg border border-gray-200 dark:border-card-border bg-gray-50 dark:bg-surface text-gray-900 dark:text-foreground outline-none focus:border-primary transition-all" />
+                <input type="date" value={form.dueDate} onChange={e => setForm(f => ({ ...f, dueDate: e.target.value }))} className="w-full px-3 py-2.5 text-sm rounded-lg border border-[var(--rule-base)] dark:border-card-border bg-gray-50 dark:bg-surface text-gray-900 dark:text-foreground outline-none focus:border-primary transition-all" />
               </div>
             </div>
             <div className="flex flex-wrap gap-3 pt-1">
-              <button onClick={() => setShowForm(false)} className="flex-1 py-2.5 rounded-lg border border-gray-200 dark:border-card-border text-gray-700 dark:text-foreground text-sm font-semibold hover:bg-gray-50 dark:hover:bg-surface transition-colors">Cancelar</button>
+              <button onClick={() => setShowForm(false)} className="flex-1 py-2.5 rounded-lg border border-[var(--rule-base)] dark:border-card-border text-gray-700 dark:text-foreground text-sm font-semibold hover:bg-gray-50 dark:hover:bg-surface transition-colors">Cancelar</button>
               <button onClick={save} disabled={saving || !form.title.trim()} className="flex-1 py-2.5 rounded-lg bg-primary text-white text-sm font-bold hover:bg-primary/90 disabled:opacity-60 flex flex-wrap items-center justify-center gap-2 transition-colors">
                 {saving ? "Guardando…" : <><Check className="h-4 w-4" />{editId ? "Guardar" : "Crear tarea"}</>}
               </button>

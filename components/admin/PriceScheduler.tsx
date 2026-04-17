@@ -132,7 +132,7 @@ function ProductSearchInput({
           value={query}
           onChange={e => handleChange(e.target.value)}
           placeholder="Buscar producto..."
-          className="w-full pl-9 pr-3 py-2 rounded-lg border border-gray-200 dark:border-card-border bg-white dark:bg-card text-gray-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-[#00B4A6]/40"
+          className="w-full pl-9 pr-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-card-border bg-white dark:bg-card text-gray-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-[#00B4A6]/40"
         />
         {loading && (
           <div className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 border-2 border-[#00B4A6] border-t-transparent rounded-full animate-spin" />
@@ -140,7 +140,7 @@ function ProductSearchInput({
       </div>
 
       {open && results.length > 0 && (
-        <div className="absolute z-20 top-full mt-1 w-full bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl overflow-hidden">
+        <div className="absolute z-20 top-full mt-1 w-full bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl overflow-hidden">
           {results.map(p => (
             <button
               key={p.id}
@@ -155,7 +155,7 @@ function ProductSearchInput({
       )}
 
       {open && results.length === 0 && !loading && query.length >= 2 && (
-        <div className="absolute z-20 top-full mt-1 w-full bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl px-4 py-3 text-sm text-gray-400 dark:text-gray-500">
+        <div className="absolute z-20 top-full mt-1 w-full bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl px-4 py-3 text-sm text-gray-400 dark:text-gray-500">
           Sin resultados para &ldquo;{query}&rdquo;
         </div>
       )}
@@ -208,7 +208,7 @@ function AddForm({ onSave, onCancel }: { onSave: (s: PriceSchedule) => void; onC
     : null;
 
   return (
-    <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl p-5  space-y-4">
+    <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl p-5  space-y-4">
       <p className="text-sm font-semibold text-gray-700 dark:text-gray-300">Nuevo cambio programado</p>
 
       {/* Product search */}
@@ -222,7 +222,7 @@ function AddForm({ onSave, onCancel }: { onSave: (s: PriceSchedule) => void; onC
       <div className="grid grid-cols-2 gap-3">
         <div className="space-y-1">
           <label className="text-xs font-medium text-gray-500 dark:text-gray-400">Precio actual</label>
-          <div className="px-3 py-2 rounded-xl border border-gray-100 dark:border-card-border/50 bg-gray-50 dark:bg-gray-900/50 text-sm text-gray-500 dark:text-gray-400">
+          <div className="px-3 py-2 rounded-xl border border-[var(--rule-soft)] dark:border-card-border/50 bg-gray-50 dark:bg-gray-900/50 text-sm text-gray-500 dark:text-gray-400">
             {form.product ? fmt(form.product.price) : "—"}
           </div>
         </div>
@@ -237,7 +237,7 @@ function AddForm({ onSave, onCancel }: { onSave: (s: PriceSchedule) => void; onC
             placeholder="0.00"
             className={cn(
               "w-full px-3 py-2 rounded-lg border bg-white dark:bg-card text-gray-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-[#00B4A6]/40",
-              errors.newPrice ? "border-red-400 dark:border-red-500" : "border-gray-200 dark:border-card-border"
+              errors.newPrice ? "border-red-400 dark:border-red-500" : "border-[var(--rule-base)] dark:border-card-border"
             )}
           />
           {errors.newPrice && <p className="text-xs text-red-500">{errors.newPrice}</p>}
@@ -266,7 +266,7 @@ function AddForm({ onSave, onCancel }: { onSave: (s: PriceSchedule) => void; onC
             onChange={e => setForm(f => ({ ...f, startDate: e.target.value }))}
             className={cn(
               "w-full px-3 py-2 rounded-lg border bg-white dark:bg-card text-gray-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-[#00B4A6]/40",
-              errors.startDate ? "border-red-400 dark:border-red-500" : "border-gray-200 dark:border-card-border"
+              errors.startDate ? "border-red-400 dark:border-red-500" : "border-[var(--rule-base)] dark:border-card-border"
             )}
           />
           {errors.startDate && <p className="text-xs text-red-500">{errors.startDate}</p>}
@@ -279,7 +279,7 @@ function AddForm({ onSave, onCancel }: { onSave: (s: PriceSchedule) => void; onC
             onChange={e => setForm(f => ({ ...f, endDate: e.target.value }))}
             className={cn(
               "w-full px-3 py-2 rounded-lg border bg-white dark:bg-card text-gray-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-[#00B4A6]/40",
-              errors.endDate ? "border-red-400 dark:border-red-500" : "border-gray-200 dark:border-card-border"
+              errors.endDate ? "border-red-400 dark:border-red-500" : "border-[var(--rule-base)] dark:border-card-border"
             )}
           />
           {errors.endDate && <p className="text-xs text-red-500">{errors.endDate}</p>}
@@ -374,7 +374,7 @@ export default function PriceScheduler() {
                 "bg-white dark:bg-card border rounded-xl p-3 text-left transition-colors",
                 filter === st
                   ? "border-[#00B4A6] ring-2 ring-[#00B4A6]/20"
-                  : "border-gray-200 dark:border-card-border hover:border-gray-300 dark:hover:border-gray-600"
+                  : "border-[var(--rule-base)] dark:border-card-border hover:border-gray-300 dark:hover:border-gray-600"
               )}
             >
               <div className="flex items-center gap-1.5 mb-1">
@@ -411,7 +411,7 @@ export default function PriceScheduler() {
               key={schedule.id}
               className={cn(
                 "bg-white dark:bg-card border rounded-xl p-4  transition-opacity",
-                status === "expirado" ? "border-gray-100 dark:border-card-border/50 opacity-70" : "border-gray-200 dark:border-card-border"
+                status === "expirado" ? "border-[var(--rule-soft)] dark:border-card-border/50 opacity-70" : "border-[var(--rule-base)] dark:border-card-border"
               )}
             >
               <div className="flex flex-wrap items-start gap-3">

@@ -194,7 +194,7 @@ export default function MoneyLeakDetector() {
                   "rounded-xl border p-4",
                   cat.isLeak
                     ? "border-red-200 dark:border-red-800 bg-red-50 dark:bg-red-900/5"
-                    : "border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800"
+                    : "border-[var(--rule-base)] bg-white dark:bg-gray-800"
                 )}
               >
                 <div className="flex items-start justify-between gap-2 mb-2">
@@ -245,7 +245,7 @@ export default function MoneyLeakDetector() {
                     <div className="flex-1 h-3 rounded-full bg-gray-100 dark:bg-gray-700 overflow-hidden">
                       <div
                         className={cn(
-                          "h-full rounded-full transition-all duration-500",
+                          "h-full rounded-full transition-all duration-[var(--dur-slow)]",
                           cat.isLeak ? "bg-red-500 dark:bg-red-600" : "bg-[#00B4A6] dark:bg-[#2dd4bf]"
                         )}
                         style={{ width: `${barCurrent}%` }}
@@ -258,7 +258,7 @@ export default function MoneyLeakDetector() {
                     </span>
                     <div className="flex-1 h-3 rounded-full bg-gray-100 dark:bg-gray-700 overflow-hidden">
                       <div
-                        className="h-full rounded-full bg-gray-400 dark:bg-gray-500 transition-all duration-500"
+                        className="h-full rounded-full bg-gray-400 dark:bg-gray-500 transition-all duration-[var(--dur-slow)]"
                         style={{ width: `${barAvg}%` }}
                       />
                     </div>

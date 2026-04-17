@@ -69,7 +69,7 @@ export function BulejeHeatmap({
       {(label || sublabel) && (
         <div className="mb-5">
           {label && (
-            <p className="text-[10px] font-bold uppercase tracking-[0.25em] text-[var(--text-tertiary)] mb-1">
+            <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)] mb-1">
               {label}
             </p>
           )}
@@ -85,7 +85,7 @@ export function BulejeHeatmap({
         {/* Grid rows: 7 days */}
         {grid.map((row, dayIdx) => (
           <div key={dayIdx} className="flex items-center gap-1">
-            <span className="w-5 shrink-0 text-[10px] font-bold uppercase tracking-[0.15em] text-[var(--text-tertiary)] text-right">
+            <span className="w-5 shrink-0 text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)] text-right">
               {dayLabels[dayIdx]}
             </span>
             <div className="flex-1 grid grid-cols-24 gap-px">
@@ -114,7 +114,7 @@ export function BulejeHeatmap({
           <span className="w-5 shrink-0" />
           <div className="flex-1 grid grid-cols-24 gap-px">
             {Array.from({ length: 24 }).map((_, h) => (
-              <div key={h} className="text-[9px] text-center text-[var(--text-tertiary)] font-mono tabular-nums">
+              <div key={h} className="text-[length:var(--ts-2xs)] text-center text-[var(--text-tertiary)] font-mono tabular-nums">
                 {h % hourStep === 0 ? String(h).padStart(2, "0") : ""}
               </div>
             ))}
@@ -124,7 +124,7 @@ export function BulejeHeatmap({
 
       {/* Legend */}
       <div className="mt-5 flex items-center gap-3">
-        <span className="text-[10px] font-bold uppercase tracking-[0.18em] text-[var(--text-tertiary)]">Menos</span>
+        <span className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)]">Menos</span>
         <div className="flex gap-px">
           {[0, 0.15, 0.3, 0.5, 0.7, 0.9, 1].map((i) => (
             <div
@@ -139,7 +139,7 @@ export function BulejeHeatmap({
             />
           ))}
         </div>
-        <span className="text-[10px] font-bold uppercase tracking-[0.18em] text-[var(--text-tertiary)]">Más</span>
+        <span className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)]">Más</span>
       </div>
     </div>
   );

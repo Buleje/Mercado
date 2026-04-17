@@ -82,21 +82,21 @@ function groupSalesByCashier(sales: Sale[]): CashierStats[] {
 function RankBadge({ rank }: { rank: number }) {
   if (rank === 1) {
     return (
-      <div className="w-10 h-10 rounded-full bg-gradient-to-b from-yellow-300 to-yellow-500 flex items-center justify-center flex-shrink-0">
+      <div className="w-10 h-10 rounded-full bg-[var(--text-primary)] flex items-center justify-center flex-shrink-0">
         <span className="text-lg" role="img" aria-label="primer lugar">&#x1F451;</span>
       </div>
     );
   }
   if (rank === 2) {
     return (
-      <div className="w-10 h-10 rounded-full bg-gradient-to-b from-gray-300 to-gray-400 flex items-center justify-center shadow flex-shrink-0">
+      <div className="w-10 h-10 rounded-full bg-[var(--text-tertiary)] flex items-center justify-center flex-shrink-0">
         <span className="text-lg" role="img" aria-label="segundo lugar">&#x1F948;</span>
       </div>
     );
   }
   if (rank === 3) {
     return (
-      <div className="w-10 h-10 rounded-full bg-gradient-to-b from-amber-600 to-amber-800 flex items-center justify-center shadow flex-shrink-0">
+      <div className="w-10 h-10 rounded-full bg-[var(--text-primary)] flex items-center justify-center flex-shrink-0">
         <span className="text-lg" role="img" aria-label="tercer lugar">&#x1F949;</span>
       </div>
     );
@@ -124,15 +124,15 @@ function RankRow({
   return (
     <div
       className={cn(
-        "flex items-center gap-4 p-4 rounded-xl border transition-all duration-500",
+        "flex items-center gap-4 p-4 rounded-xl border transition-all duration-[var(--dur-slow)]",
         isAnimating && "animate-pulse",
         cashier.rank === 1
           ? "border-yellow-300 bg-yellow-50 dark:bg-yellow-900/20 dark:border-yellow-700"
           : cashier.rank === 2
-          ? "border-gray-300 bg-gray-50 dark:bg-gray-800/50 dark:border-gray-600"
+          ? "border-[var(--rule-base)] bg-gray-50 dark:bg-gray-800/50 dark:border-gray-600"
           : cashier.rank === 3
           ? "border-amber-400 bg-amber-50 dark:bg-amber-900/20 dark:border-amber-700"
-          : "border-gray-100 dark:border-gray-700 bg-white dark:bg-gray-800"
+          : "border-[var(--rule-base)] bg-white dark:bg-gray-800"
       )}
     >
       <RankBadge rank={cashier.rank} />
@@ -287,7 +287,7 @@ export default function CashierRanking() {
         ].map((stat) => (
           <div
             key={stat.label}
-            className="rounded-xl border border-gray-100 dark:border-gray-700 bg-white dark:bg-gray-800 p-3 text-center"
+            className="rounded-xl border border-[var(--rule-base)] bg-white dark:bg-gray-800 p-3 text-center"
           >
             <div className="flex justify-center text-[#00B4A6] dark:text-green-400 mb-1">
               {stat.icon}
@@ -319,7 +319,7 @@ export default function CashierRanking() {
           </button>
         </div>
       ) : ranking.length === 0 ? (
-        <div className="rounded-xl border border-gray-100 dark:border-gray-700 bg-white dark:bg-gray-800 p-8 text-center">
+        <div className="rounded-xl border border-[var(--rule-base)] bg-white dark:bg-gray-800 p-8 text-center">
           <TrendingUp className="w-8 h-8 text-gray-300 dark:text-gray-600 mx-auto mb-2" />
           <p className="text-sm text-gray-400 dark:text-gray-500">
             No hay ventas registradas hoy

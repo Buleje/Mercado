@@ -31,7 +31,7 @@ export function OrdersPrintPreview({
         onClick={e => e.stopPropagation()}
       >
         {/* Header */}
-        <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100 dark:border-card-border shrink-0">
+        <div className="flex items-center justify-between px-5 py-4 border-b border-[var(--rule-soft)] dark:border-card-border shrink-0">
           <div>
             <h3 className="font-extrabold text-gray-900 dark:text-foreground text-lg">Vista previa de impresión</h3>
             <p className="text-xs text-gray-400 dark:text-muted mt-0.5">
@@ -53,11 +53,11 @@ export function OrdersPrintPreview({
               return (
                 <div
                   key={order.id}
-                  className="bg-white border-2 border-gray-300 rounded-lg p-4 print:break-after-page print:border-0 print:rounded-none"
+                  className="bg-white border-2 border-[var(--rule-base)] rounded-lg p-4 print:break-after-page print:border-0 print:rounded-none"
                   style={{ pageBreakAfter: "always" }}
                 >
                   {/* Header */}
-                  <div className="text-center mb-4 pb-3 border-b-2 border-dashed border-gray-300">
+                  <div className="text-center mb-4 pb-3 border-b-2 border-dashed border-[var(--rule-base)]">
                     <div className="w-16 h-16 mx-auto mb-2 bg-gray-100 rounded-full flex items-center justify-center">
                       <Store className="h-8 w-8 text-primary" />
                     </div>
@@ -88,7 +88,7 @@ export function OrdersPrintPreview({
                   </div>
 
                   {/* Customer */}
-                  <div className="mb-4 pb-3 border-b border-gray-200">
+                  <div className="mb-4 pb-3 border-b border-[var(--rule-base)]">
                     <p className="text-xs font-bold text-gray-500 uppercase mb-1">Cliente</p>
                     <p className="font-bold text-gray-900">{order.customer.name}</p>
                     {order.customer.phone && (
@@ -117,7 +117,7 @@ export function OrdersPrintPreview({
                   </div>
 
                   {/* Payment */}
-                  <div className="mb-4 pb-3 border-b-2 border-gray-300">
+                  <div className="mb-4 pb-3 border-b-2 border-[var(--rule-base)]">
                     {order.paymentMethod && (
                       <div className="flex justify-between text-sm mb-1">
                         <span className="font-bold text-gray-600">Método de pago:</span>
@@ -158,7 +158,7 @@ export function OrdersPrintPreview({
                   )}
 
                   {/* Footer */}
-                  <div className="text-center pt-3 border-t border-dashed border-gray-300">
+                  <div className="text-center pt-3 border-t border-dashed border-[var(--rule-base)]">
                     <p className="text-xs text-gray-500">¡Gracias por tu compra!</p>
                     <p className="text-xs text-gray-400 mt-1">Productos frescos · Entrega directa</p>
                   </div>
@@ -169,10 +169,10 @@ export function OrdersPrintPreview({
         </div>
 
         {/* Footer */}
-        <div className="px-5 py-4 border-t border-gray-100 dark:border-card-border shrink-0 flex gap-3">
+        <div className="px-5 py-4 border-t border-[var(--rule-soft)] dark:border-card-border shrink-0 flex gap-3">
           <button
             onClick={onClose}
-            className="flex-1 py-2.5 rounded-lg text-sm font-bold text-gray-600 dark:text-muted border border-gray-200 dark:border-card-border hover:bg-gray-50 dark:hover:bg-surface transition-colors"
+            className="flex-1 py-2.5 rounded-lg text-sm font-bold text-gray-600 dark:text-muted border border-[var(--rule-base)] dark:border-card-border hover:bg-gray-50 dark:hover:bg-surface transition-colors"
           >
             Cancelar
           </button>

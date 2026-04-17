@@ -32,7 +32,7 @@ export function Divider({
         className={cn("flex items-center gap-3 my-4", className)}
       >
         <span className={cn("flex-1 h-px", COLOR[variant])} />
-        <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-gray-400">
+        <span className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-gray-400">
           {label}
         </span>
         <span className={cn("flex-1 h-px", COLOR[variant])} />

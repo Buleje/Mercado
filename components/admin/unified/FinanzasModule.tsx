@@ -125,7 +125,7 @@ function HealthSemaphore() {
 
   if (loading || !score) {
     return (
-      <div className="bg-white border border-gray-200 rounded-xl p-4 animate-pulse">
+      <div className="bg-white border border-[var(--rule-base)] rounded-xl p-4 animate-pulse">
         <div className="h-20 w-20 rounded-full bg-gray-200 mx-auto" />
       </div>
     );
@@ -142,13 +142,13 @@ function HealthSemaphore() {
   ];
 
   return (
-    <div className="bg-white border border-gray-200 rounded-xl p-4 sm:p-5 ">
+    <div className="bg-white border border-[var(--rule-base)] rounded-xl p-4 sm:p-5 ">
       <div className="flex flex-col sm:flex-row items-center gap-4">
         {/* Circulo grande */}
         <div className={`w-20 h-20 rounded-full flex items-center justify-center ring-4 ${bgRing} shrink-0`} style={{ backgroundColor: `${color}20` }}>
           <div className="text-center">
             <span className="text-2xl font-extrabold" style={{ color }}>{score.total}</span>
-            <p className="text-[9px] font-bold" style={{ color }}>{label}</p>
+            <p className="text-[length:var(--ts-2xs)] font-bold" style={{ color }}>{label}</p>
           </div>
         </div>
         {/* Mini barras */}
@@ -156,14 +156,14 @@ function HealthSemaphore() {
           <p className="text-xs font-bold text-gray-600">Salud Financiera</p>
           {factors.map(f => (
             <div key={f.label} className="flex items-center gap-2">
-              <span className="text-[10px] font-semibold text-gray-500 w-14">{f.label}</span>
+              <span className="text-[length:var(--ts-2xs)] font-semibold text-gray-500 w-14">{f.label}</span>
               <div className="flex-1 h-2 bg-gray-200 rounded-full overflow-hidden">
                 <div
-                  className="h-full rounded-full transition-all duration-500"
+                  className="h-full rounded-full transition-all duration-[var(--dur-slow)]"
                   style={{ width: `${(f.pts / f.max) * 100}%`, backgroundColor: f.pts === f.max ? "#22c55e" : f.pts >= f.max * 0.6 ? "#f59e0b" : "#ef4444" }}
                 />
               </div>
-              <span className="text-[10px] font-bold text-gray-500 w-10 text-right">{f.detail}</span>
+              <span className="text-[length:var(--ts-2xs)] font-bold text-gray-500 w-10 text-right">{f.detail}</span>
             </div>
           ))}
         </div>
@@ -220,7 +220,7 @@ function ComparativoMensual() {
 
   if (loading) {
     return (
-      <div className="bg-white border border-gray-200 rounded-xl p-4 animate-pulse">
+      <div className="bg-white border border-[var(--rule-base)] rounded-xl p-4 animate-pulse">
         <div className="h-75 bg-gray-100 rounded-xl" />
       </div>
     );
@@ -231,7 +231,7 @@ function ComparativoMensual() {
   }
 
   return (
-    <div className="bg-white border border-gray-200 rounded-xl p-4 sm:p-5 ">
+    <div className="bg-white border border-[var(--rule-base)] rounded-xl p-4 sm:p-5 ">
       <p className="text-xs font-bold text-gray-600 mb-3">Comparativo Mensual</p>
       <ResponsiveContainer width="100%" height={300}>
         <BarChart data={chartData} margin={{ top: 5, right: 10, left: 0, bottom: 5 }}>
@@ -295,7 +295,7 @@ function PuntoEquilibrio() {
 
   if (loading || !data) {
     return (
-      <div className="bg-white border border-gray-200 rounded-xl p-4 animate-pulse">
+      <div className="bg-white border border-[var(--rule-base)] rounded-xl p-4 animate-pulse">
         <div className="h-16 bg-gray-100 rounded-xl" />
       </div>
     );
@@ -308,13 +308,13 @@ function PuntoEquilibrio() {
   const pct = Math.min((data.ventasHoy / data.gastoDiario) * 100, 150);
 
   return (
-    <div className="bg-white border border-gray-200 rounded-xl p-4 sm:p-5 ">
+    <div className="bg-white border border-[var(--rule-base)] rounded-xl p-4 sm:p-5 ">
       <p className="text-xs font-bold text-gray-600 mb-3">Punto de Equilibrio Diario</p>
       <div className="flex items-center gap-4">
         <div className="flex-1">
           <div className="relative h-3 bg-gray-200 rounded-full overflow-hidden">
             <div
-              className="h-full rounded-full transition-all duration-700"
+              className="h-full rounded-full transition-all duration-[var(--dur-slower)]"
               style={{
                 width: `${Math.min(pct, 100)}%`,
                 backgroundColor: cubierto ? "#22c55e" : "#ef4444",
@@ -326,7 +326,7 @@ function PuntoEquilibrio() {
               style={{ left: `${Math.min(100 / (pct > 100 ? pct / 100 : 1), 100)}%` }}
             />
           </div>
-          <div className="flex justify-between mt-1.5 text-[10px] text-gray-500">
+          <div className="flex justify-between mt-1.5 text-[length:var(--ts-2xs)] text-gray-500">
             <span>S/0</span>
             <span className="font-bold text-gray-700">Meta: S/{data.gastoDiario}</span>
             <span>S/{Math.round(data.gastoDiario * 1.5)}</span>
@@ -336,7 +336,7 @@ function PuntoEquilibrio() {
           <p className="text-lg font-extrabold" style={{ color: cubierto ? "#22c55e" : "#ef4444" }}>
             S/{data.ventasHoy}
           </p>
-          <p className="text-[10px] text-gray-500">vendido hoy</p>
+          <p className="text-[length:var(--ts-2xs)] text-gray-500">vendido hoy</p>
         </div>
       </div>
       <p className={`text-xs font-bold mt-2 ${cubierto ? "text-emerald-600" : "text-red-600"}`}>
@@ -420,7 +420,7 @@ function GastosDonut() {
 
   if (loading) {
     return (
-      <div className="bg-white border border-gray-200 rounded-xl p-4 animate-pulse">
+      <div className="bg-white border border-[var(--rule-base)] rounded-xl p-4 animate-pulse">
         <div className="h-55 bg-gray-100 rounded-xl" />
       </div>
     );
@@ -438,7 +438,7 @@ function GastosDonut() {
   const getColor = (category: string) => EXPENSE_COLORS[category] ?? EXPENSE_COLORS[category.toLowerCase()] ?? "#6b7280";
 
   return (
-    <div className="bg-white border border-gray-200 rounded-xl p-4 sm:p-5 ">
+    <div className="bg-white border border-[var(--rule-base)] rounded-xl p-4 sm:p-5 ">
       <p className="text-xs font-bold text-gray-600 mb-3">Gastos del Mes por Categoria</p>
       <div className="flex flex-col sm:flex-row items-center gap-4">
         <div className="relative w-45 h-45">
@@ -482,7 +482,7 @@ function GastosDonut() {
                 <span className="flex-1 text-gray-700 font-semibold truncate">{g.name}</span>
                 {isUnusual && (
                   <span
-                    className="shrink-0 px-1.5 py-0.5 rounded-full bg-orange-100 text-orange-700 text-[9px] font-bold"
+                    className="shrink-0 px-1.5 py-0.5 rounded-full bg-orange-100 text-orange-700 text-[length:var(--ts-2xs)] font-bold"
                     title={`Este gasto es ${pctOver}% mayor al promedio de S/${Math.round(avg)} en ${g.name}`}
                   >
                     Gasto inusual
@@ -530,7 +530,7 @@ function ProyeccionCierreMes() {
 
   if (loading || !data) {
     return (
-      <div className="bg-white border border-gray-200 rounded-xl p-4 animate-pulse">
+      <div className="bg-white border border-[var(--rule-base)] rounded-xl p-4 animate-pulse">
         <div className="h-32 bg-gray-100 rounded-xl" />
       </div>
     );
@@ -544,24 +544,24 @@ function ProyeccionCierreMes() {
   const mesNombre = new Date().toLocaleDateString("es-PE", { month: "long", year: "numeric" });
 
   return (
-    <div className="bg-white border border-gray-200 rounded-xl p-4 sm:p-5 ">
+    <div className="bg-white border border-[var(--rule-base)] rounded-xl p-4 sm:p-5 ">
       <div className="flex items-center gap-2 mb-3">
-        <TrendingUp className="h-4 w-4 text-purple-500" />
+        <TrendingUp className="h-4 w-4 text-[var(--text-secondary)]" />
         <p className="text-xs font-bold text-gray-600">
           Proyeccion {mesNombre.charAt(0).toUpperCase() + mesNombre.slice(1)}
         </p>
       </div>
       <div className="grid grid-cols-3 gap-3 mb-4">
         <div className="text-center">
-          <p className="text-[10px] font-bold text-gray-400 uppercase">Ventas proy.</p>
+          <p className="text-[length:var(--ts-2xs)] font-bold text-gray-400 uppercase">Ventas proy.</p>
           <p className={cn("text-base font-extrabold", ventasProyectadas === 0 ? "text-gray-300" : "text-primary")}>{formatCurrency(ventasProyectadas, { decimals: 0 })}</p>
         </div>
         <div className="text-center">
-          <p className="text-[10px] font-bold text-gray-400 uppercase">Gastos proy.</p>
+          <p className="text-[length:var(--ts-2xs)] font-bold text-gray-400 uppercase">Gastos proy.</p>
           <p className={cn("text-base font-extrabold", gastosProyectados === 0 ? "text-gray-300" : "text-red-500")}>{formatCurrency(gastosProyectados, { decimals: 0 })}</p>
         </div>
         <div className="text-center">
-          <p className="text-[10px] font-bold text-gray-400 uppercase">Utilidad est.</p>
+          <p className="text-[length:var(--ts-2xs)] font-bold text-gray-400 uppercase">Utilidad est.</p>
           <p className={cn("text-base font-extrabold", utilidadProyectada === 0 ? "text-gray-300" : utilidadProyectada >= 0 ? "text-emerald-600" : "text-red-600")}>
             {utilidadProyectada >= 0 ? "+" : ""}{formatCurrency(Math.abs(utilidadProyectada), { decimals: 0 })}
           </p>
@@ -569,17 +569,17 @@ function ProyeccionCierreMes() {
       </div>
       {/* Progress bar */}
       <div className="space-y-1.5">
-        <div className="flex justify-between text-[10px] text-gray-500">
+        <div className="flex justify-between text-[length:var(--ts-2xs)] text-gray-500">
           <span>Dia {data.diasTranscurridos} de {data.diasTotales}</span>
           <span>{Math.round(progreso)}% del mes</span>
         </div>
         <div className="h-2 bg-gray-200 rounded-full overflow-hidden">
           <div
-            className="h-full rounded-full transition-all duration-700 bg-primary"
+            className="h-full rounded-full transition-all duration-[var(--dur-slower)] bg-primary"
             style={{ width: `${progreso}%` }}
           />
         </div>
-        <p className="text-[10px] text-gray-400 text-center">
+        <p className="text-[length:var(--ts-2xs)] text-gray-400 text-center">
           Ventas actuales: {formatCurrency(Math.round(data.ventasMes), { decimals: 0 })} de {formatCurrency(ventasProyectadas, { decimals: 0 })} proyectados
         </p>
       </div>
@@ -610,7 +610,7 @@ function ResumenFiscal() {
 
   if (loading || !data) {
     return (
-      <div className="bg-white border border-gray-200 rounded-xl p-4 animate-pulse">
+      <div className="bg-white border border-[var(--rule-base)] rounded-xl p-4 animate-pulse">
         <div className="h-32 bg-gray-100 rounded-xl" />
       </div>
     );
@@ -622,7 +622,7 @@ function ResumenFiscal() {
   const mesActual = new Date().toLocaleDateString("es-PE", { month: "long", year: "numeric" });
 
   return (
-    <div className="bg-white border border-gray-200 rounded-xl p-4 sm:p-5 ">
+    <div className="bg-white border border-[var(--rule-base)] rounded-xl p-4 sm:p-5 ">
       <div className="flex items-center gap-2 mb-3">
         <Calculator className="h-4 w-4 text-amber-500" />
         <p className="text-xs font-bold text-gray-600">
@@ -646,7 +646,7 @@ function ResumenFiscal() {
           <span className="text-gray-600">IGV pagado</span>
           <span className="font-bold text-gray-900">{formatCurrency(Math.round(igvPagado), { decimals: 0 })}</span>
         </div>
-        <div className="border-t border-gray-200 pt-2 mt-2 flex justify-between text-sm">
+        <div className="border-t border-[var(--rule-base)] pt-2 mt-2 flex justify-between text-sm">
           <span className="font-bold text-gray-800">IGV a pagar</span>
           <span className={`font-extrabold ${igvNeto > 0 ? "text-red-600" : "text-emerald-600"}`}>
             {igvNeto > 0 ? "" : "-"}{formatCurrency(Math.abs(Math.round(igvNeto)), { decimals: 0 })}
@@ -654,7 +654,7 @@ function ResumenFiscal() {
           </span>
         </div>
       </div>
-      <p className="text-[10px] text-gray-400 mt-3 italic">
+      <p className="text-[length:var(--ts-2xs)] text-gray-400 mt-3 italic">
         Referencia aproximada — consulte con su contador
       </p>
     </div>
@@ -741,10 +741,10 @@ const KPI_DEFS: KpiDef[] = [
   { key: "ingresos", label: "Ingresos del mes", icon: TrendingUp, color: "#22c55e", bg: "bg-emerald-50" },
   { key: "gastos", label: "Gastos del mes", icon: TrendingDown, color: "#ef4444", bg: "bg-red-50" },
   { key: "utilidad", label: "Utilidad neta", icon: DollarSign, color: "#3b82f6", bg: "bg-emerald-50" },
-  { key: "margen", label: "Margen %", icon: Percent, color: "#8b5cf6", bg: "bg-purple-50" },
+  { key: "margen", label: "Margen %", icon: Percent, color: "#8b5cf6", bg: "bg-[var(--surface-sunken)]" },
   { key: "deuda", label: "Deuda proveedores", icon: Truck, color: "#f97316", bg: "bg-orange-50" },
   { key: "fiados", label: "Fiados pendientes", icon: CreditCard, color: "#f59e0b", bg: "bg-amber-50" },
-  { key: "igv", label: "IGV a pagar", icon: Calculator, color: "#e63946", bg: "bg-rose-50" },
+  { key: "igv", label: "IGV a pagar", icon: Calculator, color: "#e63946", bg: "bg-[var(--surface-sunken)]" },
   { key: "puntoEq", label: "Punto equilibrio", icon: Target, color: "var(--color-primary)", bg: "bg-emerald-50" },
 ];
 
@@ -758,8 +758,8 @@ function GaugeChart({ value, max, label, unit, color }: { value: number; max: nu
     { name: "empty", value: empty },
   ];
   return (
-    <div className="bg-white border border-gray-200 rounded-xl p-4  flex flex-col items-center">
-      <p className="text-[10px] font-bold text-gray-500 mb-1">{label}</p>
+    <div className="bg-white border border-[var(--rule-base)] rounded-xl p-4  flex flex-col items-center">
+      <p className="text-[length:var(--ts-2xs)] font-bold text-gray-500 mb-1">{label}</p>
       <div className="relative w-35 h-20">
         <ResponsiveContainer width="100%" height={80}>
           <PieChart>
@@ -1006,7 +1006,7 @@ function FinanzasDashboard() {
       <div className="space-y-6 animate-pulse">
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
           {Array.from({ length: 8 }).map((_, i) => (
-            <div key={i} className="bg-white border border-gray-200 rounded-xl p-4">
+            <div key={i} className="bg-white border border-[var(--rule-base)] rounded-xl p-4">
               <div className="flex items-center gap-3 mb-3">
                 <div className="h-10 w-10 rounded-full bg-gray-200" />
                 <div className="flex-1 space-y-2">
@@ -1017,19 +1017,19 @@ function FinanzasDashboard() {
             </div>
           ))}
         </div>
-        <div className="bg-white border border-gray-200 rounded-xl p-6">
+        <div className="bg-white border border-[var(--rule-base)] rounded-xl p-6">
           <div className="h-4 bg-gray-200 rounded w-48 mb-4" />
           <div className="h-80 bg-gray-100 rounded-xl" />
         </div>
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-          <div className="bg-white border border-gray-200 rounded-xl p-6">
+          <div className="bg-white border border-[var(--rule-base)] rounded-xl p-6">
             <div className="h-50 bg-gray-100 rounded-xl" />
           </div>
-          <div className="bg-white border border-gray-200 rounded-xl p-6">
+          <div className="bg-white border border-[var(--rule-base)] rounded-xl p-6">
             <div className="h-50 bg-gray-100 rounded-xl" />
           </div>
         </div>
-        <div className="bg-white border border-gray-200 rounded-xl p-6">
+        <div className="bg-white border border-[var(--rule-base)] rounded-xl p-6">
           <div className="h-70 bg-gray-100 rounded-xl" />
         </div>
       </div>
@@ -1137,13 +1137,13 @@ function FinanzasDashboard() {
           const sparkData = kpiIdx < 3 ? [{ v: val * 0.7 }, { v: val * 0.85 }, { v: val * 0.75 }, { v: val * 0.9 }, { v: val * 0.82 }, { v: val * 0.95 }, { v: val }] : null;
 
           return (
-            <div key={def.key} className="bg-white border border-gray-200 rounded-xl p-3 sm:p-4  hover:shadow-sm transition-shadow">
+            <div key={def.key} className="bg-white border border-[var(--rule-base)] rounded-xl p-3 sm:p-4  hover:shadow-sm transition-shadow">
               <div className="flex items-center gap-3">
                 <div className={`h-10 w-10 rounded-full flex items-center justify-center shrink-0 ${def.bg}`}>
                   <Icon className="h-5 w-5" style={{ color: def.color }} />
                 </div>
                 <div className="min-w-0 flex-1">
-                  <p className="text-[10px] font-bold text-gray-500 truncate">{def.label}</p>
+                  <p className="text-[length:var(--ts-2xs)] font-bold text-gray-500 truncate">{def.label}</p>
                   <div className="flex items-center gap-2">
                     <p className={`text-xl sm:text-2xl font-mono font-extrabold truncate ${valColor}`}>{display}</p>
                     <span className={`text-xs ${change >= 0 ? "text-green-600" : "text-red-500"}`}>
@@ -1151,7 +1151,7 @@ function FinanzasDashboard() {
                     </span>
                   </div>
                   {subtexto && (
-                    <p className="text-[10px] text-gray-400 font-medium">{subtexto}</p>
+                    <p className="text-[length:var(--ts-2xs)] text-gray-400 font-medium">{subtexto}</p>
                   )}
                   {sparkData && (
                     <div className="h-8 w-20 mt-1">
@@ -1173,7 +1173,7 @@ function FinanzasDashboard() {
       {/* ════════ SECCION 2: Ingresos vs Gastos vs Utilidad (ComposedChart) ════════ */}
       <StaggerItem index={1}>
       {monthlyData.length > 0 && (
-        <div className="bg-white border border-gray-200 rounded-xl p-4 sm:p-6 ">
+        <div className="bg-white border border-[var(--rule-base)] rounded-xl p-4 sm:p-6 ">
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center gap-2">
               <FavStar id="ingresos-vs-gastos" favs={finFavs} />
@@ -1181,7 +1181,7 @@ function FinanzasDashboard() {
               <p className="text-sm font-bold text-gray-700">Ingresos vs Gastos vs Utilidad</p>
             </div>
             <div className="flex items-center gap-2">
-              <span className="text-[10px] text-gray-400 font-medium">Ultimos 6 meses</span>
+              <span className="text-[length:var(--ts-2xs)] text-gray-400 font-medium">Ultimos 6 meses</span>
               <button onClick={() => setExpandedChart("ingresos-gastos")} className="p-1 hover:bg-gray-100 rounded transition-colors" title="Expandir"><Maximize2 className="h-3.5 w-3.5 text-gray-400" /></button>
             </div>
           </div>
@@ -1221,7 +1221,7 @@ function FinanzasDashboard() {
       <StaggerItem index={2}>
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         {/* Donut izquierda: Gastos por categoria */}
-        <div className="bg-white border border-gray-200 rounded-xl p-4 sm:p-6 ">
+        <div className="bg-white border border-[var(--rule-base)] rounded-xl p-4 sm:p-6 ">
           <div className="flex items-center gap-2 mb-4">
             <FavStar id="gastos-categoria" favs={finFavs} />
             <div className="h-2 w-2 rounded-full bg-[#e63946]" />
@@ -1251,7 +1251,7 @@ function FinanzasDashboard() {
                 </ResponsiveContainer>
                 <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
                   <div className="text-center">
-                    <p className="text-[9px] text-gray-400 font-medium uppercase">Total gastos</p>
+                    <p className="text-[length:var(--ts-2xs)] text-gray-400 font-medium uppercase">Total gastos</p>
                     <p className={cn("text-base font-extrabold", totalExpenses === 0 ? "text-gray-300" : "text-gray-900")}>{formatCurrency(totalExpenses, { decimals: 0 })}</p>
                   </div>
                 </div>
@@ -1273,7 +1273,7 @@ function FinanzasDashboard() {
         </div>
 
         {/* Donut derecha: Metodos de pago */}
-        <div className="bg-white border border-gray-200 rounded-xl p-4 sm:p-6 ">
+        <div className="bg-white border border-[var(--rule-base)] rounded-xl p-4 sm:p-6 ">
           <div className="flex items-center gap-2 mb-4">
             <div className="h-2 w-2 rounded-full bg-[#22c55e]" />
             <p className="text-sm font-bold text-gray-700">Ingresos por Metodo de Pago</p>
@@ -1293,7 +1293,7 @@ function FinanzasDashboard() {
                 </ResponsiveContainer>
                 <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
                   <div className="text-center">
-                    <p className="text-[9px] text-gray-400 font-medium uppercase">Total ingresos</p>
+                    <p className="text-[length:var(--ts-2xs)] text-gray-400 font-medium uppercase">Total ingresos</p>
                     <p className={cn("text-base font-extrabold", totalIncome === 0 ? "text-gray-300" : "text-gray-900")}>{formatCurrency(totalIncome, { decimals: 0 })}</p>
                   </div>
                 </div>
@@ -1319,7 +1319,7 @@ function FinanzasDashboard() {
       {/* ════════ SECCION 4: Flujo de Caja Diario (AreaChart) ════════ */}
       <StaggerItem index={3}>
       {cashFlow.length > 0 && (
-        <div className="bg-white border border-gray-200 rounded-xl p-4 sm:p-6 ">
+        <div className="bg-white border border-[var(--rule-base)] rounded-xl p-4 sm:p-6 ">
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center gap-2">
               <FavStar id="flujo-caja" favs={finFavs} />
@@ -1327,7 +1327,7 @@ function FinanzasDashboard() {
               <p className="text-sm font-bold text-gray-700">Flujo de Caja</p>
             </div>
             <div className="flex items-center gap-2">
-              <span className="text-[10px] text-gray-400 font-medium">Ultimos 30 dias</span>
+              <span className="text-[length:var(--ts-2xs)] text-gray-400 font-medium">Ultimos 30 dias</span>
               <button onClick={() => setExpandedChart("flujo-caja")} className="p-1 hover:bg-gray-100 rounded transition-colors" title="Expandir"><Maximize2 className="h-3.5 w-3.5 text-gray-400" /></button>
             </div>
           </div>
@@ -1372,19 +1372,19 @@ function FinanzasDashboard() {
         <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-xl p-4 sm:p-6">
           <div className="flex items-center gap-2 mb-4">
             <TrendingUp className="h-4 w-4 text-[var(--text-primary)]" strokeWidth={1.75} />
-            <p className="text-[10px] font-bold uppercase tracking-[0.25em] text-[var(--text-tertiary)]">Proyección {mesCapitalized}</p>
+            <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)]">Proyección {mesCapitalized}</p>
           </div>
           <div className="grid grid-cols-3 gap-4 mb-5">
             <div className="text-center p-3 bg-white/60 rounded-xl">
-              <p className="text-[10px] font-bold text-gray-400 uppercase mb-1">Ventas proyectadas</p>
+              <p className="text-[length:var(--ts-2xs)] font-bold text-gray-400 uppercase mb-1">Ventas proyectadas</p>
               <p className={cn("text-lg sm:text-xl font-extrabold", projVentas === 0 ? "text-gray-300" : "text-primary")}>{formatCurrency(projVentas, { decimals: 0 })}</p>
             </div>
             <div className="text-center p-3 bg-white/60 rounded-xl">
-              <p className="text-[10px] font-bold text-gray-400 uppercase mb-1">Gastos proyectados</p>
+              <p className="text-[length:var(--ts-2xs)] font-bold text-gray-400 uppercase mb-1">Gastos proyectados</p>
               <p className={cn("text-lg sm:text-xl font-extrabold", projGastos === 0 ? "text-gray-300" : "text-red-500")}>{formatCurrency(projGastos, { decimals: 0 })}</p>
             </div>
             <div className="text-center p-3 bg-white/60 rounded-xl">
-              <p className="text-[10px] font-bold text-gray-400 uppercase mb-1">Utilidad estimada</p>
+              <p className="text-[length:var(--ts-2xs)] font-bold text-gray-400 uppercase mb-1">Utilidad estimada</p>
               <p className={cn("text-lg sm:text-xl font-extrabold", projUtilidad === 0 ? "text-gray-300" : projUtilidad >= 0 ? "text-emerald-600" : "text-red-600")}>
                 {projUtilidad >= 0 ? "+" : ""}{formatCurrency(Math.abs(projUtilidad), { decimals: 0 })}
               </p>
@@ -1398,7 +1398,7 @@ function FinanzasDashboard() {
             </div>
             <div className="h-3 bg-gray-200 rounded-full overflow-hidden">
               <div
-                className="h-full rounded-full transition-all duration-700"
+                className="h-full rounded-full transition-all duration-[var(--dur-slower)]"
                 style={{
                   width: `${projProgreso}%`,
                   backgroundColor: projPctTarget > 70 ? "#22c55e" : projPctTarget >= 40 ? "#f59e0b" : "#ef4444",
@@ -1427,9 +1427,9 @@ function FinanzasDashboard() {
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
-                <tr className="border-b border-gray-200">
-                  <th className="text-left py-2 text-[10px] font-bold text-gray-400">Concepto</th>
-                  <th className="text-right py-2 text-[10px] font-bold text-gray-400">Monto</th>
+                <tr className="border-b border-[var(--rule-base)]">
+                  <th className="text-left py-2 text-[length:var(--ts-2xs)] font-bold text-gray-400">Concepto</th>
+                  <th className="text-right py-2 text-[length:var(--ts-2xs)] font-bold text-gray-400">Monto</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-100">
@@ -1451,7 +1451,7 @@ function FinanzasDashboard() {
                 </tr>
               </tbody>
               <tfoot>
-                <tr className="border-t-2 border-gray-300">
+                <tr className="border-t-2 border-[var(--rule-base)]">
                   <td className="pt-3 pb-1 font-bold text-gray-800">IGV a pagar</td>
                   <td className={`pt-3 pb-1 text-right font-extrabold font-mono text-lg ${fiscIgvNeto > 0 ? "text-red-600" : "text-emerald-600"}`}>
                     {fiscIgvNeto > 0 ? "" : "-"}{formatCurrency(Math.abs(Math.round(fiscIgvNeto)), { decimals: 0 })}
@@ -1461,7 +1461,7 @@ function FinanzasDashboard() {
               </tfoot>
             </table>
           </div>
-          <p className="text-[10px] text-gray-400 mt-3 italic">
+          <p className="text-[length:var(--ts-2xs)] text-gray-400 mt-3 italic">
             Referencia aproximada — consulte con su contador
           </p>
         </div>
@@ -1515,7 +1515,7 @@ function FinanzasDashboard() {
       <StaggerItem index={7}>
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         {/* Debo a proveedores */}
-        <div className="bg-white border border-gray-200 rounded-xl p-4 sm:p-6 ">
+        <div className="bg-white border border-[var(--rule-base)] rounded-xl p-4 sm:p-6 ">
           <div className="flex items-center gap-2 mb-4">
             <Truck className="h-4 w-4 text-secondary" />
             <p className="text-sm font-bold text-gray-700">Debo a proveedores</p>
@@ -1544,7 +1544,7 @@ function FinanzasDashboard() {
             </div>
           )}
           {topPayables.some(p => p.vencido) && (
-            <div className="flex items-center gap-2 mt-3 text-[10px] text-gray-400">
+            <div className="flex items-center gap-2 mt-3 text-[length:var(--ts-2xs)] text-gray-400">
               <div className="w-2 h-2 rounded-full bg-red-500" /> Vencido
               <div className="w-2 h-2 rounded-full bg-secondary ml-2" /> Al dia
             </div>
@@ -1552,7 +1552,7 @@ function FinanzasDashboard() {
         </div>
 
         {/* Me deben (fiados) */}
-        <div className="bg-white border border-gray-200 rounded-xl p-4 sm:p-6 ">
+        <div className="bg-white border border-[var(--rule-base)] rounded-xl p-4 sm:p-6 ">
           <div className="flex items-center gap-2 mb-4">
             <CreditCard className="h-4 w-4 text-amber-500" />
             <p className="text-sm font-bold text-gray-700">Me deben (fiados)</p>
@@ -1581,7 +1581,7 @@ function FinanzasDashboard() {
             </div>
           )}
           {topFiados.some(f => f.vencido) && (
-            <div className="flex items-center gap-2 mt-3 text-[10px] text-gray-400">
+            <div className="flex items-center gap-2 mt-3 text-[length:var(--ts-2xs)] text-gray-400">
               <div className="w-2 h-2 rounded-full bg-red-500" /> Vencido
               <div className="w-2 h-2 rounded-full bg-amber-500 ml-2" /> Al dia
             </div>
@@ -1593,7 +1593,7 @@ function FinanzasDashboard() {
       {/* ════════ SECCION 9: Mejora 19 — Salud del Negocio (gauge 0-100) ════════ */}
       {healthScore && (
         <StaggerItem index={8}>
-          <div className="bg-white border border-gray-200 rounded-xl p-4 sm:p-6 ">
+          <div className="bg-white border border-[var(--rule-base)] rounded-xl p-4 sm:p-6 ">
             <div className="flex items-center gap-2 mb-4">
               <div className="h-2 w-2 rounded-full" style={{ backgroundColor: healthScore.total > 70 ? "#22c55e" : healthScore.total >= 40 ? "#f59e0b" : "#ef4444" }} />
               <p className="text-sm font-bold text-gray-700">Salud del Negocio</p>
@@ -1638,9 +1638,9 @@ function FinanzasDashboard() {
                       <span className="text-xs font-bold text-gray-500">{f.detail}</span>
                     </div>
                     <div className="h-2 bg-gray-200 rounded-full overflow-hidden">
-                      <div className="h-full rounded-full transition-all duration-500" style={{ width: `${(f.pts / f.max) * 100}%`, backgroundColor: f.pts >= f.max * 0.8 ? "#22c55e" : f.pts >= f.max * 0.5 ? "#f59e0b" : "#ef4444" }} />
+                      <div className="h-full rounded-full transition-all duration-[var(--dur-slow)]" style={{ width: `${(f.pts / f.max) * 100}%`, backgroundColor: f.pts >= f.max * 0.8 ? "#22c55e" : f.pts >= f.max * 0.5 ? "#f59e0b" : "#ef4444" }} />
                     </div>
-                    <p className="text-[9px] text-gray-400 mt-0.5">{f.desc}</p>
+                    <p className="text-[length:var(--ts-2xs)] text-gray-400 mt-0.5">{f.desc}</p>
                   </div>
                 ))}
               </div>
@@ -1651,15 +1651,15 @@ function FinanzasDashboard() {
 
       {/* ════════ SECCION 10: Mejora 20 — Comparativo entre meses ════════ */}
       <StaggerItem index={9}>
-        <div className="bg-white border border-gray-200 rounded-xl p-4 sm:p-6 ">
+        <div className="bg-white border border-[var(--rule-base)] rounded-xl p-4 sm:p-6 ">
           <div className="flex items-center justify-between mb-4 flex-wrap gap-2">
             <p className="text-sm font-bold text-gray-700">Comparar Meses</p>
             <div className="flex items-center gap-2">
-              <select value={cmpMonth1} onChange={e => setCmpMonth1(e.target.value)} className="text-xs border border-gray-200 rounded-lg px-2 py-1 bg-white text-gray-700">
+              <select value={cmpMonth1} onChange={e => setCmpMonth1(e.target.value)} className="text-xs border border-[var(--rule-base)] rounded-lg px-2 py-1 bg-white text-gray-700">
                 {monthlyData.map(m => <option key={m.fullMonth} value={m.mes}>{m.mes}</option>)}
               </select>
               <span className="text-xs text-gray-400">vs</span>
-              <select value={cmpMonth2} onChange={e => setCmpMonth2(e.target.value)} className="text-xs border border-gray-200 rounded-lg px-2 py-1 bg-white text-gray-700">
+              <select value={cmpMonth2} onChange={e => setCmpMonth2(e.target.value)} className="text-xs border border-[var(--rule-base)] rounded-lg px-2 py-1 bg-white text-gray-700">
                 {monthlyData.map(m => <option key={m.fullMonth} value={m.mes}>{m.mes}</option>)}
               </select>
             </div>
@@ -1679,11 +1679,11 @@ function FinanzasDashboard() {
               <>
                 <div className="grid grid-cols-2 gap-3 mb-4">
                   <div className="text-center p-2 bg-gray-50 rounded-xl">
-                    <p className="text-[10px] text-gray-400 uppercase font-bold">Ventas</p>
+                    <p className="text-[length:var(--ts-2xs)] text-gray-400 uppercase font-bold">Ventas</p>
                     <p className={cn("text-sm font-bold", diffIngresos >= 0 ? "text-emerald-600" : "text-red-600")}>{diffIngresos >= 0 ? "+" : ""}{diffIngresos}%</p>
                   </div>
                   <div className="text-center p-2 bg-gray-50 rounded-xl">
-                    <p className="text-[10px] text-gray-400 uppercase font-bold">Gastos</p>
+                    <p className="text-[length:var(--ts-2xs)] text-gray-400 uppercase font-bold">Gastos</p>
                     <p className={cn("text-sm font-bold", diffGastos <= 0 ? "text-emerald-600" : "text-red-600")}>{diffGastos >= 0 ? "+" : ""}{diffGastos}%</p>
                   </div>
                 </div>
@@ -1784,8 +1784,8 @@ function IntelligenceKPIStrip() {
   return (
     <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
       {cards.map(c => (
-        <div key={c.label} className="bg-white border border-gray-200 rounded-xl p-3  text-center">
-          <p className="text-[10px] text-gray-500 font-semibold">{c.label}</p>
+        <div key={c.label} className="bg-white border border-[var(--rule-base)] rounded-xl p-3  text-center">
+          <p className="text-[length:var(--ts-2xs)] text-gray-500 font-semibold">{c.label}</p>
           <p className={cn("text-lg font-extrabold mt-0.5", c.color)}>{c.value}</p>
         </div>
       ))}
@@ -1879,7 +1879,7 @@ export default function FinanzasModule() {
         <div className="space-y-6">
           {/* Nuevo — diferenciador #1 vs Loyverse/Alegra/Vendemás */}
           <CashflowRollingTable />
-          <div className="pt-4 border-t border-gray-200 dark:border-white/10">
+          <div className="pt-4 border-t border-[var(--rule-base)] dark:border-white/10">
             <p className="text-xs font-bold text-gray-400 mb-3">
               Proyección legacy (30 días)
             </p>
@@ -1893,11 +1893,11 @@ export default function FinanzasModule() {
       {sub === "reportes" && (
         <div className="space-y-6">
           <ReporteMensualTab />
-          <div className="border-t border-gray-200 dark:border-white/10 pt-6">
+          <div className="border-t border-[var(--rule-base)] dark:border-white/10 pt-6">
             <ReportsTab />
             <div className="mt-4"><ImportExportTab /></div>
           </div>
-          <div className="border-t border-gray-200 dark:border-white/10 pt-6">
+          <div className="border-t border-[var(--rule-base)] dark:border-white/10 pt-6">
             <HistorialCierresTab />
           </div>
         </div>
@@ -1907,15 +1907,15 @@ export default function FinanzasModule() {
           <div className="space-y-6">
             <ComparativeReportsTab />
             <IntelligenceKPIStrip />
-            <div className="bg-white border border-gray-200 rounded-xl p-5 ">
+            <div className="bg-white border border-[var(--rule-base)] rounded-xl p-5 ">
               <h3 className="text-sm font-bold text-gray-700 mb-3">Análisis de Negocio</h3>
               <BusinessIntelligenceTab />
             </div>
-            <div className="bg-white border border-gray-200 rounded-xl p-5 ">
+            <div className="bg-white border border-[var(--rule-base)] rounded-xl p-5 ">
               <h3 className="text-sm font-bold text-gray-700 mb-3">KPIs Personalizados</h3>
               <CustomKPITab />
             </div>
-            <div className="bg-white border border-gray-200 rounded-xl p-5 ">
+            <div className="bg-white border border-[var(--rule-base)] rounded-xl p-5 ">
               <h3 className="text-sm font-bold text-gray-700 mb-3">Precios del Mercado</h3>
               <CompetitorPriceTracker />
             </div>

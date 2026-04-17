@@ -201,7 +201,7 @@ export default function ConteoFisicoWizard() {
       {/* ═══ PASO 1: Iniciar Conteo ═══ */}
       {paso === 1 && (
         <div className="space-y-6">
-          <div className="bg-white rounded-xl border border-gray-200 p-6">
+          <div className="bg-white rounded-xl border border-[var(--rule-base)] p-6">
             <h3 className="text-lg font-bold text-gray-900 mb-4">Nuevo Conteo Fisico</h3>
 
             <div className="space-y-6">
@@ -213,7 +213,7 @@ export default function ConteoFisicoWizard() {
                     className={`flex-1 p-3 rounded-lg border-2 text-sm font-medium transition-colors ${
                       tipo === 'completo'
                         ? 'border-primary bg-primary/5 text-primary'
-                        : 'border-gray-200 text-gray-600 hover:border-gray-300'
+                        : 'border-[var(--rule-base)] text-gray-600 hover:border-gray-300'
                     }`}
                   >
                     Completo
@@ -223,7 +223,7 @@ export default function ConteoFisicoWizard() {
                     className={`flex-1 p-3 rounded-lg border-2 text-sm font-medium transition-colors ${
                       tipo === 'categoria'
                         ? 'border-primary bg-primary/5 text-primary'
-                        : 'border-gray-200 text-gray-600 hover:border-gray-300'
+                        : 'border-[var(--rule-base)] text-gray-600 hover:border-gray-300'
                     }`}
                   >
                     Por categoria
@@ -239,7 +239,7 @@ export default function ConteoFisicoWizard() {
                     value={categoria}
                     onChange={e => setCategoria(e.target.value)}
                     placeholder="Ej: Abarrotes, Bebidas..."
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg bg-white text-gray-900 text-sm"
+                    className="w-full px-3 py-2 border border-[var(--rule-base)] rounded-lg bg-white text-gray-900 text-sm"
                   />
                 </div>
               )}
@@ -256,14 +256,14 @@ export default function ConteoFisicoWizard() {
 
           {/* Existing conteos */}
           {conteos.filter(c => c.status !== 'CERRADO').length > 0 && (
-            <div className="bg-white rounded-xl border border-gray-200 p-6">
+            <div className="bg-white rounded-xl border border-[var(--rule-base)] p-6">
               <h4 className="text-sm font-bold text-gray-700 mb-3">Conteos en progreso</h4>
               <div className="space-y-2">
                 {conteos.filter(c => c.status !== 'CERRADO').map(c => (
                   <button
                     key={c.id}
                     onClick={() => reanudarConteo(c.id)}
-                    className="w-full flex items-center justify-between p-3 rounded-lg border border-gray-200 hover:bg-gray-50 transition-colors text-left"
+                    className="w-full flex items-center justify-between p-3 rounded-lg border border-[var(--rule-base)] hover:bg-gray-50 transition-colors text-left"
                   >
                     <div>
                       <span className="text-sm font-medium text-gray-900 capitalize">{c.tipo}</span>
@@ -289,7 +289,7 @@ export default function ConteoFisicoWizard() {
       {paso === 2 && (
         <div className="space-y-6">
           {/* Progress bar */}
-          <div className="bg-white rounded-xl border border-gray-200 p-4">
+          <div className="bg-white rounded-xl border border-[var(--rule-base)] p-4">
             <div className="flex items-center justify-between mb-2">
               <span className="text-sm font-medium text-gray-700">Progreso</span>
               <span className="text-sm font-bold text-primary">{contados}/{totalItems} ({pctContado}%)</span>
@@ -301,14 +301,14 @@ export default function ConteoFisicoWizard() {
 
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
             {/* LEFT: Search + list */}
-            <div className="bg-white rounded-xl border border-gray-200 p-4">
+            <div className="bg-white rounded-xl border border-[var(--rule-base)] p-4">
               <div className="flex gap-2 mb-3">
                 <input
                   type="text"
                   value={search}
                   onChange={e => setSearch(e.target.value)}
                   placeholder="Buscar producto..."
-                  className="flex-1 px-3 py-2 border border-gray-300 rounded-lg bg-white text-gray-900 text-sm"
+                  className="flex-1 px-3 py-2 border border-[var(--rule-base)] rounded-lg bg-white text-gray-900 text-sm"
                 />
                 <button
                   onClick={() => setShowScanner(true)}
@@ -355,7 +355,7 @@ export default function ConteoFisicoWizard() {
             </div>
 
             {/* RIGHT: Selected product detail */}
-            <div className="bg-white rounded-xl border border-gray-200 p-4">
+            <div className="bg-white rounded-xl border border-[var(--rule-base)] p-4">
               {selected ? (
                 <div className="space-y-6">
                   {selected.product?.image && (
@@ -387,7 +387,7 @@ export default function ConteoFisicoWizard() {
                       onKeyDown={e => { if (e.key === 'Enter') guardarConteo(); }}
                       min={0}
                       placeholder="Ingresa cantidad..."
-                      className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg bg-white text-gray-900 text-2xl text-center font-bold focus:border-primary focus:outline-none"
+                      className="w-full px-4 py-3 border-2 border-[var(--rule-base)] rounded-lg bg-white text-gray-900 text-2xl text-center font-bold focus:border-primary focus:outline-none"
                       autoFocus
                     />
                   </div>
@@ -437,7 +437,7 @@ export default function ConteoFisicoWizard() {
       {/* ═══ PASO 3: Revisar Diferencias ═══ */}
       {paso === 3 && (
         <div className="space-y-6">
-          <div className="bg-white rounded-xl border border-gray-200 p-4">
+          <div className="bg-white rounded-xl border border-[var(--rule-base)] p-4">
             <div className="flex items-center justify-between mb-4">
               <h3 className="text-lg font-bold text-gray-900">Diferencias encontradas</h3>
               <span className="text-sm text-gray-500">
@@ -453,7 +453,7 @@ export default function ConteoFisicoWizard() {
               <div className="overflow-x-auto">
                 <table className="w-full text-sm">
                   <thead>
-                    <tr className="border-b border-gray-200">
+                    <tr className="border-b border-[var(--rule-base)]">
                       <th className="text-left py-2 px-2 text-gray-600 font-medium">Producto</th>
                       <th className="text-center py-2 px-2 text-gray-600 font-medium">Sistema</th>
                       <th className="text-center py-2 px-2 text-gray-600 font-medium">Contado</th>
@@ -463,7 +463,7 @@ export default function ConteoFisicoWizard() {
                   </thead>
                   <tbody>
                     {itemsConDiferencia.map(item => (
-                      <tr key={item.id} className="border-b border-gray-100">
+                      <tr key={item.id} className="border-b border-[var(--rule-soft)]">
                         <td className="py-2 px-2 text-gray-900">
                           {item.product?.name ?? `#${item.productId}`}
                         </td>
@@ -477,7 +477,7 @@ export default function ConteoFisicoWizard() {
                             type="checkbox"
                             checked={item.ajustado}
                             onChange={() => toggleAjustado(item.id)}
-                            className="w-4 h-4 rounded border-gray-300 text-primary focus:ring-primary"
+                            className="w-4 h-4 rounded border-[var(--rule-base)] text-primary focus:ring-primary"
                           />
                         </td>
                       </tr>
@@ -491,7 +491,7 @@ export default function ConteoFisicoWizard() {
           <div className="flex gap-2">
             <button
               onClick={() => setPaso(2)}
-              className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
+              className="px-4 py-2 border border-[var(--rule-base)] text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
             >
               Volver a contar
             </button>
@@ -508,7 +508,7 @@ export default function ConteoFisicoWizard() {
 
       {/* ═══ PASO 4: Resumen Final ═══ */}
       {paso === 4 && resumen && (
-        <div className="bg-white rounded-xl border border-gray-200 p-6 text-center space-y-6">
+        <div className="bg-white rounded-xl border border-[var(--rule-base)] p-6 text-center space-y-6">
           <div className="w-16 h-16 mx-auto bg-green-100 rounded-full flex items-center justify-center">
             <svg className="w-8 h-8 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />

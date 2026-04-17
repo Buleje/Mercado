@@ -125,9 +125,9 @@ export default function SupplierPortalLink() {
   );
 
   return (
-    <div className="bg-white rounded-xl border border-gray-200 overflow-hidden ">
+    <div className="bg-white rounded-xl border border-[var(--rule-base)] overflow-hidden ">
       {/* Header */}
-      <div className="p-5 border-b border-gray-100">
+      <div className="p-5 border-b border-[var(--rule-soft)]">
         <div className="flex items-center gap-3">
           <div className="p-2 rounded-xl bg-primary/10">
             <Link className="w-5 h-5 text-primary" />
@@ -154,7 +154,7 @@ export default function SupplierPortalLink() {
               value={supplierName}
               onChange={(e) => setSupplierName(e.target.value)}
               placeholder="Ej: Distribuidora Hernandez SAC"
-              className="flex-1 rounded-lg border border-gray-200 bg-gray-50 px-3 py-2.5 text-sm text-gray-900 outline-none focus:border-primary"
+              className="flex-1 rounded-lg border border-[var(--rule-base)] bg-gray-50 px-3 py-2.5 text-sm text-gray-900 outline-none focus:border-primary"
               onKeyDown={(e) => {
                 if (e.key === "Enter") generateLink();
               }}
@@ -196,7 +196,7 @@ export default function SupplierPortalLink() {
               {lowStock.map((item, i) => (
                 <div
                   key={i}
-                  className="flex items-center justify-between p-2.5 rounded-xl bg-white border border-gray-200"
+                  className="flex items-center justify-between p-2.5 rounded-xl bg-white border border-[var(--rule-base)]"
                 >
                   <div>
                     <p className="text-sm font-semibold text-gray-900">
@@ -215,7 +215,7 @@ export default function SupplierPortalLink() {
                 </div>
               ))}
             </div>
-            <div className="mt-3 p-2 rounded-xl bg-white border border-gray-200">
+            <div className="mt-3 p-2 rounded-xl bg-white border border-[var(--rule-base)]">
               <p className="text-xs text-gray-500 mb-1">Formulario de cotizacion</p>
               <div className="h-8 rounded-lg bg-gray-100 animate-pulse" />
             </div>
@@ -237,7 +237,7 @@ export default function SupplierPortalLink() {
                 return (
                   <div
                     key={config.token}
-                    className="p-4 rounded-xl bg-gray-50 border border-gray-200"
+                    className="p-4 rounded-xl bg-gray-50 border border-[var(--rule-base)]"
                   >
                     <div className="flex items-start justify-between gap-3 mb-2">
                       <div className="min-w-0">
@@ -265,7 +265,7 @@ export default function SupplierPortalLink() {
                           "flex-1 flex items-center justify-center gap-2 py-2 rounded-xl text-xs font-semibold border transition-colors",
                           copiedToken === config.token
                             ? "bg-primary text-white border-primary"
-                            : "border-gray-200 text-gray-700 hover:border-primary hover:text-primary"
+                            : "border-[var(--rule-base)] text-gray-700 hover:border-primary hover:text-primary"
                         )}
                       >
                         {copiedToken === config.token ? (

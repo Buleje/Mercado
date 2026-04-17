@@ -87,7 +87,7 @@ export default function SupplierQualityTab() {
           </h1>
           <p className="text-sm text-gray-500 dark:text-muted mt-0.5">Scoring automático, incidencias y ranking de proveedores</p>
         </div>
-        <button onClick={() => exportToCSV(SUPPLIERS.map(s => ({ proveedor: s.name, categoria: s.category, puntualidad: s.onTimeDelivery + "%", calidad: s.qualityScore + "%", precio: s.priceScore + "%", servicio: s.serviceScore + "%", general: s.overallScore + "%", pedidos: s.totalOrders, incidentes: s.incidents.length })), "calidad-proveedores")} className="flex items-center gap-1.5 px-3 py-2 rounded-lg border border-gray-200 dark:border-card-border bg-white dark:bg-surface text-sm font-semibold text-gray-700 dark:text-foreground hover:bg-gray-50 dark:hover:bg-accent transition-colors">
+        <button onClick={() => exportToCSV(SUPPLIERS.map(s => ({ proveedor: s.name, categoria: s.category, puntualidad: s.onTimeDelivery + "%", calidad: s.qualityScore + "%", precio: s.priceScore + "%", servicio: s.serviceScore + "%", general: s.overallScore + "%", pedidos: s.totalOrders, incidentes: s.incidents.length })), "calidad-proveedores")} className="flex items-center gap-1.5 px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-card-border bg-white dark:bg-surface text-sm font-semibold text-gray-700 dark:text-foreground hover:bg-gray-50 dark:hover:bg-accent transition-colors">
           <Download className="h-4 w-4" /> Exportar
         </button>
       </div>
@@ -112,9 +112,9 @@ export default function SupplierQualityTab() {
       <div className="flex flex-col sm:flex-row gap-3">
         <div className="relative flex-1 max-w-sm">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
-          <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Buscar proveedor o categoría..." className="w-full pl-9 pr-3 py-2 text-sm border border-gray-200 dark:border-card-border rounded-lg bg-white dark:bg-surface text-gray-700 dark:text-foreground" />
+          <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Buscar proveedor o categoría..." className="w-full pl-9 pr-3 py-2 text-sm border border-[var(--rule-base)] dark:border-card-border rounded-lg bg-white dark:bg-surface text-gray-700 dark:text-foreground" />
         </div>
-        <select value={sortField} onChange={e => setSortField(e.target.value as typeof sortField)} className="px-3 py-2 text-sm border border-gray-200 dark:border-card-border rounded-lg bg-white dark:bg-surface text-gray-700 dark:text-foreground">
+        <select value={sortField} onChange={e => setSortField(e.target.value as typeof sortField)} className="px-3 py-2 text-sm border border-[var(--rule-base)] dark:border-card-border rounded-lg bg-white dark:bg-surface text-gray-700 dark:text-foreground">
           <option value="overallScore">Ranking general</option>
           <option value="onTimeDelivery">Puntualidad</option>
           <option value="qualityScore">Calidad producto</option>
@@ -123,13 +123,13 @@ export default function SupplierQualityTab() {
       </div>
 
       {/* Ranking Table */}
-      <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl overflow-hidden">
+      <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full min-w-[600px] text-sm">
             <thead><tr className="text-left text-xs font-bold text-gray-400 bg-gray-50 dark:bg-surface"><th className="px-2 sm:px-4 py-2 sm:py-3">#</th><th className="px-2 sm:px-4 py-2 sm:py-3">Proveedor</th><th className="px-2 sm:px-4 py-2 sm:py-3">Categoría</th><th className="px-2 sm:px-4 py-2 sm:py-3">Puntualidad</th><th className="px-2 sm:px-4 py-2 sm:py-3">Calidad</th><th className="px-2 sm:px-4 py-2 sm:py-3">Precio</th><th className="px-2 sm:px-4 py-2 sm:py-3">Servicio</th><th className="px-2 sm:px-4 py-2 sm:py-3">General</th><th className="px-2 sm:px-4 py-2 sm:py-3">Trend</th><th className="px-2 sm:px-4 py-2 sm:py-3">Incid.</th><th className="px-2 sm:px-4 py-2 sm:py-3"></th></tr></thead>
             <tbody>
               {sorted.map((s, i) => (
-                <tr key={s.id} className="border-t border-gray-100 dark:border-card-border hover:bg-gray-50 dark:hover:bg-accent/20">
+                <tr key={s.id} className="border-t border-[var(--rule-soft)] dark:border-card-border hover:bg-gray-50 dark:hover:bg-accent/20">
                   <td className="px-2 sm:px-4 py-2 sm:py-3 font-extrabold text-gray-400">{i + 1}</td>
                   <td className="px-2 sm:px-4 py-2 sm:py-3 font-bold text-gray-800 dark:text-foreground">{s.name}</td>
                   <td className="px-2 sm:px-4 py-2 sm:py-3 text-xs text-gray-500">{s.category}</td>
@@ -151,7 +151,7 @@ export default function SupplierQualityTab() {
       {/* Detail Modal */}
       {detail && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4" onClick={() => setDetail(null)}>
-          <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl p-3 sm:p-6 w-full max-w-lg space-y-4 max-h-[80vh] overflow-auto" onClick={e => e.stopPropagation()}>
+          <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl p-3 sm:p-6 w-full max-w-lg space-y-4 max-h-[80vh] overflow-auto" onClick={e => e.stopPropagation()}>
             <div className="flex items-center justify-between">
               <div>
                 <h3 className="font-extrabold text-gray-900 dark:text-foreground">{detail.name}</h3>

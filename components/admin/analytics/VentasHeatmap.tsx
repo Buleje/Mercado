@@ -148,7 +148,7 @@ export default function VentasHeatmap() {
   // ── Loading ──
   if (loading) {
     return (
-      <div className="rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 p-4">
+      <div className="rounded-xl border border-[var(--rule-base)] bg-white dark:bg-gray-900 p-4">
         <div className="h-5 w-48 bg-gray-200 dark:bg-gray-700 rounded mb-4 animate-pulse" />
         <div className="space-y-1">
           {Array.from({ length: 7 }).map((_, i) => (
@@ -183,7 +183,7 @@ export default function VentasHeatmap() {
   // ── Empty ──
   if (grid.size === 0) {
     return (
-      <div className="rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 p-6 flex items-center justify-center h-64">
+      <div className="rounded-xl border border-[var(--rule-base)] bg-white dark:bg-gray-900 p-6 flex items-center justify-center h-64">
         <p className="text-sm text-gray-500 dark:text-gray-400">No hay datos para el mapa de calor</p>
       </div>
     );
@@ -192,7 +192,7 @@ export default function VentasHeatmap() {
   const _insightText = insight || `Tu hora pico es los ${DOW_LABELS[peakDow]} a las ${formatHour(peakHour)}. Asegurate de tener personal suficiente en ese horario.`;
 
   return (
-    <div className="rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 p-4">
+    <div className="rounded-xl border border-[var(--rule-base)] bg-white dark:bg-gray-900 p-4">
       {/* Header + period pills */}
       <div className="flex items-center justify-between mb-4">
         <h3 className="text-sm font-semibold text-gray-900 dark:text-white">
@@ -224,7 +224,7 @@ export default function VentasHeatmap() {
             {HOURS.map((h) => (
               <div
                 key={h}
-                className="w-9 text-center text-[10px] font-mono text-gray-400 dark:text-gray-500"
+                className="w-9 text-center text-[length:var(--ts-2xs)] font-mono text-gray-400 dark:text-gray-500"
               >
                 {formatHour(h)}
               </div>
@@ -268,7 +268,7 @@ export default function VentasHeatmap() {
               className="fixed z-50 pointer-events-none"
               style={{ left: hoveredCell.x, top: hoveredCell.y - 8, transform: "translate(-50%, -100%)" }}
             >
-              <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-100 dark:border-gray-700 px-4 py-3 min-w-[160px]">
+              <div className="bg-white dark:bg-gray-800 rounded-xl border border-[var(--rule-base)] px-4 py-3 min-w-[160px]">
                 <p className="text-xs font-semibold text-gray-900 dark:text-white mb-1.5">
                   {DOW_LABELS[hoveredCell.dow]} {formatHour(hoveredCell.hour)}
                 </p>
@@ -288,7 +288,7 @@ export default function VentasHeatmap() {
 
       {/* Legend */}
       <div className="flex items-center justify-center gap-2 mt-5">
-        <span className="text-[10px] text-gray-400 dark:text-gray-500 font-medium">Menor</span>
+        <span className="text-[length:var(--ts-2xs)] text-gray-400 dark:text-gray-500 font-medium">Menor</span>
         <div className="flex w-48 h-4 rounded-full overflow-hidden">
           <div className="flex-1 bg-gray-50 dark:bg-gray-800" />
           <div className="flex-1 bg-emerald-100 dark:bg-emerald-900/30" />
@@ -297,7 +297,7 @@ export default function VentasHeatmap() {
           <div className="flex-1 bg-emerald-700 dark:bg-emerald-400" />
           <div className="flex-1 bg-emerald-900 dark:bg-emerald-300" />
         </div>
-        <span className="text-[10px] text-gray-400 dark:text-gray-500 font-medium">Mayor</span>
+        <span className="text-[length:var(--ts-2xs)] text-gray-400 dark:text-gray-500 font-medium">Mayor</span>
       </div>
 
       {/* Mejora 20: Analisis de horario optimo */}

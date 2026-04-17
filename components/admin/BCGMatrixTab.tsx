@@ -17,7 +17,7 @@ const Q_CONFIG: Record<Quadrant, { label: string; Icon: LucideIcon; color: strin
   estrella: { label: "Estrellas", Icon: Star, color: "text-amber-600 dark:text-amber-400", bg: "bg-amber-50 dark:bg-amber-950/20 border-amber-200 dark:border-amber-800", desc: "Alto crecimiento + alta participación. Invertir y potenciar." },
   vaca: { label: "Vacas Lecheras", Icon: Coins, color: "text-emerald-600 dark:text-emerald-400", bg: "bg-emerald-50 dark:bg-emerald-950/20 border-emerald-200 dark:border-emerald-800", desc: "Bajo crecimiento + alta participación. Máximo beneficio, mínima inversión." },
   interrogante: { label: "Interrogantes", Icon: HelpCircle, color: "text-emerald-600 dark:text-emerald-400", bg: "bg-emerald-50 dark:bg-emerald-950/20 border-emerald-200 dark:border-emerald-800", desc: "Alto crecimiento + baja participación. Evaluar si invertir o descartar." },
-  perro: { label: "Perros", Icon: TrendingDown, color: "text-gray-600 dark:text-gray-400", bg: "bg-gray-50 dark:bg-gray-950/20 border-gray-200 dark:border-gray-800", desc: "Bajo crecimiento + baja participación. Considerar eliminar." },
+  perro: { label: "Perros", Icon: TrendingDown, color: "text-gray-600 dark:text-gray-400", bg: "bg-gray-50 dark:bg-gray-950/20 border-[var(--rule-base)]", desc: "Bajo crecimiento + baja participación. Considerar eliminar." },
 };
 
 /* ── Seed Data ── */
@@ -80,18 +80,18 @@ export default function BCGMatrixTab() {
       </div>
 
       {/* Visual Matrix */}
-      <div className="bg-white dark:bg-card rounded-xl border border-gray-200 dark:border-card-border p-3 sm:p-6">
+      <div className="bg-white dark:bg-card rounded-xl border border-[var(--rule-base)] dark:border-card-border p-3 sm:p-6">
         <h3 className="text-sm font-extrabold text-gray-900 dark:text-foreground mb-4">Mapa Visual BCG</h3>
         <div className="relative w-full aspect-square max-w-[500px] mx-auto" style={{ minHeight: 400 }}>
           {/* Axes */}
           <div className="absolute inset-0 grid grid-cols-1 sm:grid-cols-2 grid-rows-2 rounded-xl overflow-hidden">
-            <div className="border-b-2 border-r-2 border-gray-200 dark:border-card-border bg-green-50/50 dark:bg-green-950/10 flex items-center justify-center p-2">
+            <div className="border-b-2 border-r-2 border-[var(--rule-base)] dark:border-card-border bg-green-50/50 dark:bg-green-950/10 flex items-center justify-center p-2">
               <span className="text-sm font-semibold text-green-600/40 dark:text-green-400/40">Estrellas</span>
             </div>
-            <div className="border-b-2 border-gray-200 dark:border-card-border bg-emerald-50/50 dark:bg-emerald-950/10 flex items-center justify-center p-2">
+            <div className="border-b-2 border-[var(--rule-base)] dark:border-card-border bg-emerald-50/50 dark:bg-emerald-950/10 flex items-center justify-center p-2">
               <span className="text-sm font-semibold text-emerald-600/40 dark:text-emerald-400/40">Interrogantes</span>
             </div>
-            <div className="border-r-2 border-gray-200 dark:border-card-border bg-amber-50/50 dark:bg-amber-950/10 flex items-center justify-center p-2">
+            <div className="border-r-2 border-[var(--rule-base)] dark:border-card-border bg-amber-50/50 dark:bg-amber-950/10 flex items-center justify-center p-2">
               <span className="text-sm font-semibold text-amber-600/40 dark:text-amber-400/40">Vacas Lecheras</span>
             </div>
             <div className="bg-red-50/50 dark:bg-red-950/10 flex items-center justify-center p-2">
@@ -108,7 +108,7 @@ export default function BCGMatrixTab() {
             const y = pos.y;
             const size = Math.max(24, Math.min(48, (p.revenue / totalRevenue) * 400));
             return (
-              <button key={p.id} onClick={() => setDetail(p)} title={p.name} className={cn("absolute rounded-full border-2 border-white dark:border-card flex items-center justify-center text-[9px] font-bold hover:scale-125 transition-transform z-10", p.quadrant === "estrella" ? "bg-green-500 text-white" : p.quadrant === "vaca" ? "bg-amber-500 text-white" : p.quadrant === "interrogante" ? "bg-emerald-500 text-white" : "bg-gray-400 text-white")} style={{ left: `${x}%`, top: `${y}%`, width: size, height: size }}>
+              <button key={p.id} onClick={() => setDetail(p)} title={p.name} className={cn("absolute rounded-full border-2 border-white dark:border-card flex items-center justify-center text-[length:var(--ts-2xs)] font-bold hover:scale-125 transition-transform z-10", p.quadrant === "estrella" ? "bg-green-500 text-white" : p.quadrant === "vaca" ? "bg-amber-500 text-white" : p.quadrant === "interrogante" ? "bg-emerald-500 text-white" : "bg-gray-400 text-white")} style={{ left: `${x}%`, top: `${y}%`, width: size, height: size }}>
                 {p.name.slice(0, 2)}
               </button>
             );
@@ -117,8 +117,8 @@ export default function BCGMatrixTab() {
       </div>
 
       {/* Product Table */}
-      <div className="bg-white dark:bg-card rounded-xl border border-gray-200 dark:border-card-border overflow-hidden">
-        <div className="px-5 py-4 border-b border-gray-100 dark:border-card-border">
+      <div className="bg-white dark:bg-card rounded-xl border border-[var(--rule-base)] dark:border-card-border overflow-hidden">
+        <div className="px-5 py-4 border-b border-[var(--rule-soft)] dark:border-card-border">
           <h3 className="text-sm font-extrabold text-gray-900 dark:text-foreground">Detalle de Productos ({filtered.length})</h3>
         </div>
         <div className="overflow-x-auto">
@@ -176,7 +176,7 @@ export default function BCGMatrixTab() {
       {detail && (
         <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4" onClick={() => setDetail(null)}>
           <div className="bg-white dark:bg-card rounded-xl w-full max-w-md" onClick={e => e.stopPropagation()}>
-            <div className="px-3 sm:px-6 py-4 border-b border-gray-100 dark:border-card-border flex items-center justify-between">
+            <div className="px-3 sm:px-6 py-4 border-b border-[var(--rule-soft)] dark:border-card-border flex items-center justify-between">
               <h3 className="font-extrabold text-gray-900 dark:text-foreground">{detail.name}</h3>
               <button onClick={() => setDetail(null)} className="text-base sm:text-xl font-bold text-gray-400 hover:text-gray-600">×</button>
             </div>

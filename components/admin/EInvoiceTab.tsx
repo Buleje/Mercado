@@ -47,7 +47,7 @@ const TYPE_META: Record<DocType, { label: string; color: string; bg: string }> =
   boleta:         { label: "Boleta",          color: "text-emerald-600",     bg: "bg-emerald-100 dark:bg-emerald-900/30" },
   factura:        { label: "Factura",         color: "text-emerald-600",  bg: "bg-emerald-100 dark:bg-emerald-900/30" },
   "nota-credito": { label: "Nota de crédito", color: "text-amber-600",   bg: "bg-amber-100 dark:bg-amber-900/30" },
-  "nota-debito":  { label: "Nota de débito",  color: "text-violet-600",  bg: "bg-violet-100 dark:bg-violet-900/30" },
+  "nota-debito":  { label: "Nota de débito",  color: "text-[var(--text-secondary)]",  bg: "bg-[var(--surface-sunken)]" },
 };
 
 const STATUS_META: Record<DocStatus, { label: string; color: string; icon: typeof CheckCircle2 }> = {
@@ -257,7 +257,7 @@ export default function EInvoiceTab() {
           </button>
           <button
             onClick={() => exportToCSV(docs.map(d => ({ serie: d.serie, numero: d.number, fecha: d.date, tipo: TYPE_META[d.type].label, estado: STATUS_META[d.status].label, cliente: d.clientName, ruc: d.clientRUC, subtotal: d.subtotal, igv: d.igv, total: d.total })), "e-facturacion")}
-            className="flex items-center gap-1.5 px-3 py-2 rounded-lg border border-gray-200 dark:border-card-border bg-white dark:bg-surface text-sm font-semibold text-gray-700 dark:text-foreground hover:bg-gray-50 dark:hover:bg-accent transition-colors"
+            className="flex items-center gap-1.5 px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-card-border bg-white dark:bg-surface text-sm font-semibold text-gray-700 dark:text-foreground hover:bg-gray-50 dark:hover:bg-accent transition-colors"
           >
             <Download className="h-4 w-4" /> Exportar
           </button>
@@ -280,7 +280,7 @@ export default function EInvoiceTab() {
       </div>
 
       {/* IGV summary card */}
-      <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl p-3 sm:p-5">
+      <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl p-3 sm:p-5">
         <h3 className="font-extrabold text-sm text-gray-900 dark:text-foreground flex flex-wrap items-center gap-2 mb-3">
           <FileText className="h-4 w-4 text-primary" /> Resumen tributario del mes
         </h3>
@@ -310,21 +310,21 @@ export default function EInvoiceTab() {
             value={search}
             onChange={e => setSearch(e.target.value)}
             placeholder="Cliente, serie, número..."
-            className="w-full pl-9 pr-3 py-2 text-sm border border-gray-200 dark:border-card-border rounded-xl bg-white dark:bg-surface text-gray-700 dark:text-foreground"
+            className="w-full pl-9 pr-3 py-2 text-sm border border-[var(--rule-base)] dark:border-card-border rounded-xl bg-white dark:bg-surface text-gray-700 dark:text-foreground"
           />
         </div>
-        <select value={filterType} onChange={e => setFilterType(e.target.value as DocType | "todos")} className="text-sm border border-gray-200 dark:border-card-border rounded-lg px-3 py-2 bg-white dark:bg-surface text-gray-700 dark:text-foreground">
+        <select value={filterType} onChange={e => setFilterType(e.target.value as DocType | "todos")} className="text-sm border border-[var(--rule-base)] dark:border-card-border rounded-lg px-3 py-2 bg-white dark:bg-surface text-gray-700 dark:text-foreground">
           <option value="todos">Todos los tipos</option>
           {(Object.keys(TYPE_META) as DocType[]).map(t => <option key={t} value={t}>{TYPE_META[t].label}</option>)}
         </select>
-        <select value={filterStatus} onChange={e => setFilterStatus(e.target.value as DocStatus | "todos")} className="text-sm border border-gray-200 dark:border-card-border rounded-lg px-3 py-2 bg-white dark:bg-surface text-gray-700 dark:text-foreground">
+        <select value={filterStatus} onChange={e => setFilterStatus(e.target.value as DocStatus | "todos")} className="text-sm border border-[var(--rule-base)] dark:border-card-border rounded-lg px-3 py-2 bg-white dark:bg-surface text-gray-700 dark:text-foreground">
           <option value="todos">Todos los estados</option>
           {(Object.keys(STATUS_META) as DocStatus[]).map(s => <option key={s} value={s}>{STATUS_META[s].label}</option>)}
         </select>
       </div>
 
       {/* Documents table */}
-      <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl overflow-hidden">
+      <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl overflow-hidden">
         {docs.length === 0 ? (
           <div className="py-16 text-center text-gray-400 dark:text-muted text-sm">
             <Receipt className="h-10 w-10 mx-auto mb-3 opacity-30" />
@@ -349,7 +349,7 @@ export default function EInvoiceTab() {
                 {filtered.map(d => {
                   const StatusIcon = STATUS_META[d.status].icon;
                   return (
-                    <tr key={d.id} className="border-t border-gray-100 dark:border-card-border hover:bg-gray-50 dark:hover:bg-accent/20 transition-colors">
+                    <tr key={d.id} className="border-t border-[var(--rule-soft)] dark:border-card-border hover:bg-gray-50 dark:hover:bg-accent/20 transition-colors">
                       <td className="px-2 sm:px-4 py-2 sm:py-3 font-mono font-bold text-gray-800 dark:text-foreground">{d.serie}-{d.number}</td>
                       <td className="px-2 sm:px-4 py-2 sm:py-3 text-gray-500">{d.date}</td>
                       <td className="px-2 sm:px-4 py-2 sm:py-3">
@@ -395,7 +395,7 @@ export default function EInvoiceTab() {
       {/* Detail modal */}
       {detail && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4" onClick={() => setDetail(null)}>
-          <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl p-3 sm:p-6 w-full max-w-lg space-y-4" onClick={e => e.stopPropagation()}>
+          <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl p-3 sm:p-6 w-full max-w-lg space-y-4" onClick={e => e.stopPropagation()}>
             <div className="flex items-center justify-between">
               <h3 className="font-extrabold text-gray-900 dark:text-foreground">{detail.serie}-{detail.number}</h3>
               <button onClick={() => setDetail(null)}><X className="h-4 w-4 text-gray-400" /></button>
@@ -439,7 +439,7 @@ export default function EInvoiceTab() {
       {/* Emit modal */}
       {emitForm !== null && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4" onClick={() => !emitLoading && setEmitForm(null)}>
-          <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl p-4 sm:p-6 w-full max-w-md space-y-4" onClick={e => e.stopPropagation()}>
+          <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl p-4 sm:p-6 w-full max-w-md space-y-4" onClick={e => e.stopPropagation()}>
             <div className="flex items-center justify-between">
               <h3 className="font-extrabold text-gray-900 dark:text-foreground flex items-center gap-2">
                 <Send className="h-4 w-4 text-primary" /> Emitir comprobante SUNAT
@@ -458,7 +458,7 @@ export default function EInvoiceTab() {
                 <select
                   value={emitForm.tipoDoc}
                   onChange={e => setEmitForm(f => f && { ...f, tipoDoc: e.target.value as "01" | "03" })}
-                  className="w-full text-sm border border-gray-200 dark:border-card-border rounded-xl px-3 py-2 bg-white dark:bg-surface text-gray-700 dark:text-foreground"
+                  className="w-full text-sm border border-[var(--rule-base)] dark:border-card-border rounded-xl px-3 py-2 bg-white dark:bg-surface text-gray-700 dark:text-foreground"
                 >
                   <option value="03">Boleta (B001)</option>
                   <option value="01">Factura (F001)</option>
@@ -472,7 +472,7 @@ export default function EInvoiceTab() {
                   value={emitForm.orderId}
                   onChange={e => setEmitForm(f => f && { ...f, orderId: e.target.value })}
                   placeholder="ej. cm3abc123..."
-                  className="w-full text-sm border border-gray-200 dark:border-card-border rounded-xl px-3 py-2 bg-white dark:bg-surface text-gray-700 dark:text-foreground"
+                  className="w-full text-sm border border-[var(--rule-base)] dark:border-card-border rounded-xl px-3 py-2 bg-white dark:bg-surface text-gray-700 dark:text-foreground"
                 />
               </div>
 
@@ -483,7 +483,7 @@ export default function EInvoiceTab() {
                   value={emitForm.clienteNombre}
                   onChange={e => setEmitForm(f => f && { ...f, clienteNombre: e.target.value })}
                   placeholder="Nombre o razón social"
-                  className="w-full text-sm border border-gray-200 dark:border-card-border rounded-xl px-3 py-2 bg-white dark:bg-surface text-gray-700 dark:text-foreground"
+                  className="w-full text-sm border border-[var(--rule-base)] dark:border-card-border rounded-xl px-3 py-2 bg-white dark:bg-surface text-gray-700 dark:text-foreground"
                 />
               </div>
 
@@ -496,7 +496,7 @@ export default function EInvoiceTab() {
                     onChange={e => setEmitForm(f => f && { ...f, clienteDni: e.target.value })}
                     placeholder="12345678"
                     maxLength={8}
-                    className="w-full text-sm border border-gray-200 dark:border-card-border rounded-xl px-3 py-2 bg-white dark:bg-surface text-gray-700 dark:text-foreground"
+                    className="w-full text-sm border border-[var(--rule-base)] dark:border-card-border rounded-xl px-3 py-2 bg-white dark:bg-surface text-gray-700 dark:text-foreground"
                   />
                 </div>
               ) : (
@@ -507,7 +507,7 @@ export default function EInvoiceTab() {
                     onChange={e => setEmitForm(f => f && { ...f, clienteRuc: e.target.value })}
                     placeholder="20123456789"
                     maxLength={11}
-                    className="w-full text-sm border border-gray-200 dark:border-card-border rounded-xl px-3 py-2 bg-white dark:bg-surface text-gray-700 dark:text-foreground"
+                    className="w-full text-sm border border-[var(--rule-base)] dark:border-card-border rounded-xl px-3 py-2 bg-white dark:bg-surface text-gray-700 dark:text-foreground"
                   />
                 </div>
               )}
@@ -519,7 +519,7 @@ export default function EInvoiceTab() {
                   value={emitForm.clienteDireccion}
                   onChange={e => setEmitForm(f => f && { ...f, clienteDireccion: e.target.value })}
                   placeholder="Av. Centenario 123, Pucallpa"
-                  className="w-full text-sm border border-gray-200 dark:border-card-border rounded-xl px-3 py-2 bg-white dark:bg-surface text-gray-700 dark:text-foreground"
+                  className="w-full text-sm border border-[var(--rule-base)] dark:border-card-border rounded-xl px-3 py-2 bg-white dark:bg-surface text-gray-700 dark:text-foreground"
                 />
               </div>
             </div>
@@ -534,7 +534,7 @@ export default function EInvoiceTab() {
               <button
                 onClick={() => setEmitForm(null)}
                 disabled={emitLoading}
-                className="flex-1 py-2 rounded-lg border border-gray-200 dark:border-card-border text-sm font-semibold text-gray-600 dark:text-muted hover:bg-gray-50 dark:hover:bg-accent transition-colors disabled:opacity-50"
+                className="flex-1 py-2 rounded-lg border border-[var(--rule-base)] dark:border-card-border text-sm font-semibold text-gray-600 dark:text-muted hover:bg-gray-50 dark:hover:bg-accent transition-colors disabled:opacity-50"
               >
                 Cancelar
               </button>

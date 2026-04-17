@@ -23,7 +23,7 @@ const DOT_COLORS: Record<string, string> = {
   red: "bg-red-500",
   amber: "bg-amber-500",
   blue: "bg-blue-500",
-  purple: "bg-purple-500",
+  purple: "bg-[var(--text-primary)]",
   orange: "bg-orange-500",
   gray: "bg-gray-500",
 };
@@ -45,7 +45,7 @@ function HoldedKPI({
   return (
     <div
       className={cn(
-        "bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 rounded-xl p-6",
+        "bg-white dark:bg-zinc-900 border border-[var(--rule-base)] dark:border-zinc-800 rounded-xl p-6",
         size === "large" && "col-span-2",
         className
       )}

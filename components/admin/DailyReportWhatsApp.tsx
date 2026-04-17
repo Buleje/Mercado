@@ -122,7 +122,7 @@ export default function DailyReportWhatsApp({ className }: Props) {
             onChange={e => handlePhoneChange(e.target.value)}
             className={cn(
               "flex-1 px-3 py-2 rounded-xl border text-sm font-medium transition-colors",
-              "bg-white dark:bg-card border-gray-200 dark:border-card-border",
+              "bg-white dark:bg-card border-[var(--rule-base)] dark:border-card-border",
               "text-gray-900 dark:text-white placeholder:text-gray-400",
               "focus:outline-none focus:ring-2 focus:ring-primary/40",
             )}
@@ -139,7 +139,7 @@ export default function DailyReportWhatsApp({ className }: Props) {
           disabled={loading}
           className={cn(
             "flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-sm font-bold transition-colors min-h-[44px]",
-            "border border-gray-300 dark:border-card-border",
+            "border border-[var(--rule-base)] dark:border-card-border",
             "bg-white dark:bg-card text-gray-700 dark:text-white",
             "hover:bg-gray-50 dark:hover:bg-gray-800",
             "disabled:opacity-60",
@@ -181,8 +181,8 @@ export default function DailyReportWhatsApp({ className }: Props) {
 
       {/* Vista previa del mensaje */}
       {showPreview && previewText && (
-        <div className="rounded-xl border border-gray-200 dark:border-card-border bg-gray-50 dark:bg-surface p-4 space-y-2">
-          <p className="text-[11px] font-bold text-gray-400">Vista previa del mensaje</p>
+        <div className="rounded-xl border border-[var(--rule-base)] dark:border-card-border bg-gray-50 dark:bg-surface p-4 space-y-2">
+          <p className="text-[length:var(--ts-xs)] font-bold text-gray-400">Vista previa del mensaje</p>
           <textarea
             readOnly
             value={previewText}
@@ -217,7 +217,7 @@ export default function DailyReportWhatsApp({ className }: Props) {
               onChange={e => handleScheduleHourChange(e.target.value)}
               className={cn(
                 "px-3 py-2 rounded-xl border text-sm font-medium transition-colors",
-                "bg-white dark:bg-card border-gray-200 dark:border-card-border",
+                "bg-white dark:bg-card border-[var(--rule-base)] dark:border-card-border",
                 "text-gray-900 dark:text-white",
                 "focus:outline-none focus:ring-2 focus:ring-primary/40",
               )}

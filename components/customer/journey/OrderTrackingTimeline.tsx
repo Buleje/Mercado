@@ -2,6 +2,7 @@
 
 import { Check, Clock, Package, Truck, Home, MessageCircle, Phone } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { IconBadge } from "@buleje/design-system";
 
 /**
  * OrderTrackingTimeline — timeline visual del pedido post-pago.
@@ -76,15 +77,15 @@ export function OrderTrackingTimeline({
     >
       {/* Header con ETA */}
       <div className="p-5 sm:p-6 border-b border-[var(--rule-soft)]">
-        <p className="text-[10px] font-bold uppercase tracking-[0.25em] text-[var(--text-tertiary)] mb-2">
+        <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)] mb-2">
           Pedido #{orderId.slice(-6).toUpperCase()}
         </p>
         {etaMinutes != null && currentStatus !== "entregado" && currentStatus !== "cancelado" ? (
           <div className="flex items-baseline gap-2">
-            <span className="text-[10px] font-bold uppercase tracking-[0.25em] text-[var(--text-tertiary)]">
+            <span className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)]">
               Llega en
             </span>
-            <span className="text-4xl sm:text-5xl font-extrabold tabular-nums tracking-[-0.03em] text-[var(--text-primary)]">
+            <span className="text-4xl sm:text-5xl font-extrabold tabular-nums tracking-[var(--ls-tight)] text-[var(--text-primary)]">
               {etaMinutes}
             </span>
             <span className="text-lg font-bold text-[var(--text-secondary)]">min</span>
@@ -94,7 +95,7 @@ export function OrderTrackingTimeline({
             <span className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-[var(--data-success)] text-white">
               <Check className="h-4 w-4" strokeWidth={2.5} />
             </span>
-            <span className="text-2xl font-extrabold tracking-[-0.02em] text-[var(--text-primary)]">
+            <span className="text-2xl font-extrabold tracking-[var(--ls-tight)] text-[var(--text-primary)]">
               Entregado
             </span>
           </div>
@@ -164,13 +165,13 @@ export function OrderTrackingTimeline({
       {/* Driver info (solo si en_camino) */}
       {currentStatus === "en_camino" && driverName && (
         <div className="p-5 sm:p-6 border-t border-[var(--rule-soft)] bg-[var(--surface-sunken)]">
-          <p className="text-[10px] font-bold uppercase tracking-[0.25em] text-[var(--text-tertiary)] mb-3">
+          <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)] mb-3">
             Tu repartidor
           </p>
           <div className="flex items-center gap-3">
-            <span className="inline-flex h-10 w-10 items-center justify-center rounded-full bg-[var(--text-primary)] text-[var(--surface-canvas)] font-extrabold text-sm">
+            <IconBadge size="step">
               {driverName.split(" ").map((n) => n[0]).slice(0, 2).join("")}
-            </span>
+            </IconBadge>
             <div className="flex-1 min-w-0">
               <p className="text-sm font-extrabold text-[var(--text-primary)]">{driverName}</p>
               {driverPhone && (

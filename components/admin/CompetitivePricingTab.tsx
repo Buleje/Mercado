@@ -65,7 +65,7 @@ function PriceBar({
       />
       {/* Mi precio */}
       <div
-        className="absolute top-1/2 -translate-y-1/2 w-3 h-3 bg-[#00B4A6] dark:bg-[#00B4A6] rounded-full border-2 border-white dark:border-gray-900 shadow"
+        className="absolute top-1/2 -translate-y-1/2 w-3 h-3 bg-[#00B4A6] dark:bg-[#00B4A6] rounded-full border-2 border-white dark:border-[var(--rule-base)] shadow"
         style={{ left: `${myPct}%`, transform: "translate(-50%, -50%)" }}
         title={`Mi precio: S/${myPrice.toFixed(2)}`}
       />
@@ -85,7 +85,7 @@ function PriceComparisonChart({ products }: { products: PricingProduct[] }) {
   const maxVal = Math.max(...allValues) * 1.1;
 
   return (
-    <div className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-xl p-4 ">
+    <div className="bg-white dark:bg-gray-900 border border-[var(--rule-base)] rounded-xl p-4 ">
       <div className="flex items-center gap-2 mb-4">
         <BarChart2 className="h-4 w-4 text-[#00B4A6]" />
         <h3 className="text-sm font-bold text-gray-900 dark:text-white">
@@ -239,7 +239,7 @@ export default function CompetitivePricingTab() {
     <div className="space-y-5">
       {/* KPIs */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-        <div className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-xl p-4 ">
+        <div className="bg-white dark:bg-gray-900 border border-[var(--rule-base)] rounded-xl p-4 ">
           <p className="text-xs font-bold text-gray-500 dark:text-gray-400">
             Por debajo del mercado
           </p>
@@ -250,7 +250,7 @@ export default function CompetitivePricingTab() {
             productos con precio bajo
           </p>
         </div>
-        <div className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-xl p-4 ">
+        <div className="bg-white dark:bg-gray-900 border border-[var(--rule-base)] rounded-xl p-4 ">
           <p className="text-xs font-bold text-gray-500 dark:text-gray-400">
             Por encima del mercado
           </p>
@@ -261,7 +261,7 @@ export default function CompetitivePricingTab() {
             productos con precio alto
           </p>
         </div>
-        <div className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-xl p-4 ">
+        <div className="bg-white dark:bg-gray-900 border border-[var(--rule-base)] rounded-xl p-4 ">
           <p className="text-xs font-bold text-gray-500 dark:text-gray-400">
             Oportunidad estimada
           </p>
@@ -292,10 +292,10 @@ export default function CompetitivePricingTab() {
         </button>
       </div>
 
-      <div className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-xl  overflow-hidden">
+      <div className="bg-white dark:bg-gray-900 border border-[var(--rule-base)] rounded-xl  overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
-            <thead className="bg-gray-50 dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700">
+            <thead className="bg-gray-50 dark:bg-gray-800 border-b border-[var(--rule-base)]">
               <tr>
                 <th className="text-left px-4 py-3 text-xs font-bold text-gray-500 dark:text-gray-400">
                   Producto

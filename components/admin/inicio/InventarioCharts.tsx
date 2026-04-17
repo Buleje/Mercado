@@ -19,7 +19,7 @@ function ChartTooltip({ active, payload, label, prefix = "" }: {
 }) {
   if (!active || !payload?.length) return null;
   return (
-    <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl px-3 py-2 text-xs">
+    <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl px-3 py-2 text-xs">
       {label && <p className="font-semibold text-gray-700 dark:text-foreground mb-1">{label}</p>}
       {payload.map((p, i) => (
         <div key={i} className="flex items-center gap-2">
@@ -36,7 +36,7 @@ function ChartCard({ title, Icon, children, className }: {
   title: string; Icon: React.ComponentType<{ className?: string }>; children: React.ReactNode; className?: string;
 }) {
   return (
-    <div className={cn("bg-white dark:bg-card border border-gray-100 dark:border-card-border rounded-xl p-5 ", className)}>
+    <div className={cn("bg-white dark:bg-card border border-[var(--rule-soft)] dark:border-card-border rounded-xl p-5 ", className)}>
       <div className="flex items-center gap-2 mb-4">
         <Icon className="h-4 w-4 text-gray-400 dark:text-muted" />
         <h3 className="text-sm font-bold text-gray-700 dark:text-foreground">{title}</h3>
@@ -91,7 +91,7 @@ export default function InventarioCharts({ data }: { data: InventarioData }) {
               </ResponsiveContainer>
               <div className="flex flex-wrap gap-x-4 gap-y-1 mt-2 justify-center">
                 {data.distribucionStock.map((d, i) => (
-                  <span key={i} className="flex items-center gap-1.5 text-[11px] text-gray-500 dark:text-muted">
+                  <span key={i} className="flex items-center gap-1.5 text-[length:var(--ts-xs)] text-gray-500 dark:text-muted">
                     <span className="w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: d.color }} />
                     {d.rango} ({d.cantidad})
                   </span>
@@ -127,7 +127,7 @@ export default function InventarioCharts({ data }: { data: InventarioData }) {
                     <div className="flex items-center justify-between mb-1">
                       <p className="text-xs font-medium text-gray-700 dark:text-gray-300 truncate">{p.nombre}</p>
                       <span className={cn(
-                        "text-[10px] font-bold px-1.5 py-0.5 rounded whitespace-nowrap",
+                        "text-[length:var(--ts-2xs)] font-bold px-1.5 py-0.5 rounded whitespace-nowrap",
                         p.status === "critico" ? "bg-red-50 text-red-600 dark:bg-red-950/30 dark:text-red-400"
                           : p.status === "alerta" ? "bg-amber-50 text-amber-600 dark:bg-amber-950/30 dark:text-amber-400"
                           : "bg-emerald-50 text-emerald-600 dark:bg-emerald-950/30 dark:text-emerald-400"
@@ -141,7 +141,7 @@ export default function InventarioCharts({ data }: { data: InventarioData }) {
                           p.status === "critico" ? "bg-red-500" : p.status === "alerta" ? "bg-amber-500" : "bg-emerald-500"
                         )} style={{ width: `${Math.min((p.diasRestantes / 30) * 100, 100)}%` }} />
                       </div>
-                      <span className="text-[10px] text-gray-400 whitespace-nowrap">{p.stock} uds</span>
+                      <span className="text-[length:var(--ts-2xs)] text-gray-400 whitespace-nowrap">{p.stock} uds</span>
                     </div>
                   </div>
                 </div>
@@ -162,15 +162,15 @@ export default function InventarioCharts({ data }: { data: InventarioData }) {
           {data.productosCriticos.length > 0 ? (
             <div className="space-y-2">
               {data.productosCriticos.map((p, i) => (
-                <div key={i} className="flex items-center justify-between py-1.5 border-b border-gray-50 dark:border-gray-800 last:border-0">
+                <div key={i} className="flex items-center justify-between py-1.5 border-b border-gray-50 dark:border-[var(--rule-base)] last:border-0">
                   <div className="min-w-0 flex-1">
                     <p className="text-xs font-medium text-gray-700 dark:text-gray-300 truncate">{p.nombre}</p>
-                    <p className="text-[10px] text-gray-400">{p.categoria}</p>
+                    <p className="text-[length:var(--ts-2xs)] text-gray-400">{p.categoria}</p>
                   </div>
                   <div className="flex items-center gap-3 shrink-0">
                     <div className="text-right">
                       <p className="text-xs font-bold text-red-600 dark:text-red-400">{p.stock}/{p.stockMin}</p>
-                      <p className="text-[10px] text-gray-400">Pedir {p.reorder} uds</p>
+                      <p className="text-[length:var(--ts-2xs)] text-gray-400">Pedir {p.reorder} uds</p>
                     </div>
                   </div>
                 </div>
@@ -188,10 +188,10 @@ export default function InventarioCharts({ data }: { data: InventarioData }) {
           {data.topSalidas.length > 0 ? (
             <div className="space-y-2">
               {data.topSalidas.map((p, i) => (
-                <div key={i} className="flex items-center justify-between py-1.5 border-b border-gray-50 dark:border-gray-800 last:border-0">
+                <div key={i} className="flex items-center justify-between py-1.5 border-b border-gray-50 dark:border-[var(--rule-base)] last:border-0">
                   <div className="flex items-center gap-2 min-w-0 flex-1">
                     <span className={cn(
-                      "w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold shrink-0",
+                      "w-5 h-5 rounded-full flex items-center justify-center text-[length:var(--ts-2xs)] font-bold shrink-0",
                       i < 3 ? "bg-gray-900 dark:bg-foreground text-white dark:text-background" : "bg-gray-100 dark:bg-gray-800 text-gray-400"
                     )}>{i + 1}</span>
                     <p className="text-xs font-medium text-gray-700 dark:text-gray-300 truncate">{p.nombre}</p>

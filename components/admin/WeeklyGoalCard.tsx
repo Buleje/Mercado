@@ -68,7 +68,7 @@ export default function WeeklyGoalCard({ sales }: WeeklyGoalCardProps) {
   };
 
   return (
-    <div className="rounded-xl border border-gray-100 dark:border-zinc-700 bg-white dark:bg-zinc-800 p-4 col-span-2 sm:col-span-4">
+    <div className="rounded-xl border border-[var(--rule-soft)] dark:border-zinc-700 bg-white dark:bg-zinc-800 p-4 col-span-2 sm:col-span-4">
       <div className="flex items-center justify-between mb-3">
         <div className="flex items-center gap-2">
           <span className="flex items-center justify-center w-8 h-8 rounded-lg bg-primary/10">
@@ -83,7 +83,7 @@ export default function WeeklyGoalCard({ sales }: WeeklyGoalCardProps) {
         {!editing ? (
           <button
             onClick={() => { setTempGoal(String(goal)); setEditing(true); }}
-            className="flex items-center gap-1 text-[10px] font-semibold text-gray-400 dark:text-zinc-500 hover:text-primary transition-colors px-2 py-1 rounded-lg hover:bg-gray-50 dark:hover:bg-zinc-700"
+            className="flex items-center gap-1 text-[length:var(--ts-2xs)] font-semibold text-gray-400 dark:text-zinc-500 hover:text-primary transition-colors px-2 py-1 rounded-lg hover:bg-gray-50 dark:hover:bg-zinc-700"
           >
             <Pencil className="w-3 h-3" />
             Editar meta
@@ -95,7 +95,7 @@ export default function WeeklyGoalCard({ sales }: WeeklyGoalCardProps) {
               type="number"
               value={tempGoal}
               onChange={(e) => setTempGoal(e.target.value)}
-              className="w-20 px-2 py-1 text-xs rounded-lg border border-gray-200 dark:border-zinc-600 bg-white dark:bg-zinc-700 text-gray-900 dark:text-zinc-100 outline-none focus:border-primary"
+              className="w-20 px-2 py-1 text-xs rounded-lg border border-[var(--rule-base)] dark:border-zinc-600 bg-white dark:bg-zinc-700 text-gray-900 dark:text-zinc-100 outline-none focus:border-primary"
               onKeyDown={(e) => e.key === "Enter" && handleSave()}
               autoFocus
             />
@@ -112,7 +112,7 @@ export default function WeeklyGoalCard({ sales }: WeeklyGoalCardProps) {
       {/* Progress bar */}
       <div className="h-4 rounded-full bg-gray-100 dark:bg-zinc-700 overflow-hidden mb-2">
         <div
-          className={cn("h-full rounded-full transition-all duration-700 ease-out", exceeded ? "bg-emerald-500" : barColor)}
+          className={cn("h-full rounded-full transition-all duration-[var(--dur-slower)] ease-out", exceeded ? "bg-emerald-500" : barColor)}
           style={{ width: `${percentage}%` }}
         />
       </div>

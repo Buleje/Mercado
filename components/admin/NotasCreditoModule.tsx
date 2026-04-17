@@ -163,13 +163,13 @@ function StatusTimeline({ nc }: { nc: NotaCredito }) {
       {steps.map((step, i) => (
         <div key={i} className="relative flex items-start gap-3">
           <div className={cn("absolute -left-3.25 w-4 h-4 rounded-full border-2 flex items-center justify-center",
-            step.done ? "bg-primary border-primary" : "bg-white border-gray-300")}>
-            {step.done && <span className="text-white text-[8px]">{"\u2713"}</span>}
+            step.done ? "bg-primary border-primary" : "bg-white border-[var(--rule-base)]")}>
+            {step.done && <span className="text-white text-[length:var(--ts-2xs)]">{"\u2713"}</span>}
           </div>
           <div>
             <p className={cn("text-xs font-bold", step.done ? "text-gray-900" : "text-gray-400")}>{step.label}</p>
-            {step.date && <p className="text-[10px] text-gray-400">{formatDateTime(step.date)}</p>}
-            {step.by && <p className="text-[10px] text-gray-400">Por: {step.by}</p>}
+            {step.date && <p className="text-[length:var(--ts-2xs)] text-gray-400">{formatDateTime(step.date)}</p>}
+            {step.by && <p className="text-[length:var(--ts-2xs)] text-gray-400">Por: {step.by}</p>}
           </div>
         </div>
       ))}
@@ -184,12 +184,12 @@ function NCCard({ nc, onSelect, selected, onToggle }: { nc: NotaCredito; onSelec
   return (
     <m.div layout initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }}
       className={cn("bg-white border rounded-xl p-4 cursor-pointer transition-all hover:shadow-sm",
-        selected ? "border-primary ring-2 ring-primary/20" : "border-gray-200")}>
+        selected ? "border-primary ring-2 ring-primary/20" : "border-[var(--rule-base)]")}>
       <div className="flex items-start gap-3">
         <button onClick={(e) => { e.stopPropagation(); onToggle(); }}
           className={cn("w-5 h-5 rounded border-2 flex items-center justify-center shrink-0 mt-0.5 transition-colors",
-            selected ? "bg-primary border-primary text-white" : "border-gray-300")}>
-          {selected && <span className="text-[10px]">{"\u2713"}</span>}
+            selected ? "bg-primary border-primary text-white" : "border-[var(--rule-base)]")}>
+          {selected && <span className="text-[length:var(--ts-2xs)]">{"\u2713"}</span>}
         </button>
         <div className="flex-1 min-w-0" onClick={onSelect}>
           <div className="flex items-center justify-between mb-1">
@@ -197,20 +197,20 @@ function NCCard({ nc, onSelect, selected, onToggle }: { nc: NotaCredito; onSelec
               <span className="text-lg">{getDocIcon(nc.numero)}</span>
               <span className="font-mono text-xs font-bold text-gray-900">{nc.numero}</span>
             </span>
-            <span className={cn("flex items-center gap-1 px-2 py-0.5 rounded-lg text-[10px] font-bold", meta.bg, meta.color)}>
+            <span className={cn("flex items-center gap-1 px-2 py-0.5 rounded-lg text-[length:var(--ts-2xs)] font-bold", meta.bg, meta.color)}>
               <span className={cn("w-1.5 h-1.5 rounded-full", meta.dot)} />
               {meta.label}
             </span>
           </div>
           <p className="text-xs text-gray-600 truncate mb-1">[{nc.codigoMotivo}] {nc.descripcionMotivo}</p>
-          {nc.clienteNombre && <p className="text-[10px] text-gray-400 mb-1">{nc.clienteNombre}</p>}
+          {nc.clienteNombre && <p className="text-[length:var(--ts-2xs)] text-gray-400 mb-1">{nc.clienteNombre}</p>}
           {nc.orderNumero && (
-            <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[9px] font-bold bg-emerald-50 text-emerald-600 mb-2">
+            <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[length:var(--ts-2xs)] font-bold bg-emerald-50 text-emerald-600 mb-2">
               {"\u{1F517}"} {nc.orderNumero}
             </span>
           )}
-          <div className="flex items-center justify-between pt-2 border-t border-gray-100">
-            <span className="text-[10px] text-gray-400">{formatDate(nc.createdAt)}</span>
+          <div className="flex items-center justify-between pt-2 border-t border-[var(--rule-soft)]">
+            <span className="text-[length:var(--ts-2xs)] text-gray-400">{formatDate(nc.createdAt)}</span>
             <span className="text-sm font-bold text-gray-900">{formatCurrency(nc.total)}</span>
           </div>
         </div>
@@ -246,7 +246,7 @@ function WizardProgress({ step }: { step: number }) {
     <div className="flex items-center gap-2 mb-4">
       {WIZARD_STEPS.map((label, i) => (
         <div key={i} className="flex items-center gap-2 flex-1">
-          <div className={cn("w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold transition-all duration-300",
+          <div className={cn("w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold transition-all duration-[var(--dur-base)]",
             i < step ? "bg-primary text-white " :
             i === step ? "bg-primary/10 text-primary border-2 border-primary" :
             "bg-gray-100 text-gray-400")}>
@@ -273,7 +273,7 @@ function SaleDocCard({ doc, isSelected, onSelect }: { doc: SaleDoc; isSelected: 
       initial={{ opacity: 0, scale: 0.97 }} animate={{ opacity: 1, scale: 1 }}
       whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}
       className={cn(
-        "w-full text-left rounded-xl border-2 p-4 transition-all duration-200 relative overflow-hidden",
+        "w-full text-left rounded-xl border-2 p-4 transition-all duration-[var(--dur-base)] relative overflow-hidden",
         isSelected
           ? "border-primary ring-2 ring-primary/20 bg-primary/5"
           : cn(style.bg, style.border, "hover:shadow-lg")
@@ -289,14 +289,14 @@ function SaleDocCard({ doc, isSelected, onSelect }: { doc: SaleDoc; isSelected: 
         </div>
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 mb-1.5 flex-wrap">
-            <span className={cn("px-2 py-0.5 rounded-lg text-[10px] font-bold", style.badge)}>
+            <span className={cn("px-2 py-0.5 rounded-lg text-[length:var(--ts-2xs)] font-bold", style.badge)}>
               {style.label}
             </span>
             <span className="font-mono text-xs font-bold text-gray-900">
               {doc.comprobanteNumero || `#${doc.numero}`}
             </span>
           </div>
-          <div className="flex items-center gap-1.5 text-[11px] text-gray-500 mb-2">
+          <div className="flex items-center gap-1.5 text-[length:var(--ts-xs)] text-gray-500 mb-2">
             <Calendar className="h-3 w-3 shrink-0" />
             <span>{doc.fecha ? formatDate(doc.fecha) : "\u2014"}</span>
             <span className="text-gray-300">{"\u00b7"}</span>
@@ -304,7 +304,7 @@ function SaleDocCard({ doc, isSelected, onSelect }: { doc: SaleDoc; isSelected: 
             {doc.clienteDocumento && <span className="text-gray-300">({doc.clienteDocumento})</span>}
           </div>
           <div className="flex items-center justify-between">
-            <span className="flex items-center gap-1 text-[10px] text-gray-400">
+            <span className="flex items-center gap-1 text-[length:var(--ts-2xs)] text-gray-400">
               <Package className="h-3 w-3" />
               {doc.items.length} item{doc.items.length !== 1 ? "s" : ""}
             </span>
@@ -314,13 +314,13 @@ function SaleDocCard({ doc, isSelected, onSelect }: { doc: SaleDoc; isSelected: 
           </div>
           {/* Mini item preview */}
           {doc.items.length > 0 && (
-            <div className="mt-2 pt-2 border-t border-gray-200/50 flex items-center gap-1 overflow-hidden">
+            <div className="mt-2 pt-2 border-t border-[var(--rule-base)]/50 flex items-center gap-1 overflow-hidden">
               {doc.items.slice(0, 3).map((it, i) => (
-                <span key={i} className="px-1.5 py-0.5 bg-white/70 rounded text-[9px] text-gray-500 truncate max-w-25 border border-gray-100">
+                <span key={i} className="px-1.5 py-0.5 bg-white/70 rounded text-[length:var(--ts-2xs)] text-gray-500 truncate max-w-25 border border-[var(--rule-soft)]">
                   {it.nombre}
                 </span>
               ))}
-              {doc.items.length > 3 && <span className="text-[9px] text-gray-400">+{doc.items.length - 3}</span>}
+              {doc.items.length > 3 && <span className="text-[length:var(--ts-2xs)] text-gray-400">+{doc.items.length - 3}</span>}
             </div>
           )}
         </div>
@@ -341,18 +341,18 @@ function MotivoCard({ motivo, selected, onClick }: { motivo: typeof MOTIVOS_SUNA
   return (
     <button type="button" onClick={onClick}
       className={cn(
-        "text-left p-3 rounded-xl border-2 transition-all duration-200",
+        "text-left p-3 rounded-xl border-2 transition-all duration-[var(--dur-base)]",
         selected
           ? "border-primary bg-primary/5 ring-1 ring-primary/20 "
-          : "border-gray-200 hover:border-gray-300 hover:bg-gray-50"
+          : "border-[var(--rule-base)] hover:border-gray-300 hover:bg-gray-50"
       )}>
       <div className="flex items-center gap-2 mb-1">
         <span className="text-lg">{motivo.icon}</span>
-        <span className={cn("text-[10px] font-bold px-1.5 py-0.5 rounded",
+        <span className={cn("text-[length:var(--ts-2xs)] font-bold px-1.5 py-0.5 rounded",
           selected ? "bg-primary text-white" : "bg-gray-100 text-gray-500")}>{motivo.code}</span>
       </div>
       <p className={cn("text-xs font-semibold mb-0.5", selected ? "text-primary" : "text-gray-700")}>{motivo.label}</p>
-      <p className="text-[10px] text-gray-400 leading-tight">{motivo.desc}</p>
+      <p className="text-[length:var(--ts-2xs)] text-gray-400 leading-tight">{motivo.desc}</p>
     </button>
   );
 }
@@ -371,9 +371,9 @@ function AmountBreakdown({ monto, igv, total, originalTotal }: { monto: number; 
           </div>
           <div className="h-3 bg-gray-100 rounded-full overflow-hidden">
             <m.div initial={{ width: 0 }} animate={{ width: `${pct}%` }} transition={{ duration: 0.6, ease: "easeOut" }}
-              className="h-full rounded-full bg-linear-to-r from-red-400 to-red-600" />
+              className="h-full rounded-full bg-[var(--data-error)]" />
           </div>
-          <div className="flex justify-between text-[10px] text-gray-400 mt-1">
+          <div className="flex justify-between text-[length:var(--ts-2xs)] text-gray-400 mt-1">
             <span>NC: {formatCurrency(total)}</span>
             <span>Original: {formatCurrency(originalTotal)}</span>
           </div>
@@ -381,15 +381,15 @@ function AmountBreakdown({ monto, igv, total, originalTotal }: { monto: number; 
       )}
       <div className="grid grid-cols-3 gap-3">
         <div className="bg-gray-50 rounded-xl p-3 text-center">
-          <p className="text-[10px] uppercase font-bold text-gray-400 mb-1">Monto</p>
+          <p className="text-[length:var(--ts-2xs)] uppercase font-bold text-gray-400 mb-1">Monto</p>
           <p className="text-lg font-extrabold text-gray-900">{formatCurrency(monto)}</p>
         </div>
         <div className="bg-amber-50 rounded-xl p-3 text-center">
-          <p className="text-[10px] uppercase font-bold text-amber-500 mb-1">IGV 18%</p>
+          <p className="text-[length:var(--ts-2xs)] uppercase font-bold text-amber-500 mb-1">IGV 18%</p>
           <p className="text-lg font-extrabold text-amber-600">{formatCurrency(igv)}</p>
         </div>
         <div className="bg-red-50 rounded-xl p-3 text-center border border-red-200">
-          <p className="text-[10px] uppercase font-bold text-red-400 mb-1">Total NC</p>
+          <p className="text-[length:var(--ts-2xs)] uppercase font-bold text-red-400 mb-1">Total NC</p>
           <p className="text-lg font-extrabold text-red-600">{formatCurrency(total)}</p>
         </div>
       </div>
@@ -873,11 +873,11 @@ export default function NotasCreditoModule() {
 
       {/* ── Keyboard Shortcuts Panel ───────────────────────────────────── */}
       {showShortcuts && (
-        <div className="bg-white border border-gray-200 rounded-xl p-3 text-xs text-gray-500">
+        <div className="bg-white border border-[var(--rule-base)] rounded-xl p-3 text-xs text-gray-500">
           <div className="grid grid-cols-3 gap-2">
-            <div className="flex items-center gap-1.5"><kbd className="px-1.5 py-0.5 rounded bg-gray-100 font-mono text-[10px]">N</kbd> Nueva NC</div>
-            <div className="flex items-center gap-1.5"><kbd className="px-1.5 py-0.5 rounded bg-gray-100 font-mono text-[10px]">F</kbd> Buscar</div>
-            <div className="flex items-center gap-1.5"><kbd className="px-1.5 py-0.5 rounded bg-gray-100 font-mono text-[10px]">Esc</kbd> Cerrar</div>
+            <div className="flex items-center gap-1.5"><kbd className="px-1.5 py-0.5 rounded bg-gray-100 font-mono text-[length:var(--ts-2xs)]">N</kbd> Nueva NC</div>
+            <div className="flex items-center gap-1.5"><kbd className="px-1.5 py-0.5 rounded bg-gray-100 font-mono text-[length:var(--ts-2xs)]">F</kbd> Buscar</div>
+            <div className="flex items-center gap-1.5"><kbd className="px-1.5 py-0.5 rounded bg-gray-100 font-mono text-[length:var(--ts-2xs)]">Esc</kbd> Cerrar</div>
           </div>
         </div>
       )}
@@ -902,28 +902,28 @@ export default function NotasCreditoModule() {
             </span>
           </div>
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-            <div className="bg-white border border-gray-200 rounded-xl p-3">
-              <p className="text-[10px] uppercase font-bold text-gray-400 mb-1">NC este mes</p>
+            <div className="bg-white border border-[var(--rule-base)] rounded-xl p-3">
+              <p className="text-[length:var(--ts-2xs)] uppercase font-bold text-gray-400 mb-1">NC este mes</p>
               <p className="text-2xl font-extrabold text-gray-900">{kpis.count}</p>
-              <p className="text-[10px] text-gray-400 mt-0.5">{notas.filter(nc => nc.status === "BORRADOR").length} borradores pendientes</p>
+              <p className="text-[length:var(--ts-2xs)] text-gray-400 mt-0.5">{notas.filter(nc => nc.status === "BORRADOR").length} borradores pendientes</p>
             </div>
-            <div className="bg-white border border-gray-200 rounded-xl p-3">
-              <p className="text-[10px] uppercase font-bold text-gray-400 mb-1">Monto devuelto</p>
+            <div className="bg-white border border-[var(--rule-base)] rounded-xl p-3">
+              <p className="text-[length:var(--ts-2xs)] uppercase font-bold text-gray-400 mb-1">Monto devuelto</p>
               <p className="text-2xl font-extrabold text-red-600">{formatCurrency(kpis.total)}</p>
-              <p className="text-[10px] text-gray-400 mt-0.5">solo NCs emitidas este mes</p>
+              <p className="text-[length:var(--ts-2xs)] text-gray-400 mt-0.5">solo NCs emitidas este mes</p>
             </div>
-            <div className="bg-white border border-gray-200 rounded-xl p-3">
-              <p className="text-[10px] uppercase font-bold text-gray-400 mb-1">vs Mes anterior</p>
+            <div className="bg-white border border-[var(--rule-base)] rounded-xl p-3">
+              <p className="text-[length:var(--ts-2xs)] uppercase font-bold text-gray-400 mb-1">vs Mes anterior</p>
               <div className="flex items-center gap-1">
                 {kpis.trend > 0 ? <TrendingUp className="h-4 w-4 text-red-500" /> : <TrendingDown className="h-4 w-4 text-emerald-500" />}
                 <p className={cn("text-2xl font-extrabold", kpis.trend > 0 ? "text-red-600" : "text-emerald-600")}>{kpis.trend > 0 ? "+" : ""}{kpis.trend.toFixed(0)}%</p>
               </div>
-              <p className="text-[10px] text-gray-400 mt-0.5">{kpis.trend > 0 ? "subió" : "bajó"} respecto al mes pasado</p>
+              <p className="text-[length:var(--ts-2xs)] text-gray-400 mt-0.5">{kpis.trend > 0 ? "subió" : "bajó"} respecto al mes pasado</p>
             </div>
-            <div className="bg-white border border-gray-200 rounded-xl p-3">
-              <p className="text-[10px] uppercase font-bold text-gray-400 mb-1">Top motivo</p>
+            <div className="bg-white border border-[var(--rule-base)] rounded-xl p-3">
+              <p className="text-[length:var(--ts-2xs)] uppercase font-bold text-gray-400 mb-1">Top motivo</p>
               <p className="text-sm font-bold text-gray-900 truncate">{kpis.topMotivo ? kpis.topMotivo[0] : "\u2014"}</p>
-              {kpis.topMotivo && <p className="text-[10px] text-gray-400">{kpis.topMotivo[1]} casos este mes</p>}
+              {kpis.topMotivo && <p className="text-[length:var(--ts-2xs)] text-gray-400">{kpis.topMotivo[1]} casos este mes</p>}
             </div>
           </div>
         </div>
@@ -932,7 +932,7 @@ export default function NotasCreditoModule() {
       {/* ── Trend Chart + Donut + Weekday ──────────────────────────────── */}
       {!loading && trendData.length > 2 && (
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-3">
-          <div className="lg:col-span-2 bg-white border border-gray-200 rounded-xl p-4">
+          <div className="lg:col-span-2 bg-white border border-[var(--rule-base)] rounded-xl p-4">
             <p className="text-xs font-bold text-gray-700 mb-2">NC por semana ({"\u00fa"}ltimos 3 meses)</p>
             <ResponsiveContainer width="100%" height={130}>
               <LineChart data={trendData}>
@@ -946,7 +946,7 @@ export default function NotasCreditoModule() {
           </div>
           <div className="flex flex-col gap-3">
             {donutData.length > 1 && (
-              <div className="bg-white border border-gray-200 rounded-xl p-4 flex-1">
+              <div className="bg-white border border-[var(--rule-base)] rounded-xl p-4 flex-1">
                 <p className="text-xs font-bold text-gray-700 mb-1">Motivos del mes</p>
                 <ResponsiveContainer width="100%" height={80}>
                   <PieChart>
@@ -958,7 +958,7 @@ export default function NotasCreditoModule() {
                 </ResponsiveContainer>
                 <div className="space-y-0.5">
                   {donutData.map((d, i) => (
-                    <div key={i} className="flex items-center gap-1.5 text-[10px] text-gray-600">
+                    <div key={i} className="flex items-center gap-1.5 text-[length:var(--ts-2xs)] text-gray-600">
                       <div className="h-2 w-2 rounded-full shrink-0" style={{ backgroundColor: d.color }} />
                       <span className="truncate">{d.name}: {d.value}</span>
                     </div>
@@ -967,7 +967,7 @@ export default function NotasCreditoModule() {
               </div>
             )}
             {/* Días con más devoluciones */}
-            <div className="bg-white border border-gray-200 rounded-xl p-4 flex-1">
+            <div className="bg-white border border-[var(--rule-base)] rounded-xl p-4 flex-1">
               <p className="text-xs font-bold text-gray-700 mb-1">Días con más devoluciones</p>
               <ResponsiveContainer width="100%" height={80}>
                 <BarChart data={weekdayData} margin={{ top: 0, right: 0, bottom: 0, left: -20 }}>
@@ -1003,7 +1003,7 @@ export default function NotasCreditoModule() {
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
             <input ref={searchRef} type="text" placeholder="Buscar por n\u00famero, cliente, RUC/DNI..."
               aria-label="Buscar documentos" value={search} onChange={e => setSearch(e.target.value)}
-              className="w-full pl-9 pr-3 py-2 rounded-lg border border-gray-200 bg-white text-sm text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-primary/30" />
+              className="w-full pl-9 pr-3 py-2 rounded-lg border border-[var(--rule-base)] bg-white text-sm text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-primary/30" />
           </div>
           <div className="flex gap-1 items-center">
             {(["", "BORRADOR", "EMITIDA", "ANULADA"] as const).map(s => {
@@ -1013,14 +1013,14 @@ export default function NotasCreditoModule() {
                   className={cn("shrink-0 px-3 py-2 rounded-xl text-xs font-bold transition-colors inline-flex items-center gap-1.5",
                     statusFilter === s ? "bg-primary text-white" : "bg-gray-100 text-gray-600 hover:bg-gray-200")}>
                   {s === "" ? "Todos" : STATUS_META[s].label}
-                  {count > 0 && <span className={cn("px-1.5 py-0.5 rounded-full text-[9px] font-bold min-w-4.5 text-center", statusFilter === s ? "bg-white/20" : "bg-gray-200")}>{count}</span>}
+                  {count > 0 && <span className={cn("px-1.5 py-0.5 rounded-full text-[length:var(--ts-2xs)] font-bold min-w-4.5 text-center", statusFilter === s ? "bg-white/20" : "bg-gray-200")}>{count}</span>}
                 </button>
               );
             })}
             <button onClick={() => setShowAdvFilters(s => !s)}
               className={cn("p-2 rounded-lg transition-colors relative", showAdvFilters ? "bg-primary text-white" : "bg-gray-100 text-gray-500 hover:bg-gray-200")}>
               <Filter className="h-4 w-4" />
-              {activeFilterCount > 0 && <span className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-red-500 text-white text-[9px] font-bold flex items-center justify-center">{activeFilterCount}</span>}
+              {activeFilterCount > 0 && <span className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-red-500 text-white text-[length:var(--ts-2xs)] font-bold flex items-center justify-center">{activeFilterCount}</span>}
             </button>
             <div className="flex items-center gap-0.5 bg-gray-100 rounded-xl p-1">
               {([["table", LayoutList], ["cards", LayoutGrid], ["kanban", Kanban]] as const).map(([mode, Icon]) => (
@@ -1039,24 +1039,24 @@ export default function NotasCreditoModule() {
             <m.div initial={{ height: 0, opacity: 0 }} animate={{ height: "auto", opacity: 1 }} exit={{ height: 0, opacity: 0 }} className="overflow-hidden">
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 bg-gray-50 rounded-xl p-3">
                 <div>
-                  <label className="text-[10px] font-bold text-gray-400 block mb-1">Desde</label>
+                  <label className="text-[length:var(--ts-2xs)] font-bold text-gray-400 block mb-1">Desde</label>
                   <input type="date" value={dateFrom} onChange={e => setDateFrom(e.target.value)}
-                    className="w-full px-2 py-1.5 rounded-lg border border-gray-200 bg-white text-xs text-gray-900" />
+                    className="w-full px-2 py-1.5 rounded-lg border border-[var(--rule-base)] bg-white text-xs text-gray-900" />
                 </div>
                 <div>
-                  <label className="text-[10px] font-bold text-gray-400 block mb-1">Hasta</label>
+                  <label className="text-[length:var(--ts-2xs)] font-bold text-gray-400 block mb-1">Hasta</label>
                   <input type="date" value={dateTo} onChange={e => setDateTo(e.target.value)}
-                    className="w-full px-2 py-1.5 rounded-lg border border-gray-200 bg-white text-xs text-gray-900" />
+                    className="w-full px-2 py-1.5 rounded-lg border border-[var(--rule-base)] bg-white text-xs text-gray-900" />
                 </div>
                 <div>
-                  <label className="text-[10px] font-bold text-gray-400 block mb-1">Monto min</label>
+                  <label className="text-[length:var(--ts-2xs)] font-bold text-gray-400 block mb-1">Monto min</label>
                   <input type="number" value={minAmount} onChange={e => setMinAmount(e.target.value)} placeholder="0"
-                    className="w-full px-2 py-1.5 rounded-lg border border-gray-200 bg-white text-xs text-gray-900" />
+                    className="w-full px-2 py-1.5 rounded-lg border border-[var(--rule-base)] bg-white text-xs text-gray-900" />
                 </div>
                 <div>
-                  <label className="text-[10px] font-bold text-gray-400 block mb-1">Monto max</label>
+                  <label className="text-[length:var(--ts-2xs)] font-bold text-gray-400 block mb-1">Monto max</label>
                   <input type="number" value={maxAmount} onChange={e => setMaxAmount(e.target.value)} placeholder={"\u221e"}
-                    className="w-full px-2 py-1.5 rounded-lg border border-gray-200 bg-white text-xs text-gray-900" />
+                    className="w-full px-2 py-1.5 rounded-lg border border-[var(--rule-base)] bg-white text-xs text-gray-900" />
                 </div>
               </div>
             </m.div>
@@ -1077,7 +1077,7 @@ export default function NotasCreditoModule() {
                   <Send className="h-3.5 w-3.5" />Emitir {filteredNotas.filter(nc => checkedIds.has(nc.id) && nc.status === "BORRADOR").length} NC
                 </button>
               )}
-              <button onClick={exportCSV} className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold bg-white border border-gray-200 text-gray-700 hover:bg-gray-50 transition-colors">
+              <button onClick={exportCSV} className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold bg-white border border-[var(--rule-base)] text-gray-700 hover:bg-gray-50 transition-colors">
                 <Download className="h-3.5 w-3.5" />Exportar CSV
               </button>
               <button onClick={() => setCheckedIds(new Set())} className="text-xs text-gray-400 hover:text-gray-600">Deseleccionar</button>
@@ -1093,30 +1093,30 @@ export default function NotasCreditoModule() {
             const col = filteredNotas.filter(nc => nc.status === status);
             const meta = STATUS_META[status];
             return (
-              <div key={status} className="bg-gray-50 border border-gray-200 rounded-xl overflow-hidden">
-                <div className={cn("px-4 py-3 flex items-center gap-2 border-b border-gray-200", meta.bg)}>
+              <div key={status} className="bg-gray-50 border border-[var(--rule-base)] rounded-xl overflow-hidden">
+                <div className={cn("px-4 py-3 flex items-center gap-2 border-b border-[var(--rule-base)]", meta.bg)}>
                   <span className={cn("w-2 h-2 rounded-full shrink-0", meta.dot)} />
                   <span className={cn("text-xs font-bold", meta.color)}>{meta.label}</span>
-                  <span className={cn("ml-auto px-2 py-0.5 rounded-full text-[10px] font-bold bg-white/60", meta.color)}>{col.length}</span>
+                  <span className={cn("ml-auto px-2 py-0.5 rounded-full text-[length:var(--ts-2xs)] font-bold bg-white/60", meta.color)}>{col.length}</span>
                 </div>
                 <div className="p-2 space-y-2 max-h-130 overflow-y-auto">
                   {col.length === 0 ? (
                     <div className="text-center py-8 text-gray-300">
                       <p className="text-2xl mb-1">{"\u{1F4C4}"}</p>
-                      <p className="text-[10px]">Sin NCs en {meta.label}</p>
+                      <p className="text-[length:var(--ts-2xs)]">Sin NCs en {meta.label}</p>
                     </div>
                   ) : col.map(nc => (
                     <m.div key={nc.id} layout initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }}
                       onClick={() => setSelected(nc)}
-                      className="bg-white border border-gray-200 rounded-lg p-3 cursor-pointer hover:shadow-sm hover:border-primary/40 transition-all">
+                      className="bg-white border border-[var(--rule-base)] rounded-lg p-3 cursor-pointer hover:shadow-sm hover:border-primary/40 transition-all">
                       <div className="flex items-center justify-between mb-1.5">
-                        <span className="font-mono text-[10px] font-bold text-gray-500">{nc.numero}</span>
+                        <span className="font-mono text-[length:var(--ts-2xs)] font-bold text-gray-500">{nc.numero}</span>
                         <span className="text-sm font-extrabold text-gray-900">{formatCurrency(nc.total)}</span>
                       </div>
                       <p className="text-xs text-gray-600 truncate mb-1">[{nc.codigoMotivo}] {nc.descripcionMotivo}</p>
-                      {nc.clienteNombre && <p className="text-[10px] text-gray-400 truncate">{nc.clienteNombre}</p>}
-                      <div className="flex items-center justify-between mt-2 pt-2 border-t border-gray-100">
-                        <span className="text-[9px] text-gray-400">{formatDate(nc.createdAt)}</span>
+                      {nc.clienteNombre && <p className="text-[length:var(--ts-2xs)] text-gray-400 truncate">{nc.clienteNombre}</p>}
+                      <div className="flex items-center justify-between mt-2 pt-2 border-t border-[var(--rule-soft)]">
+                        <span className="text-[length:var(--ts-2xs)] text-gray-400">{formatDate(nc.createdAt)}</span>
                         <div className="flex gap-1">
                           {nc.status === "BORRADOR" && (
                             <button onClick={(e) => { e.stopPropagation(); handleEmitSunat(nc); }}
@@ -1141,7 +1141,7 @@ export default function NotasCreditoModule() {
 
       {/* ── Table / Cards View ─────────────────────────────────────────── */}
       {viewMode !== "kanban" && (
-      <div className="bg-white border border-gray-200 rounded-xl overflow-hidden ">
+      <div className="bg-white border border-[var(--rule-base)] rounded-xl overflow-hidden ">
         {loading ? (
           <div className="flex items-center justify-center py-12"><Loader2 className="h-6 w-6 animate-spin text-primary" /></div>
         ) : error ? (
@@ -1170,11 +1170,11 @@ export default function NotasCreditoModule() {
             <div className="overflow-x-auto">
               <table className="w-full min-w-175 text-sm">
                 <thead>
-                  <tr className="border-b border-gray-100 text-left">
+                  <tr className="border-b border-[var(--rule-soft)] text-left">
                     <th className="px-3 py-3 w-10">
                       <button onClick={toggleAll} className={cn("w-5 h-5 rounded border-2 flex items-center justify-center transition-colors",
-                        allChecked ? "bg-primary border-primary text-white" : "border-gray-300")}>
-                        {allChecked && <span className="text-[10px]">{"\u2713"}</span>}
+                        allChecked ? "bg-primary border-primary text-white" : "border-[var(--rule-base)]")}>
+                        {allChecked && <span className="text-[length:var(--ts-2xs)]">{"\u2713"}</span>}
                       </button>
                     </th>
                     <th className="px-3 py-3 font-semibold text-gray-500 cursor-pointer select-none" onClick={() => toggleSort("numero")}>
@@ -1201,8 +1201,8 @@ export default function NotasCreditoModule() {
                       <tr key={nc.id} className="border-b border-gray-50 hover:bg-gray-50 transition-colors group">
                         <td className="px-3 py-3">
                           <button onClick={() => toggleCheck(nc.id)} className={cn("w-5 h-5 rounded border-2 flex items-center justify-center transition-colors",
-                            checkedIds.has(nc.id) ? "bg-primary border-primary text-white" : "border-gray-300")}>
-                            {checkedIds.has(nc.id) && <span className="text-[10px]">{"\u2713"}</span>}
+                            checkedIds.has(nc.id) ? "bg-primary border-primary text-white" : "border-[var(--rule-base)]")}>
+                            {checkedIds.has(nc.id) && <span className="text-[length:var(--ts-2xs)]">{"\u2713"}</span>}
                           </button>
                         </td>
                         <td className="px-3 py-3 cursor-pointer" onClick={() => setSelected(nc)}>
@@ -1210,11 +1210,11 @@ export default function NotasCreditoModule() {
                             <span className="text-base">{getDocIcon(nc.numero)}</span>
                             <span className="font-mono text-xs font-bold text-gray-900">{nc.numero}</span>
                           </span>
-                          {nc.clienteNombre && <p className="text-[10px] text-gray-400 mt-0.5">{nc.clienteNombre}</p>}
+                          {nc.clienteNombre && <p className="text-[length:var(--ts-2xs)] text-gray-400 mt-0.5">{nc.clienteNombre}</p>}
                         </td>
                         <td className="px-3 py-3 hidden sm:table-cell">
                           {nc.orderNumero ? (
-                            <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-bold bg-emerald-50 text-emerald-600">
+                            <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[length:var(--ts-2xs)] font-bold bg-emerald-50 text-emerald-600">
                               {"\u{1F517}"} {nc.orderNumero}
                             </span>
                           ) : <span className="text-gray-300">{"\u2014"}</span>}
@@ -1255,7 +1255,7 @@ export default function NotasCreditoModule() {
               </table>
             </div>
             {totalPages > 1 && (
-              <div className="flex items-center justify-between px-4 py-3 border-t border-gray-100">
+              <div className="flex items-center justify-between px-4 py-3 border-t border-[var(--rule-soft)]">
                 <p className="text-xs text-gray-500">{filteredNotas.length} doc{filteredNotas.length !== 1 ? "s" : ""} {"\u2014"} P{"\u00e1"}g. {page}/{totalPages}</p>
                 <div className="flex gap-1">
                   <button disabled={page <= 1} onClick={() => setPage(p => p - 1)} className="p-1.5 rounded-lg hover:bg-gray-100 disabled:opacity-30"><ChevronLeft className="h-4 w-4" /></button>
@@ -1276,7 +1276,7 @@ export default function NotasCreditoModule() {
           <>
             <m.div key="nc-backdrop" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-40 bg-black/40 backdrop-blur-sm" onClick={() => setSelected(null)} />
             <m.div key="nc-panel" initial={{ x: "100%" }} animate={{ x: 0 }} exit={{ x: "100%" }} transition={{ type: "spring", damping: 25, stiffness: 250 }}
-              className="fixed inset-y-0 right-0 z-50 w-full max-w-lg bg-white border-l border-gray-200 overflow-y-auto">
+              className="fixed inset-y-0 right-0 z-50 w-full max-w-lg bg-white border-l border-[var(--rule-base)] overflow-y-auto">
               <div className="p-4 sm:p-6 space-y-5">
                 <div className="flex items-center justify-between">
                   <div>
@@ -1296,7 +1296,7 @@ export default function NotasCreditoModule() {
                     {STATUS_META[selected.status].label}
                   </span>
                   {selected.orderNumero && (
-                    <span className="inline-flex items-center gap-1 px-2 py-1 rounded-lg text-[10px] font-bold bg-emerald-50 text-emerald-600">
+                    <span className="inline-flex items-center gap-1 px-2 py-1 rounded-lg text-[length:var(--ts-2xs)] font-bold bg-emerald-50 text-emerald-600">
                       {"\u{1F517}"} Vinculada a {selected.orderNumero}
                     </span>
                   )}
@@ -1330,10 +1330,10 @@ export default function NotasCreditoModule() {
                       {selected.clienteDocumento && <span className="text-gray-400">({selected.clienteDocumento})</span>}
                     </div>
                   )}
-                  <div className="grid grid-cols-3 gap-3 pt-3 border-t border-gray-200">
-                    <div><p className="text-[10px] uppercase font-bold text-gray-400">Monto</p><p className="text-sm font-bold text-gray-900">{formatCurrency(selected.monto)}</p></div>
-                    <div><p className="text-[10px] uppercase font-bold text-gray-400">IGV</p><p className="text-sm font-bold text-gray-900">{formatCurrency(selected.igv)}</p></div>
-                    <div><p className="text-[10px] uppercase font-bold text-gray-400">Total</p><p className="text-sm font-bold text-red-600">{formatCurrency(selected.total)}</p></div>
+                  <div className="grid grid-cols-3 gap-3 pt-3 border-t border-[var(--rule-base)]">
+                    <div><p className="text-[length:var(--ts-2xs)] uppercase font-bold text-gray-400">Monto</p><p className="text-sm font-bold text-gray-900">{formatCurrency(selected.monto)}</p></div>
+                    <div><p className="text-[length:var(--ts-2xs)] uppercase font-bold text-gray-400">IGV</p><p className="text-sm font-bold text-gray-900">{formatCurrency(selected.igv)}</p></div>
+                    <div><p className="text-[length:var(--ts-2xs)] uppercase font-bold text-gray-400">Total</p><p className="text-sm font-bold text-red-600">{formatCurrency(selected.total)}</p></div>
                   </div>
                 </div>
 
@@ -1412,7 +1412,7 @@ export default function NotasCreditoModule() {
             <m.div key="nnc-modal" initial={{ opacity: 0, scale: 0.95, y: 20 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.95, y: 20 }} transition={{ type: "spring", damping: 25, stiffness: 300 }}
               className="fixed inset-0 z-50 flex items-center justify-center p-4" onClick={e => e.target === e.currentTarget && resetWizard()}>
               <div className={cn(
-                "w-full bg-white border border-gray-200 rounded-xl overflow-hidden",
+                "w-full bg-white border border-[var(--rule-base)] rounded-xl overflow-hidden",
                 wizardStep === 0 ? "max-w-3xl" : "max-w-xl"
               )}>
                 {/* Wizard Header */}
@@ -1451,7 +1451,7 @@ export default function NotasCreditoModule() {
                                 : "text-gray-500 hover:text-gray-700")}>
                             <span>{tab.icon}</span>
                             <span>{tab.label}</span>
-                            <span className={cn("px-1.5 py-0.5 rounded-full text-[9px] font-bold",
+                            <span className={cn("px-1.5 py-0.5 rounded-full text-[length:var(--ts-2xs)] font-bold",
                               pickerDocType === tab.id ? "bg-primary text-white" : "bg-gray-200 text-gray-500")}>
                               {pickerCounts[tab.id]}
                             </span>
@@ -1464,7 +1464,7 @@ export default function NotasCreditoModule() {
                         <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
                         <input type="text" value={pickerSearch} onChange={e => setPickerSearch(e.target.value)}
                           placeholder="Buscar por n\u00famero, cliente, RUC/DNI..."
-                          className="w-full pl-9 pr-3 py-2.5 rounded-lg border border-gray-200 bg-white text-sm text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-primary/30" />
+                          className="w-full pl-9 pr-3 py-2.5 rounded-lg border border-[var(--rule-base)] bg-white text-sm text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-primary/30" />
                         {pickerLoading && <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 animate-spin text-gray-400" />}
                       </div>
 
@@ -1476,7 +1476,7 @@ export default function NotasCreditoModule() {
                               <div className="flex items-center justify-between mb-2">
                                 <div className="flex items-center gap-2">
                                   <span className="text-xl">{(DOC_STYLE[selectedVenta.comprobanteTipo] || DOC_STYLE.ticket).icon}</span>
-                                  <span className={cn("px-2 py-0.5 rounded-lg text-[10px] font-bold uppercase", (DOC_STYLE[selectedVenta.comprobanteTipo] || DOC_STYLE.ticket).badge)}>
+                                  <span className={cn("px-2 py-0.5 rounded-lg text-[length:var(--ts-2xs)] font-bold uppercase", (DOC_STYLE[selectedVenta.comprobanteTipo] || DOC_STYLE.ticket).badge)}>
                                     {(DOC_STYLE[selectedVenta.comprobanteTipo] || DOC_STYLE.ticket).label}
                                   </span>
                                   <span className="font-mono text-sm font-bold text-primary">
@@ -1489,7 +1489,7 @@ export default function NotasCreditoModule() {
                                   Quitar
                                 </button>
                               </div>
-                              <div className="text-[10px] text-emerald-600 font-bold flex items-center gap-1">
+                              <div className="text-[length:var(--ts-2xs)] text-emerald-600 font-bold flex items-center gap-1">
                                 <span>{"\u2713"}</span> Documento seleccionado {"\u2014"} en el paso siguiente podr{"\u00e1"}s elegir qu{"\u00e9"} items devolver
                               </div>
                             </div>
@@ -1521,7 +1521,7 @@ export default function NotasCreditoModule() {
                       )}
 
                       {/* Actions */}
-                      <div className="flex items-center gap-3 pt-2 border-t border-gray-100">
+                      <div className="flex items-center gap-3 pt-2 border-t border-[var(--rule-soft)]">
                         <button type="button" onClick={() => { setSelectedVenta(null); setForm(prev => ({ ...prev, orderId: "" })); setWizardStep(1); }}
                           className="text-xs text-gray-400 hover:text-gray-600 hover:underline transition-colors">
                           Continuar sin documento {"\u2192"}
@@ -1549,7 +1549,7 @@ export default function NotasCreditoModule() {
                           <button onClick={() => setShowTemplates(s => !s)} className="flex items-center gap-2 w-full text-xs font-bold text-emerald-700">
                             <Bookmark className="h-3.5 w-3.5" />
                             Mis templates guardados ({templates.length})
-                            <span className="ml-auto text-[10px] text-emerald-400">{showTemplates ? "Ocultar" : "Ver"}</span>
+                            <span className="ml-auto text-[length:var(--ts-2xs)] text-emerald-400">{showTemplates ? "Ocultar" : "Ver"}</span>
                           </button>
                           <AnimatePresence>
                             {showTemplates && (
@@ -1560,8 +1560,8 @@ export default function NotasCreditoModule() {
                                       <span className="flex-1 text-xs text-gray-700">
                                         <strong>{t.name}</strong> — [{t.codigoMotivo}] {t.descripcionMotivo}
                                       </span>
-                                      <button onClick={() => loadTemplate(t)} className="text-[10px] font-bold text-emerald-600 hover:underline shrink-0">Usar</button>
-                                      <button onClick={() => deleteTemplate(t.id)} className="text-[10px] text-red-400 hover:text-red-600 shrink-0">x</button>
+                                      <button onClick={() => loadTemplate(t)} className="text-[length:var(--ts-2xs)] font-bold text-emerald-600 hover:underline shrink-0">Usar</button>
+                                      <button onClick={() => deleteTemplate(t.id)} className="text-[length:var(--ts-2xs)] text-red-400 hover:text-red-600 shrink-0">x</button>
                                     </div>
                                   ))}
                                 </div>
@@ -1576,7 +1576,7 @@ export default function NotasCreditoModule() {
                         <div className="flex items-center justify-between mb-2">
                           <label className="block text-xs font-bold text-gray-600">Motivo SUNAT {"\u2014"} {"\u00bfPor qu\u00e9"} se emite la NC?</label>
                           {form.codigoMotivo && (
-                            <button onClick={saveTemplate} className="flex items-center gap-1 text-[10px] font-bold text-emerald-600 hover:underline">
+                            <button onClick={saveTemplate} className="flex items-center gap-1 text-[length:var(--ts-2xs)] font-bold text-emerald-600 hover:underline">
                               <BookmarkPlus className="h-3 w-3" />Guardar template
                             </button>
                           )}
@@ -1597,7 +1597,7 @@ export default function NotasCreditoModule() {
                       <div>
                         <label className="block text-xs font-bold text-gray-600 mb-1">Descripci{"\u00f3"}n del motivo</label>
                         <textarea value={form.descripcionMotivo} onChange={e => setForm(p => ({ ...p, descripcionMotivo: e.target.value }))} placeholder="Detalle del motivo..." rows={2}
-                          className="w-full px-3 py-2 rounded-lg border border-gray-200 bg-white text-sm text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-primary/30 resize-none" />
+                          className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] bg-white text-sm text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-primary/30 resize-none" />
                       </div>
 
                       {/* Item Quantity Picker (if linked to a sale) */}
@@ -1606,17 +1606,17 @@ export default function NotasCreditoModule() {
                           <label className="block text-xs font-bold text-gray-600 mb-2">
                             Items a incluir en la NC {"\u2014"} ajusta cantidades para devoluci{"\u00f3"}n parcial
                           </label>
-                          <div className="border border-gray-200 rounded-xl divide-y divide-gray-100 overflow-hidden">
+                          <div className="border border-[var(--rule-base)] rounded-xl divide-y divide-gray-100 overflow-hidden">
                             {selectedVenta.items.map((item, idx) => (
                               <div key={idx} className={cn("flex items-center gap-3 p-3 transition-colors", item.selected ? "bg-primary/5" : "hover:bg-gray-50")}>
                                 <button type="button" onClick={() => handleItemToggle(idx)}
                                   className={cn("w-5 h-5 rounded border-2 flex items-center justify-center transition-colors shrink-0",
-                                    item.selected ? "bg-primary border-primary text-white" : "border-gray-300")}>
-                                  {item.selected && <span className="text-[10px]">{"\u2713"}</span>}
+                                    item.selected ? "bg-primary border-primary text-white" : "border-[var(--rule-base)]")}>
+                                  {item.selected && <span className="text-[length:var(--ts-2xs)]">{"\u2713"}</span>}
                                 </button>
                                 <div className="flex-1 min-w-0">
                                   <p className="text-sm font-medium text-gray-900 truncate">{item.nombre}</p>
-                                  <p className="text-[10px] text-gray-400">Comprado: {item.cantidad} {"\u00d7"} {formatCurrency(item.precio)}</p>
+                                  <p className="text-[length:var(--ts-2xs)] text-gray-400">Comprado: {item.cantidad} {"\u00d7"} {formatCurrency(item.precio)}</p>
                                 </div>
                                 {item.selected && (
                                   <div className="flex items-center gap-1.5">
@@ -1651,7 +1651,7 @@ export default function NotasCreditoModule() {
                           <div className="relative">
                             <DollarSign className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
                             <input type="number" step="0.01" min="0.01" value={form.monto} onChange={e => setForm(p => ({ ...p, monto: e.target.value }))} placeholder="0.00"
-                              className="w-full pl-9 pr-3 py-2 rounded-lg border border-gray-200 bg-white text-sm text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-primary/30" />
+                              className="w-full pl-9 pr-3 py-2 rounded-lg border border-[var(--rule-base)] bg-white text-sm text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-primary/30" />
                           </div>
                         </div>
                       )}
@@ -1665,7 +1665,7 @@ export default function NotasCreditoModule() {
                       <div>
                         <label className="block text-xs font-bold text-gray-600 mb-1">Notas internas (opcional)</label>
                         <input type="text" value={form.notasText} onChange={e => setForm(p => ({ ...p, notasText: e.target.value }))} placeholder="Observaciones..."
-                          className="w-full px-3 py-2 rounded-lg border border-gray-200 bg-white text-sm text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-primary/30" />
+                          className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] bg-white text-sm text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-primary/30" />
                       </div>
 
                       {/* Return stock toggle */}
@@ -1709,11 +1709,11 @@ export default function NotasCreditoModule() {
                       {/* Document Reference */}
                       {selectedVenta && (
                         <div className={cn("rounded-xl p-4 border-2", (DOC_STYLE[selectedVenta.comprobanteTipo] || DOC_STYLE.ticket).border, (DOC_STYLE[selectedVenta.comprobanteTipo] || DOC_STYLE.ticket).bg)}>
-                          <p className="text-[10px] uppercase font-bold text-gray-400 mb-2">Documento de referencia</p>
+                          <p className="text-[length:var(--ts-2xs)] uppercase font-bold text-gray-400 mb-2">Documento de referencia</p>
                           <div className="flex items-center gap-2">
                             <span className="text-2xl">{(DOC_STYLE[selectedVenta.comprobanteTipo] || DOC_STYLE.ticket).icon}</span>
                             <div>
-                              <span className={cn("px-2 py-0.5 rounded-lg text-[10px] font-bold uppercase", (DOC_STYLE[selectedVenta.comprobanteTipo] || DOC_STYLE.ticket).badge)}>
+                              <span className={cn("px-2 py-0.5 rounded-lg text-[length:var(--ts-2xs)] font-bold uppercase", (DOC_STYLE[selectedVenta.comprobanteTipo] || DOC_STYLE.ticket).badge)}>
                                 {(DOC_STYLE[selectedVenta.comprobanteTipo] || DOC_STYLE.ticket).label}
                               </span>
                               <span className="font-mono text-sm font-bold text-gray-900 ml-2">{selectedVenta.comprobanteNumero || `#${selectedVenta.numero}`}</span>
@@ -1727,8 +1727,8 @@ export default function NotasCreditoModule() {
 
                           {/* Items being returned */}
                           {selectedVenta.items.filter(it => it.selected).length > 0 && (
-                            <div className="mt-3 pt-3 border-t border-gray-200/50 space-y-1">
-                              <p className="text-[10px] uppercase font-bold text-gray-400 mb-1">Items incluidos en la NC</p>
+                            <div className="mt-3 pt-3 border-t border-[var(--rule-base)]/50 space-y-1">
+                              <p className="text-[length:var(--ts-2xs)] uppercase font-bold text-gray-400 mb-1">Items incluidos en la NC</p>
                               {selectedVenta.items.filter(it => it.selected).map((it, i) => (
                                 <div key={i} className="flex items-center justify-between text-xs">
                                   <span className="text-gray-600">{it.nombre} {"\u00d7"}{it.cantidadDevolver}{it.cantidadDevolver < it.cantidad ? ` (de ${it.cantidad})` : ""}</span>
@@ -1742,7 +1742,7 @@ export default function NotasCreditoModule() {
 
                       {/* Motivo Summary */}
                       <div className="bg-gray-50 rounded-xl p-4">
-                        <p className="text-[10px] uppercase font-bold text-gray-400 mb-2">Motivo</p>
+                        <p className="text-[length:var(--ts-2xs)] uppercase font-bold text-gray-400 mb-2">Motivo</p>
                         <div className="flex items-center gap-2">
                           <span className="text-xl">{MOTIVOS_SUNAT.find(m => m.code === form.codigoMotivo)?.icon || "\u{1F4DD}"}</span>
                           <div>

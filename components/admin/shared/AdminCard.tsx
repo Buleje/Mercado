@@ -19,9 +19,9 @@ function AdminCard({ children, className, padding = "md", hover = false }: Admin
     <div
       data-card=""
       className={cn(
-        "rounded-xl border border-gray-100 dark:border-zinc-800 bg-white dark:bg-zinc-900",
+        "rounded-xl border border-[var(--rule-soft)] dark:border-zinc-800 bg-white dark:bg-zinc-900",
         paddingMap[padding],
-        hover && "hover:shadow-sm hover:border-gray-200 dark:hover:border-zinc-700 transition-all duration-200",
+        hover && "hover:shadow-sm hover:border-gray-200 dark:hover:border-zinc-700 transition-all duration-[var(--dur-base)]",
         className,
       )}
     >

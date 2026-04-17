@@ -58,7 +58,7 @@ const STATUS_CONFIG: Record<string, { label: string; variant: BadgeVariant; badg
   cancelado:   { label: "Cancelado",   variant: "error",   badgeIcon: XCircle,     color: "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400",                 icon: <XCircle className="h-3 w-3" /> },
   pending:     { label: "Pendiente",   variant: "warning", badgeIcon: Clock,       color: "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400",         icon: <Clock className="h-3 w-3" />,        next: "confirmado" },
   confirmed:   { label: "Confirmado",  variant: "info",    badgeIcon: CheckCircle, color: "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400",             icon: <CheckCircle className="h-3 w-3" />,   next: "en_camino" },
-  preparing:   { label: "Preparando",  variant: "pending", badgeIcon: Package,     color: "bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400",     icon: <Package className="h-3 w-3" />,       next: "en_camino" },
+  preparing:   { label: "Preparando",  variant: "pending", badgeIcon: Package,     color: "bg-[var(--surface-sunken)] text-[var(--text-primary)]",     icon: <Package className="h-3 w-3" />,       next: "en_camino" },
   delivering:  { label: "En camino",   variant: "info",    badgeIcon: Truck,       color: "bg-cyan-100 text-cyan-700 dark:bg-cyan-900/30 dark:text-cyan-400",             icon: <Truck className="h-3 w-3" />,         next: "entregado" },
   delivered:   { label: "Entregado",   variant: "success", badgeIcon: CheckCircle, color: "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400", icon: <CheckCircle className="h-3 w-3" /> },
   cancelled:   { label: "Cancelado",   variant: "error",   badgeIcon: XCircle,     color: "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400",                 icon: <XCircle className="h-3 w-3" /> },
@@ -563,7 +563,7 @@ export default function SalesOrdersTab() {
             onChange={e => { setSearch(e.target.value); setPage(1); }}
             placeholder="Buscar cliente o ID..."
             aria-label="Buscar pedidos"
-            className="w-full pl-10 pr-4 py-2.5 text-sm rounded-lg border border-gray-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500/20 outline-none transition-all"
+            className="w-full pl-10 pr-4 py-2.5 text-sm rounded-lg border border-[var(--rule-base)] dark:border-zinc-700 bg-white dark:bg-zinc-900 focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500/20 outline-none transition-all"
           />
         </div>
 
@@ -576,7 +576,7 @@ export default function SalesOrdersTab() {
               "inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-sm font-medium border transition-all",
               filter === opt.id
                 ? "bg-emerald-50 dark:bg-emerald-900/20 border-emerald-200 dark:border-emerald-800 text-emerald-700 dark:text-emerald-400"
-                : "border-gray-200 dark:border-zinc-700 text-gray-600 dark:text-zinc-400 bg-white dark:bg-zinc-900 hover:bg-gray-50 dark:hover:bg-zinc-800"
+                : "border-[var(--rule-base)] dark:border-zinc-700 text-gray-600 dark:text-zinc-400 bg-white dark:bg-zinc-900 hover:bg-gray-50 dark:hover:bg-zinc-800"
             )}
           >
             {opt.label}
@@ -592,7 +592,7 @@ export default function SalesOrdersTab() {
               "inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-sm font-medium border transition-all",
               dateFilter === opt.id
                 ? "bg-emerald-50 dark:bg-emerald-900/20 border-emerald-200 dark:border-emerald-800 text-emerald-700 dark:text-emerald-400"
-                : "border-gray-200 dark:border-zinc-700 text-gray-600 dark:text-zinc-400 bg-white dark:bg-zinc-900 hover:bg-gray-50 dark:hover:bg-zinc-800"
+                : "border-[var(--rule-base)] dark:border-zinc-700 text-gray-600 dark:text-zinc-400 bg-white dark:bg-zinc-900 hover:bg-gray-50 dark:hover:bg-zinc-800"
             )}
           >
             {opt.label}
@@ -621,7 +621,7 @@ export default function SalesOrdersTab() {
               "flex items-center gap-1 px-2.5 py-1.5 rounded-full text-xs font-medium border transition-all",
               groupByZone
                 ? "bg-emerald-50 dark:bg-emerald-900/20 border-emerald-200 text-emerald-700"
-                : "border-gray-200 dark:border-zinc-700 text-gray-600 bg-white dark:bg-zinc-900 hover:bg-gray-50"
+                : "border-[var(--rule-base)] dark:border-zinc-700 text-gray-600 bg-white dark:bg-zinc-900 hover:bg-gray-50"
             )}
           >
             <MapPin className="h-3 w-3" /> Zona
@@ -645,12 +645,12 @@ export default function SalesOrdersTab() {
               "inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-sm font-medium border transition-all",
               urgencyFilter === opt.id
                 ? "bg-emerald-50 dark:bg-emerald-900/20 border-emerald-200 dark:border-emerald-800 text-emerald-700 dark:text-emerald-400"
-                : "border-gray-200 dark:border-zinc-700 text-gray-600 dark:text-zinc-400 bg-white dark:bg-zinc-900 hover:bg-gray-50 dark:hover:bg-zinc-800"
+                : "border-[var(--rule-base)] dark:border-zinc-700 text-gray-600 dark:text-zinc-400 bg-white dark:bg-zinc-900 hover:bg-gray-50 dark:hover:bg-zinc-800"
             )}
           >
             {opt.label}
             <span className={cn(
-              "text-[10px] font-bold rounded-full min-w-[18px] h-[18px] inline-flex items-center justify-center px-1",
+              "text-[length:var(--ts-2xs)] font-bold rounded-full min-w-[18px] h-[18px] inline-flex items-center justify-center px-1",
               urgencyFilter === opt.id ? "bg-emerald-600 text-white" : "bg-gray-200 dark:bg-zinc-700 text-gray-600 dark:text-zinc-300"
             )}>
               {opt.count > 99 ? "99+" : opt.count}
@@ -689,7 +689,7 @@ export default function SalesOrdersTab() {
           {newCount > 0 && (
             <button
               onClick={() => setNewCount(0)}
-              className="absolute top-2 right-2 h-5 min-w-5 px-1.5 rounded-full bg-red-500 text-white text-[10px] font-bold flex items-center justify-center"
+              className="absolute top-2 right-2 h-5 min-w-5 px-1.5 rounded-full bg-red-500 text-white text-[length:var(--ts-2xs)] font-bold flex items-center justify-center"
               title="Nuevos pedidos"
             >
               +{newCount}
@@ -706,7 +706,7 @@ export default function SalesOrdersTab() {
         const KANBAN_COLS = [
           { key: "pendiente", label: "Pendiente", match: ["pendiente", "pending"], bg: "bg-yellow-50 dark:bg-yellow-950/20", border: "border-yellow-300 dark:border-yellow-800", headerBg: "bg-yellow-100 dark:bg-yellow-900/30" },
           { key: "preparando", label: "Preparando", match: ["confirmado", "confirmed", "preparing", "preparando"], bg: "bg-emerald-50 dark:bg-emerald-950/20", border: "border-emerald-300 dark:border-emerald-800", headerBg: "bg-emerald-100 dark:bg-emerald-900/30" },
-          { key: "en_camino", label: "En camino", match: ["en_camino", "delivering"], bg: "bg-purple-50 dark:bg-purple-950/20", border: "border-purple-300 dark:border-purple-800", headerBg: "bg-purple-100 dark:bg-purple-900/30" },
+          { key: "en_camino", label: "En camino", match: ["en_camino", "delivering"], bg: "bg-[var(--surface-sunken)]", border: "border-[var(--rule-base)]", headerBg: "bg-[var(--surface-sunken)]" },
           { key: "entregado", label: "Entregado", match: ["entregado", "delivered"], bg: "bg-green-50 dark:bg-green-950/20", border: "border-green-300 dark:border-green-800", headerBg: "bg-green-100 dark:bg-green-900/30" },
         ];
         return (
@@ -717,36 +717,36 @@ export default function SalesOrdersTab() {
                 <div key={col.key} className={cn("rounded-xl border-2 min-w-[200px]", col.bg, col.border)}>
                   <div className={cn("px-3 py-2 rounded-t-lg flex items-center justify-between", col.headerBg)}>
                     <span className="text-xs font-extrabold text-gray-800 dark:text-foreground">{col.label}</span>
-                    <span className="px-1.5 py-0.5 rounded-full bg-white/60 dark:bg-white/10 text-[10px] font-bold text-gray-700 dark:text-foreground">{colOrders.length}</span>
+                    <span className="px-1.5 py-0.5 rounded-full bg-white/60 dark:bg-white/10 text-[length:var(--ts-2xs)] font-bold text-gray-700 dark:text-foreground">{colOrders.length}</span>
                   </div>
                   <div className="p-2 space-y-2 max-h-[60vh] overflow-y-auto">
                     {colOrders.length === 0 ? (
-                      <p className="text-[10px] text-gray-400 dark:text-muted text-center py-4">Sin pedidos</p>
+                      <p className="text-[length:var(--ts-2xs)] text-gray-400 dark:text-muted text-center py-4">Sin pedidos</p>
                     ) : colOrders.map(order => {
                       const minutos = Math.floor((Date.now() - new Date(order.createdAt).getTime()) / 60000);
                       const cfg = STATUS_CONFIG[order.status];
                       const nextStatus = cfg?.next;
                       return (
-                        <div key={order.id} className="bg-white dark:bg-card rounded-lg border border-gray-200 dark:border-card-border p-2.5  hover:shadow-sm transition-shadow">
+                        <div key={order.id} className="bg-white dark:bg-card rounded-lg border border-[var(--rule-base)] dark:border-card-border p-2.5  hover:shadow-sm transition-shadow">
                           <div className="flex items-center justify-between mb-1">
                             <p className="text-xs font-bold text-gray-900 dark:text-foreground truncate">{order.customerName ?? "Sin nombre"}</p>
                             {/* Mejora 14: Time badge */}
                             {!TERMINAL.has(order.status) && (
-                              <span className={cn("text-[10px] font-bold shrink-0", minutos < 15 ? "text-green-600" : minutos < 30 ? "text-yellow-600" : minutos > 60 ? "text-red-700 animate-pulse" : "text-red-600")}>
+                              <span className={cn("text-[length:var(--ts-2xs)] font-bold shrink-0", minutos < 15 ? "text-green-600" : minutos < 30 ? "text-yellow-600" : minutos > 60 ? "text-red-700 animate-pulse" : "text-red-600")}>
                                 {minutos > 60 ? `${Math.floor(minutos / 60)}h ${minutos % 60}m` : `${minutos}m`}
                               </span>
                             )}
                           </div>
                           <p className="text-sm font-extrabold font-mono text-primary">{fmt(order.total)}</p>
                           <div className="flex items-center justify-between mt-1.5">
-                            <span className="text-[10px] text-gray-400 dark:text-muted">{order.items?.length ?? 0} productos</span>
-                            <span className="text-[10px] font-bold text-gray-500 capitalize">{order.paymentMethod ?? "efectivo"}</span>
+                            <span className="text-[length:var(--ts-2xs)] text-gray-400 dark:text-muted">{order.items?.length ?? 0} productos</span>
+                            <span className="text-[length:var(--ts-2xs)] font-bold text-gray-500 capitalize">{order.paymentMethod ?? "efectivo"}</span>
                           </div>
                           {nextStatus && (
                             <button
                               disabled={updatingId === order.id}
                               onClick={() => changeStatus(order.id, nextStatus)}
-                              className="mt-2 w-full flex items-center justify-center gap-1 py-1.5 rounded-lg bg-primary/10 text-primary text-[10px] font-bold hover:bg-primary/20 transition-colors disabled:opacity-50"
+                              className="mt-2 w-full flex items-center justify-center gap-1 py-1.5 rounded-lg bg-primary/10 text-primary text-[length:var(--ts-2xs)] font-bold hover:bg-primary/20 transition-colors disabled:opacity-50"
                             >
                               {updatingId === order.id ? "..." : <><ArrowRight className="h-3 w-3" /> Mover</>}
                             </button>
@@ -776,23 +776,23 @@ export default function SalesOrdersTab() {
         const hasMoreHist = histPaged.length < histFiltered.length;
         return (
           <div className="space-y-2">
-            <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl overflow-hidden">
+            <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl overflow-hidden">
               <table className="w-full text-sm">
                 <thead>
-                  <tr className="bg-gray-50 dark:bg-surface border-b border-gray-200 dark:border-card-border">
-                    <th className="text-left px-4 py-3 text-[10px] font-bold text-gray-500 dark:text-muted">#</th>
-                    <th className="text-left px-4 py-3 text-[10px] font-bold text-gray-500 dark:text-muted">Fecha</th>
-                    <th className="text-left px-4 py-3 text-[10px] font-bold text-gray-500 dark:text-muted">Cliente</th>
-                    <th className="text-right px-4 py-3 text-[10px] font-bold text-gray-500 dark:text-muted">Total</th>
-                    <th className="text-center px-4 py-3 text-[10px] font-bold text-gray-500 dark:text-muted">Estado</th>
-                    <th className="text-center px-4 py-3 text-[10px] font-bold text-gray-500 dark:text-muted">Acciones</th>
+                  <tr className="bg-gray-50 dark:bg-surface border-b border-[var(--rule-base)] dark:border-card-border">
+                    <th className="text-left px-4 py-3 text-[length:var(--ts-2xs)] font-bold text-gray-500 dark:text-muted">#</th>
+                    <th className="text-left px-4 py-3 text-[length:var(--ts-2xs)] font-bold text-gray-500 dark:text-muted">Fecha</th>
+                    <th className="text-left px-4 py-3 text-[length:var(--ts-2xs)] font-bold text-gray-500 dark:text-muted">Cliente</th>
+                    <th className="text-right px-4 py-3 text-[length:var(--ts-2xs)] font-bold text-gray-500 dark:text-muted">Total</th>
+                    <th className="text-center px-4 py-3 text-[length:var(--ts-2xs)] font-bold text-gray-500 dark:text-muted">Estado</th>
+                    <th className="text-center px-4 py-3 text-[length:var(--ts-2xs)] font-bold text-gray-500 dark:text-muted">Acciones</th>
                   </tr>
                 </thead>
                 <tbody>
                   {histPaged.map((order, idx) => {
                     const cfg = STATUS_CONFIG[order.status] ?? { label: order.status, color: "bg-gray-100 text-gray-600", icon: null };
                     return (
-                      <tr key={order.id} className="border-b border-gray-100 dark:border-card-border hover:bg-gray-50 dark:hover:bg-surface transition-colors">
+                      <tr key={order.id} className="border-b border-[var(--rule-soft)] dark:border-card-border hover:bg-gray-50 dark:hover:bg-surface transition-colors">
                         <td className="px-4 py-3 font-mono text-xs text-gray-400">{idx + 1}</td>
                         <td className="px-4 py-3 text-xs text-gray-600 dark:text-foreground">{fmtDate(order.createdAt)}</td>
                         <td className="px-4 py-3 text-xs font-semibold text-gray-900 dark:text-foreground">{order.customerName ?? "Cliente"}</td>
@@ -803,7 +803,7 @@ export default function SalesOrdersTab() {
                         <td className="px-4 py-3 text-center">
                           <button
                             onClick={() => { setViewMode("list"); setExpandedId(order.id); }}
-                            className="px-2 py-1 rounded-lg bg-primary/10 text-primary text-[10px] font-bold hover:bg-primary/20 transition-colors"
+                            className="px-2 py-1 rounded-lg bg-primary/10 text-primary text-[length:var(--ts-2xs)] font-bold hover:bg-primary/20 transition-colors"
                           >
                             Ver detalle
                           </button>
@@ -816,7 +816,7 @@ export default function SalesOrdersTab() {
             </div>
             <p className="text-xs text-gray-400 dark:text-muted text-center">{histFiltered.length} pedido{histFiltered.length !== 1 ? "s" : ""} en total</p>
             {hasMoreHist && (
-              <button onClick={() => setPage(p => p + 1)} className="w-full py-3 rounded-lg border border-gray-200 dark:border-card-border text-sm font-bold text-gray-500 dark:text-muted hover:bg-gray-50 dark:hover:bg-surface transition-colors">
+              <button onClick={() => setPage(p => p + 1)} className="w-full py-3 rounded-lg border border-[var(--rule-base)] dark:border-card-border text-sm font-bold text-gray-500 dark:text-muted hover:bg-gray-50 dark:hover:bg-surface transition-colors">
                 Cargar más ({histFiltered.length - histPaged.length} restantes)
               </button>
             )}
@@ -853,8 +853,8 @@ export default function SalesOrdersTab() {
               className={cn(
                 "bg-white dark:bg-card border rounded-xl overflow-hidden transition-all",
                 isTerminal
-                  ? "border-gray-100 dark:border-card-border opacity-70"
-                  : "border-gray-200 dark:border-card-border "
+                  ? "border-[var(--rule-soft)] dark:border-card-border opacity-70"
+                  : "border-[var(--rule-base)] dark:border-card-border "
               )}
             >
               {/* Main row — clickable to expand */}
@@ -873,7 +873,7 @@ export default function SalesOrdersTab() {
                   {/* Mejora 14: Time badge */}
                   {!isTerminal && (
                     <span className={cn(
-                      "text-[10px] font-bold",
+                      "text-[length:var(--ts-2xs)] font-bold",
                       minutos < 15 ? "text-green-600" : minutos < 30 ? "text-yellow-600" : minutos > 60 ? "text-red-700 font-extrabold animate-pulse" : "text-red-600 font-bold"
                     )}>
                       {minutos > 60 ? `${Math.floor(minutos / 60)}h ${minutos % 60}m` : `${minutos}m`}
@@ -888,14 +888,14 @@ export default function SalesOrdersTab() {
                 {isExpanded && (
                   <div className="border-t-2 border-primary/30 dark:border-primary/20">
                     {/* Enhanced header with order ID, date and status */}
-                    <div className="bg-linear-to-r from-primary/5 via-white to-transparent dark:from-primary/10 dark:via-card px-4 py-3 flex flex-wrap items-center justify-between gap-2">
+                    <div className="bg-[var(--surface-sunken)] px-4 py-3 flex flex-wrap items-center justify-between gap-2">
                       <div className="flex items-center gap-3">
                         <div className="w-9 h-9 rounded-xl bg-primary/10 flex items-center justify-center">
                           <ShoppingBag className="h-4 w-4 text-primary" />
                         </div>
                         <div>
                           <p className="text-sm font-extrabold text-gray-900 dark:text-foreground">Pedido #{order.id.slice(0, 8)}</p>
-                          <p className="text-[10px] text-gray-400 dark:text-muted">{fmtDate(order.createdAt)}</p>
+                          <p className="text-[length:var(--ts-2xs)] text-gray-400 dark:text-muted">{fmtDate(order.createdAt)}</p>
                         </div>
                       </div>
                       <div className="flex items-center gap-2">
@@ -906,8 +906,8 @@ export default function SalesOrdersTab() {
 
                     <div className="px-4 pb-4 pt-3 space-y-3">
                     {/* Timeline visual (Mejora 2) */}
-                    <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl p-5">
-                      <p className="text-[10px] font-bold text-primary mb-2 flex items-center gap-1.5">
+                    <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl p-5">
+                      <p className="text-[length:var(--ts-2xs)] font-bold text-primary mb-2 flex items-center gap-1.5">
                         <Clock className="h-3 w-3" /> Progreso del pedido
                       </p>
                       <OrderTimeline
@@ -919,22 +919,22 @@ export default function SalesOrdersTab() {
                     </div>
 
                     {/* Meta info — card style */}
-                    <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl p-5">
-                      <p className="text-[10px] font-bold text-primary mb-2 flex items-center gap-1.5">
+                    <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl p-5">
+                      <p className="text-[length:var(--ts-2xs)] font-bold text-primary mb-2 flex items-center gap-1.5">
                         <Receipt className="h-3 w-3" /> Información del pedido
                       </p>
                       <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 text-xs">
                         <div className="bg-gray-50 dark:bg-surface rounded-lg p-2.5">
-                          <span className="text-[10px] text-gray-400 dark:text-muted block mb-0.5">ID Pedido</span>
+                          <span className="text-[length:var(--ts-2xs)] text-gray-400 dark:text-muted block mb-0.5">ID Pedido</span>
                           <span className="font-mono font-bold text-gray-700 dark:text-foreground">{order.id.slice(0, 8)}</span>
                         </div>
                         <div className="bg-gray-50 dark:bg-surface rounded-lg p-2.5">
-                          <span className="text-[10px] text-gray-400 dark:text-muted block mb-0.5">Método de pago</span>
+                          <span className="text-[length:var(--ts-2xs)] text-gray-400 dark:text-muted block mb-0.5">Método de pago</span>
                           <span className="font-bold text-gray-700 dark:text-foreground capitalize">{order.paymentMethod ?? "efectivo"}</span>
                         </div>
                         {order.customerPhone && (
                           <div className="bg-gray-50 dark:bg-surface rounded-lg p-2.5">
-                            <span className="text-[10px] text-gray-400 dark:text-muted block mb-0.5">Teléfono</span>
+                            <span className="text-[length:var(--ts-2xs)] text-gray-400 dark:text-muted block mb-0.5">Teléfono</span>
                             <span className="font-bold text-gray-700 dark:text-foreground">{order.customerPhone}</span>
                           </div>
                         )}
@@ -943,8 +943,8 @@ export default function SalesOrdersTab() {
 
                     {/* Items list — card style */}
                     {order.items && order.items.length > 0 && (
-                      <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl p-5">
-                        <p className="text-[10px] font-bold text-primary mb-2 flex items-center gap-1.5">
+                      <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl p-5">
+                        <p className="text-[length:var(--ts-2xs)] font-bold text-primary mb-2 flex items-center gap-1.5">
                           <Package className="h-3 w-3" /> Productos ({order.items.length})
                         </p>
                         <div className="space-y-1.5">
@@ -972,10 +972,10 @@ export default function SalesOrdersTab() {
                       return (
                         <div className="bg-emerald-50 dark:bg-emerald-950/20 border border-emerald-200 dark:border-emerald-800 rounded-lg p-2.5">
                           <div className="flex items-center justify-between mb-2">
-                            <span className="text-[10px] font-bold text-emerald-700 dark:text-emerald-400 uppercase flex items-center gap-1">
+                            <span className="text-[length:var(--ts-2xs)] font-bold text-emerald-700 dark:text-emerald-400 uppercase flex items-center gap-1">
                               <CheckSquare className="h-3 w-3" /> Checklist de preparacion
                             </span>
-                            <span className="text-[10px] font-bold text-emerald-600 dark:text-emerald-400">{checkedCount} de {totalItems} listos</span>
+                            <span className="text-[length:var(--ts-2xs)] font-bold text-emerald-600 dark:text-emerald-400">{checkedCount} de {totalItems} listos</span>
                           </div>
                           {/* Progress bar */}
                           <div className="w-full bg-emerald-200 dark:bg-emerald-800 rounded-full h-1.5 mb-2">
@@ -1022,7 +1022,7 @@ export default function SalesOrdersTab() {
                     <div className="bg-yellow-50 dark:bg-yellow-950/20 border border-yellow-200 dark:border-yellow-800 rounded-lg p-2.5">
                       <div className="flex items-center gap-1.5 mb-1.5">
                         <Lock className="h-3 w-3 text-yellow-600 dark:text-yellow-400" />
-                        <span className="text-[10px] font-bold text-yellow-700 dark:text-yellow-400 uppercase">Nota interna — solo visible para el equipo</span>
+                        <span className="text-[length:var(--ts-2xs)] font-bold text-yellow-700 dark:text-yellow-400 uppercase">Nota interna — solo visible para el equipo</span>
                       </div>
                       <textarea
                         defaultValue={order.notes?.startsWith("[ADMIN]") ? order.notes.replace("[ADMIN] ", "") : (order.notes ?? "")}
@@ -1061,14 +1061,14 @@ export default function SalesOrdersTab() {
                         <>
                           {deliveryAssignments[order.id] ? (
                             <div className="flex items-center gap-1.5">
-                              <span className="text-[10px] font-bold text-emerald-600 dark:text-emerald-400 px-2 py-1.5 rounded-lg bg-emerald-50 dark:bg-emerald-950/30">
+                              <span className="text-[length:var(--ts-2xs)] font-bold text-emerald-600 dark:text-emerald-400 px-2 py-1.5 rounded-lg bg-emerald-50 dark:bg-emerald-950/30">
                                 <Truck className="h-3 w-3 inline mr-1" />{deliveryAssignments[order.id]}
                               </span>
                               <a
                                 href={buildDeliveryWhatsApp(deliveryAssignments[order.id], order)}
                                 target="_blank"
                                 rel="noopener noreferrer"
-                                className="px-2 py-1.5 rounded-lg bg-[#25D366] text-white text-[10px] font-bold hover:bg-[#1da851] transition-colors"
+                                className="px-2 py-1.5 rounded-lg bg-[#25D366] text-white text-[length:var(--ts-2xs)] font-bold hover:bg-[#1da851] transition-colors"
                               >
                                 Notificar
                               </a>
@@ -1154,7 +1154,7 @@ export default function SalesOrdersTab() {
                     <div className="flex items-center gap-2 mb-2">
                       <MapPin className="h-3.5 w-3.5 text-primary" />
                       <span className="text-xs font-bold text-gray-700 dark:text-foreground">{zone}</span>
-                      <span className="text-[10px] text-gray-400 dark:text-muted">({zoneOrders.length} pedido{zoneOrders.length !== 1 ? "s" : ""})</span>
+                      <span className="text-[length:var(--ts-2xs)] text-gray-400 dark:text-muted">({zoneOrders.length} pedido{zoneOrders.length !== 1 ? "s" : ""})</span>
                     </div>
                     <div className="space-y-2">
                       {zoneOrders.map(renderOrder)}
@@ -1162,7 +1162,7 @@ export default function SalesOrdersTab() {
                   </div>
                 ))}
                 {hasMore && (
-                  <button onClick={() => setPage(p => p + 1)} className="w-full py-3 rounded-lg border border-gray-200 dark:border-card-border text-sm font-bold text-gray-500 dark:text-muted hover:bg-gray-50 dark:hover:bg-surface transition-colors">
+                  <button onClick={() => setPage(p => p + 1)} className="w-full py-3 rounded-lg border border-[var(--rule-base)] dark:border-card-border text-sm font-bold text-gray-500 dark:text-muted hover:bg-gray-50 dark:hover:bg-surface transition-colors">
                     Cargar mas ({filtered.length - paginated.length} restantes)
                   </button>
                 )}
@@ -1174,7 +1174,7 @@ export default function SalesOrdersTab() {
             <div className="space-y-2">
               {paginated.map(renderOrder)}
               {hasMore && (
-                <button onClick={() => setPage(p => p + 1)} className="w-full py-3 rounded-lg border border-gray-200 dark:border-card-border text-sm font-bold text-gray-500 dark:text-muted hover:bg-gray-50 dark:hover:bg-surface transition-colors">
+                <button onClick={() => setPage(p => p + 1)} className="w-full py-3 rounded-lg border border-[var(--rule-base)] dark:border-card-border text-sm font-bold text-gray-500 dark:text-muted hover:bg-gray-50 dark:hover:bg-surface transition-colors">
                   Cargar mas ({filtered.length - paginated.length} restantes)
                 </button>
               )}
@@ -1183,7 +1183,7 @@ export default function SalesOrdersTab() {
         })()}
 
       {/* ── Idea 11: Panel de Repartidores ─────────────────────────── */}
-      <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl p-4">
+      <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl p-4">
         <button
           onClick={() => setShowDeliveryPanel(!showDeliveryPanel)}
           className="w-full flex items-center justify-between text-sm font-bold text-gray-900 dark:text-foreground"
@@ -1203,7 +1203,7 @@ export default function SalesOrdersTab() {
                   <div key={p.nombre} className="bg-gray-50 dark:bg-surface rounded-lg px-3 py-2 text-xs">
                     <p className="font-bold text-gray-700 dark:text-foreground">{p.nombre}</p>
                     <p className="text-gray-400 dark:text-muted">{p.zona} &middot; {p.entregas} entregas (S/{(p.entregas * p.comision).toFixed(0)} comisiones)</p>
-                    <p className="text-[10px] text-gray-400">Comision: S/{p.comision}/delivery</p>
+                    <p className="text-[length:var(--ts-2xs)] text-gray-400">Comision: S/{p.comision}/delivery</p>
                   </div>
                 ))}
               </div>
@@ -1214,13 +1214,13 @@ export default function SalesOrdersTab() {
               <div className="bg-emerald-50 dark:bg-emerald-950/20 rounded-lg p-3 space-y-2">
                 <p className="text-xs font-bold text-emerald-700 dark:text-emerald-400">Nuevo repartidor</p>
                 <div className="grid grid-cols-2 gap-2">
-                  <input type="text" placeholder="Nombre" value={newDelivery.nombre} onChange={e => setNewDelivery({...newDelivery, nombre: e.target.value})} className="text-xs border border-gray-200 dark:border-card-border rounded-lg px-2 py-1.5 bg-white dark:bg-card text-gray-900 dark:text-foreground" />
-                  <input type="tel" placeholder="Telefono" value={newDelivery.telefono} onChange={e => setNewDelivery({...newDelivery, telefono: e.target.value})} className="text-xs border border-gray-200 dark:border-card-border rounded-lg px-2 py-1.5 bg-white dark:bg-card text-gray-900 dark:text-foreground" />
-                  <input type="text" placeholder="Zona (ej: Manantay)" value={newDelivery.zona} onChange={e => setNewDelivery({...newDelivery, zona: e.target.value})} className="text-xs border border-gray-200 dark:border-card-border rounded-lg px-2 py-1.5 bg-white dark:bg-card text-gray-900 dark:text-foreground" />
+                  <input type="text" placeholder="Nombre" value={newDelivery.nombre} onChange={e => setNewDelivery({...newDelivery, nombre: e.target.value})} className="text-xs border border-[var(--rule-base)] dark:border-card-border rounded-lg px-2 py-1.5 bg-white dark:bg-card text-gray-900 dark:text-foreground" />
+                  <input type="tel" placeholder="Telefono" value={newDelivery.telefono} onChange={e => setNewDelivery({...newDelivery, telefono: e.target.value})} className="text-xs border border-[var(--rule-base)] dark:border-card-border rounded-lg px-2 py-1.5 bg-white dark:bg-card text-gray-900 dark:text-foreground" />
+                  <input type="text" placeholder="Zona (ej: Manantay)" value={newDelivery.zona} onChange={e => setNewDelivery({...newDelivery, zona: e.target.value})} className="text-xs border border-[var(--rule-base)] dark:border-card-border rounded-lg px-2 py-1.5 bg-white dark:bg-card text-gray-900 dark:text-foreground" />
                   <div className="flex items-center gap-1">
                     <span className="text-xs text-gray-500">S/</span>
-                    <input type="number" min={1} max={20} value={newDelivery.comision} onChange={e => setNewDelivery({...newDelivery, comision: Number(e.target.value) || 3})} className="w-16 text-xs border border-gray-200 dark:border-card-border rounded-lg px-2 py-1.5 bg-white dark:bg-card text-gray-900 dark:text-foreground" />
-                    <span className="text-[10px] text-gray-400">/delivery</span>
+                    <input type="number" min={1} max={20} value={newDelivery.comision} onChange={e => setNewDelivery({...newDelivery, comision: Number(e.target.value) || 3})} className="w-16 text-xs border border-[var(--rule-base)] dark:border-card-border rounded-lg px-2 py-1.5 bg-white dark:bg-card text-gray-900 dark:text-foreground" />
+                    <span className="text-[length:var(--ts-2xs)] text-gray-400">/delivery</span>
                   </div>
                 </div>
                 <div className="flex gap-2">
@@ -1229,7 +1229,7 @@ export default function SalesOrdersTab() {
                 </div>
               </div>
             ) : (
-              <button onClick={() => setShowAddDelivery(true)} className="w-full py-2 rounded-lg border-2 border-dashed border-gray-200 dark:border-card-border text-xs font-bold text-gray-400 hover:text-primary hover:border-primary/40 transition-colors">
+              <button onClick={() => setShowAddDelivery(true)} className="w-full py-2 rounded-lg border-2 border-dashed border-[var(--rule-base)] dark:border-card-border text-xs font-bold text-gray-400 hover:text-primary hover:border-primary/40 transition-colors">
                 + Agregar repartidor
               </button>
             )}
@@ -1254,7 +1254,7 @@ export default function SalesOrdersTab() {
                   >
                     <div>
                       <p className="text-sm font-bold text-gray-800 dark:text-foreground">{p.nombre}</p>
-                      <p className="text-[10px] text-gray-400">{p.zona} &middot; S/{p.comision}/delivery</p>
+                      <p className="text-[length:var(--ts-2xs)] text-gray-400">{p.zona} &middot; S/{p.comision}/delivery</p>
                     </div>
                     <Truck className="h-4 w-4 text-primary" />
                   </button>
@@ -1271,11 +1271,11 @@ export default function SalesOrdersTab() {
 
       {/* Mejora 9: WhatsApp toast notification */}
       {whatsappToast && (
-        <div className="fixed bottom-4 right-4 z-50 bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl p-4 max-w-sm animate-in slide-in-from-bottom-5">
+        <div className="fixed bottom-4 right-4 z-50 bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl p-4 max-w-sm animate-in slide-in-from-bottom-5">
           <p className="text-xs font-bold text-gray-900 dark:text-foreground mb-2">
             Notificar a {whatsappToast.name}
           </p>
-          <p className="text-[10px] text-gray-500 dark:text-muted mb-3">{whatsappToast.message}</p>
+          <p className="text-[length:var(--ts-2xs)] text-gray-500 dark:text-muted mb-3">{whatsappToast.message}</p>
           <div className="flex gap-2">
             <a
               href={`https://wa.me/${whatsappToast.phone.replace(/\D/g, "").startsWith("51") ? whatsappToast.phone.replace(/\D/g, "") : "51" + whatsappToast.phone.replace(/\D/g, "")}?text=${encodeURIComponent(whatsappToast.message + "\n\nBuleje - Pucallpa")}`}
@@ -1367,7 +1367,7 @@ export default function SalesOrdersTab() {
 function DashTooltip({ active, payload, label }: any) {
   if (!active || !payload?.length) return null;
   return (
-    <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg px-3 py-2">
+    <div className="bg-white dark:bg-gray-800 border border-[var(--rule-base)] rounded-lg px-3 py-2">
       <p className="text-xs font-semibold text-gray-700 dark:text-gray-200 mb-1">{label}</p>
       {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
       {payload.map((p: any, i: number) => (
@@ -1560,7 +1560,7 @@ function OrdersDashboard({ orders }: { orders: Order[] }) {
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         <DashKpi icon={<ShoppingBag className="h-4 w-4" />} iconBg="bg-emerald-100 dark:bg-emerald-900/40 text-emerald-600 dark:text-emerald-400" label="Pedidos hoy" value={kpis.pedidosHoy} border="border-l-primary" sparkColor="var(--color-primary)" sparkVal={kpis.pedidosHoy} />
         <DashKpi icon={<DollarSign className="h-4 w-4" />} iconBg="bg-emerald-100 dark:bg-emerald-900/40 text-emerald-600 dark:text-emerald-400" label="Monto hoy" value={`S/${kpis.totalMonto.toFixed(2)}`} border="border-l-emerald-500" sparkColor="#3b82f6" sparkVal={kpis.totalMonto} />
-        <DashKpi icon={<Receipt className="h-4 w-4" />} iconBg="bg-purple-100 dark:bg-purple-900/40 text-purple-600 dark:text-purple-400" label="Ticket promedio" value={`S/${kpis.ticketProm.toFixed(2)}`} border="border-l-purple-500" sparkColor="#8b5cf6" sparkVal={kpis.ticketProm} />
+        <DashKpi icon={<Receipt className="h-4 w-4" />} iconBg="bg-[var(--surface-sunken)] text-[var(--text-secondary)] dark:text-[var(--text-primary)]" label="Ticket promedio" value={`S/${kpis.ticketProm.toFixed(2)}`} border="border-l-purple-500" sparkColor="#8b5cf6" sparkVal={kpis.ticketProm} />
         <DashKpi icon={<Clock className="h-4 w-4" />} iconBg="bg-amber-100 dark:bg-amber-900/40 text-amber-600 dark:text-amber-400" label="Pendientes" value={kpis.pendientes} border="border-l-amber-500" pulse={kpis.pendientes > 5} />
         <DashKpi icon={<Truck className="h-4 w-4" />} iconBg="bg-cyan-100 dark:bg-cyan-900/40 text-cyan-600 dark:text-cyan-400" label="En camino" value={kpis.enCamino} border="border-l-cyan-500" />
         <DashKpi icon={<CheckCircle className="h-4 w-4" />} iconBg="bg-green-100 dark:bg-green-900/40 text-green-600 dark:text-green-400" label="Entregados hoy" value={kpis.entregadosHoy} border="border-l-green-500" />
@@ -1569,7 +1569,7 @@ function OrdersDashboard({ orders }: { orders: Order[] }) {
       </div>
 
       {/* === SECCION 2: Pedidos por Estado (PieChart donut grande) === */}
-      <div className="bg-white dark:bg-card rounded-xl border border-gray-200 dark:border-card-border p-6 ">
+      <div className="bg-white dark:bg-card rounded-xl border border-[var(--rule-base)] dark:border-card-border p-6 ">
         <div className="flex items-center justify-between mb-4">
           <h3 className="text-sm font-medium text-gray-500 dark:text-zinc-400">Pedidos por Estado</h3>
           <button onClick={() => setExpandedChart("pedidos-estado")} className="p-1 hover:bg-gray-100 dark:hover:bg-gray-800 rounded transition-colors" title="Expandir"><Maximize2 className="h-3.5 w-3.5 text-gray-400" /></button>
@@ -1597,7 +1597,7 @@ function OrdersDashboard({ orders }: { orders: Order[] }) {
           <div className="absolute inset-0 flex items-center justify-center pointer-events-none" style={{ marginBottom: 30 }}>
             <div className="text-center">
               <p className="text-3xl font-mono font-bold text-gray-900 dark:text-white">{totalPedidos}</p>
-              <p className="text-[10px] text-gray-500 dark:text-gray-400">Total</p>
+              <p className="text-[length:var(--ts-2xs)] text-gray-500 dark:text-gray-400">Total</p>
             </div>
           </div>
         </div>
@@ -1606,7 +1606,7 @@ function OrdersDashboard({ orders }: { orders: Order[] }) {
       {/* === SECCION 3: Pedidos por Hora + Metodo de Pago === */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Pedidos por hora */}
-        <div className="bg-white dark:bg-card rounded-xl border border-gray-200 dark:border-card-border p-6 ">
+        <div className="bg-white dark:bg-card rounded-xl border border-[var(--rule-base)] dark:border-card-border p-6 ">
           <h3 className="text-sm font-medium text-gray-500 dark:text-zinc-400 mb-4">Pedidos por Hora - Hoy</h3>
           <ResponsiveContainer width="100%" height={250}>
             <BarChart data={hourlyData}>
@@ -1624,7 +1624,7 @@ function OrdersDashboard({ orders }: { orders: Order[] }) {
         </div>
 
         {/* Metodo de pago */}
-        <div className="bg-white dark:bg-card rounded-xl border border-gray-200 dark:border-card-border p-6 ">
+        <div className="bg-white dark:bg-card rounded-xl border border-[var(--rule-base)] dark:border-card-border p-6 ">
           <h3 className="text-sm font-medium text-gray-500 dark:text-zinc-400 mb-4">Metodo de Pago</h3>
           <ResponsiveContainer width="100%" height={250}>
             <PieChart>
@@ -1648,7 +1648,7 @@ function OrdersDashboard({ orders }: { orders: Order[] }) {
       </div>
 
       {/* === SECCION 4: Tendencia 7 Dias (ComposedChart) === */}
-      <div className="bg-white dark:bg-card rounded-xl border border-gray-200 dark:border-card-border p-6 ">
+      <div className="bg-white dark:bg-card rounded-xl border border-[var(--rule-base)] dark:border-card-border p-6 ">
         <h3 className="text-sm font-medium text-gray-500 dark:text-zinc-400 mb-4">Tendencia de Pedidos - Ultimos 7 dias</h3>
         <ResponsiveContainer width="100%" height={280}>
           <ComposedChart data={weeklyData}>
@@ -1673,7 +1673,7 @@ function OrdersDashboard({ orders }: { orders: Order[] }) {
       {/* === SECCION 5: Pedidos por Zona + SECCION 6: Top 5 Clientes === */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Pedidos por zona */}
-        <div className="bg-white dark:bg-card rounded-xl border border-gray-200 dark:border-card-border p-6 ">
+        <div className="bg-white dark:bg-card rounded-xl border border-[var(--rule-base)] dark:border-card-border p-6 ">
           <h3 className="text-sm font-medium text-gray-500 dark:text-zinc-400 mb-4">Top 5 Zonas</h3>
           {zonaData.length === 0 ? (
             <OrdersEmptyChart message="Sin datos de zona" />
@@ -1691,7 +1691,7 @@ function OrdersDashboard({ orders }: { orders: Order[] }) {
         </div>
 
         {/* Top 5 clientes */}
-        <div className="bg-white dark:bg-card rounded-xl border border-gray-200 dark:border-card-border p-6 ">
+        <div className="bg-white dark:bg-card rounded-xl border border-[var(--rule-base)] dark:border-card-border p-6 ">
           <h3 className="text-sm font-medium text-gray-500 dark:text-zinc-400 mb-4">Top 5 Clientes</h3>
           {topClientes.length === 0 ? (
             <OrdersEmptyChart message="Sin datos de clientes" />
@@ -1709,14 +1709,14 @@ function OrdersDashboard({ orders }: { orders: Order[] }) {
                       </div>
                       <div className="mt-1 h-2 bg-gray-100 dark:bg-gray-700 rounded-full overflow-hidden">
                         <div
-                          className="h-full rounded-full transition-all duration-500"
+                          className="h-full rounded-full transition-all duration-[var(--dur-slow)]"
                           style={{
                             width: `${topClientes[0].count > 0 ? (c.count / topClientes[0].count) * 100 : 0}%`,
                             backgroundColor: '#f97316',
                           }}
                         />
                       </div>
-                      <p className="text-[10px] text-gray-400 dark:text-gray-500 mt-0.5">{c.count} pedido{c.count !== 1 ? 's' : ''}</p>
+                      <p className="text-[length:var(--ts-2xs)] text-gray-400 dark:text-gray-500 mt-0.5">{c.count} pedido{c.count !== 1 ? 's' : ''}</p>
                     </div>
                   </div>
                 );
@@ -1727,7 +1727,7 @@ function OrdersDashboard({ orders }: { orders: Order[] }) {
       </div>
 
       {/* === SECCION 7: Tiempo Promedio de Procesamiento === */}
-      <div className="bg-white dark:bg-card rounded-xl border border-gray-200 dark:border-card-border p-6 ">
+      <div className="bg-white dark:bg-card rounded-xl border border-[var(--rule-base)] dark:border-card-border p-6 ">
         <h3 className="text-sm font-medium text-gray-500 dark:text-zinc-400 mb-4">Tiempo Promedio de Procesamiento</h3>
         <div className="flex flex-col items-center justify-center py-4">
           {/* Gauge semicircular */}
@@ -1773,7 +1773,7 @@ function OrdersDashboard({ orders }: { orders: Order[] }) {
           "rounded-xl border p-5 flex items-start gap-3",
           alertas.sinAtender > 0
             ? "bg-red-50 dark:bg-red-900/20 border-red-200 dark:border-red-800"
-            : "bg-gray-50 dark:bg-gray-800/50 border-gray-200 dark:border-gray-700"
+            : "bg-gray-50 dark:bg-gray-800/50 border-[var(--rule-base)]"
         )}>
           <div className={cn("rounded-full p-2 shrink-0", alertas.sinAtender > 0 ? "bg-red-100 dark:bg-red-900/40" : "bg-gray-100 dark:bg-gray-700")}>
             <AlertTriangle className={cn("h-4 w-4", alertas.sinAtender > 0 ? "text-red-600 dark:text-red-400" : "text-gray-400 dark:text-gray-500")} />
@@ -1782,7 +1782,7 @@ function OrdersDashboard({ orders }: { orders: Order[] }) {
             <p className={cn("text-sm font-bold", alertas.sinAtender > 0 ? "text-red-700 dark:text-red-300" : "text-gray-500 dark:text-gray-400")}>
               {alertas.sinAtender > 0 ? `${alertas.sinAtender} pedido${alertas.sinAtender !== 1 ? 's' : ''} sin atender` : 'Sin alertas'}
             </p>
-            <p className="text-[10px] text-gray-400 dark:text-gray-500 mt-0.5">Mas de 1 hora sin cambio de estado</p>
+            <p className="text-[length:var(--ts-2xs)] text-gray-400 dark:text-gray-500 mt-0.5">Mas de 1 hora sin cambio de estado</p>
           </div>
         </div>
 
@@ -1791,7 +1791,7 @@ function OrdersDashboard({ orders }: { orders: Order[] }) {
           "rounded-xl border p-5 flex items-start gap-3",
           alertas.sinDireccion > 0
             ? "bg-amber-50 dark:bg-amber-900/20 border-amber-200 dark:border-amber-800"
-            : "bg-gray-50 dark:bg-gray-800/50 border-gray-200 dark:border-gray-700"
+            : "bg-gray-50 dark:bg-gray-800/50 border-[var(--rule-base)]"
         )}>
           <div className={cn("rounded-full p-2 shrink-0", alertas.sinDireccion > 0 ? "bg-amber-100 dark:bg-amber-900/40" : "bg-gray-100 dark:bg-gray-700")}>
             <MapPin className={cn("h-4 w-4", alertas.sinDireccion > 0 ? "text-amber-600 dark:text-amber-400" : "text-gray-400 dark:text-gray-500")} />
@@ -1800,7 +1800,7 @@ function OrdersDashboard({ orders }: { orders: Order[] }) {
             <p className={cn("text-sm font-bold", alertas.sinDireccion > 0 ? "text-amber-700 dark:text-amber-300" : "text-gray-500 dark:text-gray-400")}>
               {alertas.sinDireccion > 0 ? `${alertas.sinDireccion} sin datos de cliente` : 'Todos con datos'}
             </p>
-            <p className="text-[10px] text-gray-400 dark:text-gray-500 mt-0.5">Pedidos activos sin nombre de cliente</p>
+            <p className="text-[length:var(--ts-2xs)] text-gray-400 dark:text-gray-500 mt-0.5">Pedidos activos sin nombre de cliente</p>
           </div>
         </div>
 
@@ -1832,7 +1832,7 @@ function OrdersDashboard({ orders }: { orders: Order[] }) {
             )}>
               Cumplimiento: {alertas.tasaCumplimiento}%
             </p>
-            <p className="text-[10px] text-gray-400 dark:text-gray-500 mt-0.5">
+            <p className="text-[length:var(--ts-2xs)] text-gray-400 dark:text-gray-500 mt-0.5">
               {alertas.tasaCumplimiento >= 90 ? 'Excelente rendimiento' : alertas.tasaCumplimiento >= 70 ? 'Puede mejorar' : 'Requiere atencion inmediata'}
             </p>
           </div>
@@ -1867,7 +1867,7 @@ function DashKpi({ icon, iconBg, label, value, border, pulse, sparkColor, sparkV
   // Lazy init so mock delta is computed once per mount, not each render (React Compiler purity rule)
   const [change] = useState(() => Math.round((Math.random() - 0.3) * 30));
   return (
-    <div className={cn("bg-white dark:bg-card rounded-xl border border-gray-200 dark:border-card-border p-5  border-l-4", border)}>
+    <div className={cn("bg-white dark:bg-card rounded-xl border border-[var(--rule-base)] dark:border-card-border p-5  border-l-4", border)}>
       <div className="flex items-start gap-3">
         <div className={cn("rounded-full p-2 shrink-0", iconBg, pulse && "animate-pulse")}>
           {icon}

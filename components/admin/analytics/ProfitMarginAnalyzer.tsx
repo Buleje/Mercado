@@ -55,7 +55,7 @@ function ScatterPoint({
 
   return (
     <div
-      className="absolute w-3 h-3 rounded-full border-2 border-white dark:border-gray-800 cursor-pointer transition-transform duration-150"
+      className="absolute w-3 h-3 rounded-full border-2 border-white dark:border-[var(--rule-base)] cursor-pointer transition-transform duration-[var(--dur-fast)]"
       style={{
         left: `${x}%`,
         bottom: `${y}%`,
@@ -68,7 +68,7 @@ function ScatterPoint({
       title={name}
     >
       {hover && (
-        <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-1 bg-gray-900 dark:bg-gray-700 text-white text-[10px] rounded px-1.5 py-0.5 whitespace-nowrap z-20 pointer-events-none">
+        <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-1 bg-gray-900 dark:bg-gray-700 text-white text-[length:var(--ts-2xs)] rounded px-1.5 py-0.5 whitespace-nowrap z-20 pointer-events-none">
           {name}
         </div>
       )}
@@ -153,7 +153,7 @@ export default function ProfitMarginAnalyzer({ products, sales }: ProfitMarginAn
           <p className="text-xs text-gray-500 dark:text-gray-400">Margen prom. ponderado</p>
           <p className="text-base font-bold text-[#00B4A6] dark:text-[#2dd4bf]">{fmtPct(avgWeightedMargin)}</p>
         </div>
-        <div className="flex-1 rounded-lg bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 p-2 text-center">
+        <div className="flex-1 rounded-lg bg-gray-50 dark:bg-gray-800 border border-[var(--rule-base)] p-2 text-center">
           <p className="text-xs text-gray-500 dark:text-gray-400">Productos analizados</p>
           <p className="text-base font-bold text-gray-800 dark:text-foreground">{items.length}</p>
         </div>
@@ -164,7 +164,7 @@ export default function ProfitMarginAnalyzer({ products, sales }: ProfitMarginAn
         {(Object.entries(QUADRANT_META) as [ProductMargin["quadrant"], typeof QUADRANT_META[keyof typeof QUADRANT_META]][]).map(([q, meta]) => (
           <div
             key={q}
-            className={cn("flex items-center gap-1.5 rounded px-2 py-1 text-[10px] font-medium border", meta.bg, meta.text)}
+            className={cn("flex items-center gap-1.5 rounded px-2 py-1 text-[length:var(--ts-2xs)] font-medium border", meta.bg, meta.text)}
             style={{ borderColor: meta.color + "60" }}
           >
             <span className="w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: meta.color }} />
@@ -174,17 +174,17 @@ export default function ProfitMarginAnalyzer({ products, sales }: ProfitMarginAn
       </div>
 
       {/* Scatter plot */}
-      <div className="relative border border-gray-200 dark:border-gray-700 rounded-lg overflow-hidden bg-gray-50 dark:bg-gray-800/50">
+      <div className="relative border border-[var(--rule-base)] rounded-lg overflow-hidden bg-gray-50 dark:bg-gray-800/50">
         {/* Axis labels */}
-        <div className="absolute top-1 right-2 text-[9px] text-gray-400 dark:text-gray-500">Margen %</div>
-        <div className="absolute bottom-1 right-2 text-[9px] text-gray-400 dark:text-gray-500">Volumen →</div>
+        <div className="absolute top-1 right-2 text-[length:var(--ts-2xs)] text-gray-400 dark:text-gray-500">Margen %</div>
+        <div className="absolute bottom-1 right-2 text-[length:var(--ts-2xs)] text-gray-400 dark:text-gray-500">Volumen →</div>
         {/* Quadrant dividers */}
         <div className="absolute inset-0 flex">
-          <div className="flex-1 border-r border-dashed border-gray-300 dark:border-gray-600" />
+          <div className="flex-1 border-r border-dashed border-[var(--rule-base)] dark:border-gray-600" />
           <div className="flex-1" />
         </div>
         <div className="absolute inset-0 flex flex-col">
-          <div className="flex-1 border-b border-dashed border-gray-300 dark:border-gray-600" />
+          <div className="flex-1 border-b border-dashed border-[var(--rule-base)] dark:border-gray-600" />
           <div className="flex-1" />
         </div>
         {/* Points */}
@@ -211,7 +211,7 @@ export default function ProfitMarginAnalyzer({ products, sales }: ProfitMarginAn
               "px-2 py-0.5 rounded text-xs border transition-colors",
               showTop === "best"
                 ? "bg-[#00B4A6] text-white border-[#00B4A6]"
-                : "text-gray-600 dark:text-gray-400 border-gray-200 dark:border-gray-700"
+                : "text-gray-600 dark:text-gray-400 border-[var(--rule-base)]"
             )}
           >
             Mejores
@@ -222,7 +222,7 @@ export default function ProfitMarginAnalyzer({ products, sales }: ProfitMarginAn
               "px-2 py-0.5 rounded text-xs border transition-colors",
               showTop === "worst"
                 ? "bg-red-600 text-white border-red-600"
-                : "text-gray-600 dark:text-gray-400 border-gray-200 dark:border-gray-700"
+                : "text-gray-600 dark:text-gray-400 border-[var(--rule-base)]"
             )}
           >
             Peores
@@ -232,12 +232,12 @@ export default function ProfitMarginAnalyzer({ products, sales }: ProfitMarginAn
           {sorted.slice(0, 5).map((p, i) => (
             <div
               key={p.id}
-              className="flex items-center gap-2 px-2 py-1.5 rounded-lg bg-gray-50 dark:bg-gray-800 border border-gray-100 dark:border-gray-700"
+              className="flex items-center gap-2 px-2 py-1.5 rounded-lg bg-gray-50 dark:bg-gray-800 border border-[var(--rule-base)]"
             >
               <span className="w-4 text-xs font-bold text-gray-400 dark:text-gray-500">{i + 1}</span>
               <div className="flex-1 min-w-0">
                 <p className="text-xs font-medium text-gray-800 dark:text-foreground truncate">{p.name}</p>
-                <p className="text-[10px] text-gray-400 dark:text-gray-500">{p.category}</p>
+                <p className="text-[length:var(--ts-2xs)] text-gray-400 dark:text-gray-500">{p.category}</p>
               </div>
               <div className="text-right shrink-0">
                 <p
@@ -252,7 +252,7 @@ export default function ProfitMarginAnalyzer({ products, sales }: ProfitMarginAn
                 >
                   {fmtPct(p.margin)}
                 </p>
-                <p className="text-[10px] text-gray-400 dark:text-gray-500">{fmt(p.price)}</p>
+                <p className="text-[length:var(--ts-2xs)] text-gray-400 dark:text-gray-500">{fmt(p.price)}</p>
               </div>
             </div>
           ))}

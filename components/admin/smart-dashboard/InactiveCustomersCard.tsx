@@ -81,7 +81,7 @@ export function InactiveCustomersCard({ orders, sales, loading }: Props) {
   if (loading) return null;
 
   return (
-    <div className="rounded-xl border border-gray-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 p-4">
+    <div className="rounded-xl border border-[var(--rule-base)] dark:border-zinc-700 bg-white dark:bg-zinc-800 p-4">
       <div className="flex items-center gap-2 mb-3">
         <Users className="w-4 h-4 text-gray-400" />
         <span className="text-sm font-semibold text-gray-700 dark:text-zinc-300">Clientes que no vuelven</span>

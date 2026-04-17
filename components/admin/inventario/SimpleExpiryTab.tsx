@@ -134,7 +134,7 @@ export default function SimpleExpiryTab() {
             value={search}
             onChange={e => setSearch(e.target.value)}
             placeholder="Buscar producto o lote..."
-            className="w-full pl-9 pr-3 py-2 rounded-lg border border-gray-200 dark:border-card-border bg-white dark:bg-surface text-sm focus:outline-none focus:ring-2 focus:ring-primary/20"
+            className="w-full pl-9 pr-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-card-border bg-white dark:bg-surface text-sm focus:outline-none focus:ring-2 focus:ring-primary/20"
           />
         </div>
         <button
@@ -142,7 +142,7 @@ export default function SimpleExpiryTab() {
             lote: b.lote, producto: b.productName, cantidad: b.quantity,
             vence: fmtDate(b.expiryDate), dias: b.days, estado: URGENCY_CONFIG[b.urgency].label,
           })), `vencimientos_${new Date().toISOString().slice(0, 10)}.csv`)}
-          className="flex items-center gap-1 px-3 py-2 rounded-lg border border-gray-200 dark:border-card-border text-xs font-bold text-gray-600 dark:text-muted hover:bg-gray-50 dark:hover:bg-surface transition-colors"
+          className="flex items-center gap-1 px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-card-border text-xs font-bold text-gray-600 dark:text-muted hover:bg-gray-50 dark:hover:bg-surface transition-colors"
         >
           <Download className="h-3.5 w-3.5" /> Excel
         </button>
@@ -165,10 +165,10 @@ export default function SimpleExpiryTab() {
                 key={b.id}
                 className={cn(
                   "rounded-xl border p-4 flex flex-col sm:flex-row sm:items-center gap-3 transition-all",
-                  isReviewed ? "border-gray-200 dark:border-card-border bg-gray-50/50 dark:bg-surface/30 opacity-60" :
+                  isReviewed ? "border-[var(--rule-base)] dark:border-card-border bg-gray-50/50 dark:bg-surface/30 opacity-60" :
                   b.urgency === "vencido" ? "border-red-200 dark:border-red-800/40 bg-red-50/80 dark:bg-red-950/20" :
                   b.urgency === "critico" ? "border-orange-200 dark:border-orange-800/40 bg-orange-50/50 dark:bg-orange-950/20" :
-                  "border-gray-200 dark:border-card-border bg-white dark:bg-card"
+                  "border-[var(--rule-base)] dark:border-card-border bg-white dark:bg-card"
                 )}
               >
                 {/* Urgency icon */}
@@ -180,13 +180,13 @@ export default function SimpleExpiryTab() {
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2 flex-wrap">
                     <span className="font-bold text-gray-900 dark:text-foreground truncate">{b.productName}</span>
-                    <span className={cn("px-2 py-0.5 rounded-full text-[10px] font-bold", cfg.bg, cfg.color)}>
+                    <span className={cn("px-2 py-0.5 rounded-full text-[length:var(--ts-2xs)] font-bold", cfg.bg, cfg.color)}>
                       {b.days < 0 ? `Venció hace ${Math.abs(b.days)} días` :
                        b.days === 0 ? "Vence hoy" :
                        `Vence en ${b.days} días`}
                     </span>
                     {isReviewed && (
-                      <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-600 dark:bg-emerald-950/30 dark:text-emerald-400">
+                      <span className="px-2 py-0.5 rounded-full text-[length:var(--ts-2xs)] font-bold bg-emerald-100 text-emerald-600 dark:bg-emerald-950/30 dark:text-emerald-400">
                         ✓ Revisado
                       </span>
                     )}
@@ -205,7 +205,7 @@ export default function SimpleExpiryTab() {
                   onClick={() => markReviewed(b.id)}
                   className={cn("shrink-0 flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold border transition-colors",
                     isReviewed
-                      ? "border-gray-300 dark:border-card-border text-gray-500 hover:bg-gray-100 dark:hover:bg-surface"
+                      ? "border-[var(--rule-base)] dark:border-card-border text-gray-500 hover:bg-gray-100 dark:hover:bg-surface"
                       : "border-emerald-300 dark:border-emerald-700 bg-emerald-50 dark:bg-emerald-950/20 text-emerald-700 dark:text-emerald-400 hover:bg-emerald-100 dark:hover:bg-emerald-950/30"
                   )}
                 >

@@ -136,29 +136,29 @@ function POSCajeroFavorites({ products, onAddToCart }: { products: Product[]; on
 
   if (favIds.length === 0 && !configMode) {
     return (
-      <div className="px-3 py-2 border-b border-gray-100 dark:border-card-border bg-gray-50/50 dark:bg-surface/30">
+      <div className="px-3 py-2 border-b border-[var(--rule-soft)] dark:border-card-border bg-gray-50/50 dark:bg-surface/30">
         <div className="flex items-center justify-between mb-1.5">
           <span className="text-xs font-bold text-gray-600 dark:text-muted">Mis Rapidos</span>
-          <button onClick={() => setConfigMode(true)} className="text-[10px] font-bold text-primary hover:underline">Configurar</button>
+          <button onClick={() => setConfigMode(true)} className="text-[length:var(--ts-2xs)] font-bold text-primary hover:underline">Configurar</button>
         </div>
-        <p className="text-[10px] text-gray-400 dark:text-muted italic">Configura tus 12 productos rapidos para atender mas rapido</p>
+        <p className="text-[length:var(--ts-2xs)] text-gray-400 dark:text-muted italic">Configura tus 12 productos rapidos para atender mas rapido</p>
       </div>
     );
   }
 
   return (
-    <div className="px-3 py-2 border-b border-gray-100 dark:border-card-border bg-gray-50/50 dark:bg-surface/30">
+    <div className="px-3 py-2 border-b border-[var(--rule-soft)] dark:border-card-border bg-gray-50/50 dark:bg-surface/30">
       <div className="flex items-center justify-between mb-1.5">
         <span className="text-xs font-bold text-gray-600 dark:text-muted">Mis Rapidos ({favIds.length}/12)</span>
         <button
           onClick={() => setConfigMode(!configMode)}
-          className={cn("text-[10px] font-bold transition-colors", configMode ? "text-emerald-600" : "text-primary hover:underline")}
+          className={cn("text-[length:var(--ts-2xs)] font-bold transition-colors", configMode ? "text-emerald-600" : "text-primary hover:underline")}
         >
           {configMode ? "Listo" : "Configurar"}
         </button>
       </div>
       {configMode && (
-        <p className="text-[10px] text-amber-600 mb-1.5">Haz click en productos del catalogo para agregarlos aqui (max 12)</p>
+        <p className="text-[length:var(--ts-2xs)] text-amber-600 mb-1.5">Haz click en productos del catalogo para agregarlos aqui (max 12)</p>
       )}
       <div className="grid grid-cols-4 gap-1.5">
         {favIds.map(id => {
@@ -170,14 +170,14 @@ function POSCajeroFavorites({ products, onAddToCart }: { products: Product[]; on
               onClick={() => configMode ? toggleFav(id) : onAddToCart(p)}
               className={cn(
                 "bg-white dark:bg-card border text-left px-1.5 rounded-lg transition-all flex items-center gap-1",
-                configMode ? "border-red-200 hover:bg-red-50" : "border-gray-200 dark:border-card-border hover:bg-gray-50 dark:hover:bg-surface"
+                configMode ? "border-red-200 hover:bg-red-50" : "border-[var(--rule-base)] dark:border-card-border hover:bg-gray-50 dark:hover:bg-surface"
               )}
               style={{ height: 48 }}
               title={configMode ? `Quitar ${p.name}` : p.name}
             >
               <div className="flex-1 min-w-0">
-                <p className="text-[10px] font-semibold text-gray-900 dark:text-foreground truncate leading-tight">{p.name.slice(0, 15)}</p>
-                <p className="text-[10px] font-bold text-primary">{fmt(p.price)}</p>
+                <p className="text-[length:var(--ts-2xs)] font-semibold text-gray-900 dark:text-foreground truncate leading-tight">{p.name.slice(0, 15)}</p>
+                <p className="text-[length:var(--ts-2xs)] font-bold text-primary">{fmt(p.price)}</p>
               </div>
               {configMode && <X className="h-3 w-3 text-red-400 shrink-0" />}
             </button>
@@ -198,7 +198,7 @@ function ModuleTooltip() {
         <Info className="h-4 w-4" />
       </button>
       {open && (
-        <div className="absolute left-6 top-0 z-50 w-80 bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl p-4 text-xs leading-relaxed pointer-events-none">
+        <div className="absolute left-6 top-0 z-50 w-80 bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl p-4 text-xs leading-relaxed pointer-events-none">
           <p className="font-extrabold text-gray-900 dark:text-foreground text-sm mb-2">🛍️ Punto de Venta (POS)</p>
           <p className="text-gray-600 dark:text-muted mb-3">Registra ventas en mostrador: busca productos, agrégalos al carrito, elige cómo cobrar y confirma la venta.</p>
           <div className="space-y-1.5">
@@ -243,7 +243,7 @@ function PromoBadge({ productId, quantity, unitPrice }: { productId: number; qua
   const saving = normalPrice - promo.payPrice;
   const applied = quantity >= promo.buyQty;
   return (
-    <span className={cn("text-[10px] font-bold px-1 py-0.5 rounded", applied ? "bg-emerald-100 text-emerald-700" : "bg-emerald-50 text-emerald-600")}>
+    <span className={cn("text-[length:var(--ts-2xs)] font-bold px-1 py-0.5 rounded", applied ? "bg-emerald-100 text-emerald-700" : "bg-emerald-50 text-emerald-600")}>
       {promo.buyQty}xS/{promo.payPrice.toFixed(0)}{saving > 0 ? ` (ahorro S/${saving.toFixed(0)})` : ""}
     </span>
   );
@@ -256,7 +256,7 @@ function SaleHistoryItem({ sale }: { sale: SaleRecord }) {
   const time = new Date(sale.createdAt).toLocaleTimeString("es-PE", { hour: "2-digit", minute: "2-digit" });
   const itemCount = sale.items.reduce((sum, i) => sum + i.quantity, 0);
   return (
-    <div className="bg-gray-50 dark:bg-surface rounded-lg border border-gray-100 dark:border-card-border hover:border-primary transition-colors">
+    <div className="bg-gray-50 dark:bg-surface rounded-lg border border-[var(--rule-soft)] dark:border-card-border hover:border-primary transition-colors">
       <button onClick={() => setExpanded(!expanded)} className="w-full text-left p-3">
         <div className="flex items-start justify-between mb-1.5">
           <div className="flex items-center gap-1.5">
@@ -266,11 +266,11 @@ function SaleHistoryItem({ sale }: { sale: SaleRecord }) {
           <span className="text-sm font-extrabold text-gray-900 dark:text-foreground">{fmt(sale.total)}</span>
         </div>
         <div className="flex items-center justify-between">
-          <span className="text-[10px] text-gray-400 dark:text-muted">{itemCount} {itemCount === 1 ? "articulo" : "articulos"}</span>
+          <span className="text-[length:var(--ts-2xs)] text-gray-400 dark:text-muted">{itemCount} {itemCount === 1 ? "articulo" : "articulos"}</span>
           <span className={cn(
-            "text-[10px] font-bold px-2 py-0.5 rounded-full",
+            "text-[length:var(--ts-2xs)] font-bold px-2 py-0.5 rounded-full",
             sale.payment === "efectivo" ? "bg-emerald-50 text-emerald-600" :
-            sale.payment === "yape" ? "bg-purple-50 text-purple-600" :
+            sale.payment === "yape" ? "bg-[var(--surface-sunken)] text-[var(--text-secondary)]" :
             sale.payment === "plin" ? "bg-teal-50 text-teal-600" :
             sale.payment === "tarjeta" ? "bg-emerald-50 text-emerald-600" :
             sale.payment === "fiado" ? "bg-amber-50 text-amber-600" :
@@ -281,16 +281,16 @@ function SaleHistoryItem({ sale }: { sale: SaleRecord }) {
         </div>
       </button>
       {expanded && (
-        <div className="px-3 pb-3 border-t border-gray-100 dark:border-card-border pt-2 space-y-1.5">
+        <div className="px-3 pb-3 border-t border-[var(--rule-soft)] dark:border-card-border pt-2 space-y-1.5">
           {(sale as SaleRecord & { items: { name?: string; quantity: number }[] }).items.map((item, idx) => (
-            <div key={idx} className="flex justify-between text-[11px]">
+            <div key={idx} className="flex justify-between text-[length:var(--ts-xs)]">
               <span className="text-gray-600 dark:text-muted truncate max-w-[140px]">
                 {(item as { name?: string }).name || `Item ${idx + 1}`} x{item.quantity}
               </span>
             </div>
           ))}
           <div className="flex gap-1.5 pt-1">
-            <a href={`/venta/${sale.id}/recibo`} target="_blank" rel="noopener noreferrer" className="flex-1 flex items-center justify-center gap-1 text-[10px] font-bold text-gray-600 dark:text-muted px-2 py-1.5 rounded-lg border border-gray-200 dark:border-card-border hover:bg-gray-100 dark:hover:bg-accent transition-colors">
+            <a href={`/venta/${sale.id}/recibo`} target="_blank" rel="noopener noreferrer" className="flex-1 flex items-center justify-center gap-1 text-[length:var(--ts-2xs)] font-bold text-gray-600 dark:text-muted px-2 py-1.5 rounded-lg border border-[var(--rule-base)] dark:border-card-border hover:bg-gray-100 dark:hover:bg-accent transition-colors">
               <Printer className="h-3 w-3" /> Reimprimir
             </a>
           </div>
@@ -402,7 +402,7 @@ function QuickAbonoFromSale({ customerPhone, customerName }: { customerPhone?: s
 
   const quickAmounts = [10, 20, 50].filter(a => a <= fiado.saldo);
   return (
-    <div className="border-t border-gray-100 dark:border-card-border pt-3 mb-2">
+    <div className="border-t border-[var(--rule-soft)] dark:border-card-border pt-3 mb-2">
       <p className="text-xs font-bold text-amber-600 mb-2">
         {customerName || customerPhone} tiene fiado de S/{fiado.saldo.toFixed(2)}. Abonar?
       </p>
@@ -516,11 +516,11 @@ function SaleCompleteModal({
         {(() => {
           const method = (lastSaleDetails?.payment || paymentMethod || "").toLowerCase();
           const map: Record<string, { emoji: string; bg: string }> = {
-            efectivo: { emoji: "\uD83D\uDCB5", bg: "bg-emerald-50 dark:bg-emerald-950/30" },
-            yape: { emoji: "\uD83D\uDCF1", bg: "bg-purple-50 dark:bg-purple-950/30" },
-            plin: { emoji: "\uD83D\uDCF2", bg: "bg-teal-50 dark:bg-teal-950/30" },
-            tarjeta: { emoji: "\uD83D\uDCB3", bg: "bg-emerald-50 dark:bg-emerald-950/30" },
-            mixto: { emoji: "\uD83D\uDD00", bg: "bg-gradient-to-br from-emerald-50 to-purple-50 dark:from-emerald-950/30 dark:to-purple-950/30" },
+            efectivo: { emoji: "\uD83D\uDCB5", bg: "bg-[var(--surface-sunken)]" },
+            yape: { emoji: "\uD83D\uDCF1", bg: "bg-[var(--surface-sunken)]" },
+            plin: { emoji: "\uD83D\uDCF2", bg: "bg-[var(--surface-sunken)]" },
+            tarjeta: { emoji: "\uD83D\uDCB3", bg: "bg-[var(--surface-sunken)]" },
+            mixto: { emoji: "\uD83D\uDD00", bg: "bg-[var(--surface-sunken)]" },
           };
           const info = map[method] || map["efectivo"];
           return (
@@ -531,7 +531,7 @@ function SaleCompleteModal({
               className={cn("w-20 h-20 rounded-xl flex flex-col items-center justify-center mx-auto mb-2 relative z-20", info.bg)}
             >
               <span className="text-4xl leading-none">{info.emoji}</span>
-              <span className="text-[9px] font-bold text-gray-500 dark:text-muted mt-1 capitalize">{method || "efectivo"}</span>
+              <span className="text-[length:var(--ts-2xs)] font-bold text-gray-500 dark:text-muted mt-1 capitalize">{method || "efectivo"}</span>
             </m.div>
           );
         })()}
@@ -572,7 +572,7 @@ function SaleCompleteModal({
               </p>
               {lastSaleDetails.comprobanteNumero ? (
                 <div className="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-xl p-3 mt-1.5">
-                  <p className="text-[10px] text-green-600 dark:text-green-400 font-bold">Documento generado</p>
+                  <p className="text-[length:var(--ts-2xs)] text-green-600 dark:text-green-400 font-bold">Documento generado</p>
                   <p className="text-base font-mono font-bold text-green-700 dark:text-green-300">
                     {lastSaleDetails.comprobanteTipo === "boleta" ? "Boleta"
                       : lastSaleDetails.comprobanteTipo === "factura" ? "Factura"
@@ -591,12 +591,12 @@ function SaleCompleteModal({
         {/* Change */}
         {saleComplete.change === -1 ? (
           <div className="bg-amber-50 rounded-lg p-3 mb-4">
-            <p className="text-[10px] font-bold text-amber-600">Fiado registrado</p>
+            <p className="text-[length:var(--ts-2xs)] font-bold text-amber-600">Fiado registrado</p>
             <p className="text-sm text-amber-600 font-semibold">Deuda pendiente del cliente</p>
           </div>
         ) : saleComplete.change > 0 ? (
           <div className="bg-amber-50 rounded-lg p-3 mb-4">
-            <p className="text-[10px] font-bold text-amber-600">Vuelto</p>
+            <p className="text-[length:var(--ts-2xs)] font-bold text-amber-600">Vuelto</p>
             <p className="text-xl sm:text-2xl font-extrabold text-amber-600">{fmt(saleComplete.change)}</p>
           </div>
         ) : null}
@@ -605,8 +605,8 @@ function SaleCompleteModal({
         <QuickAbonoFromSale customerPhone={lastSaleDetails?.customerPhone} customerName={lastSaleDetails?.customerName} />
 
         {/* WhatsApp section */}
-        <div className="border-t border-gray-100 dark:border-card-border pt-3 mb-3">
-          <p className="text-[10px] font-bold text-gray-500 dark:text-muted mb-2.5">
+        <div className="border-t border-[var(--rule-soft)] dark:border-card-border pt-3 mb-3">
+          <p className="text-[length:var(--ts-2xs)] font-bold text-gray-500 dark:text-muted mb-2.5">
             Enviar comprobante
           </p>
 
@@ -631,7 +631,7 @@ function SaleCompleteModal({
                   value={manualPhone}
                   onChange={(e) => setManualPhone(e.target.value.replace(/\D/g, "").slice(0, 9))}
                   placeholder="N° WhatsApp"
-                  className="w-full pl-9 pr-2 py-2.5 rounded-lg border border-gray-200 dark:border-card-border text-xs font-medium text-gray-900 dark:text-foreground outline-none focus:border-emerald-500 transition-colors"
+                  className="w-full pl-9 pr-2 py-2.5 rounded-lg border border-[var(--rule-base)] dark:border-card-border text-xs font-medium text-gray-900 dark:text-foreground outline-none focus:border-emerald-500 transition-colors"
                 />
               </div>
               {manualPhone.length >= 9 ? (
@@ -680,7 +680,7 @@ function SaleCompleteModal({
               href={`/venta/${saleComplete.id}/recibo`}
               target="_blank"
               rel="noopener noreferrer"
-              className="flex-1 py-2.5 rounded-lg border border-gray-200 dark:border-card-border text-gray-700 dark:text-foreground font-bold text-sm hover:bg-gray-50 dark:hover:bg-surface transition-colors flex items-center justify-center gap-1.5"
+              className="flex-1 py-2.5 rounded-lg border border-[var(--rule-base)] dark:border-card-border text-gray-700 dark:text-foreground font-bold text-sm hover:bg-gray-50 dark:hover:bg-surface transition-colors flex items-center justify-center gap-1.5"
             >
               <Printer className="h-3.5 w-3.5" /> Imprimir ticket
             </a>
@@ -709,7 +709,7 @@ function SaleCompleteModal({
                   alert(e instanceof Error ? e.message : "Error al imprimir");
                 }
               }}
-              className="w-full py-2 rounded-lg border border-gray-200 dark:border-card-border text-gray-600 dark:text-muted font-medium text-xs hover:bg-gray-50 dark:hover:bg-surface transition-colors flex items-center justify-center gap-1.5"
+              className="w-full py-2 rounded-lg border border-[var(--rule-base)] dark:border-card-border text-gray-600 dark:text-muted font-medium text-xs hover:bg-gray-50 dark:hover:bg-surface transition-colors flex items-center justify-center gap-1.5"
             >
               <Printer className="h-3.5 w-3.5" /> Ticket térmico (ESC/POS)
             </button>
@@ -759,7 +759,7 @@ function ShiftSummaryWidget() {
     <m.div
       layout
       onClick={() => setExpanded(e => !e)}
-      className="fixed bottom-4 left-4 z-40 bg-white dark:bg-gray-800 border border-gray-200 dark:border-card-border cursor-pointer select-none transition-all"
+      className="fixed bottom-4 left-4 z-40 bg-white dark:bg-gray-800 border border-[var(--rule-base)] dark:border-card-border cursor-pointer select-none transition-all"
       style={{ borderRadius: expanded ? 16 : 9999 }}
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
@@ -775,13 +775,13 @@ function ShiftSummaryWidget() {
           initial={{ opacity: 0, height: 0 }}
           animate={{ opacity: 1, height: "auto" }}
           exit={{ opacity: 0, height: 0 }}
-          className="px-4 pb-3 pt-1 border-t border-gray-100 dark:border-card-border space-y-1"
+          className="px-4 pb-3 pt-1 border-t border-[var(--rule-soft)] dark:border-card-border space-y-1"
         >
-          <div className="flex justify-between text-[11px]">
+          <div className="flex justify-between text-[length:var(--ts-xs)]">
             <span className="text-gray-500 dark:text-muted">Ticket promedio</span>
             <span className="font-bold text-gray-700 dark:text-foreground">S/{(data.ticketPromedio ?? 0).toFixed(1)}</span>
           </div>
-          <div className="flex justify-between text-[11px]">
+          <div className="flex justify-between text-[length:var(--ts-xs)]">
             <span className="text-gray-500 dark:text-muted">Ventas/hora</span>
             <span className="font-bold text-gray-700 dark:text-foreground">
               {(data.turnoMinutos ?? 0) > 0 ? ((data.cantidadVentas ?? 0) / ((data.turnoMinutos ?? 1) / 60)).toFixed(1) : "0"}
@@ -1562,7 +1562,7 @@ export default function POSView() {
       )}
 
       {/* Mejora QW-3: Indicador de conexion sticky + Mejora QW-11b: Turno */}
-      <div className="flex items-center gap-3 text-[10px] justify-end flex-wrap">
+      <div className="flex items-center gap-3 text-[length:var(--ts-2xs)] justify-end flex-wrap">
         <span className={cn("w-2 h-2 rounded-full", posOffline.isOnline ? "bg-green-500" : "bg-red-500 animate-pulse")} />
         <span className={posOffline.isOnline ? "text-green-600 dark:text-green-400" : "text-red-600 dark:text-red-400"}>
           {posOffline.isOnline ? "En linea" : "Sin conexion"}
@@ -1590,10 +1590,10 @@ export default function POSView() {
         </div>
         <div className="flex flex-wrap items-center gap-1.5 sm:gap-2 sm:justify-end">
           {cashRegisterOpen === false && (
-            <span className="text-[10px] font-bold bg-amber-50 text-amber-600 border border-amber-200 px-2.5 py-1 rounded-lg">Sin caja</span>
+            <span className="text-[length:var(--ts-2xs)] font-bold bg-amber-50 text-amber-600 border border-amber-200 px-2.5 py-1 rounded-lg">Sin caja</span>
           )}
           {cashRegisterOpen === true && (
-            <span className="text-[10px] font-bold bg-emerald-50 text-emerald-600 border border-emerald-200 px-2.5 py-1 rounded-lg">Caja abierta</span>
+            <span className="text-[length:var(--ts-2xs)] font-bold bg-emerald-50 text-emerald-600 border border-emerald-200 px-2.5 py-1 rounded-lg">Caja abierta</span>
           )}
           {/* Mejora P-3: Ultima venta rapida */}
           {lastSaleInfo && (
@@ -1697,19 +1697,19 @@ export default function POSView() {
           {/* ── Grupo 3: Vista ── */}
           <button
             onClick={() => setShowHistory(!showHistory)}
-            className="flex items-center gap-1.5 text-xs sm:text-sm font-bold text-gray-700 dark:text-foreground border border-gray-200 dark:border-card-border hover:bg-gray-50 dark:hover:bg-accent px-3 py-2 rounded-lg transition-colors"
+            className="flex items-center gap-1.5 text-xs sm:text-sm font-bold text-gray-700 dark:text-foreground border border-[var(--rule-base)] dark:border-card-border hover:bg-gray-50 dark:hover:bg-accent px-3 py-2 rounded-lg transition-colors"
             title="Atajos de teclado: F1=Buscar, F2=Cobrar, F3=Vaciar, F4=Historial"
           >
             <History className="h-4 w-4" />
             <span className="hidden sm:inline">Historial</span>
-            <kbd className="ml-0.5 text-[10px] bg-gray-200 dark:bg-gray-700 px-1 rounded hidden sm:inline">F4</kbd>
+            <kbd className="ml-0.5 text-[length:var(--ts-2xs)] bg-gray-200 dark:bg-gray-700 px-1 rounded hidden sm:inline">F4</kbd>
           </button>
 
           {/* ── Dropdown "Mas" para botones poco usados ── */}
           <div className="relative">
             <button
               onClick={() => setShowMoreTools(v => !v)}
-              className="flex items-center gap-1 text-xs sm:text-sm font-bold text-gray-500 dark:text-muted border border-gray-200 dark:border-card-border hover:bg-gray-50 dark:hover:bg-accent px-2.5 py-2 rounded-lg transition-colors"
+              className="flex items-center gap-1 text-xs sm:text-sm font-bold text-gray-500 dark:text-muted border border-[var(--rule-base)] dark:border-card-border hover:bg-gray-50 dark:hover:bg-accent px-2.5 py-2 rounded-lg transition-colors"
               title="Mas herramientas"
             >
               &#8943; <span className="hidden sm:inline">Mas</span>
@@ -1717,7 +1717,7 @@ export default function POSView() {
             {showMoreTools && (
               <>
                 <div className="fixed inset-0 z-10" onClick={() => setShowMoreTools(false)} />
-                <div className="absolute right-0 top-full mt-1 bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl p-2 z-20 min-w-[180px] space-y-1">
+                <div className="absolute right-0 top-full mt-1 bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl p-2 z-20 min-w-[180px] space-y-1">
                   <button
                     onClick={() => { setShowReturn(true); setShowMoreTools(false); }}
                     className="w-full flex items-center gap-2 text-xs font-bold text-[#f97316] hover:bg-[#f97316]/5 px-3 py-2 rounded-lg transition-colors"
@@ -1725,7 +1725,7 @@ export default function POSView() {
                     <History className="h-4 w-4 rotate-180" /> Devolucion
                   </button>
                   <div className="w-full flex items-center gap-2 text-xs font-bold text-gray-600 dark:text-muted px-3 py-1.5">
-                    <span className="text-[10px] text-gray-400">Tamano fuente</span>
+                    <span className="text-[length:var(--ts-2xs)] text-gray-400">Tamano fuente</span>
                   </div>
                   <div className="flex bg-gray-100 dark:bg-accent rounded-lg p-0.5 mx-2">
                     {(["normal", "large", "xlarge"] as const).map(size => (
@@ -1772,11 +1772,11 @@ export default function POSView() {
       <div className="flex flex-col lg:flex-row gap-2 sm:gap-4">
         {/* Left: Products */}
         <div className={cn(
-          "flex-1 bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl  overflow-hidden flex flex-col",
+          "flex-1 bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl  overflow-hidden flex flex-col",
           expanded ? "min-h-[calc(100vh-12rem)]" : ""
         )} style={expanded ? undefined : { minHeight: "28rem", maxHeight: "calc(100vh - 14rem)" }}>
           {/* Search + Categories (Upgrade 2) */}
-          <div className="p-3 space-y-2 border-b border-gray-100 dark:border-card-border relative">
+          <div className="p-3 space-y-2 border-b border-[var(--rule-soft)] dark:border-card-border relative">
             <div className="flex items-start gap-2">
               <div className="flex-1">
                 <POSSearchBar
@@ -1809,7 +1809,7 @@ export default function POSView() {
           </div>
 
           {/* Mejora 9: Frequent Products — colapsable */}
-          <div className="px-3 pt-2 border-b border-gray-100 dark:border-card-border bg-gray-50/50 dark:bg-surface/30">
+          <div className="px-3 pt-2 border-b border-[var(--rule-soft)] dark:border-card-border bg-gray-50/50 dark:bg-surface/30">
             <button
               onClick={() => { setShowFrequent(v => { const nv = !v; localStorage.setItem("pos-show-frequent", String(nv)); return nv; }); }}
               className="flex items-center gap-1.5 text-xs font-semibold text-gray-500 dark:text-muted hover:text-gray-700 dark:hover:text-foreground w-full pb-2"
@@ -1828,7 +1828,7 @@ export default function POSView() {
           </div>
 
           {/* Mejora 1R2: Cajero Favorites grid — colapsable */}
-          <div className="px-3 pt-2 border-b border-gray-100 dark:border-card-border bg-gray-50/50 dark:bg-surface/30">
+          <div className="px-3 pt-2 border-b border-[var(--rule-soft)] dark:border-card-border bg-gray-50/50 dark:bg-surface/30">
             <button
               onClick={() => { setShowRapidos(v => { const nv = !v; localStorage.setItem("pos-show-rapidos", String(nv)); return nv; }); }}
               className="flex items-center gap-1.5 text-xs font-semibold text-gray-500 dark:text-muted hover:text-gray-700 dark:hover:text-foreground w-full pb-2"
@@ -1845,7 +1845,7 @@ export default function POSView() {
 
           {/* Favorites & Recents — colapsable */}
           {(favorites.length > 0 || recentProducts.length > 0) && (
-            <div className="px-3 pt-2 border-b border-gray-100 dark:border-card-border bg-gray-50/50 dark:bg-surface/30">
+            <div className="px-3 pt-2 border-b border-[var(--rule-soft)] dark:border-card-border bg-gray-50/50 dark:bg-surface/30">
               <button
                 onClick={() => { setShowRecientes(v => { const nv = !v; localStorage.setItem("pos-show-recientes", String(nv)); return nv; }); }}
                 className="flex items-center gap-1.5 text-xs font-semibold text-gray-500 dark:text-muted hover:text-gray-700 dark:hover:text-foreground w-full pb-2"
@@ -1876,7 +1876,7 @@ export default function POSView() {
                                 "group relative shrink-0 px-2 py-1.5 rounded-lg text-xs font-medium transition-all whitespace-nowrap flex items-center gap-1.5",
                                 outOfStock
                                   ? "bg-gray-100 dark:bg-surface text-gray-400 dark:text-muted cursor-not-allowed"
-                                  : "bg-white dark:bg-card border border-gray-200 dark:border-card-border text-gray-700 dark:text-foreground hover:border-primary hover:bg-primary/5"
+                                  : "bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border text-gray-700 dark:text-foreground hover:border-primary hover:bg-primary/5"
                               )}
                             >
                               <span className="truncate max-w-24">{p.name}</span>
@@ -1916,7 +1916,7 @@ export default function POSView() {
                                 "shrink-0 px-2 py-1.5 rounded-lg text-xs font-medium transition-all whitespace-nowrap flex items-center gap-1.5",
                                 outOfStock
                                   ? "bg-gray-100 dark:bg-surface text-gray-400 dark:text-muted cursor-not-allowed"
-                                  : "bg-white dark:bg-card border border-gray-200 dark:border-card-border text-gray-700 dark:text-foreground hover:border-emerald-400 hover:bg-emerald-50/50 dark:hover:bg-emerald-500/10"
+                                  : "bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border text-gray-700 dark:text-foreground hover:border-emerald-400 hover:bg-emerald-50/50 dark:hover:bg-emerald-500/10"
                               )}
                             >
                               <span className="truncate max-w-24">{p.name}</span>
@@ -1962,7 +1962,7 @@ export default function POSView() {
                       disabled={outOfStock}
                       className={cn(
                         "bg-white dark:bg-card rounded-xl border p-2 text-left transition-all hover:shadow-sm relative",
-                        inCart ? "border-primary ring-1 ring-primary/20" : "border-gray-100 hover:border-gray-200 dark:border-card-border",
+                        inCart ? "border-primary ring-1 ring-primary/20" : "border-[var(--rule-soft)] hover:border-gray-200 dark:border-card-border",
                         outOfStock && "opacity-40 cursor-not-allowed"
                       )}
                     >
@@ -1978,13 +1978,13 @@ export default function POSView() {
                           <Star className={cn("h-3.5 w-3.5", favorites.includes(p.id) ? "fill-yellow-400 text-yellow-400" : "text-gray-400 dark:text-muted")} />
                         </span>
                         {inCart && (
-                          <div className="absolute top-1 right-1 h-5 w-5 rounded-full bg-primary text-white text-[10px] font-bold flex items-center justify-center">
+                          <div className="absolute top-1 right-1 h-5 w-5 rounded-full bg-primary text-white text-[length:var(--ts-2xs)] font-bold flex items-center justify-center">
                             {inCart.quantity}
                           </div>
                         )}
                         {outOfStock && (
                           <div className="absolute inset-0 bg-white dark:bg-card/60 flex items-center justify-center">
-                            <span className="text-[10px] font-bold text-red-500 bg-red-50 px-2 py-0.5 rounded-full">Agotado</span>
+                            <span className="text-[length:var(--ts-2xs)] font-bold text-red-500 bg-red-50 px-2 py-0.5 rounded-full">Agotado</span>
                           </div>
                         )}
                       </div>
@@ -1992,7 +1992,7 @@ export default function POSView() {
                       <div className="flex items-center justify-between mt-0.5">
                         <span className="text-sm font-extrabold text-primary">{fmt(p.price)}</span>
                         {p.stock != null && (
-                          <span className={cn("text-[10px]", p.stock <= (p.stockMin || 5) ? "text-amber-500" : "text-gray-400 dark:text-muted")}>
+                          <span className={cn("text-[length:var(--ts-2xs)]", p.stock <= (p.stockMin || 5) ? "text-amber-500" : "text-gray-400 dark:text-muted")}>
                             {p.stock}
                           </span>
                         )}
@@ -2007,11 +2007,11 @@ export default function POSView() {
 
         {/* Right: Cart */}
         <div className={cn(
-          "bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl  flex flex-col shrink-0 min-h-0",
+          "bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl  flex flex-col shrink-0 min-h-0",
           expanded ? "lg:w-96 xl:w-md" : "lg:w-80 xl:w-96"
         )} style={expanded ? undefined : { minHeight: "28rem", maxHeight: "calc(100vh - 14rem)" }}>
           {/* Cart header */}
-          <div className="px-2 sm:px-4 py-2 sm:py-3 border-b border-gray-100 dark:border-card-border">
+          <div className="px-2 sm:px-4 py-2 sm:py-3 border-b border-[var(--rule-soft)] dark:border-card-border">
             <div className="flex items-center justify-between">
               <h3 className="font-bold text-gray-900 dark:text-foreground text-sm flex flex-wrap items-center gap-2">
                 <ShoppingBasket className="h-4 w-4 text-primary" />
@@ -2039,7 +2039,7 @@ export default function POSView() {
                       Cola: {clientQueues.length}
                     </button>
                     {showQueueDropdown && (
-                      <div className="absolute right-0 top-7 z-50 w-56 bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl p-2 space-y-1">
+                      <div className="absolute right-0 top-7 z-50 w-56 bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl p-2 space-y-1">
                         {clientQueues.map((q, idx) => {
                           const qTotal = q.reduce((s, i) => s + i.product.price * i.quantity, 0);
                           const qItems = q.reduce((s, i) => s + i.quantity, 0);
@@ -2060,7 +2060,7 @@ export default function POSView() {
                 {cart.length > 0 && (
                   <button onClick={clearCart} className="text-xs font-semibold text-red-400 hover:text-red-500 transition-colors flex items-center gap-1">
                     Vaciar
-                    <kbd className="text-[10px] bg-gray-200 dark:bg-gray-700 text-gray-400 px-1 rounded">F3</kbd>
+                    <kbd className="text-[length:var(--ts-2xs)] bg-gray-200 dark:bg-gray-700 text-gray-400 px-1 rounded">F3</kbd>
                   </button>
                 )}
               </div>
@@ -2088,7 +2088,7 @@ export default function POSView() {
                 const discountMultiplier = 1 - (item.discount || 0) / 100;
                 const itemTotal = item.product.price * item.quantity * discountMultiplier;
                 return (
-                  <div key={item.product.id} className={cn("rounded-lg border border-gray-100 dark:border-card-border p-2 hover:bg-gray-50 dark:hover:bg-surface transition-all duration-300", lastAddedId === item.product.id && "ring-2 ring-green-400 bg-green-50 dark:bg-green-950/20")}>
+                  <div key={item.product.id} className={cn("rounded-lg border border-[var(--rule-soft)] dark:border-card-border p-2 hover:bg-gray-50 dark:hover:bg-surface transition-all duration-[var(--dur-base)]", lastAddedId === item.product.id && "ring-2 ring-green-400 bg-green-50 dark:bg-green-950/20")}>
                     <div className="flex flex-wrap items-center gap-2">
                       {item.product.image ? (
                         <Image src={item.product.image} alt="" width={48} height={48} className="rounded-lg object-cover shrink-0 w-12 h-12" />
@@ -2100,17 +2100,17 @@ export default function POSView() {
                       <div className="flex-1 min-w-0">
                         <p className="text-xs font-semibold text-gray-900 dark:text-foreground truncate">{item.product.name}</p>
                         <div className="flex items-center gap-1.5">
-                          <p className={cn("text-[11px]", item.discount ? "line-through text-gray-300 dark:text-muted" : "text-gray-400 dark:text-muted")}>
+                          <p className={cn("text-[length:var(--ts-xs)]", item.discount ? "line-through text-gray-300 dark:text-muted" : "text-gray-400 dark:text-muted")}>
                             {fmt(item.product.price)}
                           </p>
                           {item.discount && item.discount > 0 && (
-                            <span className="text-[10px] font-bold text-emerald-600 bg-emerald-50 px-1 py-0.5 rounded">
+                            <span className="text-[length:var(--ts-2xs)] font-bold text-emerald-600 bg-emerald-50 px-1 py-0.5 rounded">
                               -{item.discount}%
                             </span>
                           )}
                           {/* Mejora 7: Stock bajo badge */}
                           {item.product.stock != null && item.product.stock > 0 && item.product.stock <= (item.product.stockMin || 5) && (
-                            <span className="text-[10px] font-bold text-amber-600 bg-amber-50 px-1 py-0.5 rounded">
+                            <span className="text-[length:var(--ts-2xs)] font-bold text-amber-600 bg-amber-50 px-1 py-0.5 rounded">
                               Ultimas {item.product.stock}
                             </span>
                           )}
@@ -2152,7 +2152,7 @@ export default function POSView() {
                       </button>
                     </div>
                     {editingDiscount === item.product.id && (
-                      <div className="mt-2 pt-2 border-t border-gray-100 dark:border-card-border flex flex-wrap items-center gap-2">
+                      <div className="mt-2 pt-2 border-t border-[var(--rule-soft)] dark:border-card-border flex flex-wrap items-center gap-2">
                         <label className="text-xs text-gray-500 dark:text-muted font-medium">Descuento:</label>
                         <input
                           type="number"
@@ -2161,7 +2161,7 @@ export default function POSView() {
                           step="1"
                           value={item.discount || 0}
                           onChange={e => updateDiscount(item.product.id, Number(e.target.value))}
-                          className="flex-1 px-2 py-1 text-xs border border-gray-200 dark:border-card-border rounded text-gray-900 dark:text-foreground focus:border-primary outline-none"
+                          className="flex-1 px-2 py-1 text-xs border border-[var(--rule-base)] dark:border-card-border rounded text-gray-900 dark:text-foreground focus:border-primary outline-none"
                           placeholder="0"
                         />
                         <span className="text-xs text-gray-400 dark:text-muted">%</span>
@@ -2182,7 +2182,7 @@ export default function POSView() {
               const cats = Object.entries(categoryTotals);
               if (cats.length < 2) return null;
               return (
-                <p className="text-[10px] text-gray-400 dark:text-muted px-3 pb-1">
+                <p className="text-[length:var(--ts-2xs)] text-gray-400 dark:text-muted px-3 pb-1">
                   {cats.map(([cat, total]) => `${cat}: S/${total.toFixed(0)}`).join(" · ")}
                 </p>
               );
@@ -2206,7 +2206,7 @@ export default function POSView() {
 
           {/* Cart total + pay button — sticky bottom */}
           {cart.length > 0 && (
-            <div className="shrink-0 border-t border-gray-200 dark:border-card-border p-3 space-y-2 bg-white dark:bg-card rounded-b-2xl shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.05)]">
+            <div className="shrink-0 border-t border-[var(--rule-base)] dark:border-card-border p-3 space-y-2 bg-white dark:bg-card rounded-b-2xl shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.05)]">
               {/* Mejora 5: Expandable cart detail */}
               <div className="flex justify-between items-center">
                 <POSCartDetail
@@ -2223,7 +2223,7 @@ export default function POSView() {
               {/* Mejora 4R2: Total en palabras */}
               <p className="text-xs text-gray-400 italic capitalize text-right">{numeroAPalabras(cartTotal)}</p>
               {/* Desglose IGV */}
-              <p className="text-[10px] text-gray-400 font-mono text-right">Sub: S/{(cartTotal/1.18).toFixed(2)} · IGV: S/{(cartTotal - cartTotal/1.18).toFixed(2)}</p>
+              <p className="text-[length:var(--ts-2xs)] text-gray-400 font-mono text-right">Sub: S/{(cartTotal/1.18).toFixed(2)} · IGV: S/{(cartTotal - cartTotal/1.18).toFixed(2)}</p>
 
               <div className="flex gap-2">
                 <button
@@ -2232,7 +2232,7 @@ export default function POSView() {
                 >
                   <Banknote className="h-4 w-4" />
                   Cobrar {fmt(cartTotal)}
-                  <kbd className="ml-1 text-[10px] bg-white/20 px-1 rounded">F2</kbd>
+                  <kbd className="ml-1 text-[length:var(--ts-2xs)] bg-white/20 px-1 rounded">F2</kbd>
                 </button>
                 {/* Idea 12: Trueque button */}
                 <button
@@ -2253,7 +2253,7 @@ export default function POSView() {
 
       {/* Mejora 2: Mobile cart summary bar */}
       {cart.length > 0 && (
-        <div className="fixed bottom-0 left-0 right-0 bg-white dark:bg-gray-900 border-t border-gray-200 dark:border-gray-700 px-4 py-3 z-40 sm:hidden">
+        <div className="fixed bottom-0 left-0 right-0 bg-white dark:bg-gray-900 border-t border-[var(--rule-base)] px-4 py-3 z-40 sm:hidden">
           <div className="flex items-center justify-between">
             <div>
               <span className="text-sm font-medium text-gray-700 dark:text-foreground">{cartCount} items</span>
@@ -2285,7 +2285,7 @@ export default function POSView() {
               onChange={e => { setWaText(e.target.value); parseWhatsAppOrder(e.target.value); }}
               placeholder={"Ej: 2 arroz, 3 leche gloria, 1 aceite\no: dame 5 huevos y 2 gaseosas"}
               rows={4}
-              className="w-full px-3 py-2.5 rounded-lg border border-gray-200 dark:border-card-border bg-gray-50 dark:bg-surface text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500/40 resize-none font-mono"
+              className="w-full px-3 py-2.5 rounded-lg border border-[var(--rule-base)] dark:border-card-border bg-gray-50 dark:bg-surface text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500/40 resize-none font-mono"
               autoFocus
             />
 
@@ -2293,7 +2293,7 @@ export default function POSView() {
               <div className="mt-4 space-y-2">
                 <p className="text-xs font-bold text-gray-600">Productos encontrados</p>
                 {waParsedItems.map((item, idx) => (
-                  <div key={idx} className="p-2.5 rounded-lg bg-gray-50 dark:bg-surface border border-gray-100 dark:border-card-border">
+                  <div key={idx} className="p-2.5 rounded-lg bg-gray-50 dark:bg-surface border border-[var(--rule-soft)] dark:border-card-border">
                     {item.selected || item.matches.length === 1 ? (
                       <div className="flex items-center justify-between">
                         <div className="flex items-center gap-2 min-w-0">
@@ -2312,7 +2312,7 @@ export default function POSView() {
                               onClick={() => {
                                 setWaParsedItems(prev => prev.map((p, i) => i === idx ? { ...p, selected: m } : p));
                               }}
-                              className="px-2.5 py-1.5 rounded-lg text-xs font-bold bg-white dark:bg-card border border-gray-200 hover:border-[#00B4A6] hover:text-[#00B4A6] transition-colors"
+                              className="px-2.5 py-1.5 rounded-lg text-xs font-bold bg-white dark:bg-card border border-[var(--rule-base)] hover:border-[#00B4A6] hover:text-[#00B4A6] transition-colors"
                             >
                               {m.name} · S/{m.price.toFixed(2)}
                             </button>
@@ -2329,10 +2329,10 @@ export default function POSView() {
                   const resolved = waParsedItems.filter(i => i.selected || i.matches.length === 1);
                   const total = resolved.reduce((s, i) => s + ((i.selected || i.matches[0])?.price ?? 0) * i.qty, 0);
                   return (
-                    <div className="pt-3 border-t border-gray-100 dark:border-card-border">
+                    <div className="pt-3 border-t border-[var(--rule-soft)] dark:border-card-border">
                       <div className="flex justify-between items-center mb-3">
                         <span className="text-sm font-bold text-gray-700">Total estimado: <span className="text-[#00B4A6]">S/{total.toFixed(2)}</span></span>
-                        <span className="text-[10px] text-gray-400">{resolved.length}/{waParsedItems.length} items</span>
+                        <span className="text-[length:var(--ts-2xs)] text-gray-400">{resolved.length}/{waParsedItems.length} items</span>
                       </div>
                       <button
                         onClick={() => {
@@ -2367,9 +2367,9 @@ export default function POSView() {
 
       {/* ── Sales History Sidebar ──────────────────────────────────────────── */}
       {showHistory && (
-        <div className="fixed inset-y-0 right-0 z-40 w-80 bg-white dark:bg-card border-l border-gray-200 dark:border-card-border flex flex-col">
+        <div className="fixed inset-y-0 right-0 z-40 w-80 bg-white dark:bg-card border-l border-[var(--rule-base)] dark:border-card-border flex flex-col">
           {/* Header */}
-          <div className="px-2 sm:px-4 py-2 sm:py-3 border-b border-gray-100 dark:border-card-border flex items-center justify-between">
+          <div className="px-2 sm:px-4 py-2 sm:py-3 border-b border-[var(--rule-soft)] dark:border-card-border flex items-center justify-between">
             <div className="flex flex-wrap items-center gap-2">
               <History className="h-4 w-4 text-primary" />
               <h3 className="font-bold text-gray-900 dark:text-foreground text-sm">Historial del Turno</h3>
@@ -2430,7 +2430,7 @@ export default function POSView() {
                   onChange={e => setTruequeDesc(e.target.value)}
                   placeholder="Ej: 5 kg de platano, 2 gallinas..."
                   rows={2}
-                  className="w-full text-sm border border-gray-200 dark:border-card-border rounded-lg px-3 py-2 bg-gray-50 dark:bg-surface text-gray-700 dark:text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 resize-none"
+                  className="w-full text-sm border border-[var(--rule-base)] dark:border-card-border rounded-lg px-3 py-2 bg-gray-50 dark:bg-surface text-gray-700 dark:text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 resize-none"
                 />
               </div>
               <div>
@@ -2442,7 +2442,7 @@ export default function POSView() {
                   value={truequeValor}
                   onChange={e => setTruequeValor(e.target.value)}
                   placeholder="0.00"
-                  className="w-32 text-sm border border-gray-200 dark:border-card-border rounded-lg px-3 py-2 bg-gray-50 dark:bg-surface text-gray-700 dark:text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30"
+                  className="w-32 text-sm border border-[var(--rule-base)] dark:border-card-border rounded-lg px-3 py-2 bg-gray-50 dark:bg-surface text-gray-700 dark:text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30"
                 />
               </div>
               {Number(truequeValor) > 0 && cartTotal > 0 && (
@@ -2475,7 +2475,7 @@ export default function POSView() {
                 >
                   Confirmar trueque
                 </button>
-                <button onClick={() => setShowTrueque(false)} className="px-4 py-2.5 rounded-lg border border-gray-200 dark:border-card-border text-sm font-bold text-gray-500 hover:bg-gray-50 transition-colors">
+                <button onClick={() => setShowTrueque(false)} className="px-4 py-2.5 rounded-lg border border-[var(--rule-base)] dark:border-card-border text-sm font-bold text-gray-500 hover:bg-gray-50 transition-colors">
                   Cancelar
                 </button>
               </div>
@@ -2523,7 +2523,7 @@ export default function POSView() {
 
       {/* ── Mejora 7: Stock Alert Toast ──────────────────────────────────────── */}
       {stockAlert && (
-        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 animate-in slide-in-from-bottom-4 fade-in duration-300">
+        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 animate-in slide-in-from-bottom-4 fade-in duration-[var(--dur-base)]">
           <div className={cn(
             "px-4 py-2.5 rounded-xl text-xs font-bold flex items-center gap-2",
             stockAlert.type === "warning"
@@ -2532,7 +2532,7 @@ export default function POSView() {
           )}>
             {stockAlert.message}
             {stockAlert.actionLabel && stockAlert.actionFn && (
-              <button onClick={stockAlert.actionFn} className="px-2 py-1 bg-white/20 hover:bg-white/30 rounded text-[10px] font-bold whitespace-nowrap">
+              <button onClick={stockAlert.actionFn} className="px-2 py-1 bg-white/20 hover:bg-white/30 rounded text-[length:var(--ts-2xs)] font-bold whitespace-nowrap">
                 {stockAlert.actionLabel}
               </button>
             )}
@@ -2557,7 +2557,7 @@ export default function POSView() {
             <div className="flex gap-2">
               <button
                 onClick={() => setShowZeroStockConfirm(null)}
-                className="flex-1 py-2 rounded-lg border border-gray-200 dark:border-card-border text-xs font-bold text-gray-500 hover:bg-gray-50 transition-colors"
+                className="flex-1 py-2 rounded-lg border border-[var(--rule-base)] dark:border-card-border text-xs font-bold text-gray-500 hover:bg-gray-50 transition-colors"
               >
                 Cancelar
               </button>

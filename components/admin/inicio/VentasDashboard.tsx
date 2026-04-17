@@ -11,6 +11,7 @@ import { cn } from "@/lib/utils";
 import dynamic from "next/dynamic";
 import { useDashboardData } from "@/contexts/dashboard-data-context";
 import type { DateRange } from "./DashboardDateRange";
+import { UnifiedKPITile } from "@/components/admin/shared/UnifiedKPITile";
 
 const VentasCharts = dynamic(() => import("./VentasCharts"), { ssr: false });
 
@@ -259,18 +260,31 @@ export default function VentasDashboard({ dateRange }: { dateRange: DateRange })
 
   return (
     <div className="space-y-5">
-      {/* ── KPI Hero Row ── */}
+      {/* ── KPI Hero Row · ADR-068 UnifiedKPITile (armonía estricta) ── */}
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
-        <KPICard label="Ventas Netas" value={fmt(data.ventasNetas)} Icon={DollarSign} delta={data.dVentas} sparkline={data.sparkVentas} accent="emerald" />
-        <KPICard label="Utilidad Bruta" value={fmt(data.utilidadBruta)} Icon={TrendingUp} delta={data.dUtilidad} sparkline={data.sparkUtilidad} accent="blue" />
-        <KPICard label="Margen" value={`${data.margen.toFixed(1)}%`} Icon={Percent} delta={data.dMargen} accent={data.margen >= 25 ? "emerald" : data.margen >= 15 ? "amber" : "red"} />
-        <KPICard label="Tickets" value={String(data.tickets)} Icon={Receipt} delta={data.dTickets} sparkline={data.sparkTickets} accent="violet" />
-        <KPICard label="Ticket Prom." value={fmt(data.ticketPromedio)} Icon={ShoppingCart} delta={data.dTicketProm} accent="cyan" />
-        <KPICard label="Cancelados" value={String(data.cancelados)} Icon={AlertTriangle} delta={data.dCancelados} invertTrend accent="red" />
+        <UnifiedKPITile label="Ventas Netas" value={fmt(data.ventasNetas)} Icon={DollarSign} delta={data.dVentas} sparkline={data.sparkVentas} />
+        <UnifiedKPITile label="Utilidad Bruta" value={fmt(data.utilidadBruta)} Icon={TrendingUp} delta={data.dUtilidad} sparkline={data.sparkUtilidad} />
+        <UnifiedKPITile
+          label="Margen"
+          value={`${data.margen.toFixed(1)}%`}
+          Icon={Percent}
+          delta={data.dMargen}
+          intent={data.margen >= 25 ? "success" : data.margen >= 15 ? "warning" : "danger"}
+        />
+        <UnifiedKPITile label="Tickets" value={String(data.tickets)} Icon={Receipt} delta={data.dTickets} sparkline={data.sparkTickets} />
+        <UnifiedKPITile label="Ticket Prom." value={fmt(data.ticketPromedio)} Icon={ShoppingCart} delta={data.dTicketProm} />
+        <UnifiedKPITile
+          label="Cancelados"
+          value={String(data.cancelados)}
+          Icon={AlertTriangle}
+          delta={data.dCancelados}
+          invertTrend
+          intent={data.cancelados > 0 ? "danger" : "neutral"}
+        />
       </div>
 
       {/* ── Today vs Yesterday mini bar ── */}
-      <div className="flex items-center gap-3 bg-white dark:bg-card border border-gray-100 dark:border-card-border rounded-xl px-5 py-3">
+      <div className="flex items-center gap-3 bg-white dark:bg-card border border-[var(--rule-soft)] dark:border-card-border rounded-xl px-5 py-3">
         <Clock className="h-4 w-4 text-gray-400" />
         <div className="flex-1 flex items-center gap-4 text-sm">
           <span className="text-gray-500 dark:text-muted">Hoy:</span>
@@ -306,7 +320,7 @@ function KPICard({ label, value, Icon, delta, sparkline, accent, invertTrend }: 
   const colorMap = {
     emerald: { bg: "bg-emerald-50 dark:bg-emerald-950/30", icon: "text-emerald-500", spark: "#10b981" },
     blue: { bg: "bg-emerald-50 dark:bg-emerald-950/30", icon: "text-emerald-500", spark: "#3b82f6" },
-    violet: { bg: "bg-violet-50 dark:bg-violet-950/30", icon: "text-violet-500", spark: "#8b5cf6" },
+    violet: { bg: "bg-[var(--surface-sunken)]", icon: "text-[var(--text-secondary)]", spark: "#8b5cf6" },
     cyan: { bg: "bg-cyan-50 dark:bg-cyan-950/30", icon: "text-cyan-500", spark: "#06b6d4" },
     amber: { bg: "bg-amber-50 dark:bg-amber-950/30", icon: "text-amber-500", spark: "#f59e0b" },
     red: { bg: "bg-red-50 dark:bg-red-950/30", icon: "text-red-500", spark: "#ef4444" },
@@ -314,7 +328,7 @@ function KPICard({ label, value, Icon, delta, sparkline, accent, invertTrend }: 
   const c = colorMap[accent];
 
   return (
-    <div className="relative bg-white dark:bg-card border border-gray-100 dark:border-card-border rounded-xl p-4 overflow-hidden hover:shadow-sm transition-shadow">
+    <div className="relative bg-white dark:bg-card border border-[var(--rule-soft)] dark:border-card-border rounded-xl p-4 overflow-hidden hover:shadow-sm transition-shadow">
       {delta != null && Math.abs(delta) >= 10 && (
         <div className={cn("absolute top-0 left-0 right-0 h-1", isPositive ? "bg-emerald-500" : "bg-red-500")} />
       )}
@@ -332,7 +346,7 @@ function KPICard({ label, value, Icon, delta, sparkline, accent, invertTrend }: 
         )}
       </div>
       <p className="text-xl font-bold text-gray-900 dark:text-foreground tabular-nums leading-none mb-1">{value}</p>
-      <p className="text-[11px] font-medium text-gray-400 dark:text-muted">{label}</p>
+      <p className="text-[length:var(--ts-xs)] font-medium text-gray-400 dark:text-muted">{label}</p>
       {sparkline && sparkline.length > 0 && (
         <div className="mt-2">
           <MiniSparkline data={sparkline} color={c.spark} />

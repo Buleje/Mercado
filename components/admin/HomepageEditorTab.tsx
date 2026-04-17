@@ -42,7 +42,7 @@ function SectionEditor({
   onToggle: () => void;
 }) {
   return (
-    <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl overflow-hidden  hover:shadow-sm transition-shadow">
+    <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl overflow-hidden  hover:shadow-sm transition-shadow">
       <button
         onClick={onToggle}
         className="w-full flex flex-wrap items-center gap-3 px-5 py-4 text-left group"
@@ -60,7 +60,7 @@ function SectionEditor({
       </button>
 
       {expanded && (
-        <div className="px-5 pb-5 border-t border-gray-100 dark:border-card-border space-y-4 pt-4">
+        <div className="px-5 pb-5 border-t border-[var(--rule-soft)] dark:border-card-border space-y-4 pt-4">
           {section.fields.map((field) => {
             const value = content[field.key];
             if (field.type === "toggle") {
@@ -89,7 +89,7 @@ function SectionEditor({
                     onChange={(e) => onChange(field.key, e.target.value)}
                     placeholder={field.placeholder}
                     rows={3}
-                    className="w-full rounded-lg border border-gray-200 dark:border-card-border bg-gray-50 dark:bg-background px-3.5 py-2.5 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all resize-none"
+                    className="w-full rounded-lg border border-[var(--rule-base)] dark:border-card-border bg-gray-50 dark:bg-background px-3.5 py-2.5 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all resize-none"
                   />
                 ) : (
                   <input
@@ -97,7 +97,7 @@ function SectionEditor({
                     value={String(value)}
                     onChange={(e) => onChange(field.key, e.target.value)}
                     placeholder={field.placeholder}
-                    className="w-full rounded-lg border border-gray-200 dark:border-card-border bg-gray-50 dark:bg-background px-3.5 py-2.5 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
+                    className="w-full rounded-lg border border-[var(--rule-base)] dark:border-card-border bg-gray-50 dark:bg-background px-3.5 py-2.5 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
                   />
                 )}
               </div>
@@ -172,8 +172,8 @@ export default function HomepageEditorTab() {
   const SECTIONS: SectionConfig[] = [
     {
       id: "hero",
-      icon: <Layout className="h-6 w-6 text-indigo-500" />,
-      bgColor: "bg-indigo-50 dark:bg-indigo-900/20",
+      icon: <Layout className="h-6 w-6 text-[var(--text-secondary)]" />,
+      bgColor: "bg-[var(--surface-sunken)]",
       title: "Hero / Portada",
       description: "Título principal, subtítulo y botones de acción",
       fields: [
@@ -191,8 +191,8 @@ export default function HomepageEditorTab() {
     },
     {
       id: "announcement",
-      icon: <Megaphone className="h-6 w-6 text-pink-500" />,
-      bgColor: "bg-pink-50 dark:bg-pink-900/20",
+      icon: <Megaphone className="h-6 w-6 text-[var(--text-secondary)]" />,
+      bgColor: "bg-[var(--surface-sunken)]",
       title: "Barra de Anuncios",
       description: "Mensajes rotativos en la barra superior",
       fields: [
@@ -241,8 +241,8 @@ export default function HomepageEditorTab() {
     },
     {
       id: "footer",
-      icon: <AlignLeft className="h-6 w-6 text-violet-500" />,
-      bgColor: "bg-violet-50 dark:bg-violet-900/20",
+      icon: <AlignLeft className="h-6 w-6 text-[var(--text-secondary)]" />,
+      bgColor: "bg-[var(--surface-sunken)]",
       title: "Footer / Pie de Página",
       description: "Descripción, redes sociales y datos del pie de página",
       fields: [
@@ -363,7 +363,7 @@ export default function HomepageEditorTab() {
         ))}
 
         {/* FAQ Editor */}
-        <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl overflow-hidden ">
+        <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl overflow-hidden ">
           <button onClick={() => toggleSection("faq")} className="w-full flex flex-wrap items-center gap-3 px-5 py-4 text-left group">
             <div className="w-11 h-11 rounded-xl flex items-center justify-center shrink-0 bg-amber-50 dark:bg-amber-900/20">
               <HelpCircle className="h-6 w-6 text-amber-500" />
@@ -377,11 +377,11 @@ export default function HomepageEditorTab() {
             </div>
           </button>
           {expandedSections.has("faq") && (
-            <div className="px-5 pb-5 border-t border-gray-100 dark:border-card-border space-y-3 pt-4">
+            <div className="px-5 pb-5 border-t border-[var(--rule-soft)] dark:border-card-border space-y-3 pt-4">
               {content.faqItems.map((item, i) => (
-                <div key={i} className="border border-gray-100 dark:border-card-border rounded-xl p-3 space-y-2">
-                  <input value={item.question} onChange={(e) => handleListChange("faqItems", i, "question", e.target.value)} placeholder="Pregunta..." className="w-full rounded-lg border border-gray-200 dark:border-card-border bg-gray-50 dark:bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/20" />
-                  <textarea value={item.answer} onChange={(e) => handleListChange("faqItems", i, "answer", e.target.value)} placeholder="Respuesta..." rows={2} className="w-full rounded-lg border border-gray-200 dark:border-card-border bg-gray-50 dark:bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 resize-none" />
+                <div key={i} className="border border-[var(--rule-soft)] dark:border-card-border rounded-xl p-3 space-y-2">
+                  <input value={item.question} onChange={(e) => handleListChange("faqItems", i, "question", e.target.value)} placeholder="Pregunta..." className="w-full rounded-lg border border-[var(--rule-base)] dark:border-card-border bg-gray-50 dark:bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/20" />
+                  <textarea value={item.answer} onChange={(e) => handleListChange("faqItems", i, "answer", e.target.value)} placeholder="Respuesta..." rows={2} className="w-full rounded-lg border border-[var(--rule-base)] dark:border-card-border bg-gray-50 dark:bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 resize-none" />
                   <button onClick={() => handleListRemove("faqItems", i)} className="text-xs text-red-500 hover:text-red-700">Eliminar</button>
                 </div>
               ))}
@@ -391,7 +391,7 @@ export default function HomepageEditorTab() {
         </div>
 
         {/* Benefits Editor */}
-        <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl overflow-hidden ">
+        <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl overflow-hidden ">
           <button onClick={() => toggleSection("benefits")} className="w-full flex flex-wrap items-center gap-3 px-5 py-4 text-left group">
             <div className="w-11 h-11 rounded-xl flex items-center justify-center shrink-0 bg-green-50 dark:bg-green-900/20">
               <Heart className="h-6 w-6 text-green-500" />
@@ -405,11 +405,11 @@ export default function HomepageEditorTab() {
             </div>
           </button>
           {expandedSections.has("benefits") && (
-            <div className="px-5 pb-5 border-t border-gray-100 dark:border-card-border space-y-3 pt-4">
+            <div className="px-5 pb-5 border-t border-[var(--rule-soft)] dark:border-card-border space-y-3 pt-4">
               {content.benefitItems.map((item, i) => (
-                <div key={i} className="border border-gray-100 dark:border-card-border rounded-xl p-3 space-y-2">
-                  <input value={item.title} onChange={(e) => handleListChange("benefitItems", i, "title", e.target.value)} placeholder="Título del beneficio..." className="w-full rounded-lg border border-gray-200 dark:border-card-border bg-gray-50 dark:bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/20" />
-                  <textarea value={item.description} onChange={(e) => handleListChange("benefitItems", i, "description", e.target.value)} placeholder="Descripción..." rows={2} className="w-full rounded-lg border border-gray-200 dark:border-card-border bg-gray-50 dark:bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 resize-none" />
+                <div key={i} className="border border-[var(--rule-soft)] dark:border-card-border rounded-xl p-3 space-y-2">
+                  <input value={item.title} onChange={(e) => handleListChange("benefitItems", i, "title", e.target.value)} placeholder="Título del beneficio..." className="w-full rounded-lg border border-[var(--rule-base)] dark:border-card-border bg-gray-50 dark:bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/20" />
+                  <textarea value={item.description} onChange={(e) => handleListChange("benefitItems", i, "description", e.target.value)} placeholder="Descripción..." rows={2} className="w-full rounded-lg border border-[var(--rule-base)] dark:border-card-border bg-gray-50 dark:bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 resize-none" />
                   <button onClick={() => handleListRemove("benefitItems", i)} className="text-xs text-red-500 hover:text-red-700">Eliminar</button>
                 </div>
               ))}
@@ -419,7 +419,7 @@ export default function HomepageEditorTab() {
         </div>
 
         {/* Testimonials Editor */}
-        <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl overflow-hidden ">
+        <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl overflow-hidden ">
           <button onClick={() => toggleSection("testimonials")} className="w-full flex flex-wrap items-center gap-3 px-5 py-4 text-left group">
             <div className="w-11 h-11 rounded-xl flex items-center justify-center shrink-0 bg-cyan-50 dark:bg-cyan-900/20">
               <MessageSquare className="h-6 w-6 text-cyan-500" />
@@ -433,17 +433,17 @@ export default function HomepageEditorTab() {
             </div>
           </button>
           {expandedSections.has("testimonials") && (
-            <div className="px-5 pb-5 border-t border-gray-100 dark:border-card-border space-y-3 pt-4">
+            <div className="px-5 pb-5 border-t border-[var(--rule-soft)] dark:border-card-border space-y-3 pt-4">
               {content.testimonialItems.map((item, i) => (
-                <div key={i} className="border border-gray-100 dark:border-card-border rounded-xl p-3 space-y-2">
+                <div key={i} className="border border-[var(--rule-soft)] dark:border-card-border rounded-xl p-3 space-y-2">
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                    <input value={item.name} onChange={(e) => handleListChange("testimonialItems", i, "name", e.target.value)} placeholder="Nombre..." className="rounded-lg border border-gray-200 dark:border-card-border bg-gray-50 dark:bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/20" />
-                    <input value={item.location} onChange={(e) => handleListChange("testimonialItems", i, "location", e.target.value)} placeholder="Ubicación..." className="rounded-lg border border-gray-200 dark:border-card-border bg-gray-50 dark:bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/20" />
+                    <input value={item.name} onChange={(e) => handleListChange("testimonialItems", i, "name", e.target.value)} placeholder="Nombre..." className="rounded-lg border border-[var(--rule-base)] dark:border-card-border bg-gray-50 dark:bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/20" />
+                    <input value={item.location} onChange={(e) => handleListChange("testimonialItems", i, "location", e.target.value)} placeholder="Ubicación..." className="rounded-lg border border-[var(--rule-base)] dark:border-card-border bg-gray-50 dark:bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/20" />
                   </div>
-                  <textarea value={item.text} onChange={(e) => handleListChange("testimonialItems", i, "text", e.target.value)} placeholder="Testimonio..." rows={2} className="w-full rounded-lg border border-gray-200 dark:border-card-border bg-gray-50 dark:bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 resize-none" />
+                  <textarea value={item.text} onChange={(e) => handleListChange("testimonialItems", i, "text", e.target.value)} placeholder="Testimonio..." rows={2} className="w-full rounded-lg border border-[var(--rule-base)] dark:border-card-border bg-gray-50 dark:bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 resize-none" />
                   <div className="flex flex-wrap items-center gap-2">
                     <label className="text-xs text-muted">Rating:</label>
-                    <select value={item.rating} onChange={(e) => handleListChange("testimonialItems", i, "rating", parseInt(e.target.value))} className="rounded-lg border border-gray-200 dark:border-card-border bg-gray-50 dark:bg-background px-2 py-1 text-sm">
+                    <select value={item.rating} onChange={(e) => handleListChange("testimonialItems", i, "rating", parseInt(e.target.value))} className="rounded-lg border border-[var(--rule-base)] dark:border-card-border bg-gray-50 dark:bg-background px-2 py-1 text-sm">
                       {[1,2,3,4,5].map(r => <option key={r} value={r}>{r} {r === 1 ? "estrella" : "estrellas"}</option>)}
                     </select>
                     <button onClick={() => handleListRemove("testimonialItems", i)} className="ml-auto text-xs text-red-500 hover:text-red-700">Eliminar</button>

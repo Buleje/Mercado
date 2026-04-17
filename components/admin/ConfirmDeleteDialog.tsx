@@ -60,7 +60,7 @@ export function ConfirmDeleteDialog({
             className={cn(
               "relative z-10 w-full max-w-md",
               "bg-white dark:bg-card",
-              "rounded-xl border border-gray-200 dark:border-card-border",
+              "rounded-xl border border-[var(--rule-base)] dark:border-card-border",
               "overflow-hidden"
             )}
             initial={{ opacity: 0, scale: 0.92, y: 12 }}
@@ -92,7 +92,7 @@ export function ConfirmDeleteDialog({
             </div>
 
             {/* Footer */}
-            <div className="flex items-center justify-end gap-2 px-6 py-4 bg-gray-50 dark:bg-surface border-t border-gray-100 dark:border-card-border">
+            <div className="flex items-center justify-end gap-2 px-6 py-4 bg-gray-50 dark:bg-surface border-t border-[var(--rule-soft)] dark:border-card-border">
               <button
                 onClick={onClose}
                 disabled={loading}

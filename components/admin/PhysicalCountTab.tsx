@@ -326,7 +326,7 @@ export default function PhysicalCountTab() {
 
           <button
             onClick={() => setView("history")}
-            className="flex items-center gap-3 p-5 rounded-lg border border-gray-200 hover:bg-gray-50 transition-colors text-left"
+            className="flex items-center gap-3 p-5 rounded-lg border border-[var(--rule-base)] hover:bg-gray-50 transition-colors text-left"
           >
             <History className="h-8 w-8 text-gray-400 shrink-0" />
             <div>
@@ -409,12 +409,12 @@ export default function PhysicalCountTab() {
             placeholder="Buscar producto o código..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="w-full pl-9 pr-4 py-2.5 rounded-lg border border-gray-200 bg-white text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary/40 min-h-[44px]"
+            className="w-full pl-9 pr-4 py-2.5 rounded-lg border border-[var(--rule-base)] bg-white text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary/40 min-h-[44px]"
           />
         </div>
 
         {/* Tabla */}
-        <div className="overflow-x-auto rounded-xl border border-gray-200">
+        <div className="overflow-x-auto rounded-xl border border-[var(--rule-base)]">
           <table className="w-full min-w-[480px] text-sm">
             <thead>
               <tr className="bg-gray-50 text-left">
@@ -454,7 +454,7 @@ export default function PhysicalCountTab() {
                         value={row.realStock}
                         onChange={(e) => updateRow(row.productId, "realStock", e.target.value)}
                         placeholder="—"
-                        className="w-20 text-right px-2 py-1 rounded border border-gray-200 bg-white text-gray-900 text-sm focus:outline-none focus:ring-2 focus:ring-primary/40 min-h-[36px]"
+                        className="w-20 text-right px-2 py-1 rounded border border-[var(--rule-base)] bg-white text-gray-900 text-sm focus:outline-none focus:ring-2 focus:ring-primary/40 min-h-[36px]"
                       />
                     </td>
                     <td className={`px-3 py-2 text-right font-bold font-mono ${diffColor(d)}`}>
@@ -488,7 +488,7 @@ export default function PhysicalCountTab() {
           <div className="flex gap-2 flex-wrap">
             <button
               onClick={() => setView("counting")}
-              className="px-3 py-2 rounded-lg border border-gray-200 text-sm font-medium hover:bg-gray-50 transition-colors min-h-[44px]"
+              className="px-3 py-2 rounded-lg border border-[var(--rule-base)] text-sm font-medium hover:bg-gray-50 transition-colors min-h-[44px]"
             >
               Volver al conteo
             </button>
@@ -524,7 +524,7 @@ export default function PhysicalCountTab() {
             </p>
           </div>
         ) : (
-          <div className="overflow-x-auto rounded-xl border border-gray-200">
+          <div className="overflow-x-auto rounded-xl border border-[var(--rule-base)]">
             <table className="w-full min-w-[560px] text-sm">
               <thead>
                 <tr className="bg-gray-50 text-left">
@@ -554,7 +554,7 @@ export default function PhysicalCountTab() {
                           value={row.reason}
                           onChange={(e) => updateRow(row.productId, "reason", e.target.value)}
                           disabled={session.status === "aplicado"}
-                          className="w-full px-2 py-1.5 rounded border border-gray-200 bg-white text-gray-900 text-xs focus:outline-none focus:ring-2 focus:ring-primary/40 min-h-[36px]"
+                          className="w-full px-2 py-1.5 rounded border border-[var(--rule-base)] bg-white text-gray-900 text-xs focus:outline-none focus:ring-2 focus:ring-primary/40 min-h-[36px]"
                         >
                           {REASONS.map((r) => (
                             <option key={r.value} value={r.value}>{r.label}</option>
@@ -584,7 +584,7 @@ export default function PhysicalCountTab() {
           </h2>
           <button
             onClick={() => setView("start")}
-            className="px-3 py-2 rounded-lg border border-gray-200 text-sm font-medium hover:bg-gray-50 transition-colors min-h-[44px]"
+            className="px-3 py-2 rounded-lg border border-[var(--rule-base)] text-sm font-medium hover:bg-gray-50 transition-colors min-h-[44px]"
           >
             Volver
           </button>
@@ -598,7 +598,7 @@ export default function PhysicalCountTab() {
         )}
 
         {sessions.length === 0 ? (
-          <div className="rounded-xl border border-gray-200 p-8 text-center text-gray-400 text-sm">
+          <div className="rounded-xl border border-[var(--rule-base)] p-8 text-center text-gray-400 text-sm">
             No hay conteos guardados aún.
           </div>
         ) : (
@@ -606,7 +606,7 @@ export default function PhysicalCountTab() {
             {sessions.map((s) => (
               <div
                 key={s.id}
-                className="rounded-xl border border-gray-200 overflow-hidden"
+                className="rounded-xl border border-[var(--rule-base)] overflow-hidden"
               >
                 <button
                   onClick={() => setExpandedSession(expandedSession === s.id ? null : s.id)}
@@ -635,7 +635,7 @@ export default function PhysicalCountTab() {
                 </button>
 
                 {expandedSession === s.id && (
-                  <div className="border-t border-gray-100 px-4 py-3 space-y-3">
+                  <div className="border-t border-[var(--rule-soft)] px-4 py-3 space-y-3">
                     <div className="flex gap-4 text-sm text-gray-600">
                       <span>Productos contados: <strong className="text-gray-900">{s.totalCounted}</strong></span>
                       <span>Diferencias: <strong className={s.differences > 0 ? "text-red-600" : "text-gray-900"}>{s.differences}</strong></span>

@@ -52,7 +52,7 @@ export default function ABCAnalysisTab() {
         </div>
         <div className="relative">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
-          <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Buscar producto..." className="pl-9 pr-4 py-2 border border-gray-200 dark:border-card-border rounded-lg bg-white dark:bg-surface text-sm w-56" />
+          <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Buscar producto..." className="pl-9 pr-4 py-2 border border-[var(--rule-base)] dark:border-card-border rounded-lg bg-white dark:bg-surface text-sm w-56" />
         </div>
       </div>
 
@@ -65,7 +65,7 @@ export default function ABCAnalysisTab() {
             className={cn(
               "text-left p-4 rounded-xl border-2 transition-all hover:shadow-sm",
               CLASS_STYLES[cls].border,
-              filter === cls ? "border-primary ring-2 ring-primary/20" : "border-gray-200 dark:border-card-border",
+              filter === cls ? "border-primary ring-2 ring-primary/20" : "border-[var(--rule-base)] dark:border-card-border",
               CLASS_STYLES[cls].row
             )}
           >
@@ -81,17 +81,17 @@ export default function ABCAnalysisTab() {
 
       {/* Table */}
       {data.length === 0 ? (
-        <div className="bg-white dark:bg-card border-2 border-dashed border-gray-200 dark:border-card-border rounded-xl p-10 text-center text-gray-400 dark:text-muted">
+        <div className="bg-white dark:bg-card border-2 border-dashed border-[var(--rule-base)] dark:border-card-border rounded-xl p-10 text-center text-gray-400 dark:text-muted">
           <BarChart2 className="h-10 w-10 mx-auto mb-3" />
           <p className="font-semibold">Sin datos de ventas para analizar</p>
           <p className="text-xs mt-1">Registra ventas o pedidos para ver el análisis ABC</p>
         </div>
       ) : (
-        <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl overflow-hidden ">
+        <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl overflow-hidden ">
           <div className="overflow-x-auto">
             <table className="w-full min-w-[600px] text-sm">
               <thead>
-                <tr className="border-b border-gray-100 dark:border-card-border text-left">
+                <tr className="border-b border-[var(--rule-soft)] dark:border-card-border text-left">
                   <th className="px-2 sm:px-4 py-2 sm:py-3 w-8 text-xs font-bold text-gray-500 dark:text-muted">#</th>
                   <th className="px-2 sm:px-4 py-2 sm:py-3 text-xs font-bold text-gray-500 dark:text-muted">Producto</th>
                   <th className="px-2 sm:px-4 py-2 sm:py-3 text-xs font-bold text-gray-500 dark:text-muted hidden sm:table-cell">Categoría</th>

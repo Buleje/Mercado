@@ -74,7 +74,7 @@ export default function PrestamoTimeline({ cuotas, totalCuotas }: Props) {
         </div>
         <div className="h-2 rounded-full bg-gray-200 dark:bg-white/10 overflow-hidden">
           <div
-            className="h-full rounded-full bg-emerald-500 transition-all duration-500"
+            className="h-full rounded-full bg-emerald-500 transition-all duration-[var(--dur-slow)]"
             style={{ width: `${porcentaje}%` }}
           />
         </div>
@@ -123,7 +123,7 @@ export default function PrestamoTimeline({ cuotas, totalCuotas }: Props) {
                   </div>
                 )}
                 {status === "futura" && (
-                  <div className="h-6 w-6 rounded-full border-2 border-gray-300 dark:border-gray-600 bg-white dark:bg-card flex items-center justify-center">
+                  <div className="h-6 w-6 rounded-full border-2 border-[var(--rule-base)] dark:border-gray-600 bg-white dark:bg-card flex items-center justify-center">
                     <Circle className="h-3 w-3 text-gray-400 dark:text-gray-500" />
                   </div>
                 )}
@@ -142,7 +142,7 @@ export default function PrestamoTimeline({ cuotas, totalCuotas }: Props) {
                     Cuota {c.numeroCuota} &mdash; {formatCurrency(c.monto)}
                   </p>
                   <span className={cn(
-                    "text-[10px] font-bold px-1.5 py-0.5 rounded",
+                    "text-[length:var(--ts-2xs)] font-bold px-1.5 py-0.5 rounded",
                     status === "pagada" && "bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400",
                     status === "vencida" && "bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400",
                     status === "proxima" && "bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400",
@@ -155,7 +155,7 @@ export default function PrestamoTimeline({ cuotas, totalCuotas }: Props) {
                   </span>
                 </div>
 
-                <p className="text-[11px] text-gray-500 dark:text-gray-400 mt-1">
+                <p className="text-[length:var(--ts-xs)] text-gray-500 dark:text-gray-400 mt-1">
                   {status === "pagada" && c.pagadoEn && (
                     <>Pagado el {formatDate(c.pagadoEn)}{c.montoPagado ? ` — ${formatCurrency(c.montoPagado)}` : ""}</>
                   )}

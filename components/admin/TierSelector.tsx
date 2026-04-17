@@ -84,11 +84,11 @@ export default function TierSelector({ tier, onTierChange, collapsed, stats, ove
   return (
     <div className="space-y-1.5">
       <div className="flex items-center justify-between px-1">
-        <span className="text-[10px] font-bold text-gray-400 dark:text-gray-500">
+        <span className="text-[length:var(--ts-2xs)] font-bold text-gray-400 dark:text-gray-500">
           Nivel de uso
         </span>
         {stats && (
-          <span className="text-[10px] text-gray-400 dark:text-gray-500">
+          <span className="text-[length:var(--ts-2xs)] text-gray-400 dark:text-gray-500">
             {stats.visible} módulos
           </span>
         )}
@@ -107,7 +107,7 @@ export default function TierSelector({ tier, onTierChange, collapsed, stats, ove
               onClick={() => onTierChange(t)}
               title={meta.description}
               className={cn(
-                "flex-1 flex items-center justify-center gap-1.5 px-2 py-1.5 rounded-lg text-[11px] font-bold transition-all",
+                "flex-1 flex items-center justify-center gap-1.5 px-2 py-1.5 rounded-lg text-[length:var(--ts-xs)] font-bold transition-all",
                 isActive
                   ? colors.active
                   : "text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 hover:bg-white dark:hover:bg-card"
@@ -120,7 +120,7 @@ export default function TierSelector({ tier, onTierChange, collapsed, stats, ove
         })}
       </div>
 
-      <p className="text-[10px] text-gray-400 dark:text-gray-500 px-1 leading-relaxed">
+      <p className="text-[length:var(--ts-2xs)] text-gray-400 dark:text-gray-500 px-1 leading-relaxed">
         {tier === "principal"
           ? "Solo lo esencial — ideal si estás empezando"
           : tier === "intermedio"
@@ -141,17 +141,17 @@ export default function TierSelector({ tier, onTierChange, collapsed, stats, ove
           <div className="flex items-start gap-2">
             <Sparkles className="h-4 w-4 text-primary shrink-0 mt-0.5" />
             <div>
-              <p className="text-[11px] font-bold text-gray-900 dark:text-foreground">
+              <p className="text-[length:var(--ts-xs)] font-bold text-gray-900 dark:text-foreground">
                 ¡Nuevo! Elige tu nivel
               </p>
-              <p className="text-[10px] text-gray-600 dark:text-muted mt-0.5 leading-relaxed">
+              <p className="text-[length:var(--ts-2xs)] text-gray-600 dark:text-muted mt-0.5 leading-relaxed">
                 Si estás empezando, usa <strong>Principal</strong> — solo verás lo básico.
                 Cuando te sientas cómodo, sube a <strong>Intermedio</strong>.
                 <strong> Avanzado</strong> muestra todo.
               </p>
               <button
                 onClick={dismissTour}
-                className="mt-1.5 text-[10px] font-bold text-primary hover:underline"
+                className="mt-1.5 text-[length:var(--ts-2xs)] font-bold text-primary hover:underline"
               >
                 Entendido ✓
               </button>
@@ -164,12 +164,12 @@ export default function TierSelector({ tier, onTierChange, collapsed, stats, ove
       {onModuleTierChange && (
         <button
           onClick={() => setShowCustomize(v => !v)}
-          className="flex items-center gap-1 px-1 text-[10px] text-gray-400 dark:text-gray-500 hover:text-primary transition-colors"
+          className="flex items-center gap-1 px-1 text-[length:var(--ts-2xs)] text-gray-400 dark:text-gray-500 hover:text-primary transition-colors"
         >
           <Settings2 className="h-3 w-3" />
           {showCustomize ? "Cerrar personalización" : "Personalizar módulos"}
           {overrides && Object.keys(overrides).length > 0 && (
-            <span className="ml-1 text-[9px] bg-primary/10 text-primary px-1 rounded-full font-bold">
+            <span className="ml-1 text-[length:var(--ts-2xs)] bg-primary/10 text-primary px-1 rounded-full font-bold">
               {Object.keys(overrides).length}
             </span>
           )}
@@ -178,15 +178,15 @@ export default function TierSelector({ tier, onTierChange, collapsed, stats, ove
 
       {/* Customize panel */}
       {showCustomize && onModuleTierChange && (
-        <div className="mt-1 p-2 bg-gray-50 dark:bg-surface rounded-xl border border-gray-200 dark:border-card-border max-h-52 overflow-y-auto">
+        <div className="mt-1 p-2 bg-gray-50 dark:bg-surface rounded-xl border border-[var(--rule-base)] dark:border-card-border max-h-52 overflow-y-auto">
           <div className="flex items-center justify-between mb-2">
-            <span className="text-[10px] font-bold text-gray-500 dark:text-gray-400">
+            <span className="text-[length:var(--ts-2xs)] font-bold text-gray-500 dark:text-gray-400">
               Mover módulos entre niveles
             </span>
             {overrides && Object.keys(overrides).length > 0 && onResetOverrides && (
               <button
                 onClick={onResetOverrides}
-                className="flex items-center gap-0.5 text-[9px] text-gray-400 hover:text-red-500 transition-colors"
+                className="flex items-center gap-0.5 text-[length:var(--ts-2xs)] text-gray-400 hover:text-red-500 transition-colors"
               >
                 <RotateCcw className="h-2.5 w-2.5" />
                 Resetear
@@ -200,7 +200,7 @@ export default function TierSelector({ tier, onTierChange, collapsed, stats, ove
               return (
                 <div key={moduleId} className="flex items-center justify-between gap-1 py-0.5">
                   <span className={cn(
-                    "text-[10px] truncate flex-1",
+                    "text-[length:var(--ts-2xs)] truncate flex-1",
                     isOverridden ? "font-bold text-primary" : "text-gray-600 dark:text-muted"
                   )}>
                     {moduleId.replace(/-/g, " ")}

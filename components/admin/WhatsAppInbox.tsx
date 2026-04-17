@@ -209,16 +209,16 @@ export default function WhatsAppInbox() {
   // ── Render ───────────────────────────────────────────────────────────────────
 
   return (
-    <div className="flex h-[calc(100vh-10rem)] min-h-[500px] overflow-hidden rounded-xl border border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-900">
+    <div className="flex h-[calc(100vh-10rem)] min-h-[500px] overflow-hidden rounded-xl border border-[var(--rule-base)] bg-white dark:border-[var(--rule-base)] dark:bg-gray-900">
       {/* ── Columna izquierda: lista de chats ── */}
       <div
         className={cn(
-          "flex w-full flex-col border-r border-gray-200 dark:border-gray-700 md:w-80 md:flex-shrink-0",
+          "flex w-full flex-col border-r border-[var(--rule-base)] md:w-80 md:flex-shrink-0",
           selectedPhone && "hidden md:flex",
         )}
       >
         {/* Header lista */}
-        <div className="flex items-center justify-between border-b border-gray-200 px-4 py-3 dark:border-gray-700">
+        <div className="flex items-center justify-between border-b border-[var(--rule-base)] px-4 py-3 dark:border-[var(--rule-base)]">
           <div className="flex items-center gap-2">
             <MessageSquare className="h-5 w-5 text-[#00B4A6]" />
             <span className="font-semibold text-gray-800 dark:text-gray-100">
@@ -280,7 +280,7 @@ export default function WhatsAppInbox() {
                 key={conv.phone}
                 onClick={() => selectConversation(conv)}
                 className={cn(
-                  "flex w-full items-center gap-3 border-b border-gray-100 px-4 py-3 text-left transition hover:bg-gray-50 dark:border-gray-800 dark:hover:bg-gray-800",
+                  "flex w-full items-center gap-3 border-b border-[var(--rule-soft)] px-4 py-3 text-left transition hover:bg-gray-50 dark:border-[var(--rule-base)] dark:hover:bg-gray-800",
                   selectedPhone === conv.phone &&
                     "bg-green-50 dark:bg-green-900/20",
                 )}
@@ -305,12 +305,12 @@ export default function WhatsAppInbox() {
                       {conv.lastMessage}
                     </span>
                     {conv.unread > 0 && (
-                      <span className="flex h-5 min-w-[20px] items-center justify-center rounded-full bg-[#00B4A6] px-1 text-[11px] font-bold text-white">
+                      <span className="flex h-5 min-w-[20px] items-center justify-center rounded-full bg-[#00B4A6] px-1 text-[length:var(--ts-xs)] font-bold text-white">
                         {conv.unread > 99 ? "99+" : conv.unread}
                       </span>
                     )}
                   </div>
-                  <span className="text-[11px] text-gray-400">{conv.phone}</span>
+                  <span className="text-[length:var(--ts-xs)] text-gray-400">{conv.phone}</span>
                 </div>
               </button>
             ))
@@ -334,7 +334,7 @@ export default function WhatsAppInbox() {
         ) : (
           <>
             {/* Header conversación */}
-            <div className="flex items-center gap-3 border-b border-gray-200 px-4 py-3 dark:border-gray-700">
+            <div className="flex items-center gap-3 border-b border-[var(--rule-base)] px-4 py-3 dark:border-[var(--rule-base)]">
               {/* Botón volver (mobile) */}
               <button
                 onClick={() => setSelectedPhone(null)}
@@ -409,7 +409,7 @@ export default function WhatsAppInbox() {
                           </p>
                           <p
                             className={cn(
-                              "mt-1 text-right text-[10px]",
+                              "mt-1 text-right text-[length:var(--ts-2xs)]",
                               isAdmin ? "text-green-200" : "text-gray-400",
                             )}
                           >
@@ -425,7 +425,7 @@ export default function WhatsAppInbox() {
             </div>
 
             {/* Input de respuesta */}
-            <div className="border-t border-gray-200 px-4 py-3 dark:border-gray-700">
+            <div className="border-t border-[var(--rule-base)] px-4 py-3 dark:border-[var(--rule-base)]">
               <div className="flex items-end gap-2">
                 <textarea
                   value={inputMsg}
@@ -434,7 +434,7 @@ export default function WhatsAppInbox() {
                   placeholder="Escribe un mensaje… (Enter para enviar)"
                   rows={1}
                   maxLength={500}
-                  className="min-h-[44px] flex-1 resize-none rounded-lg border border-gray-200 bg-gray-50 px-4 py-2.5 text-sm text-gray-800 outline-none transition focus:border-[#00B4A6] focus:ring-1 focus:ring-[#00B4A6] dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100 dark:placeholder:text-gray-500"
+                  className="min-h-[44px] flex-1 resize-none rounded-lg border border-[var(--rule-base)] bg-gray-50 px-4 py-2.5 text-sm text-gray-800 outline-none transition focus:border-[#00B4A6] focus:ring-1 focus:ring-[#00B4A6] dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100 dark:placeholder:text-gray-500"
                   style={{ maxHeight: "120px", overflowY: "auto" }}
                 />
                 <button
@@ -450,7 +450,7 @@ export default function WhatsAppInbox() {
                   )}
                 </button>
               </div>
-              <p className="mt-1 text-right text-[10px] text-gray-400">
+              <p className="mt-1 text-right text-[length:var(--ts-2xs)] text-gray-400">
                 {inputMsg.length}/500
               </p>
             </div>

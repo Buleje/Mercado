@@ -89,7 +89,7 @@ function AreaForm({ initial, onSave, onCancel }: AreaFormProps) {
             value={name}
             onChange={(e) => setName(e.target.value)}
             placeholder="Ej: Pasillo A - Abarrotes"
-            className="w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm text-gray-900 outline-none focus:border-primary"
+            className="w-full rounded-lg border border-[var(--rule-base)] bg-white px-3 py-2 text-sm text-gray-900 outline-none focus:border-primary"
           />
         </div>
         <div>
@@ -102,7 +102,7 @@ function AreaForm({ initial, onSave, onCancel }: AreaFormProps) {
             step={0.5}
             value={sqm}
             onChange={(e) => setSqm(Number(e.target.value))}
-            className="w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm text-gray-900 outline-none focus:border-primary"
+            className="w-full rounded-lg border border-[var(--rule-base)] bg-white px-3 py-2 text-sm text-gray-900 outline-none focus:border-primary"
           />
         </div>
         <div>
@@ -114,7 +114,7 @@ function AreaForm({ initial, onSave, onCancel }: AreaFormProps) {
             min={0}
             value={revenue}
             onChange={(e) => setRevenue(Number(e.target.value))}
-            className="w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm text-gray-900 outline-none focus:border-primary"
+            className="w-full rounded-lg border border-[var(--rule-base)] bg-white px-3 py-2 text-sm text-gray-900 outline-none focus:border-primary"
           />
         </div>
         <div className="col-span-2">
@@ -130,7 +130,7 @@ function AreaForm({ initial, onSave, onCancel }: AreaFormProps) {
                   "px-2.5 py-1 rounded-full text-xs font-medium border transition-colors",
                   cats.includes(cat)
                     ? "bg-primary text-white border-primary"
-                    : "border-gray-200 text-gray-600"
+                    : "border-[var(--rule-base)] text-gray-600"
                 )}
               >
                 {cat}
@@ -150,7 +150,7 @@ function AreaForm({ initial, onSave, onCancel }: AreaFormProps) {
         </button>
         <button
           onClick={onCancel}
-          className="px-4 py-2.5 rounded-xl border border-gray-200"
+          className="px-4 py-2.5 rounded-xl border border-[var(--rule-base)]"
         >
           <X className="w-4 h-4 text-gray-500" />
         </button>
@@ -206,9 +206,9 @@ export default function RevenuePerSquareMeter() {
   const bottomArea = ranked[ranked.length - 1];
 
   return (
-    <div className="bg-white rounded-xl border border-gray-200 overflow-hidden ">
+    <div className="bg-white rounded-xl border border-[var(--rule-base)] overflow-hidden ">
       {/* Header */}
-      <div className="p-5 border-b border-gray-100 flex items-center justify-between">
+      <div className="p-5 border-b border-[var(--rule-soft)] flex items-center justify-between">
         <div className="flex items-center gap-3">
           <div className="p-2 rounded-xl bg-primary/10">
             <LayoutGrid className="w-5 h-5 text-primary" />
@@ -273,14 +273,14 @@ export default function RevenuePerSquareMeter() {
                   "p-4 rounded-xl border",
                   index === 0
                     ? "border-primary/30 bg-primary/5"
-                    : "border-gray-100 bg-gray-50"
+                    : "border-[var(--rule-soft)] bg-gray-50"
                 )}
               >
                 <div className="flex items-start justify-between gap-3">
                   <div className="flex items-start gap-3 min-w-0">
                     <div
                       className={cn(
-                        "flex-shrink-0 w-7 h-7 rounded-full flex items-center justify-center text-xs font-black",
+                        "flex-shrink-0 w-7 h-7 rounded-full flex items-center justify-center text-xs font-extrabold",
                         index === 0
                           ? "bg-primary text-white"
                           : "bg-gray-200 text-gray-600"
@@ -325,7 +325,7 @@ export default function RevenuePerSquareMeter() {
                     <p className="text-xs text-gray-400">Por m2</p>
                     <p
                       className={cn(
-                        "text-sm font-black",
+                        "text-sm font-extrabold",
                         index === 0
                           ? "text-primary"
                           : "text-gray-900"

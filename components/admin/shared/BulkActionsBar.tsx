@@ -61,7 +61,7 @@ export default function BulkActionsBar({
               "flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors",
               action.variant === "danger"
                 ? "bg-red-100 text-red-700 hover:bg-red-200"
-                : "bg-white text-gray-700 hover:bg-gray-100 border border-gray-200",
+                : "bg-white text-gray-700 hover:bg-gray-100 border border-[var(--rule-base)]",
             )}
           >
             <Icon className="h-3.5 w-3.5" />
@@ -77,7 +77,7 @@ export default function BulkActionsBar({
             <MoreHorizontal className="h-4 w-4 text-gray-600" />
           </button>
           {showMore && (
-            <div className="absolute top-full right-0 mt-1 w-44 bg-white border border-gray-200 rounded-xl py-1 z-30">
+            <div className="absolute top-full right-0 mt-1 w-44 bg-white border border-[var(--rule-base)] rounded-xl py-1 z-30">
               {overflowActions.map(action => {
                 const Icon = action.icon;
                 return (

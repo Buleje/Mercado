@@ -114,7 +114,7 @@ export interface ResumenSubTabProps {
 
 function SkeletonCard({ className }: { className?: string }) {
   return (
-    <div className={cn("rounded-xl border border-gray-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 p-5 animate-pulse", className)}>
+    <div className={cn("rounded-xl border border-[var(--rule-base)] dark:border-zinc-700 bg-white dark:bg-zinc-800 p-5 animate-pulse", className)}>
       <div className="h-3 w-1/3 rounded bg-gray-200 dark:bg-zinc-700 mb-3" />
       <div className="h-7 w-1/2 rounded bg-gray-200 dark:bg-zinc-700 mb-2" />
       <div className="h-1 w-full rounded bg-gray-200 dark:bg-zinc-700 mt-3" />
@@ -378,7 +378,7 @@ export function ResumenSubTab(props: ResumenSubTabProps) {
 
       {/* Combo del dia */}
       {!loading && comboData.products.some(p => p.found) && (
-        <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl p-4 flex items-center justify-between">
+        <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl p-4 flex items-center justify-between">
           <div className="flex items-center gap-3">
             <div className="h-10 w-10 rounded-xl bg-amber-100 dark:bg-amber-900/30 flex items-center justify-center">
               <Lightbulb className="h-5 w-5 text-amber-600" />
@@ -393,10 +393,10 @@ export function ResumenSubTab(props: ResumenSubTabProps) {
 
       {/* Logro desbloqueado */}
       {showLogro && logro && (
-        <div className="relative border-2 border-yellow-400 bg-gradient-to-r from-yellow-50 to-amber-50 dark:from-yellow-900/20 dark:to-amber-900/20 rounded-xl p-4 flex items-center gap-3">
-          <TrendingUp className="w-8 h-8 text-yellow-500" />
+        <div className="relative border border-[var(--data-success)]/40 bg-[var(--surface-sunken)] rounded-xl p-4 flex items-center gap-3">
+          <TrendingUp className="w-8 h-8 text-[var(--data-success)]" />
           <div className="flex-1">
-            <p className="text-xs font-extrabold text-yellow-700 dark:text-yellow-400">Logro desbloqueado!</p>
+            <p className="text-xs font-extrabold text-[var(--data-success)]">Logro desbloqueado!</p>
             <p className="text-sm font-bold text-gray-900 dark:text-zinc-100">{logro.texto}</p>
           </div>
           <button onClick={() => setShowLogro(false)} className="text-gray-400 hover:text-gray-600 p-1 shrink-0"><span className="text-lg">&times;</span></button>
@@ -417,7 +417,7 @@ export function ResumenSubTab(props: ResumenSubTabProps) {
             </span>
           )}
           {bestHourToday && (
-            <span className="inline-flex items-center gap-1 text-xs bg-white dark:bg-zinc-800 border border-gray-200 dark:border-zinc-700 rounded-lg px-3 py-2">
+            <span className="inline-flex items-center gap-1 text-xs bg-white dark:bg-zinc-800 border border-[var(--rule-base)] dark:border-zinc-700 rounded-lg px-3 py-2">
               <Clock className="h-3.5 w-3.5 text-primary" />
               <span className="text-gray-600 dark:text-zinc-300">Mejor hora: <span className="font-bold">{bestHourToday.hour}:00</span> (S/{bestHourToday.total.toFixed(0)})</span>
             </span>
@@ -453,7 +453,7 @@ export function ResumenSubTab(props: ResumenSubTabProps) {
       <DraggableWidgetGrid storageKey="dashboard-resumen-order" columns={2}>
         {/* Chart A — Resumen del negocio (full-width) */}
         <div key="chart-resumen" className="col-span-1 md:col-span-2">
-          <div className="rounded-xl border border-gray-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 p-4">
+          <div className="rounded-xl border border-[var(--rule-base)] dark:border-zinc-800 bg-white dark:bg-zinc-900 p-4">
             <div className="flex items-center gap-2 mb-4">
               <BarChart3 className="w-4 h-4" style={{ color: "var(--color-primary)" }} />
               <span className="text-sm font-semibold text-gray-900 dark:text-white">Resumen del negocio</span>
@@ -470,7 +470,7 @@ export function ResumenSubTab(props: ResumenSubTabProps) {
 
         {/* Chart B — Donut de categorias */}
         <div key="chart-categorias" className="col-span-1">
-          <div className="rounded-xl border border-gray-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 p-4 h-full">
+          <div className="rounded-xl border border-[var(--rule-base)] dark:border-zinc-800 bg-white dark:bg-zinc-900 p-4 h-full">
             <div className="flex items-center gap-2 mb-4">
               <TrendingUp className="w-4 h-4" style={{ color: "#8b5cf6" }} />
               <span className="text-sm font-semibold text-gray-900 dark:text-white">Ventas por categoria</span>
@@ -487,7 +487,7 @@ export function ResumenSubTab(props: ResumenSubTabProps) {
 
         {/* Top 10 productos section */}
         <div key="top-productos" className="col-span-1">
-          <div className="rounded-xl border border-gray-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 p-6 h-full">
+          <div className="rounded-xl border border-[var(--rule-base)] dark:border-zinc-800 bg-white dark:bg-zinc-900 p-6 h-full">
             <div className="flex items-center gap-2 mb-4">
               <TrendingUp className="w-4 h-4" style={{ color: "var(--color-primary)" }} />
               <span className="text-sm font-semibold text-gray-900 dark:text-white">Top 10 productos</span>
@@ -506,7 +506,7 @@ export function ResumenSubTab(props: ResumenSubTabProps) {
                       <span className="w-36 sm:w-44 truncate text-gray-700 dark:text-zinc-300 shrink-0 text-xs" title={prod.name}>{prod.name}</span>
                       <div className="flex-1 h-5 rounded bg-gray-100 dark:bg-zinc-700 relative overflow-hidden">
                         <div className="absolute inset-y-0 left-0 rounded transition-all" style={{ width: `${pct}%`, backgroundColor: idx === 0 ? "var(--color-primary)" : "var(--color-primary)60" }} />
-                        <span className="absolute inset-y-0 left-2 flex items-center text-[10px] font-semibold text-white z-10">{prod.qty} uds</span>
+                        <span className="absolute inset-y-0 left-2 flex items-center text-[length:var(--ts-2xs)] font-semibold text-white z-10">{prod.qty} uds</span>
                       </div>
                       <span className="text-xs text-gray-400 dark:text-zinc-500 shrink-0 w-20 text-right tabular-nums">{fmtR(prod.revenue)}</span>
                     </div>
@@ -519,7 +519,7 @@ export function ResumenSubTab(props: ResumenSubTabProps) {
 
         {/* Horario pico section */}
         <div key="horario-pico" className="col-span-1">
-          <div className="rounded-xl border border-gray-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 p-6 h-full">
+          <div className="rounded-xl border border-[var(--rule-base)] dark:border-zinc-800 bg-white dark:bg-zinc-900 p-6 h-full">
             <div className="flex items-center gap-2 mb-4">
               <Clock className="w-4 h-4" style={{ color: "#f97316" }} />
               <span className="text-sm font-semibold text-gray-900 dark:text-white">Ventas por hora (hoy)</span>
@@ -538,9 +538,9 @@ export function ResumenSubTab(props: ResumenSubTabProps) {
                       <span className={cn("w-8 text-right shrink-0 font-mono", isActive ? "text-amber-500 font-bold" : "text-gray-400 dark:text-zinc-500")}>{bucket.label}</span>
                       <div className="flex-1 h-4 rounded bg-gray-100 dark:bg-zinc-700 relative overflow-hidden">
                         {pct > 0 && <div className="absolute inset-y-0 left-0 rounded transition-all" style={{ width: `${pct}%`, backgroundColor: isActive ? "#f97316" : "var(--color-primary)80" }} />}
-                        {pct > 10 && <span className="absolute inset-y-0 left-2 flex items-center text-[10px] font-semibold text-white z-10">{fmtR(bucket.amount)}</span>}
+                        {pct > 10 && <span className="absolute inset-y-0 left-2 flex items-center text-[length:var(--ts-2xs)] font-semibold text-white z-10">{fmtR(bucket.amount)}</span>}
                       </div>
-                      {pct === 0 && <span className="text-gray-300 dark:text-zinc-600 text-[10px]">--</span>}
+                      {pct === 0 && <span className="text-gray-300 dark:text-zinc-600 text-[length:var(--ts-2xs)]">--</span>}
                     </div>
                   );
                 })}
@@ -554,7 +554,7 @@ export function ResumenSubTab(props: ResumenSubTabProps) {
             {loading ? (
               <SkeletonCard />
             ) : (
-              <div className="rounded-xl border border-gray-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 p-6">
+              <div className="rounded-xl border border-[var(--rule-base)] dark:border-zinc-800 bg-white dark:bg-zinc-900 p-6">
                 <div className="flex items-center gap-2 mb-3">
                   <BarChart3 className="w-4 h-4" style={{ color: "#f97316" }} />
                   <span className="text-sm font-semibold text-gray-900 dark:text-white">Este mes vs anterior</span>
@@ -578,7 +578,7 @@ export function ResumenSubTab(props: ResumenSubTabProps) {
                     { label: "Anterior", value: revenuePrevMonth, color: "#94a3b8", max: Math.max(revenueThisMonth, revenuePrevMonth, 1) },
                   ].map((bar) => (
                     <div key={bar.label}>
-                      <div className="flex justify-between text-[10px] text-gray-400 dark:text-zinc-500 mb-1">
+                      <div className="flex justify-between text-[length:var(--ts-2xs)] text-gray-400 dark:text-zinc-500 mb-1">
                         <span>{bar.label}</span>
                         <span>{fmtR(bar.value)}</span>
                       </div>
@@ -597,7 +597,7 @@ export function ResumenSubTab(props: ResumenSubTabProps) {
           <div key="kpis-extra" className="col-span-1 md:col-span-2">
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
             {monthProjection && (
-              <div className="rounded-xl border border-gray-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 p-6">
+              <div className="rounded-xl border border-[var(--rule-base)] dark:border-zinc-800 bg-white dark:bg-zinc-900 p-6">
                 <span className="text-sm font-semibold text-gray-900 dark:text-white">Proyeccion mensual</span>
                 <p className="text-lg font-bold font-mono text-gray-900 dark:text-zinc-100 mt-1">
                   {fmtR(monthProjection.ventasMes)} <span className="text-xs font-normal text-gray-400">de {fmtR(monthProjection.proyeccion)}</span>
@@ -625,7 +625,7 @@ export function ResumenSubTab(props: ResumenSubTabProps) {
               </div>
             )}
             {productosSinVenderHoy.length > 0 && (
-              <div className="rounded-xl border border-gray-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 p-6">
+              <div className="rounded-xl border border-[var(--rule-base)] dark:border-zinc-800 bg-white dark:bg-zinc-900 p-6">
                 <span className="text-sm font-semibold text-gray-900 dark:text-white">Sin vender hoy</span>
                 <div className="mt-2 space-y-1">
                   {productosSinVenderHoy.map((p, i) => (
@@ -673,7 +673,7 @@ export function ResumenSubTab(props: ResumenSubTabProps) {
             )}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               {/* Top 5 clientes */}
-              <div className="rounded-xl border border-gray-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 p-6">
+              <div className="rounded-xl border border-[var(--rule-base)] dark:border-zinc-800 bg-white dark:bg-zinc-900 p-6">
                 <div className="flex items-center gap-2 mb-4">
                   <Users className="w-4 h-4" style={{ color: "var(--color-primary)" }} />
                   <span className="text-sm font-semibold text-gray-900 dark:text-white">Top 5 clientes del mes</span>
@@ -694,11 +694,11 @@ export function ResumenSubTab(props: ResumenSubTabProps) {
                   <ol className="space-y-2">
                     {topCustomers.map((c, idx) => (
                       <li key={c.phone ?? c.name} className="flex items-center gap-2 text-sm">
-                        <span className="flex items-center justify-center w-5 h-5 rounded-full text-[10px] font-bold shrink-0 text-white" style={{ backgroundColor: idx === 0 ? "var(--color-primary)" : "#94a3b8" }}>
+                        <span className="flex items-center justify-center w-5 h-5 rounded-full text-[length:var(--ts-2xs)] font-bold shrink-0 text-white" style={{ backgroundColor: idx === 0 ? "var(--color-primary)" : "#94a3b8" }}>
                           {idx + 1}
                         </span>
                         <span className="flex-1 truncate text-gray-700 dark:text-zinc-300 text-xs" title={c.name}>{c.name}</span>
-                        <span className="text-[10px] text-gray-400 dark:text-zinc-500 shrink-0">{c.orderCount} ped.</span>
+                        <span className="text-[length:var(--ts-2xs)] text-gray-400 dark:text-zinc-500 shrink-0">{c.orderCount} ped.</span>
                         <span className="text-xs font-semibold tabular-nums shrink-0" style={{ color: "var(--color-primary)" }}>{fmtR(c.total)}</span>
                       </li>
                     ))}
@@ -707,7 +707,7 @@ export function ResumenSubTab(props: ResumenSubTabProps) {
               </div>
 
               {/* Alertas activas */}
-              <div className="rounded-xl border border-gray-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 p-6">
+              <div className="rounded-xl border border-[var(--rule-base)] dark:border-zinc-800 bg-white dark:bg-zinc-900 p-6">
                 <div className="flex items-center gap-2 mb-4">
                   <AlertTriangle className="w-4 h-4 text-amber-500" />
                   <span className="text-sm font-semibold text-gray-900 dark:text-white">Alertas activas</span>
@@ -738,7 +738,7 @@ export function ResumenSubTab(props: ResumenSubTabProps) {
 
         {/* Logros y Streaks */}
         <div key="logros" className="col-span-1 md:col-span-2">
-          <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl p-4 flex items-center justify-between">
+          <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl p-4 flex items-center justify-between">
             <div className="flex items-center gap-3">
               <div className="h-10 w-10 rounded-xl bg-amber-100 dark:bg-amber-900/30 flex items-center justify-center"><Target className="h-5 w-5 text-amber-600" /></div>
               <div>

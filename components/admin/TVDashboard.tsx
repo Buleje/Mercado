@@ -162,7 +162,7 @@ export default function TVDashboard() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-5xl font-black tracking-tight text-primary">
+          <h1 className="text-5xl font-extrabold tracking-tight text-primary">
             Buleje
           </h1>
           <p className="text-2xl text-gray-500 mt-1">
@@ -242,7 +242,7 @@ export default function TVDashboard() {
         <div className="w-full h-16 rounded-full bg-gray-200 overflow-hidden shadow-inner">
           <div
             className={cn(
-              "h-full rounded-full transition-all duration-700 ease-out",
+              "h-full rounded-full transition-all duration-[var(--dur-slower)] ease-out",
               barColor
             )}
             style={{ width: `${progress}%` }}

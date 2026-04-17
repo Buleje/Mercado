@@ -101,7 +101,7 @@ export default function InsuranceTab() {
           </h1>
           <p className="text-sm text-gray-500 dark:text-muted mt-0.5">Registro de pólizas, alertas de vencimiento y siniestros</p>
         </div>
-        <button onClick={() => exportToCSV(policies.map(p => ({ tipo: TYPE_LABELS[p.type], aseguradora: p.insurer, poliza: p.policyNumber, cobertura: p.coverage, prima_mensual: p.monthlyPremium, inicio: p.startDate, fin: p.endDate, estado: STATUS_META[p.status].label })), "polizas-seguros")} className="flex items-center gap-1.5 px-3 py-2 rounded-lg border border-gray-200 dark:border-card-border bg-white dark:bg-surface text-sm font-semibold text-gray-700 dark:text-foreground hover:bg-gray-50 dark:hover:bg-accent transition-colors">
+        <button onClick={() => exportToCSV(policies.map(p => ({ tipo: TYPE_LABELS[p.type], aseguradora: p.insurer, poliza: p.policyNumber, cobertura: p.coverage, prima_mensual: p.monthlyPremium, inicio: p.startDate, fin: p.endDate, estado: STATUS_META[p.status].label })), "polizas-seguros")} className="flex items-center gap-1.5 px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-card-border bg-white dark:bg-surface text-sm font-semibold text-gray-700 dark:text-foreground hover:bg-gray-50 dark:hover:bg-accent transition-colors">
           <Download className="h-4 w-4" /> Exportar
         </button>
       </div>
@@ -112,7 +112,7 @@ export default function InsuranceTab() {
           { label: "Pólizas vigentes", value: String(stats.vigentes), color: "text-emerald-600", bg: "bg-emerald-50 dark:bg-emerald-950/30" },
           { label: "Prima mensual total", value: fmt(stats.monthlyTotal), color: "text-emerald-600", bg: "bg-emerald-50 dark:bg-emerald-950/30" },
           { label: "Siniestros abiertos", value: String(stats.claimsOpen), color: "text-amber-600", bg: "bg-amber-50 dark:bg-amber-950/30" },
-          { label: "Monto total siniestros", value: fmt(stats.claimsTotal), color: "text-violet-600", bg: "bg-violet-50 dark:bg-violet-950/30" },
+          { label: "Monto total siniestros", value: fmt(stats.claimsTotal), color: "text-[var(--text-secondary)]", bg: "bg-[var(--surface-sunken)]" },
         ].map(({ label, value, color, bg }) => (
           <div key={label} className={cn("rounded-xl p-4", bg)}>
             <p className="text-xs font-semibold text-gray-500 dark:text-muted mb-1">{label}</p>
@@ -149,13 +149,13 @@ export default function InsuranceTab() {
         <>
           <div className="relative max-w-sm">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
-            <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Tipo, aseguradora, N° póliza..." className="w-full pl-9 pr-3 py-2 text-sm border border-gray-200 dark:border-card-border rounded-lg bg-white dark:bg-surface text-gray-700 dark:text-foreground" />
+            <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Tipo, aseguradora, N° póliza..." className="w-full pl-9 pr-3 py-2 text-sm border border-[var(--rule-base)] dark:border-card-border rounded-lg bg-white dark:bg-surface text-gray-700 dark:text-foreground" />
           </div>
 
-          <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl overflow-hidden">
+          <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl overflow-hidden">
             <div className="overflow-x-auto">
               <table className="w-full min-w-[600px] text-sm">
-                <thead className="bg-gray-50 dark:bg-surface/50 border-b border-gray-200 dark:border-card-border">
+                <thead className="bg-gray-50 dark:bg-surface/50 border-b border-[var(--rule-base)] dark:border-card-border">
                   <tr>
                     <th className="px-2 sm:px-4 py-2 sm:py-3 text-left text-xs font-bold text-gray-500 dark:text-muted uppercase">Estado</th>
                     <th className="px-2 sm:px-4 py-2 sm:py-3 text-left text-xs font-bold text-gray-500 dark:text-muted uppercase">Tipo</th>
@@ -190,10 +190,10 @@ export default function InsuranceTab() {
       )}
 
       {view === "claims" && (
-        <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl overflow-hidden">
+        <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl overflow-hidden">
           <div className="overflow-x-auto">
             <table className="w-full min-w-[600px] text-sm">
-              <thead className="bg-gray-50 dark:bg-surface/50 border-b border-gray-200 dark:border-card-border">
+              <thead className="bg-gray-50 dark:bg-surface/50 border-b border-[var(--rule-base)] dark:border-card-border">
                 <tr>
                   <th className="px-2 sm:px-4 py-2 sm:py-3 text-left text-xs font-bold text-gray-500 dark:text-muted uppercase">Estado</th>
                   <th className="px-2 sm:px-4 py-2 sm:py-3 text-left text-xs font-bold text-gray-500 dark:text-muted uppercase">Fecha</th>
@@ -227,7 +227,7 @@ export default function InsuranceTab() {
       {/* Policy detail modal */}
       {detail && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4" onClick={() => setDetail(null)}>
-          <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl p-3 sm:p-6 w-full max-w-md space-y-3" onClick={e => e.stopPropagation()}>
+          <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl p-3 sm:p-6 w-full max-w-md space-y-3" onClick={e => e.stopPropagation()}>
             <div className="flex items-center justify-between">
               <h3 className="font-extrabold text-gray-900 dark:text-foreground text-sm">{TYPE_LABELS[detail.type]}</h3>
               <button onClick={() => setDetail(null)}><X className="h-4 w-4 text-gray-400" /></button>
@@ -253,7 +253,7 @@ export default function InsuranceTab() {
       {/* Claim detail modal */}
       {claimDetail && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4" onClick={() => setClaimDetail(null)}>
-          <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl p-3 sm:p-6 w-full max-w-md space-y-3" onClick={e => e.stopPropagation()}>
+          <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl p-3 sm:p-6 w-full max-w-md space-y-3" onClick={e => e.stopPropagation()}>
             <div className="flex items-center justify-between">
               <h3 className="font-extrabold text-gray-900 dark:text-foreground text-sm">Detalle del siniestro</h3>
               <button onClick={() => setClaimDetail(null)}><X className="h-4 w-4 text-gray-400" /></button>

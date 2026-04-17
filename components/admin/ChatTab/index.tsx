@@ -113,12 +113,12 @@ export default function ChatTab() {
                   <span className="text-sm font-semibold text-slate-900 dark:text-white">
                     {selectedThread.customerName}
                   </span>
-                  <span className="text-[10px] uppercase text-slate-400">
+                  <span className="text-[length:var(--ts-2xs)] uppercase text-slate-400">
                     {STATUS_LABELS[selectedThread.status]}
                   </span>
                 </div>
                 {selectedThread.customerPhone && (
-                  <div className="text-[11px] text-slate-500">
+                  <div className="text-[length:var(--ts-xs)] text-slate-500">
                     <a
                       href={`tel:${selectedThread.customerPhone}`}
                       className="underline underline-offset-2 hover:text-[#00B4A6]"

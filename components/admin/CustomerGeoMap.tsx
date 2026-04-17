@@ -333,7 +333,7 @@ export default function CustomerGeoMap({ className }: Props) {
           </button>
 
           {/* View mode toggle */}
-          <div className="flex rounded-lg border border-gray-200">
+          <div className="flex rounded-lg border border-[var(--rule-base)]">
             <button
               onClick={() => setViewMode("markers")}
               className={cn(
@@ -365,7 +365,7 @@ export default function CustomerGeoMap({ className }: Props) {
       {/* Stats panel */}
       {showStats && !loading && totalCustomers > 0 && (
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-          <div className="rounded-xl border border-gray-200 bg-white p-3">
+          <div className="rounded-xl border border-[var(--rule-base)] bg-white p-3">
             <div className="flex items-center gap-2">
               <Users className="h-4 w-4 text-primary" />
               <span className="text-xs text-gray-500">Con GPS</span>
@@ -374,7 +374,7 @@ export default function CustomerGeoMap({ className }: Props) {
               {totalCustomers}
             </p>
           </div>
-          <div className="rounded-xl border border-gray-200 bg-white p-3">
+          <div className="rounded-xl border border-[var(--rule-base)] bg-white p-3">
             <div className="flex items-center gap-2">
               <DollarSign className="h-4 w-4 text-secondary" />
               <span className="text-xs text-gray-500">Total gastado</span>
@@ -383,7 +383,7 @@ export default function CustomerGeoMap({ className }: Props) {
               {formatSoles(totalSpent)}
             </p>
           </div>
-          <div className="rounded-xl border border-gray-200 bg-white p-3">
+          <div className="rounded-xl border border-[var(--rule-base)] bg-white p-3">
             <div className="flex items-center gap-2">
               <TrendingUp className="h-4 w-4 text-primary" />
               <span className="text-xs text-gray-500">Top zona</span>
@@ -393,7 +393,7 @@ export default function CustomerGeoMap({ className }: Props) {
             </p>
             <p className="text-xs text-gray-500">{topZones[0]?.[1]?.count ?? 0} clientes</p>
           </div>
-          <div className="rounded-xl border border-gray-200 bg-white p-3">
+          <div className="rounded-xl border border-[var(--rule-base)] bg-white p-3">
             <div className="flex items-center gap-2">
               <MapPin className="h-4 w-4 text-gray-500" />
               <span className="text-xs text-gray-500">Por nivel</span>
@@ -418,7 +418,7 @@ export default function CustomerGeoMap({ className }: Props) {
 
       {/* Top zones breakdown */}
       {showStats && !loading && topZones.length > 1 && (
-        <div className="rounded-xl border border-gray-200 bg-white p-4">
+        <div className="rounded-xl border border-[var(--rule-base)] bg-white p-4">
           <h3 className="mb-3 text-sm font-semibold text-gray-800">
             Top 5 zonas
           </h3>
@@ -432,7 +432,7 @@ export default function CustomerGeoMap({ className }: Props) {
                   </span>
                   <div className="relative h-4 flex-1 overflow-hidden rounded-full bg-gray-100">
                     <div
-                      className="h-full rounded-full bg-primary transition-all duration-500"
+                      className="h-full rounded-full bg-primary transition-all duration-[var(--dur-slow)]"
                       style={{ width: `${Math.max(pct, 3)}%` }}
                     />
                   </div>
@@ -448,7 +448,7 @@ export default function CustomerGeoMap({ className }: Props) {
 
       {/* Map container */}
       {loading ? (
-        <div className="flex items-center justify-center rounded-xl border border-gray-200 bg-white" style={{ height: 480 }}>
+        <div className="flex items-center justify-center rounded-xl border border-[var(--rule-base)] bg-white" style={{ height: 480 }}>
           <Loader2 className="h-8 w-8 animate-spin text-primary" />
         </div>
       ) : error ? (
@@ -457,7 +457,7 @@ export default function CustomerGeoMap({ className }: Props) {
           <p className="text-sm text-red-600">{error}</p>
         </div>
       ) : totalCustomers === 0 ? (
-        <div className="flex flex-col items-center justify-center gap-3 rounded-xl border border-gray-200 bg-white px-4 py-16">
+        <div className="flex flex-col items-center justify-center gap-3 rounded-xl border border-[var(--rule-base)] bg-white px-4 py-16">
           <MapPin className="h-10 w-10 text-gray-300" />
           <p className="text-sm text-gray-500">
             No hay clientes con coordenadas GPS registradas.
@@ -469,14 +469,14 @@ export default function CustomerGeoMap({ className }: Props) {
       ) : (
         <div
           ref={containerRef}
-          className="rounded-xl border border-gray-200 "
+          className="rounded-xl border border-[var(--rule-base)] "
           style={{ height: 480, width: "100%" }}
         />
       )}
 
       {/* Legend */}
       {!loading && !error && totalCustomers > 0 && viewMode === "markers" && (
-        <div className="flex flex-wrap items-center gap-4 rounded-xl border border-gray-200 bg-white px-4 py-2.5 text-xs">
+        <div className="flex flex-wrap items-center gap-4 rounded-xl border border-[var(--rule-base)] bg-white px-4 py-2.5 text-xs">
           <span className="font-medium text-gray-500">Leyenda:</span>
           <span className="flex items-center gap-1.5">
             <span className="inline-block h-3 w-3 rounded-full bg-primary" />
@@ -494,7 +494,7 @@ export default function CustomerGeoMap({ className }: Props) {
       )}
 
       {!loading && !error && totalCustomers > 0 && viewMode === "heat" && (
-        <div className="flex flex-wrap items-center gap-4 rounded-xl border border-gray-200 bg-white px-4 py-2.5 text-xs">
+        <div className="flex flex-wrap items-center gap-4 rounded-xl border border-[var(--rule-base)] bg-white px-4 py-2.5 text-xs">
           <span className="font-medium text-gray-500">Intensidad:</span>
           <div className="flex items-center gap-1">
             <span className="text-gray-400">Bajo</span>

@@ -63,7 +63,7 @@ export function NumberStat({
       <Kicker>{label}</Kicker>
       <div
         className={cn(
-          "mt-1.5 font-extrabold tracking-[-0.02em] tabular-nums leading-none",
+          "mt-1.5 font-extrabold tracking-[var(--ls-tight)] tabular-nums leading-none",
           "text-gray-900 dark:text-white",
           SIZE[size],
         )}
@@ -79,7 +79,7 @@ export function NumberStat({
       {delta && (
         <p
           className={cn(
-            "mt-2 text-[11px] font-semibold tabular-nums",
+            "mt-2 text-[length:var(--ts-xs)] font-semibold tabular-nums",
             direction === "up" && "text-emerald-600 dark:text-emerald-400",
             direction === "down" && "text-red-600 dark:text-red-400",
             direction === "neutral" && "text-gray-500",

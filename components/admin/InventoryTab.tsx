@@ -147,7 +147,7 @@ function InventoryContextMenu({ product, x, y, onClose, onEdit, onView, onDuplic
   return (
     <div
       ref={menuRef}
-      className="fixed z-[9999] bg-white dark:bg-zinc-900 rounded-xl border border-gray-100 dark:border-zinc-800 min-w-[180px] py-1 animate-in fade-in zoom-in-95 duration-150"
+      className="fixed z-[9999] bg-white dark:bg-zinc-900 rounded-xl border border-[var(--rule-soft)] dark:border-zinc-800 min-w-[180px] py-1 animate-in fade-in zoom-in-95 duration-[var(--dur-fast)]"
       style={{ left: x, top: y }}
     >
       {items.map((item, i) => {
@@ -155,7 +155,7 @@ function InventoryContextMenu({ product, x, y, onClose, onEdit, onView, onDuplic
         return (
           <div key={i}>
             {item.divider && (
-              <div className="my-1 border-t border-gray-100 dark:border-zinc-800" />
+              <div className="my-1 border-t border-[var(--rule-soft)] dark:border-zinc-800" />
             )}
             <button
               onClick={item.onClick}
@@ -738,7 +738,7 @@ export default function InventoryTab() {
       {/* KPI skeleton */}
       <div className="grid grid-cols-2 sm:grid-cols-5 gap-4">
         {[...Array(5)].map((_, i) => (
-          <div key={i} className="bg-white dark:bg-card border border-gray-100 dark:border-card-border rounded-xl p-5">
+          <div key={i} className="bg-white dark:bg-card border border-[var(--rule-soft)] dark:border-card-border rounded-xl p-5">
             <div className="h-3 w-1/3 bg-gray-200 dark:bg-accent rounded mb-3" />
             <div className="h-7 w-1/2 bg-gray-200 dark:bg-accent rounded mb-2" />
             <div className="h-1 w-full bg-gray-200 dark:bg-accent rounded mt-3" />
@@ -747,7 +747,7 @@ export default function InventoryTab() {
       </div>
       {/* Product row skeletons */}
       {[...Array(6)].map((_, i) => (
-        <div key={i} className="flex flex-wrap items-center gap-3 p-3 bg-white dark:bg-card rounded-xl border border-gray-100 dark:border-card-border">
+        <div key={i} className="flex flex-wrap items-center gap-3 p-3 bg-white dark:bg-card rounded-xl border border-[var(--rule-soft)] dark:border-card-border">
           <div className="h-10 w-10 bg-gray-200 dark:bg-accent rounded-lg shrink-0" />
           <div className="flex-1 space-y-2">
             <div className="h-4 bg-gray-200 dark:bg-accent rounded w-1/3" />
@@ -788,7 +788,7 @@ export default function InventoryTab() {
         <button
           onClick={() => setShowScanner(true)}
           disabled={scanLoading}
-          className="flex items-center gap-1.5 text-sm font-medium rounded-lg border border-gray-200 dark:border-zinc-700 hover:bg-gray-50 dark:hover:bg-zinc-800 px-4 py-2.5 transition-colors"
+          className="flex items-center gap-1.5 text-sm font-medium rounded-lg border border-[var(--rule-base)] dark:border-zinc-700 hover:bg-gray-50 dark:hover:bg-zinc-800 px-4 py-2.5 transition-colors"
         >
           {scanLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <ScanBarcode className="h-4 w-4" />}
           {scanLoading ? "Buscando..." : "Escanear"}
@@ -813,14 +813,14 @@ export default function InventoryTab() {
             value={search}
             onChange={e => setSearch(e.target.value)}
             placeholder={searchPlaceholders[phIndex]}
-            className="w-full pl-10 pr-4 py-2 rounded-lg border border-gray-200 dark:border-card-border text-sm text-gray-900 dark:text-foreground outline-none focus:border-primary transition-colors"
+            className="w-full pl-10 pr-4 py-2 rounded-lg border border-[var(--rule-base)] dark:border-card-border text-sm text-gray-900 dark:text-foreground outline-none focus:border-primary transition-colors"
           />
         </div>
         {/* Category filter */}
         <select
           value={catFilter}
           onChange={e => setCatFilter(e.target.value)}
-          className="px-3 py-2 rounded-lg border border-gray-200 dark:border-card-border text-sm text-gray-700 dark:text-foreground outline-none focus:border-primary"
+          className="px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-card-border text-sm text-gray-700 dark:text-foreground outline-none focus:border-primary"
         >
           {categories.map(c => (
             <option key={c.id} value={c.id}>{c.label}</option>
@@ -831,7 +831,7 @@ export default function InventoryTab() {
           onClick={() => setLowOnly(!lowOnly)}
           className={cn(
             "flex items-center gap-1 px-3 py-2 rounded-lg text-xs font-bold border transition-colors whitespace-nowrap",
-            lowOnly ? "border-amber-300 bg-amber-50 text-amber-700 dark:border-amber-700 dark:bg-amber-950/20 dark:text-amber-400" : "border-gray-200 dark:border-card-border text-gray-500 dark:text-muted hover:bg-gray-50 dark:hover:bg-surface"
+            lowOnly ? "border-amber-300 bg-amber-50 text-amber-700 dark:border-amber-700 dark:bg-amber-950/20 dark:text-amber-400" : "border-[var(--rule-base)] dark:border-card-border text-gray-500 dark:text-muted hover:bg-gray-50 dark:hover:bg-surface"
           )}
         >
           <AlertTriangle className="h-3.5 w-3.5" /> Bajo stock
@@ -840,7 +840,7 @@ export default function InventoryTab() {
           onClick={() => setShowInactive(!showInactive)}
           className={cn(
             "flex items-center gap-1 px-3 py-2 rounded-lg text-xs font-bold border transition-colors whitespace-nowrap",
-            showInactive ? "border-gray-400 bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300" : "border-gray-200 dark:border-card-border text-gray-500 dark:text-muted hover:bg-gray-50 dark:hover:bg-surface"
+            showInactive ? "border-gray-400 bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300" : "border-[var(--rule-base)] dark:border-card-border text-gray-500 dark:text-muted hover:bg-gray-50 dark:hover:bg-surface"
           )}
         >
           {showInactive ? <Eye className="h-3.5 w-3.5" /> : <EyeOff className="h-3.5 w-3.5" />}
@@ -850,7 +850,7 @@ export default function InventoryTab() {
           onClick={() => setNoImageOnly(!noImageOnly)}
           className={cn(
             "flex items-center gap-1 px-3 py-2 rounded-lg text-xs font-bold border transition-colors whitespace-nowrap",
-            noImageOnly ? "border-violet-300 bg-violet-50 text-violet-700 dark:border-violet-700 dark:bg-violet-950/20 dark:text-violet-400" : "border-gray-200 dark:border-card-border text-gray-500 dark:text-muted hover:bg-gray-50 dark:hover:bg-surface"
+            noImageOnly ? "border-violet-300 bg-[var(--surface-sunken)] text-[var(--text-secondary)] dark:border-violet-700 dark:bg-violet-950/20 dark:text-[var(--text-primary)]" : "border-[var(--rule-base)] dark:border-card-border text-gray-500 dark:text-muted hover:bg-gray-50 dark:hover:bg-surface"
           )}
         >
           <Camera className="h-3.5 w-3.5" /> Sin foto ({noImageCount})
@@ -868,7 +868,7 @@ export default function InventoryTab() {
           onClick={() => setShowFilters(!showFilters)}
           className={cn(
             "flex items-center gap-1 px-3 py-2 rounded-lg text-xs font-bold border transition-colors whitespace-nowrap",
-            showFilters ? "border-primary bg-primary/5 text-primary" : "border-gray-200 dark:border-card-border text-gray-500 dark:text-muted hover:bg-gray-50 dark:hover:bg-surface"
+            showFilters ? "border-primary bg-primary/5 text-primary" : "border-[var(--rule-base)] dark:border-card-border text-gray-500 dark:text-muted hover:bg-gray-50 dark:hover:bg-surface"
           )}
         >
           <Filter className="h-3.5 w-3.5" />
@@ -879,34 +879,34 @@ export default function InventoryTab() {
 
       {/* KPIs — grid-cols-5 */}
       <div className="grid grid-cols-2 sm:grid-cols-5 gap-4">
-        <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl p-5 ">
+        <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl p-5 ">
           <p className="text-xs text-gray-500 dark:text-zinc-400 font-medium">Productos</p>
           <p className="text-2xl font-mono font-bold text-gray-900 dark:text-foreground mt-1">{totalProducts}</p>
-          <p className="text-[10px] text-gray-400 dark:text-zinc-500 mt-1">{activeProducts} activos</p>
+          <p className="text-[length:var(--ts-2xs)] text-gray-400 dark:text-zinc-500 mt-1">{activeProducts} activos</p>
           <div className="h-1 rounded-full mt-2 bg-primary" />
         </div>
-        <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl p-5 ">
+        <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl p-5 ">
           <p className="text-xs text-gray-500 dark:text-zinc-400 font-medium">Activos</p>
           <p className="text-2xl font-mono font-bold text-emerald-600 mt-1">{activeProducts}</p>
-          <p className="text-[10px] text-gray-400 dark:text-zinc-500 mt-1">{totalProducts - activeProducts} inactivos</p>
+          <p className="text-[length:var(--ts-2xs)] text-gray-400 dark:text-zinc-500 mt-1">{totalProducts - activeProducts} inactivos</p>
           <div className="h-1 rounded-full mt-2 bg-emerald-500" />
         </div>
-        <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl p-5 ">
+        <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl p-5 ">
           <p className="text-xs text-gray-500 dark:text-zinc-400 font-medium">Bajo stock</p>
           <p className={cn("text-2xl font-mono font-bold mt-1", lowStockCount > 0 ? "text-amber-600" : "text-gray-900 dark:text-foreground")}>{lowStockCount}</p>
-          <p className="text-[10px] text-gray-400 dark:text-zinc-500 mt-1">{lowStockCount > 0 ? "Requieren reposicion" : "Stock saludable"}</p>
+          <p className="text-[length:var(--ts-2xs)] text-gray-400 dark:text-zinc-500 mt-1">{lowStockCount > 0 ? "Requieren reposicion" : "Stock saludable"}</p>
           <div className={cn("h-1 rounded-full mt-2", lowStockCount > 0 ? "bg-amber-500" : "bg-gray-200 dark:bg-zinc-700")} />
         </div>
-        <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl p-5 ">
+        <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl p-5 ">
           <p className="text-xs text-gray-500 dark:text-zinc-400 font-medium">Prox. a vencer</p>
           <p className={cn("text-2xl font-mono font-bold mt-1", expiringSoonCount > 0 ? "text-orange-600" : "text-gray-900 dark:text-foreground")}>{expiringSoonCount}</p>
-          <p className="text-[10px] text-gray-400 dark:text-zinc-500 mt-1">Proximos 30 dias</p>
+          <p className="text-[length:var(--ts-2xs)] text-gray-400 dark:text-zinc-500 mt-1">Proximos 30 dias</p>
           <div className={cn("h-1 rounded-full mt-2", expiringSoonCount > 0 ? "bg-orange-500" : "bg-gray-200 dark:bg-zinc-700")} />
         </div>
-        <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl p-5 ">
+        <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl p-5 ">
           <p className="text-xs text-gray-500 dark:text-zinc-400 font-medium">Valor total</p>
           <p className="text-2xl font-mono font-bold text-primary mt-1">{fmt(totalStockValue)}</p>
-          <p className="text-[10px] text-gray-400 dark:text-zinc-500 mt-1">En inventario</p>
+          <p className="text-[length:var(--ts-2xs)] text-gray-400 dark:text-zinc-500 mt-1">En inventario</p>
           <div className="h-1 rounded-full mt-2 bg-emerald-500" />
         </div>
       </div>
@@ -925,12 +925,12 @@ export default function InventoryTab() {
       {/* Mejora P-8: Margen promedio por categoria */}
       {categoryMargins.length > 0 && (
         <div className="flex flex-wrap items-center gap-1.5">
-          <span className="text-[10px] text-gray-400 dark:text-muted font-medium mr-1">Margen:</span>
+          <span className="text-[length:var(--ts-2xs)] text-gray-400 dark:text-muted font-medium mr-1">Margen:</span>
           {categoryMargins.map(cm => (
             <span
               key={cm.cat}
               className={cn(
-                "text-[10px] font-mono font-bold px-2 py-0.5 rounded-full",
+                "text-[length:var(--ts-2xs)] font-mono font-bold px-2 py-0.5 rounded-full",
                 cm.margin > 25 ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400"
                 : cm.margin >= 15 ? "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400"
                 : "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400"
@@ -944,7 +944,7 @@ export default function InventoryTab() {
 
       {/* OC Alerts Section (IMPROVEMENT 1) */}
       {lowStockProducts.length > 0 && (
-        <div className="bg-linear-to-r from-amber-50 to-red-50 dark:from-amber-950/20 dark:to-red-950/20 border-2 border-amber-300 dark:border-amber-700 rounded-xl overflow-hidden ">
+        <div className="bg-[var(--surface-sunken)] border border-[var(--data-warning)]/40 rounded-xl overflow-hidden ">
           <div className="px-5 py-4">
             <div className="flex flex-wrap items-start justify-between gap-3">
               <div className="flex flex-wrap items-center gap-3">
@@ -991,7 +991,7 @@ export default function InventoryTab() {
                   return (
                     <div key={p.id} className="bg-white dark:bg-card border border-amber-200 dark:border-amber-800 rounded-xl p-3 flex flex-wrap items-center gap-3">
                       {p.image ? (
-                        <Image src={p.image} alt={p.name} width={40} height={40} unoptimized={p.image.startsWith("data:")} className="rounded-lg object-cover border border-gray-100 dark:border-card-border shrink-0" />
+                        <Image src={p.image} alt={p.name} width={40} height={40} unoptimized={p.image.startsWith("data:")} className="rounded-lg object-cover border border-[var(--rule-soft)] dark:border-card-border shrink-0" />
                       ) : (
                         <div className="h-10 w-10 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
                           <Package className="h-5 w-5 text-primary/40" />
@@ -1025,16 +1025,16 @@ export default function InventoryTab() {
 
       {/* Expanded options panel (Vista + Import/Export) — collapsible from toolbar "Mas" button */}
       {showFilters && (
-        <div className="bg-gray-50 dark:bg-surface rounded-xl p-3 border border-gray-100 dark:border-card-border space-y-3">
+        <div className="bg-gray-50 dark:bg-surface rounded-xl p-3 border border-[var(--rule-soft)] dark:border-card-border space-y-3">
           {/* Grupo: Vista */}
           <div>
-            <p className="text-[10px] font-bold text-gray-400 dark:text-muted mb-2">Vista</p>
+            <p className="text-[length:var(--ts-2xs)] font-bold text-gray-400 dark:text-muted mb-2">Vista</p>
             <div className="flex flex-wrap gap-2">
               <button
                 onClick={() => { const next = !showExtendedCols; setShowExtendedCols(next); try { localStorage.setItem("inv-extended-cols", String(next)); } catch {} }}
                 className={cn(
                   "flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-bold border transition-colors",
-                  showExtendedCols ? "border-emerald-300 bg-emerald-50 text-emerald-700 dark:border-emerald-700 dark:bg-emerald-950/20 dark:text-emerald-400" : "border-gray-200 dark:border-card-border text-gray-500 dark:text-muted hover:bg-white dark:hover:bg-card"
+                  showExtendedCols ? "border-emerald-300 bg-emerald-50 text-emerald-700 dark:border-emerald-700 dark:bg-emerald-950/20 dark:text-emerald-400" : "border-[var(--rule-base)] dark:border-card-border text-gray-500 dark:text-muted hover:bg-white dark:hover:bg-card"
                 )}
               >
                 <Layers className="h-3.5 w-3.5" /> {showExtendedCols ? "Menos columnas" : "Mas columnas"}
@@ -1058,7 +1058,7 @@ export default function InventoryTab() {
 
           {/* Grupo: Importar / Exportar */}
           <div>
-            <p className="text-[10px] font-bold text-gray-400 dark:text-muted mb-2">Importar / Exportar</p>
+            <p className="text-[length:var(--ts-2xs)] font-bold text-gray-400 dark:text-muted mb-2">Importar / Exportar</p>
             <div className="flex flex-wrap gap-2">
               <button
                 onClick={() => {
@@ -1074,7 +1074,7 @@ export default function InventoryTab() {
                     unidad: p.unit, codigo: p.barcode ?? "", activo: p.active ? "Si" : "No",
                   })), `inventario_${new Date().toISOString().slice(0, 10)}.csv`);
                 }}
-                className="flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-bold border border-gray-200 dark:border-card-border text-gray-500 dark:text-muted hover:bg-white dark:hover:bg-card transition-colors"
+                className="flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-bold border border-[var(--rule-base)] dark:border-card-border text-gray-500 dark:text-muted hover:bg-white dark:hover:bg-card transition-colors"
               >
                 <Download className="h-3.5 w-3.5" /> CSV
               </button>
@@ -1111,7 +1111,7 @@ export default function InventoryTab() {
 
       {/* Contador de resultados filtrados */}
       {filteredProducts.length !== products.length && (
-        <p className="text-[10px] text-gray-400">Mostrando {filteredProducts.length} de {products.length} productos</p>
+        <p className="text-[length:var(--ts-2xs)] text-gray-400">Mostrando {filteredProducts.length} de {products.length} productos</p>
       )}
 
       {/* Content */}
@@ -1163,7 +1163,7 @@ export default function InventoryTab() {
                   className={cn(
                     "bg-white dark:bg-card border rounded-xl p-4  transition-all relative",
                     !p.active && "opacity-60 bg-gray-50 dark:bg-gray-900",
-                    lowStock ? "border-amber-300" : "border-gray-200 dark:border-card-border"
+                    lowStock ? "border-amber-300" : "border-[var(--rule-base)] dark:border-card-border"
                   )}
                 >
                   {!p.active && (
@@ -1173,7 +1173,7 @@ export default function InventoryTab() {
                   )}
                   <div className="flex flex-wrap items-start gap-3">
                     {p.image ? (
-                      <Image src={p.image} alt={p.name} width={56} height={56} unoptimized={p.image.startsWith("data:")} className="rounded-xl object-cover border border-gray-100 dark:border-card-border shrink-0 bg-gray-50 dark:bg-surface" />
+                      <Image src={p.image} alt={p.name} width={56} height={56} unoptimized={p.image.startsWith("data:")} className="rounded-xl object-cover border border-[var(--rule-soft)] dark:border-card-border shrink-0 bg-gray-50 dark:bg-surface" />
                     ) : (
                       <div className="h-14 w-14 rounded-xl bg-primary/10 flex items-center justify-center shrink-0">
                         <Package className="h-6 w-6 text-primary/40" />
@@ -1194,18 +1194,18 @@ export default function InventoryTab() {
                       </div>
                     </div>
                     <div className="flex flex-col gap-1.5 shrink-0">
-                      <button onClick={() => openEditModal(p)} className="p-2 rounded-lg bg-gray-50 dark:bg-surface text-gray-500 dark:text-muted hover:bg-primary/10 hover:text-primary transition-colors border border-gray-100 dark:border-card-border" title="Editar">
+                      <button onClick={() => openEditModal(p)} className="p-2 rounded-lg bg-gray-50 dark:bg-surface text-gray-500 dark:text-muted hover:bg-primary/10 hover:text-primary transition-colors border border-[var(--rule-soft)] dark:border-card-border" title="Editar">
                         <Pencil className="h-4 w-4" />
                       </button>
-                      <button onClick={() => deleteProduct(p.id)} className="p-2 rounded-lg bg-gray-50 dark:bg-surface text-gray-500 dark:text-muted hover:bg-red-50 hover:text-red-500 transition-colors border border-gray-100 dark:border-card-border" title="Eliminar">
+                      <button onClick={() => deleteProduct(p.id)} className="p-2 rounded-lg bg-gray-50 dark:bg-surface text-gray-500 dark:text-muted hover:bg-red-50 hover:text-red-500 transition-colors border border-[var(--rule-soft)] dark:border-card-border" title="Eliminar">
                         <Trash2 className="h-4 w-4" />
                       </button>
-                      <button onClick={() => setKardexProduct({ id: p.id, name: p.name })} className="p-2 rounded-lg bg-gray-50 dark:bg-surface text-gray-500 dark:text-muted hover:bg-emerald-50 hover:text-emerald-600 transition-colors border border-gray-100 dark:border-card-border" title="Ver Kardex">
+                      <button onClick={() => setKardexProduct({ id: p.id, name: p.name })} className="p-2 rounded-lg bg-gray-50 dark:bg-surface text-gray-500 dark:text-muted hover:bg-emerald-50 hover:text-emerald-600 transition-colors border border-[var(--rule-soft)] dark:border-card-border" title="Ver Kardex">
                         <BookOpen className="h-4 w-4" />
                       </button>
                     </div>
                   </div>
-                  <div className="flex items-center gap-2 flex-wrap mt-3 pt-3 border-t border-gray-100 dark:border-card-border">
+                  <div className="flex items-center gap-2 flex-wrap mt-3 pt-3 border-t border-[var(--rule-soft)] dark:border-card-border">
                     <button
                       onClick={() => toggleActive(p)}
                       className={cn(
@@ -1244,13 +1244,13 @@ export default function InventoryTab() {
           </div>
 
           {/* Desktop table — UX Mejora 18: Sticky header */}
-          <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl overflow-hidden  hidden sm:block">
+          <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl overflow-hidden  hidden sm:block">
             <div className="max-h-[65vh] overflow-y-auto overflow-x-auto">
               <table className="w-full min-w-[600px] text-sm">
-                <thead className="sticky top-0 bg-white dark:bg-card z-10 shadow-[0_1px_0_0_rgba(0,0,0,0.05)]">
-                  <tr className="border-b border-gray-100 dark:border-card-border text-left">
+                <thead className="sticky top-0 bg-white dark:bg-card z-10 shadow-[var(--shadow-sm)]">
+                  <tr className="border-b border-[var(--rule-soft)] dark:border-card-border text-left">
                     <th className="px-3 py-3 w-10">
-                      <input type="checkbox" checked={filteredProducts.length > 0 && selectedIds.size === filteredProducts.length} onChange={toggleSelectAll} className="rounded border-gray-300 text-primary focus:ring-primary" />
+                      <input type="checkbox" checked={filteredProducts.length > 0 && selectedIds.size === filteredProducts.length} onChange={toggleSelectAll} className="rounded border-[var(--rule-base)] text-primary focus:ring-primary" />
                     </th>
                     <th className="px-2 sm:px-4 py-2 sm:py-3 text-xs font-bold text-gray-500 dark:text-muted w-12">Img</th>
                     <th className="px-2 sm:px-4 py-2 sm:py-3 text-xs font-bold text-gray-500 dark:text-muted">Producto</th>
@@ -1283,7 +1283,7 @@ export default function InventoryTab() {
                         }}
                       >
                         <td className="px-3 py-3">
-                          <input type="checkbox" checked={selectedIds.has(p.id)} onChange={() => toggleSelect(p.id)} className="rounded border-gray-300 text-primary focus:ring-primary" />
+                          <input type="checkbox" checked={selectedIds.has(p.id)} onChange={() => toggleSelect(p.id)} className="rounded border-[var(--rule-base)] text-primary focus:ring-primary" />
                         </td>
                         <td className="px-2 sm:px-4 py-2 sm:py-3">
                           {p.image ? (
@@ -1358,9 +1358,9 @@ export default function InventoryTab() {
                           {(() => {
                             const spw = computeSalesPerWeek(p.id, movements);
                             const info = getRotationInfo(spw, p.stock ?? 0);
-                            if (!info) return <span className="text-[10px] text-gray-400 dark:text-muted">Normal</span>;
+                            if (!info) return <span className="text-[length:var(--ts-2xs)] text-gray-400 dark:text-muted">Normal</span>;
                             return (
-                              <span className={cn("inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold", info.className)}>
+                              <span className={cn("inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[length:var(--ts-2xs)] font-bold", info.className)}>
                                 {info.level === "rapido" && <TrendingUp className="h-2.5 w-2.5" />}
                                 {info.label}
                               </span>
@@ -1424,7 +1424,7 @@ export default function InventoryTab() {
                               <Trash2 className="h-4 w-4" />
                             </button>
                             {/* Mejora 6 nueva: QR */}
-                            <button onClick={() => setShowQRProduct(p)} className="p-1.5 rounded-lg text-gray-400 dark:text-muted hover:text-violet-500 hover:bg-violet-50 transition-colors" title="QR">
+                            <button onClick={() => setShowQRProduct(p)} className="p-1.5 rounded-lg text-gray-400 dark:text-muted hover:text-[var(--text-primary)] hover:bg-[var(--surface-sunken)] transition-colors" title="QR">
                               <ScanBarcode className="h-4 w-4" />
                             </button>
                             {/* Mejora 5 nueva: Auto-reorden toggle */}
@@ -1489,11 +1489,11 @@ export default function InventoryTab() {
                       {items.length === 0 ? (
                         <p className="text-xs text-gray-400 dark:text-muted text-center py-4">Sin productos</p>
                       ) : items.map(p => (
-                        <div key={p.id} className="bg-white dark:bg-card rounded-lg p-2.5  border border-gray-100 dark:border-border cursor-pointer hover:shadow-sm transition-shadow"
+                        <div key={p.id} className="bg-white dark:bg-card rounded-lg p-2.5  border border-[var(--rule-soft)] dark:border-border cursor-pointer hover:shadow-sm transition-shadow"
                           onClick={() => { setEditModalProduct(p); }}>
                           <p className="text-xs font-bold text-gray-800 dark:text-foreground truncate">{p.name}</p>
                           <div className="flex items-center justify-between mt-1">
-                            <span className="text-[10px] text-gray-500 dark:text-muted">{p.category}</span>
+                            <span className="text-[length:var(--ts-2xs)] text-gray-500 dark:text-muted">{p.category}</span>
                             <span className="text-xs font-bold">{p.stock ?? 0} uds</span>
                           </div>
                         </div>
@@ -1545,14 +1545,14 @@ export default function InventoryTab() {
                     value={pickerSearch}
                     onChange={e => setPickerSearch(e.target.value)}
                     placeholder="Buscar producto..."
-                    className="w-full pl-10 pr-4 py-2 rounded-lg border border-gray-200 dark:border-card-border text-sm outline-none focus:border-primary"
+                    className="w-full pl-10 pr-4 py-2 rounded-lg border border-[var(--rule-base)] dark:border-card-border text-sm outline-none focus:border-primary"
                     autoFocus
                   />
                 </div>
                 <select
                   value={pickerCat}
                   onChange={e => setPickerCat(e.target.value)}
-                  className="px-3 py-2 rounded-lg border border-gray-200 dark:border-card-border text-sm outline-none"
+                  className="px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-card-border text-sm outline-none"
                 >
                   <option value="todos">Todos</option>
                   {realCategories.map(c => (
@@ -1577,7 +1577,7 @@ export default function InventoryTab() {
                           setEditModalProduct(p);
                           setEditForm({ ...p });
                         }}
-                        className="flex flex-col items-center gap-2 p-3 rounded-xl border border-gray-200 dark:border-card-border hover:border-primary hover:shadow-sm transition-all text-center group"
+                        className="flex flex-col items-center gap-2 p-3 rounded-xl border border-[var(--rule-base)] dark:border-card-border hover:border-primary hover:shadow-sm transition-all text-center group"
                       >
                         <div className="w-16 h-16 rounded-lg bg-gray-100 dark:bg-accent overflow-hidden flex-shrink-0">
                           {p.image ? (
@@ -1589,10 +1589,10 @@ export default function InventoryTab() {
                           )}
                         </div>
                         <span className="text-xs font-bold text-gray-800 dark:text-foreground line-clamp-2 group-hover:text-primary transition-colors">{p.name}</span>
-                        <span className="text-[11px] text-gray-500 dark:text-muted">{fmt(p.price)}</span>
+                        <span className="text-[length:var(--ts-xs)] text-gray-500 dark:text-muted">{fmt(p.price)}</span>
                         {p.stock != null && (
                           <span className={cn(
-                            "text-[10px] font-bold px-2 py-0.5 rounded-full",
+                            "text-[length:var(--ts-2xs)] font-bold px-2 py-0.5 rounded-full",
                             (p.stock ?? 0) === 0 ? "bg-red-100 text-red-700" : (p.stock ?? 0) <= (p.stockMin ?? 5) ? "bg-amber-100 text-amber-700" : "bg-emerald-100 text-emerald-700"
                           )}>
                             Stock: {p.stock}
@@ -1651,7 +1651,7 @@ export default function InventoryTab() {
                         className="w-full text-left px-3 py-2.5 hover:bg-emerald-50 flex flex-wrap items-center gap-3 transition-colors border-b border-gray-50 last:border-0"
                       >
                         {r.image && (
-                          <Image src={r.image} alt={r.name} width={40} height={40} className="rounded-lg object-cover border border-gray-100 dark:border-card-border shrink-0 bg-gray-50 dark:bg-surface" />
+                          <Image src={r.image} alt={r.name} width={40} height={40} className="rounded-lg object-cover border border-[var(--rule-soft)] dark:border-card-border shrink-0 bg-gray-50 dark:bg-surface" />
                         )}
                         <div className="flex-1 min-w-0">
                           <p className="text-sm font-semibold text-gray-900 dark:text-foreground truncate">{r.name}</p>
@@ -1665,53 +1665,53 @@ export default function InventoryTab() {
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-4">
                 <div>
                   <label className="block text-xs font-semibold text-gray-500 dark:text-muted mb-1">Nombre *</label>
-                  <input required value={addForm.name} onChange={(e) => setAddForm(f => ({ ...f, name: e.target.value }))} placeholder="Arroz costeño 1kg" className="w-full px-3 py-2 rounded-lg border border-gray-200 dark:border-card-border text-gray-900 dark:text-foreground focus:border-primary outline-none text-sm" />
+                  <input required value={addForm.name} onChange={(e) => setAddForm(f => ({ ...f, name: e.target.value }))} placeholder="Arroz costeño 1kg" className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-card-border text-gray-900 dark:text-foreground focus:border-primary outline-none text-sm" />
                 </div>
                 <div>
                   <label className="block text-xs font-semibold text-gray-500 dark:text-muted mb-1">Categoría *</label>
-                  <select value={addForm.category} onChange={(e) => setAddForm(f => ({ ...f, category: e.target.value }))} className="w-full px-3 py-2 rounded-lg border border-gray-200 dark:border-card-border text-gray-900 dark:text-foreground focus:border-primary outline-none text-sm">
+                  <select value={addForm.category} onChange={(e) => setAddForm(f => ({ ...f, category: e.target.value }))} className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-card-border text-gray-900 dark:text-foreground focus:border-primary outline-none text-sm">
                     {realCategories.map((c) => <option key={c.id} value={c.id}>{c.label}</option>)}
                   </select>
                 </div>
                 <div>
                   <label className="block text-xs font-semibold text-gray-500 dark:text-muted mb-1">Precio de venta (S/) *</label>
-                  <input required type="number" step="0.01" min="0" value={addForm.price} onChange={(e) => setAddForm(f => ({ ...f, price: e.target.value }))} placeholder="5.50" className="w-full px-3 py-2 rounded-lg border border-gray-200 dark:border-card-border text-gray-900 dark:text-foreground focus:border-primary outline-none text-sm" />
+                  <input required type="number" step="0.01" min="0" value={addForm.price} onChange={(e) => setAddForm(f => ({ ...f, price: e.target.value }))} placeholder="5.50" className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-card-border text-gray-900 dark:text-foreground focus:border-primary outline-none text-sm" />
                 </div>
                 <div>
                   <label className="block text-xs font-semibold text-gray-500 dark:text-muted mb-1">Precio de costo (S/)</label>
-                  <input type="number" step="0.01" min="0" value={addForm.costPrice} onChange={(e) => setAddForm(f => ({ ...f, costPrice: e.target.value }))} placeholder="3.50" className="w-full px-3 py-2 rounded-lg border border-gray-200 dark:border-card-border text-gray-900 dark:text-foreground focus:border-primary outline-none text-sm" />
+                  <input type="number" step="0.01" min="0" value={addForm.costPrice} onChange={(e) => setAddForm(f => ({ ...f, costPrice: e.target.value }))} placeholder="3.50" className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-card-border text-gray-900 dark:text-foreground focus:border-primary outline-none text-sm" />
                 </div>
                 <div>
                   <label className="block text-xs font-semibold text-gray-500 dark:text-muted mb-1">Unidad</label>
-                  <input value={addForm.unit} onChange={(e) => setAddForm(f => ({ ...f, unit: e.target.value }))} placeholder="kg, und, bolsa…" className="w-full px-3 py-2 rounded-lg border border-gray-200 dark:border-card-border text-gray-900 dark:text-foreground focus:border-primary outline-none text-sm" />
+                  <input value={addForm.unit} onChange={(e) => setAddForm(f => ({ ...f, unit: e.target.value }))} placeholder="kg, und, bolsa…" className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-card-border text-gray-900 dark:text-foreground focus:border-primary outline-none text-sm" />
                 </div>
                 <div>
                   <label className="block text-xs font-semibold text-gray-500 dark:text-muted mb-1">Badge</label>
-                  <select value={addForm.badge} onChange={(e) => setAddForm(f => ({ ...f, badge: e.target.value }))} className="w-full px-3 py-2 rounded-lg border border-gray-200 dark:border-card-border text-gray-900 dark:text-foreground focus:border-primary outline-none text-sm">
+                  <select value={addForm.badge} onChange={(e) => setAddForm(f => ({ ...f, badge: e.target.value }))} className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-card-border text-gray-900 dark:text-foreground focus:border-primary outline-none text-sm">
                     <option value="">Sin badge</option>
                     {["Oferta", "Popular", "Fresco", "Premium"].map((b) => <option key={b} value={b}>{b}</option>)}
                   </select>
                 </div>
                 <div>
                   <label className="block text-xs font-semibold text-gray-500 dark:text-muted mb-1">Stock actual</label>
-                  <input type="number" min="0" value={addForm.stock} onChange={(e) => setAddForm(f => ({ ...f, stock: e.target.value }))} placeholder="0" className="w-full px-3 py-2 rounded-lg border border-gray-200 dark:border-card-border text-gray-900 dark:text-foreground focus:border-primary outline-none text-sm" />
+                  <input type="number" min="0" value={addForm.stock} onChange={(e) => setAddForm(f => ({ ...f, stock: e.target.value }))} placeholder="0" className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-card-border text-gray-900 dark:text-foreground focus:border-primary outline-none text-sm" />
                 </div>
                 <div>
                   <label className="block text-xs font-semibold text-gray-500 dark:text-muted mb-1" title="Cantidad mínima antes de generar alerta de stock bajo">Stock mínimo</label>
-                  <input type="number" min="0" value={addForm.stockMin} onChange={(e) => setAddForm(f => ({ ...f, stockMin: e.target.value }))} placeholder="5" className="w-full px-3 py-2 rounded-lg border border-gray-200 dark:border-card-border text-gray-900 dark:text-foreground focus:border-primary outline-none text-sm" />
+                  <input type="number" min="0" value={addForm.stockMin} onChange={(e) => setAddForm(f => ({ ...f, stockMin: e.target.value }))} placeholder="5" className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-card-border text-gray-900 dark:text-foreground focus:border-primary outline-none text-sm" />
                 </div>
                 <div>
                   <label className="block text-xs font-semibold text-gray-500 dark:text-muted mb-1">Stock máximo</label>
-                  <input type="number" min="0" value={addForm.stockMax} onChange={(e) => setAddForm(f => ({ ...f, stockMax: e.target.value }))} placeholder="100" className="w-full px-3 py-2 rounded-lg border border-gray-200 dark:border-card-border text-gray-900 dark:text-foreground focus:border-primary outline-none text-sm" />
+                  <input type="number" min="0" value={addForm.stockMax} onChange={(e) => setAddForm(f => ({ ...f, stockMax: e.target.value }))} placeholder="100" className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-card-border text-gray-900 dark:text-foreground focus:border-primary outline-none text-sm" />
                 </div>
                 <div>
                   <label className="block text-xs font-semibold text-gray-500 dark:text-muted mb-1">Fecha de vencimiento</label>
-                  <input type="date" value={addForm.expiryDate} onChange={(e) => setAddForm(f => ({ ...f, expiryDate: e.target.value }))} className="w-full px-3 py-2 rounded-lg border border-gray-200 dark:border-card-border text-gray-900 dark:text-foreground focus:border-primary outline-none text-sm" />
+                  <input type="date" value={addForm.expiryDate} onChange={(e) => setAddForm(f => ({ ...f, expiryDate: e.target.value }))} className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-card-border text-gray-900 dark:text-foreground focus:border-primary outline-none text-sm" />
                 </div>
                 <div>
                   <label className="block text-xs font-semibold text-gray-500 dark:text-muted mb-1">Código de barras</label>
                   <div className="flex flex-wrap gap-2">
-                    <input value={addForm.barcode} onChange={(e) => setAddForm(f => ({ ...f, barcode: e.target.value }))} placeholder="7750000000000" className="flex-1 px-3 py-2 rounded-lg border border-gray-200 dark:border-card-border text-gray-900 dark:text-foreground focus:border-primary outline-none text-sm font-mono" />
+                    <input value={addForm.barcode} onChange={(e) => setAddForm(f => ({ ...f, barcode: e.target.value }))} placeholder="7750000000000" className="flex-1 px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-card-border text-gray-900 dark:text-foreground focus:border-primary outline-none text-sm font-mono" />
                     <button type="button" onClick={() => setShowScanner(true)} className="px-3 py-2 rounded-lg border border-primary/30 text-primary hover:bg-primary/5 transition-colors">
                       <ScanBarcode className="h-4 w-4" />
                     </button>
@@ -1720,31 +1720,31 @@ export default function InventoryTab() {
               </div>
 
               {/* IMPROVEMENT 3: Variant Management */}
-              <div className="bg-purple-50 dark:bg-purple-950/20 border border-purple-200 dark:border-purple-800 rounded-xl p-4 space-y-3">
+              <div className="bg-[var(--surface-sunken)] border border-[var(--rule-base)] rounded-xl p-4 space-y-3">
                 <div className="flex items-center justify-between">
                   <div className="flex flex-wrap items-center gap-2">
-                    <Layers className="h-4 w-4 text-purple-600 dark:text-purple-400" />
-                    <p className="text-sm font-bold text-purple-900 dark:text-purple-100">Gestionar variantes / presentaciones</p>
+                    <Layers className="h-4 w-4 text-[var(--text-secondary)] dark:text-[var(--text-primary)]" />
+                    <p className="text-sm font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)]">Gestionar variantes / presentaciones</p>
                   </div>
                   <button
                     type="button"
                     onClick={() => setAddForm(f => ({ ...f, isVariant: !f.isVariant }))}
                     className={cn(
                       "relative inline-flex h-5 w-9 shrink-0 rounded-full border-2 border-transparent transition-colors cursor-pointer",
-                      addForm.isVariant ? "bg-purple-500" : "bg-gray-200"
+                      addForm.isVariant ? "bg-[var(--text-primary)]" : "bg-gray-200"
                     )}
                   >
                     <span className={cn("inline-block h-4 w-4 rounded-full bg-white shadow transition-transform", addForm.isVariant ? "translate-x-4" : "translate-x-0")} />
                   </button>
                 </div>
                 {addForm.isVariant && (
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2 border-t border-purple-200 dark:border-purple-800">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2 border-t border-[var(--rule-base)]">
                     <div>
-                      <label className="block text-xs font-semibold text-purple-700 dark:text-purple-300 mb-1">Variante de (producto padre)</label>
+                      <label className="block text-xs font-semibold text-[var(--text-secondary)] dark:text-[var(--text-primary)] mb-1">Variante de (producto padre)</label>
                       <select
                         value={addForm.variantOf}
                         onChange={(e) => setAddForm(f => ({ ...f, variantOf: e.target.value }))}
-                        className="w-full px-3 py-2 rounded-lg border border-purple-200 dark:border-purple-700 bg-white dark:bg-card text-gray-900 dark:text-foreground focus:border-purple-400 outline-none text-sm"
+                        className="w-full px-3 py-2 rounded-lg border border-purple-200 dark:border-purple-700 bg-white dark:bg-card text-gray-900 dark:text-foreground focus:border-[var(--text-primary)] outline-none text-sm"
                       >
                         <option value="">Ninguno (es producto padre)</option>
                         {products.filter(p => p.active).map(p => (
@@ -1753,12 +1753,12 @@ export default function InventoryTab() {
                       </select>
                     </div>
                     <div>
-                      <label className="block text-xs font-semibold text-purple-700 dark:text-purple-300 mb-1">Atributo de variante</label>
+                      <label className="block text-xs font-semibold text-[var(--text-secondary)] dark:text-[var(--text-primary)] mb-1">Atributo de variante</label>
                       <input
                         value={addForm.variantAttr}
                         onChange={(e) => setAddForm(f => ({ ...f, variantAttr: e.target.value }))}
                         placeholder="Ej: 500ml, 1L, pack 6 unid"
-                        className="w-full px-3 py-2 rounded-lg border border-purple-200 dark:border-purple-700 bg-white dark:bg-card text-gray-900 dark:text-foreground focus:border-purple-400 outline-none text-sm"
+                        className="w-full px-3 py-2 rounded-lg border border-purple-200 dark:border-purple-700 bg-white dark:bg-card text-gray-900 dark:text-foreground focus:border-[var(--text-primary)] outline-none text-sm"
                       />
                     </div>
                   </div>
@@ -1770,7 +1770,7 @@ export default function InventoryTab() {
                   <label className="block text-xs font-semibold text-gray-500 dark:text-muted mb-1">Imagen del producto</label>
                   <div className="flex flex-wrap gap-3 items-start">
                     {addForm.image && (
-                      <div className="relative h-16 w-16 rounded-xl overflow-hidden border border-gray-200 dark:border-card-border shrink-0 bg-gray-50 dark:bg-surface">
+                      <div className="relative h-16 w-16 rounded-xl overflow-hidden border border-[var(--rule-base)] dark:border-card-border shrink-0 bg-gray-50 dark:bg-surface">
                         <Image src={addForm.image} alt="preview" fill unoptimized={addForm.image.startsWith("data:")} className="object-cover" sizes="64px" />
                       </div>
                     )}
@@ -1788,7 +1788,7 @@ export default function InventoryTab() {
                         value={addForm.image}
                         onChange={(e) => setAddForm(f => ({ ...f, image: e.target.value }))}
                         placeholder="o pegar URL de imagen"
-                        className="w-full px-3 py-2 rounded-lg border border-gray-200 dark:border-card-border text-gray-900 dark:text-foreground focus:border-primary outline-none text-sm"
+                        className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-card-border text-gray-900 dark:text-foreground focus:border-primary outline-none text-sm"
                       />
                       <input
                         ref={addImgRef}
@@ -1813,7 +1813,7 @@ export default function InventoryTab() {
                 </div>
               </div>
               <div className="flex flex-wrap gap-3 pt-1">
-                <button type="button" onClick={() => setShowAdd(false)} className="flex-1 py-2.5 rounded-lg border border-gray-200 dark:border-card-border text-sm font-semibold text-gray-600 dark:text-muted hover:bg-gray-50 dark:hover:bg-surface transition-colors">Cancelar</button>
+                <button type="button" onClick={() => setShowAdd(false)} className="flex-1 py-2.5 rounded-lg border border-[var(--rule-base)] dark:border-card-border text-sm font-semibold text-gray-600 dark:text-muted hover:bg-gray-50 dark:hover:bg-surface transition-colors">Cancelar</button>
                 <button type="submit" disabled={saving} className="flex-1 py-2.5 rounded-lg bg-primary text-white text-sm font-bold hover:bg-primary-dark transition-colors disabled:opacity-60">
                   {saving ? "Guardando…" : "Agregar producto"}
                 </button>
@@ -1837,52 +1837,52 @@ export default function InventoryTab() {
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-4">
                 <div>
                   <label className="block text-xs font-semibold text-gray-500 dark:text-muted mb-1">Nombre *</label>
-                  <input required value={editForm.name ?? ""} onChange={(e) => setEditForm(f => ({ ...f, name: e.target.value }))} className="w-full px-3 py-2 rounded-lg border border-gray-200 dark:border-card-border text-gray-900 dark:text-foreground focus:border-primary outline-none text-sm" />
+                  <input required value={editForm.name ?? ""} onChange={(e) => setEditForm(f => ({ ...f, name: e.target.value }))} className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-card-border text-gray-900 dark:text-foreground focus:border-primary outline-none text-sm" />
                 </div>
                 <div>
                   <label className="block text-xs font-semibold text-gray-500 dark:text-muted mb-1">Categoría</label>
-                  <select value={editForm.category ?? ""} onChange={(e) => setEditForm(f => ({ ...f, category: e.target.value }))} className="w-full px-3 py-2 rounded-lg border border-gray-200 dark:border-card-border text-gray-900 dark:text-foreground focus:border-primary outline-none text-sm">
+                  <select value={editForm.category ?? ""} onChange={(e) => setEditForm(f => ({ ...f, category: e.target.value }))} className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-card-border text-gray-900 dark:text-foreground focus:border-primary outline-none text-sm">
                     {realCategories.map((c) => <option key={c.id} value={c.id}>{c.label}</option>)}
                   </select>
                 </div>
                 <div>
                   <label className="block text-xs font-semibold text-gray-500 dark:text-muted mb-1">Precio de venta (S/)</label>
-                  <input type="number" step="0.01" min="0" value={editForm.price ?? ""} onChange={(e) => setEditForm(f => ({ ...f, price: Number(e.target.value) }))} className="w-full px-3 py-2 rounded-lg border border-gray-200 dark:border-card-border text-gray-900 dark:text-foreground focus:border-primary outline-none text-sm" />
+                  <input type="number" step="0.01" min="0" value={editForm.price ?? ""} onChange={(e) => setEditForm(f => ({ ...f, price: Number(e.target.value) }))} className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-card-border text-gray-900 dark:text-foreground focus:border-primary outline-none text-sm" />
                 </div>
                 <div>
                   <label className="block text-xs font-semibold text-gray-500 dark:text-muted mb-1">Precio de costo (S/)</label>
-                  <input type="number" step="0.01" min="0" value={editForm.costPrice ?? ""} onChange={(e) => setEditForm(f => ({ ...f, costPrice: Number(e.target.value) || undefined }))} className="w-full px-3 py-2 rounded-lg border border-gray-200 dark:border-card-border text-gray-900 dark:text-foreground focus:border-primary outline-none text-sm" />
+                  <input type="number" step="0.01" min="0" value={editForm.costPrice ?? ""} onChange={(e) => setEditForm(f => ({ ...f, costPrice: Number(e.target.value) || undefined }))} className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-card-border text-gray-900 dark:text-foreground focus:border-primary outline-none text-sm" />
                 </div>
                 <div>
                   <label className="block text-xs font-semibold text-gray-500 dark:text-muted mb-1">Unidad</label>
-                  <input value={editForm.unit ?? ""} onChange={(e) => setEditForm(f => ({ ...f, unit: e.target.value }))} className="w-full px-3 py-2 rounded-lg border border-gray-200 dark:border-card-border text-gray-900 dark:text-foreground focus:border-primary outline-none text-sm" />
+                  <input value={editForm.unit ?? ""} onChange={(e) => setEditForm(f => ({ ...f, unit: e.target.value }))} className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-card-border text-gray-900 dark:text-foreground focus:border-primary outline-none text-sm" />
                 </div>
                 <div>
                   <label className="block text-xs font-semibold text-gray-500 dark:text-muted mb-1">Badge</label>
-                  <select value={editForm.badge ?? ""} onChange={(e) => setEditForm(f => ({ ...f, badge: e.target.value || undefined }))} className="w-full px-3 py-2 rounded-lg border border-gray-200 dark:border-card-border text-gray-900 dark:text-foreground focus:border-primary outline-none text-sm">
+                  <select value={editForm.badge ?? ""} onChange={(e) => setEditForm(f => ({ ...f, badge: e.target.value || undefined }))} className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-card-border text-gray-900 dark:text-foreground focus:border-primary outline-none text-sm">
                     <option value="">Sin badge</option>
                     {["Oferta", "Popular", "Fresco", "Premium"].map((b) => <option key={b} value={b}>{b}</option>)}
                   </select>
                 </div>
                 <div>
                   <label className="block text-xs font-semibold text-gray-500 dark:text-muted mb-1">Stock actual</label>
-                  <input type="number" min="0" value={editForm.stock ?? ""} onChange={(e) => setEditForm(f => ({ ...f, stock: e.target.value !== "" ? Number(e.target.value) : undefined }))} className="w-full px-3 py-2 rounded-lg border border-gray-200 dark:border-card-border text-gray-900 dark:text-foreground focus:border-primary outline-none text-sm" />
+                  <input type="number" min="0" value={editForm.stock ?? ""} onChange={(e) => setEditForm(f => ({ ...f, stock: e.target.value !== "" ? Number(e.target.value) : undefined }))} className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-card-border text-gray-900 dark:text-foreground focus:border-primary outline-none text-sm" />
                 </div>
                 <div>
                   <label className="block text-xs font-semibold text-gray-500 dark:text-muted mb-1" title="Cantidad mínima antes de generar alerta de stock bajo">Stock mínimo</label>
-                  <input type="number" min="0" value={editForm.stockMin ?? ""} onChange={(e) => setEditForm(f => ({ ...f, stockMin: e.target.value !== "" ? Number(e.target.value) : undefined }))} className="w-full px-3 py-2 rounded-lg border border-gray-200 dark:border-card-border text-gray-900 dark:text-foreground focus:border-primary outline-none text-sm" />
+                  <input type="number" min="0" value={editForm.stockMin ?? ""} onChange={(e) => setEditForm(f => ({ ...f, stockMin: e.target.value !== "" ? Number(e.target.value) : undefined }))} className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-card-border text-gray-900 dark:text-foreground focus:border-primary outline-none text-sm" />
                 </div>
                 <div>
                   <label className="block text-xs font-semibold text-gray-500 dark:text-muted mb-1">Stock máximo</label>
-                  <input type="number" min="0" value={editForm.stockMax ?? ""} onChange={(e) => setEditForm(f => ({ ...f, stockMax: e.target.value !== "" ? Number(e.target.value) : undefined }))} className="w-full px-3 py-2 rounded-lg border border-gray-200 dark:border-card-border text-gray-900 dark:text-foreground focus:border-primary outline-none text-sm" />
+                  <input type="number" min="0" value={editForm.stockMax ?? ""} onChange={(e) => setEditForm(f => ({ ...f, stockMax: e.target.value !== "" ? Number(e.target.value) : undefined }))} className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-card-border text-gray-900 dark:text-foreground focus:border-primary outline-none text-sm" />
                 </div>
                 <div>
                   <label className="block text-xs font-semibold text-gray-500 dark:text-muted mb-1">Fecha de vencimiento</label>
-                  <input type="date" value={editForm.expiryDate ?? ""} onChange={(e) => setEditForm(f => ({ ...f, expiryDate: e.target.value || undefined }))} className="w-full px-3 py-2 rounded-lg border border-gray-200 dark:border-card-border text-gray-900 dark:text-foreground focus:border-primary outline-none text-sm" />
+                  <input type="date" value={editForm.expiryDate ?? ""} onChange={(e) => setEditForm(f => ({ ...f, expiryDate: e.target.value || undefined }))} className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-card-border text-gray-900 dark:text-foreground focus:border-primary outline-none text-sm" />
                 </div>
                 <div>
                   <label className="block text-xs font-semibold text-gray-500 dark:text-muted mb-1">Código de barras</label>
-                  <input value={editForm.barcode ?? ""} onChange={(e) => setEditForm(f => ({ ...f, barcode: e.target.value || undefined }))} className="w-full px-3 py-2 rounded-lg border border-gray-200 dark:border-card-border text-gray-900 dark:text-foreground focus:border-primary outline-none text-sm font-mono" />
+                  <input value={editForm.barcode ?? ""} onChange={(e) => setEditForm(f => ({ ...f, barcode: e.target.value || undefined }))} className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-card-border text-gray-900 dark:text-foreground focus:border-primary outline-none text-sm font-mono" />
                 </div>
                 <div className="sm:col-span-2">
                   <label className="block text-xs font-semibold text-gray-500 dark:text-muted mb-1">Descripción del producto</label>
@@ -1891,37 +1891,37 @@ export default function InventoryTab() {
                     value={editForm.description ?? ""}
                     onChange={(e) => setEditForm(f => ({ ...f, description: e.target.value || undefined }))}
                     placeholder="Ej: Aceite de girasol puro, ideal para frituras ligeras. Botella de 1 litro."
-                    className="w-full px-3 py-2 rounded-lg border border-gray-200 dark:border-card-border text-gray-900 dark:text-foreground focus:border-primary outline-none text-sm resize-none"
+                    className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-card-border text-gray-900 dark:text-foreground focus:border-primary outline-none text-sm resize-none"
                   />
                 </div>
               </div>
 
               {/* IMPROVEMENT 3: Variant Management in Edit */}
-              <div className="bg-purple-50 dark:bg-purple-950/20 border border-purple-200 dark:border-purple-800 rounded-xl p-4 space-y-3">
+              <div className="bg-[var(--surface-sunken)] border border-[var(--rule-base)] rounded-xl p-4 space-y-3">
                 <div className="flex items-center justify-between">
                   <div className="flex flex-wrap items-center gap-2">
-                    <Layers className="h-4 w-4 text-purple-600 dark:text-purple-400" />
-                    <p className="text-sm font-bold text-purple-900 dark:text-purple-100">Gestionar variantes / presentaciones</p>
+                    <Layers className="h-4 w-4 text-[var(--text-secondary)] dark:text-[var(--text-primary)]" />
+                    <p className="text-sm font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)]">Gestionar variantes / presentaciones</p>
                   </div>
                   <button
                     type="button"
                     onClick={() => setEditForm(f => ({ ...f, isVariant: !f.isVariant }))}
                     className={cn(
                       "relative inline-flex h-5 w-9 shrink-0 rounded-full border-2 border-transparent transition-colors cursor-pointer",
-                      editForm.isVariant ? "bg-purple-500" : "bg-gray-200"
+                      editForm.isVariant ? "bg-[var(--text-primary)]" : "bg-gray-200"
                     )}
                   >
                     <span className={cn("inline-block h-4 w-4 rounded-full bg-white shadow transition-transform", editForm.isVariant ? "translate-x-4" : "translate-x-0")} />
                   </button>
                 </div>
                 {editForm.isVariant && (
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2 border-t border-purple-200 dark:border-purple-800">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2 border-t border-[var(--rule-base)]">
                     <div>
-                      <label className="block text-xs font-semibold text-purple-700 dark:text-purple-300 mb-1">Variante de (producto padre)</label>
+                      <label className="block text-xs font-semibold text-[var(--text-secondary)] dark:text-[var(--text-primary)] mb-1">Variante de (producto padre)</label>
                       <select
                         value={editForm.variantOf ?? ""}
                         onChange={(e) => setEditForm(f => ({ ...f, variantOf: e.target.value }))}
-                        className="w-full px-3 py-2 rounded-lg border border-purple-200 dark:border-purple-700 bg-white dark:bg-card text-gray-900 dark:text-foreground focus:border-purple-400 outline-none text-sm"
+                        className="w-full px-3 py-2 rounded-lg border border-purple-200 dark:border-purple-700 bg-white dark:bg-card text-gray-900 dark:text-foreground focus:border-[var(--text-primary)] outline-none text-sm"
                       >
                         <option value="">Ninguno (es producto padre)</option>
                         {products.filter(p => p.active && p.id !== editModalProduct?.id).map(p => (
@@ -1930,12 +1930,12 @@ export default function InventoryTab() {
                       </select>
                     </div>
                     <div>
-                      <label className="block text-xs font-semibold text-purple-700 dark:text-purple-300 mb-1">Atributo de variante</label>
+                      <label className="block text-xs font-semibold text-[var(--text-secondary)] dark:text-[var(--text-primary)] mb-1">Atributo de variante</label>
                       <input
                         value={editForm.variantAttr ?? ""}
                         onChange={(e) => setEditForm(f => ({ ...f, variantAttr: e.target.value }))}
                         placeholder="Ej: 500ml, 1L, pack 6 unid"
-                        className="w-full px-3 py-2 rounded-lg border border-purple-200 dark:border-purple-700 bg-white dark:bg-card text-gray-900 dark:text-foreground focus:border-purple-400 outline-none text-sm"
+                        className="w-full px-3 py-2 rounded-lg border border-purple-200 dark:border-purple-700 bg-white dark:bg-card text-gray-900 dark:text-foreground focus:border-[var(--text-primary)] outline-none text-sm"
                       />
                     </div>
                   </div>
@@ -1947,7 +1947,7 @@ export default function InventoryTab() {
                   <label className="block text-xs font-semibold text-gray-500 dark:text-muted mb-1">Imagen del producto</label>
                   <div className="flex flex-wrap gap-3 items-start">
                     {editForm.image && (
-                      <div className="relative h-16 w-16 rounded-xl overflow-hidden border border-gray-200 dark:border-card-border shrink-0 bg-gray-50 dark:bg-surface">
+                      <div className="relative h-16 w-16 rounded-xl overflow-hidden border border-[var(--rule-base)] dark:border-card-border shrink-0 bg-gray-50 dark:bg-surface">
                         <Image src={editForm.image} alt="preview" fill unoptimized={editForm.image.startsWith("data:")} className="object-cover" sizes="64px" />
                       </div>
                     )}
@@ -1965,7 +1965,7 @@ export default function InventoryTab() {
                         value={editForm.image ?? ""}
                         onChange={(e) => setEditForm(f => ({ ...f, image: e.target.value }))}
                         placeholder="o pegar URL de imagen"
-                        className="w-full px-3 py-2 rounded-lg border border-gray-200 dark:border-card-border text-gray-900 dark:text-foreground focus:border-primary outline-none text-sm"
+                        className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-card-border text-gray-900 dark:text-foreground focus:border-primary outline-none text-sm"
                       />
                       <input
                         ref={editImgRef}
@@ -2006,7 +2006,7 @@ export default function InventoryTab() {
                 </button>
               </div>
               <div className="flex flex-wrap gap-3">
-                <button type="button" onClick={closeEditModal} className="flex-1 py-2.5 rounded-lg border border-gray-200 dark:border-card-border text-sm font-semibold text-gray-600 dark:text-muted hover:bg-gray-50 dark:hover:bg-surface transition-colors">Cancelar</button>
+                <button type="button" onClick={closeEditModal} className="flex-1 py-2.5 rounded-lg border border-[var(--rule-base)] dark:border-card-border text-sm font-semibold text-gray-600 dark:text-muted hover:bg-gray-50 dark:hover:bg-surface transition-colors">Cancelar</button>
                 <button type="button" onClick={saveEdit} disabled={saving} className="flex-1 py-2.5 rounded-lg bg-primary text-white text-sm font-bold hover:bg-primary-dark transition-colors disabled:opacity-60">
                   {saving ? "Guardando…" : "Guardar cambios"}
                 </button>
@@ -2089,7 +2089,7 @@ export default function InventoryTab() {
               <div className="flex gap-3">
                 <button
                   onClick={() => setBulkDeleteConfirm(false)}
-                  className="flex-1 py-2.5 rounded-lg border border-gray-200 dark:border-card-border text-sm font-semibold text-gray-600 dark:text-muted hover:bg-gray-100 transition-colors"
+                  className="flex-1 py-2.5 rounded-lg border border-[var(--rule-base)] dark:border-card-border text-sm font-semibold text-gray-600 dark:text-muted hover:bg-gray-100 transition-colors"
                 >
                   Cancelar
                 </button>
@@ -2110,7 +2110,7 @@ export default function InventoryTab() {
       {bulkModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
           <div className="bg-white dark:bg-card rounded-xl max-w-sm w-full overflow-hidden">
-            <div className="flex items-center justify-between px-3 sm:px-6 py-4 border-b border-gray-100 dark:border-card-border">
+            <div className="flex items-center justify-between px-3 sm:px-6 py-4 border-b border-[var(--rule-soft)] dark:border-card-border">
               <h3 className="text-lg font-bold text-foreground">Edición masiva — {selectedIds.size} producto{selectedIds.size > 1 ? "s" : ""}</h3>
               <button onClick={() => setBulkModal(false)} className="p-2 rounded-lg hover:bg-black/5 dark:hover:bg-white/5"><X className="h-5 w-5" /></button>
             </div>
@@ -2118,7 +2118,7 @@ export default function InventoryTab() {
               <div>
                 <label className="text-xs font-bold text-gray-600 dark:text-muted">Campo a modificar</label>
                 <select value={bulkField} onChange={e => { setBulkField(e.target.value as typeof bulkField); setBulkValue(""); }}
-                  className="mt-1 w-full rounded-xl border border-gray-200 dark:border-card-border bg-white dark:bg-surface px-3 py-2 text-sm">
+                  className="mt-1 w-full rounded-xl border border-[var(--rule-base)] dark:border-card-border bg-white dark:bg-surface px-3 py-2 text-sm">
                   <option value="active">Estado (activo/inactivo)</option>
                   <option value="category">Categoría</option>
                   <option value="priceAdjust">Ajuste de precio (S/)</option>
@@ -2130,38 +2130,38 @@ export default function InventoryTab() {
                 <label className="text-xs font-bold text-gray-600 dark:text-muted">Nuevo valor</label>
                 {bulkField === "active" ? (
                   <select value={bulkValue} onChange={e => setBulkValue(e.target.value)}
-                    className="mt-1 w-full rounded-xl border border-gray-200 dark:border-card-border bg-white dark:bg-surface px-3 py-2 text-sm">
+                    className="mt-1 w-full rounded-xl border border-[var(--rule-base)] dark:border-card-border bg-white dark:bg-surface px-3 py-2 text-sm">
                     <option value="true">Activo</option>
                     <option value="false">Inactivo</option>
                   </select>
                 ) : bulkField === "category" ? (
                   <select value={bulkValue} onChange={e => setBulkValue(e.target.value)}
-                    className="mt-1 w-full rounded-xl border border-gray-200 dark:border-card-border bg-white dark:bg-surface px-3 py-2 text-sm">
+                    className="mt-1 w-full rounded-xl border border-[var(--rule-base)] dark:border-card-border bg-white dark:bg-surface px-3 py-2 text-sm">
                     <option value="">Seleccionar…</option>
                     {categories.map(c => <option key={c.id} value={c.id}>{c.label}</option>)}
                   </select>
                 ) : bulkField === "priceAdjust" ? (
                   <div className="mt-1">
                     <input type="number" step="0.01" value={bulkValue} onChange={e => setBulkValue(e.target.value)} placeholder="Ej: 1.50 para aumentar S/1.50"
-                      className="w-full rounded-xl border border-gray-200 dark:border-card-border bg-white dark:bg-surface px-3 py-2 text-sm" />
+                      className="w-full rounded-xl border border-[var(--rule-base)] dark:border-card-border bg-white dark:bg-surface px-3 py-2 text-sm" />
                     <p className="text-xs text-gray-400 mt-1">Monto en soles a sumar o restar del precio</p>
                   </div>
                 ) : bulkField === "pricePercent" ? (
                   <div className="mt-1">
                     <input type="number" step="1" value={bulkValue} onChange={e => setBulkValue(e.target.value)} placeholder="Ej: 10 para +10%, -5 para -5%"
-                      className="w-full rounded-xl border border-gray-200 dark:border-card-border bg-white dark:bg-surface px-3 py-2 text-sm" />
+                      className="w-full rounded-xl border border-[var(--rule-base)] dark:border-card-border bg-white dark:bg-surface px-3 py-2 text-sm" />
                     <p className="text-xs text-gray-400 mt-1">
                       Esto ajustará el precio de {selectedIds.size} producto{selectedIds.size > 1 ? "s" : ""} un {bulkValue ? `${bulkValue}%` : "...%"}
                     </p>
                   </div>
                 ) : (
                   <input type="number" min="0" value={bulkValue} onChange={e => setBulkValue(e.target.value)} placeholder="Cantidad"
-                    className="mt-1 w-full rounded-xl border border-gray-200 dark:border-card-border bg-white dark:bg-surface px-3 py-2 text-sm" />
+                    className="mt-1 w-full rounded-xl border border-[var(--rule-base)] dark:border-card-border bg-white dark:bg-surface px-3 py-2 text-sm" />
                 )}
               </div>
             </div>
-            <div className="px-3 sm:px-6 py-4 bg-gray-50 dark:bg-surface border-t border-gray-100 dark:border-card-border flex flex-wrap gap-3">
-              <button onClick={() => setBulkModal(false)} className="flex-1 py-2.5 rounded-lg border border-gray-200 dark:border-card-border text-sm font-semibold text-gray-600 dark:text-muted hover:bg-gray-100 transition-colors">Cancelar</button>
+            <div className="px-3 sm:px-6 py-4 bg-gray-50 dark:bg-surface border-t border-[var(--rule-soft)] dark:border-card-border flex flex-wrap gap-3">
+              <button onClick={() => setBulkModal(false)} className="flex-1 py-2.5 rounded-lg border border-[var(--rule-base)] dark:border-card-border text-sm font-semibold text-gray-600 dark:text-muted hover:bg-gray-100 transition-colors">Cancelar</button>
               <button onClick={executeBulk} disabled={bulkSaving || (!bulkValue && bulkField !== "active")}
                 className="flex-1 py-2.5 rounded-lg bg-primary text-white text-sm font-bold hover:bg-primary-dark transition-colors disabled:opacity-60">
                 {bulkSaving ? "Aplicando…" : "Aplicar"}
@@ -2185,7 +2185,7 @@ export default function InventoryTab() {
         <>
           <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-sm" onClick={() => setShowQRProduct(null)} />
           <div className="fixed inset-0 z-50 flex items-center justify-center p-4" onClick={e => e.target === e.currentTarget && setShowQRProduct(null)}>
-            <div className="w-full max-w-sm bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl p-5 space-y-4 text-center">
+            <div className="w-full max-w-sm bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl p-5 space-y-4 text-center">
               <div className="flex items-center justify-between">
                 <h3 className="text-sm font-bold text-gray-900 dark:text-foreground">Codigo QR</h3>
                 <button onClick={() => setShowQRProduct(null)} className="p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-accent">
@@ -2211,7 +2211,7 @@ export default function InventoryTab() {
                       w.document.close();
                     }
                   }}
-                  className="flex-1 py-2 rounded-lg border border-gray-200 dark:border-card-border text-gray-700 dark:text-foreground font-bold text-xs hover:bg-gray-50 transition-colors flex items-center justify-center gap-1.5"
+                  className="flex-1 py-2 rounded-lg border border-[var(--rule-base)] dark:border-card-border text-gray-700 dark:text-foreground font-bold text-xs hover:bg-gray-50 transition-colors flex items-center justify-center gap-1.5"
                 >
                   Imprimir
                 </button>
@@ -2233,7 +2233,7 @@ export default function InventoryTab() {
         <>
           <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-sm" onClick={() => setShowAutoReorder(null)} />
           <div className="fixed inset-0 z-50 flex items-center justify-center p-4" onClick={e => e.target === e.currentTarget && setShowAutoReorder(null)}>
-            <div className="w-full max-w-sm bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl p-5 space-y-4">
+            <div className="w-full max-w-sm bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl p-5 space-y-4">
               <div className="flex items-center justify-between">
                 <h3 className="text-sm font-bold text-gray-900 dark:text-foreground">Configurar Auto-Reorden</h3>
                 <button onClick={() => setShowAutoReorder(null)} className="p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-accent">
@@ -2244,7 +2244,7 @@ export default function InventoryTab() {
                 <label className="block text-xs font-bold text-gray-600 dark:text-gray-400 mb-1">Reordenar cuando stock sea menor o igual a:</label>
                 <input
                   type="number" min="1" value={arThreshold} onChange={e => setArThreshold(e.target.value)}
-                  className="w-full px-3 py-2 rounded-lg border border-gray-200 dark:border-card-border text-sm outline-none focus:ring-2 focus:ring-primary/30"
+                  className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-card-border text-sm outline-none focus:ring-2 focus:ring-primary/30"
                   placeholder="5"
                 />
               </div>
@@ -2252,7 +2252,7 @@ export default function InventoryTab() {
                 <label className="block text-xs font-bold text-gray-600 dark:text-gray-400 mb-1">Cantidad a pedir:</label>
                 <input
                   type="number" min="1" value={arQty} onChange={e => setArQty(e.target.value)}
-                  className="w-full px-3 py-2 rounded-lg border border-gray-200 dark:border-card-border text-sm outline-none focus:ring-2 focus:ring-primary/30"
+                  className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-card-border text-sm outline-none focus:ring-2 focus:ring-primary/30"
                   placeholder="10"
                 />
               </div>

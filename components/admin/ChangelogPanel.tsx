@@ -57,9 +57,9 @@ const ACTION_STYLE: Record<ActionType, { dot: string; icon: string; bg: string }
     bg: "bg-red-50 dark:bg-red-900/20",
   },
   export: {
-    dot: "bg-purple-500",
-    icon: "text-purple-600 dark:text-purple-400",
-    bg: "bg-purple-50 dark:bg-purple-900/20",
+    dot: "bg-[var(--text-primary)]",
+    icon: "text-[var(--text-secondary)] dark:text-[var(--text-primary)]",
+    bg: "bg-[var(--surface-sunken)]",
   },
   import: {
     dot: "bg-amber-500",
@@ -127,7 +127,7 @@ export default function ChangelogPanel({ entity, entityId, label = "elemento" }:
         onClick={() => setOpen(true)}
         className={cn(
           "inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors",
-          "border border-gray-200 dark:border-gray-700",
+          "border border-[var(--rule-base)]",
           "text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800",
         )}
       >
@@ -147,13 +147,13 @@ export default function ChangelogPanel({ entity, entityId, label = "elemento" }:
       <div
         className={cn(
           "fixed top-0 right-0 z-50 h-full w-full max-w-[400px]",
-          "bg-white dark:bg-gray-900 border-l border-gray-200 dark:border-gray-700",
-          "flex flex-col transition-transform duration-300 ease-in-out",
+          "bg-white dark:bg-gray-900 border-l border-[var(--rule-base)]",
+          "flex flex-col transition-transform duration-[var(--dur-base)] ease-in-out",
           open ? "translate-x-0" : "translate-x-full",
         )}
       >
         {/* Encabezado */}
-        <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100 dark:border-gray-800">
+        <div className="flex items-center justify-between px-5 py-4 border-b border-[var(--rule-base)]">
           <div className="flex items-center gap-2">
             <History className="w-4 h-4 text-gray-500" />
             <h2 className="font-semibold text-gray-900 dark:text-white text-sm">
@@ -170,7 +170,7 @@ export default function ChangelogPanel({ entity, entityId, label = "elemento" }:
 
         {/* Subheader con contexto */}
         {(entity || entityId) && (
-          <div className="px-5 py-2 bg-gray-50 dark:bg-gray-800/50 border-b border-gray-100 dark:border-gray-800">
+          <div className="px-5 py-2 bg-gray-50 dark:bg-gray-800/50 border-b border-[var(--rule-base)]">
             <p className="text-xs text-gray-500 dark:text-gray-400">
               {label}
               {entityId && <span className="ml-1 font-mono text-gray-400">#{entityId}</span>}
@@ -192,7 +192,7 @@ export default function ChangelogPanel({ entity, entityId, label = "elemento" }:
               <p className="text-sm">Sin cambios registrados</p>
             </div>
           ) : (
-            <ol className="relative border-l border-gray-200 dark:border-gray-700 space-y-0">
+            <ol className="relative border-l border-[var(--rule-base)] space-y-0">
               {entries.map((entry, idx) => {
                 const type = detectActionType(entry.action);
                 const style = ACTION_STYLE[type];
@@ -204,7 +204,7 @@ export default function ChangelogPanel({ entity, entityId, label = "elemento" }:
                       className={cn(
                         "absolute -left-[9px] flex h-[18px] w-[18px] items-center justify-center rounded-full",
                         style.bg,
-                        "border-2 border-white dark:border-gray-900",
+                        "border-2 border-white dark:border-[var(--rule-base)]",
                       )}
                     >
                       <span className={cn("w-2 h-2 rounded-full", style.dot)} />
@@ -236,7 +236,7 @@ export default function ChangelogPanel({ entity, entityId, label = "elemento" }:
         </div>
 
         {/* Footer */}
-        <div className="px-5 py-3 border-t border-gray-100 dark:border-gray-800">
+        <div className="px-5 py-3 border-t border-[var(--rule-base)]">
           <button
             onClick={load}
             disabled={loading}

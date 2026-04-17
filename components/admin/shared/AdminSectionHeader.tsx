@@ -24,7 +24,7 @@ const iconBgMap: Record<string, string> = {
   blue: "bg-emerald-50 dark:bg-emerald-900/20",
   amber: "bg-amber-50 dark:bg-amber-900/20",
   red: "bg-red-50 dark:bg-red-900/20",
-  violet: "bg-violet-50 dark:bg-violet-900/20",
+  violet: "bg-[var(--surface-sunken)]",
   gray: "bg-gray-50 dark:bg-zinc-800",
 };
 
@@ -72,7 +72,7 @@ function AdminSectionHeader({ title, subtitle, icon: Icon, iconColor, actions, t
       </div>
 
       {tabs && tabs.length > 0 && (
-        <div className="flex items-center gap-1 border-b border-gray-100 dark:border-zinc-800">
+        <div className="flex items-center gap-1 border-b border-[var(--rule-soft)] dark:border-zinc-800">
           {tabs.map((tab) => (
             <button
               key={tab.id}

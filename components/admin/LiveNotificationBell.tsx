@@ -127,7 +127,7 @@ function MiniToast({
         "flex items-start gap-3 px-4 py-3 rounded-xl border min-w-[260px] max-w-xs",
         cfg.bg,
         cfg.border,
-        "animate-in slide-in-from-right-4 fade-in duration-300"
+        "animate-in slide-in-from-right-4 fade-in duration-[var(--dur-base)]"
       )}
     >
       <span className={cn("mt-0.5 flex-shrink-0 w-7 h-7 rounded-full flex items-center justify-center", cfg.bg)}>
@@ -222,7 +222,7 @@ export default function LiveNotificationBell() {
 
           {/* Unread badge */}
           {unreadCount > 0 && (
-            <span className="absolute -top-1 -right-1 min-w-[18px] h-[18px] px-1 rounded-full bg-red-500 text-white text-[10px] font-bold flex items-center justify-center leading-none ">
+            <span className="absolute -top-1 -right-1 min-w-[18px] h-[18px] px-1 rounded-full bg-red-500 text-white text-[length:var(--ts-2xs)] font-bold flex items-center justify-center leading-none ">
               {unreadCount > 9 ? "9+" : unreadCount}
             </span>
           )}
@@ -230,7 +230,7 @@ export default function LiveNotificationBell() {
           {/* Connection dot */}
           <span
             className={cn(
-              "absolute bottom-0.5 right-0.5 w-2 h-2 rounded-full border-2 border-white dark:border-gray-900",
+              "absolute bottom-0.5 right-0.5 w-2 h-2 rounded-full border-2 border-white dark:border-[var(--rule-base)]",
               isConnected ? "bg-teal-500" : "bg-gray-400"
             )}
           />
@@ -238,14 +238,14 @@ export default function LiveNotificationBell() {
 
         {/* ── Dropdown ─────────────────────────────────────────────── */}
         {open && (
-          <div className="absolute right-0 mt-2 w-80 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 z-50 overflow-hidden animate-in slide-in-from-top-2 fade-in duration-150">
+          <div className="absolute right-0 mt-2 w-80 rounded-xl border border-[var(--rule-base)] bg-white dark:bg-gray-900 z-50 overflow-hidden animate-in slide-in-from-top-2 fade-in duration-[var(--dur-fast)]">
             {/* Header */}
-            <div className="flex items-center justify-between px-4 py-3 border-b border-gray-100 dark:border-gray-800 bg-gray-50 dark:bg-gray-800/50">
+            <div className="flex items-center justify-between px-4 py-3 border-b border-[var(--rule-base)] bg-gray-50 dark:bg-gray-800/50">
               <div className="flex items-center gap-2">
                 <Bell className="h-4 w-4 text-[#00B4A6]" />
                 <span className="text-sm font-bold text-gray-900 dark:text-white">Tiempo real</span>
                 {unreadCount > 0 && (
-                  <span className="bg-red-500 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full">
+                  <span className="bg-red-500 text-white text-[length:var(--ts-2xs)] font-bold px-1.5 py-0.5 rounded-full">
                     {unreadCount}
                   </span>
                 )}
@@ -297,7 +297,7 @@ export default function LiveNotificationBell() {
                         <p className="text-xs text-gray-700 dark:text-gray-300 mt-0.5 leading-snug">
                           {n.message}
                         </p>
-                        <p className="text-[10px] text-gray-400 dark:text-gray-500 mt-1">
+                        <p className="text-[length:var(--ts-2xs)] text-gray-400 dark:text-gray-500 mt-1">
                           {relativeTime(n.timestamp)}
                         </p>
                       </div>
@@ -308,7 +308,7 @@ export default function LiveNotificationBell() {
             </div>
 
             {/* Footer */}
-            <div className="px-4 py-2.5 border-t border-gray-100 dark:border-gray-800 bg-gray-50 dark:bg-gray-800/50">
+            <div className="px-4 py-2.5 border-t border-[var(--rule-base)] bg-gray-50 dark:bg-gray-800/50">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-1.5">
                   <span
@@ -317,11 +317,11 @@ export default function LiveNotificationBell() {
                       isConnected ? "bg-teal-500 animate-pulse" : "bg-gray-400"
                     )}
                   />
-                  <p className="text-[10px] text-gray-400 dark:text-gray-600">
+                  <p className="text-[length:var(--ts-2xs)] text-gray-400 dark:text-gray-600">
                     {isConnected ? "Conectado en tiempo real" : "Reconectando..."}
                   </p>
                 </div>
-                <p className="text-[10px] text-gray-300 dark:text-gray-700">
+                <p className="text-[length:var(--ts-2xs)] text-gray-300 dark:text-gray-700">
                   {notifs.length}/{MAX_NOTIFS}
                 </p>
               </div>

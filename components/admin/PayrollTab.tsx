@@ -101,7 +101,7 @@ export default function PayrollTab() {
           <p className="text-sm text-gray-500 dark:text-muted mt-0.5">Planilla mensual, descuentos AFP/ONP y control de pagos</p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
-          <button onClick={() => exportToCSV(monthPayroll.map(p => ({ empleado: p.employeeName, cargo: p.role, departamento: p.department, mes: MONTH_LABELS[p.month] ?? p.month, salario_base: p.baseSalary, horas_extra: p.overtime, bonificaciones: p.bonuses, bruto: p.grossSalary, afp_snp: p.snpOrAfp, renta_5ta: p.incomeTax, neto: p.netSalary, estado: p.status, fecha_pago: p.paymentDate ?? "" })), `nomina-${selectedMonth}`)} className="flex items-center gap-1.5 px-3 py-2 rounded-lg border border-gray-200 dark:border-card-border bg-white dark:bg-surface text-sm font-semibold text-gray-700 dark:text-foreground hover:bg-gray-50 dark:hover:bg-accent transition-colors">
+          <button onClick={() => exportToCSV(monthPayroll.map(p => ({ empleado: p.employeeName, cargo: p.role, departamento: p.department, mes: MONTH_LABELS[p.month] ?? p.month, salario_base: p.baseSalary, horas_extra: p.overtime, bonificaciones: p.bonuses, bruto: p.grossSalary, afp_snp: p.snpOrAfp, renta_5ta: p.incomeTax, neto: p.netSalary, estado: p.status, fecha_pago: p.paymentDate ?? "" })), `nomina-${selectedMonth}`)} className="flex items-center gap-1.5 px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-card-border bg-white dark:bg-surface text-sm font-semibold text-gray-700 dark:text-foreground hover:bg-gray-50 dark:hover:bg-accent transition-colors">
             <Download className="h-4 w-4" /> Exportar
           </button>
           {totals.pending > 0 && (
@@ -115,7 +115,7 @@ export default function PayrollTab() {
       {/* Month selector */}
       <div className="flex items-center gap-2 flex-wrap">
         {MONTHS.map(m => (
-          <button key={m} onClick={() => setSelectedMonth(m)} className={cn("px-2 sm:px-4 py-1.5 sm:py-2 text-sm font-semibold rounded-lg transition-colors", selectedMonth === m ? "bg-primary text-white" : "bg-white dark:bg-card border border-gray-200 dark:border-card-border text-gray-600 dark:text-muted hover:bg-gray-50 dark:hover:bg-accent")}>
+          <button key={m} onClick={() => setSelectedMonth(m)} className={cn("px-2 sm:px-4 py-1.5 sm:py-2 text-sm font-semibold rounded-lg transition-colors", selectedMonth === m ? "bg-primary text-white" : "bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border text-gray-600 dark:text-muted hover:bg-gray-50 dark:hover:bg-accent")}>
             {MONTH_LABELS[m] ?? m}
           </button>
         ))}
@@ -145,19 +145,19 @@ export default function PayrollTab() {
       <div className="flex flex-col sm:flex-row gap-3">
         <div className="relative flex-1 max-w-xs">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
-          <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Buscar empleado..." className="w-full pl-9 pr-3 py-2 text-sm border border-gray-200 dark:border-card-border rounded-lg bg-white dark:bg-surface text-gray-700 dark:text-foreground" />
+          <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Buscar empleado..." className="w-full pl-9 pr-3 py-2 text-sm border border-[var(--rule-base)] dark:border-card-border rounded-lg bg-white dark:bg-surface text-gray-700 dark:text-foreground" />
         </div>
-        <select value={filterStatus} onChange={e => setFilterStatus(e.target.value as PayrollStatus | "todos")} className="text-sm border border-gray-200 dark:border-card-border rounded-lg px-3 py-2 bg-white dark:bg-surface text-gray-700 dark:text-foreground">
+        <select value={filterStatus} onChange={e => setFilterStatus(e.target.value as PayrollStatus | "todos")} className="text-sm border border-[var(--rule-base)] dark:border-card-border rounded-lg px-3 py-2 bg-white dark:bg-surface text-gray-700 dark:text-foreground">
           <option value="todos">Todos los estados</option>
           {(Object.keys(STATUS_META) as PayrollStatus[]).map(s => <option key={s} value={s}>{STATUS_META[s].label}</option>)}
         </select>
       </div>
 
       {/* Table */}
-      <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl overflow-hidden">
+      <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full min-w-[600px] text-sm">
-            <thead className="bg-gray-50 dark:bg-surface/50 border-b border-gray-200 dark:border-card-border">
+            <thead className="bg-gray-50 dark:bg-surface/50 border-b border-[var(--rule-base)] dark:border-card-border">
               <tr>
                 <th className="px-2 sm:px-4 py-2 sm:py-3 text-left text-xs font-bold text-gray-500 dark:text-muted">Empleado</th>
                 <th className="px-2 sm:px-4 py-2 sm:py-3 text-right text-xs font-bold text-gray-500 dark:text-muted">Bruto</th>
@@ -203,7 +203,7 @@ export default function PayrollTab() {
                 );
               })}
             </tbody>
-            <tfoot className="bg-gray-50 dark:bg-surface/50 border-t-2 border-gray-200 dark:border-card-border">
+            <tfoot className="bg-gray-50 dark:bg-surface/50 border-t-2 border-[var(--rule-base)] dark:border-card-border">
               <tr>
                 <td className="px-2 sm:px-4 py-2 sm:py-3 text-xs font-bold text-gray-700 dark:text-foreground uppercase">TOTAL {MONTH_LABELS[selectedMonth]}</td>
                 <td className="px-2 sm:px-4 py-2 sm:py-3 text-right font-extrabold text-gray-800 dark:text-foreground">{fmt(totals.gross)}</td>
@@ -220,7 +220,7 @@ export default function PayrollTab() {
       {/* Payslip detail modal */}
       {detail && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4" onClick={() => setDetail(null)}>
-          <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl p-3 sm:p-6 w-full max-w-sm space-y-4" onClick={e => e.stopPropagation()}>
+          <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl p-3 sm:p-6 w-full max-w-sm space-y-4" onClick={e => e.stopPropagation()}>
             <div className="flex items-center justify-between">
               <h3 className="font-extrabold text-gray-900 dark:text-foreground">Boleta de pago</h3>
               <button onClick={() => setDetail(null)}><X className="h-4 w-4 text-gray-400" /></button>
@@ -233,13 +233,13 @@ export default function PayrollTab() {
               <Row label="Salario base" value={fmt(detail.baseSalary)} />
               {detail.overtime > 0 && <Row label="Horas extra" value={`+${fmt(detail.overtime)}`} vcolor="text-emerald-600" />}
               {detail.bonuses > 0 && <Row label="Bonificaciones" value={`+${fmt(detail.bonuses)}`} vcolor="text-emerald-600" />}
-              <div className="border-t border-gray-100 dark:border-card-border pt-2">
+              <div className="border-t border-[var(--rule-soft)] dark:border-card-border pt-2">
                 <Row label="Salario bruto" value={fmt(detail.grossSalary)} bold />
               </div>
               <Row label="AFP / ONP (13%)" value={`-${fmt(detail.snpOrAfp)}`} vcolor="text-amber-600" />
               {detail.incomeTax > 0 && <Row label="Renta 5ta cat." value={`-${fmt(detail.incomeTax)}`} vcolor="text-amber-600" />}
               {detail.otherDiscounts > 0 && <Row label="Otros descuentos" value={`-${fmt(detail.otherDiscounts)}`} vcolor="text-red-500" />}
-              <div className="border-t-2 border-gray-200 dark:border-card-border pt-2">
+              <div className="border-t-2 border-[var(--rule-base)] dark:border-card-border pt-2">
                 <Row label="SALARIO NETO" value={fmt(detail.netSalary)} bold accent />
               </div>
             </div>

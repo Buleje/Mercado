@@ -21,7 +21,7 @@ export function Eyebrow({
   return (
     <Comp
       className={cn(
-        "text-[11px] font-bold uppercase tracking-[0.18em]",
+        "text-[length:var(--ts-xs)] font-bold uppercase tracking-[var(--ls-wider)]",
         variant === "default" && "text-gray-500 dark:text-gray-400",
         variant === "muted" && "text-gray-400",
         variant === "accent" && "text-primary",

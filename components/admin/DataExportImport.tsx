@@ -136,7 +136,7 @@ export default function DataExportImport() {
   return (
     <div className="space-y-6">
       {/* ── Sección Exportar ── */}
-      <div className="rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 p-6">
+      <div className="rounded-xl border border-[var(--rule-base)] bg-white dark:bg-gray-800 p-6">
         <div className="flex items-start gap-4">
           <div className="flex-shrink-0 w-10 h-10 rounded-lg bg-emerald-50 dark:bg-emerald-900/20 flex items-center justify-center">
             <Download className="w-5 h-5 text-emerald-600 dark:text-emerald-400" />
@@ -163,7 +163,7 @@ export default function DataExportImport() {
       </div>
 
       {/* ── Sección Importar ── */}
-      <div className="rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 p-6">
+      <div className="rounded-xl border border-[var(--rule-base)] bg-white dark:bg-gray-800 p-6">
         <div className="flex items-start gap-4 mb-4">
           <div className="flex-shrink-0 w-10 h-10 rounded-lg bg-emerald-50 dark:bg-emerald-900/20 flex items-center justify-center">
             <Upload className="w-5 h-5 text-emerald-600 dark:text-emerald-400" />
@@ -187,7 +187,7 @@ export default function DataExportImport() {
               "border-2 border-dashed rounded-lg p-8 text-center cursor-pointer transition-colors",
               dragOver
                 ? "border-emerald-400 bg-emerald-50 dark:bg-emerald-900/10"
-                : "border-gray-300 dark:border-gray-600 hover:border-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-900/10",
+                : "border-[var(--rule-base)] dark:border-gray-600 hover:border-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-900/10",
             )}
           >
             <FileJson className="w-8 h-8 mx-auto mb-2 text-gray-400" />
@@ -217,7 +217,7 @@ export default function DataExportImport() {
                 Cancelar
               </button>
             </div>
-            <div className="rounded-lg bg-gray-50 dark:bg-gray-900/50 border border-gray-200 dark:border-gray-700 p-4 space-y-2">
+            <div className="rounded-lg bg-gray-50 dark:bg-gray-900/50 border border-[var(--rule-base)] p-4 space-y-2">
               {(preview.products?.length ?? 0) > 0 && (
                 <div className="flex items-center gap-2 text-sm">
                   <span className="w-2 h-2 rounded-full bg-emerald-500" />

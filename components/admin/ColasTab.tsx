@@ -81,7 +81,7 @@ function QueueCard({ queue }: { queue: QueueStats }) {
     <div
       className={cn(
         "rounded-xl border bg-white p-5  transition-shadow hover:shadow-sm",
-        "dark:border-gray-700 dark:bg-gray-800",
+        "dark:border-[var(--rule-base)] dark:bg-gray-800",
         hasFailed && "border-red-300 dark:border-red-700",
       )}
     >
@@ -269,7 +269,7 @@ export default function ColasTab() {
               "flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-xs font-medium transition-colors",
               autoRefresh
                 ? "border-teal-300 bg-teal-50 text-teal-700 dark:border-teal-700 dark:bg-teal-900/20 dark:text-teal-400"
-                : "border-gray-300 bg-gray-50 text-gray-600 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-400",
+                : "border-[var(--rule-base)] bg-gray-50 text-gray-600 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-400",
             )}
             title={autoRefresh ? "Desactivar auto-refresco" : "Activar auto-refresco"}
           >

@@ -202,7 +202,7 @@ export default function CollectionCenterTab() {
               "centro-cobros"
             )
           }
-          className="flex items-center gap-1.5 px-3 py-2 rounded-lg border border-gray-200 dark:border-card-border bg-white dark:bg-surface text-sm font-semibold text-gray-700 dark:text-foreground hover:bg-gray-50 dark:hover:bg-accent transition-colors"
+          className="flex items-center gap-1.5 px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-card-border bg-white dark:bg-surface text-sm font-semibold text-gray-700 dark:text-foreground hover:bg-gray-50 dark:hover:bg-accent transition-colors"
         >
           <Download className="h-4 w-4" /> Exportar
         </button>
@@ -227,7 +227,7 @@ export default function CollectionCenterTab() {
       </div>
 
       {/* Gráfico de antigüedad */}
-      <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl p-4">
+      <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl p-4">
         <h3 className="text-sm font-bold text-gray-700 dark:text-foreground mb-4">
           Antigüedad de cartera
         </h3>
@@ -285,13 +285,13 @@ export default function CollectionCenterTab() {
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder="Buscar cliente o pedido..."
-            className="w-full pl-9 pr-3 py-2 text-sm border border-gray-200 dark:border-card-border rounded-xl bg-white dark:bg-surface text-gray-700 dark:text-foreground"
+            className="w-full pl-9 pr-3 py-2 text-sm border border-[var(--rule-base)] dark:border-card-border rounded-xl bg-white dark:bg-surface text-gray-700 dark:text-foreground"
           />
         </div>
         <select
           value={filterBucket}
           onChange={(e) => setFilterBucket(e.target.value as AgeBucket | "todos")}
-          className="px-3 py-2 text-sm border border-gray-200 dark:border-card-border rounded-xl bg-white dark:bg-surface text-gray-700 dark:text-foreground"
+          className="px-3 py-2 text-sm border border-[var(--rule-base)] dark:border-card-border rounded-xl bg-white dark:bg-surface text-gray-700 dark:text-foreground"
         >
           <option value="todos">Todos los tramos</option>
           {(Object.keys(BUCKET_META) as AgeBucket[]).map((b) => (
@@ -303,7 +303,7 @@ export default function CollectionCenterTab() {
       </div>
 
       {/* Tabla */}
-      <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl overflow-hidden">
+      <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full min-w-[600px] text-sm">
             <thead>
@@ -326,7 +326,7 @@ export default function CollectionCenterTab() {
                   <tr
                     key={d.id}
                     className={cn(
-                      "border-t border-gray-100 dark:border-card-border hover:bg-gray-50 dark:hover:bg-accent/20",
+                      "border-t border-[var(--rule-soft)] dark:border-card-border hover:bg-gray-50 dark:hover:bg-accent/20",
                       d.bucket === "90+" && "bg-red-50/50 dark:bg-red-950/10",
                       d.bucket === "61-90" && "bg-orange-50/30 dark:bg-orange-950/5"
                     )}
@@ -405,7 +405,7 @@ export default function CollectionCenterTab() {
           onClick={() => setDetail(null)}
         >
           <div
-            className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl p-6 w-full max-w-md space-y-4"
+            className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl p-6 w-full max-w-md space-y-4"
             onClick={(e) => e.stopPropagation()}
           >
             <div className="flex items-center justify-between">
@@ -447,7 +447,7 @@ export default function CollectionCenterTab() {
                 <p className="font-bold text-gray-800 dark:text-foreground">{detail.phone || "—"}</p>
               </div>
             </div>
-            <div className="flex flex-wrap gap-2 pt-2 border-t border-gray-100 dark:border-card-border">
+            <div className="flex flex-wrap gap-2 pt-2 border-t border-[var(--rule-soft)] dark:border-card-border">
               {detail.phone && (
                 <a
                   href={`https://wa.me/51${detail.phone.replace(/\D/g, "")}?text=Hola%20${encodeURIComponent(detail.customer)}%2C%20le%20recordamos%20su%20deuda%20pendiente%20de%20${fmt(detail.amount - detail.paid)}`}
@@ -460,7 +460,7 @@ export default function CollectionCenterTab() {
               )}
               <a
                 href={`tel:${detail.phone}`}
-                className="flex items-center gap-1.5 px-3 py-2 rounded-lg border border-gray-200 dark:border-card-border text-xs font-bold text-gray-700 dark:text-foreground hover:bg-gray-50 dark:hover:bg-surface transition-colors"
+                className="flex items-center gap-1.5 px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-card-border text-xs font-bold text-gray-700 dark:text-foreground hover:bg-gray-50 dark:hover:bg-surface transition-colors"
               >
                 <Phone className="h-3.5 w-3.5" /> Llamar
               </a>

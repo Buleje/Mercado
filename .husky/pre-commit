@@ -40,3 +40,19 @@ if [ -n "$EMPTY_CATCHES" ]; then
   exit 1
 fi
 echo "✅ No new empty .catch()"
+
+# 4. Design tokens gate (ADR-068): block decorative gradients/shadows in admin + store.
+#    Only scans staged files — fast (<2s). Whitelist in scripts/lint-design-tokens.ts.
+#    Emergency bypass: HUSKY=0 git commit ...
+STAGED_UI=$(git diff --cached --name-only --diff-filter=ACMR | grep -E '^(components/(admin|store)|app/t)/' | grep -E '\.(tsx|ts)$' || true)
+if [ -n "$STAGED_UI" ]; then
+  echo "🎨 Running design-tokens gate (ADR-068)..."
+  npx tsx scripts/lint-design-tokens.ts --staged || {
+    echo ""
+    echo "❌ Design token violations detected (ADR-068 armonia)."
+    echo "   Fix or add to whitelist in scripts/lint-design-tokens.ts."
+    echo "   Emergency bypass: HUSKY=0 git commit ..."
+    exit 1
+  }
+  echo "✅ Design tokens clean"
+fi

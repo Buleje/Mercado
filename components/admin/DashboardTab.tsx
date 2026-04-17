@@ -1300,7 +1300,7 @@ ${o.notes ? `<hr><p style="font-size:11px">${o.notes}</p>` : ""}
         {/* KPI cards skeleton */}
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
           {[1, 2, 3, 4].map(i => (
-            <div key={i} className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl p-4 space-y-2">
+            <div key={i} className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl p-4 space-y-2">
               <div className="h-3 w-16 bg-gray-200 dark:bg-surface rounded" />
               <div className="h-7 w-24 bg-gray-200 dark:bg-surface rounded" />
               <div className="h-3 w-20 bg-gray-200 dark:bg-surface rounded" />
@@ -1308,7 +1308,7 @@ ${o.notes ? `<hr><p style="font-size:11px">${o.notes}</p>` : ""}
           ))}
         </div>
         {/* Orders list skeleton */}
-        <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl p-3 sm:p-5 space-y-3">
+        <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl p-3 sm:p-5 space-y-3">
           <div className="h-4 w-28 bg-gray-200 dark:bg-surface rounded" />
           {[1, 2, 3, 4, 5].map(i => (
             <div key={i} className="flex flex-wrap items-center gap-2 sm:gap-4">
@@ -1323,7 +1323,7 @@ ${o.notes ? `<hr><p style="font-size:11px">${o.notes}</p>` : ""}
           ))}
         </div>
         {/* Chart skeleton */}
-        <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl p-3 sm:p-5">
+        <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl p-3 sm:p-5">
           <div className="h-4 w-36 bg-gray-200 dark:bg-surface rounded mb-4" />
           <div className="flex flex-wrap items-end gap-2 h-32">
             {[40, 70, 55, 85, 60, 90, 75].map((h, i) => (
@@ -1402,7 +1402,7 @@ ${o.notes ? `<hr><p style="font-size:11px">${o.notes}</p>` : ""}
                 "flex items-center gap-1.5 text-xs font-bold px-2.5 py-1.5 rounded-lg transition-colors",
                 expandAll
                   ? "text-white bg-indigo-600 hover:bg-indigo-700 "
-                  : "text-indigo-700 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-900/30 hover:bg-indigo-100 dark:hover:bg-indigo-900/50"
+                  : "text-[var(--text-secondary)] dark:text-[var(--text-primary)] bg-[var(--surface-sunken)] hover:bg-[var(--surface-sunken)] dark:hover:bg-indigo-900/50"
               )}
               title={expandAll ? "Colapsar — volver a vista por sección (Esc)" : "Ver todos los gráficos en una vista"}
             >
@@ -1415,7 +1415,7 @@ ${o.notes ? `<hr><p style="font-size:11px">${o.notes}</p>` : ""}
               <Download className="h-3.5 w-3.5" />
             </button>
             {showExport && (
-              <div className="absolute right-0 top-full mt-1 bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-lg py-1 z-50 min-w-40">
+              <div className="absolute right-0 top-full mt-1 bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-lg py-1 z-50 min-w-40">
                 {[
                   { key:"ventas", label:"Ventas CSV" },
                   { key:"pedidos", label:"Pedidos CSV" },
@@ -1458,11 +1458,11 @@ ${o.notes ? `<hr><p style="font-size:11px">${o.notes}</p>` : ""}
             <svg className="h-3.5 w-3.5" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
           </a>
           {/* Auto-refresh toggle */}
-          <div className="flex items-center gap-1.5 ml-1 border-l border-gray-200 dark:border-card-border pl-2">
+          <div className="flex items-center gap-1.5 ml-1 border-l border-[var(--rule-base)] dark:border-card-border pl-2">
             <button
               onClick={() => setAutoRefresh(v => !v)}
               className={cn(
-                "px-2 py-1 rounded-md text-[10px] font-bold uppercase transition-colors",
+                "px-2 py-1 rounded-md text-[length:var(--ts-2xs)] font-bold uppercase transition-colors",
                 autoRefresh ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400" : "bg-gray-100 text-gray-400 dark:bg-surface dark:text-muted"
               )}
             >
@@ -1471,7 +1471,7 @@ ${o.notes ? `<hr><p style="font-size:11px">${o.notes}</p>` : ""}
             {newOrderCount > 0 && autoRefresh && (
               <button
                 onClick={() => { setNewOrderCount(0); setSection("resumen"); }}
-                className="flex items-center gap-1 px-2 py-0.5 rounded-full bg-red-500 text-white text-[10px] font-bold animate-pulse"
+                className="flex items-center gap-1 px-2 py-0.5 rounded-full bg-red-500 text-white text-[length:var(--ts-2xs)] font-bold animate-pulse"
               >
                 +{newOrderCount} nuevo{newOrderCount > 1 ? "s" : ""}
               </button>
@@ -1480,7 +1480,7 @@ ${o.notes ? `<hr><p style="font-size:11px">${o.notes}</p>` : ""}
               <select
                 value={refreshInterval}
                 onChange={e => setRefreshInterval(Number(e.target.value))}
-                className="text-[10px] bg-transparent border-0 outline-none text-muted cursor-pointer"
+                className="text-[length:var(--ts-2xs)] bg-transparent border-0 outline-none text-muted cursor-pointer"
               >
                 <option value={15}>15s</option>
                 <option value={30}>30s</option>
@@ -1488,7 +1488,7 @@ ${o.notes ? `<hr><p style="font-size:11px">${o.notes}</p>` : ""}
               </select>
             )}
             {lastUpdated && (
-              <span className="text-[10px] text-muted hidden sm:inline" title={`Actualizado: ${lastUpdated.toLocaleTimeString("es-PE")}`}>
+              <span className="text-[length:var(--ts-2xs)] text-muted hidden sm:inline" title={`Actualizado: ${lastUpdated.toLocaleTimeString("es-PE")}`}>
                 {(() => {
                   const mins = Math.floor((Date.now() - lastUpdated.getTime()) / 60000);
                   if (mins === 0) return "Ahora";
@@ -1507,7 +1507,7 @@ ${o.notes ? `<hr><p style="font-size:11px">${o.notes}</p>` : ""}
       {autoRefresh && lastUpdated && (
         <div className="h-0.5 w-full bg-gray-100 dark:bg-accent mb-3 rounded-full overflow-hidden">
           <div 
-            className="h-full bg-linear-to-r from-emerald-400 to-emerald-500 rounded-full"
+            className="h-full bg-[var(--data-success)] rounded-full"
             style={{
               animation: `countdown ${refreshInterval}s linear infinite`,
               animationPlayState: loading ? 'paused' : 'running'
@@ -1525,20 +1525,20 @@ ${o.notes ? `<hr><p style="font-size:11px">${o.notes}</p>` : ""}
               { label: "Ventas Netas", value: fmt(st.ventas), accent: "text-emerald-600 dark:text-emerald-400", bg: "bg-emerald-50 dark:bg-emerald-950/30", delta: st.dVentas },
               { label: "Utilidad", value: fmt(st.utilidad), accent: "text-emerald-600 dark:text-emerald-400", bg: "bg-emerald-50 dark:bg-emerald-950/30", delta: st.dUtilidad },
               { label: "Margen", value: `${st.margen.toFixed(1)}%`, accent: st.margen >= 25 ? "text-emerald-600 dark:text-emerald-400" : "text-amber-600 dark:text-amber-400", bg: "bg-gray-50 dark:bg-surface", delta: st.dMargen },
-              { label: "Tickets", value: String(st.tickets), accent: "text-violet-600 dark:text-violet-400", bg: "bg-violet-50 dark:bg-violet-950/30", delta: st.dTickets },
-              { label: "Clientes", value: String(st.clientesAtendidos), accent: "text-indigo-600 dark:text-indigo-400", bg: "bg-indigo-50 dark:bg-indigo-950/30", delta: st.dClientes },
+              { label: "Tickets", value: String(st.tickets), accent: "text-[var(--text-secondary)] dark:text-[var(--text-primary)]", bg: "bg-[var(--surface-sunken)]", delta: st.dTickets },
+              { label: "Clientes", value: String(st.clientesAtendidos), accent: "text-[var(--text-secondary)] dark:text-[var(--text-primary)]", bg: "bg-[var(--surface-sunken)]", delta: st.dClientes },
               { label: "Stock Alerta", value: String(st.stockCritico.length + st.agotados.length), accent: (st.stockCritico.length + st.agotados.length) > 0 ? "text-red-600 dark:text-red-400" : "text-emerald-600 dark:text-emerald-400", bg: "bg-gray-50 dark:bg-surface" },
               { label: "Balance Caja", value: fmt(st.ventas - st.totalPurch), accent: (st.ventas - st.totalPurch) >= 0 ? "text-emerald-600 dark:text-emerald-400" : "text-red-600 dark:text-red-400", bg: "bg-gray-50 dark:bg-surface" },
             ] as { label: string; value: string; accent: string; bg: string; delta?: number | null }[]).map(k => (
               <div key={k.label} className={cn("rounded-xl px-3 py-2.5", k.bg)}>
-                <div className="text-[10px] text-gray-500 dark:text-muted font-medium truncate">{k.label}</div>
+                <div className="text-[length:var(--ts-2xs)] text-gray-500 dark:text-muted font-medium truncate">{k.label}</div>
                 <div className={cn("text-sm font-extrabold tabular-nums leading-tight mt-0.5 truncate", k.accent)}>{k.value}</div>
                 {k.delta != null && k.delta !== undefined ? (
-                  <div className={cn("text-[10px] font-bold mt-0.5", k.delta >= 0 ? "text-green-600 dark:text-green-400" : "text-red-500 dark:text-red-400")}>
+                  <div className={cn("text-[length:var(--ts-2xs)] font-bold mt-0.5", k.delta >= 0 ? "text-green-600 dark:text-green-400" : "text-red-500 dark:text-red-400")}>
                     {k.delta >= 0 ? "↑" : "↓"} {Math.abs(k.delta).toFixed(1)}%
                   </div>
                 ) : k.delta === null ? (
-                  <div className="text-[10px] text-gray-400 dark:text-muted mt-0.5">— Sin datos</div>
+                  <div className="text-[length:var(--ts-2xs)] text-gray-400 dark:text-muted mt-0.5">— Sin datos</div>
                 ) : null}
               </div>
             ))}
@@ -1547,8 +1547,8 @@ ${o.notes ? `<hr><p style="font-size:11px">${o.notes}</p>` : ""}
           <div className="flex-1 min-h-0 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 overflow-y-auto">
             {/* ── Col 1: Ventas + Caja ── */}
             <div className="flex flex-col gap-3 overflow-y-auto min-h-0" style={{scrollbarWidth:"thin" as React.CSSProperties["scrollbarWidth"]}}>
-              <div className="bg-white dark:bg-card border border-gray-100 dark:border-card-border rounded-xl p-3 shrink-0">
-                <div className="flex items-center gap-1.5 mb-2 pb-1.5 border-b border-gray-100 dark:border-card-border">
+              <div className="bg-white dark:bg-card border border-[var(--rule-soft)] dark:border-card-border rounded-xl p-3 shrink-0">
+                <div className="flex items-center gap-1.5 mb-2 pb-1.5 border-b border-[var(--rule-soft)] dark:border-card-border">
                   <DollarSign className="h-3.5 w-3.5 text-emerald-500" />
                   <span className="text-xs font-bold text-gray-700 dark:text-foreground">Ventas</span>
                 </div>
@@ -1570,19 +1570,19 @@ ${o.notes ? `<hr><p style="font-size:11px">${o.notes}</p>` : ""}
                   {[
                     { label: "Ventas Netas", value: fmt(st.ventas), accent: "text-emerald-600 dark:text-emerald-400" },
                     { label: "Ticket Prom.", value: fmt(st.ticketProm), accent: "text-emerald-600 dark:text-emerald-400" },
-                    { label: "Uds. Vendidas", value: String(st.uds), accent: "text-violet-600 dark:text-violet-400" },
+                    { label: "Uds. Vendidas", value: String(st.uds), accent: "text-[var(--text-secondary)] dark:text-[var(--text-primary)]" },
                     { label: "Cancelados", value: String(st.cancelados), accent: "text-red-500 dark:text-red-400" },
                   ].map(k => (
                     <div key={k.label} className="bg-gray-50 dark:bg-surface rounded-lg px-2.5 py-2">
-                      <div className="text-[10px] text-gray-400 dark:text-muted">{k.label}</div>
+                      <div className="text-[length:var(--ts-2xs)] text-gray-400 dark:text-muted">{k.label}</div>
                       <div className={cn("text-sm font-bold tabular-nums truncate", k.accent)}>{k.value}</div>
                     </div>
                   ))}
                 </div>
               </div>
-              <div className="bg-white dark:bg-card border border-gray-100 dark:border-card-border rounded-xl p-3 shrink-0">
-                <div className="flex items-center gap-1.5 mb-2 pb-1.5 border-b border-gray-100 dark:border-card-border">
-                  <Banknote className="h-3.5 w-3.5 text-indigo-500" />
+              <div className="bg-white dark:bg-card border border-[var(--rule-soft)] dark:border-card-border rounded-xl p-3 shrink-0">
+                <div className="flex items-center gap-1.5 mb-2 pb-1.5 border-b border-[var(--rule-soft)] dark:border-card-border">
+                  <Banknote className="h-3.5 w-3.5 text-[var(--text-secondary)]" />
                   <span className="text-xs font-bold text-gray-700 dark:text-foreground">Caja</span>
                 </div>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mb-3">
@@ -1593,7 +1593,7 @@ ${o.notes ? `<hr><p style="font-size:11px">${o.notes}</p>` : ""}
                     { label: "Margen", value: `${st.margen.toFixed(1)}%`, accent: st.margen >= 25 ? "text-emerald-600 dark:text-emerald-400" : "text-amber-600 dark:text-amber-400" },
                   ].map(k => (
                     <div key={k.label} className="bg-gray-50 dark:bg-surface rounded-lg px-2.5 py-2">
-                      <div className="text-[10px] text-gray-400 dark:text-muted">{k.label}</div>
+                      <div className="text-[length:var(--ts-2xs)] text-gray-400 dark:text-muted">{k.label}</div>
                       <div className={cn("text-sm font-bold tabular-nums truncate", k.accent)}>{k.value}</div>
                     </div>
                   ))}
@@ -1603,7 +1603,7 @@ ${o.notes ? `<hr><p style="font-size:11px">${o.notes}</p>` : ""}
                     {st.payments.slice(0, 5).map(p => (
                       <div key={p.method} className="flex flex-wrap items-center gap-2">
                         <div className="w-2 h-2 rounded-full shrink-0" style={{background: p.color}} />
-                        <span className="text-[11px] text-gray-500 dark:text-muted flex-1 truncate">{p.label}</span>
+                        <span className="text-[length:var(--ts-xs)] text-gray-500 dark:text-muted flex-1 truncate">{p.label}</span>
                         <span className="text-xs font-semibold text-gray-800 dark:text-foreground">{fmt(p.total)}</span>
                       </div>
                     ))}
@@ -1613,8 +1613,8 @@ ${o.notes ? `<hr><p style="font-size:11px">${o.notes}</p>` : ""}
             </div>
             {/* ── Col 2: Productos + Inventario ── */}
             <div className="flex flex-col gap-3 overflow-y-auto min-h-0" style={{scrollbarWidth:"thin" as React.CSSProperties["scrollbarWidth"]}}>
-              <div className="bg-white dark:bg-card border border-gray-100 dark:border-card-border rounded-xl p-3 shrink-0">
-                <div className="flex items-center gap-1.5 mb-2 pb-1.5 border-b border-gray-100 dark:border-card-border">
+              <div className="bg-white dark:bg-card border border-[var(--rule-soft)] dark:border-card-border rounded-xl p-3 shrink-0">
+                <div className="flex items-center gap-1.5 mb-2 pb-1.5 border-b border-[var(--rule-soft)] dark:border-card-border">
                   <TrendingUp className="h-3.5 w-3.5 text-emerald-500" />
                   <span className="text-xs font-bold text-gray-700 dark:text-foreground">Productos (Top ingresos)</span>
                 </div>
@@ -1626,7 +1626,7 @@ ${o.notes ? `<hr><p style="font-size:11px">${o.notes}</p>` : ""}
                     <div className="space-y-2">
                       {st.topRev.slice(0, 6).map((p, i) => (
                         <div key={p.id} className="flex flex-wrap items-center gap-2">
-                          <span className={cn("w-4 h-4 rounded-full flex items-center justify-center text-[10px] font-bold shrink-0", i < 3 ? "bg-gray-900 dark:bg-foreground text-white dark:text-background" : "bg-gray-100 dark:bg-accent text-gray-400")}>{i+1}</span>
+                          <span className={cn("w-4 h-4 rounded-full flex items-center justify-center text-[length:var(--ts-2xs)] font-bold shrink-0", i < 3 ? "bg-gray-900 dark:bg-foreground text-white dark:text-background" : "bg-gray-100 dark:bg-accent text-gray-400")}>{i+1}</span>
                           <div className="flex-1 min-w-0">
                             <div className="flex justify-between mb-0.5">
                               <span className="text-xs text-gray-600 dark:text-gray-300 truncate">{p.name}</span>
@@ -1642,29 +1642,29 @@ ${o.notes ? `<hr><p style="font-size:11px">${o.notes}</p>` : ""}
                   );
                 })()}
                 {st.catSales.length > 0 && (
-                  <div className="mt-2.5 pt-2 border-t border-gray-100 dark:border-card-border grid grid-cols-1 sm:grid-cols-2 gap-1.5">
+                  <div className="mt-2.5 pt-2 border-t border-[var(--rule-soft)] dark:border-card-border grid grid-cols-1 sm:grid-cols-2 gap-1.5">
                     {st.catSales.slice(0, 4).map(c => (
                       <div key={c.cat} className="flex items-center gap-1.5 min-w-0">
                         <div className="w-1.5 h-1.5 rounded-full shrink-0" style={{background: c.color}} />
-                        <span className="text-[10px] text-gray-500 dark:text-muted truncate flex-1">{c.label}</span>
-                        <span className="text-[10px] font-semibold text-gray-700 dark:text-foreground shrink-0">{fmt(c.total)}</span>
+                        <span className="text-[length:var(--ts-2xs)] text-gray-500 dark:text-muted truncate flex-1">{c.label}</span>
+                        <span className="text-[length:var(--ts-2xs)] font-semibold text-gray-700 dark:text-foreground shrink-0">{fmt(c.total)}</span>
                       </div>
                     ))}
                   </div>
                 )}
               </div>
-              <div className="bg-white dark:bg-card border border-gray-100 dark:border-card-border rounded-xl p-3 shrink-0">
-                <div className="flex items-center gap-1.5 mb-2 pb-1.5 border-b border-gray-100 dark:border-card-border">
+              <div className="bg-white dark:bg-card border border-[var(--rule-soft)] dark:border-card-border rounded-xl p-3 shrink-0">
+                <div className="flex items-center gap-1.5 mb-2 pb-1.5 border-b border-[var(--rule-soft)] dark:border-card-border">
                   <Package className="h-3.5 w-3.5 text-amber-500" />
                   <span className="text-xs font-bold text-gray-700 dark:text-foreground">Inventario</span>
                 </div>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mb-2.5">
                   <div className="bg-gray-50 dark:bg-surface rounded-lg px-2.5 py-2">
-                    <div className="text-[10px] text-gray-400 dark:text-muted">Valor stock</div>
+                    <div className="text-[length:var(--ts-2xs)] text-gray-400 dark:text-muted">Valor stock</div>
                     <div className="text-sm font-bold text-amber-600 dark:text-amber-400 tabular-nums truncate">{fmt(st.stockVal)}</div>
                   </div>
                   <div className="bg-gray-50 dark:bg-surface rounded-lg px-2.5 py-2">
-                    <div className="text-[10px] text-gray-400 dark:text-muted">Sin stock</div>
+                    <div className="text-[length:var(--ts-2xs)] text-gray-400 dark:text-muted">Sin stock</div>
                     <div className={cn("text-sm font-bold tabular-nums", st.agotados.length > 0 ? "text-red-600 dark:text-red-400" : "text-emerald-600 dark:text-emerald-400")}>{st.agotados.length}</div>
                   </div>
                 </div>
@@ -1675,17 +1675,17 @@ ${o.notes ? `<hr><p style="font-size:11px">${o.notes}</p>` : ""}
                     {st.agotados.slice(0, 2).map(p => (
                       <div key={p.id} className="flex items-center justify-between py-1.5 px-2 bg-red-50 dark:bg-red-950/30 rounded-lg">
                         <span className="text-xs text-gray-700 dark:text-foreground truncate flex-1">{p.name}</span>
-                        <span className="text-[10px] font-bold text-red-600 dark:text-red-400 ml-2 shrink-0">Agotado</span>
+                        <span className="text-[length:var(--ts-2xs)] font-bold text-red-600 dark:text-red-400 ml-2 shrink-0">Agotado</span>
                       </div>
                     ))}
                     {st.stockCritico.filter(p => (p.stock ?? 0) > 0).slice(0, 4).map(p => (
                       <div key={p.id} className="flex items-center justify-between py-1.5 px-2 bg-amber-50 dark:bg-amber-950/30 rounded-lg">
                         <span className="text-xs text-gray-700 dark:text-foreground truncate flex-1">{p.name}</span>
-                        <span className="text-[10px] font-bold text-amber-600 dark:text-amber-400 ml-2 shrink-0">{p.stock}/{p.stockMin}</span>
+                        <span className="text-[length:var(--ts-2xs)] font-bold text-amber-600 dark:text-amber-400 ml-2 shrink-0">{p.stock}/{p.stockMin}</span>
                       </div>
                     ))}
                     {(st.stockCritico.length + st.agotados.length) > 6 && (
-                      <p className="text-[10px] text-gray-400 text-center">+{st.stockCritico.length + st.agotados.length - 6} más con alerta</p>
+                      <p className="text-[length:var(--ts-2xs)] text-gray-400 text-center">+{st.stockCritico.length + st.agotados.length - 6} más con alerta</p>
                     )}
                   </div>
                 )}
@@ -1693,19 +1693,19 @@ ${o.notes ? `<hr><p style="font-size:11px">${o.notes}</p>` : ""}
             </div>
             {/* ── Col 3: Clientes + Compras ── */}
             <div className="flex flex-col gap-3 overflow-y-auto min-h-0" style={{scrollbarWidth:"thin" as React.CSSProperties["scrollbarWidth"]}}>
-              <div className="bg-white dark:bg-card border border-gray-100 dark:border-card-border rounded-xl p-3 shrink-0">
-                <div className="flex items-center gap-1.5 mb-2 pb-1.5 border-b border-gray-100 dark:border-card-border">
-                  <Users className="h-3.5 w-3.5 text-violet-500" />
+              <div className="bg-white dark:bg-card border border-[var(--rule-soft)] dark:border-card-border rounded-xl p-3 shrink-0">
+                <div className="flex items-center gap-1.5 mb-2 pb-1.5 border-b border-[var(--rule-soft)] dark:border-card-border">
+                  <Users className="h-3.5 w-3.5 text-[var(--text-secondary)]" />
                   <span className="text-xs font-bold text-gray-700 dark:text-foreground">Clientes</span>
                 </div>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mb-2.5">
                   <div className="bg-gray-50 dark:bg-surface rounded-lg px-2.5 py-2">
-                    <div className="text-[10px] text-gray-400 dark:text-muted">Atendidos</div>
-                    <div className="text-sm font-bold text-indigo-600 dark:text-indigo-400 tabular-nums">{st.clientesAtendidos}</div>
+                    <div className="text-[length:var(--ts-2xs)] text-gray-400 dark:text-muted">Atendidos</div>
+                    <div className="text-sm font-bold text-[var(--text-secondary)] dark:text-[var(--text-primary)] tabular-nums">{st.clientesAtendidos}</div>
                   </div>
                   <div className="bg-gray-50 dark:bg-surface rounded-lg px-2.5 py-2">
-                    <div className="text-[10px] text-gray-400 dark:text-muted">Nuevos</div>
-                    <div className="text-sm font-bold text-violet-600 dark:text-violet-400 tabular-nums">{st.newCust}</div>
+                    <div className="text-[length:var(--ts-2xs)] text-gray-400 dark:text-muted">Nuevos</div>
+                    <div className="text-sm font-bold text-[var(--text-secondary)] dark:text-[var(--text-primary)] tabular-nums">{st.newCust}</div>
                   </div>
                 </div>
                 {(() => {
@@ -1722,14 +1722,14 @@ ${o.notes ? `<hr><p style="font-size:11px">${o.notes}</p>` : ""}
                     <div className="space-y-1.5">
                       {top.map((c,i) => (
                         <div key={c.name+i} className="flex flex-wrap items-center gap-2">
-                          <span className={cn("w-4 h-4 rounded-full flex items-center justify-center text-[10px] font-bold shrink-0", i < 3 ? "bg-violet-100 dark:bg-violet-900/50 text-violet-700 dark:text-violet-300" : "bg-gray-100 dark:bg-accent text-gray-400")}>{i+1}</span>
+                          <span className={cn("w-4 h-4 rounded-full flex items-center justify-center text-[length:var(--ts-2xs)] font-bold shrink-0", i < 3 ? "bg-[var(--surface-sunken)] text-[var(--text-secondary)] dark:text-[var(--text-primary)]" : "bg-gray-100 dark:bg-accent text-gray-400")}>{i+1}</span>
                           <div className="flex-1 min-w-0">
                             <div className="flex justify-between mb-0.5">
                               <span className="text-xs text-gray-600 dark:text-gray-300 truncate">{c.name}</span>
                               <span className="text-xs font-semibold text-gray-800 dark:text-foreground ml-1 shrink-0">{fmt(c.total)}</span>
                             </div>
                             <div className="h-1 bg-gray-100 dark:bg-accent rounded-full overflow-hidden">
-                              <div className="h-full rounded-full bg-violet-500" style={{width:`${(c.total/mx)*100}%`}} />
+                              <div className="h-full rounded-full bg-[var(--text-primary)]" style={{width:`${(c.total/mx)*100}%`}} />
                             </div>
                           </div>
                         </div>
@@ -1738,18 +1738,18 @@ ${o.notes ? `<hr><p style="font-size:11px">${o.notes}</p>` : ""}
                   );
                 })()}
               </div>
-              <div className="bg-white dark:bg-card border border-gray-100 dark:border-card-border rounded-xl p-3 shrink-0">
-                <div className="flex items-center gap-1.5 mb-2 pb-1.5 border-b border-gray-100 dark:border-card-border">
+              <div className="bg-white dark:bg-card border border-[var(--rule-soft)] dark:border-card-border rounded-xl p-3 shrink-0">
+                <div className="flex items-center gap-1.5 mb-2 pb-1.5 border-b border-[var(--rule-soft)] dark:border-card-border">
                   <Truck className="h-3.5 w-3.5 text-emerald-500" />
                   <span className="text-xs font-bold text-gray-700 dark:text-foreground">Compras</span>
                 </div>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mb-2.5">
                   <div className="bg-gray-50 dark:bg-surface rounded-lg px-2.5 py-2">
-                    <div className="text-[10px] text-gray-400 dark:text-muted">Total compras</div>
+                    <div className="text-[length:var(--ts-2xs)] text-gray-400 dark:text-muted">Total compras</div>
                     <div className="text-sm font-bold text-emerald-600 dark:text-emerald-400 tabular-nums truncate">{fmt(st.totalPurch)}</div>
                   </div>
                   <div className="bg-gray-50 dark:bg-surface rounded-lg px-2.5 py-2">
-                    <div className="text-[10px] text-gray-400 dark:text-muted">Deuda pend.</div>
+                    <div className="text-[length:var(--ts-2xs)] text-gray-400 dark:text-muted">Deuda pend.</div>
                     <div className={cn("text-sm font-bold tabular-nums truncate", st.debt > 0 ? "text-red-600 dark:text-red-400" : "text-emerald-600 dark:text-emerald-400")}>{fmt(st.debt)}</div>
                   </div>
                 </div>
@@ -1765,7 +1765,7 @@ ${o.notes ? `<hr><p style="font-size:11px">${o.notes}</p>` : ""}
                               <span className="text-xs font-semibold text-gray-800 dark:text-foreground ml-1 shrink-0">{fmt(s.total)}</span>
                             </div>
                             <div className="h-1 bg-gray-100 dark:bg-accent rounded-full overflow-hidden">
-                              <div className="h-full rounded-full bg-indigo-500" style={{width:`${(s.total/mx)*100}%`}} />
+                              <div className="h-full rounded-full bg-[var(--text-primary)]" style={{width:`${(s.total/mx)*100}%`}} />
                             </div>
                           </div>
                         </div>
@@ -1774,8 +1774,8 @@ ${o.notes ? `<hr><p style="font-size:11px">${o.notes}</p>` : ""}
                   </div>
                 )}
                 {st.overdue.length > 0 && (
-                  <div className="mt-2 pt-2 border-t border-gray-100 dark:border-card-border">
-                    <p className="text-[10px] font-bold text-red-600 dark:text-red-400 mb-1">
+                  <div className="mt-2 pt-2 border-t border-[var(--rule-soft)] dark:border-card-border">
+                    <p className="text-[length:var(--ts-2xs)] font-bold text-red-600 dark:text-red-400 mb-1">
                       {st.overdue.length} cuenta{st.overdue.length !== 1 ? "s" : ""} vencida{st.overdue.length !== 1 ? "s" : ""}
                     </p>
                     {st.overdue.slice(0, 2).map(p => (
@@ -1794,19 +1794,19 @@ ${o.notes ? `<hr><p style="font-size:11px">${o.notes}</p>` : ""}
       {!fullscreen && (<>
       {/* ── Expand All banner ── */}
       {expandAll && (
-        <div className="flex items-center justify-between mb-5 px-2 sm:px-4 py-2 sm:py-3 bg-indigo-50 dark:bg-indigo-900/20 rounded-xl border border-indigo-100 dark:border-indigo-800/50">
+        <div className="flex items-center justify-between mb-5 px-2 sm:px-4 py-2 sm:py-3 bg-[var(--surface-sunken)] rounded-xl border border-[var(--rule-base)]">
           <div className="flex flex-wrap items-center gap-2.5">
             <div className="w-7 h-7 rounded-lg bg-indigo-600 flex items-center justify-center shrink-0">
               <LayoutDashboard className="h-3.5 w-3.5 text-white" />
             </div>
             <div>
-              <span className="text-sm font-bold text-indigo-700 dark:text-indigo-300">Vista expandida</span>
-              <p className="text-xs text-indigo-500 dark:text-indigo-400">Todos los gráficos y secciones — desplázate para ver cada una</p>
+              <span className="text-sm font-bold text-[var(--text-secondary)] dark:text-[var(--text-primary)]">Vista expandida</span>
+              <p className="text-xs text-[var(--text-secondary)] dark:text-[var(--text-primary)]">Todos los gráficos y secciones — desplázate para ver cada una</p>
             </div>
           </div>
           <button
             onClick={() => setExpandAll(false)}
-            className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-semibold text-indigo-600 dark:text-indigo-400 hover:bg-indigo-100 dark:hover:bg-indigo-900/50 transition-colors"
+            className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-semibold text-[var(--text-secondary)] dark:text-[var(--text-primary)] hover:bg-[var(--surface-sunken)] dark:hover:bg-indigo-900/50 transition-colors"
             title="Colapsar (Esc)"
           >
             <Minimize2 className="h-3.5 w-3.5" />
@@ -1823,7 +1823,7 @@ ${o.notes ? `<hr><p style="font-size:11px">${o.notes}</p>` : ""}
           value={dashSearch}
           onChange={e => { setDashSearch(e.target.value); if (section !== "ventas" && e.target.value) setSection("ventas"); }}
           placeholder="Buscar pedido, cliente…"
-          className="w-full pl-8 pr-8 py-2 text-xs rounded-lg border border-gray-200 dark:border-card-border bg-gray-50 dark:bg-accent/50 text-gray-700 dark:text-foreground placeholder-gray-300 focus:outline-none focus:border-primary/40 focus:bg-white dark:focus:bg-card transition-colors"
+          className="w-full pl-8 pr-8 py-2 text-xs rounded-lg border border-[var(--rule-base)] dark:border-card-border bg-gray-50 dark:bg-accent/50 text-gray-700 dark:text-foreground placeholder-gray-300 focus:outline-none focus:border-primary/40 focus:bg-white dark:focus:bg-card transition-colors"
         />
         {dashSearch && (
           <button onClick={() => setDashSearch("")} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 font-bold text-sm">×</button>
@@ -1833,7 +1833,7 @@ ${o.notes ? `<hr><p style="font-size:11px">${o.notes}</p>` : ""}
 
       {/* ── Section Tabs ── */}
       {!expandAll && (
-      <div className={cn("flex border-b border-gray-100 dark:border-card-border overflow-x-auto", fullscreen && "justify-center gap-1")} style={{scrollbarWidth:"none" as React.CSSProperties["scrollbarWidth"],marginBottom:"20px"}}>
+      <div className={cn("flex border-b border-[var(--rule-soft)] dark:border-card-border overflow-x-auto", fullscreen && "justify-center gap-1")} style={{scrollbarWidth:"none" as React.CSSProperties["scrollbarWidth"],marginBottom:"20px"}}>
         {SECTIONS.map(s => (
           <button key={s.id} onClick={()=>setSection(s.id)}
             className={cn(
@@ -1869,12 +1869,12 @@ ${o.notes ? `<hr><p style="font-size:11px">${o.notes}</p>` : ""}
         const agotadosCount = products.filter(p => p.stock != null && p.stock <= 0).length;
         const stockBajoCount = products.filter(p => p.stock != null && p.stockMin != null && p.stock > 0 && p.stock <= p.stockMin).length;
         return (
-          <div className="mb-4 rounded-xl border border-emerald-200 dark:border-emerald-800/40 bg-linear-to-r from-emerald-50 to-teal-50 dark:from-emerald-950/25 dark:to-teal-950/25 px-5 py-4">
+          <div className="mb-4 rounded-xl border border-emerald-200 dark:border-emerald-800/40 bg-[var(--surface-sunken)] px-5 py-4">
             <div className="flex items-center justify-between mb-3">
               <div className="flex flex-wrap items-center gap-2">
                 <Sun className="h-4.5 w-4.5 text-emerald-600 dark:text-emerald-400" />
                 <span className="text-sm font-extrabold text-emerald-700 dark:text-emerald-400">Resumen de hoy</span>
-                <span className="text-[10px] text-emerald-500/70 dark:text-emerald-500/60">{new Date().toLocaleDateString("es-PE", { weekday: "long", day: "numeric", month: "short" })}</span>
+                <span className="text-[length:var(--ts-2xs)] text-emerald-500/70 dark:text-emerald-500/60">{new Date().toLocaleDateString("es-PE", { weekday: "long", day: "numeric", month: "short" })}</span>
               </div>
               {ydRev > 0 && (
                 <span className={cn("text-xs font-bold px-2 py-0.5 rounded-full", isUp ? "text-emerald-700 bg-emerald-100 dark:bg-emerald-900/40" : "text-red-600 bg-red-100 dark:bg-red-900/40")}>
@@ -1886,15 +1886,15 @@ ${o.notes ? `<hr><p style="font-size:11px">${o.notes}</p>` : ""}
             <div className="grid grid-cols-3 gap-3 mb-3">
               <div className="text-center">
                 <p className="text-xl font-extrabold text-gray-900 dark:text-foreground">S/{todayRev.toFixed(0)}</p>
-                <p className="text-[10px] text-gray-400 dark:text-muted">Ingresos</p>
+                <p className="text-[length:var(--ts-2xs)] text-gray-400 dark:text-muted">Ingresos</p>
               </div>
               <div className="text-center border-x border-emerald-200 dark:border-emerald-800/40">
                 <p className="text-xl font-extrabold text-gray-900 dark:text-foreground">{todayCount}</p>
-                <p className="text-[10px] text-gray-400 dark:text-muted">Transacciones</p>
+                <p className="text-[length:var(--ts-2xs)] text-gray-400 dark:text-muted">Transacciones</p>
               </div>
               <div className="text-center">
                 <p className="text-xl font-extrabold text-gray-900 dark:text-foreground">S/{todayAvg.toFixed(0)}</p>
-                <p className="text-[10px] text-gray-400 dark:text-muted">Ticket prom.</p>
+                <p className="text-[length:var(--ts-2xs)] text-gray-400 dark:text-muted">Ticket prom.</p>
               </div>
             </div>
             {/* Status row — pending orders + stock */}
@@ -1948,7 +1948,7 @@ ${o.notes ? `<hr><p style="font-size:11px">${o.notes}</p>` : ""}
                 ins.type === "danger" ? "bg-red-50/60 border-red-100" :
                 ins.type === "warning" ? "bg-amber-50/60 border-amber-100" :
                 ins.type === "success" ? "bg-emerald-50/60 border-emerald-100" :
-                "bg-gray-50/60 border-gray-100"
+                "bg-gray-50/60 border-[var(--rule-soft)]"
               )}>
                 <div className={cn(
                   "w-8 h-8 rounded-lg flex items-center justify-center shrink-0",
@@ -2003,10 +2003,10 @@ ${o.notes ? `<hr><p style="font-size:11px">${o.notes}</p>` : ""}
         <div className={cn("space-y-4", expandAll && "col-span-full")}>
           {/* ── Monthly Goals Card ── */}
           {period === "mes" && (
-            <div className="bg-linear-to-br from-indigo-50 to-purple-50 dark:from-indigo-950/30 dark:to-purple-950/30 rounded-xl border border-indigo-100 dark:border-indigo-900/30 p-3 sm:p-5">
+            <div className="bg-[var(--surface-sunken)] rounded-xl border border-[var(--rule-base)] p-3 sm:p-5">
               <div className="flex items-center justify-between mb-4">
                 <div className="flex flex-wrap items-center gap-2.5">
-                  <div className="w-10 h-10 rounded-xl bg-linear-to-br from-indigo-500 to-purple-500 flex items-center justify-center">
+                  <div className="w-10 h-10 rounded-xl bg-[var(--text-primary)] flex items-center justify-center">
                     <Target className="h-5 w-5 text-white" />
                   </div>
                   <div>
@@ -2018,7 +2018,7 @@ ${o.notes ? `<hr><p style="font-size:11px">${o.notes}</p>` : ""}
                   {Object.values(monthlyGoals).some(v => v > 0) && (
                     <button
                       onClick={() => setShowGoalHistory(true)}
-                      className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold text-indigo-600 dark:text-indigo-400 bg-white/60 dark:bg-white/10 hover:bg-white dark:hover:bg-white/20 transition-colors"
+                      className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold text-[var(--text-secondary)] dark:text-[var(--text-primary)] bg-white/60 dark:bg-white/10 hover:bg-white dark:hover:bg-white/20 transition-colors"
                     >
                       <BarChart3 className="h-3.5 w-3.5" /> Histórico
                     </button>
@@ -2028,7 +2028,7 @@ ${o.notes ? `<hr><p style="font-size:11px">${o.notes}</p>` : ""}
                       setTempGoals(monthlyGoals);
                       setEditingMonthlyGoals(true);
                     }}
-                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold text-white bg-linear-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 transition-colors "
+                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold text-white bg-[var(--text-primary)] hover:opacity-90 transition-colors "
                   >
                     <Edit3 className="h-3.5 w-3.5" /> Editar metas
                   </button>
@@ -2046,21 +2046,21 @@ ${o.notes ? `<hr><p style="font-size:11px">${o.notes}</p>` : ""}
                     const pct = metric.goal > 0 ? Math.min((metric.value / metric.goal) * 100, 100) : 0;
                     const status = pct >= 100 ? "complete" : pct >= 80 ? "good" : pct >= 50 ? "warning" : "danger";
                     return (
-                      <div key={metric.key} className="bg-white/70 dark:bg-gray-900/30 rounded-xl p-4 border border-white/50 dark:border-gray-800">
+                      <div key={metric.key} className="bg-white/70 dark:bg-gray-900/30 rounded-xl p-4 border border-white/50 dark:border-[var(--rule-base)]">
                         <div className="flex items-center justify-between mb-2">
                           <div className="flex flex-wrap items-center gap-2">
                             <div className={cn(
                               "w-8 h-8 rounded-lg flex items-center justify-center",
                               metric.color === "emerald" && "bg-emerald-100 dark:bg-emerald-900/30",
                               metric.color === "blue" && "bg-emerald-100 dark:bg-emerald-900/30",
-                              metric.color === "violet" && "bg-violet-100 dark:bg-violet-900/30",
+                              metric.color === "violet" && "bg-[var(--surface-sunken)]",
                               metric.color === "amber" && "bg-amber-100 dark:bg-amber-900/30"
                             )}>
                               <metric.icon className={cn(
                                 "h-4 w-4",
                                 metric.color === "emerald" && "text-emerald-600 dark:text-emerald-400",
                                 metric.color === "blue" && "text-emerald-600 dark:text-emerald-400",
-                                metric.color === "violet" && "text-violet-600 dark:text-violet-400",
+                                metric.color === "violet" && "text-[var(--text-secondary)] dark:text-[var(--text-primary)]",
                                 metric.color === "amber" && "text-amber-600 dark:text-amber-400"
                               )} />
                             </div>
@@ -2087,17 +2087,17 @@ ${o.notes ? `<hr><p style="font-size:11px">${o.notes}</p>` : ""}
                           <div className="h-2 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
                             <div
                               className={cn(
-                                "h-full rounded-full transition-all duration-500",
-                                status === "complete" && "bg-linear-to-r from-emerald-500 to-emerald-600",
-                                status === "good" && "bg-linear-to-r from-emerald-500 to-emerald-600",
-                                status === "warning" && "bg-linear-to-r from-amber-500 to-amber-600",
-                                status === "danger" && "bg-linear-to-r from-red-500 to-red-600"
+                                "h-full rounded-full transition-all duration-[var(--dur-slow)]",
+                                status === "complete" && "bg-[var(--data-success)]",
+                                status === "good" && "bg-[var(--data-success)]",
+                                status === "warning" && "bg-[var(--data-warning)]",
+                                status === "danger" && "bg-[var(--data-error)]"
                               )}
                               style={{ width: `${pct}%` }}
                             />
                           </div>
                           <p className={cn(
-                            "text-[10px] font-medium",
+                            "text-[length:var(--ts-2xs)] font-medium",
                             status === "complete" && "text-emerald-600 dark:text-emerald-400",
                             status === "good" && "text-gray-600 dark:text-gray-400",
                             status === "warning" && "text-amber-600 dark:text-amber-400",
@@ -2119,7 +2119,7 @@ ${o.notes ? `<hr><p style="font-size:11px">${o.notes}</p>` : ""}
                     setTempGoals({ revenue: 0, orders: 0, customers: 0, avgTicket: 0 });
                     setEditingMonthlyGoals(true);
                   }}
-                  className="w-full py-8 rounded-xl border-2 border-dashed border-indigo-200 dark:border-indigo-800 text-gray-400 dark:text-muted hover:border-indigo-400 dark:hover:border-indigo-600 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors group"
+                  className="w-full py-8 rounded-xl border-2 border-dashed border-[var(--rule-base)] text-gray-400 dark:text-muted hover:border-indigo-400 dark:hover:border-indigo-600 hover:text-[var(--text-primary)] dark:hover:text-[var(--text-primary)] transition-colors group"
                 >
                   <Target className="h-8 w-8 mx-auto mb-2 opacity-50 group-hover:opacity-100 transition-opacity" />
                   <p className="text-sm font-semibold">Definir metas del mes</p>
@@ -2133,9 +2133,9 @@ ${o.notes ? `<hr><p style="font-size:11px">${o.notes}</p>` : ""}
           {editingMonthlyGoals && (
             <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4" onClick={() => setEditingMonthlyGoals(false)}>
               <div className="bg-white dark:bg-card rounded-xl w-full max-w-lg" onClick={e => e.stopPropagation()}>
-                <div className="flex items-center justify-between px-3 sm:px-6 py-4 border-b border-gray-100 dark:border-card-border">
+                <div className="flex items-center justify-between px-3 sm:px-6 py-4 border-b border-[var(--rule-soft)] dark:border-card-border">
                   <div className="flex flex-wrap items-center gap-2.5">
-                    <div className="w-9 h-9 rounded-xl bg-linear-to-br from-indigo-500 to-purple-500 flex items-center justify-center">
+                    <div className="w-9 h-9 rounded-xl bg-[var(--text-primary)] flex items-center justify-center">
                       <Target className="h-4 w-4 text-white" />
                     </div>
                     <h3 className="font-extrabold text-gray-900 dark:text-foreground">Metas del mes</h3>
@@ -2156,7 +2156,7 @@ ${o.notes ? `<hr><p style="font-size:11px">${o.notes}</p>` : ""}
                         value={tempGoals.revenue || ""}
                         onChange={e => setTempGoals(prev => ({ ...prev, revenue: Number(e.target.value) }))}
                         placeholder="5000"
-                        className="w-full px-3 py-2.5 rounded-lg border border-gray-200 dark:border-card-border text-gray-900 dark:text-foreground focus:border-indigo-500 outline-none text-sm"
+                        className="w-full px-3 py-2.5 rounded-lg border border-[var(--rule-base)] dark:border-card-border text-gray-900 dark:text-foreground focus:border-[var(--text-primary)] outline-none text-sm"
                       />
                     </div>
                     <div>
@@ -2170,7 +2170,7 @@ ${o.notes ? `<hr><p style="font-size:11px">${o.notes}</p>` : ""}
                         value={tempGoals.orders || ""}
                         onChange={e => setTempGoals(prev => ({ ...prev, orders: Number(e.target.value) }))}
                         placeholder="100"
-                        className="w-full px-3 py-2.5 rounded-lg border border-gray-200 dark:border-card-border text-gray-900 dark:text-foreground focus:border-indigo-500 outline-none text-sm"
+                        className="w-full px-3 py-2.5 rounded-lg border border-[var(--rule-base)] dark:border-card-border text-gray-900 dark:text-foreground focus:border-[var(--text-primary)] outline-none text-sm"
                       />
                     </div>
                     <div>
@@ -2184,7 +2184,7 @@ ${o.notes ? `<hr><p style="font-size:11px">${o.notes}</p>` : ""}
                         value={tempGoals.customers || ""}
                         onChange={e => setTempGoals(prev => ({ ...prev, customers: Number(e.target.value) }))}
                         placeholder="50"
-                        className="w-full px-3 py-2.5 rounded-lg border border-gray-200 dark:border-card-border text-gray-900 dark:text-foreground focus:border-indigo-500 outline-none text-sm"
+                        className="w-full px-3 py-2.5 rounded-lg border border-[var(--rule-base)] dark:border-card-border text-gray-900 dark:text-foreground focus:border-[var(--text-primary)] outline-none text-sm"
                       />
                     </div>
                     <div>
@@ -2198,7 +2198,7 @@ ${o.notes ? `<hr><p style="font-size:11px">${o.notes}</p>` : ""}
                         value={tempGoals.avgTicket || ""}
                         onChange={e => setTempGoals(prev => ({ ...prev, avgTicket: Number(e.target.value) }))}
                         placeholder="50"
-                        className="w-full px-3 py-2.5 rounded-lg border border-gray-200 dark:border-card-border text-gray-900 dark:text-foreground focus:border-indigo-500 outline-none text-sm"
+                        className="w-full px-3 py-2.5 rounded-lg border border-[var(--rule-base)] dark:border-card-border text-gray-900 dark:text-foreground focus:border-[var(--text-primary)] outline-none text-sm"
                       />
                     </div>
                   </div>
@@ -2206,9 +2206,9 @@ ${o.notes ? `<hr><p style="font-size:11px">${o.notes}</p>` : ""}
                     <p className="text-xs text-emerald-700 dark:text-emerald-400"><strong>Consejo:</strong> Establece metas realistas basadas en tu histórico y +10-15% de crecimiento.</p>
                   </div>
                 </div>
-                <div className="flex flex-wrap justify-end gap-3 px-3 sm:px-6 py-4 border-t border-gray-100 dark:border-card-border">
+                <div className="flex flex-wrap justify-end gap-3 px-3 sm:px-6 py-4 border-t border-[var(--rule-soft)] dark:border-card-border">
                   <button onClick={() => setEditingMonthlyGoals(false)} className="px-2 sm:px-4 py-1.5 sm:py-2.5 rounded-lg text-sm font-semibold text-gray-600 dark:text-muted hover:bg-gray-100 dark:hover:bg-accent transition-colors">Cancelar</button>
-                  <button onClick={saveMonthlyGoals} className="px-2 sm:px-4 py-1.5 sm:py-2.5 rounded-lg text-sm font-bold text-white bg-linear-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 transition-colors ">Guardar metas</button>
+                  <button onClick={saveMonthlyGoals} className="px-2 sm:px-4 py-1.5 sm:py-2.5 rounded-lg text-sm font-bold text-white bg-[var(--text-primary)] hover:opacity-90 transition-colors ">Guardar metas</button>
                 </div>
               </div>
             </div>
@@ -2218,9 +2218,9 @@ ${o.notes ? `<hr><p style="font-size:11px">${o.notes}</p>` : ""}
           {showGoalHistory && (
             <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4" onClick={() => setShowGoalHistory(false)}>
               <div className="bg-white dark:bg-card rounded-xl w-full max-w-2xl max-h-[90vh] flex flex-col" onClick={e => e.stopPropagation()}>
-                <div className="flex items-center justify-between px-3 sm:px-6 py-4 border-b border-gray-100 dark:border-card-border shrink-0">
+                <div className="flex items-center justify-between px-3 sm:px-6 py-4 border-b border-[var(--rule-soft)] dark:border-card-border shrink-0">
                   <div className="flex flex-wrap items-center gap-2.5">
-                    <div className="w-9 h-9 rounded-xl bg-linear-to-br from-indigo-500 to-purple-500 flex items-center justify-center">
+                    <div className="w-9 h-9 rounded-xl bg-[var(--text-primary)] flex items-center justify-center">
                       <BarChart3 className="h-4 w-4 text-white" />
                     </div>
                     <h3 className="font-extrabold text-gray-900 dark:text-foreground">Histórico de metas</h3>
@@ -2241,7 +2241,7 @@ ${o.notes ? `<hr><p style="font-size:11px">${o.notes}</p>` : ""}
                           const date = new Date(monthKey + "-01");
                           const monthLabel = date.toLocaleDateString("es-PE", { month: "long", year: "numeric" });
                           return (
-                            <div key={monthKey} className="bg-gray-50 dark:bg-surface rounded-xl p-4 border border-gray-100 dark:border-card-border">
+                            <div key={monthKey} className="bg-gray-50 dark:bg-surface rounded-xl p-4 border border-[var(--rule-soft)] dark:border-card-border">
                               <h4 className="font-bold text-sm text-gray-900 dark:text-foreground mb-3 capitalize">{monthLabel}</h4>
                               <div className="grid sm:grid-cols-2 gap-3 text-xs">
                                 <div>
@@ -2290,7 +2290,7 @@ ${o.notes ? `<hr><p style="font-size:11px">${o.notes}</p>` : ""}
           
           {/* Period comparison badge */}
           {period !== "todo" && (
-            <div className="flex items-center justify-between px-2 sm:px-4 py-1.5 sm:py-2 bg-linear-to-r from-emerald-50 to-violet-50 dark:from-emerald-950/30 dark:to-violet-950/30 rounded-xl border border-emerald-100 dark:border-emerald-900/30">
+            <div className="flex items-center justify-between px-2 sm:px-4 py-1.5 sm:py-2 bg-[var(--surface-sunken)] rounded-xl border border-[var(--rule-base)]">
               <div className="flex flex-wrap items-center gap-2">
                 <CalendarDays className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
                 <span className="text-sm font-semibold text-gray-700 dark:text-foreground">
@@ -2309,7 +2309,7 @@ ${o.notes ? `<hr><p style="font-size:11px">${o.notes}</p>` : ""}
           )}
 
           {/* Sprint 3: Morning Briefing Card */}
-          <div className="bg-linear-to-br from-gray-900 to-gray-800 dark:from-gray-800 dark:to-gray-900 rounded-lg p-4 text-white">
+          <div className="bg-[var(--brand-ink)] rounded-lg p-4 text-white">
             <div className="flex items-center justify-between mb-3">
               <div className="flex flex-wrap items-center gap-2">
                 <div className="w-8 h-8 rounded-lg bg-white/10 flex items-center justify-center">
@@ -2317,13 +2317,13 @@ ${o.notes ? `<hr><p style="font-size:11px">${o.notes}</p>` : ""}
                 </div>
                 <div>
                   <h3 className="text-sm font-bold">Buenos días</h3>
-                  <p className="text-[10px] text-gray-400">{new Date().toLocaleDateString("es-PE", { weekday: "long", day: "numeric", month: "long" })}</p>
+                  <p className="text-[length:var(--ts-2xs)] text-gray-400">{new Date().toLocaleDateString("es-PE", { weekday: "long", day: "numeric", month: "long" })}</p>
                 </div>
               </div>
               {st.todayRevenue > 0 && (
                 <div className="text-right">
                   <div className="text-lg font-bold text-emerald-400">{fmt(st.todayRevenue)}</div>
-                  <div className="text-[10px] text-gray-400">hoy</div>
+                  <div className="text-[length:var(--ts-2xs)] text-gray-400">hoy</div>
                 </div>
               )}
             </div>
@@ -2331,7 +2331,7 @@ ${o.notes ? `<hr><p style="font-size:11px">${o.notes}</p>` : ""}
             {/* Yesterday summary */}
             <div className="flex flex-wrap items-center gap-3 mb-3 px-3 py-2 rounded-lg bg-white/5">
               <div className="flex-1">
-                <span className="text-[10px] text-gray-400">Ayer</span>
+                <span className="text-[length:var(--ts-2xs)] text-gray-400">Ayer</span>
                 <div className="flex flex-wrap items-center gap-3 mt-0.5">
                   <span className="text-sm font-bold">{fmt(st.yesterdayRevenue)}</span>
                   <span className="text-xs text-gray-400">{st.yesterdayTickets} ticket{st.yesterdayTickets !== 1 ? "s" : ""}</span>
@@ -2349,7 +2349,7 @@ ${o.notes ? `<hr><p style="font-size:11px">${o.notes}</p>` : ""}
             {/* Today's priorities */}
             {st.briefingPriorities.length > 0 && (
               <div>
-                <div className="text-[10px] text-gray-400 mb-1.5">Prioridades de hoy</div>
+                <div className="text-[length:var(--ts-2xs)] text-gray-400 mb-1.5">Prioridades de hoy</div>
                 <div className="space-y-1">
                   {st.briefingPriorities.map((p, i) => (
                     <div key={i} className="text-xs text-gray-200 py-1 px-2 rounded bg-white/5">
@@ -2368,12 +2368,12 @@ ${o.notes ? `<hr><p style="font-size:11px">${o.notes}</p>` : ""}
             <Kpi label="Ventas Netas" value={fmt(st.ventas)} icon={DollarSign} accent="text-emerald-500" delta={st.dVentas} sparklineData={st.sparklineRevenue} />
             <Kpi label="Utilidad" value={fmt(st.utilidad)} icon={TrendingUp} accent="text-emerald-500" delta={st.dUtilidad} sparklineData={st.sparklineProfit} />
             <Kpi label="Margen" value={`${st.margen.toFixed(1)}%`} icon={Percent} accent={st.margen>=25?"text-emerald-500":st.margen>=15?"text-amber-500":"text-red-500"} delta={st.dMargen} />
-            <Kpi label="Tickets" value={String(st.tickets)} icon={Receipt} accent="text-violet-500" delta={st.dTickets} sparklineData={st.sparklineOrders} />
+            <Kpi label="Tickets" value={String(st.tickets)} icon={Receipt} accent="text-[var(--text-secondary)]" delta={st.dTickets} sparklineData={st.sparklineOrders} />
           </div>
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
-            <Kpi label="Ticket Prom." value={fmt(st.ticketProm)} icon={ShoppingCart} accent="text-indigo-500" delta={st.dTicketProm} sparklineData={st.sparklineAvgTicket} />
+            <Kpi label="Ticket Prom." value={fmt(st.ticketProm)} icon={ShoppingCart} accent="text-[var(--text-secondary)]" delta={st.dTicketProm} sparklineData={st.sparklineAvgTicket} />
             <Kpi label="Uds. Vendidas" value={String(st.uds)} icon={Package} accent="text-cyan-500" delta={st.dUds} />
-            <Kpi label="Clientes" value={String(st.clientesAtendidos)} icon={Users} accent="text-violet-500" delta={st.dClientes} />
+            <Kpi label="Clientes" value={String(st.clientesAtendidos)} icon={Users} accent="text-[var(--text-secondary)]" delta={st.dClientes} />
             <Kpi label="Stock Valor." value={fmt(st.stockVal)} icon={ShoppingBasket} accent="text-amber-500" />
           </div>
 
@@ -2434,9 +2434,9 @@ ${o.notes ? `<hr><p style="font-size:11px">${o.notes}</p>` : ""}
             const maxVal = Math.max(...hourData, 1);
             if (allTx.length === 0) return null;
             return (
-              <div className="rounded-xl border border-gray-100 dark:border-card-border bg-white dark:bg-card p-4">
+              <div className="rounded-xl border border-[var(--rule-soft)] dark:border-card-border bg-white dark:bg-card p-4">
                 <div className="flex flex-wrap items-center gap-2 mb-3">
-                  <Clock className="h-4 w-4 text-indigo-500" />
+                  <Clock className="h-4 w-4 text-[var(--text-secondary)]" />
                   <p className="text-xs font-semibold text-gray-700 dark:text-foreground">Ventas por hora — Mapa de calor</p>
                 </div>
                 <div className="grid grid-cols-4 sm:grid-cols-6 lg:grid-cols-12 gap-1">
@@ -2452,9 +2452,9 @@ ${o.notes ? `<hr><p style="font-size:11px">${o.notes}</p>` : ""}
                               : "rgba(156,163,175,0.08)",
                           }}
                         />
-                        <span className="text-[8px] text-gray-400 dark:text-muted">{h}h</span>
+                        <span className="text-[length:var(--ts-2xs)] text-gray-400 dark:text-muted">{h}h</span>
                         {val > 0 && (
-                          <span className="absolute -top-7 left-1/2 -translate-x-1/2 bg-gray-800 text-white text-[9px] font-bold px-1.5 py-0.5 rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-10">
+                          <span className="absolute -top-7 left-1/2 -translate-x-1/2 bg-gray-800 text-white text-[length:var(--ts-2xs)] font-bold px-1.5 py-0.5 rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-10">
                             {h}:00 — S/{val.toFixed(0)}
                           </span>
                         )}
@@ -2463,13 +2463,13 @@ ${o.notes ? `<hr><p style="font-size:11px">${o.notes}</p>` : ""}
                   })}
                 </div>
                 <div className="flex items-center justify-between mt-2">
-                  <span className="text-[9px] text-gray-400">Menos ventas</span>
+                  <span className="text-[length:var(--ts-2xs)] text-gray-400">Menos ventas</span>
                   <div className="flex flex-wrap gap-0.5">
                     {[0.1, 0.3, 0.5, 0.7, 0.9].map(o => (
                       <div key={o} className="w-3 h-2 rounded-sm" style={{ background: `rgba(45,106,79,${o})` }} />
                     ))}
                   </div>
-                  <span className="text-[9px] text-gray-400">Más ventas</span>
+                  <span className="text-[length:var(--ts-2xs)] text-gray-400">Más ventas</span>
                 </div>
               </div>
             );
@@ -2477,7 +2477,7 @@ ${o.notes ? `<hr><p style="font-size:11px">${o.notes}</p>` : ""}
             {editingGoal ? (
               <form onSubmit={(e) => { e.preventDefault(); const v = dailyGoal; localStorage.setItem("daily-sales-goal", String(v)); setEditingGoal(false); }} className="flex flex-wrap items-center gap-2">
                 <span className="text-xs text-gray-500">S/</span>
-                <input type="number" min={0} step={10} value={dailyGoal || ""} onChange={(e) => setDailyGoal(Number(e.target.value))} className="flex-1 px-3 py-1.5 rounded-lg border border-gray-200 dark:border-zinc-700 text-sm text-gray-800 dark:text-foreground bg-white dark:bg-card outline-none focus:border-primary" autoFocus />
+                <input type="number" min={0} step={10} value={dailyGoal || ""} onChange={(e) => setDailyGoal(Number(e.target.value))} className="flex-1 px-3 py-1.5 rounded-lg border border-[var(--rule-base)] dark:border-zinc-700 text-sm text-gray-800 dark:text-foreground bg-white dark:bg-card outline-none focus:border-primary" autoFocus />
                 <button type="submit" className="px-3 py-1.5 rounded-lg bg-primary text-white text-xs font-bold">Guardar</button>
               </form>
             ) : dailyGoal > 0 ? (() => {
@@ -2496,13 +2496,13 @@ ${o.notes ? `<hr><p style="font-size:11px">${o.notes}</p>` : ""}
                     </div>
                   </div>
                   <div className="h-3 bg-gray-100 dark:bg-surface rounded-full overflow-hidden">
-                    <div className={`h-full rounded-full transition-all duration-500 ${pct >= 100 ? "bg-emerald-500" : pct >= 60 ? "bg-amber-500" : "bg-red-400"}`} style={{ width: `${pct}%` }} />
+                    <div className={`h-full rounded-full transition-all duration-[var(--dur-slow)] ${pct >= 100 ? "bg-emerald-500" : pct >= 60 ? "bg-amber-500" : "bg-red-400"}`} style={{ width: `${pct}%` }} />
                   </div>
-                  {pct >= 100 && <p className="text-[10px] text-emerald-600 font-bold mt-1.5 text-center">¡Meta alcanzada!</p>}
+                  {pct >= 100 && <p className="text-[length:var(--ts-2xs)] text-emerald-600 font-bold mt-1.5 text-center">¡Meta alcanzada!</p>}
                 </div>
               );
             })() : (
-              <button onClick={() => setEditingGoal(true)} className="w-full py-3 rounded-lg border-2 border-dashed border-gray-200 dark:border-zinc-700 text-gray-400 text-xs font-medium hover:border-primary hover:text-primary transition-colors">
+              <button onClick={() => setEditingGoal(true)} className="w-full py-3 rounded-lg border-2 border-dashed border-[var(--rule-base)] dark:border-zinc-700 text-gray-400 text-xs font-medium hover:border-primary hover:text-primary transition-colors">
                 + Definir meta de ventas diaria
               </button>
             )}
@@ -2529,7 +2529,7 @@ ${o.notes ? `<hr><p style="font-size:11px">${o.notes}</p>` : ""}
           />
 
           <div className="grid lg:grid-cols-5 gap-3">
-            <div className="lg:col-span-3 bg-white dark:bg-card rounded-xl border border-gray-100 dark:border-card-border p-4">
+            <div className="lg:col-span-3 bg-white dark:bg-card rounded-xl border border-[var(--rule-soft)] dark:border-card-border p-4">
               <p className="text-xs font-semibold text-gray-500 dark:text-muted mb-3">Ventas por día</p>
               {st.daily.length === 0 ? <Empty /> : (
                 <div className="relative h-32">
@@ -2563,7 +2563,7 @@ ${o.notes ? `<hr><p style="font-size:11px">${o.notes}</p>` : ""}
               )}
             </div>
 
-            <div className="lg:col-span-2 bg-white dark:bg-card rounded-xl border border-gray-100 dark:border-card-border p-4">
+            <div className="lg:col-span-2 bg-white dark:bg-card rounded-xl border border-[var(--rule-soft)] dark:border-card-border p-4">
               <p className="text-xs font-semibold text-gray-500 dark:text-muted mb-3">Métodos de pago</p>
               {st.payments.length === 0 ? <Empty /> : (
                 <div className="flex flex-wrap items-center gap-2 sm:gap-4">
@@ -2605,8 +2605,8 @@ ${o.notes ? `<hr><p style="font-size:11px">${o.notes}</p>` : ""}
                         className="w-full rounded-sm transition-all min-h-0.5"
                         style={{ height: `${Math.max((c / maxH) * 100, 3)}%`, background: c > 0 ? `rgba(45,106,79,${0.25 + (c / maxH) * 0.75})` : "rgba(156,163,175,0.15)" }}
                       />
-                      {i % 3 === 0 && <span className="text-[8px] text-gray-300 dark:text-muted">{i}h</span>}
-                      {c > 0 && <span className="absolute -top-5 left-1/2 -translate-x-1/2 bg-gray-800 text-white text-[9px] font-bold px-1.5 py-0.5 rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-10">{c} ventas</span>}
+                      {i % 3 === 0 && <span className="text-[length:var(--ts-2xs)] text-gray-300 dark:text-muted">{i}h</span>}
+                      {c > 0 && <span className="absolute -top-5 left-1/2 -translate-x-1/2 bg-gray-800 text-white text-[length:var(--ts-2xs)] font-bold px-1.5 py-0.5 rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-10">{c} ventas</span>}
                     </div>
                   ))}
                 </div>
@@ -2644,11 +2644,11 @@ ${o.notes ? `<hr><p style="font-size:11px">${o.notes}</p>` : ""}
                   const winner = isSignificant ? (bConvRate > aConvRate ? variantB.id : variantA.id) : null;
                   
                   return (
-                    <div key={test.id} className="border border-gray-200 dark:border-card-border rounded-xl p-3">
+                    <div key={test.id} className="border border-[var(--rule-base)] dark:border-card-border rounded-xl p-3">
                       <div className="flex items-start justify-between mb-2">
                         <div className="flex-1 min-w-0">
                           <h4 className="font-bold text-sm text-gray-900 dark:text-foreground truncate">{test.name}</h4>
-                          <p className="text-[10px] text-gray-500 dark:text-muted mt-0.5">{test.hypothesis}</p>
+                          <p className="text-[length:var(--ts-2xs)] text-gray-500 dark:text-muted mt-0.5">{test.hypothesis}</p>
                         </div>
                         <DBadge color={test.status === "running" ? "green" : test.status === "completed" ? "blue" : "gray"}>
                           {test.status === "running" ? "En curso" : test.status === "completed" ? "Completo" : "Pausado"}
@@ -2661,16 +2661,16 @@ ${o.notes ? `<hr><p style="font-size:11px">${o.notes}</p>` : ""}
                           return (
                             <div key={v.id} className={cn(
                               "p-2 rounded-lg border-2 transition-all",
-                              isWinner ? "border-emerald-500 bg-emerald-50 dark:bg-emerald-950/30" : "border-gray-200 dark:border-card-border bg-gray-50 dark:bg-surface"
+                              isWinner ? "border-emerald-500 bg-emerald-50 dark:bg-emerald-950/30" : "border-[var(--rule-base)] dark:border-card-border bg-gray-50 dark:bg-surface"
                             )}>
                               <div className="flex items-center gap-1.5 mb-1">
-                                <span className="text-[10px] font-bold text-gray-600 dark:text-gray-400">{v.name}</span>
+                                <span className="text-[length:var(--ts-2xs)] font-bold text-gray-600 dark:text-gray-400">{v.name}</span>
                                 {isWinner && <Trophy className="h-3 w-3 text-emerald-600" />}
                               </div>
                               <div className="text-xs">
                                 <div className="font-bold text-gray-900 dark:text-foreground">{convRate.toFixed(1)}%</div>
-                                <div className="text-[9px] text-gray-500">{v.visitors} visitantes • {v.conversions} conversiones</div>
-                                {test.metric === "revenue" && <div className="text-[9px] text-gray-600 dark:text-gray-400 font-semibold">S/{v.revenue.toFixed(2)}</div>}
+                                <div className="text-[length:var(--ts-2xs)] text-gray-500">{v.visitors} visitantes • {v.conversions} conversiones</div>
+                                {test.metric === "revenue" && <div className="text-[length:var(--ts-2xs)] text-gray-600 dark:text-gray-400 font-semibold">S/{v.revenue.toFixed(2)}</div>}
                               </div>
                             </div>
                           );
@@ -2678,13 +2678,13 @@ ${o.notes ? `<hr><p style="font-size:11px">${o.notes}</p>` : ""}
                       </div>
                       {winner && isSignificant && (
                         <div className="bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-800 rounded-lg p-2 text-center">
-                          <p className="text-[10px] font-bold text-emerald-700 dark:text-emerald-400">
+                          <p className="text-[length:var(--ts-2xs)] font-bold text-emerald-700 dark:text-emerald-400">
                             Ganador: {test.variants.find(v => v.id === winner)?.name} (+{Math.abs(diff).toFixed(1)}% mejor)
                           </p>
                         </div>
                       )}
                       {!winner && test.status === "running" && (
-                        <p className="text-[9px] text-gray-400 dark:text-muted text-center">
+                        <p className="text-[length:var(--ts-2xs)] text-gray-400 dark:text-muted text-center">
                           Se necesitan más datos para determinar un ganador con confianza
                         </p>
                       )}
@@ -2702,9 +2702,9 @@ ${o.notes ? `<hr><p style="font-size:11px">${o.notes}</p>` : ""}
           {showABTestModal && (
             <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4" onClick={() => setShowABTestModal(false)}>
               <div className="bg-white dark:bg-card rounded-xl w-full max-w-2xl" onClick={e => e.stopPropagation()}>
-                <div className="flex items-center justify-between px-3 sm:px-6 py-4 border-b border-gray-100 dark:border-card-border">
+                <div className="flex items-center justify-between px-3 sm:px-6 py-4 border-b border-[var(--rule-soft)] dark:border-card-border">
                   <div className="flex flex-wrap items-center gap-2.5">
-                    <div className="w-9 h-9 rounded-xl bg-linear-to-br from-violet-500 to-purple-500 flex items-center justify-center">
+                    <div className="w-9 h-9 rounded-xl bg-[var(--text-primary)] flex items-center justify-center">
                       <Beaker className="h-4 w-4 text-white" />
                     </div>
                     <h3 className="font-extrabold text-gray-900 dark:text-foreground">Nueva Prueba A/B</h3>
@@ -2716,31 +2716,31 @@ ${o.notes ? `<hr><p style="font-size:11px">${o.notes}</p>` : ""}
                     <label className="text-xs font-semibold text-gray-500 dark:text-muted mb-1.5 block">Nombre del test</label>
                     <input type="text" value={abTestForm.name} onChange={e => setAbTestForm(prev => ({ ...prev, name: e.target.value }))}
                       placeholder="Ej: Banner promocional vs. Sin banner"
-                      className="w-full px-3 py-2.5 rounded-lg border border-gray-200 dark:border-card-border text-gray-900 dark:text-foreground focus:border-violet-500 outline-none text-sm" />
+                      className="w-full px-3 py-2.5 rounded-lg border border-[var(--rule-base)] dark:border-card-border text-gray-900 dark:text-foreground focus:border-[var(--text-primary)] outline-none text-sm" />
                   </div>
                   <div>
                     <label className="text-xs font-semibold text-gray-500 dark:text-muted mb-1.5 block">Hipótesis</label>
                     <textarea value={abTestForm.hypothesis} onChange={e => setAbTestForm(prev => ({ ...prev, hypothesis: e.target.value }))}
                       placeholder="Ej: Agregar un banner con descuento aumentará la conversión en 15%"
                       rows={2}
-                      className="w-full px-3 py-2.5 rounded-lg border border-gray-200 dark:border-card-border text-gray-900 dark:text-foreground focus:border-violet-500 outline-none text-sm resize-none" />
+                      className="w-full px-3 py-2.5 rounded-lg border border-[var(--rule-base)] dark:border-card-border text-gray-900 dark:text-foreground focus:border-[var(--text-primary)] outline-none text-sm resize-none" />
                   </div>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <div>
                       <label className="text-xs font-semibold text-gray-500 dark:text-muted mb-1.5 block">Variante A (Control)</label>
                       <input type="text" value={abTestForm.variantA} onChange={e => setAbTestForm(prev => ({ ...prev, variantA: e.target.value }))}
-                        className="w-full px-3 py-2.5 rounded-lg border border-gray-200 dark:border-card-border text-gray-900 dark:text-foreground focus:border-violet-500 outline-none text-sm" />
+                        className="w-full px-3 py-2.5 rounded-lg border border-[var(--rule-base)] dark:border-card-border text-gray-900 dark:text-foreground focus:border-[var(--text-primary)] outline-none text-sm" />
                     </div>
                     <div>
                       <label className="text-xs font-semibold text-gray-500 dark:text-muted mb-1.5 block">Variante B</label>
                       <input type="text" value={abTestForm.variantB} onChange={e => setAbTestForm(prev => ({ ...prev, variantB: e.target.value }))}
-                        className="w-full px-3 py-2.5 rounded-lg border border-gray-200 dark:border-card-border text-gray-900 dark:text-foreground focus:border-violet-500 outline-none text-sm" />
+                        className="w-full px-3 py-2.5 rounded-lg border border-[var(--rule-base)] dark:border-card-border text-gray-900 dark:text-foreground focus:border-[var(--text-primary)] outline-none text-sm" />
                     </div>
                   </div>
                   <div>
                     <label className="text-xs font-semibold text-gray-500 dark:text-muted mb-1.5 block">Métrica a medir</label>
                     <select value={abTestForm.metric} onChange={e => setAbTestForm(prev => ({ ...prev, metric: e.target.value as "revenue"|"conversion"|"aov"|"retention" }))}
-                      className="w-full px-3 py-2.5 rounded-lg border border-gray-200 dark:border-card-border text-gray-900 dark:text-foreground focus:border-violet-500 outline-none text-sm">
+                      className="w-full px-3 py-2.5 rounded-lg border border-[var(--rule-base)] dark:border-card-border text-gray-900 dark:text-foreground focus:border-[var(--text-primary)] outline-none text-sm">
                       <option value="conversion">Tasa de conversión</option>
                       <option value="revenue">Ingresos</option>
                       <option value="aov">Valor promedio de orden</option>
@@ -2751,19 +2751,19 @@ ${o.notes ? `<hr><p style="font-size:11px">${o.notes}</p>` : ""}
                     <div>
                       <label className="text-xs font-semibold text-gray-500 dark:text-muted mb-1.5 block">Fecha inicio</label>
                       <input type="date" value={abTestForm.startDate} onChange={e => setAbTestForm(prev => ({ ...prev, startDate: e.target.value }))}
-                        className="w-full px-3 py-2.5 rounded-lg border border-gray-200 dark:border-card-border text-gray-900 dark:text-foreground focus:border-violet-500 outline-none text-sm" />
+                        className="w-full px-3 py-2.5 rounded-lg border border-[var(--rule-base)] dark:border-card-border text-gray-900 dark:text-foreground focus:border-[var(--text-primary)] outline-none text-sm" />
                     </div>
                     <div>
                       <label className="text-xs font-semibold text-gray-500 dark:text-muted mb-1.5 block">Fecha fin</label>
                       <input type="date" value={abTestForm.endDate} onChange={e => setAbTestForm(prev => ({ ...prev, endDate: e.target.value }))}
-                        className="w-full px-3 py-2.5 rounded-lg border border-gray-200 dark:border-card-border text-gray-900 dark:text-foreground focus:border-violet-500 outline-none text-sm" />
+                        className="w-full px-3 py-2.5 rounded-lg border border-[var(--rule-base)] dark:border-card-border text-gray-900 dark:text-foreground focus:border-[var(--text-primary)] outline-none text-sm" />
                     </div>
                   </div>
                   <div className="bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-100 dark:border-emerald-800 rounded-xl p-3">
                     <p className="text-xs text-emerald-700 dark:text-emerald-400"><strong>Recomendación:</strong> Ejecuta pruebas por al menos 7-14 días y 100+ visitantes por variante para resultados confiables.</p>
                   </div>
                 </div>
-                <div className="flex flex-wrap justify-end gap-3 px-3 sm:px-6 py-4 border-t border-gray-100 dark:border-card-border">
+                <div className="flex flex-wrap justify-end gap-3 px-3 sm:px-6 py-4 border-t border-[var(--rule-soft)] dark:border-card-border">
                   <button onClick={() => setShowABTestModal(false)} className="px-2 sm:px-4 py-1.5 sm:py-2.5 rounded-lg text-sm font-semibold text-gray-600 dark:text-muted hover:bg-gray-100 dark:hover:bg-accent transition-colors">Cancelar</button>
                   <button onClick={() => {
                     const newTest: ABTest = {
@@ -2784,7 +2784,7 @@ ${o.notes ? `<hr><p style="font-size:11px">${o.notes}</p>` : ""}
                     localStorage.setItem("buleje-ab-tests", JSON.stringify(updated));
                     setShowABTestModal(false);
                     setAbTestForm({ name: "", hypothesis: "", variantA: "Control", variantB: "Variant B", metric: "conversion", startDate: "", endDate: "" });
-                  }} className="px-2 sm:px-4 py-1.5 sm:py-2.5 rounded-lg text-sm font-bold text-white bg-linear-to-r from-violet-600 to-purple-600 hover:from-violet-700 hover:to-purple-700 transition-colors ">Crear test</button>
+                  }} className="px-2 sm:px-4 py-1.5 sm:py-2.5 rounded-lg text-sm font-bold text-white bg-[var(--text-primary)] hover:opacity-90 transition-colors ">Crear test</button>
                 </div>
               </div>
             </div>
@@ -2908,10 +2908,10 @@ function Kpi({ label, value, icon: Icon, accent, delta, sparklineData, invertTre
   const isPositive = delta != null ? (invertTrend ? delta <= 0 : delta >= 0) : false;
   const arrowUp = delta != null ? delta >= 0 : false;
   return (
-    <div className="bg-white dark:bg-card rounded-xl border border-gray-100 dark:border-card-border px-2 sm:px-4 py-2 sm:py-3.5 hover:border-gray-200 dark:hover:border-gray-600 transition-all relative overflow-hidden">
+    <div className="bg-white dark:bg-card rounded-xl border border-[var(--rule-soft)] dark:border-card-border px-2 sm:px-4 py-2 sm:py-3.5 hover:border-gray-200 dark:hover:border-gray-600 transition-all relative overflow-hidden">
       {/* Visual gradient indicator on top edge for significant changes */}
       {delta != null && Math.abs(delta) >= 10 && (
-        <div className={cn("absolute top-0 left-0 right-0 h-1", isPositive ? "bg-linear-to-r from-emerald-400 to-green-500" : "bg-linear-to-r from-red-400 to-red-500")} />
+        <div className={cn("absolute top-0 left-0 right-0 h-1", isPositive ? "bg-[var(--data-success)]" : "bg-[var(--data-error)]")} />
       )}
       <p className="text-xs font-medium text-gray-400 dark:text-muted mb-2.5 truncate">{label}</p>
       <div className="flex flex-wrap items-end justify-between gap-2">
@@ -2940,7 +2940,7 @@ function Kpi({ label, value, icon: Icon, accent, delta, sparklineData, invertTre
 
 function Card({ title, icon: Icon, children, action }: { title: string; icon: React.ComponentType<{className?:string}>; children: React.ReactNode; action?: React.ReactNode }) {
   return (
-    <div className="bg-white dark:bg-card rounded-xl border border-gray-100 dark:border-card-border p-4">
+    <div className="bg-white dark:bg-card rounded-xl border border-[var(--rule-soft)] dark:border-card-border p-4">
       <div className="flex items-center justify-between mb-4">
         <h3 className="flex items-center gap-1.5 text-xs font-semibold tracking-wider text-gray-400 dark:text-muted" style={{letterSpacing:"0.06em"}}>
           <Icon className="h-3 w-3 text-gray-300 dark:text-muted" />{title.toUpperCase()}
@@ -2956,7 +2956,7 @@ function DBadge({ children, color }: { children: React.ReactNode; color: "green"
   const m: Record<string,string> = {
     green:"bg-emerald-50 text-emerald-600", red:"bg-red-50 text-red-600",
     amber:"bg-amber-50 text-amber-600", blue:"bg-emerald-50 text-emerald-600",
-    purple:"bg-purple-50 text-purple-600", gray:"bg-gray-100 text-gray-500",
+    purple:"bg-[var(--surface-sunken)] text-[var(--text-secondary)]", gray:"bg-gray-100 text-gray-500",
   };
   return <span className={cn("inline-flex px-1.5 py-0.5 rounded text-xs font-semibold",m[color])}>{children}</span>;
 }

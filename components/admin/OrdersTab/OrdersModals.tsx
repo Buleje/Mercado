@@ -67,7 +67,7 @@ export function RejectModal({ rejectReason, onReasonChange, onConfirm, onCancel 
         className="bg-white dark:bg-card rounded-xl w-full max-w-md"
         onClick={e => e.stopPropagation()}
       >
-        <div className="px-5 py-4 border-b border-gray-100 dark:border-card-border">
+        <div className="px-5 py-4 border-b border-[var(--rule-soft)] dark:border-card-border">
           <h3 className="font-extrabold text-gray-900 dark:text-foreground">Rechazar pedido</h3>
           <p className="text-xs text-gray-400 dark:text-muted mt-0.5">Selecciona un motivo o escribe uno personalizado</p>
         </div>
@@ -81,7 +81,7 @@ export function RejectModal({ rejectReason, onReasonChange, onConfirm, onCancel 
                   "text-left px-3 py-2 rounded-lg text-sm border transition-colors",
                   rejectReason === t
                     ? "border-red-400 bg-red-50 text-red-700 font-semibold"
-                    : "border-gray-200 dark:border-card-border text-gray-600 dark:text-muted hover:bg-gray-50 dark:hover:bg-surface"
+                    : "border-[var(--rule-base)] dark:border-card-border text-gray-600 dark:text-muted hover:bg-gray-50 dark:hover:bg-surface"
                 )}
               >
                 {t}
@@ -92,12 +92,12 @@ export function RejectModal({ rejectReason, onReasonChange, onConfirm, onCancel 
             value={rejectReason}
             onChange={e => onReasonChange(e.target.value)}
             placeholder="O escribe un motivo personalizado..."
-            className="w-full px-3 py-2 rounded-lg border border-gray-200 dark:border-card-border text-sm text-gray-900 dark:text-foreground outline-none focus:border-red-400"
+            className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-card-border text-sm text-gray-900 dark:text-foreground outline-none focus:border-red-400"
           />
           <div className="flex gap-2 pt-1">
             <button
               onClick={onCancel}
-              className="flex-1 py-2.5 rounded-lg border border-gray-200 dark:border-card-border text-sm font-bold text-gray-600 dark:text-muted hover:bg-gray-50 dark:hover:bg-surface"
+              className="flex-1 py-2.5 rounded-lg border border-[var(--rule-base)] dark:border-card-border text-sm font-bold text-gray-600 dark:text-muted hover:bg-gray-50 dark:hover:bg-surface"
             >
               Cancelar
             </button>

@@ -112,7 +112,7 @@ function PromoCard({ promo, onToggle, onDelete, loading }: {
 
   return (
     <div className={cn(
-      "bg-white dark:bg-gray-900 rounded-xl border border-gray-100 dark:border-gray-800 border-l-4 p-4 ",
+      "bg-white dark:bg-gray-900 rounded-xl border border-[var(--rule-base)] border-l-4 p-4 ",
       "transition-all hover:shadow-sm",
       statusColor,
       !promo.activa && "opacity-60",
@@ -311,7 +311,7 @@ export default function PromocionesModule() {
             onClick={fetchPromos}
             disabled={loading}
             aria-label="Recargar promociones"
-            className="h-9 w-9 flex items-center justify-center rounded-lg border border-gray-200 dark:border-gray-700 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors disabled:opacity-50"
+            className="h-9 w-9 flex items-center justify-center rounded-lg border border-[var(--rule-base)] hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors disabled:opacity-50"
           >
             <RefreshCw className={cn("h-4 w-4 text-gray-500", loading && "animate-spin")} />
           </button>
@@ -358,7 +358,7 @@ export default function PromocionesModule() {
 
       {/* Formulario nueva promo */}
       {showForm && (
-        <div className="bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 rounded-xl p-5  space-y-4">
+        <div className="bg-white dark:bg-gray-900 border border-[var(--rule-base)] rounded-xl p-5  space-y-4">
           <h2 className="text-sm font-semibold text-gray-800 dark:text-white flex items-center gap-2">
             <Tag className="h-4 w-4 text-[#f97316]" />
             Nueva promoción
@@ -378,7 +378,7 @@ export default function PromocionesModule() {
                 value={form.nombre}
                 onChange={e => setForm(f => ({ ...f, nombre: e.target.value }))}
                 placeholder="Ej: Descuento fin de semana"
-                className="w-full text-sm rounded-lg border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 px-3 py-2 text-gray-800 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#00B4A6]/40 focus:border-[#00B4A6]"
+                className="w-full text-sm rounded-lg border border-[var(--rule-base)] bg-gray-50 dark:bg-gray-800 px-3 py-2 text-gray-800 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#00B4A6]/40 focus:border-[#00B4A6]"
               />
             </div>
 
@@ -387,7 +387,7 @@ export default function PromocionesModule() {
               <select
                 value={form.tipo}
                 onChange={e => setForm(f => ({ ...f, tipo: e.target.value as PromoType }))}
-                className="w-full text-sm rounded-lg border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 px-3 py-2 text-gray-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-[#00B4A6]/40 focus:border-[#00B4A6]"
+                className="w-full text-sm rounded-lg border border-[var(--rule-base)] bg-gray-50 dark:bg-gray-800 px-3 py-2 text-gray-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-[#00B4A6]/40 focus:border-[#00B4A6]"
               >
                 {(Object.keys(TIPO_LABELS) as PromoType[]).map(t => (
                   <option key={t} value={t}>{TIPO_LABELS[t]}</option>
@@ -407,7 +407,7 @@ export default function PromocionesModule() {
                   value={form.valor}
                   onChange={e => setForm(f => ({ ...f, valor: e.target.value }))}
                   placeholder={form.tipo === "porcentaje" ? "20" : "5.00"}
-                  className="w-full text-sm rounded-lg border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 px-3 py-2 text-gray-800 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#00B4A6]/40 focus:border-[#00B4A6]"
+                  className="w-full text-sm rounded-lg border border-[var(--rule-base)] bg-gray-50 dark:bg-gray-800 px-3 py-2 text-gray-800 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#00B4A6]/40 focus:border-[#00B4A6]"
                 />
               </div>
             )}
@@ -419,7 +419,7 @@ export default function PromocionesModule() {
                 value={form.categorias}
                 onChange={e => setForm(f => ({ ...f, categorias: e.target.value }))}
                 placeholder="Lácteos, Bebidas"
-                className="w-full text-sm rounded-lg border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 px-3 py-2 text-gray-800 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#00B4A6]/40 focus:border-[#00B4A6]"
+                className="w-full text-sm rounded-lg border border-[var(--rule-base)] bg-gray-50 dark:bg-gray-800 px-3 py-2 text-gray-800 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#00B4A6]/40 focus:border-[#00B4A6]"
               />
             </div>
 
@@ -429,7 +429,7 @@ export default function PromocionesModule() {
                 type="date"
                 value={form.fechaInicio}
                 onChange={e => setForm(f => ({ ...f, fechaInicio: e.target.value }))}
-                className="w-full text-sm rounded-lg border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 px-3 py-2 text-gray-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-[#00B4A6]/40 focus:border-[#00B4A6]"
+                className="w-full text-sm rounded-lg border border-[var(--rule-base)] bg-gray-50 dark:bg-gray-800 px-3 py-2 text-gray-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-[#00B4A6]/40 focus:border-[#00B4A6]"
               />
             </div>
 
@@ -439,7 +439,7 @@ export default function PromocionesModule() {
                 type="date"
                 value={form.fechaFin}
                 onChange={e => setForm(f => ({ ...f, fechaFin: e.target.value }))}
-                className="w-full text-sm rounded-lg border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 px-3 py-2 text-gray-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-[#00B4A6]/40 focus:border-[#00B4A6]"
+                className="w-full text-sm rounded-lg border border-[var(--rule-base)] bg-gray-50 dark:bg-gray-800 px-3 py-2 text-gray-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-[#00B4A6]/40 focus:border-[#00B4A6]"
               />
             </div>
 
@@ -452,7 +452,7 @@ export default function PromocionesModule() {
                 value={form.condicion}
                 onChange={e => setForm(f => ({ ...f, condicion: e.target.value }))}
                 placeholder='Ej: "min_cantidad:3" o "min_monto:50"'
-                className="w-full text-sm rounded-lg border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 px-3 py-2 text-gray-800 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#00B4A6]/40 focus:border-[#00B4A6]"
+                className="w-full text-sm rounded-lg border border-[var(--rule-base)] bg-gray-50 dark:bg-gray-800 px-3 py-2 text-gray-800 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#00B4A6]/40 focus:border-[#00B4A6]"
               />
             </div>
           </div>

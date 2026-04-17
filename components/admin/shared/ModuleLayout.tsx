@@ -144,7 +144,7 @@ export default function ModuleLayout({
             >
               {tab.label}
               {tab.count !== undefined && tab.count > 0 && (
-                <span className="ml-1.5 bg-red-500 text-white text-[10px] font-bold rounded-full min-w-[18px] h-[18px] inline-flex items-center justify-center px-1">
+                <span className="ml-1.5 bg-red-500 text-white text-[length:var(--ts-2xs)] font-bold rounded-full min-w-[18px] h-[18px] inline-flex items-center justify-center px-1">
                   {tab.count > 99 ? "99+" : tab.count}
                 </span>
               )}

@@ -166,7 +166,7 @@ export default function SeasonalProducts() {
               transition={{ delay: idx * 0.05 }}
               className="flex-shrink-0 w-44 sm:w-48 snap-start"
             >
-              <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-gray-800 overflow-hidden shadow-sm hover:shadow-lg transition-all group">
+              <div className="bg-white dark:bg-gray-900 rounded-2xl border border-[var(--rule-base)] overflow-hidden shadow-sm hover:shadow-lg transition-all group">
                 {/* Image placeholder */}
                 <div
                   className="h-28 flex items-center justify-center relative"
@@ -177,7 +177,7 @@ export default function SeasonalProducts() {
                   ) : (
                     <span className="text-4xl opacity-50">{temporada.emoji}</span>
                   )}
-                  <span className="absolute top-2 left-2 px-2 py-0.5 rounded-full text-[10px] font-bold text-white"
+                  <span className="absolute top-2 left-2 px-2 py-0.5 rounded-full text-[length:var(--ts-2xs)] font-bold text-white"
                     style={{ background: `linear-gradient(135deg, ${temporada.color.from}, ${temporada.color.to})` }}
                   >
                     De temporada

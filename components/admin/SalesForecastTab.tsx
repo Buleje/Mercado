@@ -80,9 +80,9 @@ export default function SalesForecastTab() {
           { label: "Venta Proyectada", value: fmt(totalPredicted), sub: `${period === "7d" ? "7" : period === "30d" ? "30" : "90"} días`, color: "text-emerald-600 dark:text-emerald-400" },
           { label: "Promedio Diario", value: fmt(avgDaily), sub: "por día estimado", color: "text-emerald-600 dark:text-emerald-400" },
           { label: "Crecimiento", value: `${Number(growthPct) > 0 ? "+" : ""}${growthPct}%`, sub: "vs periodo anterior", color: Number(growthPct) >= 0 ? "text-emerald-600 dark:text-emerald-400" : "text-red-600 dark:text-red-400" },
-          { label: "Rango Confianza", value: `${fmt(totalLower)} — ${fmt(totalUpper)}`, sub: "intervalo 95%", color: "text-purple-600 dark:text-purple-400" },
+          { label: "Rango Confianza", value: `${fmt(totalLower)} — ${fmt(totalUpper)}`, sub: "intervalo 95%", color: "text-[var(--text-secondary)] dark:text-[var(--text-primary)]" },
         ].map(kpi => (
-          <div key={kpi.label} className="bg-white dark:bg-card rounded-xl border border-gray-200 dark:border-card-border p-3 sm:p-5">
+          <div key={kpi.label} className="bg-white dark:bg-card rounded-xl border border-[var(--rule-base)] dark:border-card-border p-3 sm:p-5">
             <p className="text-xs font-semibold text-gray-500 dark:text-muted">{kpi.label}</p>
             <p className={cn("text-lg font-extrabold mt-1", kpi.color)}>{kpi.value}</p>
             <p className="text-xs text-gray-400 dark:text-muted mt-1">{kpi.sub}</p>
@@ -93,7 +93,7 @@ export default function SalesForecastTab() {
       {view === "general" ? (
         <>
           {/* Chart visualization */}
-          <div className="bg-white dark:bg-card rounded-xl border border-gray-200 dark:border-card-border p-3 sm:p-6">
+          <div className="bg-white dark:bg-card rounded-xl border border-[var(--rule-base)] dark:border-card-border p-3 sm:p-6">
             <h3 className="font-bold text-gray-900 dark:text-foreground mb-4 flex flex-wrap items-center gap-2">
               <BarChart3 className="h-5 w-5 text-primary" /> Gráfico de Proyección
             </h3>
@@ -128,8 +128,8 @@ export default function SalesForecastTab() {
           </div>
 
           {/* Daily forecast table */}
-          <div className="bg-white dark:bg-card rounded-xl border border-gray-200 dark:border-card-border overflow-hidden">
-            <div className="px-3 sm:px-6 py-4 border-b border-gray-100 dark:border-card-border">
+          <div className="bg-white dark:bg-card rounded-xl border border-[var(--rule-base)] dark:border-card-border overflow-hidden">
+            <div className="px-3 sm:px-6 py-4 border-b border-[var(--rule-soft)] dark:border-card-border">
               <h3 className="font-bold text-gray-900 dark:text-foreground">Detalle Diario</h3>
             </div>
             <div className="overflow-x-auto max-h-96">
@@ -176,8 +176,8 @@ export default function SalesForecastTab() {
           )}
 
           {/* Product forecast table */}
-          <div className="bg-white dark:bg-card rounded-xl border border-gray-200 dark:border-card-border overflow-hidden">
-            <div className="px-3 sm:px-6 py-4 border-b border-gray-100 dark:border-card-border">
+          <div className="bg-white dark:bg-card rounded-xl border border-[var(--rule-base)] dark:border-card-border overflow-hidden">
+            <div className="px-3 sm:px-6 py-4 border-b border-[var(--rule-soft)] dark:border-card-border">
               <h3 className="font-bold text-gray-900 dark:text-foreground">Pronóstico por Producto</h3>
             </div>
             <div className="overflow-x-auto">
@@ -199,7 +199,7 @@ export default function SalesForecastTab() {
                       <td className="px-3 sm:px-6 py-3 font-semibold text-gray-900 dark:text-foreground">{p.name}</td>
                       <td className="px-3 sm:px-6 py-3 text-right text-gray-700 dark:text-foreground">{p.current} ud</td>
                       <td className="px-3 sm:px-6 py-3 text-right font-bold text-emerald-600 dark:text-emerald-400">{p.predicted7d} ud</td>
-                      <td className="px-3 sm:px-6 py-3 text-right font-bold text-purple-600 dark:text-purple-400">{p.predicted30d} ud</td>
+                      <td className="px-3 sm:px-6 py-3 text-right font-bold text-[var(--text-secondary)] dark:text-[var(--text-primary)]">{p.predicted30d} ud</td>
                       <td className="px-3 sm:px-6 py-3 text-center">
                         <span className={cn("inline-flex items-center gap-1 text-xs font-bold px-2 py-1 rounded-full", p.trend >= 0 ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400" : "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400")}>
                           {p.trend >= 0 ? <ArrowUp className="h-3 w-3" /> : <ArrowDown className="h-3 w-3" />}

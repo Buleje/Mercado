@@ -90,12 +90,12 @@ export default function ABTestsTab() {
       {tests.length === 0 && <p className="text-center text-gray-400 dark:text-muted py-12">No hay A/B tests creados aún.</p>}
       <div className="space-y-3">
         {tests.map(t => (
-          <div key={t.id} className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl p-4">
+          <div key={t.id} className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl p-4">
             <div className="flex flex-wrap items-start justify-between gap-3">
               <div className="flex-1">
                 <div className="flex flex-wrap items-center gap-2">
                   <h3 className="font-bold text-gray-900 dark:text-foreground">{t.name}</h3>
-                  <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${t.active ? "bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300" : "bg-gray-100 text-gray-500 dark:bg-surface dark:text-muted"}`}>
+                  <span className={`text-[length:var(--ts-2xs)] font-bold px-2 py-0.5 rounded-full ${t.active ? "bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300" : "bg-gray-100 text-gray-500 dark:bg-surface dark:text-muted"}`}>
                     {t.active ? "Activo" : "Inactivo"}
                   </span>
                 </div>
@@ -123,7 +123,7 @@ export default function ABTestsTab() {
 
             {/* Results expanded */}
             {expandedId === t.id && results[t.id] && (
-              <div className="mt-4 border-t border-gray-100 dark:border-card-border pt-4">
+              <div className="mt-4 border-t border-[var(--rule-soft)] dark:border-card-border pt-4">
                 <h4 className="text-sm font-bold mb-2 text-gray-700 dark:text-muted">Resultados</h4>
                 {results[t.id].length === 0 ? (
                   <p className="text-xs text-gray-400">Sin datos aún</p>
@@ -137,15 +137,15 @@ export default function ABTestsTab() {
                           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2 mt-2 text-center">
                             <div>
                               <p className="text-lg font-bold text-emerald-600">{r.impressions}</p>
-                              <p className="text-[10px] text-gray-400">Impresiones</p>
+                              <p className="text-[length:var(--ts-2xs)] text-gray-400">Impresiones</p>
                             </div>
                             <div>
                               <p className="text-lg font-bold text-green-600">{r.conversions}</p>
-                              <p className="text-[10px] text-gray-400">Conversiones</p>
+                              <p className="text-[length:var(--ts-2xs)] text-gray-400">Conversiones</p>
                             </div>
                             <div>
-                              <p className="text-lg font-bold text-purple-600">{r.conversionRate.toFixed(1)}%</p>
-                              <p className="text-[10px] text-gray-400">Tasa</p>
+                              <p className="text-lg font-bold text-[var(--text-secondary)]">{r.conversionRate.toFixed(1)}%</p>
+                              <p className="text-[length:var(--ts-2xs)] text-gray-400">Tasa</p>
                             </div>
                           </div>
                         </div>
@@ -162,7 +162,7 @@ export default function ABTestsTab() {
       {/* Create modal */}
       {showCreate && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40" onClick={() => setShowCreate(false)}>
-          <div className="bg-white dark:bg-card rounded-xl p-3 sm:p-6 max-w-md w-full mx-4 border border-gray-200 dark:border-card-border" onClick={e => e.stopPropagation()}>
+          <div className="bg-white dark:bg-card rounded-xl p-3 sm:p-6 max-w-md w-full mx-4 border border-[var(--rule-base)] dark:border-card-border" onClick={e => e.stopPropagation()}>
             <div className="flex items-center justify-between mb-4">
               <h3 className="text-lg font-extrabold text-foreground">Nuevo A/B Test</h3>
               <button onClick={() => setShowCreate(false)} className="p-1 rounded-lg hover:bg-gray-100 dark:hover:bg-surface"><X className="w-4 h-4" /></button>

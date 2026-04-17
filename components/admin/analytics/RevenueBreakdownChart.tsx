@@ -66,7 +66,7 @@ function HorizontalBar({
       <span className="w-28 text-xs text-gray-600 dark:text-gray-300 truncate shrink-0">{label}</span>
       <div className="flex-1 bg-gray-100 dark:bg-gray-700 rounded-full h-6 overflow-hidden">
         <div
-          className="h-full rounded-full transition-all duration-500"
+          className="h-full rounded-full transition-all duration-[var(--dur-slow)]"
           style={{ width: `${p}%`, backgroundColor: color }}
         />
       </div>
@@ -290,7 +290,7 @@ export default function RevenueBreakdownChart({ sales, products }: RevenueBreakd
                 title={`${HOUR_LABELS[i]}: ${fmt(val)}`}
               >
                 <div
-                  className="w-full rounded-t transition-all duration-500"
+                  className="w-full rounded-t transition-all duration-[var(--dur-slow)]"
                   style={{
                     height: `${(val / maxHour) * 100}%`,
                     minHeight: val > 0 ? "2px" : "0px",
@@ -303,7 +303,7 @@ export default function RevenueBreakdownChart({ sales, products }: RevenueBreakd
           </div>
           <div className="flex gap-1 mt-1">
             {HOUR_LABELS.map((h, i) => (
-              <div key={i} className="flex-1 text-center text-[9px] text-gray-400 dark:text-gray-500 leading-none">
+              <div key={i} className="flex-1 text-center text-[length:var(--ts-2xs)] text-gray-400 dark:text-gray-500 leading-none">
                 {i % 2 === 0 ? h : ""}
               </div>
             ))}

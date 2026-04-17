@@ -176,11 +176,11 @@ export default function AdminCommandPalette({ items }: AdminCommandPaletteProps)
       aria-label="Busqueda global"
     >
       <div
-        className="bg-white dark:bg-gray-900 rounded-xl w-full max-w-lg mx-4 overflow-hidden border border-gray-200 dark:border-gray-700"
+        className="bg-white dark:bg-gray-900 rounded-xl w-full max-w-lg mx-4 overflow-hidden border border-[var(--rule-base)]"
         onClick={e => e.stopPropagation()}
       >
         {/* Search input */}
-        <div className="flex items-center gap-3 px-4 py-3.5 border-b border-gray-100 dark:border-gray-800">
+        <div className="flex items-center gap-3 px-4 py-3.5 border-b border-[var(--rule-base)]">
           <Search className="h-4 w-4 text-gray-400 shrink-0" />
           <input
             ref={inputRef}
@@ -192,7 +192,7 @@ export default function AdminCommandPalette({ items }: AdminCommandPaletteProps)
             className="flex-1 text-sm bg-transparent text-gray-900 dark:text-white placeholder:text-gray-400 outline-none"
           />
           {searching && <Loader2 className="h-3.5 w-3.5 animate-spin text-gray-400 shrink-0" />}
-          <kbd className="px-1.5 py-0.5 rounded bg-gray-100 dark:bg-gray-800 text-[9px] font-mono text-gray-400 shrink-0">
+          <kbd className="px-1.5 py-0.5 rounded bg-gray-100 dark:bg-gray-800 text-[length:var(--ts-2xs)] font-mono text-gray-400 shrink-0">
             Esc
           </kbd>
         </div>
@@ -211,7 +211,7 @@ export default function AdminCommandPalette({ items }: AdminCommandPaletteProps)
                 {/* Category separator */}
                 <div className="flex items-center gap-2 px-4 pt-3 pb-1.5">
                   <span className="h-px flex-1 bg-gray-100 dark:bg-gray-800" />
-                  <span className="text-[10px] font-semibold text-gray-400 dark:text-gray-500 flex items-center gap-1.5">
+                  <span className="text-[length:var(--ts-2xs)] font-semibold text-gray-400 dark:text-gray-500 flex items-center gap-1.5">
                     {DYN_ICONS[category]}
                     {category}
                   </span>
@@ -263,7 +263,7 @@ export default function AdminCommandPalette({ items }: AdminCommandPaletteProps)
 
                       {/* Shortcut badge */}
                       {item.shortcut && (
-                        <kbd className="shrink-0 px-1.5 py-0.5 rounded bg-gray-100 dark:bg-gray-800 text-[9px] font-mono text-gray-400">
+                        <kbd className="shrink-0 px-1.5 py-0.5 rounded bg-gray-100 dark:bg-gray-800 text-[length:var(--ts-2xs)] font-mono text-gray-400">
                           {item.shortcut}
                         </kbd>
                       )}
@@ -281,7 +281,7 @@ export default function AdminCommandPalette({ items }: AdminCommandPaletteProps)
         </div>
 
         {/* Footer */}
-        <div className="px-4 py-2.5 border-t border-gray-100 dark:border-gray-800 flex items-center gap-4 text-[10px] text-gray-400">
+        <div className="px-4 py-2.5 border-t border-[var(--rule-base)] flex items-center gap-4 text-[length:var(--ts-2xs)] text-gray-400">
           <span className="flex items-center gap-1">
             <kbd className="px-1 py-0.5 rounded bg-gray-100 dark:bg-gray-800 font-mono">&#8593;&#8595;</kbd>
             Navegar

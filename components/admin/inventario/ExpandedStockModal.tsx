@@ -120,7 +120,7 @@ export default function ExpandedStockModal({ products, movements, onClose }: Pro
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm" onClick={e => e.target === e.currentTarget && onClose()}>
       <div className="bg-white dark:bg-card w-[95vw] max-w-7xl h-[90vh] rounded-xl flex flex-col overflow-hidden">
         {/* Header */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200 dark:border-card-border shrink-0">
+        <div className="flex items-center justify-between px-6 py-4 border-b border-[var(--rule-base)] dark:border-card-border shrink-0">
           <div>
             <h2 className="text-lg font-extrabold text-gray-900 dark:text-foreground">Inventario completo</h2>
             <p className="text-xs text-gray-500 dark:text-muted">{filtered.length} productos activos</p>
@@ -133,7 +133,7 @@ export default function ExpandedStockModal({ products, movements, onClose }: Pro
                 value={search}
                 onChange={e => setSearch(e.target.value)}
                 placeholder="Buscar producto..."
-                className="pl-9 pr-3 py-2 w-56 rounded-lg border border-gray-200 dark:border-card-border bg-gray-50 dark:bg-surface text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
+                className="pl-9 pr-3 py-2 w-56 rounded-lg border border-[var(--rule-base)] dark:border-card-border bg-gray-50 dark:bg-surface text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
               />
             </div>
             <button onClick={onClose} className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-surface transition-colors">
@@ -228,7 +228,7 @@ export default function ExpandedStockModal({ products, movements, onClose }: Pro
                           )}>
                             {p.margin.pct.toFixed(0)}%
                           </span>
-                          <span className="text-[10px] text-gray-500 dark:text-muted">
+                          <span className="text-[length:var(--ts-2xs)] text-gray-500 dark:text-muted">
                             S/{p.margin.soles.toFixed(2)}
                           </span>
                         </div>
@@ -240,19 +240,19 @@ export default function ExpandedStockModal({ products, movements, onClose }: Pro
                     {/* Movimiento (sin movimiento / con movimiento) */}
                     <td className="px-4 py-3">
                       {p.daysSinceMove === null ? (
-                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-red-100 text-red-700 dark:bg-red-950/30 dark:text-red-400">
+                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[length:var(--ts-2xs)] font-bold bg-red-100 text-red-700 dark:bg-red-950/30 dark:text-red-400">
                           Nunca vendido
                         </span>
                       ) : noMovement ? (
-                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-red-100 text-red-700 dark:bg-red-950/30 dark:text-red-400">
+                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[length:var(--ts-2xs)] font-bold bg-red-100 text-red-700 dark:bg-red-950/30 dark:text-red-400">
                           <TrendingDown className="h-3 w-3" /> {p.daysSinceMove}d sin mov.
                         </span>
                       ) : recentMove ? (
-                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-700 dark:bg-emerald-950/30 dark:text-emerald-400">
+                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[length:var(--ts-2xs)] font-bold bg-emerald-100 text-emerald-700 dark:bg-emerald-950/30 dark:text-emerald-400">
                           <TrendingUp className="h-3 w-3" /> Hace {p.daysSinceMove}d
                         </span>
                       ) : (
-                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-100 text-amber-700 dark:bg-amber-950/30 dark:text-amber-400">
+                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[length:var(--ts-2xs)] font-bold bg-amber-100 text-amber-700 dark:bg-amber-950/30 dark:text-amber-400">
                           Hace {p.daysSinceMove}d
                         </span>
                       )}
@@ -262,10 +262,10 @@ export default function ExpandedStockModal({ products, movements, onClose }: Pro
                     <td className="px-4 py-3">
                       {(() => {
                         const spw = p.salesWeek;
-                        if (spw > 10) return <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-orange-100 text-orange-700 dark:bg-orange-950/30 dark:text-orange-400">Rápido</span>;
-                        if (spw >= 3) return <span className="text-[10px] text-gray-500 dark:text-muted">Normal</span>;
-                        if (spw >= 1) return <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-yellow-100 text-yellow-700 dark:bg-yellow-950/30 dark:text-yellow-400">Lento</span>;
-                        if ((p.stock ?? 0) > 0) return <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-red-100 text-red-800 dark:bg-red-950/30 dark:text-red-400">Sin rotar</span>;
+                        if (spw > 10) return <span className="px-2 py-0.5 rounded-full text-[length:var(--ts-2xs)] font-bold bg-orange-100 text-orange-700 dark:bg-orange-950/30 dark:text-orange-400">Rápido</span>;
+                        if (spw >= 3) return <span className="text-[length:var(--ts-2xs)] text-gray-500 dark:text-muted">Normal</span>;
+                        if (spw >= 1) return <span className="px-2 py-0.5 rounded-full text-[length:var(--ts-2xs)] font-bold bg-yellow-100 text-yellow-700 dark:bg-yellow-950/30 dark:text-yellow-400">Lento</span>;
+                        if ((p.stock ?? 0) > 0) return <span className="px-2 py-0.5 rounded-full text-[length:var(--ts-2xs)] font-bold bg-red-100 text-red-800 dark:bg-red-950/30 dark:text-red-400">Sin rotar</span>;
                         return <span className="text-xs text-gray-300">—</span>;
                       })()}
                     </td>
@@ -284,7 +284,7 @@ export default function ExpandedStockModal({ products, movements, onClose }: Pro
         </div>
 
         {/* Footer summary */}
-        <div className="px-6 py-3 border-t border-gray-200 dark:border-card-border bg-gray-50 dark:bg-surface flex flex-wrap items-center gap-4 text-xs shrink-0">
+        <div className="px-6 py-3 border-t border-[var(--rule-base)] dark:border-card-border bg-gray-50 dark:bg-surface flex flex-wrap items-center gap-4 text-xs shrink-0">
           <span className="font-bold text-gray-700 dark:text-foreground">{filtered.length} productos</span>
           <span className="text-red-600 font-semibold">{filtered.filter(p => (p.stock ?? 0) === 0).length} sin stock</span>
           <span className="text-red-500 font-semibold">{filtered.filter(p => p.daysSinceMove === null || (p.daysSinceMove ?? 0) > 30).length} sin movimiento</span>

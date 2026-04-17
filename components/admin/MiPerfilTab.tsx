@@ -131,9 +131,9 @@ export default function MiPerfilTab() {
       />
 
       {/* Profile Card */}
-      <div className="bg-white dark:bg-card rounded-xl border border-gray-200 dark:border-card-border overflow-hidden">
+      <div className="bg-white dark:bg-card rounded-xl border border-[var(--rule-base)] dark:border-card-border overflow-hidden">
         {/* Header banner */}
-        <div className="h-20 bg-linear-to-r from-primary/80 to-primary/40" />
+        <div className="h-20 bg-[var(--brand-ink)]" />
 
         <div className="px-6 pb-6">
           {/* Avatar overlapping banner */}
@@ -170,7 +170,7 @@ export default function MiPerfilTab() {
                     type="text"
                     value={profile.username}
                     onChange={e => setProfile(p => ({ ...p, username: e.target.value }))}
-                    className="w-full px-3 py-2.5 text-sm rounded-lg border border-gray-200 dark:border-card-border bg-gray-50 dark:bg-surface text-gray-900 dark:text-white outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary"
+                    className="w-full px-3 py-2.5 text-sm rounded-lg border border-[var(--rule-base)] dark:border-card-border bg-gray-50 dark:bg-surface text-gray-900 dark:text-white outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary"
                   />
                 ) : (
                   <p className="text-sm font-medium text-gray-900 dark:text-white capitalize px-3 py-2.5">{profile.username || "—"}</p>
@@ -196,7 +196,7 @@ export default function MiPerfilTab() {
                     value={profile.phone}
                     onChange={e => setProfile(p => ({ ...p, phone: e.target.value }))}
                     placeholder="+51 999 999 999"
-                    className="w-full px-3 py-2.5 text-sm rounded-lg border border-gray-200 dark:border-card-border bg-gray-50 dark:bg-surface text-gray-900 dark:text-white outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary"
+                    className="w-full px-3 py-2.5 text-sm rounded-lg border border-[var(--rule-base)] dark:border-card-border bg-gray-50 dark:bg-surface text-gray-900 dark:text-white outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary"
                   />
                 ) : (
                   <p className="text-sm font-medium text-gray-900 dark:text-white px-3 py-2.5">{profile.phone || "No registrado"}</p>
@@ -234,7 +234,7 @@ export default function MiPerfilTab() {
               ) : (
                 <button
                   onClick={() => setEditMode(true)}
-                  className="flex items-center gap-2 px-4 py-2.5 rounded-lg text-sm font-semibold border border-gray-200 dark:border-card-border text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-accent transition-colors"
+                  className="flex items-center gap-2 px-4 py-2.5 rounded-lg text-sm font-semibold border border-[var(--rule-base)] dark:border-card-border text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-accent transition-colors"
                 >
                   Editar perfil
                 </button>
@@ -250,7 +250,7 @@ export default function MiPerfilTab() {
       </div>
 
       {/* Security Section */}
-      <div className="bg-white dark:bg-card rounded-xl border border-gray-200 dark:border-card-border p-6">
+      <div className="bg-white dark:bg-card rounded-xl border border-[var(--rule-base)] dark:border-card-border p-6">
         <div className="flex items-center gap-2 mb-4">
           <Key className="h-5 w-5 text-gray-500" />
           <h3 className="text-sm font-bold text-gray-900 dark:text-white">Seguridad</h3>
@@ -259,7 +259,7 @@ export default function MiPerfilTab() {
         {!showPasswordForm ? (
           <button
             onClick={() => setShowPasswordForm(true)}
-            className="flex items-center gap-2 px-4 py-2.5 rounded-lg text-sm font-semibold border border-gray-200 dark:border-card-border text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-accent transition-colors"
+            className="flex items-center gap-2 px-4 py-2.5 rounded-lg text-sm font-semibold border border-[var(--rule-base)] dark:border-card-border text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-accent transition-colors"
           >
             <Key className="h-4 w-4" />
             Cambiar contraseña
@@ -272,7 +272,7 @@ export default function MiPerfilTab() {
                 type="password"
                 value={currentPassword}
                 onChange={e => setCurrentPassword(e.target.value)}
-                className="w-full px-3 py-2.5 text-sm rounded-lg border border-gray-200 dark:border-card-border bg-gray-50 dark:bg-surface text-gray-900 dark:text-white outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary"
+                className="w-full px-3 py-2.5 text-sm rounded-lg border border-[var(--rule-base)] dark:border-card-border bg-gray-50 dark:bg-surface text-gray-900 dark:text-white outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary"
               />
             </div>
             <div>
@@ -281,7 +281,7 @@ export default function MiPerfilTab() {
                 type="password"
                 value={newPassword}
                 onChange={e => setNewPassword(e.target.value)}
-                className="w-full px-3 py-2.5 text-sm rounded-lg border border-gray-200 dark:border-card-border bg-gray-50 dark:bg-surface text-gray-900 dark:text-white outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary"
+                className="w-full px-3 py-2.5 text-sm rounded-lg border border-[var(--rule-base)] dark:border-card-border bg-gray-50 dark:bg-surface text-gray-900 dark:text-white outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary"
               />
             </div>
             <div>
@@ -290,7 +290,7 @@ export default function MiPerfilTab() {
                 type="password"
                 value={confirmPassword}
                 onChange={e => setConfirmPassword(e.target.value)}
-                className="w-full px-3 py-2.5 text-sm rounded-lg border border-gray-200 dark:border-card-border bg-gray-50 dark:bg-surface text-gray-900 dark:text-white outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary"
+                className="w-full px-3 py-2.5 text-sm rounded-lg border border-[var(--rule-base)] dark:border-card-border bg-gray-50 dark:bg-surface text-gray-900 dark:text-white outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary"
               />
             </div>
             {passwordError && (

@@ -132,7 +132,7 @@ export default function StaleProductAlert() {
   );
 
   return (
-    <div className="rounded-xl border border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-900">
+    <div className="rounded-xl border border-[var(--rule-base)] bg-white dark:border-[var(--rule-base)] dark:bg-gray-900">
       {/* Header */}
       <div
         onClick={() => setExpanded((v) => !v)}
@@ -172,10 +172,10 @@ export default function StaleProductAlert() {
       </div>
 
       {expanded && (
-        <div className="border-t border-gray-100 dark:border-gray-700">
+        <div className="border-t border-[var(--rule-base)]">
           {/* Summary cards */}
           {!loading && staleProducts.length > 0 && (
-            <div className="grid grid-cols-3 gap-px border-b border-gray-100 bg-gray-100 dark:border-gray-700 dark:bg-gray-700">
+            <div className="grid grid-cols-3 gap-px border-b border-[var(--rule-soft)] bg-gray-100 dark:border-[var(--rule-base)] dark:bg-gray-700">
               {(["revisar", "ofertar", "devolver"] as const).map((key) => {
                 const cfg = SUGGESTION_CONFIG[key];
                 return (
@@ -213,7 +213,7 @@ export default function StaleProductAlert() {
           {!loading && staleProducts.length > 0 && (
             <>
               {/* Sort controls */}
-              <div className="flex items-center gap-2 border-b border-gray-100 px-5 py-2 dark:border-gray-700">
+              <div className="flex items-center gap-2 border-b border-[var(--rule-soft)] px-5 py-2 dark:border-[var(--rule-base)]">
                 <span className="text-xs text-gray-400">Ordenar por:</span>
                 {(["days", "stock", "value"] as const).map((s) => (
                   <button

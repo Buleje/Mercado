@@ -4,6 +4,7 @@
 export * from "./empty-states";
 export * from "./success-moments";
 export * from "./contextual";
+export * from "./pucallpa-locals";
 export { IllustrationCard } from "./IllustrationCard";
 
 // Re-export agrupados por contexto para autocomplete

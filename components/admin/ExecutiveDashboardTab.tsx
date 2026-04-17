@@ -255,10 +255,10 @@ export default function ExecutiveDashboardTab() {
           {[
             { label: "Ingresos",      value: fmtShort(kpis.revenue),  delta: kpis.revDelta,  icon: DollarSign,  color: "text-emerald-500", bgColor: "bg-emerald-50 dark:bg-emerald-900/20",  spark: kpis.revSpark,    sparkColor: "#10b981" },
             { label: "Transacciones", value: String(kpis.tickets),    delta: kpis.tickDelta, icon: ShoppingCart,color: "text-emerald-500",    bgColor: "bg-emerald-50 dark:bg-emerald-900/20",        spark: kpis.tickSpark,   sparkColor: "#3b82f6" },
-            { label: "Clientes",      value: String(kpis.clients),    delta: kpis.cliDelta,  icon: Users,       color: "text-violet-500", bgColor: "bg-violet-50 dark:bg-violet-900/20",    spark: kpis.clientSpark, sparkColor: "#8b5cf6" },
+            { label: "Clientes",      value: String(kpis.clients),    delta: kpis.cliDelta,  icon: Users,       color: "text-[var(--text-secondary)]", bgColor: "bg-[var(--surface-sunken)]",    spark: kpis.clientSpark, sparkColor: "#8b5cf6" },
             { label: "Utilidad",      value: fmtShort(kpis.utilidad), delta: kpis.utilDelta, icon: TrendingUp,  color: "text-amber-500",  bgColor: "bg-amber-50 dark:bg-amber-900/20",      spark: kpis.utilSpark,   sparkColor: "#f59e0b" },
           ].map(kpi => (
-            <div key={kpi.label} className="bg-white dark:bg-card rounded-xl border border-gray-200 dark:border-card-border p-4">
+            <div key={kpi.label} className="bg-white dark:bg-card rounded-xl border border-[var(--rule-base)] dark:border-card-border p-4">
               <div className="flex flex-wrap items-center gap-2 mb-3">
                 <div className={cn("h-9 w-9 rounded-xl flex items-center justify-center shrink-0", kpi.bgColor)}>
                   <kpi.icon className={cn("h-4.5 w-4.5", kpi.color)} />
@@ -279,7 +279,7 @@ export default function ExecutiveDashboardTab() {
       )}
 
       {/* ── Revenue bar chart ── */}
-      <div className="bg-white dark:bg-card rounded-xl border border-gray-200 dark:border-card-border p-3 sm:p-5">
+      <div className="bg-white dark:bg-card rounded-xl border border-[var(--rule-base)] dark:border-card-border p-3 sm:p-5">
         <div className="flex items-center justify-between mb-4">
           <h3 className="font-bold text-gray-900 dark:text-foreground flex flex-wrap items-center gap-2">
             <BarChart3 className="h-4 w-4 text-primary" /> Ingresos — {PERIOD_LABELS[period]}
@@ -299,12 +299,12 @@ export default function ExecutiveDashboardTab() {
               <div key={i} className="flex-1 flex flex-col items-center gap-0.5 group min-w-0" title={`${r.label}: ${fmt(r.value)}`}>
                 <div className="w-full flex flex-col justify-end rounded-t overflow-hidden" style={{ height: 96 }}>
                   <div
-                    className={cn("w-full rounded-t transition-all duration-300 group-hover:opacity-80", r.value > 0 ? "bg-primary" : "bg-gray-100 dark:bg-surface")}
+                    className={cn("w-full rounded-t transition-all duration-[var(--dur-base)] group-hover:opacity-80", r.value > 0 ? "bg-primary" : "bg-gray-100 dark:bg-surface")}
                     style={{ height: `${(r.value / maxChart) * 96}px`, minHeight: 2 }}
                   />
                 </div>
                 {revenueChart.length <= 14 && (
-                  <span className="text-[8px] text-gray-400 dark:text-muted truncate w-full text-center">
+                  <span className="text-[length:var(--ts-2xs)] text-gray-400 dark:text-muted truncate w-full text-center">
                     {r.label.split(" ")[0]}
                   </span>
                 )}
@@ -327,14 +327,14 @@ export default function ExecutiveDashboardTab() {
                 key={h.module}
                 onClick={() => setExpanded(expandedModule === h.module ? null : h.module)}
                 className={cn(
-                  "bg-white dark:bg-card rounded-xl border p-4 text-left transition-all duration-200 hover:shadow-sm",
-                  h.status === "critical" ? "border-red-300 dark:border-red-800" : h.status === "warning" ? "border-amber-300 dark:border-amber-800" : "border-gray-200 dark:border-card-border",
+                  "bg-white dark:bg-card rounded-xl border p-4 text-left transition-all duration-[var(--dur-base)] hover:shadow-sm",
+                  h.status === "critical" ? "border-red-300 dark:border-red-800" : h.status === "warning" ? "border-amber-300 dark:border-amber-800" : "border-[var(--rule-base)] dark:border-card-border",
                   expandedModule === h.module && "sm:col-span-2 ring-1 ring-primary/20"
                 )}
               >
                 <div className="flex items-center justify-between mb-2">
                   <span className="font-bold text-sm text-gray-900 dark:text-foreground">{h.module}</span>
-                  <span className={cn("text-[10px] font-bold uppercase px-2 py-0.5 rounded-full", h.status === "ok" ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400" : h.status === "warning" ? "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400" : "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400")}>
+                  <span className={cn("text-[length:var(--ts-2xs)] font-bold uppercase px-2 py-0.5 rounded-full", h.status === "ok" ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400" : h.status === "warning" ? "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400" : "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400")}>
                     {h.status === "ok" ? "OK" : h.status === "warning" ? "Alerta" : "Crítico"}
                   </span>
                 </div>
@@ -350,7 +350,7 @@ export default function ExecutiveDashboardTab() {
                   </span>
                 </div>
                 {expandedModule === h.module && (
-                  <div className="mt-3 pt-3 border-t border-gray-100 dark:border-card-border space-y-2">
+                  <div className="mt-3 pt-3 border-t border-[var(--rule-soft)] dark:border-card-border space-y-2">
                     {h.detail && <p className="text-xs text-gray-500 dark:text-muted">{h.detail}</p>}
                     {h.target > 0 && (
                       <>
@@ -372,7 +372,7 @@ export default function ExecutiveDashboardTab() {
       </div>
 
       {/* ── Recommendations ── */}
-      <div className="bg-white dark:bg-card rounded-xl border border-gray-200 dark:border-card-border p-3 sm:p-5">
+      <div className="bg-white dark:bg-card rounded-xl border border-[var(--rule-base)] dark:border-card-border p-3 sm:p-5">
         <h3 className="font-bold text-gray-900 dark:text-foreground mb-3 flex flex-wrap items-center gap-2">
           <AlertTriangle className="h-4 w-4 text-amber-500" /> Acciones recomendadas
         </h3>
@@ -408,7 +408,7 @@ function MiniSparkline({ data, color }: { data: number[]; color: string }) {
       <svg width={w} height={h} viewBox={`0 0 ${w} ${h}`} className="overflow-visible opacity-70 group-hover:opacity-100 transition-opacity">
         <polyline points={pts} fill="none" stroke={color} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
       </svg>
-      <div className="absolute bottom-full right-0 mb-1 hidden group-hover:block bg-gray-900 text-white text-[9px] font-semibold px-2 py-1 rounded-md whitespace-nowrap z-20">
+      <div className="absolute bottom-full right-0 mb-1 hidden group-hover:block bg-gray-900 text-white text-[length:var(--ts-2xs)] font-semibold px-2 py-1 rounded-md whitespace-nowrap z-20">
         7 días {trend} hoy: {typeof lastVal === 'number' && lastVal >= 1000 ? `${(lastVal/1000).toFixed(1)}k` : lastVal}
       </div>
     </div>

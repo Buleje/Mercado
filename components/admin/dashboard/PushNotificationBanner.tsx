@@ -128,7 +128,7 @@ export default function PushNotificationBanner() {
                   No se pudieron activar las notificaciones
                 </p>
                 {errorMsg && (
-                  <p className="text-[11px] text-red-500 dark:text-red-400 mt-0.5">{errorMsg}</p>
+                  <p className="text-[length:var(--ts-xs)] text-red-500 dark:text-red-400 mt-0.5">{errorMsg}</p>
                 )}
               </>
             )}

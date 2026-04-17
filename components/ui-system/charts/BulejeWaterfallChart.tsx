@@ -90,7 +90,7 @@ export const BulejeWaterfallChart = memo(function BulejeWaterfallChart({
       {(label || sublabel) && (
         <div className="mb-5">
           {label && (
-            <p className="text-[10px] font-bold uppercase tracking-[0.25em] text-[var(--text-tertiary)] mb-1">
+            <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)] mb-1">
               {label}
             </p>
           )}

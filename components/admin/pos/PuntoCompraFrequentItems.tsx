@@ -73,7 +73,7 @@ export default function PuntoCompraFrequentItems({ onAddToCart }: Props) {
       <div className="text-center py-8 text-gray-400">
         <Package className="h-8 w-8 mx-auto mb-2 opacity-30" />
         <p className="text-xs">No hay historial de compras aun</p>
-        <p className="text-[10px] mt-1 text-gray-300 dark:text-gray-600">
+        <p className="text-[length:var(--ts-2xs)] mt-1 text-gray-300 dark:text-gray-600">
           Los productos frecuentes apareceran despues de crear ordenes de compra
         </p>
       </div>
@@ -84,7 +84,7 @@ export default function PuntoCompraFrequentItems({ onAddToCart }: Props) {
     <div className="space-y-1.5 p-1 max-h-72 overflow-y-auto">
       <div className="flex items-center gap-1.5 mb-2">
         <TrendingUp className="h-3 w-3 text-[#00B4A6]" />
-        <span className="text-[10px] font-semibold text-gray-400">
+        <span className="text-[length:var(--ts-2xs)] font-semibold text-gray-400">
           Top {items.length} productos (90 dias)
         </span>
       </div>
@@ -101,7 +101,7 @@ export default function PuntoCompraFrequentItems({ onAddToCart }: Props) {
           )}
         >
           {/* Frequency badge */}
-          <span className="shrink-0 h-7 w-7 rounded-lg bg-[#00B4A6]/10 text-[#00B4A6] flex items-center justify-center text-[10px] font-bold">
+          <span className="shrink-0 h-7 w-7 rounded-lg bg-[#00B4A6]/10 text-[#00B4A6] flex items-center justify-center text-[length:var(--ts-2xs)] font-bold">
             {item.frequency}x
           </span>
 
@@ -110,13 +110,13 @@ export default function PuntoCompraFrequentItems({ onAddToCart }: Props) {
             <p className="text-xs font-medium text-gray-900 dark:text-white truncate">
               {item.name}
             </p>
-            <p className="text-[10px] text-gray-400">
+            <p className="text-[length:var(--ts-2xs)] text-gray-400">
               ~{item.avgQuantity} uds · S/{item.avgCost.toFixed(2)} c/u
             </p>
           </div>
 
           {/* Add hint */}
-          <span className="shrink-0 text-[10px] text-[#00B4A6] font-medium opacity-0 group-hover:opacity-100">
+          <span className="shrink-0 text-[length:var(--ts-2xs)] text-[#00B4A6] font-medium opacity-0 group-hover:opacity-100">
             + {item.avgQuantity}
           </span>
         </button>

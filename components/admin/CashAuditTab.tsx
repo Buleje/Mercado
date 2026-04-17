@@ -95,12 +95,12 @@ function ModuleTooltip() {
         <Info className="h-4 w-4" />
       </button>
       {open && (
-        <div className="absolute left-6 top-0 z-50 w-72 bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl p-4 text-xs leading-relaxed pointer-events-none">
+        <div className="absolute left-6 top-0 z-50 w-72 bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl p-4 text-xs leading-relaxed pointer-events-none">
           <p className="font-bold text-gray-900 dark:text-foreground mb-2 text-sm flex items-center gap-1.5"><Calculator className="h-4 w-4 text-primary" /> ¿Qué es Cuadrar la Caja?</p>
           <p className="text-gray-600 dark:text-muted mb-3">Compara el <strong>dinero que debería haber</strong> (fondo + ventas en efectivo) con el <strong>dinero que realmente cuentas</strong> al cerrar cada turno.</p>
           <p className="font-semibold text-gray-700 dark:text-foreground mb-1">Ejemplo:</p>
           <p className="text-gray-500 dark:text-muted mb-3">Valentina abre caja con S/200. Vende S/350 en efectivo. Al cerrar se esperan S/550. Si cuenta S/540 → <span className="text-red-500 font-semibold">faltante S/10</span>.</p>
-          <div className="space-y-1 border-t border-gray-100 dark:border-card-border pt-2">
+          <div className="space-y-1 border-t border-[var(--rule-soft)] dark:border-card-border pt-2">
             <p className="text-gray-500 dark:text-muted"><span className="font-semibold text-gray-700 dark:text-foreground">Tarjetas</span> — resumen global de todos los arqueos.</p>
             <p className="text-gray-500 dark:text-muted"><span className="font-semibold text-gray-700 dark:text-foreground">Tabla</span> — cada fila = un turno cerrado con su diferencia.</p>
             <p className="text-gray-500 dark:text-muted"><span className="font-semibold text-gray-700 dark:text-foreground">Ver detalle</span> — turno y desglose de billetes.</p>
@@ -156,7 +156,7 @@ function CashCounter({ expectedAmount }: { expectedAmount: number }) {
   }
 
   return (
-    <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl overflow-hidden">
+    <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl overflow-hidden">
       <button
         type="button"
         onClick={() => setOpen(o => !o)}
@@ -170,7 +170,7 @@ function CashCounter({ expectedAmount }: { expectedAmount: number }) {
       </button>
 
       {open && (
-        <div className="px-4 pb-4 space-y-4 border-t border-gray-100 dark:border-card-border pt-4">
+        <div className="px-4 pb-4 space-y-4 border-t border-[var(--rule-soft)] dark:border-card-border pt-4">
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
             {/* Billetes */}
             <div>
@@ -199,7 +199,7 @@ function CashCounter({ expectedAmount }: { expectedAmount: number }) {
                             value={qty || ""}
                             onChange={e => setCount(key, e.target.value)}
                             placeholder="0"
-                            className="w-16 text-center text-sm border border-gray-200 dark:border-card-border rounded-lg px-2 py-1 bg-white dark:bg-surface focus:outline-none focus:ring-2 focus:ring-primary/30"
+                            className="w-16 text-center text-sm border border-[var(--rule-base)] dark:border-card-border rounded-lg px-2 py-1 bg-white dark:bg-surface focus:outline-none focus:ring-2 focus:ring-primary/30"
                           />
                         </td>
                         <td className="py-1.5 text-right font-bold text-gray-800 dark:text-foreground">
@@ -239,7 +239,7 @@ function CashCounter({ expectedAmount }: { expectedAmount: number }) {
                             value={qty || ""}
                             onChange={e => setCount(key, e.target.value)}
                             placeholder="0"
-                            className="w-16 text-center text-sm border border-gray-200 dark:border-card-border rounded-lg px-2 py-1 bg-white dark:bg-surface focus:outline-none focus:ring-2 focus:ring-primary/30"
+                            className="w-16 text-center text-sm border border-[var(--rule-base)] dark:border-card-border rounded-lg px-2 py-1 bg-white dark:bg-surface focus:outline-none focus:ring-2 focus:ring-primary/30"
                           />
                         </td>
                         <td className="py-1.5 text-right font-bold text-gray-800 dark:text-foreground">
@@ -254,13 +254,13 @@ function CashCounter({ expectedAmount }: { expectedAmount: number }) {
           </div>
 
           {/* Resumen */}
-          <div className="grid grid-cols-3 gap-3 pt-2 border-t border-gray-100 dark:border-card-border">
+          <div className="grid grid-cols-3 gap-3 pt-2 border-t border-[var(--rule-soft)] dark:border-card-border">
             <div className="bg-gray-50 dark:bg-surface rounded-xl p-3 text-center">
-              <p className="text-[10px] text-gray-400 dark:text-muted font-semibold uppercase">Esperado</p>
+              <p className="text-[length:var(--ts-2xs)] text-gray-400 dark:text-muted font-semibold uppercase">Esperado</p>
               <p className="font-extrabold text-gray-800 dark:text-foreground text-sm">{fmt(expectedAmount)}</p>
             </div>
             <div className="bg-gray-50 dark:bg-surface rounded-xl p-3 text-center">
-              <p className="text-[10px] text-gray-400 dark:text-muted font-semibold uppercase">Contado</p>
+              <p className="text-[length:var(--ts-2xs)] text-gray-400 dark:text-muted font-semibold uppercase">Contado</p>
               <p className={cn("font-extrabold text-sm", hasCount ? "text-gray-800 dark:text-foreground" : "text-gray-400")}>
                 {hasCount ? fmt(counted) : "—"}
               </p>
@@ -272,7 +272,7 @@ function CashCounter({ expectedAmount }: { expectedAmount: number }) {
               difference > 0 ? "bg-emerald-50 dark:bg-emerald-900/20" :
               "bg-red-50 dark:bg-red-900/20"
             )}>
-              <p className="text-[10px] font-semibold uppercase text-gray-400 dark:text-muted">Diferencia</p>
+              <p className="text-[length:var(--ts-2xs)] font-semibold uppercase text-gray-400 dark:text-muted">Diferencia</p>
               <p className={cn(
                 "font-extrabold text-sm",
                 !hasCount ? "text-gray-400" :
@@ -351,10 +351,10 @@ export default function CashAuditTab({ onNavigateToTurnos }: Props) {
               <ExternalLink className="h-4 w-4" /> Ir a Turnos
             </button>
           )}
-          <button onClick={() => { startTransition(() => setLoading(true)); loadAudits(); }} disabled={loading} className="p-2 rounded-lg border border-gray-200 dark:border-card-border bg-white dark:bg-surface text-gray-500 hover:text-primary disabled:opacity-40 transition-colors">
+          <button onClick={() => { startTransition(() => setLoading(true)); loadAudits(); }} disabled={loading} className="p-2 rounded-lg border border-[var(--rule-base)] dark:border-card-border bg-white dark:bg-surface text-gray-500 hover:text-primary disabled:opacity-40 transition-colors">
             <RefreshCw className={cn("h-4 w-4", loading && "animate-spin")} />
           </button>
-          <button onClick={() => exportToCSV(audits.map(a => ({ fecha: a.date, turno: a.shift, cajero: a.cashier, esperado: a.expectedAmount, contado: a.countedAmount, diferencia: a.difference, estado: STATUS_MAP[a.status].label, ventas: a.salesCount, cerrado_por: a.closedBy || "-" })), "arqueo-caja")} className="flex items-center gap-1.5 px-3 py-2 rounded-lg border border-gray-200 dark:border-card-border bg-white dark:bg-surface text-sm font-semibold text-gray-700 dark:text-foreground hover:bg-gray-50 dark:hover:bg-accent transition-colors">
+          <button onClick={() => exportToCSV(audits.map(a => ({ fecha: a.date, turno: a.shift, cajero: a.cashier, esperado: a.expectedAmount, contado: a.countedAmount, diferencia: a.difference, estado: STATUS_MAP[a.status].label, ventas: a.salesCount, cerrado_por: a.closedBy || "-" })), "arqueo-caja")} className="flex items-center gap-1.5 px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-card-border bg-white dark:bg-surface text-sm font-semibold text-gray-700 dark:text-foreground hover:bg-gray-50 dark:hover:bg-accent transition-colors">
             <Download className="h-4 w-4" /> Descargar
           </button>
         </div>
@@ -381,7 +381,7 @@ export default function CashAuditTab({ onNavigateToTurnos }: Props) {
       <CashCounter expectedAmount={audits.length > 0 ? audits[0].expectedAmount : 0} />
 
       {/* Table */}
-      <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl overflow-hidden">
+      <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl overflow-hidden">
         {loading ? (
           <div className="p-8 flex justify-center"><div className="h-8 w-8 border-4 border-primary border-t-transparent rounded-full animate-spin" /></div>
         ) : audits.length === 0 ? (
@@ -400,7 +400,7 @@ export default function CashAuditTab({ onNavigateToTurnos }: Props) {
                 {audits.map(a => {
                   const SIcon = STATUS_MAP[a.status].icon;
                   return (
-                    <tr key={a.id} className="border-t border-gray-100 dark:border-card-border hover:bg-gray-50 dark:hover:bg-accent/20">
+                    <tr key={a.id} className="border-t border-[var(--rule-soft)] dark:border-card-border hover:bg-gray-50 dark:hover:bg-accent/20">
                       <td className="px-2 sm:px-4 py-2 sm:py-3 font-bold text-gray-800 dark:text-foreground">{a.date}</td>
                       <td className="px-2 sm:px-4 py-2 sm:py-3 text-xs text-gray-600 dark:text-muted capitalize">{a.shift}</td>
                       <td className="px-2 sm:px-4 py-2 sm:py-3 font-bold text-gray-800 dark:text-foreground">{a.cashier}</td>
@@ -421,7 +421,7 @@ export default function CashAuditTab({ onNavigateToTurnos }: Props) {
       {/* Detail Modal */}
       {detail && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4" onClick={() => setDetail(null)}>
-          <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl p-3 sm:p-6 w-full max-w-md space-y-4 max-h-[80vh] overflow-auto" onClick={e => e.stopPropagation()}>
+          <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl p-3 sm:p-6 w-full max-w-md space-y-4 max-h-[80vh] overflow-auto" onClick={e => e.stopPropagation()}>
             <div className="flex items-center justify-between">
               <div>
                 <h3 className="font-extrabold text-gray-900 dark:text-foreground">Cuadre — {detail.date} {detail.shift}</h3>

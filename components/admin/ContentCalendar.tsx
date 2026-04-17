@@ -40,7 +40,7 @@ const ENTRY_TYPES: { value: EntryType; label: string; color: string; dot: string
   {
     value: "post",
     label: "Post",
-    color: "bg-purple-100 text-purple-700",
+    color: "bg-[var(--surface-sunken)] text-[var(--text-primary)]",
     dot: "bg-purple-400",
   },
   {
@@ -180,8 +180,8 @@ export default function ContentCalendar() {
         className={cn(
           "min-h-[80px] rounded-lg border p-1.5 transition",
           isCurrentMonth
-            ? "border-gray-200 bg-white"
-            : "border-gray-100 bg-gray-50/50",
+            ? "border-[var(--rule-base)] bg-white"
+            : "border-[var(--rule-soft)] bg-gray-50/50",
           dragOver === ymd && "border-primary bg-primary/5",
           "cursor-pointer hover:border-primary/40"
         )}
@@ -262,7 +262,7 @@ export default function ContentCalendar() {
               "flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-sm transition",
               view === "month"
                 ? "border-primary bg-primary text-white"
-                : "border-gray-200 text-gray-600 hover:bg-gray-50"
+                : "border-[var(--rule-base)] text-gray-600 hover:bg-gray-50"
             )}
           >
             <CalendarDays className="h-3.5 w-3.5" />
@@ -274,7 +274,7 @@ export default function ContentCalendar() {
               "flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-sm transition",
               view === "week"
                 ? "border-primary bg-primary text-white"
-                : "border-gray-200 text-gray-600 hover:bg-gray-50"
+                : "border-[var(--rule-base)] text-gray-600 hover:bg-gray-50"
             )}
           >
             <List className="h-3.5 w-3.5" />
@@ -305,13 +305,13 @@ export default function ContentCalendar() {
       {view === "month" && (
         <>
           <div className="flex items-center justify-between">
-            <button onClick={prevMonth} className="rounded-lg border border-gray-200 p-1.5 hover:bg-gray-50">
+            <button onClick={prevMonth} className="rounded-lg border border-[var(--rule-base)] p-1.5 hover:bg-gray-50">
               <ChevronLeft className="h-4 w-4 text-gray-600" />
             </button>
             <span className="font-semibold text-gray-900">
               {MONTH_NAMES[month]} {year}
             </span>
-            <button onClick={nextMonth} className="rounded-lg border border-gray-200 p-1.5 hover:bg-gray-50">
+            <button onClick={nextMonth} className="rounded-lg border border-[var(--rule-base)] p-1.5 hover:bg-gray-50">
               <ChevronRight className="h-4 w-4 text-gray-600" />
             </button>
           </div>
@@ -343,7 +343,7 @@ export default function ContentCalendar() {
             return (
               <div
                 key={ymd}
-                className="min-h-[120px] rounded-xl border border-gray-200 bg-white p-2"
+                className="min-h-[120px] rounded-xl border border-[var(--rule-base)] bg-white p-2"
               >
                 <div className={cn(
                   "mb-2 flex h-8 w-8 items-center justify-center rounded-full text-xs font-bold",
@@ -369,7 +369,7 @@ export default function ContentCalendar() {
       {showForm && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
           <div className="w-full max-w-md rounded-xl bg-white">
-            <div className="flex items-center justify-between border-b border-gray-100 p-5">
+            <div className="flex items-center justify-between border-b border-[var(--rule-soft)] p-5">
               <h3 className="font-semibold text-gray-900">
                 Nueva entrada
               </h3>
@@ -386,7 +386,7 @@ export default function ContentCalendar() {
                   type="date"
                   value={form.date}
                   onChange={(e) => setForm((f) => ({ ...f, date: e.target.value }))}
-                  className="w-full rounded-lg border border-gray-200 bg-gray-50 px-3 py-2 text-sm focus:border-primary focus:outline-none"
+                  className="w-full rounded-lg border border-[var(--rule-base)] bg-gray-50 px-3 py-2 text-sm focus:border-primary focus:outline-none"
                 />
               </div>
               <div>
@@ -396,7 +396,7 @@ export default function ContentCalendar() {
                 <select
                   value={form.type}
                   onChange={(e) => setForm((f) => ({ ...f, type: e.target.value as EntryType }))}
-                  className="w-full rounded-lg border border-gray-200 bg-gray-50 px-3 py-2 text-sm focus:border-primary focus:outline-none"
+                  className="w-full rounded-lg border border-[var(--rule-base)] bg-gray-50 px-3 py-2 text-sm focus:border-primary focus:outline-none"
                 >
                   {ENTRY_TYPES.map((t) => (
                     <option key={t.value} value={t.value}>{t.label}</option>
@@ -411,7 +411,7 @@ export default function ContentCalendar() {
                   value={form.title}
                   onChange={(e) => setForm((f) => ({ ...f, title: e.target.value }))}
                   placeholder="Ej: Oferta arroz 5kg"
-                  className="w-full rounded-lg border border-gray-200 bg-gray-50 px-3 py-2 text-sm focus:border-primary focus:outline-none"
+                  className="w-full rounded-lg border border-[var(--rule-base)] bg-gray-50 px-3 py-2 text-sm focus:border-primary focus:outline-none"
                 />
               </div>
               <div>
@@ -423,14 +423,14 @@ export default function ContentCalendar() {
                   onChange={(e) => setForm((f) => ({ ...f, notes: e.target.value }))}
                   rows={2}
                   placeholder="Detalles adicionales..."
-                  className="w-full rounded-lg border border-gray-200 bg-gray-50 px-3 py-2 text-sm focus:border-primary focus:outline-none"
+                  className="w-full rounded-lg border border-[var(--rule-base)] bg-gray-50 px-3 py-2 text-sm focus:border-primary focus:outline-none"
                 />
               </div>
             </div>
-            <div className="flex gap-3 border-t border-gray-100 p-5">
+            <div className="flex gap-3 border-t border-[var(--rule-soft)] p-5">
               <button
                 onClick={() => setShowForm(false)}
-                className="flex-1 rounded-lg border border-gray-200 py-2 text-sm text-gray-600 hover:bg-gray-50"
+                className="flex-1 rounded-lg border border-[var(--rule-base)] py-2 text-sm text-gray-600 hover:bg-gray-50"
               >
                 Cancelar
               </button>

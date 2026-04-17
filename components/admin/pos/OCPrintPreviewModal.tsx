@@ -152,7 +152,7 @@ export default function OCPrintPreviewModal({
       <div className="bg-white dark:bg-gray-900 rounded-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
         <div className="p-6 space-y-4" id="oc-print-area">
           {/* Header */}
-          <div className="flex items-center justify-between border-b dark:border-gray-700 pb-4">
+          <div className="flex items-center justify-between border-b dark:border-[var(--rule-base)] pb-4">
             <div>
               <h2 className="text-lg font-bold text-gray-900 dark:text-white">ORDEN DE COMPRA</h2>
               <p className="text-sm text-gray-500 dark:text-gray-400">Buleje</p>
@@ -175,7 +175,7 @@ export default function OCPrintPreviewModal({
           {/* Tabla de items */}
           <table className="w-full text-sm">
             <thead>
-              <tr className="border-b-2 border-gray-200 dark:border-gray-700">
+              <tr className="border-b-2 border-[var(--rule-base)]">
                 <th className="text-left py-2 font-semibold text-gray-700 dark:text-gray-300">Producto</th>
                 <th className="text-right py-2 font-semibold text-gray-700 dark:text-gray-300">Cant.</th>
                 <th className="text-right py-2 font-semibold text-gray-700 dark:text-gray-300">P.Unit</th>
@@ -184,7 +184,7 @@ export default function OCPrintPreviewModal({
             </thead>
             <tbody>
               {cart.map((item, idx) => (
-                <tr key={idx} className="border-b border-gray-100 dark:border-gray-700">
+                <tr key={idx} className="border-b border-[var(--rule-base)]">
                   <td className="py-2 text-gray-800 dark:text-gray-200">{item.product.name}</td>
                   <td className="py-2 text-right text-gray-600 dark:text-gray-400">
                     {item.quantity} {item.product.unit}
@@ -201,7 +201,7 @@ export default function OCPrintPreviewModal({
           </table>
 
           {/* Totales */}
-          <div className="border-t-2 border-gray-200 dark:border-gray-700 pt-3 space-y-1">
+          <div className="border-t-2 border-[var(--rule-base)] pt-3 space-y-1">
             <div className="flex justify-between text-sm">
               <span className="text-gray-500 dark:text-gray-400">Subtotal</span>
               <span className="font-mono dark:text-gray-200">S/{subtotal.toFixed(2)}</span>
@@ -212,20 +212,20 @@ export default function OCPrintPreviewModal({
                 <span className="font-mono">-S/{discountAmount.toFixed(2)}</span>
               </div>
             )}
-            <div className="flex justify-between text-lg font-bold border-t dark:border-gray-700 pt-2 dark:text-white">
+            <div className="flex justify-between text-lg font-bold border-t dark:border-[var(--rule-base)] pt-2 dark:text-white">
               <span>TOTAL</span>
               <span className="font-mono text-[#00B4A6]">S/{total.toFixed(2)}</span>
             </div>
           </div>
 
           {/* Condiciones */}
-          <div className="text-xs text-gray-500 dark:text-gray-400 border-t dark:border-gray-700 pt-3 space-y-1">
+          <div className="text-xs text-gray-500 dark:text-gray-400 border-t dark:border-[var(--rule-base)] pt-3 space-y-1">
             <p><strong>Pago:</strong> {paymentMethod.replace("_", " ")}</p>
             {notes && <p><strong>Notas:</strong> {notes}</p>}
           </div>
 
           {/* Firma */}
-          <div className="flex justify-between pt-6 mt-4 border-t dark:border-gray-700">
+          <div className="flex justify-between pt-6 mt-4 border-t dark:border-[var(--rule-base)]">
             <div className="text-center">
               <div className="w-40 border-b border-gray-400 dark:border-gray-600 mb-1"></div>
               <p className="text-xs text-gray-500 dark:text-gray-400">Firma autorizada</p>
@@ -238,7 +238,7 @@ export default function OCPrintPreviewModal({
         </div>
 
         {/* Botones del modal */}
-        <div className="flex gap-2 p-4 border-t dark:border-gray-700 bg-gray-50 dark:bg-gray-800 rounded-b-2xl">
+        <div className="flex gap-2 p-4 border-t dark:border-[var(--rule-base)] bg-gray-50 dark:bg-gray-800 rounded-b-2xl">
           <button
             type="button"
             onClick={() => {

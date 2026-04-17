@@ -10,7 +10,7 @@ const SEGMENT_CONFIG: Record<SegmentLabel, { label: string; icon: React.ElementT
   regular:   { label: "Regular",    icon: Star,          color: "text-sky-700 dark:text-sky-400",        bg: "bg-sky-50 dark:bg-sky-950/30",          border: "border-sky-300 dark:border-sky-700",        barColor: "bg-sky-400" },
   nuevo:     { label: "Nuevo",      icon: UserPlus,      color: "text-emerald-700 dark:text-emerald-400",bg: "bg-emerald-50 dark:bg-emerald-950/30",  border: "border-emerald-300 dark:border-emerald-700",barColor: "bg-emerald-400" },
   en_riesgo: { label: "En Riesgo",  icon: AlertTriangle, color: "text-amber-700 dark:text-amber-400",   bg: "bg-amber-50 dark:bg-amber-950/30",      border: "border-amber-300 dark:border-amber-700",   barColor: "bg-amber-400" },
-  dormido:   { label: "Dormido",    icon: Moon,          color: "text-gray-500 dark:text-gray-400",      bg: "bg-gray-50 dark:bg-surface",            border: "border-gray-200 dark:border-card-border",  barColor: "bg-gray-400" },
+  dormido:   { label: "Dormido",    icon: Moon,          color: "text-gray-500 dark:text-gray-400",      bg: "bg-gray-50 dark:bg-surface",            border: "border-[var(--rule-base)] dark:border-card-border",  barColor: "bg-gray-400" },
 };
 
 const TIER_COLORS: Record<string, string> = {
@@ -94,13 +94,13 @@ export default function CustomerSegmentationTab() {
           </button>
           <div className="relative">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
-            <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Buscar..." className="pl-9 pr-4 py-2 border border-gray-200 dark:border-card-border rounded-lg bg-white dark:bg-surface text-sm w-44" />
+            <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Buscar..." className="pl-9 pr-4 py-2 border border-[var(--rule-base)] dark:border-card-border rounded-lg bg-white dark:bg-surface text-sm w-44" />
           </div>
         </div>
       </div>
 
       {/* Gráfico de distribución por segmento */}
-      <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl p-4 sm:p-5">
+      <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl p-4 sm:p-5">
         <h3 className="text-sm font-bold text-gray-700 dark:text-foreground mb-3">Distribución de clientes</h3>
         <div className="flex h-8 rounded-xl overflow-hidden gap-0.5">
           {(Object.keys(SEGMENT_CONFIG) as SegmentLabel[]).map(seg => {
@@ -115,7 +115,7 @@ export default function CustomerSegmentationTab() {
                 onClick={() => setActiveSegment(activeSegment === seg ? "all" : seg)}
                 title={`${SEGMENT_CONFIG[seg].label}: ${count} (${pct.toFixed(0)}%)`}
               >
-                {pct > 8 && <span className="text-white text-[10px] font-extrabold">{pct.toFixed(0)}%</span>}
+                {pct > 8 && <span className="text-white text-[length:var(--ts-2xs)] font-extrabold">{pct.toFixed(0)}%</span>}
               </div>
             );
           })}
@@ -139,7 +139,7 @@ export default function CustomerSegmentationTab() {
 
       {/* Segment pills */}
       <div className="flex gap-2 flex-wrap">
-        <button onClick={() => setActiveSegment("all")} className={cn("px-3 py-1.5 rounded-full text-sm font-bold border transition", activeSegment === "all" ? "bg-primary text-white border-primary" : "border-gray-200 dark:border-card-border text-gray-600 dark:text-muted hover:bg-gray-50 dark:hover:bg-surface")}>
+        <button onClick={() => setActiveSegment("all")} className={cn("px-3 py-1.5 rounded-full text-sm font-bold border transition", activeSegment === "all" ? "bg-primary text-white border-primary" : "border-[var(--rule-base)] dark:border-card-border text-gray-600 dark:text-muted hover:bg-gray-50 dark:hover:bg-surface")}>
           Todos · {totalCustomers}
         </button>
         {(Object.keys(SEGMENT_CONFIG) as SegmentLabel[]).map(seg => {
@@ -176,7 +176,7 @@ export default function CustomerSegmentationTab() {
               <button
                 onClick={() => handleCampaign(seg)}
                 disabled={count === 0}
-                className={cn("w-full mt-1 flex items-center justify-center gap-1 px-2 py-1.5 rounded-lg text-[11px] font-bold transition-all", isSent ? "bg-emerald-500 text-white" : "bg-white/60 dark:bg-black/20 text-gray-600 dark:text-muted hover:bg-white dark:hover:bg-white/10 disabled:opacity-30 disabled:cursor-not-allowed")}
+                className={cn("w-full mt-1 flex items-center justify-center gap-1 px-2 py-1.5 rounded-lg text-[length:var(--ts-xs)] font-bold transition-all", isSent ? "bg-emerald-500 text-white" : "bg-white/60 dark:bg-black/20 text-gray-600 dark:text-muted hover:bg-white dark:hover:bg-white/10 disabled:opacity-30 disabled:cursor-not-allowed")}
               >
                 {isSent ? <>Enviado</> : <><Send className="h-3 w-3" />Enviar campaña</>}
               </button>
@@ -187,10 +187,10 @@ export default function CustomerSegmentationTab() {
 
       {/* Vista tabla o RFM */}
       {view === "tabla" ? (
-        <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl overflow-hidden">
+        <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl overflow-hidden">
           <div className="overflow-x-auto">
             <table className="w-full min-w-[600px] text-sm">
-              <thead className="bg-gray-50 dark:bg-surface border-b border-gray-200 dark:border-card-border">
+              <thead className="bg-gray-50 dark:bg-surface border-b border-[var(--rule-base)] dark:border-card-border">
                 <tr>
                   <th className="text-left px-4 py-3 font-bold text-gray-500 dark:text-muted">Cliente</th>
                   <th className="text-left px-4 py-3 font-bold text-gray-500 dark:text-muted">Segmento</th>
@@ -219,7 +219,7 @@ export default function CustomerSegmentationTab() {
                         </span>
                       </td>
                       <td className="px-4 py-3">
-                        <span className={cn("px-2 py-0.5 rounded-full text-[10px] font-extrabold uppercase", TIER_COLORS[c.loyaltyTier] ?? "bg-gray-200 text-gray-600")}>{c.loyaltyTier}</span>
+                        <span className={cn("px-2 py-0.5 rounded-full text-[length:var(--ts-2xs)] font-extrabold uppercase", TIER_COLORS[c.loyaltyTier] ?? "bg-gray-200 text-gray-600")}>{c.loyaltyTier}</span>
                       </td>
                       <td className="px-4 py-3 text-right font-bold text-gray-700 dark:text-foreground">{c.orderCount}</td>
                       <td className="px-4 py-3 text-right font-bold text-gray-900 dark:text-foreground">S/{c.totalSpent.toFixed(2)}</td>
@@ -241,20 +241,20 @@ export default function CustomerSegmentationTab() {
         /* Vista RFM */
         <div className="space-y-2">
           {filtered.length === 0 && (
-            <div className="text-center py-10 text-gray-400 bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl">No se encontraron clientes</div>
+            <div className="text-center py-10 text-gray-400 bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl">No se encontraron clientes</div>
           )}
           {filtered.slice(0, 50).map(c => {
             const { r, f, m } = getRFMScores(c, data.customers);
             const cfg = SEGMENT_CONFIG[c.segment];
             return (
-              <div key={c.phone} className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl p-3 sm:p-4">
+              <div key={c.phone} className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl p-3 sm:p-4">
                 <div className="flex items-center justify-between mb-3 flex-wrap gap-2">
                   <div>
                     <p className="font-bold text-sm text-gray-900 dark:text-foreground">{c.name}</p>
                     <p className="text-xs text-gray-400">{c.phone}</p>
                   </div>
                   <div className="flex items-center gap-2">
-                    <span className={cn("px-2 py-0.5 rounded-full text-[10px] font-extrabold uppercase", TIER_COLORS[c.loyaltyTier] ?? "bg-gray-200 text-gray-600")}>{c.loyaltyTier}</span>
+                    <span className={cn("px-2 py-0.5 rounded-full text-[length:var(--ts-2xs)] font-extrabold uppercase", TIER_COLORS[c.loyaltyTier] ?? "bg-gray-200 text-gray-600")}>{c.loyaltyTier}</span>
                     <span className={cn("inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-bold border", cfg.bg, cfg.color, cfg.border)}>
                       <cfg.icon className="h-3 w-3" />{cfg.label}
                     </span>
@@ -268,13 +268,13 @@ export default function CustomerSegmentationTab() {
                   ].map(metric => (
                     <div key={metric.label}>
                       <div className="flex justify-between items-center mb-1">
-                        <span className="text-[10px] font-bold text-gray-500 dark:text-muted">{metric.label}</span>
-                        <span className="text-[10px] font-extrabold text-gray-700 dark:text-foreground">{metric.value}</span>
+                        <span className="text-[length:var(--ts-2xs)] font-bold text-gray-500 dark:text-muted">{metric.label}</span>
+                        <span className="text-[length:var(--ts-2xs)] font-extrabold text-gray-700 dark:text-foreground">{metric.value}</span>
                       </div>
                       <div className="h-2 bg-gray-100 dark:bg-surface rounded-full overflow-hidden">
                         <div className={cn("h-full rounded-full transition-all", metric.color)} style={{ width: `${metric.value}%` }} />
                       </div>
-                      <p className="text-[9px] text-gray-400 mt-0.5">{metric.desc}</p>
+                      <p className="text-[length:var(--ts-2xs)] text-gray-400 mt-0.5">{metric.desc}</p>
                     </div>
                   ))}
                 </div>

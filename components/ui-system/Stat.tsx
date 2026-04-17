@@ -19,19 +19,19 @@ export function Stat({ label, value, hint, variant = "default", className }: Pro
     <div
       className={cn(
         "flex flex-col",
-        variant === "bordered" && "px-4 py-3 border border-gray-200 dark:border-gray-800 rounded-lg",
+        variant === "bordered" && "px-4 py-3 border border-[var(--rule-base)] rounded-lg",
         variant === "inverse" && "text-white dark:text-gray-900",
         className,
       )}
     >
-      <span className="text-[10px] font-bold uppercase tracking-[0.18em] text-gray-400 dark:text-gray-500">
+      <span className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-gray-400 dark:text-gray-500">
         {label}
       </span>
       <span className="mt-1 text-lg font-extrabold tabular-nums tracking-tight text-gray-900 dark:text-white">
         {value}
       </span>
       {hint && (
-        <span className="text-[11px] text-gray-500 dark:text-gray-400 mt-0.5">{hint}</span>
+        <span className="text-[length:var(--ts-xs)] text-gray-500 dark:text-gray-400 mt-0.5">{hint}</span>
       )}
     </div>
   );

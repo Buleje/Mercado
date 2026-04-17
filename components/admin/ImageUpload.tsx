@@ -99,7 +99,7 @@ export default function ImageUpload({
       {value ? (
         /* ── Con imagen ─────────────────────────────────────── */
         <div className="relative group">
-          <div className={cn("relative rounded-xl overflow-hidden border border-gray-200 dark:border-card-border bg-gray-50 dark:bg-surface", ASPECT_MAP[aspectRatio])}>
+          <div className={cn("relative rounded-xl overflow-hidden border border-[var(--rule-base)] dark:border-card-border bg-gray-50 dark:bg-surface", ASPECT_MAP[aspectRatio])}>
             <Image
               src={value}
               alt={label ?? ""}
@@ -145,7 +145,7 @@ export default function ImageUpload({
             ASPECT_MAP[aspectRatio],
             dragOver
               ? "border-primary bg-primary/5 dark:bg-primary/10"
-              : "border-gray-200 dark:border-card-border hover:border-primary/40 hover:bg-gray-50 dark:hover:bg-surface",
+              : "border-[var(--rule-base)] dark:border-card-border hover:border-primary/40 hover:bg-gray-50 dark:hover:bg-surface",
             uploading && "pointer-events-none opacity-60",
           )}
         >

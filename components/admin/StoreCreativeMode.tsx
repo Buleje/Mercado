@@ -74,7 +74,7 @@ interface StoreCreativeModeProps {
 const INPUT_CLASS =
   "rounded-lg bg-gray-800 border border-gray-700 text-white text-sm px-3 py-2.5 w-full focus:outline-none focus:border-emerald-500 transition-colors placeholder:text-gray-600";
 const LABEL_CLASS =
-  "block text-[11px] font-semibold text-gray-400 mb-1";
+  "block text-[length:var(--ts-xs)] font-semibold text-gray-400 mb-1";
 
 const VIEWPORTS: { id: Viewport; icon: typeof Monitor; width: string; label: string }[] = [
   { id: "desktop", icon: Monitor, width: "100%", label: "Escritorio" },
@@ -214,16 +214,16 @@ function PreviewCard({ title, price, primaryColor, borderRadius, styleVariant }:
 }) {
   const cardClass =
     styleVariant === "minimal"
-      ? "border border-gray-200 shadow-none"
+      ? "border border-[var(--rule-base)] shadow-none"
       : styleVariant === "border"
-        ? "border-2 border-gray-300 "
+        ? "border-2 border-[var(--rule-base)] "
         : styleVariant === "glass"
           ? "border border-white/40 bg-white/70 backdrop-blur-md"
-          : "border border-gray-200";
+          : "border border-[var(--rule-base)]";
 
   return (
     <div className={cn("p-3 bg-white", cardClass)} style={{ borderRadius }}>
-      <div className="aspect-square rounded-xl bg-gradient-to-br from-slate-100 via-emerald-50 to-indigo-100 flex items-center justify-center">
+      <div className="aspect-square rounded-xl bg-[var(--surface-sunken)] flex items-center justify-center">
         <div className="h-12 w-12 rounded-xl bg-white/80 flex items-center justify-center ring-1 ring-white">
           <Store className="h-6 w-6 text-gray-400" />
         </div>
@@ -511,7 +511,7 @@ export default function StoreCreativeMode({ tenantSlug, initialTheme, onClose, o
               onClick={() => setSplitPreview((v) => !v)}
               className={cn(
                 "flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium transition-colors",
-                splitPreview ? "bg-purple-600/20 text-purple-400" : "text-gray-400 hover:text-white hover:bg-gray-800",
+                splitPreview ? "bg-purple-600/20 text-[var(--text-tertiary)]" : "text-gray-400 hover:text-white hover:bg-gray-800",
               )}
               title={splitPreview ? "Vista simple" : "Comparar antes/después"}
             >
@@ -551,7 +551,7 @@ export default function StoreCreativeMode({ tenantSlug, initialTheme, onClose, o
           <div className="p-3 border-t border-gray-800 mt-2 space-y-4">
             {panel === "plantillas" && (
               <>
-                <p className="text-[10px] font-bold text-gray-500">Plantillas rapidas</p>
+                <p className="text-[length:var(--ts-2xs)] font-bold text-gray-500">Plantillas rapidas</p>
                 {QUICK_TEMPLATES.map((tpl) => (
                   <button
                     key={tpl.id}
@@ -635,7 +635,7 @@ export default function StoreCreativeMode({ tenantSlug, initialTheme, onClose, o
             {panel === "secciones" && (
               <div className="space-y-6">
                 <div className="space-y-2">
-                  <p className="text-[10px] font-bold text-gray-500">Pagina principal</p>
+                  <p className="text-[length:var(--ts-2xs)] font-bold text-gray-500">Pagina principal</p>
                   {SECTION_ITEMS.map((section) => {
                     const enabled = draft.sections.includes(section.key);
                     return (
@@ -647,7 +647,7 @@ export default function StoreCreativeMode({ tenantSlug, initialTheme, onClose, o
                   })}
                 </div>
                 <div className="space-y-2">
-                  <p className="text-[10px] font-bold text-gray-500">Tienda online</p>
+                  <p className="text-[length:var(--ts-2xs)] font-bold text-gray-500">Tienda online</p>
                   {tiendaSectionOrder.map((key, idx) => {
                     const enabled = tiendaSectionsEnabled.includes(key);
                     const count = sectionContentCounts[key] ?? 0;
@@ -673,7 +673,7 @@ export default function StoreCreativeMode({ tenantSlug, initialTheme, onClose, o
                         </div>
                         <div className="flex-1 min-w-0">
                           <span className="text-xs text-gray-200 block">{TIENDA_SECTION_LABELS[key]}</span>
-                          <span className={cn("text-[10px]", count > 0 ? "text-emerald-400" : "text-gray-500")}>
+                          <span className={cn("text-[length:var(--ts-2xs)]", count > 0 ? "text-emerald-400" : "text-gray-500")}>
                             {count > 0 ? `${count} productos` : "Sin productos"}
                           </span>
                         </div>
@@ -698,7 +698,7 @@ export default function StoreCreativeMode({ tenantSlug, initialTheme, onClose, o
                 <div>
                   <div className="flex items-center justify-between mb-1">
                     <label className={LABEL_CLASS}>Redondez</label>
-                    <span className="text-[10px] text-emerald-400 font-bold">{draft.borderRadius}px</span>
+                    <span className="text-[length:var(--ts-2xs)] text-emerald-400 font-bold">{draft.borderRadius}px</span>
                   </div>
                   <input type="range" min={0} max={24} value={draft.borderRadius} onChange={(e) => patch("borderRadius", Number(e.target.value))} className="w-full accent-emerald-500" />
                 </div>
@@ -800,10 +800,10 @@ export default function StoreCreativeMode({ tenantSlug, initialTheme, onClose, o
                   <input className={INPUT_CLASS} value={draft.address} onChange={(e) => patch("address", e.target.value)} />
                 </div>
                 <div className="space-y-2">
-                  <p className="text-[10px] font-bold text-gray-500">Horario</p>
+                  <p className="text-[length:var(--ts-2xs)] font-bold text-gray-500">Horario</p>
                   {DAYS.map((day) => (
                     <div key={day} className="grid grid-cols-[1fr,1fr,1fr] gap-2 items-center rounded-lg bg-gray-800 border border-gray-700 p-2">
-                      <span className="text-[11px] font-semibold text-gray-300 capitalize">{day}</span>
+                      <span className="text-[length:var(--ts-xs)] font-semibold text-gray-300 capitalize">{day}</span>
                       <input className={cn(INPUT_CLASS, "px-2 py-1.5 text-xs")} value={draft.schedules[day].open} onChange={(e) => patchSchedule(day, "open", e.target.value)} />
                       <input className={cn(INPUT_CLASS, "px-2 py-1.5 text-xs")} value={draft.schedules[day].close} onChange={(e) => patchSchedule(day, "close", e.target.value)} />
                     </div>
@@ -860,18 +860,18 @@ export default function StoreCreativeMode({ tenantSlug, initialTheme, onClose, o
 
             {panel === "historial" && (
               <div className="space-y-3">
-                <p className="text-[10px] font-bold text-gray-500">Versiones guardadas</p>
+                <p className="text-[length:var(--ts-2xs)] font-bold text-gray-500">Versiones guardadas</p>
                 {savedSnapshots.length === 0 ? (
                   <p className="text-xs text-gray-500">Aún no hay versiones. Guarda cambios para crear una.</p>
                 ) : (
                   savedSnapshots.map((snap, idx) => (
                     <div key={idx} className="rounded-lg bg-gray-800 border border-gray-700 p-2.5 space-y-2">
                       <div className="flex items-center justify-between">
-                        <span className="text-[10px] text-gray-400">{snap.savedAt}</span>
+                        <span className="text-[length:var(--ts-2xs)] text-gray-400">{snap.savedAt}</span>
                         <button
                           type="button"
                           onClick={() => pushChange(snap.theme)}
-                          className="text-[10px] font-bold text-emerald-400 hover:text-emerald-300 transition-colors"
+                          className="text-[length:var(--ts-2xs)] font-bold text-emerald-400 hover:text-emerald-300 transition-colors"
                         >
                           Restaurar
                         </button>
@@ -882,12 +882,12 @@ export default function StoreCreativeMode({ tenantSlug, initialTheme, onClose, o
                           <span className="h-4 w-4 rounded-full border border-gray-600" style={{ backgroundColor: snap.theme.secondaryColor }} />
                           <span className="h-4 w-4 rounded-full border border-gray-600" style={{ backgroundColor: snap.theme.accentColor }} />
                         </div>
-                        <span className="text-[10px] text-gray-400">{snap.theme.fontFamily}</span>
+                        <span className="text-[length:var(--ts-2xs)] text-gray-400">{snap.theme.fontFamily}</span>
                         {snap.theme.darkModeDefault && (
-                          <span className="text-[10px] px-1.5 py-0.5 rounded bg-gray-700 text-gray-300">Dark</span>
+                          <span className="text-[length:var(--ts-2xs)] px-1.5 py-0.5 rounded bg-gray-700 text-gray-300">Dark</span>
                         )}
                       </div>
-                      <p className="text-[11px] text-gray-300 font-semibold truncate">{snap.theme.storeName}</p>
+                      <p className="text-[length:var(--ts-xs)] text-gray-300 font-semibold truncate">{snap.theme.storeName}</p>
                     </div>
                   ))
                 )}
@@ -901,7 +901,7 @@ export default function StoreCreativeMode({ tenantSlug, initialTheme, onClose, o
             <div className={cn("flex gap-4 w-full justify-center", splitPreview && "items-start")}>
               {splitPreview && (
                 <div className="flex flex-col items-center gap-1 shrink-0">
-                  <span className="text-[10px] font-bold text-gray-500 uppercase">Guardado</span>
+                  <span className="text-[length:var(--ts-2xs)] font-bold text-gray-500 uppercase">Guardado</span>
                   <div
                     className="bg-white rounded-lg overflow-hidden"
                     style={{ width: viewport === "mobile" ? "320px" : "48%", maxWidth: "50%", height: "calc(100vh - 100px)" }}
@@ -915,9 +915,9 @@ export default function StoreCreativeMode({ tenantSlug, initialTheme, onClose, o
                 </div>
               )}
               <div className={cn("flex flex-col items-center gap-1", splitPreview && "shrink-0")}>
-                {splitPreview && <span className="text-[10px] font-bold text-emerald-400 uppercase">Borrador</span>}
+                {splitPreview && <span className="text-[length:var(--ts-2xs)] font-bold text-emerald-400 uppercase">Borrador</span>}
                 <div
-                  className="bg-white rounded-lg overflow-hidden transition-all duration-300"
+                  className="bg-white rounded-lg overflow-hidden transition-all duration-[var(--dur-base)]"
                   style={{
                     width: splitPreview ? (viewport === "mobile" ? "320px" : "48%") : activeViewport.width,
                     maxWidth: splitPreview ? "50%" : "100%",
@@ -935,7 +935,7 @@ export default function StoreCreativeMode({ tenantSlug, initialTheme, onClose, o
             </div>
           ) : (
           <div
-            className="bg-white rounded-lg overflow-hidden transition-all duration-300"
+            className="bg-white rounded-lg overflow-hidden transition-all duration-[var(--dur-base)]"
             style={{ width: activeViewport.width, maxWidth: "100%", minHeight: "calc(100vh - 80px)", fontFamily }}
           >
             <div className={cn("min-h-full", draft.darkModeDefault ? "bg-gray-950 text-white" : "bg-gray-50 text-gray-900")}>
@@ -946,15 +946,15 @@ export default function StoreCreativeMode({ tenantSlug, initialTheme, onClose, o
                       {draft.logo ? (
                         <Image src={draft.logo} alt="" fill sizes="36px" className="object-cover" unoptimized={draft.logo.startsWith("data:")} />
                       ) : (
-                        <span className="text-sm font-black text-white">{draft.storeName.slice(0, 2).toUpperCase()}</span>
+                        <span className="text-sm font-extrabold text-white">{draft.storeName.slice(0, 2).toUpperCase()}</span>
                       )}
                     </div>
                     <div>
-                      <p className="text-sm font-black text-white">{draft.storeName || "Mi tienda"}</p>
-                      <p className="text-[10px] text-white/80 line-clamp-1">{draft.slogan || "Tu tienda de confianza"}</p>
+                      <p className="text-sm font-extrabold text-white">{draft.storeName || "Mi tienda"}</p>
+                      <p className="text-[length:var(--ts-2xs)] text-white/80 line-clamp-1">{draft.slogan || "Tu tienda de confianza"}</p>
                     </div>
                   </div>
-                  <span className="text-[10px] font-bold text-white/80">Preview</span>
+                  <span className="text-[length:var(--ts-2xs)] font-bold text-white/80">Preview</span>
                 </div>
               </div>
 
@@ -968,11 +968,11 @@ export default function StoreCreativeMode({ tenantSlug, initialTheme, onClose, o
                   }}
                 >
                   <div className="max-w-xl">
-                    <p className="inline-flex items-center gap-1 text-[10px] font-bold bg-white/25 text-white px-2 py-1 rounded-full">
+                    <p className="inline-flex items-center gap-1 text-[length:var(--ts-2xs)] font-bold bg-white/25 text-white px-2 py-1 rounded-full">
                       <Sparkles className="h-3 w-3" />
                       {draft.heroBadge || "Oferta"}
                     </p>
-                    <h2 className="mt-3 text-2xl font-black text-white leading-tight">{draft.heroTitle || "Todo lo que necesitas"}</h2>
+                    <h2 className="mt-3 text-2xl font-extrabold text-white leading-tight">{draft.heroTitle || "Todo lo que necesitas"}</h2>
                     <p className="mt-2 text-sm text-white/90 line-clamp-2">{draft.heroSubtitle || "Delivery rapido en tu zona"}</p>
                     <button
                       type="button"
@@ -990,8 +990,8 @@ export default function StoreCreativeMode({ tenantSlug, initialTheme, onClose, o
 
               <div className="p-4 space-y-3">
                 <div className="flex items-center justify-between">
-                  <h3 className="text-sm font-black">Productos destacados</h3>
-                  <span className="text-[10px] text-gray-400">{draft.sections.length} secciones activas</span>
+                  <h3 className="text-sm font-extrabold">Productos destacados</h3>
+                  <span className="text-[length:var(--ts-2xs)] text-gray-400">{draft.sections.length} secciones activas</span>
                 </div>
 
                 <div className={cn("grid grid-cols-2 gap-3", viewport === "desktop" && "sm:grid-cols-3 lg:grid-cols-4")}
@@ -1009,7 +1009,7 @@ export default function StoreCreativeMode({ tenantSlug, initialTheme, onClose, o
                 {/* Tienda sections preview */}
                 {tiendaSectionsEnabled.length > 0 && (
                   <div className="space-y-2">
-                    <p className="text-[10px] font-bold text-gray-500">Secciones de tienda</p>
+                    <p className="text-[length:var(--ts-2xs)] font-bold text-gray-500">Secciones de tienda</p>
                     {tiendaSectionsEnabled.map((key) => (
                       <div
                         key={key}
@@ -1034,19 +1034,19 @@ export default function StoreCreativeMode({ tenantSlug, initialTheme, onClose, o
                 <div className="rounded-xl p-3 border" style={{ borderColor: draft.darkModeDefault ? "#374151" : "#e5e7eb" }}>
                   <p className="text-xs font-bold mb-2">Herramientas activas</p>
                   <div className="flex flex-wrap gap-1.5">
-                    <span className="text-[10px] px-2 py-1 rounded-full bg-emerald-100 text-emerald-700">{draft.cartStyle}</span>
-                    <span className="text-[10px] px-2 py-1 rounded-full bg-emerald-100 text-emerald-700">{draft.buttonStyle}</span>
-                    <span className="text-[10px] px-2 py-1 rounded-full bg-purple-100 text-purple-700">{draft.animations}</span>
-                    <span className="text-[10px] px-2 py-1 rounded-full bg-amber-100 text-amber-700">{draft.backgroundPattern}</span>
-                    <span className="text-[10px] px-2 py-1 rounded-full bg-slate-100 text-slate-700">{draft.fontFamily}</span>
+                    <span className="text-[length:var(--ts-2xs)] px-2 py-1 rounded-full bg-emerald-100 text-emerald-700">{draft.cartStyle}</span>
+                    <span className="text-[length:var(--ts-2xs)] px-2 py-1 rounded-full bg-emerald-100 text-emerald-700">{draft.buttonStyle}</span>
+                    <span className="text-[length:var(--ts-2xs)] px-2 py-1 rounded-full bg-[var(--surface-sunken)] text-[var(--text-primary)]">{draft.animations}</span>
+                    <span className="text-[length:var(--ts-2xs)] px-2 py-1 rounded-full bg-amber-100 text-amber-700">{draft.backgroundPattern}</span>
+                    <span className="text-[length:var(--ts-2xs)] px-2 py-1 rounded-full bg-slate-100 text-slate-700">{draft.fontFamily}</span>
                   </div>
                 </div>
 
                 {draft.welcomePopupEnabled && (
                   <div className="rounded-xl border p-3 bg-white" style={{ borderColor: draft.secondaryColor }}>
-                    <p className="text-xs font-black" style={{ color: draft.primaryColor }}>{draft.welcomePopupTitle || "Bienvenido"}</p>
+                    <p className="text-xs font-extrabold" style={{ color: draft.primaryColor }}>{draft.welcomePopupTitle || "Bienvenido"}</p>
                     <p className="text-xs text-gray-500 mt-1">{draft.welcomePopupMessage || "Usa este cupon en tu primera compra"}</p>
-                    <div className="mt-2 inline-flex items-center gap-1 rounded-full px-2 py-1 text-[10px] font-bold bg-gray-100 text-gray-700">
+                    <div className="mt-2 inline-flex items-center gap-1 rounded-full px-2 py-1 text-[length:var(--ts-2xs)] font-bold bg-gray-100 text-gray-700">
                       <Check className="h-3 w-3" />
                       {draft.welcomePopupCoupon || "BIENVENIDO10"}
                     </div>
@@ -1054,7 +1054,7 @@ export default function StoreCreativeMode({ tenantSlug, initialTheme, onClose, o
                 )}
               </div>
 
-              <div className="px-4 py-3 border-t text-[10px] text-center" style={{ borderColor: draft.darkModeDefault ? "#1f2937" : "#e5e7eb" }}>
+              <div className="px-4 py-3 border-t text-[length:var(--ts-2xs)] text-center" style={{ borderColor: draft.darkModeDefault ? "#1f2937" : "#e5e7eb" }}>
                 {draft.footerText || draft.slogan || "Tu bodega de confianza"}
               </div>
             </div>

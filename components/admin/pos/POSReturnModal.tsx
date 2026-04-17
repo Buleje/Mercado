@@ -219,9 +219,9 @@ export default function POSReturnModal({
         className="fixed inset-0 z-50 flex items-center justify-center p-4"
         onClick={e => e.target === e.currentTarget && resetAndClose()}
       >
-        <div className="w-full max-w-xl bg-white border border-gray-200 rounded-xl max-h-[90vh] flex flex-col overflow-hidden">
+        <div className="w-full max-w-xl bg-white border border-[var(--rule-base)] rounded-xl max-h-[90vh] flex flex-col overflow-hidden">
           {/* Header */}
-          <div className="flex items-center justify-between p-4 border-b border-gray-100">
+          <div className="flex items-center justify-between p-4 border-b border-[var(--rule-soft)]">
             <h3 className="text-base font-extrabold text-gray-900 flex items-center gap-2">
               <RotateCcw className="h-4 w-4 text-secondary" />
               Devolucion
@@ -244,7 +244,7 @@ export default function POSReturnModal({
                     onChange={e => setSearchQuery(e.target.value)}
                     onKeyDown={e => e.key === "Enter" && handleSearch()}
                     placeholder="Buscar por ID de boleta..."
-                    className="w-full pl-9 pr-3 py-2 rounded-lg border border-gray-200 bg-white text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
+                    className="w-full pl-9 pr-3 py-2 rounded-lg border border-[var(--rule-base)] bg-white text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
                     autoFocus
                   />
                 </div>
@@ -256,7 +256,7 @@ export default function POSReturnModal({
                 </button>
               </div>
 
-              <p className="text-[10px] font-bold text-gray-400">
+              <p className="text-[length:var(--ts-2xs)] font-bold text-gray-400">
                 {searchQuery ? "Resultados" : "Ventas recientes de hoy"}
               </p>
 
@@ -275,22 +275,22 @@ export default function POSReturnModal({
                     <button
                       key={sale.id}
                       onClick={() => selectSale(sale)}
-                      className="w-full text-left p-3 rounded-lg border border-gray-100 hover:bg-gray-50 transition-colors"
+                      className="w-full text-left p-3 rounded-lg border border-[var(--rule-soft)] hover:bg-gray-50 transition-colors"
                     >
                       <div className="flex items-center justify-between">
                         <div>
                           <p className="text-xs font-bold text-gray-900">
                             #{sale.id.slice(0, 8)}
                           </p>
-                          <p className="text-[10px] text-gray-400">{fmtDate(sale.createdAt)}</p>
+                          <p className="text-[length:var(--ts-2xs)] text-gray-400">{fmtDate(sale.createdAt)}</p>
                         </div>
                         <div className="text-right">
                           <p className="text-sm font-extrabold text-primary">{fmt(sale.total)}</p>
-                          <p className="text-[10px] text-gray-400 capitalize">{sale.payment}</p>
+                          <p className="text-[length:var(--ts-2xs)] text-gray-400 capitalize">{sale.payment}</p>
                         </div>
                       </div>
                       {sale.items && sale.items.length > 0 && (
-                        <p className="text-[10px] text-gray-400 mt-1 truncate">
+                        <p className="text-[length:var(--ts-2xs)] text-gray-400 mt-1 truncate">
                           {sale.items.map(i => `${i.quantity}x ${i.name}`).join(", ")}
                         </p>
                       )}
@@ -308,10 +308,10 @@ export default function POSReturnModal({
                 <p className="text-xs font-bold text-gray-900">
                   Venta #{selectedSale.id.slice(0, 8)} - {fmtDate(selectedSale.createdAt)}
                 </p>
-                <p className="text-[10px] text-gray-400">Total original: {fmt(selectedSale.total)}</p>
+                <p className="text-[length:var(--ts-2xs)] text-gray-400">Total original: {fmt(selectedSale.total)}</p>
               </div>
 
-              <p className="text-[10px] font-bold text-gray-400">
+              <p className="text-[length:var(--ts-2xs)] font-bold text-gray-400">
                 Seleccionar items a devolver
               </p>
 
@@ -323,7 +323,7 @@ export default function POSReturnModal({
                       "p-3 rounded-xl border transition-colors",
                       item.selected
                         ? "border-primary bg-primary/5"
-                        : "border-gray-100"
+                        : "border-[var(--rule-soft)]"
                     )}
                   >
                     <div className="flex items-center gap-3">
@@ -331,22 +331,22 @@ export default function POSReturnModal({
                         type="checkbox"
                         checked={item.selected}
                         onChange={() => toggleItem(idx)}
-                        className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary"
+                        className="h-4 w-4 rounded border-[var(--rule-base)] text-primary focus:ring-primary"
                       />
                       <div className="flex-1 min-w-0">
                         <p className="text-xs font-bold text-gray-900 truncate">{item.name}</p>
-                        <p className="text-[10px] text-gray-400">{fmt(item.price)} x {item.maxQty} = {fmt(item.price * item.maxQty)}</p>
+                        <p className="text-[length:var(--ts-2xs)] text-gray-400">{fmt(item.price)} x {item.maxQty} = {fmt(item.price * item.maxQty)}</p>
                       </div>
                       {item.selected && (
                         <div className="flex items-center gap-1.5">
-                          <label className="text-[10px] text-gray-500">Cant:</label>
+                          <label className="text-[length:var(--ts-2xs)] text-gray-500">Cant:</label>
                           <input
                             type="number"
                             min={1}
                             max={item.maxQty}
                             value={item.returnQty}
                             onChange={e => updateReturnQty(idx, parseInt(e.target.value) || 0)}
-                            className="w-14 px-2 py-1 rounded-lg border border-gray-200 text-xs text-center text-gray-900 bg-white outline-none focus:border-primary"
+                            className="w-14 px-2 py-1 rounded-lg border border-[var(--rule-base)] text-xs text-center text-gray-900 bg-white outline-none focus:border-primary"
                           />
                         </div>
                       )}
@@ -361,7 +361,7 @@ export default function POSReturnModal({
                 <select
                   value={motivo}
                   onChange={e => setMotivo(e.target.value)}
-                  className="w-full px-3 py-2 rounded-lg border border-gray-200 bg-white text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-primary/30"
+                  className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] bg-white text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-primary/30"
                 >
                   {MOTIVOS.map(m => (
                     <option key={m} value={m}>{m}</option>

@@ -215,7 +215,7 @@ function ComparisonBars({
             <div key={day.date} className="flex-1 flex flex-col items-center group">
               {/* Tooltip */}
               {(day.revenue > 0 || prevDay.revenue > 0) && (
-                <div className="absolute -top-12 left-1/2 -translate-x-1/2 bg-gray-800 text-white text-[10px] rounded px-1.5 py-1 whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-10 space-y-0.5">
+                <div className="absolute -top-12 left-1/2 -translate-x-1/2 bg-gray-800 text-white text-[length:var(--ts-2xs)] rounded px-1.5 py-1 whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-10 space-y-0.5">
                   <div>Esta: {fmt(day.revenue)}</div>
                   {prevDay.revenue > 0 && <div>Ant: {fmt(prevDay.revenue)}</div>}
                 </div>
@@ -224,17 +224,17 @@ function ComparisonBars({
               {/* Par de barras */}
               <div className="w-full flex items-end gap-0.5" style={{ height: 80 }}>
                 <div
-                  className="flex-1 bg-[#00B4A6] dark:bg-[#2dd4bf] rounded-t transition-all duration-500"
+                  className="flex-1 bg-[#00B4A6] dark:bg-[#2dd4bf] rounded-t transition-all duration-[var(--dur-slow)]"
                   style={{ height: `${thisH}px` }}
                 />
                 <div
-                  className="flex-1 bg-gray-200 dark:bg-gray-600 rounded-t transition-all duration-500"
+                  className="flex-1 bg-gray-200 dark:bg-gray-600 rounded-t transition-all duration-[var(--dur-slow)]"
                   style={{ height: `${prevH}px` }}
                 />
               </div>
 
               {/* Etiqueta dia */}
-              <span className="text-[9px] text-gray-400 dark:text-gray-500 mt-1 leading-none">
+              <span className="text-[length:var(--ts-2xs)] text-gray-400 dark:text-gray-500 mt-1 leading-none">
                 {day.dayLabel.split(" ")[0]}
                 <br />
                 {day.dayLabel.split(" ")[1]}
@@ -271,7 +271,7 @@ function TopProductsTable({ products }: { products: TopProduct[] }) {
               </div>
               <div className="h-1.5 bg-gray-100 dark:bg-gray-700 rounded-full overflow-hidden">
                 <div
-                  className="h-full bg-[#f97316] rounded-full transition-all duration-500"
+                  className="h-full bg-[#f97316] rounded-full transition-all duration-[var(--dur-slow)]"
                   style={{ width: `${barPct}%` }}
                 />
               </div>
@@ -366,7 +366,7 @@ export default function EmployeePerformanceChart() {
             value={selectedId}
             onChange={(e) => setSelectedId(e.target.value)}
             className={cn(
-              "w-full appearance-none rounded-xl border border-gray-200 dark:border-gray-700",
+              "w-full appearance-none rounded-xl border border-[var(--rule-base)]",
               "bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100",
               "px-4 py-3 pr-10 text-sm font-medium",
               "focus:outline-none focus:ring-2 focus:ring-[#00B4A6] dark:focus:ring-green-500"
@@ -399,7 +399,7 @@ export default function EmployeePerformanceChart() {
         </div>
       )}
       {!loading && !error && allStats.length === 0 && (
-        <div className="rounded-xl border border-gray-100 dark:border-gray-700 bg-white dark:bg-gray-800 p-8 text-center">
+        <div className="rounded-xl border border-[var(--rule-base)] bg-white dark:bg-gray-800 p-8 text-center">
           <Users className="w-8 h-8 text-gray-300 dark:text-gray-600 mx-auto mb-2" />
           <p className="text-sm text-gray-400 dark:text-gray-500">
             No hay datos de ventas disponibles
@@ -440,7 +440,7 @@ export default function EmployeePerformanceChart() {
             ].map((kpi) => (
               <div
                 key={kpi.label}
-                className="rounded-xl border border-gray-100 dark:border-gray-700 bg-white dark:bg-gray-800 p-3 text-center"
+                className="rounded-xl border border-[var(--rule-base)] bg-white dark:bg-gray-800 p-3 text-center"
               >
                 <p className="text-xs text-gray-400 dark:text-gray-500 mb-1">{kpi.label}</p>
                 <p className="font-bold text-lg text-gray-900 dark:text-gray-100">{kpi.value}</p>
@@ -450,7 +450,7 @@ export default function EmployeePerformanceChart() {
           </div>
 
           {/* Grafico de barras comparativo */}
-          <div className="rounded-xl border border-gray-100 dark:border-gray-700 bg-white dark:bg-gray-800 p-4">
+          <div className="rounded-xl border border-[var(--rule-base)] bg-white dark:bg-gray-800 p-4">
             <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-4">
               Ventas por dia (esta semana vs anterior)
             </h3>
@@ -461,7 +461,7 @@ export default function EmployeePerformanceChart() {
           </div>
 
           {/* Top 5 productos */}
-          <div className="rounded-xl border border-gray-100 dark:border-gray-700 bg-white dark:bg-gray-800 p-4">
+          <div className="rounded-xl border border-[var(--rule-base)] bg-white dark:bg-gray-800 p-4">
             <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-4">
               Productos mas vendidos (esta semana)
             </h3>

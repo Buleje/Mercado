@@ -91,7 +91,7 @@ function ProductCard({
   const hasStock = product.stock === undefined || product.stock > 0;
 
   return (
-    <div className="bg-white dark:bg-gray-900 rounded-2xl overflow-hidden shadow-sm border border-gray-100 dark:border-gray-800 flex flex-col">
+    <div className="bg-white dark:bg-gray-900 rounded-2xl overflow-hidden shadow-sm border border-[var(--rule-base)] flex flex-col">
       <div className="relative aspect-square bg-gray-100 dark:bg-gray-800">
         {product.imageUrl ? (
           <Image
@@ -126,7 +126,7 @@ function ProductCard({
         </div>
 
         <div className="flex items-center justify-between gap-2">
-          <p className="font-black text-gray-900 dark:text-white">
+          <p className="font-extrabold text-gray-900 dark:text-white">
             {formatPrice(product.price, currency)}
           </p>
           {product.unit && (
@@ -257,7 +257,7 @@ export default function TenantCatalog({ slug, storeName, primaryColor, currency 
         <div className="max-w-5xl mx-auto flex items-center gap-3">
           <Link href={`/t/${slug}`} className="flex items-center gap-2 flex-1 min-w-0">
             <div
-              className="w-9 h-9 rounded-xl flex items-center justify-center text-sm font-black flex-shrink-0"
+              className="w-9 h-9 rounded-xl flex items-center justify-center text-sm font-extrabold flex-shrink-0"
               style={{ background: "rgba(255,255,255,0.2)", color: "#fff" }}
             >
               {storeName.slice(0, 2).toUpperCase()}
@@ -283,7 +283,7 @@ export default function TenantCatalog({ slug, storeName, primaryColor, currency 
       </header>
 
       <main className="max-w-5xl mx-auto px-4 py-6">
-        <h2 className="text-2xl font-black mb-4">Catálogo completo</h2>
+        <h2 className="text-2xl font-extrabold mb-4">Catálogo completo</h2>
 
         <div className="relative mb-6">
           <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
@@ -292,7 +292,7 @@ export default function TenantCatalog({ slug, storeName, primaryColor, currency 
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             placeholder="Buscar productos…"
-            className="w-full pl-10 pr-4 py-3 rounded-2xl bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 text-gray-900 dark:text-white placeholder:text-gray-400 text-sm outline-none focus:border-emerald-400 dark:focus:border-emerald-500 transition-colors shadow-sm"
+            className="w-full pl-10 pr-4 py-3 rounded-2xl bg-white dark:bg-gray-900 border border-[var(--rule-base)] text-gray-900 dark:text-white placeholder:text-gray-400 text-sm outline-none focus:border-emerald-400 dark:focus:border-emerald-500 transition-colors shadow-sm"
             style={{ minHeight: "48px" }}
           />
         </div>

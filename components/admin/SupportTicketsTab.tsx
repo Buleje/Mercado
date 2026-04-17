@@ -102,7 +102,7 @@ export default function SupportTicketsTab() {
         </div>
         <div className="flex flex-wrap gap-2">
           <button onClick={() => setShowFaq(!showFaq)} className="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-primary text-white text-sm font-semibold hover:bg-primary/90 transition-colors">FAQ</button>
-          <button onClick={() => exportToCSV(tickets.map(t => ({ numero: t.number, fecha: t.date, cliente: t.clientName, asunto: t.subject, prioridad: PRIORITY_META[t.priority].label, estado: STATUS_META[t.status].label, fuente: t.source, asignado: t.assignedTo, sla_hrs: t.slaHours, transcurrido: t.elapsedHours, sla_breach: t.slaBreached ? "Sí" : "No", satisfaccion: t.satisfaction ?? "—" })), "soporte-tickets")} className="flex items-center gap-1.5 px-3 py-2 rounded-lg border border-gray-200 dark:border-card-border bg-white dark:bg-surface text-sm font-semibold text-gray-700 dark:text-foreground hover:bg-gray-50 dark:hover:bg-accent transition-colors">
+          <button onClick={() => exportToCSV(tickets.map(t => ({ numero: t.number, fecha: t.date, cliente: t.clientName, asunto: t.subject, prioridad: PRIORITY_META[t.priority].label, estado: STATUS_META[t.status].label, fuente: t.source, asignado: t.assignedTo, sla_hrs: t.slaHours, transcurrido: t.elapsedHours, sla_breach: t.slaBreached ? "Sí" : "No", satisfaccion: t.satisfaction ?? "—" })), "soporte-tickets")} className="flex items-center gap-1.5 px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-card-border bg-white dark:bg-surface text-sm font-semibold text-gray-700 dark:text-foreground hover:bg-gray-50 dark:hover:bg-accent transition-colors">
             <Download className="h-4 w-4" /> Exportar
           </button>
         </div>
@@ -135,7 +135,7 @@ export default function SupportTicketsTab() {
 
       {/* FAQ Panel */}
       {showFaq && (
-        <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl p-3 sm:p-5">
+        <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl p-3 sm:p-5">
           <h3 className="font-extrabold text-sm text-gray-900 dark:text-foreground mb-3">Base de conocimiento (FAQ)</h3>
           <div className="space-y-3">
             {FAQ.map((f, i) => (
@@ -152,26 +152,26 @@ export default function SupportTicketsTab() {
       <div className="flex flex-col sm:flex-row gap-3 flex-wrap">
         <div className="relative flex-1 max-w-sm">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
-          <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Cliente, asunto, número..." className="w-full pl-9 pr-3 py-2 text-sm border border-gray-200 dark:border-card-border rounded-lg bg-white dark:bg-surface text-gray-700 dark:text-foreground" />
+          <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Cliente, asunto, número..." className="w-full pl-9 pr-3 py-2 text-sm border border-[var(--rule-base)] dark:border-card-border rounded-lg bg-white dark:bg-surface text-gray-700 dark:text-foreground" />
         </div>
-        <select value={filterPriority} onChange={e => setFilterPriority(e.target.value as TicketPriority | "todos")} className="text-sm border border-gray-200 dark:border-card-border rounded-lg px-3 py-2 bg-white dark:bg-surface text-gray-700 dark:text-foreground">
+        <select value={filterPriority} onChange={e => setFilterPriority(e.target.value as TicketPriority | "todos")} className="text-sm border border-[var(--rule-base)] dark:border-card-border rounded-lg px-3 py-2 bg-white dark:bg-surface text-gray-700 dark:text-foreground">
           <option value="todos">Todas las prioridades</option>
           {(Object.keys(PRIORITY_META) as TicketPriority[]).map(p => <option key={p} value={p}>{PRIORITY_META[p].label}</option>)}
         </select>
-        <select value={filterStatus} onChange={e => setFilterStatus(e.target.value as TicketStatus | "todos")} className="text-sm border border-gray-200 dark:border-card-border rounded-lg px-3 py-2 bg-white dark:bg-surface text-gray-700 dark:text-foreground">
+        <select value={filterStatus} onChange={e => setFilterStatus(e.target.value as TicketStatus | "todos")} className="text-sm border border-[var(--rule-base)] dark:border-card-border rounded-lg px-3 py-2 bg-white dark:bg-surface text-gray-700 dark:text-foreground">
           <option value="todos">Todos los estados</option>
           {(Object.keys(STATUS_META) as TicketStatus[]).map(s => <option key={s} value={s}>{STATUS_META[s].label}</option>)}
         </select>
       </div>
 
       {/* Tickets table */}
-      <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl overflow-hidden">
+      <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full min-w-[600px] text-sm">
             <thead><tr className="text-left text-xs font-bold text-gray-400 bg-gray-50 dark:bg-surface"><th className="px-2 sm:px-4 py-2 sm:py-3">Ticket</th><th className="px-2 sm:px-4 py-2 sm:py-3">Cliente</th><th className="px-2 sm:px-4 py-2 sm:py-3">Asunto</th><th className="px-2 sm:px-4 py-2 sm:py-3">Prioridad</th><th className="px-2 sm:px-4 py-2 sm:py-3">Estado</th><th className="px-2 sm:px-4 py-2 sm:py-3">SLA</th><th className="px-2 sm:px-4 py-2 sm:py-3"></th></tr></thead>
             <tbody>
               {filtered.map(t => (
-                <tr key={t.id} className="border-t border-gray-100 dark:border-card-border hover:bg-gray-50 dark:hover:bg-accent/20 transition-colors">
+                <tr key={t.id} className="border-t border-[var(--rule-soft)] dark:border-card-border hover:bg-gray-50 dark:hover:bg-accent/20 transition-colors">
                   <td className="px-2 sm:px-4 py-2 sm:py-3 font-mono text-xs font-bold text-gray-700 dark:text-foreground">{t.number}<br/><span className="text-gray-400">{t.date}</span></td>
                   <td className="px-2 sm:px-4 py-2 sm:py-3 text-gray-700 dark:text-foreground">{t.clientName}<br/><span className="text-xs text-gray-400">{SOURCE_META[t.source]}</span></td>
                   <td className="px-2 sm:px-4 py-2 sm:py-3 font-bold text-gray-800 dark:text-foreground max-w-[200px] truncate">{t.subject}</td>
@@ -179,7 +179,7 @@ export default function SupportTicketsTab() {
                   <td className="px-2 sm:px-4 py-2 sm:py-3"><span className={cn("text-xs font-bold", STATUS_META[t.status].color)}>{STATUS_META[t.status].label}</span></td>
                   <td className="px-2 sm:px-4 py-2 sm:py-3 text-xs">
                     <span className={cn("font-bold", t.slaBreached ? "text-red-600" : "text-emerald-600")}>{t.elapsedHours}h / {t.slaHours}h</span>
-                    {t.slaBreached && <span className="block text-red-500 text-[10px]">Incumplido</span>}
+                    {t.slaBreached && <span className="block text-red-500 text-[length:var(--ts-2xs)]">Incumplido</span>}
                   </td>
                   <td className="px-2 sm:px-4 py-2 sm:py-3"><button onClick={() => setDetail(t)} className="text-primary hover:underline text-xs font-bold"><Eye className="h-3.5 w-3.5 inline" /></button></td>
                 </tr>
@@ -191,7 +191,7 @@ export default function SupportTicketsTab() {
 
       {detail && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4" onClick={() => setDetail(null)}>
-          <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl p-3 sm:p-6 w-full max-w-lg space-y-4 max-h-[90vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
+          <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl p-3 sm:p-6 w-full max-w-lg space-y-4 max-h-[90vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
             <div className="flex items-center justify-between">
               <h3 className="font-extrabold text-gray-900 dark:text-foreground">{detail.number}</h3>
               <button onClick={() => setDetail(null)}><X className="h-4 w-4 text-gray-400" /></button>

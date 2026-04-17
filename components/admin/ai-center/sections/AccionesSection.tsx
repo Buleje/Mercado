@@ -253,8 +253,8 @@ function DailyChecklist({ checked, onToggle }: DailyChecklistProps) {
   const total = CHECKLIST_ITEMS.length;
 
   return (
-    <div className="rounded-lg border border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-900">
-      <div className="flex items-center justify-between border-b border-gray-100 px-4 py-3 dark:border-gray-800">
+    <div className="rounded-lg border border-[var(--rule-base)] bg-white dark:border-[var(--rule-base)] dark:bg-gray-900">
+      <div className="flex items-center justify-between border-b border-[var(--rule-soft)] px-4 py-3 dark:border-[var(--rule-base)]">
         <div className="flex items-center gap-2">
           <CheckSquare className="h-4 w-4 text-emerald-500" />
           <span className="text-sm font-medium text-gray-900 dark:text-gray-100">
@@ -299,7 +299,7 @@ function DailyChecklist({ checked, onToggle }: DailyChecklistProps) {
       </div>
 
       {completedCount === total && (
-        <div className="flex items-center gap-2 border-t border-gray-100 px-4 py-2.5 dark:border-gray-800">
+        <div className="flex items-center gap-2 border-t border-[var(--rule-soft)] px-4 py-2.5 dark:border-[var(--rule-base)]">
           <Check className="h-4 w-4 text-emerald-500" />
           <span className="text-xs text-emerald-600 dark:text-emerald-400">
             Checklist completo
@@ -325,8 +325,8 @@ function TaskCard({ task, done, onMarkDone }: TaskCardProps) {
   return (
     <div
       className={cn(
-        "flex items-start gap-3 rounded-lg border border-gray-200 bg-white px-4 py-3",
-        "dark:border-gray-700 dark:bg-gray-900",
+        "flex items-start gap-3 rounded-lg border border-[var(--rule-base)] bg-white px-4 py-3",
+        "dark:border-[var(--rule-base)] dark:bg-gray-900",
       )}
     >
       {/* Dot */}
@@ -347,9 +347,9 @@ function TaskCard({ task, done, onMarkDone }: TaskCardProps) {
       <button
         onClick={() => onMarkDone(task.id)}
         className={cn(
-          "shrink-0 rounded border border-gray-200 px-2.5 py-1 text-xs text-gray-500",
+          "shrink-0 rounded border border-[var(--rule-base)] px-2.5 py-1 text-xs text-gray-500",
           "transition-colors hover:border-emerald-300 hover:text-emerald-600",
-          "dark:border-gray-700 dark:text-gray-400 dark:hover:border-emerald-600 dark:hover:text-emerald-400",
+          "dark:border-[var(--rule-base)] dark:text-gray-400 dark:hover:border-emerald-600 dark:hover:text-emerald-400",
         )}
       >
         Hecho
@@ -451,8 +451,8 @@ export default function AccionesSection({ data }: AccionesSectionProps) {
         {(noTasks || allDone) ? (
           <div
             className={cn(
-              "rounded-lg border border-gray-200 bg-white px-4 py-6 text-center",
-              "dark:border-gray-700 dark:bg-gray-900",
+              "rounded-lg border border-[var(--rule-base)] bg-white px-4 py-6 text-center",
+              "dark:border-[var(--rule-base)] dark:bg-gray-900",
             )}
           >
             <Check className="mx-auto mb-2 h-5 w-5 text-emerald-500" />

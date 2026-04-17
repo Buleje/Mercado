@@ -141,7 +141,7 @@ export default function DigitalMenuQR() {
               "flex-shrink-0 px-4 py-2 rounded-full text-sm font-medium transition-colors border",
               activeCategory === cat
                 ? "bg-primary text-white border-primary"
-                : "bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 border-gray-200 dark:border-gray-700"
+                : "bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 border-[var(--rule-base)]"
             )}
           >
             {cat}
@@ -167,7 +167,7 @@ export default function DigitalMenuQR() {
               return (
                 <div
                   key={product.id}
-                  className="bg-white dark:bg-gray-900 rounded-2xl overflow-hidden shadow border border-gray-100 dark:border-gray-800"
+                  className="bg-white dark:bg-gray-900 rounded-2xl overflow-hidden shadow border border-[var(--rule-base)]"
                 >
                   {product.image ? (
                     <div className="relative w-full h-32">
@@ -181,7 +181,7 @@ export default function DigitalMenuQR() {
                     </div>
                   ) : (
                     <div className="w-full h-32 bg-primary/10 flex items-center justify-center">
-                      <span className="text-4xl text-primary/30 font-black">
+                      <span className="text-4xl text-primary/30 font-extrabold">
                         {product.name[0]}
                       </span>
                     </div>
@@ -237,7 +237,7 @@ export default function DigitalMenuQR() {
       {totalItems > 0 && (
         <button
           onClick={() => setShowCart(true)}
-          className="fixed bottom-6 left-1/2 -translate-x-1/2 z-30 bg-primary text-white px-8 py-4 rounded-2xl shadow-2xl flex items-center gap-3 font-bold text-base"
+          className="fixed bottom-6 left-1/2 -translate-x-1/2 z-30 bg-primary text-white px-8 py-4 rounded-2xl shadow-[var(--shadow-xl)] flex items-center gap-3 font-bold text-base"
         >
           <ShoppingCart className="w-5 h-5" />
           Ver pedido ({totalItems}) — {fmt(totalPrice)}
@@ -251,7 +251,7 @@ export default function DigitalMenuQR() {
             className="absolute inset-0 bg-black/50"
             onClick={() => setShowCart(false)}
           />
-          <div className="relative bg-white dark:bg-gray-900 rounded-t-3xl max-h-[80vh] overflow-y-auto p-6 shadow-2xl">
+          <div className="relative bg-white dark:bg-gray-900 rounded-t-3xl max-h-[80vh] overflow-y-auto p-6 shadow-[var(--shadow-xl)]">
             <div className="flex items-center justify-between mb-4">
               <h2 className="text-xl font-bold text-gray-900 dark:text-white">
                 Mi pedido
@@ -300,7 +300,7 @@ export default function DigitalMenuQR() {
                 </div>
               ))}
             </div>
-            <div className="mt-4 pt-4 border-t border-gray-200 dark:border-gray-700">
+            <div className="mt-4 pt-4 border-t border-[var(--rule-base)]">
               <div className="flex justify-between text-lg font-bold text-gray-900 dark:text-white">
                 <span>Total</span>
                 <span>{fmt(totalPrice)}</span>

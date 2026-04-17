@@ -105,15 +105,15 @@ function SparklineKPICard({
   const gradId = `sp-${title.replace(/\W+/g, "")}`;
   return (
     <div
-      className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl  p-3 relative overflow-hidden"
+      className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl  p-3 relative overflow-hidden"
       style={{ borderBottomColor: accentColor, borderBottomWidth: 4 }}
     >
       <div className="flex items-center gap-1.5 mb-1">
         <Icon className="h-3.5 w-3.5" style={{ color: accentColor }} />
-        <p className="text-[10px] uppercase font-bold text-gray-400 truncate">{title}</p>
+        <p className="text-[length:var(--ts-2xs)] uppercase font-bold text-gray-400 truncate">{title}</p>
       </div>
       <p className="text-xl font-extrabold font-mono text-gray-900 dark:text-white leading-tight">{value}</p>
-      {sub && <p className="text-[10px] text-gray-400 mt-0.5">{sub}</p>}
+      {sub && <p className="text-[length:var(--ts-2xs)] text-gray-400 mt-0.5">{sub}</p>}
       <div className="absolute bottom-0 right-0 w-20 h-10 opacity-50 pointer-events-none">
         <ResponsiveContainer width="100%" height={300}>
           <AreaChart data={sparkData} margin={{ top: 2, right: 2, bottom: 0, left: 0 }}>
@@ -226,7 +226,7 @@ export function PrestamosDashboard({ prestamos, resumen }: Props) {
       )}
 
       <m.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}>
-        <div className="bg-white dark:bg-card rounded-xl border border-gray-200 dark:border-card-border p-6 ">
+        <div className="bg-white dark:bg-card rounded-xl border border-[var(--rule-base)] dark:border-card-border p-6 ">
           <h3 className="text-sm font-bold text-gray-700 dark:text-foreground mb-4">Cobros vs Nuevos préstamos (6 meses)</h3>
           {areaData.some(d => d.cobrado > 0 || d.nuevos > 0) ? (
             <ResponsiveContainer width="100%" height={250}>
@@ -258,7 +258,7 @@ export function PrestamosDashboard({ prestamos, resumen }: Props) {
 
       <m.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}>
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          <div className="bg-white dark:bg-card rounded-xl border border-gray-200 dark:border-card-border p-6 ">
+          <div className="bg-white dark:bg-card rounded-xl border border-[var(--rule-base)] dark:border-card-border p-6 ">
             <h3 className="text-sm font-bold text-gray-700 dark:text-foreground mb-4 flex items-center gap-2">
               <User className="h-4 w-4 text-[#f97316]" /> Top 5 deudores
             </h3>
@@ -281,9 +281,9 @@ export function PrestamosDashboard({ prestamos, resumen }: Props) {
             )}
           </div>
 
-          <div className="bg-white dark:bg-card rounded-xl border border-gray-200 dark:border-card-border p-6 ">
+          <div className="bg-white dark:bg-card rounded-xl border border-[var(--rule-base)] dark:border-card-border p-6 ">
             <h3 className="text-sm font-bold text-gray-700 dark:text-foreground mb-2 flex items-center gap-2">
-              <Shield className="h-4 w-4 text-purple-500" /> Distribución por estado
+              <Shield className="h-4 w-4 text-[var(--text-secondary)]" /> Distribución por estado
             </h3>
             {donutData.length > 0 ? (
               <>
@@ -299,7 +299,7 @@ export function PrestamosDashboard({ prestamos, resumen }: Props) {
                   {donutData.map(d => (
                     <div key={d.name} className="flex items-center gap-1.5">
                       <div className="h-2.5 w-2.5 rounded-full shrink-0" style={{ backgroundColor: d.color }} />
-                      <span className="text-[10px] text-gray-600 dark:text-gray-400">{d.name}: <strong>{d.value}</strong></span>
+                      <span className="text-[length:var(--ts-2xs)] text-gray-600 dark:text-gray-400">{d.name}: <strong>{d.value}</strong></span>
                     </div>
                   ))}
                 </div>
@@ -309,7 +309,7 @@ export function PrestamosDashboard({ prestamos, resumen }: Props) {
             )}
           </div>
 
-          <div className="bg-white dark:bg-card rounded-xl border border-gray-200 dark:border-card-border p-6 ">
+          <div className="bg-white dark:bg-card rounded-xl border border-[var(--rule-base)] dark:border-card-border p-6 ">
             <h3 className="text-sm font-bold text-gray-700 dark:text-foreground mb-4 flex items-center gap-2">
               <Scale className="h-4 w-4 text-emerald-500" /> Dado vs Recibido
             </h3>
@@ -325,7 +325,7 @@ export function PrestamosDashboard({ prestamos, resumen }: Props) {
                 <div className="h-3 bg-gray-100 dark:bg-gray-800 rounded-full overflow-hidden">
                   <m.div className="h-full bg-red-500 rounded-full" initial={{ width: 0 }} animate={{ width: `${(totalDados / maxDireccion) * 100}%` }} transition={{ duration: 0.8, delay: 0.3 }} />
                 </div>
-                <p className="text-[10px] text-gray-400 mt-0.5">{prestamos.filter(p=>p.direccion==="DADO").length} préstamos</p>
+                <p className="text-[length:var(--ts-2xs)] text-gray-400 mt-0.5">{prestamos.filter(p=>p.direccion==="DADO").length} préstamos</p>
               </div>
               <div>
                 <div className="flex justify-between items-center mb-1">
@@ -338,14 +338,14 @@ export function PrestamosDashboard({ prestamos, resumen }: Props) {
                 <div className="h-3 bg-gray-100 dark:bg-gray-800 rounded-full overflow-hidden">
                   <m.div className="h-full bg-emerald-500 rounded-full" initial={{ width: 0 }} animate={{ width: `${(totalRecibidos / maxDireccion) * 100}%` }} transition={{ duration: 0.8, delay: 0.5 }} />
                 </div>
-                <p className="text-[10px] text-gray-400 mt-0.5">{prestamos.filter(p=>p.direccion==="RECIBIDO").length} préstamos</p>
+                <p className="text-[length:var(--ts-2xs)] text-gray-400 mt-0.5">{prestamos.filter(p=>p.direccion==="RECIBIDO").length} préstamos</p>
               </div>
-              <div className="pt-3 border-t border-gray-100 dark:border-white/10">
+              <div className="pt-3 border-t border-[var(--rule-soft)] dark:border-white/10">
                 <p className="text-xs text-gray-500 dark:text-gray-400">Balance neto</p>
                 <p className={cn("text-lg font-extrabold font-mono", totalDados > totalRecibidos ? "text-red-600 dark:text-red-400" : "text-emerald-600 dark:text-emerald-400")}>
                   {totalDados > totalRecibidos ? "− " : "+ "}{formatCurrency(Math.abs(totalDados - totalRecibidos))}
                 </p>
-                <p className="text-[10px] text-gray-400">{totalDados > totalRecibidos ? "Más dado que recibido" : "Más recibido que dado"}</p>
+                <p className="text-[length:var(--ts-2xs)] text-gray-400">{totalDados > totalRecibidos ? "Más dado que recibido" : "Más recibido que dado"}</p>
               </div>
             </div>
           </div>

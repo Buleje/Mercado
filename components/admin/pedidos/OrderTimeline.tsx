@@ -97,7 +97,7 @@ export default function OrderTimeline({
                         ? "border-emerald-500 bg-emerald-500 text-white"
                         : isCurrent
                           ? "border-[#f97316] bg-[#f97316]/10 text-[#f97316]"
-                          : "border-gray-200 dark:border-gray-600 bg-gray-50 dark:bg-gray-800 text-gray-300 dark:text-gray-600"
+                          : "border-[var(--rule-base)] dark:border-gray-600 bg-gray-50 dark:bg-gray-800 text-gray-300 dark:text-gray-600"
                   )}
                 >
                   {isCancelled ? (
@@ -118,7 +118,7 @@ export default function OrderTimeline({
 
                 {/* Label */}
                 <p className={cn(
-                  "text-[10px] font-bold mt-1 text-center",
+                  "text-[length:var(--ts-2xs)] font-bold mt-1 text-center",
                   isCancelled
                     ? "text-red-400"
                     : isCompleted
@@ -132,7 +132,7 @@ export default function OrderTimeline({
 
                 {/* Timestamp */}
                 {timestamp && (
-                  <p className="text-[9px] text-gray-400 dark:text-gray-500 mt-0.5">
+                  <p className="text-[length:var(--ts-2xs)] text-gray-400 dark:text-gray-500 mt-0.5">
                     {fmtDate(timestamp)} {fmtTime(timestamp)}
                   </p>
                 )}

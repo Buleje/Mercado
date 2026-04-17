@@ -43,7 +43,7 @@ type MetricsData = {
 
 const TIER_CONFIG: Record<string, { label: string; color: string; bg: string; border: string }> = {
   bronce:   { label: "Bronce",   color: "text-amber-700 dark:text-amber-300",   bg: "bg-amber-50 dark:bg-amber-900/20",   border: "border-amber-200 dark:border-amber-700" },
-  plata:    { label: "Plata",    color: "text-gray-600 dark:text-gray-300",     bg: "bg-gray-50 dark:bg-gray-800",         border: "border-gray-200 dark:border-gray-600" },
+  plata:    { label: "Plata",    color: "text-gray-600 dark:text-gray-300",     bg: "bg-gray-50 dark:bg-gray-800",         border: "border-[var(--rule-base)] dark:border-gray-600" },
   oro:      { label: "Oro",      color: "text-yellow-700 dark:text-yellow-300", bg: "bg-yellow-50 dark:bg-yellow-900/20",  border: "border-yellow-200 dark:border-yellow-700" },
   diamante: { label: "Diamante", color: "text-sky-700 dark:text-sky-300",       bg: "bg-sky-50 dark:bg-sky-900/20",        border: "border-sky-200 dark:border-sky-700" },
 };
@@ -67,14 +67,14 @@ function KPICard({ icon: Icon, label, value, sub, colorClass }: {
   colorClass?: string;
 }) {
   return (
-    <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-gray-800 p-4 flex flex-col gap-2">
+    <div className="bg-white dark:bg-gray-900 rounded-2xl border border-[var(--rule-base)] p-4 flex flex-col gap-2">
       <div className={cn("w-9 h-9 rounded-xl flex items-center justify-center", colorClass ?? "bg-primary/10")}>
         <Icon className={cn("h-4 w-4", colorClass ? "text-white" : "text-primary")} />
       </div>
       <p className="text-xl font-extrabold text-gray-900 dark:text-white leading-none">{value}</p>
       <div>
         <p className="text-xs font-semibold text-gray-500 dark:text-gray-400">{label}</p>
-        {sub && <p className="text-[11px] text-gray-400 dark:text-gray-500 mt-0.5">{sub}</p>}
+        {sub && <p className="text-[length:var(--ts-xs)] text-gray-400 dark:text-gray-500 mt-0.5">{sub}</p>}
       </div>
     </div>
   );
@@ -84,7 +84,7 @@ function MiniBarChart({ data }: { data: MonthlySpend[] }) {
   if (!data.length) return null;
   const max = Math.max(...data.map(d => d.amount), 1);
   return (
-    <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-gray-800 p-4">
+    <div className="bg-white dark:bg-gray-900 rounded-2xl border border-[var(--rule-base)] p-4">
       <h3 className="text-sm font-bold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
         <TrendingUp className="h-4 w-4 text-primary" />
         Gastos últimos 6 meses
@@ -96,12 +96,12 @@ function MiniBarChart({ data }: { data: MonthlySpend[] }) {
             <div key={d.month} className="flex-1 flex flex-col items-center gap-1">
               <div className="w-full flex items-end justify-center" style={{ height: "76px" }}>
                 <div
-                  className="w-full rounded-t-lg bg-primary/80 dark:bg-primary transition-all duration-500"
+                  className="w-full rounded-t-lg bg-primary/80 dark:bg-primary transition-all duration-[var(--dur-slow)]"
                   style={{ height: `${Math.max(pct, 4)}%` }}
                   title={`${getMonthLabel(d.month)}: ${fmt(d.amount)}`}
                 />
               </div>
-              <span className="text-[10px] text-gray-400 dark:text-gray-500 font-medium">{getMonthLabel(d.month)}</span>
+              <span className="text-[length:var(--ts-2xs)] text-gray-400 dark:text-gray-500 font-medium">{getMonthLabel(d.month)}</span>
             </div>
           );
         })}
@@ -113,9 +113,9 @@ function MiniBarChart({ data }: { data: MonthlySpend[] }) {
 function FavoritesList({ products }: { products: FavoriteProduct[] }) {
   if (!products.length) return null;
   return (
-    <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-gray-800 p-4">
+    <div className="bg-white dark:bg-gray-900 rounded-2xl border border-[var(--rule-base)] p-4">
       <h3 className="text-sm font-bold text-gray-900 dark:text-white mb-3 flex items-center gap-2">
-        <Heart className="h-4 w-4 text-rose-500" />
+        <Heart className="h-4 w-4 text-[var(--text-secondary)]" />
         Tus productos favoritos
       </h3>
       <div className="space-y-2">
@@ -133,10 +133,10 @@ function FavoritesList({ products }: { products: FavoriteProduct[] }) {
             </div>
             <div className="flex-1 min-w-0">
               <p className="text-sm font-semibold text-gray-800 dark:text-gray-200 truncate">{p.name}</p>
-              <p className="text-[11px] text-gray-400 dark:text-gray-500">{p.count} veces · {fmt(p.totalSpent)}</p>
+              <p className="text-[length:var(--ts-xs)] text-gray-400 dark:text-gray-500">{p.count} veces · {fmt(p.totalSpent)}</p>
             </div>
             <div className="shrink-0">
-              <span className="inline-flex items-center gap-0.5 text-[10px] font-bold text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-900/20 rounded-full px-2 py-0.5">
+              <span className="inline-flex items-center gap-0.5 text-[length:var(--ts-2xs)] font-bold text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-900/20 rounded-full px-2 py-0.5">
                 <Star className="h-2.5 w-2.5" />
                 x{p.count}
               </span>
@@ -184,12 +184,12 @@ function BadgesSection({ orderCount, totalSpent, hasCouponSavings }: {
       description: "Usaste un cupon de descuento",
       earned: hasCouponSavings,
       icon: Tag,
-      color: "bg-rose-500",
+      color: "bg-[var(--text-primary)]",
     },
   ];
 
   return (
-    <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-gray-800 p-4">
+    <div className="bg-white dark:bg-gray-900 rounded-2xl border border-[var(--rule-base)] p-4">
       <h3 className="text-sm font-bold text-gray-900 dark:text-white mb-3 flex items-center gap-2">
         <Award className="h-4 w-4 text-primary" />
         Tus logros
@@ -203,15 +203,15 @@ function BadgesSection({ orderCount, totalSpent, hasCouponSavings }: {
               className={cn(
                 "rounded-xl p-3 border transition-all",
                 b.earned
-                  ? "border-gray-100 dark:border-gray-800 bg-gray-50 dark:bg-gray-800/50"
-                  : "border-dashed border-gray-200 dark:border-gray-700 opacity-40 grayscale",
+                  ? "border-[var(--rule-base)] bg-gray-50 dark:bg-gray-800/50"
+                  : "border-dashed border-[var(--rule-base)] opacity-40 grayscale",
               )}
             >
               <div className={cn("w-8 h-8 rounded-lg flex items-center justify-center mb-2", b.earned ? b.color : "bg-gray-300 dark:bg-gray-700")}>
                 <Icon className="h-4 w-4 text-white" />
               </div>
               <p className="text-xs font-bold text-gray-800 dark:text-gray-200 leading-tight">{b.label}</p>
-              <p className="text-[10px] text-gray-400 dark:text-gray-500 mt-0.5 leading-snug">{b.description}</p>
+              <p className="text-[length:var(--ts-2xs)] text-gray-400 dark:text-gray-500 mt-0.5 leading-snug">{b.description}</p>
             </div>
           );
         })}
@@ -328,7 +328,7 @@ export default function CustomerMetricsPanel({ phone }: { phone: string }) {
 
   if (error) {
     return (
-      <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-gray-800 p-6 text-center">
+      <div className="bg-white dark:bg-gray-900 rounded-2xl border border-[var(--rule-base)] p-6 text-center">
         <RefreshCw className="h-8 w-8 text-gray-300 dark:text-gray-600 mx-auto mb-2" />
         <p className="text-sm text-gray-500 dark:text-gray-400">{error}</p>
       </div>
@@ -356,7 +356,7 @@ export default function CustomerMetricsPanel({ phone }: { phone: string }) {
         </div>
         <div>
           <p className={cn("text-sm font-extrabold", tierCfg.color)}>Nivel {tierCfg.label}</p>
-          <p className="text-[11px] text-gray-500 dark:text-gray-400">Sigue comprando para subir de nivel</p>
+          <p className="text-[length:var(--ts-xs)] text-gray-500 dark:text-gray-400">Sigue comprando para subir de nivel</p>
         </div>
       </div>
 

@@ -110,8 +110,8 @@ export default function ConversionMetricsTab() {
           label: "Clientes totales",
           value: String(stats.totalCustomers),
           icon: Users,
-          color: "text-purple-400",
-          bg: "bg-purple-500/10",
+          color: "text-[var(--text-tertiary)]",
+          bg: "bg-[var(--text-primary)]/10",
         },
         {
           label: "Pedidos pendientes",
@@ -285,7 +285,7 @@ export default function ConversionMetricsTab() {
           {/* Customer Segments */}
           <div className="bg-white/5 border border-white/10 rounded-xl p-4">
             <h3 className="text-sm font-semibold text-white mb-3 flex flex-wrap items-center gap-2">
-              <Users className="w-4 h-4 text-purple-400" />
+              <Users className="w-4 h-4 text-[var(--text-tertiary)]" />
               Segmentos de Clientes
             </h3>
             {segments.length === 0 ? (

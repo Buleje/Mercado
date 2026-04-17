@@ -81,7 +81,7 @@ export default function ChartManager({ moduleId, charts, className }: ChartManag
             {/* Remove button on hover */}
             <button
               onClick={() => removeChart(chart.id)}
-              className="absolute top-3 right-3 z-10 opacity-0 group-hover:opacity-100 transition-opacity p-1.5 rounded-lg bg-white/90 dark:bg-gray-900/90 border border-gray-200 dark:border-gray-700 hover:bg-red-50 dark:hover:bg-red-950/30 hover:border-red-300 dark:hover:border-red-800 text-gray-400 hover:text-red-500 "
+              className="absolute top-3 right-3 z-10 opacity-0 group-hover:opacity-100 transition-opacity p-1.5 rounded-lg bg-white/90 dark:bg-gray-900/90 border border-[var(--rule-base)] hover:bg-red-50 dark:hover:bg-red-950/30 hover:border-red-300 dark:hover:border-red-800 text-gray-400 hover:text-red-500 "
               title="Quitar gráfico"
             >
               <X className="h-4 w-4" />
@@ -93,7 +93,7 @@ export default function ChartManager({ moduleId, charts, className }: ChartManag
         {/* Add chart button */}
         <button
           onClick={() => setModalOpen(true)}
-          className="w-full flex items-center justify-center gap-2 py-3 px-4 rounded-xl border-2 border-dashed border-gray-200 dark:border-gray-700 text-gray-400 dark:text-gray-500 hover:border-gray-300 dark:hover:border-gray-600 hover:text-gray-500 dark:hover:text-gray-400 transition-colors text-sm font-medium"
+          className="w-full flex items-center justify-center gap-2 py-3 px-4 rounded-xl border-2 border-dashed border-[var(--rule-base)] text-gray-400 dark:text-gray-500 hover:border-gray-300 dark:hover:border-gray-600 hover:text-gray-500 dark:hover:text-gray-400 transition-colors text-sm font-medium"
         >
           <Plus className="h-4 w-4" />
           Agregar gráfico
@@ -121,7 +121,7 @@ export default function ChartManager({ moduleId, charts, className }: ChartManag
                   addChart(chart.id);
                   if (hiddenCharts.length <= 1) setModalOpen(false);
                 }}
-                className="w-full flex items-center gap-3 p-3 rounded-lg border border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors text-left"
+                className="w-full flex items-center gap-3 p-3 rounded-lg border border-[var(--rule-base)] hover:border-gray-300 dark:hover:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors text-left"
               >
                 <div className="h-9 w-9 rounded-lg bg-gray-100 dark:bg-gray-800 flex items-center justify-center shrink-0">
                   <Plus className="h-4 w-4 text-gray-500" />

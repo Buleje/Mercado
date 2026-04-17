@@ -19,7 +19,9 @@
       }
     ],
     "paths": {
-      "@/*": ["./*"]
+      "@/*": ["./*"],
+      "@buleje/design-system": ["./packages/design-system/src/index.ts"],
+      "@buleje/design-system/*": ["./packages/design-system/src/*"]
     }
   },
   "include": [

@@ -11,6 +11,7 @@ import {
 import type { DbPromotion, DbCustomer } from "@/lib/jsondb";
 import { cn } from "@/lib/utils";
 import { escapeHtml } from "@/lib/safe-html";
+import { PrimaryButton } from "@buleje/design-system";
 
 function formatDate(iso: string) {
   try { return new Date(iso).toLocaleDateString("es-PE", { day: "2-digit", month: "short", year: "numeric" }); }
@@ -24,7 +25,7 @@ function safeMdToHtml(md: string): string {
       .replace(/\*\*(.+?)\*\*/g, '<strong class="font-semibold text-gray-900 dark:text-foreground">$1</strong>')
       .replace(/\*(.+?)\*/g, "<em>$1</em>");
     if (line.startsWith("### ")) return `<h3 class="text-sm font-bold text-gray-800 dark:text-foreground mt-3 mb-0.5">${rich.slice(4)}</h3>`;
-    if (line.startsWith("## ")) return `<h2 class="text-base font-bold text-gray-900 dark:text-foreground mt-4 mb-1 pb-1 border-b border-gray-100 dark:border-card-border">${rich.slice(3)}</h2>`;
+    if (line.startsWith("## ")) return `<h2 class="text-base font-bold text-gray-900 dark:text-foreground mt-4 mb-1 pb-1 border-b border-[var(--rule-soft)] dark:border-card-border">${rich.slice(3)}</h2>`;
     if (line.startsWith("# ")) return `<h1 class="text-lg font-extrabold text-gray-900 dark:text-foreground mt-4 mb-2">${rich.slice(2)}</h1>`;
     if (/^[-*] /.test(line)) return `<li class="ml-5 list-disc text-gray-700 dark:text-foreground leading-relaxed text-sm">${rich.slice(2)}</li>`;
     if (/^\d+\. /.test(line)) return `<li class="ml-5 list-decimal text-gray-700 dark:text-foreground leading-relaxed text-sm">${rich.replace(/^\d+\.\s/, "")}</li>`;
@@ -428,28 +429,28 @@ export default function PromotionsTab() {
     <div className="space-y-3 sm:space-y-6">
       {/* ── Mejora 13: Resumen de rendimiento ────────────────────────────── */}
       {promos.length > 0 && (
-        <div className="bg-linear-to-br from-emerald-50 to-teal-50 dark:from-emerald-950/30 dark:to-teal-950/30 border border-emerald-200 dark:border-emerald-900/50 rounded-xl p-3 sm:p-6">
+        <div className="bg-[var(--surface-sunken)] border border-[var(--rule-base)] rounded-xl p-3 sm:p-6">
           <h3 className="font-extrabold text-gray-900 dark:text-foreground mb-3 flex items-center gap-2">
-            <TrendingUp className="h-5 w-5 text-emerald-600" />
+            <TrendingUp className="h-5 w-5 text-[var(--data-success)]" />
             Rendimiento de Promociones
           </h3>
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-4">
-            <div className="bg-white dark:bg-card rounded-xl p-3 border border-gray-100 dark:border-card-border">
-              <p className="text-[10px] font-bold text-gray-400 uppercase">Activas</p>
+            <div className="bg-white dark:bg-card rounded-xl p-3 border border-[var(--rule-soft)] dark:border-card-border">
+              <p className="text-[length:var(--ts-2xs)] font-bold text-gray-400 uppercase">Activas</p>
               <p className="text-lg font-extrabold text-emerald-600">{active.length}</p>
             </div>
-            <div className="bg-white dark:bg-card rounded-xl p-3 border border-gray-100 dark:border-card-border">
-              <p className="text-[10px] font-bold text-gray-400 uppercase">Total usos est.</p>
+            <div className="bg-white dark:bg-card rounded-xl p-3 border border-[var(--rule-soft)] dark:border-card-border">
+              <p className="text-[length:var(--ts-2xs)] font-bold text-gray-400 uppercase">Total usos est.</p>
               <p className="text-lg font-extrabold text-gray-900 dark:text-foreground">{promoMetrics.reduce((s, p) => s + p.estimatedUses, 0)}</p>
             </div>
-            <div className="bg-white dark:bg-card rounded-xl p-3 border border-gray-100 dark:border-card-border">
-              <p className="text-[10px] font-bold text-gray-400 uppercase">Revenue est.</p>
+            <div className="bg-white dark:bg-card rounded-xl p-3 border border-[var(--rule-soft)] dark:border-card-border">
+              <p className="text-[length:var(--ts-2xs)] font-bold text-gray-400 uppercase">Revenue est.</p>
               <p className="text-lg font-extrabold text-primary">S/{promoMetrics.reduce((s, p) => s + p.estimatedRevenue, 0).toFixed(0)}</p>
             </div>
-            <div className="bg-white dark:bg-card rounded-xl p-3 border border-gray-100 dark:border-card-border">
-              <p className="text-[10px] font-bold text-gray-400 uppercase">Mas popular</p>
+            <div className="bg-white dark:bg-card rounded-xl p-3 border border-[var(--rule-soft)] dark:border-card-border">
+              <p className="text-[length:var(--ts-2xs)] font-bold text-gray-400 uppercase">Mas popular</p>
               <p className="text-sm font-extrabold text-gray-900 dark:text-foreground truncate">{topPromo?.name || "-"}</p>
-              <p className="text-[10px] text-gray-400">{topPromo ? `~${topPromo.estimatedUses} usos` : ""}</p>
+              <p className="text-[length:var(--ts-2xs)] text-gray-400">{topPromo ? `~${topPromo.estimatedUses} usos` : ""}</p>
             </div>
           </div>
           {/* Badges de rendimiento inline por promo */}
@@ -468,23 +469,24 @@ export default function PromotionsTab() {
       )}
 
       {/* ── Campañas Programadas ───────────────────────────────────────────── */}
-      <div className="bg-linear-to-br from-indigo-50 to-purple-50 dark:from-indigo-950/30 dark:to-purple-950/30 border border-indigo-200 dark:border-indigo-900/50 rounded-xl p-3 sm:p-6">
+      <div className="bg-[var(--surface-sunken)] border border-[var(--rule-base)] rounded-xl p-3 sm:p-6">
         <div className="flex items-center justify-between mb-4">
           <div className="flex flex-wrap items-center gap-2">
-            <div className="w-10 h-10 rounded-xl bg-linear-to-br from-indigo-500 to-purple-600 flex items-center justify-center">
-              <Calendar className="h-5 w-5 text-white" />
+            <div className="w-10 h-10 rounded-xl bg-[var(--text-primary)] flex items-center justify-center">
+              <Calendar className="h-5 w-5 text-[var(--surface-canvas)]" />
             </div>
             <div>
               <h3 className="font-extrabold text-gray-900 dark:text-foreground">Campañas Programadas</h3>
               <p className="text-xs text-gray-500 dark:text-muted">Automatiza tus campañas de marketing</p>
             </div>
           </div>
-          <button
+          <PrimaryButton
             onClick={openCreateCampaign}
-            className="flex flex-wrap items-center gap-2 bg-linear-to-r from-indigo-600 to-purple-600 text-white px-2 sm:px-4 py-1.5 sm:py-2 rounded-lg text-sm font-bold hover:brightness-110 transition "
+            size="md"
+            leftIcon={<Plus className="h-4 w-4" />}
           >
-            <Plus className="h-4 w-4" /> Nueva Campaña
-          </button>
+            Nueva Campaña
+          </PrimaryButton>
         </div>
 
         {campaigns.length === 0 ? (
@@ -505,7 +507,7 @@ export default function PromotionsTab() {
               const StatusIcon = config.icon;
 
               return (
-                <div key={c.id} className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl p-4">
+                <div key={c.id} className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl p-4">
                   <div className="flex flex-wrap items-start gap-3">
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2 flex-wrap mb-1">
@@ -513,7 +515,7 @@ export default function PromotionsTab() {
                         <span className={cn("inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-bold", config.color)}>
                           <StatusIcon className="h-3 w-3" /> {config.label}
                         </span>
-                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-bold bg-purple-100 text-purple-700">
+                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-bold bg-[var(--surface-sunken)] text-[var(--text-primary)]">
                           <Target className="h-3 w-3" /> {c.targetSegment.charAt(0).toUpperCase() + c.targetSegment.slice(1)}
                         </span>
                       </div>
@@ -601,13 +603,13 @@ export default function PromotionsTab() {
       {loading ? (
         <div className="h-40 flex items-center justify-center text-gray-400 dark:text-muted">Cargando…</div>
       ) : promos.length === 0 ? (
-        <div className="h-40 flex items-center justify-center text-gray-400 dark:text-muted bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl">
+        <div className="h-40 flex items-center justify-center text-gray-400 dark:text-muted bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl">
           No hay promociones. Crea una o pide sugerencias a la IA.
         </div>
       ) : (
         <div className="space-y-3">
           {promos.map(p => (
-            <div key={p.id} className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl  overflow-hidden">
+            <div key={p.id} className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl  overflow-hidden">
               <div className="flex">
                 {/* Accent strip */}
                 <div className={cn("w-1.5 shrink-0",
@@ -640,7 +642,7 @@ export default function PromotionsTab() {
                           )}
                           <span className={cn("inline-flex px-2 py-0.5 rounded-full text-xs font-bold",
                             p.targetType === "all" ? "bg-emerald-100 text-emerald-700" :
-                            p.targetType === "group" ? "bg-purple-100 text-purple-700" : "bg-amber-100 text-amber-700"
+                            p.targetType === "group" ? "bg-[var(--surface-sunken)] text-[var(--text-primary)]" : "bg-amber-100 text-amber-700"
                           )}>
                             {p.targetType === "all" ? "Todos" : p.targetType === "group" ? "Grupo" : "Individual"}
                           </span>
@@ -695,7 +697,7 @@ export default function PromotionsTab() {
       {showForm && (
         <div className="fixed inset-0 flex items-end sm:items-center justify-center bg-black/50" style={{ zIndex: 100 }} onClick={() => setShowForm(false)}>
           <div className="bg-white dark:bg-card rounded-t-2xl sm:rounded-xl w-full max-w-2xl max-h-[92vh] flex flex-col" onClick={e => e.stopPropagation()}>
-            <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100 dark:border-card-border shrink-0">
+            <div className="flex items-center justify-between px-5 py-4 border-b border-[var(--rule-soft)] dark:border-card-border shrink-0">
               <h3 className="font-extrabold text-gray-900 dark:text-foreground text-lg">{editingId ? "Editar promoción" : "Nueva promoción"}</h3>
               <button onClick={() => setShowForm(false)} className="p-1.5 rounded-lg text-gray-400 dark:text-muted hover:text-gray-700 dark:hover:text-foreground hover:bg-gray-100 dark:hover:bg-accent transition-colors">
                 <X className="h-5 w-5" />
@@ -706,32 +708,32 @@ export default function PromotionsTab() {
               <div>
                 <label className="text-xs font-bold text-gray-500 dark:text-muted">Nombre *</label>
                 <input type="text" value={form.name} onChange={e => setForm(f => ({ ...f, name: e.target.value }))}
-                  className="w-full mt-1 px-3 py-2 text-sm rounded-xl border border-gray-200 dark:border-card-border outline-none focus:border-primary" placeholder="Ej: 2x1 en arroz" />
+                  className="w-full mt-1 px-3 py-2 text-sm rounded-xl border border-[var(--rule-base)] dark:border-card-border outline-none focus:border-primary" placeholder="Ej: 2x1 en arroz" />
               </div>
               {/* Description */}
               <div>
                 <label className="text-xs font-bold text-gray-500 dark:text-muted">Descripción</label>
                 <textarea value={form.description} onChange={e => setForm(f => ({ ...f, description: e.target.value }))} rows={2}
-                  className="w-full mt-1 px-3 py-2 text-sm rounded-xl border border-gray-200 dark:border-card-border outline-none focus:border-primary resize-none" placeholder="Detalles de la promoción…" />
+                  className="w-full mt-1 px-3 py-2 text-sm rounded-xl border border-[var(--rule-base)] dark:border-card-border outline-none focus:border-primary resize-none" placeholder="Detalles de la promoción…" />
               </div>
               {/* Discount + Min purchase */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
                   <label className="text-xs font-bold text-gray-500 dark:text-muted">Descuento %</label>
                   <input type="number" min={0} max={100} value={form.discountPercent} onChange={e => setForm(f => ({ ...f, discountPercent: Number(e.target.value) }))}
-                    className="w-full mt-1 px-3 py-2 text-sm rounded-xl border border-gray-200 dark:border-card-border outline-none focus:border-primary" />
+                    className="w-full mt-1 px-3 py-2 text-sm rounded-xl border border-[var(--rule-base)] dark:border-card-border outline-none focus:border-primary" />
                 </div>
                 <div>
                   <label className="text-xs font-bold text-gray-500 dark:text-muted">Compra mín. (S/)</label>
                   <input type="number" min={0} step={0.01} value={form.minPurchase} onChange={e => setForm(f => ({ ...f, minPurchase: e.target.value }))}
-                    className="w-full mt-1 px-3 py-2 text-sm rounded-xl border border-gray-200 dark:border-card-border outline-none focus:border-primary" placeholder="Opcional" />
+                    className="w-full mt-1 px-3 py-2 text-sm rounded-xl border border-[var(--rule-base)] dark:border-card-border outline-none focus:border-primary" placeholder="Opcional" />
                 </div>
               </div>
               {/* Image URL */}
               <div>
                 <label className="text-xs font-bold text-gray-500 dark:text-muted">URL de imagen</label>
                 <input type="url" value={form.imageUrl} onChange={e => setForm(f => ({ ...f, imageUrl: e.target.value }))}
-                  className="w-full mt-1 px-3 py-2 text-sm rounded-xl border border-gray-200 dark:border-card-border outline-none focus:border-primary" placeholder="https://..." />
+                  className="w-full mt-1 px-3 py-2 text-sm rounded-xl border border-[var(--rule-base)] dark:border-card-border outline-none focus:border-primary" placeholder="https://..." />
                 {form.imageUrl && (
                   <div className="relative mt-2 w-32 h-32 rounded-xl bg-gray-100 dark:bg-accent overflow-hidden">
                     <Image src={form.imageUrl} alt="preview" fill className="object-cover" sizes="128px" onError={e => { (e.currentTarget as HTMLImageElement).style.display = "none"; }} />
@@ -742,7 +744,7 @@ export default function PromotionsTab() {
               <div>
                 <label className="text-xs font-bold text-gray-500 dark:text-muted">Mensaje WhatsApp</label>
                 <textarea value={form.message} onChange={e => setForm(f => ({ ...f, message: e.target.value }))} rows={3}
-                  className="w-full mt-1 px-3 py-2 text-sm rounded-xl border border-gray-200 dark:border-card-border outline-none focus:border-primary resize-none"
+                  className="w-full mt-1 px-3 py-2 text-sm rounded-xl border border-[var(--rule-base)] dark:border-card-border outline-none focus:border-primary resize-none"
                   placeholder="🎉 *Promoción especial*&#10;&#10;Aprovecha el descuento…" />
               </div>
               {/* Target type */}
@@ -757,7 +759,7 @@ export default function PromotionsTab() {
                     <button key={v} type="button"
                       onClick={() => setForm(f => ({ ...f, targetType: v }))}
                       className={cn("flex-1 flex items-center justify-center gap-1.5 py-2.5 rounded-xl text-sm font-semibold border-2 transition-all",
-                        form.targetType === v ? "border-primary bg-primary/5 text-primary" : "border-gray-200 dark:border-card-border text-gray-500 dark:text-muted hover:border-gray-300"
+                        form.targetType === v ? "border-primary bg-primary/5 text-primary" : "border-[var(--rule-base)] dark:border-card-border text-gray-500 dark:text-muted hover:border-gray-300"
                       )}>
                       <Icon className="h-4 w-4" /> {l}
                     </button>
@@ -771,9 +773,9 @@ export default function PromotionsTab() {
                   <div className="relative">
                     <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400 dark:text-muted pointer-events-none" />
                     <input type="text" placeholder="Buscar cliente…" value={customerSearch} onChange={e => setCustomerSearch(e.target.value)}
-                      className="w-full pl-9 pr-3 py-2 text-sm rounded-xl border border-gray-200 dark:border-card-border outline-none focus:border-primary" />
+                      className="w-full pl-9 pr-3 py-2 text-sm rounded-xl border border-[var(--rule-base)] dark:border-card-border outline-none focus:border-primary" />
                   </div>
-                  <div className="max-h-40 overflow-y-auto rounded-xl border border-gray-200 dark:border-card-border divide-y divide-gray-100">
+                  <div className="max-h-40 overflow-y-auto rounded-xl border border-[var(--rule-base)] dark:border-card-border divide-y divide-gray-100">
                     {filteredFormCustomers.map(c => (
                       <label key={c.phone} className="flex flex-wrap items-center gap-2 px-3 py-2 hover:bg-gray-50 dark:hover:bg-surface cursor-pointer text-sm">
                         <input type="checkbox" checked={selectedPhones.has(c.phone)}
@@ -784,7 +786,7 @@ export default function PromotionsTab() {
                               return next;
                             });
                           }}
-                          className="rounded border-gray-300 text-primary focus:ring-primary" />
+                          className="rounded border-[var(--rule-base)] text-primary focus:ring-primary" />
                         <span className="font-medium text-gray-900 dark:text-foreground">{c.name}</span>
                         <span className="text-xs text-gray-400 dark:text-muted font-mono">{c.phone}</span>
                       </label>
@@ -799,10 +801,10 @@ export default function PromotionsTab() {
               <div>
                 <label className="text-xs font-bold text-gray-500 dark:text-muted">Fecha de expiración</label>
                 <input type="date" value={form.expiresAt} onChange={e => setForm(f => ({ ...f, expiresAt: e.target.value }))}
-                  className="w-full mt-1 px-3 py-2 text-sm rounded-xl border border-gray-200 dark:border-card-border outline-none focus:border-primary text-gray-600 dark:text-muted" />
+                  className="w-full mt-1 px-3 py-2 text-sm rounded-xl border border-[var(--rule-base)] dark:border-card-border outline-none focus:border-primary text-gray-600 dark:text-muted" />
               </div>
             </div>
-            <div className="px-5 py-4 border-t border-gray-100 dark:border-card-border flex flex-wrap gap-3 shrink-0">
+            <div className="px-5 py-4 border-t border-[var(--rule-soft)] dark:border-card-border flex flex-wrap gap-3 shrink-0">
               <button onClick={() => setShowForm(false)} className="flex-1 py-2.5 rounded-lg text-sm font-semibold text-gray-700 dark:text-foreground bg-gray-100 dark:bg-accent hover:bg-gray-200 transition-colors">Cancelar</button>
               <button onClick={savePromo} disabled={saving || !form.name.trim()}
                 className="flex-1 py-2.5 rounded-lg text-sm font-semibold text-white bg-primary hover:bg-primary-dark transition-colors disabled:opacity-50">
@@ -817,7 +819,7 @@ export default function PromotionsTab() {
       {detailPromo && (
         <div className="fixed inset-0 flex items-center justify-center p-4 bg-black/50" style={{ zIndex: 100 }} onClick={() => setDetailPromo(null)}>
           <div className="bg-white dark:bg-card rounded-xl w-full max-w-lg max-h-[90vh] flex flex-col" onClick={e => e.stopPropagation()}>
-            <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100 dark:border-card-border shrink-0">
+            <div className="flex items-center justify-between px-5 py-4 border-b border-[var(--rule-soft)] dark:border-card-border shrink-0">
               <h3 className="font-extrabold text-gray-900 dark:text-foreground text-lg">{detailPromo.name}</h3>
               <button onClick={() => setDetailPromo(null)} className="p-1.5 rounded-lg text-gray-400 dark:text-muted hover:text-gray-700 dark:hover:text-foreground hover:bg-gray-100 dark:hover:bg-accent transition-colors">
                 <X className="h-5 w-5" />
@@ -839,7 +841,7 @@ export default function PromotionsTab() {
                   </span>
                 )}
                 <span className={cn("inline-flex px-2.5 py-1 rounded-full text-xs font-bold",
-                  detailPromo.targetType === "all" ? "bg-emerald-100 text-emerald-700" : detailPromo.targetType === "group" ? "bg-purple-100 text-purple-700" : "bg-amber-100 text-amber-700"
+                  detailPromo.targetType === "all" ? "bg-emerald-100 text-emerald-700" : detailPromo.targetType === "group" ? "bg-[var(--surface-sunken)] text-[var(--text-primary)]" : "bg-amber-100 text-amber-700"
                 )}>{detailPromo.targetType === "all" ? "Todos los clientes" : detailPromo.targetType === "group" ? "Grupo seleccionado" : "Individual"}</span>
               </div>
               {detailPromo.description && (
@@ -881,7 +883,7 @@ export default function PromotionsTab() {
                 {detailPromo.expiresAt && <span>Expira: {formatDate(detailPromo.expiresAt)}</span>}
               </div>
             </div>
-            <div className="px-5 py-4 border-t border-gray-100 dark:border-card-border flex flex-wrap gap-3 shrink-0">
+            <div className="px-5 py-4 border-t border-[var(--rule-soft)] dark:border-card-border flex flex-wrap gap-3 shrink-0">
               <button
                 onClick={() => { setDetailPromo(null); openSendModal(detailPromo); }}
                 className="flex-1 flex flex-wrap items-center justify-center gap-2 py-2.5 rounded-lg text-sm font-semibold text-white bg-green-500 hover:bg-green-600 transition-colors"
@@ -903,7 +905,7 @@ export default function PromotionsTab() {
       {sendPromo && (
         <div className="fixed inset-0 flex items-end sm:items-center justify-center bg-black/50" style={{ zIndex: 100 }} onClick={() => setSendPromo(null)}>
           <div className="bg-white dark:bg-card rounded-t-2xl sm:rounded-xl w-full max-w-2xl max-h-[92vh] flex flex-col" onClick={e => e.stopPropagation()}>
-            <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100 dark:border-card-border shrink-0">
+            <div className="flex items-center justify-between px-5 py-4 border-b border-[var(--rule-soft)] dark:border-card-border shrink-0">
               <div>
                 <h3 className="font-extrabold text-gray-900 dark:text-foreground text-lg">Enviar por WhatsApp</h3>
                 <p className="text-xs text-gray-500 dark:text-muted">{sendPromo.name}</p>
@@ -913,18 +915,18 @@ export default function PromotionsTab() {
               </button>
             </div>
             {/* Message preview */}
-            <div className="px-5 py-3 border-b border-gray-100 dark:border-card-border shrink-0">
+            <div className="px-5 py-3 border-b border-[var(--rule-soft)] dark:border-card-border shrink-0">
               <p className="text-xs font-bold text-gray-400 dark:text-muted mb-1">Vista previa del mensaje</p>
               <div className="bg-green-50 rounded-xl p-3 text-sm text-gray-700 dark:text-foreground whitespace-pre-wrap border border-green-100 max-h-24 overflow-y-auto">
                 {sendPromo.message || `🎉 *${sendPromo.name}*\n\n${sendPromo.description}\n\n${sendPromo.discountPercent > 0 ? `📢 ${sendPromo.discountPercent}% de descuento` : ""}${sendPromo.minPurchase ? `\nCompra mínima: S/${sendPromo.minPurchase}` : ""}\n\n¡Te esperamos en Buleje! 🛒`}
               </div>
             </div>
             {/* Customer selection */}
-            <div className="px-5 py-3 border-b border-gray-100 dark:border-card-border shrink-0 flex flex-wrap items-center gap-2">
+            <div className="px-5 py-3 border-b border-[var(--rule-soft)] dark:border-card-border shrink-0 flex flex-wrap items-center gap-2">
               <div className="relative flex-1">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400 dark:text-muted pointer-events-none" />
                 <input type="text" placeholder="Buscar cliente…" value={sendSearch} onChange={e => setSendSearch(e.target.value)}
-                  className="w-full pl-9 pr-3 py-2 text-sm rounded-lg border border-gray-200 dark:border-card-border outline-none focus:border-primary" />
+                  className="w-full pl-9 pr-3 py-2 text-sm rounded-lg border border-[var(--rule-base)] dark:border-card-border outline-none focus:border-primary" />
               </div>
               <button onClick={() => setSendPhones(new Set(customers.map(c => c.phone)))}
                 className="text-xs font-semibold text-primary hover:underline whitespace-nowrap">Todos</button>
@@ -944,7 +946,7 @@ export default function PromotionsTab() {
                           return next;
                         });
                       }}
-                      className="rounded border-gray-300 text-primary focus:ring-primary" />
+                      className="rounded border-[var(--rule-base)] text-primary focus:ring-primary" />
                     <div className="flex-1 min-w-0">
                       <p className="text-sm font-semibold text-gray-900 dark:text-foreground">{c.name}</p>
                       <p className="text-xs text-gray-400 dark:text-muted font-mono">{c.phone}</p>
@@ -962,7 +964,7 @@ export default function PromotionsTab() {
                 );
               })}
             </div>
-            <div className="px-5 py-4 border-t border-gray-100 dark:border-card-border shrink-0">
+            <div className="px-5 py-4 border-t border-[var(--rule-soft)] dark:border-card-border shrink-0">
               <p className="text-xs text-gray-500 dark:text-muted mb-3">{sendPhones.size} cliente{sendPhones.size !== 1 ? "s" : ""} seleccionado{sendPhones.size !== 1 ? "s" : ""}. Cada envío abrirá WhatsApp Web/App.</p>
               <button
                 onClick={sendToAll}
@@ -980,7 +982,7 @@ export default function PromotionsTab() {
       {showAiModal && (
         <div className="fixed inset-0 flex items-center justify-center p-4 bg-black/50" style={{ zIndex: 100 }} onClick={() => setShowAiModal(false)}>
           <div className="bg-white dark:bg-card rounded-xl w-full max-w-2xl max-h-[90vh] flex flex-col" onClick={e => e.stopPropagation()}>
-            <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100 dark:border-card-border shrink-0">
+            <div className="flex items-center justify-between px-5 py-4 border-b border-[var(--rule-soft)] dark:border-card-border shrink-0">
               <div className="flex flex-wrap items-center gap-2">
                 <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ background: 'linear-gradient(to bottom right, #8b5cf6, #9333ea)' }}>
                   <MessageCircle className="h-4 w-4 text-white" />
@@ -1046,7 +1048,7 @@ export default function PromotionsTab() {
                 <button
                   key={tpl.name}
                   onClick={() => applyTemplate(tpl)}
-                  className="w-full flex flex-wrap items-center gap-3 p-3 rounded-lg border border-gray-200 dark:border-card-border bg-gray-50 dark:bg-surface hover:bg-amber-50 dark:hover:bg-amber-900/10 hover:border-amber-300 dark:hover:border-amber-700 transition-all text-left"
+                  className="w-full flex flex-wrap items-center gap-3 p-3 rounded-lg border border-[var(--rule-base)] dark:border-card-border bg-gray-50 dark:bg-surface hover:bg-amber-50 dark:hover:bg-amber-900/10 hover:border-amber-300 dark:hover:border-amber-700 transition-all text-left"
                 >
                   <span className="text-xl sm:text-2xl shrink-0">{tpl.icon}</span>
                   <div className="flex-1 min-w-0">
@@ -1065,7 +1067,7 @@ export default function PromotionsTab() {
       {showCampaignForm && (
         <div className="fixed inset-0 flex items-end sm:items-center justify-center bg-black/50" style={{ zIndex: 100 }} onClick={() => setShowCampaignForm(false)}>
           <div className="bg-white dark:bg-card rounded-t-2xl sm:rounded-xl w-full max-w-2xl max-h-[92vh] flex flex-col" onClick={e => e.stopPropagation()}>
-            <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100 dark:border-card-border shrink-0">
+            <div className="flex items-center justify-between px-5 py-4 border-b border-[var(--rule-soft)] dark:border-card-border shrink-0">
               <h3 className="font-extrabold text-gray-900 dark:text-foreground text-lg">{editingCampaignId ? "Editar Campaña" : "Nueva Campaña Programada"}</h3>
               <button onClick={() => setShowCampaignForm(false)} className="p-1.5 rounded-lg text-gray-400 dark:text-muted hover:text-gray-700 dark:hover:text-foreground hover:bg-gray-100 dark:hover:bg-accent transition-colors">
                 <X className="h-5 w-5" />
@@ -1076,19 +1078,19 @@ export default function PromotionsTab() {
               <div>
                 <label className="text-xs font-bold text-gray-500 dark:text-muted">Nombre de campaña *</label>
                 <input type="text" value={campaignForm.name} onChange={e => setCampaignForm(f => ({ ...f, name: e.target.value }))}
-                  className="w-full mt-1 px-3 py-2 text-sm rounded-xl border border-gray-200 dark:border-card-border outline-none focus:border-primary" placeholder="Ej: Campaña de Verano" />
+                  className="w-full mt-1 px-3 py-2 text-sm rounded-xl border border-[var(--rule-base)] dark:border-card-border outline-none focus:border-primary" placeholder="Ej: Campaña de Verano" />
               </div>
               {/* Description */}
               <div>
                 <label className="text-xs font-bold text-gray-500 dark:text-muted">Descripción</label>
                 <textarea value={campaignForm.description} onChange={e => setCampaignForm(f => ({ ...f, description: e.target.value }))} rows={2}
-                  className="w-full mt-1 px-3 py-2 text-sm rounded-xl border border-gray-200 dark:border-card-border outline-none focus:border-primary resize-none" placeholder="Detalles de la campaña…" />
+                  className="w-full mt-1 px-3 py-2 text-sm rounded-xl border border-[var(--rule-base)] dark:border-card-border outline-none focus:border-primary resize-none" placeholder="Detalles de la campaña…" />
               </div>
               {/* Target Segment */}
               <div>
                 <label className="text-xs font-bold text-gray-500 dark:text-muted">Segmento objetivo *</label>
                 <select value={campaignForm.targetSegment} onChange={e => setCampaignForm(f => ({ ...f, targetSegment: e.target.value }))}
-                  className="w-full mt-1 px-3 py-2 text-sm rounded-xl border border-gray-200 dark:border-card-border outline-none focus:border-primary bg-white dark:bg-surface">
+                  className="w-full mt-1 px-3 py-2 text-sm rounded-xl border border-[var(--rule-base)] dark:border-card-border outline-none focus:border-primary bg-white dark:bg-surface">
                   <option value="all">Todos</option>
                   <option value="champions">Champions</option>
                   <option value="loyal">Loyal</option>
@@ -1103,19 +1105,19 @@ export default function PromotionsTab() {
                 <div>
                   <label className="text-xs font-bold text-gray-500 dark:text-muted">Fecha/hora inicio *</label>
                   <input type="datetime-local" value={campaignForm.startDate ? campaignForm.startDate.slice(0, 16) : ""} onChange={e => setCampaignForm(f => ({ ...f, startDate: e.target.value }))}
-                    className="w-full mt-1 px-3 py-2 text-sm rounded-xl border border-gray-200 dark:border-card-border outline-none focus:border-primary text-gray-600 dark:text-muted" />
+                    className="w-full mt-1 px-3 py-2 text-sm rounded-xl border border-[var(--rule-base)] dark:border-card-border outline-none focus:border-primary text-gray-600 dark:text-muted" />
                 </div>
                 <div>
                   <label className="text-xs font-bold text-gray-500 dark:text-muted">Fecha/hora fin</label>
                   <input type="datetime-local" value={campaignForm.endDate ? campaignForm.endDate.slice(0, 16) : ""} onChange={e => setCampaignForm(f => ({ ...f, endDate: e.target.value }))}
-                    className="w-full mt-1 px-3 py-2 text-sm rounded-xl border border-gray-200 dark:border-card-border outline-none focus:border-primary text-gray-600 dark:text-muted" />
+                    className="w-full mt-1 px-3 py-2 text-sm rounded-xl border border-[var(--rule-base)] dark:border-card-border outline-none focus:border-primary text-gray-600 dark:text-muted" />
                 </div>
               </div>
               {/* Message Template */}
               <div>
                 <label className="text-xs font-bold text-gray-500 dark:text-muted">Mensaje con placeholders</label>
                 <textarea value={campaignForm.messageTemplate} onChange={e => setCampaignForm(f => ({ ...f, messageTemplate: e.target.value }))} rows={4}
-                  className="w-full mt-1 px-3 py-2 text-sm rounded-xl border border-gray-200 dark:border-card-border outline-none focus:border-primary resize-none font-mono"
+                  className="w-full mt-1 px-3 py-2 text-sm rounded-xl border border-[var(--rule-base)] dark:border-card-border outline-none focus:border-primary resize-none font-mono"
                   placeholder="¡Hola {name}! Tenemos un {discount}% de descuento especial para ti..." />
                 <p className="text-xs text-gray-400 dark:text-muted mt-1">Variables: {"{name}"}, {"{discount}"}, {"{code}"}</p>
               </div>
@@ -1123,24 +1125,29 @@ export default function PromotionsTab() {
               <div>
                 <label className="text-xs font-bold text-gray-500 dark:text-muted">Código de descuento</label>
                 <input type="text" value={campaignForm.discountCode} onChange={e => setCampaignForm(f => ({ ...f, discountCode: e.target.value.toUpperCase() }))}
-                  className="w-full mt-1 px-3 py-2 text-sm rounded-xl border border-gray-200 dark:border-card-border outline-none focus:border-primary font-mono" placeholder="VERANO20" />
+                  className="w-full mt-1 px-3 py-2 text-sm rounded-xl border border-[var(--rule-base)] dark:border-card-border outline-none focus:border-primary font-mono" placeholder="VERANO20" />
               </div>
               {/* Auto-send toggle */}
               <div className="flex flex-wrap items-center gap-3 p-3 bg-gray-50 dark:bg-surface rounded-xl">
                 <input type="checkbox" id="autoSend" checked={campaignForm.autoSend} onChange={e => setCampaignForm(f => ({ ...f, autoSend: e.target.checked }))}
-                  className="rounded border-gray-300 text-primary focus:ring-primary" />
+                  className="rounded border-[var(--rule-base)] text-primary focus:ring-primary" />
                 <label htmlFor="autoSend" className="text-sm font-medium text-gray-700 dark:text-foreground cursor-pointer flex-1">
                   Enviar automáticamente al inicio de la campaña
                   <span className="block text-xs text-gray-400 dark:text-muted font-normal">Las notificaciones se enviarán por WhatsApp al segmento seleccionado</span>
                 </label>
               </div>
             </div>
-            <div className="px-5 py-4 border-t border-gray-100 dark:border-card-border flex flex-wrap gap-3 shrink-0">
-              <button onClick={() => setShowCampaignForm(false)} className="flex-1 py-2.5 rounded-lg text-sm font-semibold text-gray-700 dark:text-foreground bg-gray-100 dark:bg-accent hover:bg-gray-200 transition-colors">Cancelar</button>
-              <button onClick={saveCampaign} disabled={savingCampaign || !campaignForm.name.trim() || !campaignForm.startDate}
-                className="flex-1 py-2.5 rounded-lg text-sm font-semibold text-white bg-linear-to-r from-indigo-600 to-purple-600 hover:brightness-110 transition disabled:opacity-50">
-                {savingCampaign ? "Guardando…" : editingCampaignId ? "Guardar cambios" : "Crear campaña"}
-              </button>
+            <div className="px-5 py-4 border-t border-[var(--rule-soft)] dark:border-card-border flex flex-wrap gap-3 shrink-0">
+              <PrimaryButton variant="secondary" onClick={() => setShowCampaignForm(false)} className="flex-1">Cancelar</PrimaryButton>
+              <PrimaryButton
+                variant="primary"
+                onClick={saveCampaign}
+                disabled={!campaignForm.name.trim() || !campaignForm.startDate}
+                loading={savingCampaign}
+                className="flex-1"
+              >
+                {savingCampaign ? "Guardando" : editingCampaignId ? "Guardar cambios" : "Crear campaña"}
+              </PrimaryButton>
             </div>
           </div>
         </div>

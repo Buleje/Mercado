@@ -170,11 +170,11 @@ export default function MarketListMode({ onClose }: { onClose: () => void }) {
         animate={{ opacity: 1, scale: 1, y: 0 }}
         exit={{ opacity: 0, scale: 0.95, y: 20 }}
         transition={{ type: "spring", damping: 25, stiffness: 300 }}
-        className="bg-white dark:bg-gray-900 rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-hidden flex flex-col"
+        className="bg-white dark:bg-gray-900 rounded-2xl shadow-[var(--shadow-xl)] w-full max-w-2xl max-h-[90vh] overflow-hidden flex flex-col"
         onClick={e => e.stopPropagation()}
       >
         {/* Header */}
-        <div className="flex items-center justify-between p-5 border-b border-gray-200 dark:border-gray-700">
+        <div className="flex items-center justify-between p-5 border-b border-[var(--rule-base)]">
           <div className="flex items-center gap-3">
             <div className="h-10 w-10 rounded-xl bg-[#00B4A6]/10 flex items-center justify-center">
               <FileText className="h-5 w-5 text-[#00B4A6]" />
@@ -200,7 +200,7 @@ export default function MarketListMode({ onClose }: { onClose: () => void }) {
               value={text}
               onChange={e => setText(e.target.value)}
               placeholder={"2 kg arroz\n1 leche gloria\naceite 1 litro\n3 tomates\nfideos\njugo de naranja"}
-              className="w-full h-40 p-4 rounded-xl bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-900 dark:text-white placeholder:text-gray-400 dark:placeholder:text-gray-500 text-sm leading-relaxed resize-none focus:outline-none focus:ring-2 focus:ring-[#00B4A6]/40 transition-all"
+              className="w-full h-40 p-4 rounded-xl bg-gray-50 dark:bg-gray-800 border border-[var(--rule-base)] text-gray-900 dark:text-white placeholder:text-gray-400 dark:placeholder:text-gray-500 text-sm leading-relaxed resize-none focus:outline-none focus:ring-2 focus:ring-[#00B4A6]/40 transition-all"
               autoFocus
             />
             <p className="text-xs text-gray-400 mt-1.5">Escribe un producto por linea. Puedes poner cantidad y unidad.</p>
@@ -225,7 +225,7 @@ export default function MarketListMode({ onClose }: { onClose: () => void }) {
                       r.status === "found" && "border-green-200 dark:border-green-800 bg-green-50/50 dark:bg-green-900/20",
                       r.status === "multiple" && "border-amber-200 dark:border-amber-800 bg-amber-50/50 dark:bg-amber-900/20",
                       r.status === "not_found" && "border-red-200 dark:border-red-800 bg-red-50/50 dark:bg-red-900/20",
-                      r.status === "searching" && "border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 animate-pulse",
+                      r.status === "searching" && "border-[var(--rule-base)] bg-gray-50 dark:bg-gray-800 animate-pulse",
                     )}
                   >
                     {r.status === "searching" ? (
@@ -283,7 +283,7 @@ export default function MarketListMode({ onClose }: { onClose: () => void }) {
 
         {/* Footer */}
         {foundItems.length > 0 && (
-          <div className="border-t border-gray-200 dark:border-gray-700 p-5">
+          <div className="border-t border-[var(--rule-base)] p-5">
             <button
               onClick={handleAddAll}
               className="w-full py-4 rounded-xl bg-[#00B4A6] hover:bg-[#009690] text-white font-bold text-base flex items-center justify-center gap-2 transition-all shadow-xl shadow-[#00B4A6]/25 active:scale-[0.98]"

@@ -60,8 +60,8 @@ function MenuOverlay({ items, position, onClose }: MenuOverlayProps) {
       ref={menuRef}
       className={cn(
         "fixed z-[9999] bg-white dark:bg-zinc-900 rounded-xl",
-        "border border-gray-100 dark:border-zinc-800 min-w-[180px] py-1",
-        "animate-in fade-in zoom-in-95 duration-150",
+        "border border-[var(--rule-soft)] dark:border-zinc-800 min-w-[180px] py-1",
+        "animate-in fade-in zoom-in-95 duration-[var(--dur-fast)]",
       )}
       style={{ left: position.x, top: position.y }}
     >
@@ -70,7 +70,7 @@ function MenuOverlay({ items, position, onClose }: MenuOverlayProps) {
         return (
           <React.Fragment key={i}>
             {item.divider && (
-              <div className="my-1 border-t border-gray-100 dark:border-zinc-800" />
+              <div className="my-1 border-t border-[var(--rule-soft)] dark:border-zinc-800" />
             )}
             <button
               onClick={() => {

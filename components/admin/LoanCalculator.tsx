@@ -109,7 +109,7 @@ export default function LoanCalculator() {
       </div>
 
       {/* Inputs */}
-      <div className="rounded-xl border border-gray-200 bg-white p-5">
+      <div className="rounded-xl border border-[var(--rule-base)] bg-white p-5">
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
           <div>
             <label className="mb-1.5 block text-sm font-medium text-gray-700">
@@ -121,7 +121,7 @@ export default function LoanCalculator() {
               onChange={(e) => setPrincipal(e.target.value)}
               min="0"
               step="100"
-              className="w-full rounded-lg border border-gray-200 bg-gray-50 px-3 py-2 text-sm focus:border-primary focus:outline-none"
+              className="w-full rounded-lg border border-[var(--rule-base)] bg-gray-50 px-3 py-2 text-sm focus:border-primary focus:outline-none"
             />
           </div>
           <div>
@@ -135,7 +135,7 @@ export default function LoanCalculator() {
               min="0"
               max="200"
               step="0.5"
-              className="w-full rounded-lg border border-gray-200 bg-gray-50 px-3 py-2 text-sm focus:border-primary focus:outline-none"
+              className="w-full rounded-lg border border-[var(--rule-base)] bg-gray-50 px-3 py-2 text-sm focus:border-primary focus:outline-none"
             />
           </div>
           <div>
@@ -148,7 +148,7 @@ export default function LoanCalculator() {
               onChange={(e) => setMonths(e.target.value)}
               min="1"
               max="360"
-              className="w-full rounded-lg border border-gray-200 bg-gray-50 px-3 py-2 text-sm focus:border-primary focus:outline-none"
+              className="w-full rounded-lg border border-[var(--rule-base)] bg-gray-50 px-3 py-2 text-sm focus:border-primary focus:outline-none"
             />
           </div>
           <div>
@@ -161,7 +161,7 @@ export default function LoanCalculator() {
               onChange={(e) => setAvgMonthlySales(e.target.value)}
               placeholder="Opcional"
               min="0"
-              className="w-full rounded-lg border border-gray-200 bg-gray-50 px-3 py-2 text-sm focus:border-primary focus:outline-none"
+              className="w-full rounded-lg border border-[var(--rule-base)] bg-gray-50 px-3 py-2 text-sm focus:border-primary focus:outline-none"
             />
           </div>
         </div>
@@ -171,7 +171,7 @@ export default function LoanCalculator() {
       {p > 0 && m > 0 ? (
         <>
           <div className="grid gap-3 sm:grid-cols-3">
-            <div className="rounded-xl border border-gray-200 bg-white p-4">
+            <div className="rounded-xl border border-[var(--rule-base)] bg-white p-4">
               <p className="text-xs text-gray-500">
                 Cuota mensual
               </p>
@@ -179,7 +179,7 @@ export default function LoanCalculator() {
                 {fmt(monthlyPayment)}
               </p>
             </div>
-            <div className="rounded-xl border border-gray-200 bg-white p-4">
+            <div className="rounded-xl border border-[var(--rule-base)] bg-white p-4">
               <p className="text-xs text-gray-500">
                 Total a pagar
               </p>
@@ -187,7 +187,7 @@ export default function LoanCalculator() {
                 {fmt(totalPayment)}
               </p>
             </div>
-            <div className="rounded-xl border border-gray-200 bg-white p-4">
+            <div className="rounded-xl border border-[var(--rule-base)] bg-white p-4">
               <p className="text-xs text-gray-500">
                 Interes total
               </p>
@@ -241,7 +241,7 @@ export default function LoanCalculator() {
           )}
 
           {/* Capital vs interest chart */}
-          <div className="rounded-xl border border-gray-200 bg-white p-5">
+          <div className="rounded-xl border border-[var(--rule-base)] bg-white p-5">
             <h3 className="mb-3 text-sm font-semibold text-gray-800">
               Proporcion capital vs interes
             </h3>
@@ -298,7 +298,7 @@ export default function LoanCalculator() {
           </div>
 
           {showTable && (
-            <div className="overflow-x-auto rounded-xl border border-gray-200">
+            <div className="overflow-x-auto rounded-xl border border-[var(--rule-base)]">
               <table className="w-full text-sm">
                 <thead>
                   <tr className="bg-primary/10">
@@ -352,7 +352,7 @@ export default function LoanCalculator() {
           )}
         </>
       ) : (
-        <div className="flex items-center justify-center rounded-xl border border-dashed border-gray-200 bg-gray-50 py-12">
+        <div className="flex items-center justify-center rounded-xl border border-dashed border-[var(--rule-base)] bg-gray-50 py-12">
           <p className="text-sm text-gray-400">
             Ingresa los datos del prestamo para ver los calculos.
           </p>

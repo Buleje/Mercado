@@ -227,14 +227,14 @@ export default function ExpiryDashboardTab() {
         <div className="flex items-center gap-2">
           <button
             onClick={handleExportCSV}
-            className="flex items-center gap-1.5 px-3 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+            className="flex items-center gap-1.5 px-3 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 border border-[var(--rule-base)] dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
           >
             <Download className="h-4 w-4" />
             Exportar CSV
           </button>
           <button
             onClick={fetchData}
-            className="flex items-center gap-1.5 px-3 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+            className="flex items-center gap-1.5 px-3 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 border border-[var(--rule-base)] dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
           >
             <RefreshCw className="h-4 w-4" />
             Actualizar
@@ -282,7 +282,7 @@ export default function ExpiryDashboardTab() {
 
       {/* ── Value breakdown mini-bar ───────────────────────────────────────── */}
       {summary.valorTotalRiesgo > 0 && (
-        <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-4">
+        <div className="bg-white dark:bg-gray-800 rounded-xl border border-[var(--rule-base)] p-4">
           <p className="text-xs font-medium text-gray-500 dark:text-gray-400 mb-2">
             Desglose del valor en riesgo
           </p>
@@ -333,7 +333,7 @@ export default function ExpiryDashboardTab() {
           placeholder="Buscar por producto, lote o categoría..."
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
-          className="w-full px-4 py-2.5 pl-10 text-sm bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg text-gray-900 dark:text-white placeholder:text-gray-400 dark:placeholder:text-gray-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/50 transition-colors"
+          className="w-full px-4 py-2.5 pl-10 text-sm bg-white dark:bg-gray-800 border border-[var(--rule-base)] rounded-lg text-gray-900 dark:text-white placeholder:text-gray-400 dark:placeholder:text-gray-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/50 transition-colors"
         />
         <Package className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
       </div>
@@ -425,7 +425,7 @@ function KPICard({
   return (
     <div
       className={cn(
-        "bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-4 flex flex-col gap-3 transition-shadow",
+        "bg-white dark:bg-gray-800 rounded-xl border border-[var(--rule-base)] p-4 flex flex-col gap-3 transition-shadow",
         alert && `ring-2 ${ringColors[alertColor] || ringColors.amber}`,
       )}
     >
@@ -549,7 +549,7 @@ function BatchSection({
         <div className="overflow-x-auto">
           <table className="w-full min-w-[700px] text-sm">
             <thead>
-              <tr className="border-t border-b border-gray-100 dark:border-gray-700">
+              <tr className="border-t border-b border-[var(--rule-base)]">
                 <th className="text-left py-2.5 px-4 font-medium text-gray-500 dark:text-gray-400">
                   Producto
                 </th>
@@ -629,7 +629,7 @@ function BatchSection({
               ))}
             </tbody>
             <tfoot>
-              <tr className="border-t-2 border-gray-200 dark:border-gray-600">
+              <tr className="border-t-2 border-[var(--rule-base)] dark:border-gray-600">
                 <td
                   colSpan={5}
                   className="py-2.5 px-4 text-right font-semibold text-gray-600 dark:text-gray-300 text-sm"

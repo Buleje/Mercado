@@ -502,7 +502,7 @@ export default function TurnosModule() {
                 Equipo de Cajeros
               </h3>
               {cajeroStats.length === 0 ? (
-                <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl  p-8 text-center">
+                <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl  p-8 text-center">
                   <p className="text-gray-400 text-sm">Sin datos de cajeros. Abre turnos para ver estadisticas.</p>
                 </div>
               ) : (
@@ -513,7 +513,7 @@ export default function TurnosModule() {
                     return (
                       <div key={c.id} className={cn(
                         "bg-white dark:bg-card border rounded-xl  p-4 transition-shadow hover:shadow-sm",
-                        isTop ? "border-amber-400 dark:border-amber-600 ring-1 ring-amber-200 dark:ring-amber-800" : "border-gray-200 dark:border-card-border"
+                        isTop ? "border-amber-400 dark:border-amber-600 ring-1 ring-amber-200 dark:ring-amber-800" : "border-[var(--rule-base)] dark:border-card-border"
                       )}>
                         <div className="flex items-center gap-3 mb-3">
                           <div
@@ -527,24 +527,24 @@ export default function TurnosModule() {
                               {c.name}
                               {isTop && <span className="text-amber-500 text-xs">TOP</span>}
                             </p>
-                            <p className="text-[10px] text-gray-400 truncate">{c.id}</p>
+                            <p className="text-[length:var(--ts-2xs)] text-gray-400 truncate">{c.id}</p>
                           </div>
                         </div>
                         <div className="grid grid-cols-2 gap-2 text-xs mb-3">
                           <div>
-                            <p className="text-[10px] text-gray-400 font-bold uppercase">Turnos</p>
+                            <p className="text-[length:var(--ts-2xs)] text-gray-400 font-bold uppercase">Turnos</p>
                             <p className="font-extrabold text-gray-900 dark:text-white">{c.turnos}</p>
                           </div>
                           <div>
-                            <p className="text-[10px] text-gray-400 font-bold uppercase">Ventas total</p>
+                            <p className="text-[length:var(--ts-2xs)] text-gray-400 font-bold uppercase">Ventas total</p>
                             <p className="font-extrabold text-emerald-600 dark:text-emerald-400">{formatCurrency(c.ventasTotal)}</p>
                           </div>
                           <div>
-                            <p className="text-[10px] text-gray-400 font-bold uppercase">Ventas/hora</p>
+                            <p className="text-[length:var(--ts-2xs)] text-gray-400 font-bold uppercase">Ventas/hora</p>
                             <p className="font-extrabold text-gray-900 dark:text-white">{formatCurrency(c.ventasPorHora)}/h</p>
                           </div>
                           <div>
-                            <p className="text-[10px] text-gray-400 font-bold uppercase">Dif. caja</p>
+                            <p className="text-[length:var(--ts-2xs)] text-gray-400 font-bold uppercase">Dif. caja</p>
                             <p className={cn("font-extrabold", c.difCaja >= 0 ? "text-emerald-600" : Math.abs(c.difCaja) > 20 ? "text-red-600" : "text-amber-600")}>
                               {c.difCaja >= 0 ? "+" : ""}{formatCurrency(c.difCaja)}
                             </p>
@@ -571,11 +571,11 @@ export default function TurnosModule() {
                   <Trophy className="h-4 w-4 text-amber-500" />
                   Ranking de Cajeros
                 </h3>
-                <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl overflow-hidden ">
+                <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl overflow-hidden ">
                   <div className="overflow-x-auto">
                     <table className="w-full text-sm">
                       <thead>
-                        <tr className="border-b border-gray-100 dark:border-white/5 text-left">
+                        <tr className="border-b border-[var(--rule-soft)] dark:border-white/5 text-left">
                           <th className="px-4 py-3 font-semibold text-gray-500 dark:text-gray-400 w-8">#</th>
                           <th className="px-4 py-3 font-semibold text-gray-500 dark:text-gray-400">Cajero</th>
                           <th className="px-4 py-3 font-semibold text-gray-500 dark:text-gray-400 text-right">Turnos</th>
@@ -602,7 +602,7 @@ export default function TurnosModule() {
                               <td className="px-4 py-3 font-medium text-gray-900 dark:text-white">
                                 <div className="flex items-center gap-2">
                                   <div
-                                    className="h-6 w-6 rounded-full flex items-center justify-center text-[10px] font-bold shrink-0"
+                                    className="h-6 w-6 rounded-full flex items-center justify-center text-[length:var(--ts-2xs)] font-bold shrink-0"
                                     style={{ backgroundColor: cajeroColor(c.name), color: cajeroColorText(c.name) }}
                                   >
                                     {c.name.charAt(0).toUpperCase()}
@@ -633,7 +633,7 @@ export default function TurnosModule() {
                   <BarChart3 className="h-4 w-4 text-[#00B4A6]" />
                   Ventas por Cajero (este mes)
                 </h3>
-                <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl  p-4">
+                <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl  p-4">
                   <ResponsiveContainer width="100%" height={250}>
                     <BarChart data={chartData} layout="vertical" margin={{ top: 5, right: 30, left: 10, bottom: 5 }}>
                       <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
@@ -685,34 +685,34 @@ export default function TurnosModule() {
         }
         return (
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-            <div className="rounded-xl border border-gray-200 dark:border-card-border bg-white dark:bg-card  hover:shadow-sm transition-shadow p-3">
+            <div className="rounded-xl border border-[var(--rule-base)] dark:border-card-border bg-white dark:bg-card  hover:shadow-sm transition-shadow p-3">
               <div className="flex items-center gap-2 mb-1">
                 <Clock className="h-4 w-4 text-[#00B4A6]" />
-                <p className="text-[10px] uppercase font-bold text-gray-400">Turnos del mes</p>
+                <p className="text-[length:var(--ts-2xs)] uppercase font-bold text-gray-400">Turnos del mes</p>
               </div>
               <p className="text-2xl font-extrabold font-mono text-gray-900 dark:text-white">{turnosMesCount}</p>
             </div>
-            <div className="rounded-xl border border-gray-200 dark:border-card-border bg-white dark:bg-card  hover:shadow-sm transition-shadow p-3">
+            <div className="rounded-xl border border-[var(--rule-base)] dark:border-card-border bg-white dark:bg-card  hover:shadow-sm transition-shadow p-3">
               <div className="flex items-center gap-2 mb-1">
                 <Timer className="h-4 w-4 text-emerald-500" />
-                <p className="text-[10px] uppercase font-bold text-gray-400">Horas trabajadas</p>
+                <p className="text-[length:var(--ts-2xs)] uppercase font-bold text-gray-400">Horas trabajadas</p>
               </div>
               <p className="text-2xl font-extrabold font-mono text-gray-900 dark:text-white">{horasTrabajadas.toFixed(1)}h</p>
             </div>
-            <div className="rounded-xl border border-gray-200 dark:border-card-border bg-white dark:bg-card  hover:shadow-sm transition-shadow p-3">
+            <div className="rounded-xl border border-[var(--rule-base)] dark:border-card-border bg-white dark:bg-card  hover:shadow-sm transition-shadow p-3">
               <div className="flex items-center gap-2 mb-1">
                 <DollarSign className="h-4 w-4 text-emerald-500" />
-                <p className="text-[10px] uppercase font-bold text-gray-400">Ventas/hora</p>
+                <p className="text-[length:var(--ts-2xs)] uppercase font-bold text-gray-400">Ventas/hora</p>
               </div>
               <p className="text-2xl font-extrabold font-mono text-emerald-600 dark:text-emerald-400">{formatCurrency(ventasPorHora)}</p>
             </div>
-            <div className="rounded-xl border border-gray-200 dark:border-card-border bg-white dark:bg-card  hover:shadow-sm transition-shadow p-3">
+            <div className="rounded-xl border border-[var(--rule-base)] dark:border-card-border bg-white dark:bg-card  hover:shadow-sm transition-shadow p-3">
               <div className="flex items-center gap-2 mb-1">
                 <Trophy className="h-4 w-4 text-amber-500" />
-                <p className="text-[10px] uppercase font-bold text-gray-400">Mejor cajero</p>
+                <p className="text-[length:var(--ts-2xs)] uppercase font-bold text-gray-400">Mejor cajero</p>
               </div>
               <p className="text-lg font-extrabold text-gray-900 dark:text-white truncate">{mejorCajero}</p>
-              {mejorVph > 0 && <p className="text-[10px] text-gray-400 font-mono">{formatCurrency(mejorVph)}/h</p>}
+              {mejorVph > 0 && <p className="text-[length:var(--ts-2xs)] text-gray-400 font-mono">{formatCurrency(mejorVph)}/h</p>}
             </div>
           </div>
         );
@@ -751,7 +751,7 @@ export default function TurnosModule() {
               <div className="bg-white/60 dark:bg-white/5 rounded-xl p-3">
                 <div className="flex items-center gap-2 mb-1">
                   <User className="h-3.5 w-3.5 text-gray-400" />
-                  <p className="text-[10px] uppercase font-bold text-gray-400">Operador</p>
+                  <p className="text-[length:var(--ts-2xs)] uppercase font-bold text-gray-400">Operador</p>
                 </div>
                 <p className="text-sm font-bold text-gray-900 dark:text-white truncate">{turnoActivo.adminUserId}</p>
               </div>
@@ -759,7 +759,7 @@ export default function TurnosModule() {
               <div className="bg-white/60 dark:bg-white/5 rounded-xl p-3">
                 <div className="flex items-center gap-2 mb-1">
                   <Clock className="h-3.5 w-3.5 text-gray-400" />
-                  <p className="text-[10px] uppercase font-bold text-gray-400">Inicio</p>
+                  <p className="text-[length:var(--ts-2xs)] uppercase font-bold text-gray-400">Inicio</p>
                 </div>
                 <p className="text-sm font-bold text-gray-900 dark:text-white">{formatTime(turnoActivo.abrioEn)}</p>
               </div>
@@ -767,7 +767,7 @@ export default function TurnosModule() {
               <div className="bg-white/60 dark:bg-white/5 rounded-xl p-3">
                 <div className="flex items-center gap-2 mb-1">
                   <DollarSign className="h-3.5 w-3.5 text-gray-400" />
-                  <p className="text-[10px] uppercase font-bold text-gray-400">Ef. Inicial</p>
+                  <p className="text-[length:var(--ts-2xs)] uppercase font-bold text-gray-400">Ef. Inicial</p>
                 </div>
                 <p className="text-sm font-bold text-gray-900 dark:text-white">{formatCurrency(turnoActivo.inicioEfectivo)}</p>
               </div>
@@ -775,7 +775,7 @@ export default function TurnosModule() {
               <div className="bg-white/60 dark:bg-white/5 rounded-xl p-3">
                 <div className="flex items-center gap-2 mb-1">
                   <ShoppingCart className="h-3.5 w-3.5 text-gray-400" />
-                  <p className="text-[10px] uppercase font-bold text-gray-400">Ventas</p>
+                  <p className="text-[length:var(--ts-2xs)] uppercase font-bold text-gray-400">Ventas</p>
                 </div>
                 <p className="text-sm font-bold text-emerald-600 dark:text-emerald-400">{formatCurrency(turnoActivo.ventasTotal)}</p>
               </div>
@@ -784,7 +784,7 @@ export default function TurnosModule() {
         </div>
       ) : (
         /* Open turno card */
-        <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl  p-6 sm:p-8">
+        <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl  p-6 sm:p-8">
           <div className="max-w-sm mx-auto text-center space-y-5">
             <div className="h-16 w-16 rounded-xl bg-[#00B4A6]/10 flex items-center justify-center mx-auto">
               <Clock className="h-8 w-8 text-[#00B4A6]" />
@@ -799,14 +799,14 @@ export default function TurnosModule() {
               <select
                 value={selectedCajero}
                 onChange={e => setSelectedCajero(e.target.value)}
-                className="w-full px-4 py-3 rounded-lg border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 text-sm text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-[#00B4A6]/30"
+                className="w-full px-4 py-3 rounded-lg border border-[var(--rule-base)] dark:border-white/10 bg-white dark:bg-white/5 text-sm text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-[#00B4A6]/30"
               >
                 <option value="">Yo mismo (usuario actual)</option>
                 {cajeros.map(c => (
                   <option key={c.id} value={c.id}>{c.name} ({c.role})</option>
                 ))}
               </select>
-              {cajerosLoading && <p className="text-[10px] text-gray-400 mt-1">Cargando cajeros...</p>}
+              {cajerosLoading && <p className="text-[length:var(--ts-2xs)] text-gray-400 mt-1">Cargando cajeros...</p>}
             </div>
             <div>
               <label className="block text-xs font-bold text-gray-600 dark:text-gray-400 mb-1 text-left">Efectivo inicial (S/)</label>
@@ -817,7 +817,7 @@ export default function TurnosModule() {
                 value={efectivoInicial}
                 onChange={e => setEfectivoInicial(e.target.value)}
                 placeholder="0.00"
-                className="w-full px-4 py-3 rounded-lg border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 text-sm text-gray-900 dark:text-white placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#00B4A6]/30 text-center text-lg font-bold"
+                className="w-full px-4 py-3 rounded-lg border border-[var(--rule-base)] dark:border-white/10 bg-white dark:bg-white/5 text-sm text-gray-900 dark:text-white placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#00B4A6]/30 text-center text-lg font-bold"
               />
             </div>
             <button
@@ -886,23 +886,23 @@ export default function TurnosModule() {
                 <CalendarDays className="h-4 w-4 text-[#00B4A6]" />
                 Calendario Semanal
               </h3>
-              <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl  overflow-hidden">
+              <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl  overflow-hidden">
                 <div className="overflow-x-auto">
                   <div className="grid grid-cols-7 min-w-[700px]">
                     {DIAS_SEMANA.map((dia, idx) => {
                       const turnos = weekMap.get(idx) || [];
                       return (
-                        <div key={dia} className={cn("border-r border-gray-100 dark:border-white/5 last:border-r-0", idx < 5 ? "" : "bg-gray-50/50 dark:bg-white/[0.02]")}>
-                          <div className="px-2 py-2 border-b border-gray-100 dark:border-white/5 text-center">
+                        <div key={dia} className={cn("border-r border-[var(--rule-soft)] dark:border-white/5 last:border-r-0", idx < 5 ? "" : "bg-gray-50/50 dark:bg-white/[0.02]")}>
+                          <div className="px-2 py-2 border-b border-[var(--rule-soft)] dark:border-white/5 text-center">
                             <p className="text-xs font-bold text-gray-500 dark:text-gray-400">{dia}</p>
                           </div>
                           <div className="p-1.5 min-h-[100px] space-y-1">
                             {turnos.length === 0 ? (
-                              <p className="text-[10px] text-gray-300 dark:text-gray-600 text-center py-3">Sin turno</p>
+                              <p className="text-[length:var(--ts-2xs)] text-gray-300 dark:text-gray-600 text-center py-3">Sin turno</p>
                             ) : turnos.map(t => (
                               <div
                                 key={t.id}
-                                className="rounded-lg p-1.5 text-[10px] leading-tight"
+                                className="rounded-lg p-1.5 text-[length:var(--ts-2xs)] leading-tight"
                                 style={{ backgroundColor: cajeroColor(t.adminUserId), color: cajeroColorText(t.adminUserId) }}
                               >
                                 <p className="font-bold truncate">{t.adminUserId}</p>
@@ -925,7 +925,7 @@ export default function TurnosModule() {
                 <BarChart3 className="h-4 w-4 text-[#f97316]" />
                 Productividad por Cajero
               </h3>
-              <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl overflow-hidden ">
+              <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl overflow-hidden ">
                 {cajeros.length <= 1 && cajeros.length === 1 ? (
                   <div className="p-4 text-center text-sm text-gray-400">Solo hay 1 cajero registrado</div>
                 ) : cajeros.length === 0 ? (
@@ -934,7 +934,7 @@ export default function TurnosModule() {
                   <div className="overflow-x-auto -mx-4 sm:mx-0">
                     <table className="w-full min-w-[550px] sm:min-w-0 text-sm">
                       <thead>
-                        <tr className="border-b border-gray-100 dark:border-white/5 text-left">
+                        <tr className="border-b border-[var(--rule-soft)] dark:border-white/5 text-left">
                           <th className="px-4 py-3 font-semibold text-gray-500 dark:text-gray-400">Cajero</th>
                           <th className="px-4 py-3 font-semibold text-gray-500 dark:text-gray-400 text-right">Turnos</th>
                           <th className="px-4 py-3 font-semibold text-gray-500 dark:text-gray-400 text-right">Ventas total</th>
@@ -950,11 +950,11 @@ export default function TurnosModule() {
                             c.name === bestCajero ? "bg-emerald-50/50 dark:bg-emerald-900/10" : ""
                           )}>
                             <td className="px-4 py-3 font-medium text-gray-900 dark:text-white flex items-center gap-2">
-                              <div className="h-6 w-6 rounded-full flex items-center justify-center text-[10px] font-bold" style={{ backgroundColor: cajeroColor(c.name), color: cajeroColorText(c.name) }}>
+                              <div className="h-6 w-6 rounded-full flex items-center justify-center text-[length:var(--ts-2xs)] font-bold" style={{ backgroundColor: cajeroColor(c.name), color: cajeroColorText(c.name) }}>
                                 {c.name.charAt(0).toUpperCase()}
                               </div>
                               <span className="truncate max-w-[100px]">{c.name}</span>
-                              {c.name === bestCajero && <span className="text-emerald-600 text-[10px] font-bold">TOP</span>}
+                              {c.name === bestCajero && <span className="text-emerald-600 text-[length:var(--ts-2xs)] font-bold">TOP</span>}
                             </td>
                             <td className="px-4 py-3 text-right text-gray-700 dark:text-gray-300">{c.turnos}</td>
                             <td className="px-4 py-3 text-right font-bold text-emerald-600 dark:text-emerald-400">{formatCurrency(c.ventasTotal)}</td>
@@ -982,8 +982,8 @@ export default function TurnosModule() {
             <h3 className="text-sm font-bold text-gray-900 dark:text-white">Historial de turnos</h3>
             {historial.length > 0 && (
               <div className="flex bg-gray-100 dark:bg-accent rounded-lg p-0.5">
-                <button onClick={() => setHistorialView("tabla")} className={cn("px-2.5 py-1 rounded-md text-[10px] font-bold transition-all", historialView === "tabla" ? "bg-white dark:bg-card text-gray-900 dark:text-foreground " : "text-gray-500 dark:text-muted")}>Tabla</button>
-                <button onClick={() => setHistorialView("timeline")} className={cn("px-2.5 py-1 rounded-md text-[10px] font-bold transition-all", historialView === "timeline" ? "bg-white dark:bg-card text-gray-900 dark:text-foreground " : "text-gray-500 dark:text-muted")}>Timeline</button>
+                <button onClick={() => setHistorialView("tabla")} className={cn("px-2.5 py-1 rounded-md text-[length:var(--ts-2xs)] font-bold transition-all", historialView === "tabla" ? "bg-white dark:bg-card text-gray-900 dark:text-foreground " : "text-gray-500 dark:text-muted")}>Tabla</button>
+                <button onClick={() => setHistorialView("timeline")} className={cn("px-2.5 py-1 rounded-md text-[length:var(--ts-2xs)] font-bold transition-all", historialView === "timeline" ? "bg-white dark:bg-card text-gray-900 dark:text-foreground " : "text-gray-500 dark:text-muted")}>Timeline</button>
               </div>
             )}
           </div>
@@ -1015,7 +1015,7 @@ export default function TurnosModule() {
             </button>
           )}
         </div>
-        <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl overflow-hidden ">
+        <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl overflow-hidden ">
           {historial.length === 0 ? (
             <div className="text-center py-16 px-4">
               <div className="text-6xl mb-4">&#9200;</div>
@@ -1040,7 +1040,7 @@ export default function TurnosModule() {
                       <p className="text-sm font-bold text-gray-900 dark:text-white truncate">
                         {t.adminUserId} <span className="font-normal text-gray-400">{horaInicio}-{horaFin}</span> <span className="font-extrabold text-emerald-600 dark:text-emerald-400">{formatCurrency(t.ventasTotal)}</span>
                       </p>
-                      <p className="text-[10px] text-gray-400">
+                      <p className="text-[length:var(--ts-2xs)] text-gray-400">
                         {cuadro === null ? "" : cuadro ? "Cuadro" : `Dif: ${dif! >= 0 ? "+" : ""}${formatCurrency(dif!)}`}
                         {" · "}{new Date(t.abrioEn).toLocaleDateString("es-PE", { day: "2-digit", month: "short" })}
                       </p>
@@ -1054,7 +1054,7 @@ export default function TurnosModule() {
               <div className="overflow-x-auto -mx-4 sm:mx-0">
                 <table className="w-full min-w-[650px] sm:min-w-0 text-sm">
                   <thead>
-                    <tr className="border-b border-gray-100 dark:border-white/5 text-left">
+                    <tr className="border-b border-[var(--rule-soft)] dark:border-white/5 text-left">
                       <th className="px-4 py-3 font-semibold text-gray-500 dark:text-gray-400">Operador</th>
                       <th className="px-4 py-3 font-semibold text-gray-500 dark:text-gray-400">Apertura</th>
                       <th className="px-4 py-3 font-semibold text-gray-500 dark:text-gray-400 hidden sm:table-cell">Cierre</th>
@@ -1082,7 +1082,7 @@ export default function TurnosModule() {
                 </table>
               </div>
               {totalPages > 1 && (
-                <div className="flex items-center justify-between px-4 py-3 border-t border-gray-100 dark:border-white/5">
+                <div className="flex items-center justify-between px-4 py-3 border-t border-[var(--rule-soft)] dark:border-white/5">
                   <p className="text-xs text-gray-500 dark:text-gray-400">
                     {historial.length} turno{historial.length !== 1 ? "s" : ""} — Pag. {page}/{totalPages}
                   </p>
@@ -1131,9 +1131,9 @@ export default function TurnosModule() {
               transition={{ duration: 0.2, ease: "easeOut" }}
               onClick={e => e.target === e.currentTarget && setShowCierre(false)}
             >
-              <div className="w-full max-w-xl bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl max-h-[90vh] flex flex-col">
+              <div className="w-full max-w-xl bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl max-h-[90vh] flex flex-col">
                 {/* UX Mejora 12: Sticky header */}
-                <div className="sticky top-0 z-10 bg-white dark:bg-card border-b border-gray-200 dark:border-gray-700 px-6 py-4 flex items-center justify-between rounded-t-2xl">
+                <div className="sticky top-0 z-10 bg-white dark:bg-card border-b border-[var(--rule-base)] px-6 py-4 flex items-center justify-between rounded-t-2xl">
                   <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Cerrar Turno</h3>
                   <button onClick={() => setShowCierre(false)} className="p-1 hover:bg-gray-100 dark:hover:bg-white/5 rounded-lg transition-colors">
                     <X className="h-5 w-5 text-gray-500" />
@@ -1151,7 +1151,7 @@ export default function TurnosModule() {
                     <span className="text-gray-500 dark:text-gray-400">Ventas del turno</span>
                     <span className="font-bold text-emerald-600 dark:text-emerald-400">{formatCurrency(turnoActivo.ventasTotal)}</span>
                   </div>
-                  <div className="flex justify-between text-sm border-t border-gray-200 dark:border-white/10 pt-2">
+                  <div className="flex justify-between text-sm border-t border-[var(--rule-base)] dark:border-white/10 pt-2">
                     <span className="text-gray-500 dark:text-gray-400">Total esperado</span>
                     <span className="font-bold text-gray-900 dark:text-white">
                       {formatCurrency(turnoActivo.inicioEfectivo + turnoActivo.ventasTotal)}
@@ -1169,7 +1169,7 @@ export default function TurnosModule() {
                       value={cierreEfectivo}
                       onChange={e => setCierreEfectivo(e.target.value)}
                       placeholder="0.00"
-                      className="w-full px-3 py-2.5 rounded-lg border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 text-sm text-gray-900 dark:text-white placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#00B4A6]/30 text-center text-lg font-bold"
+                      className="w-full px-3 py-2.5 rounded-lg border border-[var(--rule-base)] dark:border-white/10 bg-white dark:bg-white/5 text-sm text-gray-900 dark:text-white placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#00B4A6]/30 text-center text-lg font-bold"
                     />
                   </div>
 
@@ -1191,7 +1191,7 @@ export default function TurnosModule() {
                       onChange={e => setCierreNotas(e.target.value)}
                       placeholder="Observaciones del turno..."
                       rows={2}
-                      className="w-full px-3 py-2 rounded-lg border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 text-sm text-gray-900 dark:text-white placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#00B4A6]/30 resize-none"
+                      className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-white/10 bg-white dark:bg-white/5 text-sm text-gray-900 dark:text-white placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#00B4A6]/30 resize-none"
                     />
                   </div>
                 </div>
@@ -1202,7 +1202,7 @@ export default function TurnosModule() {
 
                 </div>
                 {/* UX Mejora 12: Sticky footer */}
-                <div className="sticky bottom-0 bg-white dark:bg-card border-t border-gray-200 dark:border-gray-700 px-6 py-4 flex justify-end gap-3 rounded-b-2xl">
+                <div className="sticky bottom-0 bg-white dark:bg-card border-t border-[var(--rule-base)] px-6 py-4 flex justify-end gap-3 rounded-b-2xl">
                   <button
                     onClick={() => setShowCierre(false)}
                     className="px-4 py-2 text-sm font-bold text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-white/5 rounded-lg transition-colors"
@@ -1244,7 +1244,7 @@ export default function TurnosModule() {
               className="fixed inset-0 z-50 flex items-center justify-center p-4"
               onClick={e => e.target === e.currentTarget && setShowResumen(false)}
             >
-              <div className="w-full max-w-lg bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl p-5 space-y-4 max-h-[90vh] overflow-y-auto" id="turno-resumen">
+              <div className="w-full max-w-lg bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl p-5 space-y-4 max-h-[90vh] overflow-y-auto" id="turno-resumen">
                 <div className="flex items-center justify-between">
                   <h3 className="text-lg font-bold text-gray-900 dark:text-white flex items-center gap-2">
                     <Trophy className="h-5 w-5 text-amber-500" />
@@ -1262,15 +1262,15 @@ export default function TurnosModule() {
                   </h4>
                   <div className="grid grid-cols-3 gap-3">
                     <div>
-                      <p className="text-[10px] text-emerald-600 dark:text-emerald-400 font-semibold">Total vendido</p>
+                      <p className="text-[length:var(--ts-2xs)] text-emerald-600 dark:text-emerald-400 font-semibold">Total vendido</p>
                       <p className="text-lg font-extrabold text-emerald-800 dark:text-emerald-200">{formatCurrency(resumen.totalVentas)}</p>
                     </div>
                     <div>
-                      <p className="text-[10px] text-emerald-600 dark:text-emerald-400 font-semibold">Cant. ventas</p>
+                      <p className="text-[length:var(--ts-2xs)] text-emerald-600 dark:text-emerald-400 font-semibold">Cant. ventas</p>
                       <p className="text-lg font-extrabold text-emerald-800 dark:text-emerald-200">{resumen.cantidadVentas}</p>
                     </div>
                     <div>
-                      <p className="text-[10px] text-emerald-600 dark:text-emerald-400 font-semibold">Ticket prom.</p>
+                      <p className="text-[length:var(--ts-2xs)] text-emerald-600 dark:text-emerald-400 font-semibold">Ticket prom.</p>
                       <p className="text-lg font-extrabold text-emerald-800 dark:text-emerald-200">{formatCurrency(resumen.ticketPromedio)}</p>
                     </div>
                   </div>
@@ -1307,7 +1307,7 @@ export default function TurnosModule() {
                       <span className="text-gray-500 dark:text-gray-400">Efectivo al cierre</span>
                       <span className="font-bold text-gray-900 dark:text-white">{formatCurrency(resumen.cierreEfectivo)}</span>
                     </div>
-                    <div className="flex justify-between text-sm border-t border-gray-200 dark:border-white/10 pt-1.5">
+                    <div className="flex justify-between text-sm border-t border-[var(--rule-base)] dark:border-white/10 pt-1.5">
                       <span className="text-gray-500 dark:text-gray-400">Diferencia</span>
                       <span className={cn("font-bold", resumen.diferencia >= 0 ? "text-emerald-600 dark:text-emerald-400" : "text-red-600 dark:text-red-400")}>
                         {resumen.diferencia >= 0 ? "+" : ""}{formatCurrency(resumen.diferencia)}
@@ -1352,16 +1352,16 @@ export default function TurnosModule() {
 
                 {/* Card 4: Top 3 productos */}
                 {resumen.topProductos.length > 0 && (
-                  <div className="bg-violet-50 dark:bg-violet-900/20 rounded-xl p-4">
-                    <h4 className="text-xs font-bold text-violet-800 dark:text-violet-300 mb-3 flex items-center gap-1.5">
+                  <div className="bg-[var(--surface-sunken)] rounded-xl p-4">
+                    <h4 className="text-xs font-bold text-[var(--text-secondary)] dark:text-[var(--text-primary)] mb-3 flex items-center gap-1.5">
                       <TrendingUp className="h-3.5 w-3.5" /> Top productos
                     </h4>
                     <div className="space-y-1.5">
                       {resumen.topProductos.map((p, i) => (
                         <div key={p.nombre} className="flex items-center gap-2 text-sm">
-                          <span className="text-[10px] font-extrabold text-violet-400 w-4 text-right">{i + 1}</span>
-                          <span className="flex-1 text-violet-700 dark:text-violet-300 truncate">{p.nombre}</span>
-                          <span className="font-bold text-violet-800 dark:text-violet-200">x{p.cantidad}</span>
+                          <span className="text-[length:var(--ts-2xs)] font-extrabold text-[var(--text-tertiary)] w-4 text-right">{i + 1}</span>
+                          <span className="flex-1 text-[var(--text-secondary)] dark:text-[var(--text-primary)] truncate">{p.nombre}</span>
+                          <span className="font-bold text-[var(--text-secondary)] dark:text-[var(--text-primary)]">x{p.cantidad}</span>
                         </div>
                       ))}
                     </div>
@@ -1381,7 +1381,7 @@ export default function TurnosModule() {
                       initial={{ scale: 0.8 }}
                       animate={{ scale: [0.8, 1.1, 1] }}
                       transition={{ duration: 0.5, times: [0, 0.6, 1] }}
-                      className="bg-gradient-to-r from-amber-50 to-yellow-50 dark:from-amber-950/20 dark:to-yellow-950/20 border-2 border-amber-400 rounded-xl p-4 text-center"
+                      className="bg-[var(--surface-sunken)] border border-[var(--data-success)]/40 rounded-xl p-4 text-center"
                     >
                       <p className="text-2xl font-extrabold text-amber-600 mb-1">META SUPERADA!</p>
                       <p className="text-sm text-amber-700 dark:text-amber-300">
@@ -1489,14 +1489,14 @@ export default function TurnosModule() {
                   const isGoodDay = ventasAyer > 0 ? ventasHoy >= ventasAyer : ventasHoy > 0;
 
                   return (ventasAyer > 0 || ventasPromedio7d > 0) ? (
-                    <div className="bg-gradient-to-r from-indigo-50 to-purple-50 dark:from-indigo-950/20 dark:to-purple-950/20 rounded-xl p-4">
-                      <h4 className="text-xs font-bold text-indigo-800 dark:text-indigo-300 mb-3 flex items-center gap-1.5">
+                    <div className="bg-[var(--surface-sunken)] rounded-xl p-4">
+                      <h4 className="text-xs font-bold text-[var(--text-secondary)] mb-3 flex items-center gap-1.5">
                         <TrendingUp className="h-3.5 w-3.5" /> Comparativo
                       </h4>
                       <div className="space-y-2">
                         {ventasAyer > 0 && (
                           <div className="flex justify-between text-sm">
-                            <span className="text-indigo-600 dark:text-indigo-400">vs Ayer</span>
+                            <span className="text-[var(--text-secondary)] dark:text-[var(--text-primary)]">vs Ayer</span>
                             <span className={cn("font-bold", pctVsAyer >= 0 ? "text-emerald-600" : "text-red-600")}>
                               {pctVsAyer >= 0 ? "+" : ""}{pctVsAyer.toFixed(0)}% {pctVsAyer >= 0 ? "\u2191" : "\u2193"}
                             </span>
@@ -1504,7 +1504,7 @@ export default function TurnosModule() {
                         )}
                         {ventasPromedio7d > 0 && (
                           <div className="flex justify-between text-sm">
-                            <span className="text-indigo-600 dark:text-indigo-400">vs Promedio semanal</span>
+                            <span className="text-[var(--text-secondary)] dark:text-[var(--text-primary)]">vs Promedio semanal</span>
                             <span className={cn("font-bold", pctVsPromedio >= 0 ? "text-emerald-600" : "text-red-600")}>
                               {pctVsPromedio >= 0 ? "+" : ""}{pctVsPromedio.toFixed(0)}% {pctVsPromedio >= 0 ? "\u2191" : "\u2193"}
                             </span>

@@ -65,10 +65,10 @@ function CashFlowTooltip({ active, payload }: { active?: boolean; payload?: Arra
   if (!active || !payload?.[0]) return null;
   const d = payload[0].payload;
   return (
-    <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-100 dark:border-gray-700 px-4 py-3 min-w-[180px]">
+    <div className="bg-white dark:bg-gray-800 rounded-xl border border-[var(--rule-base)] px-4 py-3 min-w-[180px]">
       <p className="text-xs font-semibold text-gray-900 dark:text-white mb-1.5">
         {formatDate(d.fecha)}
-        {d.isProjected && <span className="ml-2 text-[10px] font-normal text-amber-500">(Proyectado)</span>}
+        {d.isProjected && <span className="ml-2 text-[length:var(--ts-2xs)] font-normal text-amber-500">(Proyectado)</span>}
       </p>
       <p className="text-xs text-gray-500 flex justify-between gap-4">
         <span>Ingresos</span>
@@ -78,7 +78,7 @@ function CashFlowTooltip({ active, payload }: { active?: boolean; payload?: Arra
         <span>Egresos</span>
         <span className="font-mono font-medium text-[#e63946]">{formatCurrency(d.egresos)}</span>
       </p>
-      <div className="border-t border-gray-200 dark:border-gray-600 mt-1.5 pt-1.5">
+      <div className="border-t border-[var(--rule-base)] dark:border-gray-600 mt-1.5 pt-1.5">
         <p className="text-xs flex justify-between gap-4">
           <span className="font-semibold text-gray-700 dark:text-gray-300">Balance</span>
           <span className={cn("font-mono font-bold", d.balance >= 0 ? "text-[#00B4A6]" : "text-[#e63946]")}>{formatCurrency(d.balance)}</span>
@@ -181,7 +181,7 @@ export default function CashFlowChart() {
   // ── Loading ──
   if (loading) {
     return (
-      <div className="rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 p-4">
+      <div className="rounded-xl border border-[var(--rule-base)] bg-white dark:bg-gray-900 p-4">
         <div className="h-5 w-40 bg-gray-200 dark:bg-gray-700 rounded mb-4 animate-pulse" />
         <div className="grid grid-cols-3 gap-3 mb-4">
           {Array.from({ length: 3 }).map((_, i) => (
@@ -212,7 +212,7 @@ export default function CashFlowChart() {
   // ── Empty ──
   if (!chartData.length) {
     return (
-      <div className="rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 p-6 flex items-center justify-center h-64">
+      <div className="rounded-xl border border-[var(--rule-base)] bg-white dark:bg-gray-900 p-6 flex items-center justify-center h-64">
         <p className="text-sm text-gray-500 dark:text-gray-400">No hay datos de flujo de caja</p>
       </div>
     );
@@ -227,7 +227,7 @@ export default function CashFlowChart() {
     : [];
 
   return (
-    <div className="rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 p-4">
+    <div className="rounded-xl border border-[var(--rule-base)] bg-white dark:bg-gray-900 p-4">
       {/* Header + period pills */}
       <div className="flex items-center justify-between mb-4">
         <h3 className="text-sm font-semibold text-gray-900 dark:text-white">
@@ -259,11 +259,11 @@ export default function CashFlowChart() {
             return (
               <div
                 key={card.label}
-                className="rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/50 p-3 "
+                className="rounded-xl border border-[var(--rule-base)] bg-gray-50 dark:bg-gray-800/50 p-3 "
               >
                 <div className="flex items-center gap-1.5 mb-1">
                   <Icon className="h-3.5 w-3.5 text-gray-400" />
-                  <span className="text-[10px] text-gray-500 dark:text-gray-400 font-medium">
+                  <span className="text-[length:var(--ts-2xs)] text-gray-500 dark:text-gray-400 font-medium">
                     {card.label}
                   </span>
                 </div>
