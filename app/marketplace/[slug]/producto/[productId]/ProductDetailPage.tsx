@@ -22,6 +22,7 @@ import { useMarketplaceCart } from "@/hooks/use-marketplace-cart";
 import ProductGallery from "@/components/marketplace/ProductGallery";
 import ProductVariantSelector from "@/components/marketplace/ProductVariantSelector";
 import { RecommendationsWidget } from "@/components/marketplace/RecommendationsWidget";
+import StoreWhatsAppButton from "@/components/marketplace/StoreWhatsAppButton";
 
 // ── Types ────────────────────────────────────────────────────────────────────
 
@@ -54,6 +55,7 @@ interface ProductData {
     slug: string;
     logo: string | null;
     description: string | null;
+    whatsappNumber?: string | null;
   };
 }
 
@@ -401,6 +403,15 @@ export default function ProductDetailPage() {
                 <Share2 className="h-4 w-4" />
                 Compartir producto
               </button>
+
+              {/* WhatsApp CTA */}
+              <StoreWhatsAppButton
+                whatsappNumber={product.store.whatsappNumber}
+                storeName={product.store.name}
+                productName={product.name}
+                productSlug={product.store.slug}
+                variant="outline"
+              />
             </div>
           </div>
         </motion.div>

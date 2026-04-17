@@ -15,6 +15,7 @@ import Link from "next/link";
 import { cn } from "@/lib/utils";
 import { m, AnimatePresence } from "framer-motion";
 import type { MarketplaceStore } from "@/components/marketplace/useMarketplaceGeo";
+import type { QuickChipId } from "@/components/marketplace/QuickFilterChips";
 
 /* ── Category config ───────────────────────────────────────────────────────── */
 
@@ -247,9 +248,85 @@ interface MarketplaceStoresViewProps {
   filteredStores: MarketplaceStore[];
   onRetry: () => void;
   onClearAll: () => void;
+  /** Quick-filter chips active in MarketplaceContent */
+  activeChips?: Set<QuickChipId>;
 }
 
-/* ── MarketplaceStoresView ─────────────────────────────────────────────────── */
+/* ── Chip filter helpers + MarketplaceStoresView ───────────────────────────── */
+
+/**
+ * Returns true when the store passes every active quick-filter chip.
+ * Fields that don't exist on a given store are skipped (tolerant).
+ */
+function passesChips(
+  store: MarketplaceStore & Partial<StoreChipFields>,
+  chips: Set<QuickChipId>,
+): boolean {
+  if (chips.size === 0) return true;
+
+  for (const chip of chips) {
+    switch (chip) {
+      case "open_now": {
+        // Only filter if the store carries openHours data
+        if (!("openHours" in store) || store.openHours == null) break;
+        const now = new Date();
+        const dayIndex = now.getDay(); // 0=Sun … 6=Sat
+        const minutesNow = now.getHours() * 60 + now.getMinutes();
+        const todayHours = store.openHours[dayIndex];
+        if (!todayHours) return false;
+        const open = todayHours.open * 60 + todayHours.openMin;
+        const close = todayHours.close * 60 + todayHours.closeMin;
+        if (minutesNow < open || minutesNow >= close) return false;
+        break;
+      }
+      case "free_delivery": {
+        if (!("deliveryFee" in store) && !("freeDelivery" in store)) break;
+        const isFree =
+          store.freeDelivery === true || store.deliveryFee === 0;
+        if (!isFree) return false;
+        break;
+      }
+      case "has_offers": {
+        if (!("hasOffers" in store) && !("activePromos" in store)) break;
+        const hasOffers =
+          store.hasOffers === true ||
+          (typeof store.activePromos === "number" && store.activePromos > 0);
+        if (!hasOffers) return false;
+        break;
+      }
+      case "top_rated": {
+        if ((store.rating ?? 0) < 4.5) return false;
+        break;
+      }
+      case "new_stores": {
+        if (!("createdAt" in store) || store.createdAt == null) break;
+        const thirtyDaysMs = 30 * 24 * 60 * 60 * 1000;
+        const age = Date.now() - new Date(store.createdAt).getTime();
+        if (age >= thirtyDaysMs) return false;
+        break;
+      }
+    }
+  }
+  return true;
+}
+
+/* ── Optional extended fields that may exist on store objects ───────────────── */
+
+interface DayHours {
+  open: number;
+  openMin: number;
+  close: number;
+  closeMin: number;
+}
+
+interface StoreChipFields {
+  openHours: DayHours[] | null;
+  deliveryFee: number;
+  freeDelivery: boolean;
+  hasOffers: boolean;
+  activePromos: number;
+  createdAt: string | Date;
+}
 
 export default function MarketplaceStoresView({
   stores: _stores,
@@ -259,10 +336,21 @@ export default function MarketplaceStoresView({
   category,
   zone,
   geoActive,
-  filteredStores,
+  filteredStores: filteredStoresProp,
   onRetry,
   onClearAll,
+  activeChips,
 }: MarketplaceStoresViewProps) {
+  const chips = activeChips ?? new Set<QuickChipId>();
+
+  // Apply chip filters on top of whatever geo/category filtering already happened
+  const filteredStores =
+    chips.size === 0
+      ? filteredStoresProp
+      : filteredStoresProp.filter((s) =>
+          passesChips(s as MarketplaceStore & Partial<StoreChipFields>, chips),
+        );
+
   return (
     <>
       {/* Error state */}

@@ -29,6 +29,9 @@ import { deserializeCart } from "@/lib/marketplace/cart-sharing";
 import { useMarketplaceCart } from "@/hooks/use-marketplace-cart";
 import { useCustomer } from "@/contexts/customer-context";
 import ReorderButton from "@/components/marketplace/ReorderButton";
+import QuickFilterChips, {
+  type QuickChipId,
+} from "@/components/marketplace/QuickFilterChips";
 
 type ViewMode = "tiendas" | "catalogo";
 
@@ -132,6 +135,21 @@ export default function MarketplaceContent({ initialStores }: MarketplaceContent
   const [category, setCategory] = useState(mappedCategory);
   const [zone, setZone] = useState("");
   const [productFilters, setProductFilters] = useState<MarketplaceFiltersState>(DEFAULT_FILTERS);
+
+  // ── Quick-filter chips ──
+  const [activeChips, setActiveChips] = useState<Set<QuickChipId>>(new Set());
+
+  const handleChipToggle = useCallback((chipId: QuickChipId) => {
+    setActiveChips((prev) => {
+      const next = new Set(prev);
+      if (next.has(chipId)) {
+        next.delete(chipId);
+      } else {
+        next.add(chipId);
+      }
+      return next;
+    });
+  }, []);
 
   // ── New: view mode ──
   const [viewMode, setViewMode] = useState<ViewMode>(() => {
@@ -306,6 +324,19 @@ export default function MarketplaceContent({ initialStores }: MarketplaceContent
             )}
           </m.div>
 
+          {/* ── Quick Filter Chips ── */}
+          <m.div
+            className="mt-5 max-w-2xl mx-auto"
+            initial={{ opacity: 0, y: 6 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.35 }}
+          >
+            <QuickFilterChips
+              activeChips={activeChips}
+              onToggle={handleChipToggle}
+            />
+          </m.div>
+
           {/* ── View Mode Toggle ── */}
           <m.div
             className="flex items-center justify-center mt-5"
@@ -442,6 +473,7 @@ export default function MarketplaceContent({ initialStores }: MarketplaceContent
             zone={zone}
             geoActive={geoActive}
             filteredStores={filteredStores}
+            activeChips={activeChips}
             onRetry={fetchStores}
             onClearAll={() => {
               setSearch("");

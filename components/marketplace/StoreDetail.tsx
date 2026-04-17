@@ -9,6 +9,7 @@ import { useMarketplaceCart } from "@/hooks/use-marketplace-cart";
 import { useCartWithUndo } from "@/hooks/use-cart-with-undo";
 import MarketplaceChat from "@/components/marketplace/MarketplaceChat";
 import MarketplaceCart from "@/components/marketplace/MarketplaceCart";
+import StoreWhatsAppButton from "@/components/marketplace/StoreWhatsAppButton";
 
 // ---------- constantes de categorías sugeridas ----------
 
@@ -44,6 +45,7 @@ interface StoreInfo {
   vacationMode?: boolean;
   vacationMessage?: string | null;
   tenantSlug?: string | null;
+  whatsappNumber?: string | null;
 }
 
 interface StoreProduct {
@@ -874,6 +876,15 @@ function StoreInfoSection({ store }: { store: StoreInfo }) {
                 </svg>
                 Llamar
               </a>
+            </div>
+
+            {/* WhatsApp CTA */}
+            <div className="mt-3">
+              <StoreWhatsAppButton
+                whatsappNumber={store.whatsappNumber}
+                storeName={store.name}
+                variant="primary"
+              />
             </div>
           </div>
         </div>

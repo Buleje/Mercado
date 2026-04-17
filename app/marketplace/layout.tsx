@@ -2,6 +2,8 @@ import type { Metadata } from "next";
 import MarketplaceNavbar from "@/components/marketplace/MarketplaceNavbar";
 import StoreProviders from "@/components/StoreProviders";
 import MotionProvider from "@/components/MotionProvider";
+import CompareFloatingBadge from "@/components/marketplace/CompareFloatingBadge";
+import ProductCompareDrawer from "@/components/marketplace/ProductCompareDrawer";
 
 export const metadata: Metadata = {
   title: {
@@ -36,6 +38,8 @@ export default function MarketplaceLayout({
         <div className="min-h-screen bg-gray-50 dark:bg-gray-950">
           <MarketplaceNavbar />
           <main id="main-content">{children}</main>
+          <CompareFloatingBadge />
+          <ProductCompareDrawer />
         </div>
       </MotionProvider>
     </StoreProviders>

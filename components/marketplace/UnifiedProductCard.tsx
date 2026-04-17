@@ -9,10 +9,13 @@ import {
   Package,
   Store as StoreIcon,
   Star,
+  GitCompareArrows,
+  Check,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useCartWithUndo } from "@/hooks/use-cart-with-undo";
 import { useHoverPrefetch } from "@/hooks/use-hover-prefetch";
+import { useCompare } from "@/contexts/compare-context";
 
 /* ── Tipos públicos ─────────────────────────────────────────────────────────── */
 
@@ -154,7 +157,9 @@ export default function UnifiedProductCard({
   index = 0,
 }: UnifiedProductCardProps) {
   const { addItemWithUndo } = useCartWithUndo();
+  const { add: addToCompare, remove: removeFromCompare, has: isInCompare } = useCompare();
   const [justAdded, setJustAdded] = useState(false);
+  const [compareLimitMsg, setCompareLimitMsg] = useState(false);
   const countdown = useCountdown(variant === "flash" ? endsAt : undefined);
 
   const productHref =
@@ -164,6 +169,27 @@ export default function UnifiedProductCard({
   const { onMouseEnter, onMouseLeave } = useHoverPrefetch(productHref);
 
   const isOutOfStock = product.stock === 0;
+  const inCompare = isInCompare(product.id);
+
+  const handleCompare = useCallback(() => {
+    if (inCompare) {
+      removeFromCompare(product.id);
+      return;
+    }
+    const added = addToCompare({
+      productId: product.id,
+      storeSlug: product.storeSlug ?? "",
+      name: product.name,
+      price: product.price,
+      image: product.image,
+      rating: product.storeRating,
+      stock: product.stock,
+    });
+    if (!added) {
+      setCompareLimitMsg(true);
+      setTimeout(() => setCompareLimitMsg(false), 2500);
+    }
+  }, [inCompare, addToCompare, removeFromCompare, product]);
 
   const handleAdd = useCallback(() => {
     if (isOutOfStock) return;
@@ -288,6 +314,45 @@ export default function UnifiedProductCard({
             </>
           )}
         </button>
+
+        {/* Botón comparar */}
+        <button
+          onClick={handleCompare}
+          aria-label={
+            inCompare
+              ? `Quitar ${product.name} de la comparacion`
+              : `Comparar ${product.name}`
+          }
+          aria-pressed={inCompare}
+          className={cn(
+            "flex w-full items-center justify-center gap-1 rounded-lg py-1 text-xs transition-colors",
+            inCompare
+              ? "font-medium text-gray-700 hover:text-gray-900 dark:text-gray-300 dark:hover:text-gray-100"
+              : "text-gray-400 hover:text-gray-700 dark:text-gray-600 dark:hover:text-gray-300"
+          )}
+        >
+          {inCompare ? (
+            <>
+              <Check className="h-3 w-3" aria-hidden="true" />
+              Quitar de comparar
+            </>
+          ) : (
+            <>
+              <GitCompareArrows className="h-3 w-3" aria-hidden="true" />
+              Comparar
+            </>
+          )}
+        </button>
+
+        {/* Aviso limite maximo */}
+        {compareLimitMsg && (
+          <p
+            role="alert"
+            className="rounded-md bg-amber-50 px-2 py-1 text-center text-[10px] text-amber-700 dark:bg-amber-950/30 dark:text-amber-400"
+          >
+            Maximo 3 productos para comparar
+          </p>
+        )}
       </div>
     </motion.div>
   );
