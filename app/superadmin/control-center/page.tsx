@@ -6,7 +6,9 @@ import {
   Store, ShieldCheck, Users, Package, CreditCard, Truck, ChefHat,
   Search, Heart, Globe, FileText, Terminal, ExternalLink, Copy, Check,
   HeartPulse, MonitorCheck, Eye, EyeOff, Trash2, LogIn, KeyRound,
+  Map, ChevronDown,
 } from "lucide-react";
+import { SITE_MAP, TOTAL_ROUTES } from "@/lib/site-map";
 
 // ── Link sections ─────────────────────────────────────────────────────────────
 
@@ -281,6 +283,135 @@ function SavedTenantCredentials() {
   );
 }
 
+// ── SiteMapBlock — las 101 rutas categorizadas ───────────────────────
+
+function SiteMapBlock() {
+  const [openCategory, setOpenCategory] = useState<string | null>("store-customer");
+
+  const statusColor = (status: "live" | "wip" | "legacy") =>
+    status === "live"
+      ? "bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400"
+      : status === "wip"
+        ? "bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400"
+        : "bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400";
+
+  const authBadge = (auth: string) => ({
+    public: "🌐",
+    customer: "🛒",
+    admin: "🏪",
+    superadmin: "⚡",
+    supplier: "📦",
+    driver: "🛵",
+  }[auth] ?? "?");
+
+  return (
+    <div className="bg-white dark:bg-gray-950 border border-gray-200 dark:border-gray-800 rounded-2xl overflow-hidden">
+      <div className="px-6 py-4 border-b border-gray-100 dark:border-gray-800 flex items-center justify-between">
+        <div>
+          <h3 className="text-sm font-semibold text-gray-900 dark:text-white uppercase tracking-wider flex items-center gap-2">
+            <Map className="w-4 h-4 text-teal-600" />
+            Site Map completo
+          </h3>
+          <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+            Las {TOTAL_ROUTES} rutas del proyecto, organizadas en {SITE_MAP.length} categorías JTBD
+          </p>
+        </div>
+        <div className="flex items-center gap-2 text-xs">
+          <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 dark:bg-emerald-950/30 text-emerald-700 dark:text-emerald-400 px-2 py-1 font-bold tabular-nums">
+            {SITE_MAP.flatMap((c) => c.routes).filter((r) => r.status === "live").length} live
+          </span>
+          <span className="inline-flex items-center gap-1 rounded-full bg-amber-50 dark:bg-amber-950/30 text-amber-700 dark:text-amber-400 px-2 py-1 font-bold tabular-nums">
+            {SITE_MAP.flatMap((c) => c.routes).filter((r) => r.status === "wip").length} WIP
+          </span>
+        </div>
+      </div>
+      <div className="divide-y divide-gray-100 dark:divide-gray-800">
+        {SITE_MAP.map((cat) => {
+          const isOpen = openCategory === cat.id;
+          return (
+            <div key={cat.id}>
+              <button
+                type="button"
+                onClick={() => setOpenCategory(isOpen ? null : cat.id)}
+                className="w-full flex items-center justify-between px-6 py-3 hover:bg-gray-50 dark:hover:bg-gray-900/50 transition-colors text-left"
+                aria-expanded={isOpen}
+              >
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm font-bold text-gray-900 dark:text-white">{cat.label}</span>
+                    <span className="inline-flex items-center rounded-full bg-gray-100 dark:bg-gray-800 px-2 py-0.5 text-[10px] font-bold tabular-nums text-gray-600 dark:text-gray-400">
+                      {cat.routes.length}
+                    </span>
+                  </div>
+                  <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
+                    {cat.description} · Audiencia: {cat.audience}
+                  </p>
+                </div>
+                <ChevronDown
+                  className={`w-4 h-4 text-gray-400 shrink-0 transition-transform ${isOpen ? "rotate-180" : ""}`}
+                />
+              </button>
+              {isOpen && (
+                <div className="bg-gray-50 dark:bg-gray-900/30 px-6 py-2">
+                  <table className="w-full text-sm">
+                    <thead>
+                      <tr className="border-b border-gray-200 dark:border-gray-800">
+                        <th className="text-left py-2 text-[10px] font-bold uppercase tracking-wider text-gray-500">Ruta</th>
+                        <th className="text-left py-2 text-[10px] font-bold uppercase tracking-wider text-gray-500">Label</th>
+                        <th className="text-left py-2 text-[10px] font-bold uppercase tracking-wider text-gray-500">Descripción</th>
+                        <th className="text-center py-2 text-[10px] font-bold uppercase tracking-wider text-gray-500">Auth</th>
+                        <th className="text-center py-2 text-[10px] font-bold uppercase tracking-wider text-gray-500">Status</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-gray-100 dark:divide-gray-800/60">
+                      {cat.routes.map((r) => (
+                        <tr key={r.path} className="hover:bg-white dark:hover:bg-gray-900/50 transition-colors">
+                          <td className="py-2">
+                            <a
+                              href={r.path.replace(/\[.*?\]/g, "_")}
+                              target="_blank"
+                              rel="noopener"
+                              className="inline-flex items-center gap-1 font-mono text-xs text-gray-700 dark:text-gray-300 hover:text-teal-600 dark:hover:text-teal-400 tabular-nums"
+                              title={r.path.includes("[") ? "Contiene params dinámicos — visitá con valor real" : undefined}
+                            >
+                              {r.path}
+                              <ExternalLink className="w-3 h-3 opacity-40" />
+                            </a>
+                          </td>
+                          <td className="py-2 text-xs font-semibold text-gray-900 dark:text-white">{r.label}</td>
+                          <td className="py-2 text-xs text-gray-500 dark:text-gray-400">{r.description}</td>
+                          <td className="py-2 text-center text-base" title={r.auth}>
+                            {authBadge(r.auth)}
+                          </td>
+                          <td className="py-2 text-center">
+                            <span className={`inline-flex rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider ${statusColor(r.status)}`}>
+                              {r.status}
+                            </span>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </div>
+          );
+        })}
+      </div>
+      {/* Legend */}
+      <div className="px-6 py-3 bg-gray-50 dark:bg-gray-900/30 border-t border-gray-100 dark:border-gray-800 flex flex-wrap items-center gap-3 text-[10px] font-bold uppercase tracking-wider text-gray-500">
+        <span>Leyenda auth:</span>
+        <span>🌐 Public</span>
+        <span>🛒 Customer</span>
+        <span>🏪 Admin</span>
+        <span>⚡ Superadmin</span>
+        <span>📦 Supplier</span>
+        <span>🛵 Driver</span>
+      </div>
+    </div>
+  );
+}
+
 export default function ControlCenterPage() {
   return (
     <div className="space-y-8">
@@ -344,6 +475,9 @@ export default function ControlCenterPage() {
 
       {/* Saved tenant credentials */}
       <SavedTenantCredentials />
+
+      {/* ── SITE MAP COMPLETO — las 101 rutas del proyecto ── */}
+      <SiteMapBlock />
 
       {/* Link sections */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">

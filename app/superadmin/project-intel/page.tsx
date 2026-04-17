@@ -1117,21 +1117,21 @@ function ScoresTab({ liveData }: { liveData: LiveIntelData | null }) {
       {/* Tech Debt (solo si tenemos liveData) */}
       {liveData && (
         <div className="bg-white dark:bg-gray-950 border border-gray-200 dark:border-gray-800 rounded-2xl p-5">
-          <h3 className="text-sm font-bold text-gray-900 dark:text-white mb-3">
-            📋 Deuda Técnica (docs/TECH-DEBT.md)
+          <h3 className="text-sm font-extrabold tracking-tight text-gray-900 dark:text-white mb-3">
+            Deuda técnica (docs/TECH-DEBT.md)
           </h3>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-4">
             <Bucket n={liveData.techDebt.total} label="Total items" color="text-gray-700 dark:text-gray-300" />
-            <Bucket n={liveData.techDebt.open} label="🔓 Abiertos" color="text-red-500" />
-            <Bucket n={liveData.techDebt.inProgress} label="🟡 En progreso" color="text-amber-500" />
-            <Bucket n={liveData.techDebt.closed} label="✅ Cerrados" color="text-emerald-500" />
+            <Bucket n={liveData.techDebt.open} label="Abiertos" color="text-red-500" />
+            <Bucket n={liveData.techDebt.inProgress} label="En progreso" color="text-amber-500" />
+            <Bucket n={liveData.techDebt.closed} label="Cerrados" color="text-emerald-500" />
           </div>
           {Object.values(liveData.techDebt.bySeverity).some((n) => n > 0) && (
             <div className="grid grid-cols-2 md:grid-cols-4 gap-2 pt-3 border-t border-gray-100 dark:border-gray-900">
-              <SeverityBadge n={liveData.techDebt.bySeverity.critical} label="🔴 Críticos" />
-              <SeverityBadge n={liveData.techDebt.bySeverity.high}     label="🟠 Altos" />
-              <SeverityBadge n={liveData.techDebt.bySeverity.medium}   label="🟡 Medios" />
-              <SeverityBadge n={liveData.techDebt.bySeverity.low}      label="🟢 Bajos" />
+              <SeverityBadge n={liveData.techDebt.bySeverity.critical} label="Críticos" />
+              <SeverityBadge n={liveData.techDebt.bySeverity.high}     label="Altos" />
+              <SeverityBadge n={liveData.techDebt.bySeverity.medium}   label="Medios" />
+              <SeverityBadge n={liveData.techDebt.bySeverity.low}      label="Bajos" />
             </div>
           )}
         </div>
@@ -1175,10 +1175,10 @@ function BigScoreCard({
     <div className="bg-white dark:bg-gray-950 border border-gray-200 dark:border-gray-800 rounded-2xl p-5">
       <h3 className="text-sm font-bold text-gray-900 dark:text-white mb-4">{label}</h3>
       <div className="grid grid-cols-4 gap-2 mb-5">
-        <Bucket n={snap.applied} label="✅ Listas"    color="text-emerald-500" />
-        <Bucket n={snap.partial} label="⚠️ Parciales" color="text-amber-500" />
-        <Bucket n={snap.missing} label="❌ Faltan"    color="text-red-500" />
-        <Bucket n={snap.na}      label="➖ No aplica" color="text-gray-400" />
+        <Bucket n={snap.applied} label="Listas"    color="text-emerald-500" />
+        <Bucket n={snap.partial} label="Parciales" color="text-amber-500" />
+        <Bucket n={snap.missing} label="Faltan"    color="text-red-500" />
+        <Bucket n={snap.na}      label="No aplica" color="text-gray-400" />
       </div>
       <div className="space-y-3">
         <ScoreBar label="Avance sólido (cuenta parciales como medio punto)" pct={score.solidPct} gradient={bar} />
@@ -1288,8 +1288,8 @@ function PricingTab() {
               <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">{plan.priceDetail}</p>
             </div>
             <div className="space-y-2 mb-4">
-              <p className="text-[10px] uppercase tracking-wide font-bold text-emerald-600 dark:text-emerald-400">
-                ✅ Incluye
+              <p className="text-[10px] uppercase tracking-[0.18em] font-bold text-emerald-600 dark:text-emerald-400">
+                Incluye
               </p>
               {plan.includes.map((item, i) => (
                 <div key={i} className="flex items-start gap-2 text-xs text-gray-700 dark:text-gray-300">
@@ -1330,7 +1330,7 @@ function SellTab() {
       bg: "bg-gradient-to-br from-yellow-50 to-amber-50 dark:from-yellow-950/30 dark:to-amber-950/30",
       border: "border-yellow-400 dark:border-yellow-600",
       badge: "bg-yellow-500 text-white",
-      badgeLabel: "⭐ Más vendido",
+      badgeLabel: "Más vendido",
     },
     premium: {
       bg: "bg-gradient-to-br from-emerald-50 to-cyan-50 dark:from-emerald-950/30 dark:to-cyan-950/30",
@@ -1400,8 +1400,8 @@ function SellTab() {
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4 pt-4 border-t border-white/60 dark:border-white/10">
               <div>
-                <p className="text-[10px] uppercase tracking-wide font-bold text-emerald-600 dark:text-emerald-400 mb-2">
-                  ✅ Qué incluye
+                <p className="text-[10px] uppercase tracking-[0.18em] font-bold text-emerald-600 dark:text-emerald-400 mb-2">
+                  Qué incluye
                 </p>
                 <ul className="space-y-1.5">
                   {pkg.includes.map((item, i) => (
@@ -1448,12 +1448,14 @@ function RoadmapTab() {
           className="bg-white dark:bg-gray-950 border border-gray-200 dark:border-gray-800 rounded-2xl p-5"
         >
           <div className="flex items-center gap-3 mb-4">
-            <div className="text-3xl">{phase.emoji}</div>
+            <div className="h-10 w-10 shrink-0 rounded-lg bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-800 flex items-center justify-center text-xs font-extrabold tabular-nums text-gray-700 dark:text-gray-200">
+              {String(idx + 1).padStart(2, "0")}
+            </div>
             <div>
-              <div className="text-[10px] uppercase tracking-wide font-bold text-violet-600 dark:text-violet-400">
+              <div className="text-[10px] uppercase tracking-[0.18em] font-bold text-gray-400">
                 Fase {idx + 1}
               </div>
-              <h3 className="text-base font-bold text-gray-900 dark:text-white">{phase.when}</h3>
+              <h3 className="text-base font-extrabold tracking-tight text-gray-900 dark:text-white">{phase.when}</h3>
             </div>
           </div>
           <ul className="space-y-2">

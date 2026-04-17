@@ -763,10 +763,10 @@ function StoreInfoSection({ store }: { store: StoreInfo }) {
       : `https://www.google.com/maps/search/${encodeURIComponent(`${store.name} ${zone} Perú`)}`;
 
   const paymentMethods = [
-    { label: "Efectivo", icon: "💵" },
-    { label: "Yape", icon: "📱" },
-    { label: "Plin", icon: "💳" },
-    { label: "Transferencia", icon: "🏦" },
+    { label: "Efectivo" },
+    { label: "Yape" },
+    { label: "Plin" },
+    { label: "Transferencia" },
   ];
 
   return (
@@ -902,9 +902,8 @@ function StoreInfoSection({ store }: { store: StoreInfo }) {
               {paymentMethods.map((m) => (
                 <span
                   key={m.label}
-                  className="inline-flex items-center gap-1.5 rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 px-3 py-1.5 text-xs font-medium text-gray-700 dark:text-gray-300"
+                  className="inline-flex items-center rounded-full border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 px-3 py-1.5 text-xs font-bold text-gray-700 dark:text-gray-300"
                 >
-                  <span aria-hidden="true">{m.icon}</span>
                   {m.label}
                 </span>
               ))}
@@ -1270,8 +1269,22 @@ export default function StoreDetail({ slug }: { slug: string }) {
 
             {/* Vacation mode banner */}
             {store.vacationMode && (
-              <div className="mt-3 flex items-center gap-2 rounded-xl bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800 px-3 py-2.5">
-                <span aria-hidden="true" className="text-lg">🏖️</span>
+              <div className="mt-3 flex items-center gap-2.5 rounded-xl bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800 px-3 py-2.5">
+                <svg
+                  aria-hidden="true"
+                  className="h-5 w-5 text-amber-600 shrink-0"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="1.5"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                >
+                  <path d="M4 20h16" />
+                  <path d="M8 10c4-7 12-4 8 4" />
+                  <path d="M12 20V13" />
+                  <path d="M8 14c0-3 4-3 4 0" strokeOpacity="0.5" />
+                </svg>
                 <div>
                   <p className="text-sm font-bold text-amber-700 dark:text-amber-300">Tienda en vacaciones</p>
                   <p className="text-xs text-amber-600 dark:text-amber-400">

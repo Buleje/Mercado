@@ -1,6 +1,10 @@
 "use client";
 import { useState, useCallback, useEffect } from "react";
-import { Tag, Plus, Trash2, ToggleLeft, ToggleRight, X, Loader2, RefreshCw } from "lucide-react";
+import {
+  Tag, Plus, Trash2, ToggleLeft, ToggleRight, X, Loader2, RefreshCw,
+  Gift, Package, ShoppingCart, DollarSign,
+  type LucideIcon,
+} from "lucide-react";
 import { cn } from "@/lib/utils";
 import AdminModuleHeader from "@/components/admin/shared/AdminModuleHeader";
 
@@ -62,13 +66,13 @@ function promoBadgeText(promo: Promocion): string {
   }
 }
 
-function promoIcon(tipo: PromoType): string {
+function promoIcon(tipo: PromoType): LucideIcon {
   switch (tipo) {
-    case "porcentaje": return "🏷️";
-    case "2x1": return "🎁";
-    case "3x2": return "📦";
-    case "combo": return "🛒";
-    case "monto_fijo": return "💰";
+    case "porcentaje": return Tag;
+    case "2x1": return Gift;
+    case "3x2": return Package;
+    case "combo": return ShoppingCart;
+    case "monto_fijo": return DollarSign;
   }
 }
 
@@ -119,8 +123,12 @@ function PromoCard({ promo, onToggle, onDelete, loading }: {
             <span className={cn("text-xs px-2 py-0.5 rounded-full font-medium", TIPO_BADGE[promo.tipo])}>
               {TIPO_LABELS[promo.tipo]}
             </span>
-            <span className="text-sm font-bold text-gray-800 dark:text-white">
-              {promoIcon(promo.tipo)} {promoBadgeText(promo)}
+            <span className="inline-flex items-center gap-1.5 text-sm font-bold text-gray-800 dark:text-white">
+              {(() => {
+                const PIcon = promoIcon(promo.tipo);
+                return <PIcon className="h-3.5 w-3.5" strokeWidth={1.75} />;
+              })()}
+              {promoBadgeText(promo)}
             </span>
           </div>
           <p className="text-sm font-semibold text-gray-700 dark:text-gray-200 mt-1 truncate">{promo.nombre}</p>
@@ -453,8 +461,11 @@ export default function PromocionesModule() {
           {form.nombre && (
             <div className="flex items-center gap-2 p-3 bg-gray-50 dark:bg-gray-800 rounded-xl">
               <span className="text-xs text-gray-500 dark:text-gray-400">Vista previa:</span>
-              <span className="text-sm font-bold">
-                {promoIcon(form.tipo)}{" "}
+              <span className="inline-flex items-center gap-1.5 text-sm font-bold">
+                {(() => {
+                  const PIcon = promoIcon(form.tipo);
+                  return <PIcon className="h-3.5 w-3.5" strokeWidth={1.75} />;
+                })()}{" "}
                 {form.tipo === "porcentaje" && form.valor ? `${form.valor}% OFF` :
                   form.tipo === "monto_fijo" && form.valor ? `S/ ${form.valor} OFF` :
                   form.tipo === "combo" && form.valor ? `Combo S/ ${form.valor}` :

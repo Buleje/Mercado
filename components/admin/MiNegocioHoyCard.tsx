@@ -188,12 +188,14 @@ export default function MiNegocioHoyCard({ onNavigate }: MiNegocioHoyCardProps) 
           <p className="text-xs text-gray-500 dark:text-muted mt-0.5">
             {data.ventas.cantidadVentas} ventas hoy
           </p>
-          <div className="mt-2 flex gap-2 text-[10px]">
+          <div className="mt-2 flex gap-3 text-[10px] tabular-nums">
             <span className="text-gray-400">
-              🏪 {fmt(data.ventas.ventasMostrador)}
+              <span className="text-gray-500 font-bold uppercase tracking-wider mr-1">Mostrador</span>
+              {fmt(data.ventas.ventasMostrador)}
             </span>
             <span className="text-gray-400">
-              🌐 {fmt(data.ventas.ventasOnline)}
+              <span className="text-gray-500 font-bold uppercase tracking-wider mr-1">Online</span>
+              {fmt(data.ventas.ventasOnline)}
             </span>
           </div>
         </button>
@@ -281,8 +283,8 @@ export default function MiNegocioHoyCard({ onNavigate }: MiNegocioHoyCardProps) 
               <p className="text-sm font-bold text-gray-900 dark:text-white truncate">
                 {data.topProducto.nombre}
               </p>
-              <p className="text-xs text-gray-500 dark:text-muted mt-0.5">
-                ⭐ Más vendido hoy
+              <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-gray-400 mt-0.5">
+                Más vendido hoy
               </p>
               <p className="text-lg font-extrabold text-purple-600 dark:text-purple-400 mt-1">
                 {data.topProducto.cantidad} {data.topProducto.cantidad === 1 ? "unidad" : "unidades"}

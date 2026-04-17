@@ -16,19 +16,21 @@ import { cn } from "@/lib/utils";
 import { m, AnimatePresence } from "framer-motion";
 import type { MarketplaceStore } from "@/components/marketplace/useMarketplaceGeo";
 import type { QuickChipId } from "@/components/marketplace/QuickFilterChips";
+import { getStoreCategoryIcon } from "@/components/marketplace/_category-icons";
+import { Plane } from "lucide-react";
 
 /* ── Category config ───────────────────────────────────────────────────────── */
 
 export const CATEGORIES = [
-  { id: "todos", label: "Todos", emoji: "🏪" },
-  { id: "bodega", label: "Bodegas", emoji: "🛒" },
-  { id: "minimarket", label: "Minimarkets", emoji: "🏬" },
-  { id: "fruteria", label: "Fruterías", emoji: "🍎" },
-  { id: "carniceria", label: "Carnicerías", emoji: "🥩" },
-  { id: "panaderia", label: "Panaderías", emoji: "🍞" },
-  { id: "licoreria", label: "Licorerías", emoji: "🍷" },
-  { id: "farmacia", label: "Farmacias", emoji: "💊" },
-  { id: "restaurante", label: "Restaurantes", emoji: "🍽️" },
+  { id: "todos", label: "Todos" },
+  { id: "bodega", label: "Bodegas" },
+  { id: "minimarket", label: "Minimarkets" },
+  { id: "fruteria", label: "Fruterías" },
+  { id: "carniceria", label: "Carnicerías" },
+  { id: "panaderia", label: "Panaderías" },
+  { id: "licoreria", label: "Licorerías" },
+  { id: "farmacia", label: "Farmacias" },
+  { id: "restaurante", label: "Restaurantes" },
 ];
 
 /* ── Zones ─────────────────────────────────────────────────────────────────── */
@@ -121,14 +123,21 @@ function StoreCard({ store, index }: { store: MarketplaceStore; index: number })
           )}
 
           {/* Category badge */}
-          <span className="absolute top-3 left-3 inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-white/90 dark:bg-card/90 backdrop-blur-sm text-xs font-bold text-gray-700 dark:text-foreground shadow-sm">
-            {categoryMeta.emoji} {categoryMeta.label}
-          </span>
+          {(() => {
+            const CatIcon = getStoreCategoryIcon(categoryMeta.id);
+            return (
+              <span className="absolute top-3 left-3 inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-white/95 dark:bg-gray-950/95 backdrop-blur-sm border border-gray-200 dark:border-gray-800 text-[11px] font-bold text-gray-700 dark:text-gray-200">
+                <CatIcon className="h-3 w-3" strokeWidth={1.75} aria-hidden="true" />
+                {categoryMeta.label}
+              </span>
+            );
+          })()}
 
           {/* Vacation badge */}
           {store.vacationMode && (
-            <span className="absolute bottom-3 left-3 inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-amber-100/95 dark:bg-amber-900/80 backdrop-blur-sm text-xs font-bold text-amber-700 dark:text-amber-300 shadow-sm">
-              🏖️ De vacaciones
+            <span className="absolute bottom-3 left-3 inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-white/95 dark:bg-gray-950/95 backdrop-blur-sm border border-amber-300 dark:border-amber-700 text-[11px] font-bold text-amber-700 dark:text-amber-300">
+              <Plane className="h-3 w-3" strokeWidth={1.75} />
+              De vacaciones
             </span>
           )}
 

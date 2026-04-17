@@ -3,9 +3,11 @@
 import { useState, useCallback } from "react";
 import Link from "next/link";
 import dynamic from "next/dynamic";
-import { Search, ChefHat, Menu, X } from "lucide-react";
+import { Search, ChefHat, Menu, X, Heart } from "lucide-react";
 import { CartBadge } from "@/components/marketplace/MarketplaceCart";
 import MarketplaceCart from "@/components/marketplace/MarketplaceCart";
+import ThemeToggle from "@/components/ThemeToggle";
+import { useWishlist } from "@/hooks/use-wishlist";
 import { useRouter } from "next/navigation";
 import { AuthModal, useAuthModal } from "@/components/auth/AuthModal";
 
@@ -21,6 +23,7 @@ export default function MarketplaceNavbar() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const router = useRouter();
   const { authModalOpen, openAuthModal, closeAuthModal } = useAuthModal();
+  const { count: wishlistCount } = useWishlist();
 
   const handleOpenCart = useCallback(() => setCartOpen(true), []);
   const handleCloseCart = useCallback(() => setCartOpen(false), []);
@@ -98,7 +101,20 @@ export default function MarketplaceNavbar() {
                 <ChefHat className="h-3.5 w-3.5" aria-hidden="true" />
                 Recetas
               </Link>
+              <Link
+                href="/marketplace/favoritos"
+                aria-label={`Mis favoritos (${wishlistCount})`}
+                className="relative rounded-lg p-2 text-gray-600 dark:text-gray-400 hover:text-rose-500 dark:hover:text-rose-400 transition-colors"
+              >
+                <Heart className={wishlistCount > 0 ? "h-5 w-5 fill-current text-rose-500" : "h-5 w-5"} aria-hidden="true" />
+                {wishlistCount > 0 && (
+                  <span className="absolute -top-0.5 -right-0.5 h-4 min-w-4 px-1 rounded-full bg-rose-500 text-white text-[10px] font-extrabold flex items-center justify-center">
+                    {wishlistCount > 99 ? "99+" : wishlistCount}
+                  </span>
+                )}
+              </Link>
               <CartBadge onClick={handleOpenCart} />
+              <ThemeToggle className="ml-1" />
               <Link
                 href="/marketplace/negocios"
                 className="rounded-lg px-3 py-1.5 text-sm font-semibold text-gray-600 dark:text-gray-400 transition-colors hover:text-gray-900 dark:hover:text-white"
@@ -119,8 +135,9 @@ export default function MarketplaceNavbar() {
               </button>
             </div>
 
-            {/* Mobile: cart + hamburger */}
+            {/* Mobile: cart + theme + hamburger */}
             <div className="flex md:hidden items-center gap-1">
+              <ThemeToggle />
               <CartBadge onClick={handleOpenCart} />
               <button
                 onClick={() => setMobileMenuOpen(!mobileMenuOpen)}

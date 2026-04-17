@@ -8,8 +8,10 @@ import {
   Loader2,
   ChevronDown,
   Check,
+  DollarSign,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { getProductCategoryIcon } from "@/components/marketplace/_category-icons";
 
 /* ── Tipos públicos ─────────────────────────────────────────────────────────── */
 
@@ -39,12 +41,12 @@ export interface MarketplaceFiltersProps {
 /* ── Constantes ─────────────────────────────────────────────────────────────── */
 
 const PRODUCT_CATEGORIES = [
-  { id: null,        label: "Todos", emoji: "🔥" },
-  { id: "abarrotes", label: "Abarrotes", emoji: "🛒" },
-  { id: "bebidas",   label: "Bebidas", emoji: "🥤" },
-  { id: "limpieza",  label: "Limpieza", emoji: "🧹" },
-  { id: "frescos",   label: "Frescos", emoji: "🥬" },
-  { id: "otros",     label: "Otros", emoji: "📦" },
+  { id: null,        label: "Todos", key: "todos" },
+  { id: "abarrotes", label: "Abarrotes", key: "abarrotes" },
+  { id: "bebidas",   label: "Bebidas", key: "bebidas" },
+  { id: "limpieza",  label: "Limpieza", key: "limpieza" },
+  { id: "frescos",   label: "Frescos", key: "frescos" },
+  { id: "otros",     label: "Otros", key: "otros" },
 ] as const;
 
 const SORT_OPTIONS: { value: SortBy; label: string; short: string }[] = [
@@ -265,13 +267,17 @@ function FiltersDrawer({
                   onClick={() => onChange({ productCategory: cat.id })}
                   aria-pressed={filters.productCategory === cat.id}
                   className={cn(
-                    "rounded-full px-3 py-1.5 text-sm font-semibold transition-colors",
+                    "inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-sm font-semibold transition-colors",
                     filters.productCategory === cat.id
-                      ? "bg-primary text-white shadow-sm"
-                      : "border border-gray-200 bg-white text-gray-600 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300"
+                      ? "bg-gray-900 dark:bg-white text-white dark:text-gray-900"
+                      : "border border-gray-200 bg-white text-gray-600 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300 hover:border-gray-400"
                   )}
                 >
-                  <span aria-hidden="true">{cat.emoji}</span> {cat.label}
+                  {(() => {
+                    const CatIcon = getProductCategoryIcon(cat.key);
+                    return <CatIcon className="h-3.5 w-3.5" strokeWidth={1.75} aria-hidden="true" />;
+                  })()}
+                  {cat.label}
                 </button>
               ))}
             </div>
@@ -411,13 +417,16 @@ export default function MarketplaceFilters(props: MarketplaceFiltersProps) {
               onClick={() => onChange({ productCategory: cat.id })}
               aria-pressed={filters.productCategory === cat.id}
               className={cn(
-                "inline-flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap border transition-all shrink-0",
+                "inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap border transition-all shrink-0",
                 filters.productCategory === cat.id
-                  ? "bg-primary text-white border-primary shadow-sm"
-                  : "bg-white dark:bg-gray-900 text-gray-600 dark:text-gray-300 border-gray-200 dark:border-gray-700 hover:border-primary/40 hover:text-primary"
+                  ? "bg-gray-900 dark:bg-white text-white dark:text-gray-900 border-gray-900 dark:border-white"
+                  : "bg-white dark:bg-gray-900 text-gray-600 dark:text-gray-300 border-gray-200 dark:border-gray-700 hover:border-gray-400"
               )}
             >
-              <span className="text-sm" aria-hidden="true">{cat.emoji}</span>
+              {(() => {
+                const CatIcon = getProductCategoryIcon(cat.key);
+                return <CatIcon className="h-3.5 w-3.5" strokeWidth={1.75} aria-hidden="true" />;
+              })()}
               {cat.label}
             </button>
           ))}
@@ -483,7 +492,8 @@ export default function MarketplaceFilters(props: MarketplaceFiltersProps) {
                 : "bg-white dark:bg-gray-900 text-gray-600 dark:text-gray-300 border-gray-200 dark:border-gray-700 hover:border-primary/40"
             )}
           >
-            <span aria-hidden="true">💰</span> {priceActive ? `S/${filters.minPrice} – S/${filters.maxPrice >= MAX_PRICE_LIMIT ? "500+" : filters.maxPrice}` : "Precio"}
+            <DollarSign className="h-3.5 w-3.5" strokeWidth={1.75} aria-hidden="true" />
+            {priceActive ? `S/${filters.minPrice} – S/${filters.maxPrice >= MAX_PRICE_LIMIT ? "500+" : filters.maxPrice}` : "Precio"}
             <ChevronDown className={cn("h-3 w-3 transition-transform", priceOpen && "rotate-180")} aria-hidden="true" />
           </button>
           <FilterDropdown open={priceOpen} onClose={handleClosePriceDropdown}>

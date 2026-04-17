@@ -11,11 +11,13 @@ import {
   Star,
   GitCompareArrows,
   Check,
+  Eye,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useCartWithUndo } from "@/hooks/use-cart-with-undo";
 import { useHoverPrefetch } from "@/hooks/use-hover-prefetch";
 import { useCompare } from "@/contexts/compare-context";
+import { QuickViewModal } from "@/components/customer/journey";
 
 /* ── Tipos públicos ─────────────────────────────────────────────────────────── */
 
@@ -160,6 +162,7 @@ export default function UnifiedProductCard({
   const { add: addToCompare, remove: removeFromCompare, has: isInCompare } = useCompare();
   const [justAdded, setJustAdded] = useState(false);
   const [compareLimitMsg, setCompareLimitMsg] = useState(false);
+  const [quickViewOpen, setQuickViewOpen] = useState(false);
   const countdown = useCountdown(variant === "flash" ? endsAt : undefined);
 
   const productHref =
@@ -227,23 +230,38 @@ export default function UnifiedProductCard({
       />
 
       {/* ── Imagen ── */}
-      <Link href={productHref} className="block">
-        <div className="relative aspect-square overflow-hidden rounded-t-2xl bg-gray-50 dark:bg-surface">
-          {product.image ? (
-            <Image
-              src={product.image}
-              alt={product.name}
-              fill
-              className="object-cover transition-transform duration-300 group-hover:scale-105"
-              sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, (max-width: 1280px) 25vw, 20vw"
-            />
-          ) : (
-            <div className="flex h-full w-full items-center justify-center">
-              <Package className="h-10 w-10 text-gray-200 dark:text-gray-700" aria-hidden="true" />
-            </div>
-          )}
-        </div>
-      </Link>
+      <div className="relative">
+        <Link href={productHref} className="block">
+          <div className="relative aspect-square overflow-hidden rounded-t-2xl bg-gray-50 dark:bg-surface">
+            {product.image ? (
+              <Image
+                src={product.image}
+                alt={product.name}
+                fill
+                className="object-cover transition-transform duration-300 group-hover:scale-105"
+                sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, (max-width: 1280px) 25vw, 20vw"
+              />
+            ) : (
+              <div className="flex h-full w-full items-center justify-center">
+                <Package className="h-10 w-10 text-gray-200 dark:text-gray-700" aria-hidden="true" />
+              </div>
+            )}
+          </div>
+        </Link>
+        {/* Quick view trigger — visible en hover desktop, tap-tap mobile */}
+        <button
+          type="button"
+          onClick={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            setQuickViewOpen(true);
+          }}
+          className="absolute top-2 right-2 z-10 inline-flex h-8 w-8 items-center justify-center rounded-full bg-white/95 dark:bg-card/95 backdrop-blur-sm border border-gray-200 dark:border-card-border opacity-0 group-hover:opacity-100 hover:bg-white dark:hover:bg-card transition-opacity shadow-sm"
+          aria-label={`Vista rápida de ${product.name}`}
+        >
+          <Eye className="h-3.5 w-3.5 text-gray-700 dark:text-gray-200" strokeWidth={1.75} aria-hidden />
+        </button>
+      </div>
 
       {/* ── Contenido ── */}
       <div className="flex flex-1 flex-col gap-1.5 p-3">
@@ -354,6 +372,33 @@ export default function UnifiedProductCard({
           </p>
         )}
       </div>
+
+      {/* Quick view modal — monta on-demand al abrir */}
+      {quickViewOpen && (
+        <QuickViewModal
+          open={quickViewOpen}
+          onOpenChange={setQuickViewOpen}
+          product={{
+            id: product.id,
+            name: product.name,
+            price: product.price,
+            originalPrice: product.originalPrice,
+            image: product.image ?? "",
+            category: product.category,
+            unit: product.unit ?? undefined,
+            stock: product.stock,
+            badges: variant === "flash" && product.discount
+              ? [{ label: `-${product.discount}% OFF`, variant: "accent" as const }]
+              : variant === "liquidation"
+                ? [{ label: "Liquidación", variant: "warning" as const }]
+                : undefined,
+          }}
+          storeName={product.storeName}
+          onAddToCart={async (qty) => {
+            for (let i = 0; i < qty; i++) handleAdd();
+          }}
+        />
+      )}
     </motion.div>
   );
 }

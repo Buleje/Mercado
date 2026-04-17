@@ -5,6 +5,8 @@ import {
   DollarSign, Calendar, AlertTriangle,
   CheckCircle2, TrendingUp, Shield, MessageCircle,
   ChevronLeft, ChevronRight, Search, Plus, Clock, XCircle, Ban,
+  UtensilsCrossed, Home, Package, User,
+  type LucideIcon,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import StatusBadge from "@/components/admin/shared/StatusBadge";
@@ -226,11 +228,11 @@ export default function FiadoStats({ fiados, loading, totalSaldo, tendenciaMoros
       {/* Mejora QW-11g: Fiados agrupados por zona/tipo */}
       {!loading && fiados.length > 0 && (() => {
         // Agrupar por prefijo del nombre (zona aproximada)
-        const TAG_MAP: Record<string, { emoji: string; color: string; bg: string }> = {
-          restaurante: { emoji: "\uD83C\uDF7D\uFE0F", color: "text-orange-700", bg: "bg-orange-100" },
-          vecino: { emoji: "\uD83C\uDFE0", color: "text-emerald-700", bg: "bg-emerald-100" },
-          mayorista: { emoji: "\uD83D\uDCE6", color: "text-purple-700", bg: "bg-purple-100" },
-          otro: { emoji: "\uD83D\uDC64", color: "text-gray-700", bg: "bg-gray-100" },
+        const TAG_MAP: Record<string, { Icon: LucideIcon; color: string; bg: string }> = {
+          restaurante: { Icon: UtensilsCrossed, color: "text-orange-700", bg: "bg-orange-100" },
+          vecino: { Icon: Home, color: "text-emerald-700", bg: "bg-emerald-100" },
+          mayorista: { Icon: Package, color: "text-purple-700", bg: "bg-purple-100" },
+          otro: { Icon: User, color: "text-gray-700", bg: "bg-gray-100" },
         };
         // Agrupar activos por etiqueta del customerName (detectar palabras clave)
         const activos = fiados.filter(f => f.status === "ACTIVO" || f.status === "VENCIDO");
@@ -253,7 +255,8 @@ export default function FiadoStats({ fiados, loading, totalSaldo, tendenciaMoros
               return (
                 <button key={tag} onClick={() => setSearch(tag === "vecino" ? "" : tag.slice(0, 5))}
                   className={cn("inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold border transition-colors hover:opacity-80", meta.bg, meta.color)}>
-                  {meta.emoji} {tag.charAt(0).toUpperCase() + tag.slice(1)}: {formatCurrency(data.saldo)} ({data.count})
+                  <meta.Icon className="h-3.5 w-3.5" strokeWidth={1.75} />
+                  {tag.charAt(0).toUpperCase() + tag.slice(1)}: {formatCurrency(data.saldo)} ({data.count})
                 </button>
               );
             })}

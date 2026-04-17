@@ -88,7 +88,7 @@ export default function AdminCommandPalette({ items }: AdminCommandPaletteProps)
             label: p.name,
             subtitle: `S/ ${p.price.toFixed(2)}${p.category ? ` · ${p.category}` : ""}`,
             category: "Producto",
-            icon: "📦",
+            iconComponent: Package,
             onSelect: () => {
               window.dispatchEvent(new CustomEvent("admin:navigate", { detail: { tab: "productos" } }));
             },
@@ -103,7 +103,7 @@ export default function AdminCommandPalette({ items }: AdminCommandPaletteProps)
             label: c.name,
             subtitle: c.phone ?? c.location ?? "",
             category: "Cliente",
-            icon: "👤",
+            iconComponent: Users,
             onSelect: () => {
               window.dispatchEvent(new CustomEvent("admin:navigate", { detail: { tab: "clientes" } }));
             },

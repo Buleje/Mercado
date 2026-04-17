@@ -15,6 +15,10 @@ const nextConfig: NextConfig = {
   // See docs/adr/008-typescript-strict-gate.md.
   typescript: { ignoreBuildErrors: true },
 
+  // Ocultar el boton flotante "compiling" / dev indicators en desarrollo.
+  // Bloqueaba la navegacion al superponerse sobre la UI en pantallas pequenas.
+  devIndicators: false,
+
   // ── Cache Components (Next.js 16) ─────────────────────────────────────────
   // Habilita Partial Prerendering (PPR) + directiva `'use cache'` + cacheLife +
   // cacheTag + updateTag/revalidateTag. Reemplaza al viejo `experimental.ppr`.

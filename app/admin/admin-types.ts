@@ -156,22 +156,21 @@ export const DEMO_DATA_MODULES: Partial<Record<Tab, { label: string; api?: strin
   "inventario": { label: "24 productos de ejemplo cargados al inicio", api: "/api/admin/demo-products" },
 };
 
-// Rich metadata for every module: emoji, priority, description and a helpful tip
-export const MODULE_INFO: Partial<Record<Tab, { emoji: string; priority: "core" | "high" | "medium" | "low"; desc: string; tip: string }>> = {
-  "asistente-ia":  { emoji: "\u{1F9E0}", priority: "core",   desc: "Dashboard IA, chat con asistente y centro de alertas del negocio.",     tip: "Empieza aqu\u00ED cada ma\u00F1ana para tener el pulso del negocio." },
-  // ventas-caja removido — funcionalidad cubierta por pedidos + analytics-pro
-  "inventario":    { emoji: "\u{1F4E6}", priority: "core",   desc: "Stock, Kardex, vencimientos, mermas y alertas de inventario.",           tip: "Control completo del inventario desde una sola vista." },
-  "productos":     { emoji: "\u{1F3EA}", priority: "high",   desc: "Cat\u00E1logo, categor\u00EDas, ofertas, cupones e historial de precios.",         tip: "Gestiona tu cat\u00E1logo y optimiza precios." },
-  "compras":       { emoji: "\u{1F4CB}", priority: "high",   desc: "Pedidos a proveedor, directorio de proveedores y recepci\u00F3n.",            tip: "Flujo completo de compras desde la cotizaci\u00F3n hasta la recepci\u00F3n." },
-  "plata":         { emoji: "\u{1F4B5}", priority: "high",   desc: "Ingresos, egresos, gastos, ganancias, reportes y exportaci\u00F3n.",          tip: "Visi\u00F3n financiera completa del negocio en un solo m\u00F3dulo." },
-  "clientes":      { emoji: "\u{1F465}", priority: "high",   desc: "CRM, delivery, opiniones y programa de fidelizaci\u00F3n.",                   tip: "Conoce a tus clientes y personaliza la atenci\u00F3n." },
-  "config":        { emoji: "\u2699\uFE0F", priority: "core",   desc: "Usuarios, permisos, plan y configuraci\u00F3n de la p\u00E1gina web.",             tip: "Configura esto primero para que todo funcione correctamente." },
-  "pedidos":       { emoji: "\u{1F6D2}", priority: "core",   desc: "Gestiona pedidos recibidos, su estado, asignaci\u00F3n y entrega.",           tip: "Centraliza pedidos de WhatsApp, tienda online y mostrador." },
-  "plan":          { emoji: "\u26A1", priority: "medium", desc: "Tu plan actual, l\u00EDmites y opciones de mejora.",                          tip: "Revisa tu plan para aprovechar al m\u00E1ximo la plataforma." },
-  "fiados":        { emoji: "\u{1F4B0}", priority: "high",   desc: "Control de cr\u00E9ditos informales: registro, pagos y saldos pendientes.",  tip: "Lleva la cuenta de lo que te deben tus clientes de confianza." },
-  "turnos":        { emoji: "\u23F1\uFE0F", priority: "high",   desc: "Apertura y cierre de turnos con conteo de efectivo.",                   tip: "Control de caja por turno para saber exactamente cu\u00E1nto entr\u00F3." },
-  "recetas":       { emoji: "\u{1F373}", priority: "medium", desc: "Recetas de producci\u00F3n con ingredientes y control de lotes.",            tip: "Calcula costos de producci\u00F3n y descuenta stock autom\u00E1ticamente." },
-  "prestamos":     { emoji: "\u{1F3E6}", priority: "medium", desc: "Pr\u00E9stamos a clientes con cuotas, inter\u00E9s y tabla de amortizaci\u00F3n.",     tip: "Gestiona pr\u00E9stamos con calculadora integrada y seguimiento de pagos." },
+// Rich metadata for every module: priority, description and a helpful tip
+export const MODULE_INFO: Partial<Record<Tab, { priority: "core" | "high" | "medium" | "low"; desc: string; tip: string }>> = {
+  "asistente-ia":  { priority: "core",   desc: "Dashboard IA, chat con asistente y centro de alertas del negocio.",     tip: "Empezá acá cada mañana para tener el pulso del negocio." },
+  "inventario":    { priority: "core",   desc: "Stock, Kardex, vencimientos, mermas y alertas de inventario.",           tip: "Control completo del inventario desde una sola vista." },
+  "productos":     { priority: "high",   desc: "Catálogo, categorías, ofertas, cupones e historial de precios.",         tip: "Gestioná tu catálogo y optimizá precios." },
+  "compras":       { priority: "high",   desc: "Pedidos a proveedor, directorio de proveedores y recepción.",            tip: "Flujo completo de compras desde la cotización hasta la recepción." },
+  "plata":         { priority: "high",   desc: "Ingresos, egresos, gastos, ganancias, reportes y exportación.",          tip: "Visión financiera completa del negocio en un solo módulo." },
+  "clientes":      { priority: "high",   desc: "CRM, delivery, opiniones y programa de fidelización.",                   tip: "Conocé a tus clientes y personalizá la atención." },
+  "config":        { priority: "core",   desc: "Usuarios, permisos, plan y configuración de la página web.",             tip: "Configurá esto primero para que todo funcione correctamente." },
+  "pedidos":       { priority: "core",   desc: "Gestiona pedidos recibidos, su estado, asignación y entrega.",           tip: "Centralizá pedidos de WhatsApp, tienda online y mostrador." },
+  "plan":          { priority: "medium", desc: "Tu plan actual, límites y opciones de mejora.",                          tip: "Revisá tu plan para aprovechar al máximo la plataforma." },
+  "fiados":        { priority: "high",   desc: "Control de créditos informales: registro, pagos y saldos pendientes.",  tip: "Llevá la cuenta de lo que te deben tus clientes de confianza." },
+  "turnos":        { priority: "high",   desc: "Apertura y cierre de turnos con conteo de efectivo.",                   tip: "Control de caja por turno para saber exactamente cuánto entró." },
+  "recetas":       { priority: "medium", desc: "Recetas de producción con ingredientes y control de lotes.",            tip: "Calculá costos de producción y descontá stock automáticamente." },
+  "prestamos":     { priority: "medium", desc: "Préstamos a clientes con cuotas, interés y tabla de amortización.",     tip: "Gestioná préstamos con calculadora integrada y seguimiento de pagos." },
 };
 
 export const STATUS_LABELS: Record<OrderStatus, string> = {

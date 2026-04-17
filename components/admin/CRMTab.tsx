@@ -195,13 +195,13 @@ export default function CRMTab() {
     return counts;
   }, [customers]);
 
-  const getFreqLabel = (c: Customer): { label: string; emoji: string } => {
+  const getFreqLabel = (c: Customer): { label: string } => {
     const orders30d = c._orderCount ?? 0;
-    if (orders30d >= 20) return { label: "Diario", emoji: "\uD83D\uDCC5" };
-    if (orders30d >= 4) return { label: "Semanal", emoji: "\uD83D\uDCC6" };
-    if (orders30d >= 2) return { label: "Quincenal", emoji: "\uD83D\uDDD3" };
-    if (orders30d >= 1) return { label: "Mensual", emoji: "\uD83D\uDCCB" };
-    return { label: "Inactivo", emoji: "\uD83D\uDE34" };
+    if (orders30d >= 20) return { label: "Diario" };
+    if (orders30d >= 4) return { label: "Semanal" };
+    if (orders30d >= 2) return { label: "Quincenal" };
+    if (orders30d >= 1) return { label: "Mensual" };
+    return { label: "Inactivo" };
   };
 
   const topCustomer = useMemo(() => {

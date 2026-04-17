@@ -2,7 +2,6 @@ import type { Metadata } from "next";
 import { Suspense } from "react";
 import dynamic from "next/dynamic";
 import Link from "next/link";
-import Image from "next/image";
 import { cacheLife, cacheTag } from "next/cache";
 import {
   GeolocationPrompt,
@@ -11,6 +10,11 @@ import {
   AnimatedSearchBar,
   ReviewsCarousel,
 } from "@/components/landing/LandingClientSections";
+import HeroParallax from "@/components/landing/HeroParallax";
+import FeaturedStoresCarousel from "@/components/landing/FeaturedStoresCarousel";
+import ScrollyHowItWorks from "@/components/landing/ScrollyHowItWorks";
+import { Button, Card, SectionHeader, Kicker } from "@/components/ui-system";
+import { Store, Bike } from "lucide-react";
 
 export const metadata: Metadata = {
   title: "Buleje — Pide lo que quieras, te lo llevamos | Bodegas, Mercado y Mas",
@@ -163,129 +167,39 @@ function BulejeJsonLd() {
   );
 }
 
-// ── Hero — Rappi-style consumer discovery ──
+// ── Hero — Parallax multicapa con stats animados ──
 async function HeroSection() {
   const stats = await getMarketplaceStats();
-
   return (
-    <section className="py-16 sm:py-20 bg-white dark:bg-gray-950">
-      <div className="mx-auto max-w-5xl px-4 sm:px-6 text-center">
-        <h1 className="text-4xl sm:text-5xl lg:text-6xl font-extrabold text-gray-900 dark:text-white leading-tight">
-          Pide lo que{" "}
-          <span className="text-primary">quieras</span>,{" "}
-          te lo llevamos
-        </h1>
-        <p className="mt-6 text-lg text-gray-500 dark:text-gray-400 max-w-2xl mx-auto">
-          Bodegas, minimarkets, licorerías, farmacias y más — todo desde tu celular con delivery rápido.
-        </p>
-
-        {/* Animated search bar */}
-        <AnimatedSearchBar />
-
-        {/* Mini stats */}
-        <div className="mt-8 flex flex-wrap justify-center gap-6 text-gray-500 dark:text-gray-400 text-sm">
-          <span className="flex items-center gap-1.5">
-            <span className="font-bold text-gray-900 dark:text-white">{stats.storeCount || "10+"}
-            </span> tiendas
-          </span>
-          <span className="flex items-center gap-1.5">
-            <span className="font-bold text-gray-900 dark:text-white">{stats.productCount || "500+"}
-            </span> productos
-          </span>
-          <span className="flex items-center gap-1.5">
-            <span className="font-bold text-gray-900 dark:text-white">{stats.avgRating}</span> valoración
-          </span>
-        </div>
-
-        {/* Geolocation prompt */}
-        <div className="mt-4 flex justify-center">
-          <GeolocationPrompt />
-        </div>
-      </div>
-    </section>
+    <HeroParallax
+      storeCount={stats.storeCount}
+      productCount={stats.productCount}
+      avgRating={stats.avgRating}
+    />
   );
 }
 
-// ── Categories grid — big colorful cards (Rappi / PedidosYa style) ──
+// ── Categories grid — minimal editorial con lucide icons ──
 const CATEGORIES = [
-  { emoji: "🏪", label: "Bodegas", slug: "bodegas", color: "", desc: "Abarrotes, bebidas y más" },
-  { emoji: "🍔", label: "Restaurantes", slug: "restaurantes", color: "", desc: "Comida lista para ti" },
-  { emoji: "🍺", label: "Licorería", slug: "licoreria", color: "", desc: "Cervezas, vinos y licores" },
-  { emoji: "💊", label: "Farmacia", slug: "farmacia", color: "", desc: "Medicinas y cuidado personal" },
-  { emoji: "🥦", label: "Frutas y Verduras", slug: "frutas-verduras", color: "", desc: "Frescos del mercado" },
-  { emoji: "🍞", label: "Panadería", slug: "panaderia", color: "", desc: "Pan caliente y pasteles" },
-  { emoji: "🧹", label: "Limpieza", slug: "limpieza", color: "", desc: "Productos para tu hogar" },
-  { emoji: "🐾", label: "Mascotas", slug: "mascotas", color: "", desc: "Alimento y accesorios" },
-  { emoji: "🥩", label: "Carnicería", slug: "carniceria", color: "", desc: "Carnes frescas del día" },
-  { emoji: "🧊", label: "Congelados", slug: "congelados", color: "", desc: "Helados y comida congelada" },
-  { emoji: "🍿", label: "Snacks", slug: "snacks", color: "", desc: "Galletas, dulces y más" },
-  { emoji: "🧴", label: "Cuidado Personal", slug: "higiene", color: "", desc: "Jabones, shampoo, crema" },
+  { label: "Bodegas", slug: "bodegas", desc: "Abarrotes, bebidas y más" },
+  { label: "Restaurantes", slug: "restaurantes", desc: "Comida lista para ti" },
+  { label: "Licorería", slug: "licoreria", desc: "Cervezas, vinos y licores" },
+  { label: "Farmacia", slug: "farmacia", desc: "Medicinas y cuidado personal" },
+  { label: "Frutas y Verduras", slug: "frutas-verduras", desc: "Frescos del mercado" },
+  { label: "Panadería", slug: "panaderia", desc: "Pan caliente y pasteles" },
+  { label: "Limpieza", slug: "limpieza", desc: "Productos para tu hogar" },
+  { label: "Mascotas", slug: "mascotas", desc: "Alimento y accesorios" },
+  { label: "Carnicería", slug: "carniceria", desc: "Carnes frescas del día" },
+  { label: "Congelados", slug: "congelados", desc: "Helados y comida congelada" },
+  { label: "Snacks", slug: "snacks", desc: "Galletas, dulces y más" },
+  { label: "Cuidado Personal", slug: "higiene", desc: "Jabones, shampoo, crema" },
 ];
 
 function CategoriesGrid() {
   return <CategoriesGridClient categories={CATEGORIES} />;
 }
 
-// ── How it works — consumer-focused ──
-function HowItWorks() {
-  const steps = [
-    {
-      num: "1",
-      emoji: "🔍",
-      title: "Busca y elige",
-      desc: "Encuentra lo que necesitas por categoría o busca directamente. Miles de productos disponibles.",
-    },
-    {
-      num: "2",
-      emoji: "🛒",
-      title: "Agrega al carrito",
-      desc: "Elige productos de cualquier tienda. El carrito se organiza solo.",
-    },
-    {
-      num: "3",
-      emoji: "💳",
-      title: "Paga fácil",
-      desc: "Yape, Plin o efectivo contra entrega. Sin tarjetas, sin complicaciones.",
-    },
-    {
-      num: "4",
-      emoji: "🚚",
-      title: "Recibe en tu puerta",
-      desc: "Delivery rápido directo a tu casa. Cada tienda prepara y envía tu pedido.",
-    },
-  ];
-
-  return (
-    <section className="py-12 sm:py-16 bg-gray-50 dark:bg-gray-900/50">
-      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-        <div className="text-center mb-10">
-          <h2 className="text-2xl sm:text-3xl font-extrabold text-gray-900 dark:text-white">
-            Así de fácil funciona
-          </h2>
-        </div>
-        <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-6">
-          {steps.map((s) => (
-            <div
-              key={s.num}
-              className="bg-white dark:bg-gray-800 rounded-2xl p-6 border border-gray-200 dark:border-gray-800 hover:shadow-sm transition-all text-center"
-            >
-              <span className="text-4xl block mb-3">{s.emoji}</span>
-              <div className="inline-flex items-center justify-center h-8 w-8 rounded-full bg-primary/10 dark:bg-primary/20 text-primary dark:text-primary-light font-bold text-sm mb-2">
-                {s.num}
-              </div>
-              <h3 className="text-lg font-bold text-gray-900 dark:text-white">
-                {s.title}
-              </h3>
-              <p className="text-sm text-gray-500 dark:text-gray-400 mt-2">
-                {s.desc}
-              </p>
-            </div>
-          ))}
-        </div>
-      </div>
-    </section>
-  );
-}
+// HowItWorks fue reemplazado por <ScrollyHowItWorks /> del design system.
 
 // ── Featured Stores section (real DB data) ──
 async function FeaturedStoresSection() {
@@ -295,96 +209,27 @@ async function FeaturedStoresSection() {
   return (
     <section className="py-12 sm:py-16 bg-gray-50 dark:bg-gray-900/50">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-        <div className="flex items-center justify-between mb-8">
-          <div>
-            <h2 className="text-2xl sm:text-3xl font-extrabold text-gray-900 dark:text-white">
-              Tiendas destacadas
-            </h2>
-            <p className="mt-1 text-gray-500 dark:text-gray-400 text-sm">
-              Las mejor valoradas por nuestros clientes
-            </p>
-          </div>
-          <Link
-            href="/marketplace"
-            className="text-primary dark:text-primary-light font-semibold text-sm hover:underline hidden sm:block"
-          >
-            Ver todas →
-          </Link>
-        </div>
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4">
-          {stores.map((store) => (
+        <SectionHeader
+          eyebrow="Con mejor reputación"
+          title="Tiendas destacadas"
+          description="Las mejor valoradas por nuestros clientes esta semana."
+          size="md"
+          ruled
+          className="mb-6"
+          action={
             <Link
-              key={store.id}
-              href={`/marketplace/${store.slug}`}
-              className="group bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-800 p-4 text-center hover:shadow-md hover:-translate-y-1 transition-all"
+              href="/marketplace"
+              className="text-xs font-bold text-gray-900 dark:text-white link-underline hidden sm:inline-flex"
             >
-              <div className="relative w-16 h-16 mx-auto mb-3 rounded-xl overflow-hidden bg-gray-100 dark:bg-gray-700">
-                {store.logo ? (
-                  <Image
-                    src={store.logo}
-                    alt={store.name}
-                    fill
-                    className="object-cover"
-                    sizes="64px"
-                  />
-                ) : (
-                  <div className="w-full h-full flex items-center justify-center text-2xl">
-                    🏪
-                  </div>
-                )}
-              </div>
-              <h3 className="text-sm font-bold text-gray-900 dark:text-white truncate">
-                {store.name}
-              </h3>
-              {store.rating > 0 && (
-                <div className="flex items-center justify-center gap-1 mt-1">
-                  <span className="text-yellow-400 text-xs">★</span>
-                  <span className="text-xs font-semibold text-gray-600 dark:text-gray-300">
-                    {store.rating.toFixed(1)}
-                  </span>
-                  <span className="text-xs text-gray-400">
-                    ({store.reviewCount})
-                  </span>
-                </div>
-              )}
-              {store.zone && (
-                <p className="text-xs text-gray-400 mt-1 capitalize truncate">
-                  📍 {store.zone}
-                </p>
-              )}
-              {/* Product previews */}
-              {store.products && store.products.length > 0 && (
-                <div className="flex items-center justify-center gap-1 mt-2">
-                  {store.products.map((sp, i) => (
-                    <div
-                      key={i}
-                      className="h-7 w-7 rounded-full bg-gray-100 dark:bg-gray-700 overflow-hidden shrink-0 border-2 border-white dark:border-gray-800"
-                      style={{ marginLeft: i > 0 ? "-6px" : "0" }}
-                      title={sp.product.name}
-                    >
-                      {sp.product.image ? (
-                        <Image
-                          src={sp.product.image}
-                          alt={sp.product.name}
-                          width={28}
-                          height={28}
-                          className="h-7 w-7 object-cover"
-                        />
-                      ) : (
-                        <div className="w-full h-full flex items-center justify-center text-xs">📦</div>
-                      )}
-                    </div>
-                  ))}
-                  <span className="text-[10px] text-gray-400 ml-1 font-semibold">+</span>
-                </div>
-              )}
+              Ver todas →
             </Link>
-          ))}
-        </div>
-        <div className="text-center mt-6 sm:hidden">
+          }
+        />
+        <FeaturedStoresCarousel stores={stores} />
+        <div className="mt-6 sm:hidden text-center">
           <Link
             href="/marketplace"
-            className="text-primary dark:text-primary-light font-semibold text-sm hover:underline"
+            className="text-xs font-bold text-gray-900 dark:text-white link-underline"
           >
             Ver todas las tiendas →
           </Link>
@@ -414,89 +259,93 @@ async function ReviewsSection() {
 
 // ── Business + Driver CTA banners ──
 function PromoBanners() {
+  const banners = [
+    {
+      kicker: "Para dueños",
+      icon: Store,
+      title: "¿Tenés un negocio?",
+      desc: "Registrá tu bodega, minimarket o tienda y empezá a vender online gratis. Miles de clientes te esperan.",
+      primary: { label: "Registrar mi negocio", href: "/marketplace/apply" },
+      secondary: { label: "Ver planes", href: "/negocios" },
+    },
+    {
+      kicker: "Para repartidores",
+      icon: Bike,
+      title: "¿Querés repartir?",
+      desc: "Uníte como repartidor y generá ingresos extra entregando pedidos en tu zona. Vos elegís tu horario.",
+      primary: { label: "Quiero ser repartidor", href: "/marketplace/repartidor" },
+    },
+  ];
+
   return (
-    <section className="py-12 sm:py-16 bg-white dark:bg-gray-950">
+    <section className="py-16 sm:py-20 bg-white dark:bg-gray-950">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-        <div className="grid sm:grid-cols-2 gap-6">
-          {/* For businesses */}
-          <div className="rounded-2xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 p-8 sm:p-10">
-              <span className="text-4xl block mb-4">🏪</span>
-              <h3 className="text-2xl font-extrabold text-gray-900 dark:text-white mb-2">
-                ¿Tienes un negocio?
-              </h3>
-              <p className="text-gray-500 dark:text-gray-400 mb-6 max-w-sm">
-                Registra tu bodega, minimarket o tienda y empieza a vender online gratis. Miles de clientes te esperan.
-              </p>
-              <div className="flex flex-wrap gap-3">
-                <Link
-                  href="/marketplace/apply"
-                  className="inline-flex items-center gap-2 bg-primary text-white font-bold px-6 py-3 rounded-xl hover:bg-primary-dark transition-colors"
-                >
-                  Registrar mi negocio
-                </Link>
-                <Link
-                  href="/negocios"
-                  className="inline-flex items-center gap-2 border border-gray-300 dark:border-gray-700 text-gray-700 dark:text-gray-300 font-semibold px-6 py-3 rounded-xl hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
-                >
-                  Ver planes
-                </Link>
-              </div>
-          </div>
-          {/* For drivers */}
-          <div className="rounded-2xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 p-8 sm:p-10">
-              <span className="text-4xl block mb-4">🛵</span>
-              <h3 className="text-2xl font-extrabold text-gray-900 dark:text-white mb-2">
-                ¿Quieres repartir?
-              </h3>
-              <p className="text-gray-500 dark:text-gray-400 mb-6 max-w-sm">
-                Únete como repartidor y genera ingresos extra entregando pedidos en tu zona. Tú eliges tu horario.
-              </p>
-              <Link
-                href="/marketplace/repartidor"
-                className="inline-flex items-center gap-2 bg-primary text-white font-bold px-6 py-3 rounded-xl hover:bg-primary-dark transition-colors"
-              >
-                Quiero ser repartidor
-              </Link>
-          </div>
+        <div className="grid sm:grid-cols-2 gap-5">
+          {banners.map((b, i) => {
+            const Icon = b.icon;
+            return (
+              <Card key={i} variant="base" padding="lg" className="justify-between">
+                <div>
+                  <div className="flex items-center gap-3 mb-6">
+                    <div className="h-10 w-10 rounded-lg flex items-center justify-center bg-gray-50 dark:bg-gray-950 border border-gray-200 dark:border-gray-800 text-gray-700 dark:text-gray-200">
+                      <Icon className="h-4 w-4" strokeWidth={1.5} />
+                    </div>
+                    <Kicker>{b.kicker}</Kicker>
+                  </div>
+                  <h3 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-gray-900 dark:text-white">
+                    {b.title}
+                  </h3>
+                  <p className="mt-3 text-sm text-gray-500 dark:text-gray-400 max-w-md leading-relaxed">
+                    {b.desc}
+                  </p>
+                </div>
+                <div className="mt-8 flex flex-wrap gap-3">
+                  <Button asChild variant="primary" size="md">
+                    <Link href={b.primary.href}>{b.primary.label}</Link>
+                  </Button>
+                  {b.secondary && (
+                    <Button asChild variant="secondary" size="md">
+                      <Link href={b.secondary.href}>{b.secondary.label}</Link>
+                    </Button>
+                  )}
+                </div>
+              </Card>
+            );
+          })}
         </div>
       </div>
     </section>
   );
 }
 
-// ── Popular payment methods ──
+// ── Popular payment methods — editorial wordmark list ──
 function PaymentMethods() {
+  const methods = [
+    { name: "Yape", desc: "Transferencia al instante" },
+    { name: "Plin", desc: "Desde tu app del banco" },
+    { name: "Efectivo", desc: "Contra entrega" },
+    { name: "Tarjeta", desc: "Débito y crédito" },
+  ];
   return (
-    <section className="py-10 sm:py-14 bg-gray-50 dark:bg-gray-900/50">
-      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 text-center">
-        <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-6">
-          Paga como prefieras
-        </h3>
-        <div className="flex flex-wrap justify-center gap-6 sm:gap-10">
-          <div className="flex flex-col items-center gap-2">
-            <div className="h-14 w-14 rounded-2xl bg-gray-100 dark:bg-gray-800 flex items-center justify-center text-2xl">
-              💜
+    <section className="py-16 sm:py-20 bg-gray-50 dark:bg-gray-900/50 border-y border-gray-200 dark:border-gray-800">
+      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+        <div className="flex items-center gap-6 justify-between flex-wrap mb-8">
+          <Kicker>Formas de pago aceptadas</Kicker>
+          <span className="text-[10px] font-bold text-gray-400 tabular-nums uppercase tracking-wider">
+            4 OPCIONES
+          </span>
+        </div>
+        <div className="grid grid-cols-2 md:grid-cols-4 divide-x divide-y sm:divide-y-0 divide-gray-200 dark:divide-gray-800 border border-gray-200 dark:border-gray-800 rounded-2xl bg-white dark:bg-gray-900 overflow-hidden">
+          {methods.map((m) => (
+            <div key={m.name} className="px-6 py-6 sm:py-8">
+              <p className="text-2xl sm:text-3xl font-extrabold tracking-tight text-gray-900 dark:text-white">
+                {m.name}
+              </p>
+              <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                {m.desc}
+              </p>
             </div>
-            <span className="text-sm font-semibold text-gray-700 dark:text-gray-300">Yape</span>
-          </div>
-          <div className="flex flex-col items-center gap-2">
-            <div className="h-14 w-14 rounded-2xl bg-gray-100 dark:bg-gray-800 flex items-center justify-center text-2xl">
-              💚
-            </div>
-            <span className="text-sm font-semibold text-gray-700 dark:text-gray-300">Plin</span>
-          </div>
-          <div className="flex flex-col items-center gap-2">
-            <div className="h-14 w-14 rounded-2xl bg-gray-100 dark:bg-gray-800 flex items-center justify-center text-2xl">
-              💵
-            </div>
-            <span className="text-sm font-semibold text-gray-700 dark:text-gray-300">Efectivo</span>
-          </div>
-          <div className="flex flex-col items-center gap-2">
-            <div className="h-14 w-14 rounded-2xl bg-gray-100 dark:bg-gray-800 flex items-center justify-center text-2xl">
-              💳
-            </div>
-            <span className="text-sm font-semibold text-gray-700 dark:text-gray-300">Tarjeta</span>
-          </div>
+          ))}
         </div>
       </div>
     </section>
@@ -508,25 +357,25 @@ function FinalCTA() {
   return (
     <section className="py-14 sm:py-20 bg-gray-50 dark:bg-gray-900/50">
       <div className="max-w-4xl mx-auto px-4 text-center">
-        <h2 className="text-3xl sm:text-4xl font-extrabold text-gray-900 dark:text-white">
+        <h2 className="text-fs-h1 font-extrabold tracking-[-0.02em] text-gray-900 dark:text-white">
           Todo lo que necesitas,{" "}
-          <span className="text-primary">en un solo lugar</span>
+          <span className="text-gray-500 dark:text-gray-400">en un solo lugar</span>
         </h2>
-        <p className="mt-4 text-lg text-gray-500 dark:text-gray-400 max-w-xl mx-auto">
-          Únete a miles de personas que ya compran en Buleje. Delivery rápido, pagos fáciles y las mejores tiendas de tu zona.
+        <p className="mt-4 text-base sm:text-lg text-gray-500 dark:text-gray-400 max-w-xl mx-auto leading-relaxed">
+          Pedí a bodegas cerca tuyo. Delivery en 25 min. Pagás con Yape o efectivo al recibir.
         </p>
-        <div className="mt-8 flex flex-wrap justify-center gap-4">
+        <div className="mt-8 flex flex-wrap justify-center gap-3">
           <Link
             href="/marketplace"
-            className="inline-flex items-center gap-2 bg-primary text-white font-bold px-8 py-4 rounded-xl hover:bg-primary-dark transition-colors text-lg"
+            className="inline-flex items-center gap-2 bg-gray-900 dark:bg-white text-white dark:text-gray-900 font-bold px-6 py-3 rounded-full text-sm hover:opacity-90 transition-opacity"
           >
             Explorar Marketplace
           </Link>
           <Link
             href="/negocios"
-            className="inline-flex items-center gap-2 border border-gray-300 dark:border-gray-700 text-gray-700 dark:text-gray-300 font-semibold px-8 py-4 rounded-xl hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors text-lg"
+            className="inline-flex items-center gap-2 bg-transparent text-gray-900 dark:text-white font-bold px-6 py-3 rounded-full text-sm border border-gray-300 dark:border-gray-700 hover:border-gray-900 dark:hover:border-gray-400 transition-colors"
           >
-            Soy un negocio
+            Abrí tu tienda →
           </Link>
         </div>
       </div>
@@ -548,7 +397,7 @@ export default async function Home() {
       <Suspense fallback={<SectionSkeleton />}>
         <FeaturedStoresSection />
       </Suspense>
-      <HowItWorks />
+      <ScrollyHowItWorks />
       <Suspense fallback={<SectionSkeleton />}>
         <ReviewsSection />
       </Suspense>

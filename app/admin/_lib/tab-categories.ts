@@ -31,7 +31,6 @@ import {
   BarChart3,
   Gauge,
   Inbox,
-  Trophy,
   BotMessageSquare,
   Receipt,
   Warehouse,
@@ -40,8 +39,6 @@ import {
   ClipboardCheck,
   TimerReset,
   TrendingUp,
-  Wand2,
-  FileText,
 } from "lucide-react";
 import type { Tab } from "./tabs.types";
 
@@ -206,116 +203,98 @@ export type TabCategory = {
   tabs: Tab[];
 };
 
-// ── Sidebar modules — organized by business workflow ────────────────────────
-// Group 1: Daily operations (what you use every day)
-// Group 2: Inventory & catalog (product management)
-// Group 3: Money & clients (financial + CRM)
-// Group 4: Growth & channels (marketplace, analytics)
-// Group 5: Documents & production (back-office)
+// ── Sidebar modules v5 — reorganized by Jobs-to-Be-Done (ADR-064) ───────────
+//
+// Antes: 17 categorías planas (rompía Miller's Law 7±2).
+// Ahora: 5 hubs JTBD que agrupan los 35 tabs existentes por OUTCOME del usuario,
+// no por feature. Research: Shopify admin unified 2026, Linear UI refresh, IA Authority 2026.
+//
+// Jobs cubiertos por hub:
+//   01 Hoy     → "Ver cómo va mi negocio ahora"
+//   02 Operar  → "Hacer vender y reponer stock"
+//   03 Cobrar  → "Cobrar, facturar, ver la plata"
+//   04 Crecer  → "Traer y retener clientes"
+//   05 Conocer → "Saber qué funciona y optimizar"
+//
+// Mi Tienda + Config quedan como secundarios (dropdown o footer).
 export const BASIC_MODULES: TabCategory[] = [
+  // ── 01 · HOY ─────────────────────────────────────
+  // Overview diario + IA + metas. Lo que abre el dueño al empezar el día.
   {
-    id: "inicio",
-    label: "Inicio",
+    id: "hoy",
+    label: "Hoy",
     icon: Gauge,
-    tabs: ["vendor-dashboard"],
-  },
-  // ─── CENTRO IA ────────────────────────────────
-  {
-    id: "dashboard",
-    label: "Centro IA",
-    icon: Wand2,
-    tabs: ["ai-command", "sugerencias-ia"],
-  },
-  // ─── CHAT IA ─────────────────────────────────
-  {
-    id: "chat-ia",
-    label: "Chat IA",
-    icon: BotMessageSquare,
-    tabs: ["asistente-ia"],
-  },
-  // ─── METAS & LOGROS ──────────────────────────────
-  {
-    id: "metas",
-    label: "Metas y Logros",
-    icon: Trophy,
-    tabs: ["metas-logros"],
-  },
-  // ─── VENTAS & OPERACIONES ──────────────────────
-  {
-    id: "ventas",
-    label: "Ventas y Caja",
-    icon: Receipt,
-    tabs: ["ventas-caja", "pedidos"],
+    tabs: [
+      "vendor-dashboard",
+      "ai-command",
+      "sugerencias-ia",
+      "asistente-ia",
+      "metas-logros",
+    ],
   },
 
-  // ─── PRODUCTOS & STOCK ────────────────────────
+  // ── 02 · OPERAR ──────────────────────────────────
+  // Día a día de vender, stockear, reponer. POS + catálogo + inventario.
   {
-    id: "productos",
-    label: "Promociones y Ofertas",
-    icon: BadgePercent,
-    tabs: ["productos"],
-  },
-  {
-    id: "inventario",
-    label: "Inventario",
+    id: "operar",
+    label: "Operar",
     icon: Warehouse,
-    tabs: ["inventario"],
-  },
-  {
-    id: "compras",
-    label: "Compras",
-    icon: PackagePlus,
-    tabs: ["compras"],
+    tabs: [
+      "ventas-caja",
+      "pedidos",
+      "productos",
+      "inventario",
+      "compras",
+    ],
   },
 
-  // ─── DINERO & CLIENTES ────────────────────────
+  // ── 03 · COBRAR ──────────────────────────────────
+  // Dinero entrante + créditos + facturación SUNAT + documentos fiscales.
   {
-    id: "finanzas",
-    label: "Finanzas",
+    id: "cobrar",
+    label: "Cobrar",
     icon: Wallet,
-    tabs: ["plata", "facturacion", "forecasting"],
+    tabs: [
+      "plata",
+      "fiados",
+      "prestamos",
+      "facturacion",
+      "cotizaciones",
+      "guias-remision",
+      "notas-credito",
+      "contratos",
+    ],
   },
+
+  // ── 04 · CRECER ──────────────────────────────────
+  // CRM + marketplace + canales + comunicación con clientes.
   {
-    id: "clientes",
-    label: "Clientes y Créditos",
+    id: "crecer",
+    label: "Crecer",
     icon: Heart,
-    tabs: ["clientes", "fiados", "prestamos"],
+    tabs: [
+      "clientes",
+      "marketplace",
+      "marketplace-chat",
+      "delivery-partners",
+      "delivery-live",
+    ],
   },
 
-  // ─── CANALES & CRECIMIENTO ────────────────────
+  // ── 05 · CONOCER ─────────────────────────────────
+  // Analytics + forecast + rendimiento. El "saber" estratégico.
   {
-    id: "marketplace-ops",
-    label: "Marketplace",
-    icon: Store,
-    tabs: ["marketplace", "delivery-partners", "delivery-live"],
-  },
-  // ─── COMUNICACIÓN ────────────────────────────
-  {
-    id: "comunicacion",
-    label: "Comunicación",
-    icon: BotMessageSquare,
-    tabs: ["marketplace-chat"],
-  },
-  {
-    id: "analytics",
-    label: "Analytics",
+    id: "conocer",
+    label: "Conocer",
     icon: BarChart3,
-    tabs: ["analytics-pro"],
-  },
-
-  // ─── DOCS ─────────────────────────────────────
-  {
-    id: "documentos",
-    label: "Documentos",
-    icon: FileText,
-    tabs: ["cotizaciones", "guias-remision", "notas-credito", "contratos"],
-  },
-
-  {
-    id: "sistema",
-    label: "Sistema",
-    icon: Gauge,
-    tabs: ["support-inbox", "rendimiento", "colas", "auditoria"],
+    tabs: [
+      "analytics-pro",
+      "forecasting",
+      "rendimiento",
+      "support-inbox",
+      "colas",
+      "auditoria",
+    ],
   },
 ];
 

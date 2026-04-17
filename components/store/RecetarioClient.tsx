@@ -7,7 +7,8 @@ import { motion, AnimatePresence } from "framer-motion";
 import {
   Search, Clock, Users, ChefHat, ShoppingCart, Flame,
   X, Sparkles, ArrowRight, Star, Eye, LayoutGrid, List,
-  Send,
+  Send, Utensils, Salad, Soup, Cake, GlassWater, Zap,
+  Trophy, type LucideIcon,
 } from "lucide-react";
 import { useCart } from "@/contexts/cart-context";
 import { useToast } from "@/contexts/toast-context";
@@ -30,7 +31,6 @@ type Receta = {
   id: string;
   nombre: string;
   descripcion: string | null;
-  emoji?: string;
   tiempoMinutos?: number;
   porciones?: number;
   dificultad?: string;
@@ -46,22 +46,22 @@ type Receta = {
 };
 
 // ── Constants ──────────────────────────────────────────────
-const CATEGORIAS = [
-  { id: "todas", label: "Todas", emoji: "\uD83C\uDF7D\uFE0F" },
-  { id: "entradas", label: "Entradas", emoji: "\uD83E\uDD57" },
-  { id: "platos-de-fondo", label: "Platos de fondo", emoji: "\uD83C\uDF5B" },
-  { id: "sopas", label: "Sopas", emoji: "\uD83C\uDF72" },
-  { id: "postres", label: "Postres", emoji: "\uD83C\uDF70" },
-  { id: "bebidas", label: "Bebidas", emoji: "\uD83E\uDD64" },
-  { id: "rapidas", label: "Rapidas", emoji: "\u26A1" },
+const CATEGORIAS: { id: string; label: string; Icon: LucideIcon }[] = [
+  { id: "todas", label: "Todas", Icon: Utensils },
+  { id: "entradas", label: "Entradas", Icon: Salad },
+  { id: "platos-de-fondo", label: "Platos de fondo", Icon: ChefHat },
+  { id: "sopas", label: "Sopas", Icon: Soup },
+  { id: "postres", label: "Postres", Icon: Cake },
+  { id: "bebidas", label: "Bebidas", Icon: GlassWater },
+  { id: "rapidas", label: "Rápidas", Icon: Zap },
 ];
 
 import { CATEGORIA_GRADIENTS } from "@/lib/recipe-gradients";
 
-const DIFICULTAD_LABELS: Record<string, { label: string; icon: string }> = {
-  "Facil": { label: "Facil", icon: "\u2B50" },
-  "Media": { label: "Media", icon: "\uD83D\uDD25" },
-  "Dificil": { label: "Dificil", icon: "\uD83C\uDFC6" },
+const DIFICULTAD_LABELS: Record<string, { label: string; Icon: LucideIcon }> = {
+  "Facil": { label: "Fácil", Icon: Star },
+  "Media": { label: "Media", Icon: Flame },
+  "Dificil": { label: "Difícil", Icon: Trophy },
 };
 
 // ── Skeleton ───────────────────────────────────────────────
@@ -146,10 +146,10 @@ function RecetaCard({
               </div>
             )}
 
-            {/* Emoji badge in corner (if exists) */}
-            {receta.emoji && (
-              <span className="absolute top-3 left-3 text-2xl drop-shadow-lg select-none bg-black/20 backdrop-blur-sm rounded-full w-10 h-10 flex items-center justify-center">
-                {receta.emoji}
+            {/* Category kicker corner (editorial, sin emoji) */}
+            {receta.categoria && (
+              <span className="absolute top-3 left-3 text-[10px] font-bold uppercase tracking-[0.2em] text-white mix-blend-difference">
+                {receta.categoria}
               </span>
             )}
 
@@ -159,20 +159,23 @@ function RecetaCard({
             {/* Floating badges on image */}
             <div className="absolute bottom-3 left-3 flex items-center gap-2 flex-wrap">
               {receta.tiempoMinutos && (
-                <span className="flex items-center gap-1 px-2.5 py-1 rounded-full bg-black/30 backdrop-blur-md text-white text-xs font-bold">
-                  <Clock className="h-3 w-3" /> {receta.tiempoMinutos} min
+                <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-white/95 backdrop-blur border border-gray-200 text-gray-800 text-[11px] font-bold tabular-nums">
+                  <Clock className="h-3 w-3" strokeWidth={1.75} /> {receta.tiempoMinutos} min
                 </span>
               )}
               {receta.porciones && (
-                <span className="flex items-center gap-1 px-2.5 py-1 rounded-full bg-black/30 backdrop-blur-md text-white text-xs font-bold">
-                  <Users className="h-3 w-3" /> {receta.porciones}
+                <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-white/95 backdrop-blur border border-gray-200 text-gray-800 text-[11px] font-bold tabular-nums">
+                  <Users className="h-3 w-3" strokeWidth={1.75} /> {receta.porciones}
                 </span>
               )}
-              {dif && (
-                <span className="flex items-center gap-1 px-2.5 py-1 rounded-full bg-black/30 backdrop-blur-md text-white text-xs font-bold">
-                  {dif.icon} {dif.label}
-                </span>
-              )}
+              {dif && (() => {
+                const DIcon = dif.Icon;
+                return (
+                  <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-white/95 backdrop-blur border border-gray-200 text-gray-800 text-[11px] font-bold">
+                    <DIcon className="h-3 w-3" strokeWidth={1.75} /> {dif.label}
+                  </span>
+                );
+              })()}
             </div>
 
             {/* Video badge */}
@@ -241,12 +244,12 @@ function RecetaCard({
 // ── Category Highlight Card ────────────────────────────────
 function CategoriaCard({
   nombre,
-  emoji,
+  Icon,
   count,
   onClick,
 }: {
   nombre: string;
-  emoji: string;
+  Icon: LucideIcon;
   count: number;
   colors?: { from: string; to: string };
   onClick: () => void;
@@ -254,16 +257,22 @@ function CategoriaCard({
   return (
     <button
       onClick={onClick}
-      className="flex-shrink-0 w-40 sm:w-48 rounded-2xl overflow-hidden border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 shadow-sm hover:shadow-xl transition-all duration-300 group active:scale-[0.97]"
+      className="shrink-0 w-40 sm:w-48 rounded-xl overflow-hidden border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 hover:border-gray-900 dark:hover:border-gray-500 transition-all duration-300 group active:scale-[0.98] text-left"
     >
-      <div className="h-28 flex items-center justify-center relative bg-gray-50 dark:bg-gray-800">
-        <span className="text-5xl group-hover:scale-110 transition-transform duration-300 drop-shadow-lg">
-          {emoji}
-        </span>
+      <div className="h-28 flex items-center justify-center bg-gray-50 dark:bg-gray-950 border-b border-gray-100 dark:border-gray-800 text-gray-700 dark:text-gray-200">
+        <Icon
+          className="h-10 w-10 group-hover:scale-110 transition-transform duration-300"
+          strokeWidth={1.25}
+          aria-hidden="true"
+        />
       </div>
-      <div className="px-4 py-3 text-left">
-        <p className="font-bold text-sm text-gray-900 dark:text-white">{nombre}</p>
-        <p className="text-xs text-gray-500 dark:text-gray-400">{count} receta{count !== 1 ? "s" : ""}</p>
+      <div className="px-4 py-3.5">
+        <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-gray-400 tabular-nums">
+          {count} receta{count !== 1 ? "s" : ""}
+        </p>
+        <p className="mt-1 font-extrabold text-sm text-gray-900 dark:text-white tracking-tight">
+          {nombre}
+        </p>
       </div>
     </button>
   );
@@ -453,21 +462,24 @@ export default function RecetarioClient() {
           <div className="flex items-center justify-between gap-4">
             {/* Category pills */}
             <div className="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-hide flex-1">
-              {CATEGORIAS.map(cat => (
+              {CATEGORIAS.map(cat => {
+                const CIcon = cat.Icon;
+                return (
                 <button
                   key={cat.id}
                   onClick={() => setCatFilter(cat.id)}
                   className={cn(
-                    "px-4 py-2 rounded-full text-sm font-semibold whitespace-nowrap transition-all duration-200 flex items-center gap-1.5",
+                    "px-4 py-2 rounded-full text-sm font-bold whitespace-nowrap transition-all duration-200 flex items-center gap-1.5 border",
                     catFilter === cat.id
-                      ? "bg-primary text-white shadow-lg shadow-primary/20 scale-105"
-                      : "bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700"
+                      ? "bg-gray-900 dark:bg-white text-white dark:text-gray-900 border-gray-900 dark:border-white"
+                      : "bg-white dark:bg-gray-900 text-gray-600 dark:text-gray-300 border-gray-200 dark:border-gray-800 hover:border-gray-400"
                   )}
                 >
-                  <span className="text-sm">{cat.emoji}</span>
+                  <CIcon className="h-3.5 w-3.5" strokeWidth={1.75} />
                   {cat.label}
                 </button>
-              ))}
+                );
+              })}
             </div>
 
             {/* View toggle + count */}
@@ -591,20 +603,24 @@ export default function RecetarioClient() {
       {!loading && recetas.length > 0 && (
         <section className="border-t border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900">
           <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-12">
-            <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-6 flex items-center gap-2">
-              <ChefHat className="h-6 w-6 text-gray-500" />
-              Categorias destacadas
-            </h2>
+            <div className="mb-6">
+              <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-gray-400">
+                Explorá
+              </p>
+              <h2 className="mt-1 text-2xl sm:text-3xl font-extrabold tracking-tight text-gray-900 dark:text-white">
+                Categorías destacadas
+              </h2>
+            </div>
             <div className="flex items-stretch gap-4 overflow-x-auto pb-4 scrollbar-hide">
               {Object.entries(categoryCounts).map(([cat, count]) => {
                 const colors = CATEGORIA_GRADIENTS[cat] || { from: "#e5e7eb", to: "#d1d5db" };
                 const catEntry = CATEGORIAS.find(c => c.label === cat);
-                const emoji = catEntry?.emoji || "\uD83C\uDF7D\uFE0F";
+                const CIcon = catEntry?.Icon ?? Utensils;
                 return (
                   <CategoriaCard
                     key={cat}
                     nombre={cat}
-                    emoji={emoji}
+                    Icon={CIcon}
                     count={count}
                     colors={colors}
                     onClick={() => {
@@ -715,8 +731,8 @@ function RecetaListItem({
         {/* Content */}
         <div className="flex-1 py-4 pr-4 flex flex-col justify-center min-w-0">
           <Link href={`/recetas/${receta.id}`}>
-            <h3 className="font-bold text-gray-900 dark:text-white group-hover:text-primary dark:group-hover:text-primary-light transition-colors truncate">
-              {receta.emoji} {receta.nombre}
+            <h3 className="font-extrabold tracking-tight text-gray-900 dark:text-white group-hover:text-primary dark:group-hover:text-primary-light transition-colors truncate">
+              {receta.nombre}
             </h3>
           </Link>
           {receta.descripcion && (

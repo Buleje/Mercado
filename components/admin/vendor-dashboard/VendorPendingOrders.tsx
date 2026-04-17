@@ -1,7 +1,7 @@
 "use client";
 
 import type { VendorOrder } from "./vendor-dashboard.types";
-import { Package, Clock } from "lucide-react";
+import { Package, Clock, CheckCircle2 } from "lucide-react";
 import Link from "next/link";
 
 type Props = {
@@ -39,9 +39,14 @@ export function VendorPendingOrders({ orders }: Props) {
           Pedidos sin atender
         </h3>
         <div className="text-center py-8">
-          <span className="text-3xl">✅</span>
-          <p className="mt-2 text-sm font-medium text-gray-600 dark:text-muted">
-            Estás al día. No hay pedidos sin atender.
+          <div className="inline-flex h-10 w-10 items-center justify-center rounded-xl border border-gray-200 dark:border-gray-800 bg-gray-50 dark:bg-gray-950 text-emerald-600 dark:text-emerald-400 mb-2">
+            <CheckCircle2 className="h-5 w-5" strokeWidth={1.5} />
+          </div>
+          <p className="mt-2 text-sm font-semibold text-gray-700 dark:text-gray-200">
+            Estás al día
+          </p>
+          <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
+            No hay pedidos sin atender
           </p>
         </div>
       </div>

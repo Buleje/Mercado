@@ -21,6 +21,9 @@ const CartSidebar = dynamic(() => import("@/components/CartSidebar"));
 const MobileBottomNav = dynamic(() => import("@/components/MobileBottomNav"));
 const QuickReorderModal = dynamic(() => import("@/components/QuickReorderModal"));
 
+// ADR-065 Ola F — ilustraciones custom
+import { PedidoLlegando, LupaConfundida, IllustrationCard } from "@/components/ui-system/illustrations";
+
 // ── Types ──────────────────────────────────────────────────────────
 type OrderItem = {
   productId?: number; name: string; price?: number;
@@ -243,12 +246,12 @@ function OrderCard({ order: o, onReorder, onCancel }: { order: Order; onReorder?
             <button
               onClick={() => {
                 const lines = [
-                  `🧾 Pedido #${o.id.slice(-6).toUpperCase()}`,
-                  `📅 ${new Date(o.createdAt).toLocaleDateString("es-PE", { day: "numeric", month: "long" })}`,
+                  `Pedido #${o.id.slice(-6).toUpperCase()}`,
+                  `${new Date(o.createdAt).toLocaleDateString("es-PE", { day: "numeric", month: "long" })}`,
                   "",
-                  ...items.map(i => `• ${i.quantity}${i.unit} ${i.name}`),
+                  ...items.map(i => `- ${i.quantity}${i.unit} ${i.name}`),
                   "",
-                  `💰 Total: S/${(o.total ?? 0).toFixed(2)}`,
+                  `Total: S/${(o.total ?? 0).toFixed(2)}`,
                 ];
                 const text = lines.join("\n");
                 if (navigator.share) {
@@ -315,28 +318,30 @@ function OrderSkeleton() {
 // ── Empty State ────────────────────────────────────────────────────
 function EmptyState({ isFiltered }: { isFiltered: boolean }) {
   return (
-    <div className="text-center py-16 px-6">
-      <div className="inline-flex items-center justify-center w-20 h-20 rounded-2xl bg-primary/10 mb-5">
-        <ShoppingBag className="h-10 w-10 text-primary/30" />
-      </div>
-      <h3 className="text-lg font-bold text-foreground mb-2">
-        {isFiltered ? "Sin resultados" : "Aún no tienes pedidos"}
-      </h3>
-      <p className="text-sm text-muted max-w-xs mx-auto mb-6">
-        {isFiltered
-          ? "No hay pedidos que coincidan con este filtro."
-          : "Realiza tu primer pedido y aparecerá aquí con todos sus detalles."}
-      </p>
-      {!isFiltered && (
-        <Link
-          href="/#productos"
-          className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-primary text-white text-sm font-bold hover:bg-primary-dark transition-colors shadow-md shadow-primary/20"
-        >
-          <ShoppingCart className="h-4 w-4" />
-          Ir a comprar
-        </Link>
-      )}
-    </div>
+    <IllustrationCard
+      size="md"
+      illustration={
+        isFiltered ? <LupaConfundida size={140} /> : <PedidoLlegando size={160} />
+      }
+      kicker={isFiltered ? "Sin resultados" : "Mis pedidos"}
+      title={isFiltered ? "Nada coincide con este filtro" : "Hacé tu primer pedido"}
+      description={
+        isFiltered
+          ? "Probá cambiando el filtro para ver otros pedidos."
+          : "Realizá tu primer pedido y verás acá el historial con estado y tiempo de entrega."
+      }
+      primaryAction={
+        !isFiltered && (
+          <Link
+            href="/tienda"
+            className="inline-flex items-center gap-2 rounded-full bg-[var(--text-primary)] text-[var(--surface-canvas)] px-5 py-2.5 text-sm font-bold hover:opacity-90 transition-opacity"
+          >
+            <ShoppingCart className="h-4 w-4" strokeWidth={1.75} />
+            Ir a comprar
+          </Link>
+        )
+      }
+    />
   );
 }
 
@@ -441,56 +446,50 @@ export default function MisPedidosPage() {
       <AnnouncementBar />
       <Header />
 
-      {/* ── Hero header — matches site gradient ──────────────────── */}
+      {/* ── Hero header — editorial dark ──────────────────── */}
       <div
-        className="pt-32 sm:pt-36 pb-10 sm:pb-14"
-        style={{ background: "linear-gradient(135deg, #009690 0%, #00B4A6 50%, #33C4B8 100%)" }}
+        className="pt-32 sm:pt-36 pb-12 sm:pb-16 border-b border-gray-200 dark:border-gray-800"
+        style={{ background: "#060a0d" }}
       >
         <div className="max-w-5xl mx-auto px-4 sm:px-6">
           <div className="flex items-center gap-3 mb-6">
             <Link
               href="/"
-              className="p-2 -ml-1 rounded-xl bg-white/10 hover:bg-white/20 transition-colors text-white/80 hover:text-white"
+              className="p-2 -ml-1 rounded-full border border-white/15 bg-white/5 hover:bg-white/10 transition-colors text-white/70 hover:text-white"
             >
-              <ArrowLeft className="h-4 w-4" />
+              <ArrowLeft className="h-4 w-4" strokeWidth={1.75} aria-hidden />
             </Link>
             <div className="flex-1 min-w-0">
-              <h1 className="text-2xl sm:text-3xl font-extrabold text-white leading-tight">Mis Pedidos</h1>
-              <p className="text-xs text-white/60 mt-0.5">Buleje</p>
+              <span className="inline-flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-[0.25em] text-white/45 mb-1">
+                Historial
+              </span>
+              <h1 className="text-2xl sm:text-3xl font-extrabold text-white leading-tight tracking-[-0.02em]">Mis Pedidos</h1>
             </div>
             {identified && safeOrders.length > 0 && (
-              <div className="text-right shrink-0 bg-white/10 backdrop-blur-sm rounded-xl px-3 py-2 border border-white/15">
-                <p className="text-lg font-extrabold text-white leading-none">{completedOrders.length}</p>
-                <p className="text-[10px] text-white/60 mt-0.5">pedidos</p>
+              <div className="text-right shrink-0 rounded-lg border border-white/15 bg-white/5 px-3 py-2">
+                <p className="text-lg font-extrabold text-white leading-none tabular-nums">{completedOrders.length}</p>
+                <p className="text-[10px] text-white/45 mt-1 font-bold uppercase tracking-[0.18em]">pedidos</p>
               </div>
             )}
           </div>
 
-          {/* Stats row — inside hero */}
+          {/* Stats row — editorial */}
           {identified && orders !== null && !loading && safeOrders.length > 0 && (
-            <div className="grid grid-cols-3 gap-2.5">
-              <div className="bg-white/10 backdrop-blur-sm rounded-2xl border border-white/10 p-4 text-center">
-                <p className="text-2xl font-extrabold text-white leading-tight">{completedOrders.length}</p>
-                <p className="text-[11px] text-white/60 font-medium mt-1">Realizados</p>
+            <div className="grid grid-cols-3 gap-0 border-y border-white/10 py-6">
+              <div className="text-center px-4">
+                <p className="text-2xl sm:text-3xl font-extrabold text-white tabular-nums tracking-tight">{completedOrders.length}</p>
+                <p className="text-[10px] text-white/45 font-bold uppercase tracking-[0.18em] mt-2">Realizados</p>
               </div>
-              <div className="bg-white/10 backdrop-blur-sm rounded-2xl border border-white/10 p-4 text-center">
-                <p className="text-base font-extrabold text-white leading-tight">{fmt(totalSpent)}</p>
-                <p className="text-[11px] text-white/60 font-medium mt-1">Invertido</p>
+              <div className="text-center px-4 border-x border-white/10">
+                <p className="text-xl sm:text-2xl font-extrabold text-white tabular-nums tracking-tight">{fmt(totalSpent)}</p>
+                <p className="text-[10px] text-white/45 font-bold uppercase tracking-[0.18em] mt-2">Invertido</p>
               </div>
-              <div className={cn(
-                "rounded-2xl border p-4 text-center backdrop-blur-sm",
-                activeOrders.length > 0
-                  ? "bg-amber-400/20 border-amber-400/30"
-                  : "bg-white/10 border-white/10"
-              )}>
+              <div className="text-center px-4">
                 <p className={cn(
-                  "text-2xl font-extrabold leading-tight",
-                  activeOrders.length > 0 ? "text-amber-300" : "text-white"
+                  "text-2xl sm:text-3xl font-extrabold tabular-nums tracking-tight",
+                  activeOrders.length > 0 ? "text-white" : "text-white/70"
                 )}>{activeOrders.length}</p>
-                <p className={cn(
-                  "text-[11px] font-medium mt-1",
-                  activeOrders.length > 0 ? "text-amber-300/80" : "text-white/60"
-                )}>En curso</p>
+                <p className="text-[10px] font-bold uppercase tracking-[0.18em] mt-2 text-white/45">En curso</p>
               </div>
             </div>
           )}

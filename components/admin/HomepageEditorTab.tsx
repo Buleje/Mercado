@@ -207,7 +207,7 @@ export default function HomepageEditorTab() {
       description: "Banner de ofertas del día con cuenta regresiva",
       fields: [
         { key: "countdownEnabled", label: "Mostrar countdown", type: "toggle" },
-        { key: "countdownTitle", label: "Título", type: "text", placeholder: "🔥 OFERTAS DEL DÍA" },
+        { key: "countdownTitle", label: "Título", type: "text", placeholder: "Ofertas del día" },
         { key: "countdownSubtitle", label: "Subtítulo", type: "text", placeholder: "¡Aprovecha antes de la medianoche!" },
         { key: "countdownCtaText", label: "Texto botón", type: "text", placeholder: "Ver ofertas" },
       ],
@@ -444,7 +444,7 @@ export default function HomepageEditorTab() {
                   <div className="flex flex-wrap items-center gap-2">
                     <label className="text-xs text-muted">Rating:</label>
                     <select value={item.rating} onChange={(e) => handleListChange("testimonialItems", i, "rating", parseInt(e.target.value))} className="rounded-lg border border-gray-200 dark:border-card-border bg-gray-50 dark:bg-background px-2 py-1 text-sm">
-                      {[1,2,3,4,5].map(r => <option key={r} value={r}>{r} ⭐</option>)}
+                      {[1,2,3,4,5].map(r => <option key={r} value={r}>{r} {r === 1 ? "estrella" : "estrellas"}</option>)}
                     </select>
                     <button onClick={() => handleListRemove("testimonialItems", i)} className="ml-auto text-xs text-red-500 hover:text-red-700">Eliminar</button>
                   </div>

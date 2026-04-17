@@ -23,6 +23,7 @@ import { notFound } from "next/navigation";
 import Link from "next/link";
 import { Suspense } from "react";
 import { categories } from "@/data/products";
+import { getCatalogCategoryIcon } from "@/lib/catalog/catalog-icons";
 import { zones, findZone } from "@/data/zones";
 import {
   districts,
@@ -95,20 +96,24 @@ function CategoryCard({
   citySlug: string;
   districtSlug: string;
 }) {
+  // eslint-disable-next-line react-hooks/purity -- lookup de componente lucide, no factory
+  const CatIcon = getCatalogCategoryIcon(category.id);
   return (
     <Link
       href={`/zona/${citySlug}/distrito/${districtSlug}/${category.id}`}
-      className="group flex flex-col items-center gap-3 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm transition-all hover:shadow-md hover:border-emerald-300 hover:-translate-y-0.5"
+      className="group flex flex-col gap-4 rounded-xl border border-slate-200 bg-white p-5 transition-all hover:border-slate-900 hover:-translate-y-0.5"
     >
-      <span className="text-4xl" role="img" aria-label={category.label}>
-        {category.emoji}
-      </span>
-      <h2 className="text-lg font-semibold text-slate-800 group-hover:text-emerald-700 transition-colors">
-        {category.label}
-      </h2>
-      <p className="text-xs text-slate-500">
-        {category.label} en {districtName}
-      </p>
+      <div className="h-10 w-10 rounded-lg bg-slate-50 border border-slate-200 flex items-center justify-center text-slate-700">
+        <CatIcon className="h-4 w-4" strokeWidth={1.5} aria-hidden="true" />
+      </div>
+      <div>
+        <h2 className="text-base font-extrabold tracking-tight text-slate-800 group-hover:text-slate-900 transition-colors">
+          {category.label}
+        </h2>
+        <p className="text-xs text-slate-500 mt-1">
+          {category.label} en {districtName}
+        </p>
+      </div>
     </Link>
   );
 }

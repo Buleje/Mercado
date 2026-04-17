@@ -246,8 +246,9 @@ export default function PedidoPage() {
           </p>
           {/* P2 — ETA estimado */}
           {order.status === "confirmado" && (
-            <p className="text-sm font-semibold text-emerald-700 mt-2">
-              🕐 Entrega estimada: ~30-45 min
+            <p className="inline-flex items-center gap-1.5 text-sm font-semibold text-emerald-700 mt-2">
+              <svg className="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10" /><path d="M12 6v6l4 2" /></svg>
+              Entrega estimada: ~30–45 min
             </p>
           )}
           {order.status === "en_camino" && (() => {
@@ -452,9 +453,10 @@ export default function PedidoPage() {
         {/* ── Receipt link ──────────────────────────────────────────────── */}
         <a
           href={`/pedido/${order.id}/recibo`}
-          className="block text-center bg-white dark:bg-gray-900 rounded-2xl shadow-sm dark:shadow-gray-900/20 p-4 text-sm font-semibold text-primary hover:bg-primary/5 dark:hover:bg-primary/10 transition-colors"
+          className="inline-flex items-center justify-center gap-2 w-full text-center bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 p-4 text-sm font-bold text-gray-900 dark:text-white hover:border-gray-900 dark:hover:border-gray-500 transition-colors"
         >
-          🧾 Ver comprobante / Imprimir recibo
+          <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round"><path d="M7 2h8l4 4v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2Z" /><path d="M15 2v4h4" /><path d="M9 11h6" /><path d="M9 14h6" /><path d="M9 17h4" /></svg>
+          Ver comprobante / Imprimir recibo
         </a>
 
         {/* ── Footer info ───────────────────────────────────────────────── */}
@@ -535,7 +537,7 @@ function PostDeliveryReview({ orderId, customerName }: { orderId: string; custom
       </div>
       {rating > 0 && (
         <p className="text-center text-xs text-gray-500 dark:text-gray-400">
-          {rating <= 2 ? "Lo sentimos, mejoraremos 💪" : rating <= 3 ? "¡Gracias por tu feedback!" : rating <= 4 ? "¡Muy bien! 👍" : "¡Excelente! 🎉"}
+          {rating <= 2 ? "Lo sentimos, vamos a mejorar." : rating <= 3 ? "Gracias por tu feedback." : rating <= 4 ? "¡Muy bien!" : "¡Excelente!"}
         </p>
       )}
 

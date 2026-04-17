@@ -1369,10 +1369,10 @@ function FinanzasDashboard() {
       {/* ════════ SECCION 5: Proyeccion del Mes ════════ */}
       <StaggerItem index={4}>
       {projection && (
-        <div className="bg-linear-to-br from-primary/5 via-white to-secondary/5 border border-gray-200 rounded-xl p-4 sm:p-6 ">
+        <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-xl p-4 sm:p-6">
           <div className="flex items-center gap-2 mb-4">
-            <TrendingUp className="h-5 w-5 text-primary" />
-            <p className="text-sm font-bold text-gray-700">Proyeccion {mesCapitalized}</p>
+            <TrendingUp className="h-4 w-4 text-[var(--text-primary)]" strokeWidth={1.75} />
+            <p className="text-[10px] font-bold uppercase tracking-[0.25em] text-[var(--text-tertiary)]">Proyección {mesCapitalized}</p>
           </div>
           <div className="grid grid-cols-3 gap-4 mb-5">
             <div className="text-center p-3 bg-white/60 rounded-xl">

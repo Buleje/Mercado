@@ -5,7 +5,8 @@ import Link from "next/link";
 import {
   ArrowLeft, Award, Star, Trophy,
   Loader2, ChevronRight, TrendingUp, TrendingDown,
-  Clock,
+  Clock, ShoppingCart, Gift, Medal, Gem, PartyPopper,
+  type LucideIcon,
 } from "lucide-react";
 import { useCustomer } from "@/contexts/customer-context";
 import { cn } from "@/lib/utils";
@@ -61,11 +62,11 @@ type LoyaltyTransaction = {
 
 /* ── Tier styles ─────────────────────────────────────────────────── */
 
-const TIER_META: Record<string, { emoji: string; color: string; bg: string; border: string }> = {
-  bronce:   { emoji: "🥉", color: "text-amber-700 dark:text-amber-300",   bg: "bg-amber-50 dark:bg-amber-900/20",   border: "border-amber-200 dark:border-amber-700" },
-  plata:    { emoji: "🥈", color: "text-gray-600 dark:text-gray-300",     bg: "bg-gray-50 dark:bg-gray-800",         border: "border-gray-200 dark:border-gray-600" },
-  oro:      { emoji: "🥇", color: "text-yellow-700 dark:text-yellow-300", bg: "bg-yellow-50 dark:bg-yellow-900/20",  border: "border-yellow-200 dark:border-yellow-700" },
-  diamante: { emoji: "💎", color: "text-sky-700 dark:text-sky-300",       bg: "bg-sky-50 dark:bg-sky-900/20",        border: "border-sky-200 dark:border-sky-700" },
+const TIER_META: Record<string, { Icon: LucideIcon; color: string; bg: string; border: string }> = {
+  bronce:   { Icon: Medal,  color: "text-amber-700 dark:text-amber-300",   bg: "bg-amber-50 dark:bg-amber-900/20",   border: "border-amber-200 dark:border-amber-700" },
+  plata:    { Icon: Medal,  color: "text-gray-600 dark:text-gray-300",     bg: "bg-gray-50 dark:bg-gray-800",         border: "border-gray-200 dark:border-gray-600" },
+  oro:      { Icon: Trophy, color: "text-yellow-700 dark:text-yellow-300", bg: "bg-yellow-50 dark:bg-yellow-900/20",  border: "border-yellow-200 dark:border-yellow-700" },
+  diamante: { Icon: Gem,    color: "text-sky-700 dark:text-sky-300",       bg: "bg-sky-50 dark:bg-sky-900/20",        border: "border-sky-200 dark:border-sky-700" },
 };
 
 /* ── Main Page ───────────────────────────────────────────────────── */
@@ -154,22 +155,24 @@ export default function PuntosPage() {
       <AnnouncementBar />
       <Header />
 
-      {/* ── Hero ─────────────────────────────────────────────────── */}
+      {/* ── Hero ── editorial dark ── */}
       <div
-        className="pt-32 sm:pt-36 pb-10 sm:pb-14"
-        style={{ background: "linear-gradient(135deg, #009690 0%, #00B4A6 50%, #33C4B8 100%)" }}
+        className="pt-32 sm:pt-36 pb-12 sm:pb-16 border-b border-gray-200 dark:border-gray-800"
+        style={{ background: "#060a0d" }}
       >
         <div className="max-w-3xl mx-auto px-4 sm:px-6">
           <div className="flex items-center gap-3 mb-6">
             <Link
               href="/cuenta"
-              className="p-2 -ml-1 rounded-xl bg-white/10 hover:bg-white/20 transition-colors text-white/80 hover:text-white"
+              className="p-2 -ml-1 rounded-full border border-white/15 bg-white/5 hover:bg-white/10 transition-colors text-white/70 hover:text-white"
             >
-              <ArrowLeft className="h-4 w-4" />
+              <ArrowLeft className="h-4 w-4" strokeWidth={1.75} aria-hidden />
             </Link>
             <div className="flex-1">
-              <h1 className="text-2xl sm:text-3xl font-extrabold text-white">Mis Puntos</h1>
-              <p className="text-xs text-white/60 mt-0.5">Programa de fidelidad Buleje</p>
+              <span className="inline-flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-[0.25em] text-white/45 mb-1">
+                Fidelidad
+              </span>
+              <h1 className="text-2xl sm:text-3xl font-extrabold text-white tracking-[-0.02em]">Mis Puntos</h1>
             </div>
           </div>
 
@@ -177,8 +180,8 @@ export default function PuntosPage() {
           {loyalty && (
             <div className="bg-white/10 backdrop-blur-sm rounded-2xl border border-white/15 p-5 sm:p-6">
               <div className="flex items-center gap-4">
-                <div className="h-14 w-14 rounded-2xl bg-white/15 flex items-center justify-center text-3xl">
-                  {tierStyle.emoji}
+                <div className="h-14 w-14 rounded-2xl bg-white/15 flex items-center justify-center text-white">
+                  <tierStyle.Icon className="h-7 w-7" strokeWidth={1.5} aria-hidden="true" />
                 </div>
                 <div className="flex-1">
                   <p className="text-sm text-white/60 font-medium">Tu saldo</p>
@@ -249,16 +252,29 @@ export default function PuntosPage() {
               <h2 className="text-lg font-bold text-foreground mb-3">¿Cómo funciona?</h2>
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                 {[
-                  { icon: "🛒", title: "Compra", desc: "Ganas 1 punto por cada S/ 1 que gastas" },
-                  { icon: "⭐", title: "Acumula", desc: "Sube de nivel comprando más: Bronce → Plata → Oro → Diamante" },
-                  { icon: "🎁", title: "Canjea", desc: "Usa tus puntos por descuentos, delivery gratis o productos" },
-                ].map((step) => (
-                  <div key={step.title} className="bg-white dark:bg-card rounded-xl border border-gray-100 dark:border-card-border p-4 text-center">
-                    <span className="text-2xl">{step.icon}</span>
-                    <p className="text-sm font-bold text-foreground mt-2">{step.title}</p>
-                    <p className="text-xs text-muted mt-1">{step.desc}</p>
-                  </div>
-                ))}
+                  { Icon: ShoppingCart, title: "Compra", desc: "Ganás 1 punto por cada S/ 1 que gastás" },
+                  { Icon: Star, title: "Acumulá", desc: "Subí de nivel comprando más: Bronce → Plata → Oro → Diamante" },
+                  { Icon: Gift, title: "Canjeá", desc: "Usá tus puntos por descuentos, delivery gratis o productos" },
+                ].map((step, i) => {
+                  const SIcon = step.Icon;
+                  return (
+                    <div
+                      key={step.title}
+                      className="bg-white dark:bg-card rounded-xl border border-gray-200 dark:border-card-border p-5"
+                    >
+                      <div className="flex items-center gap-3">
+                        <div className="h-8 w-8 rounded-lg bg-gray-50 dark:bg-gray-950 border border-gray-200 dark:border-gray-800 flex items-center justify-center text-gray-700 dark:text-gray-200">
+                          <SIcon className="h-4 w-4" strokeWidth={1.5} />
+                        </div>
+                        <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-gray-400 tabular-nums">
+                          0{i + 1}
+                        </span>
+                      </div>
+                      <p className="mt-4 text-sm font-extrabold tracking-tight text-foreground">{step.title}</p>
+                      <p className="text-xs text-muted mt-1 leading-relaxed">{step.desc}</p>
+                    </div>
+                  );
+                })}
               </div>
             </section>
 
@@ -279,7 +295,9 @@ export default function PuntosPage() {
                           : "bg-white dark:bg-card border-gray-100 dark:border-card-border"
                       )}
                     >
-                      <span className="text-xl">{style.emoji}</span>
+                      <div className={cn("h-10 w-10 rounded-lg flex items-center justify-center", style.bg, style.color)}>
+                        <style.Icon className="h-5 w-5" strokeWidth={1.5} />
+                      </div>
                       <div className="flex-1 min-w-0">
                         <p className={cn("text-sm font-bold capitalize", isActive ? style.color : "text-foreground")}>
                           {t.name}
@@ -299,8 +317,11 @@ export default function PuntosPage() {
             {/* ── Auto-discount by purchase frequency ────────── */}
             {loyalty?.autoDiscount && (
               <section>
-                <h2 className="text-lg font-bold text-foreground mb-3">🎉 Tu descuento por compras frecuentes</h2>
-                <div className="bg-linear-to-br from-primary/5 to-primary/10 dark:from-primary/10 dark:to-primary/20 rounded-xl border border-primary/20 p-4">
+                <h2 className="inline-flex items-center gap-2 text-lg font-extrabold tracking-tight text-foreground mb-3">
+                  <PartyPopper className="h-5 w-5 text-primary" strokeWidth={1.5} />
+                  Tu descuento por compras frecuentes
+                </h2>
+                <div className="bg-[var(--surface-sunken)] rounded-xl border border-[var(--rule-base)] p-4">
                   <div className="flex items-center gap-3 mb-3">
                     <div className="h-10 w-10 rounded-xl bg-primary/15 flex items-center justify-center text-lg">🏷️</div>
                     <div className="flex-1">

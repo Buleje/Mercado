@@ -12,6 +12,9 @@ import {
   ShieldAlert,
   XCircle,
   Check,
+  Bell,
+  Wallet,
+  type LucideIcon,
 } from "lucide-react";
 import { cn, formatCurrency } from "@/lib/utils";
 
@@ -36,11 +39,11 @@ interface Alert {
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
 
-const CATEGORY_LABELS: Record<AlertCategory, { label: string; emoji: string }> = {
-  pedidos: { label: "Pedidos", emoji: "\uD83D\uDCE6" },
-  inventario: { label: "Inventario", emoji: "\uD83D\uDCE6" },
-  finanzas: { label: "Finanzas", emoji: "\uD83D\uDCB0" },
-  general: { label: "General", emoji: "\uD83D\uDD14" },
+const CATEGORY_LABELS: Record<AlertCategory, { label: string; Icon: LucideIcon }> = {
+  pedidos: { label: "Pedidos", Icon: ShoppingCart },
+  inventario: { label: "Inventario", Icon: Package },
+  finanzas: { label: "Finanzas", Icon: Wallet },
+  general: { label: "General", Icon: Bell },
 };
 
 function timeAgo(ts: number): string {
@@ -501,7 +504,7 @@ export default function AlertsCenterTab({ tenantId: _tenantId, onNavigate }: Pro
           <div key={cat} className="space-y-2">
             {/* Category separator */}
             <div className="flex items-center gap-2 pt-2">
-              <span className="text-sm">{catConfig.emoji}</span>
+              <catConfig.Icon className="h-3.5 w-3.5 text-gray-500 dark:text-muted" strokeWidth={1.75} />
               <h4 className="text-xs font-extrabold text-gray-500 dark:text-muted">
                 {catConfig.label}
               </h4>

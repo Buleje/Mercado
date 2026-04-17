@@ -4,6 +4,8 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   ArrowDownCircle, ArrowUpCircle, Download, Loader2, Package,
   Search, TrendingDown, TrendingUp, RefreshCw,
+  Undo2, Plus, ShoppingCart, Globe, Minus, AlertTriangle, ArrowLeftRight, HelpCircle,
+  type LucideIcon,
 } from "lucide-react";
 import { cn, exportToCSV } from "@/lib/utils";
 
@@ -26,15 +28,15 @@ type Product = { id: number; name: string; unit: string };
 
 // ── Config ─────────────────────────────────────────────────────────────────────
 
-const TYPE_LABELS: Record<string, { label: string; emoji: string; dir: "in" | "out" }> = {
-  compra:           { label: "Compra",        emoji: "📦", dir: "in" },
-  devolucion:       { label: "Devolución",    emoji: "↩️", dir: "in" },
-  ajuste_positivo:  { label: "Ajuste (+)",    emoji: "➕", dir: "in" },
-  venta:            { label: "Venta",         emoji: "🛒", dir: "out" },
-  venta_online:     { label: "Venta online",  emoji: "🌐", dir: "out" },
-  ajuste_negativo:  { label: "Ajuste (−)",    emoji: "➖", dir: "out" },
-  merma:            { label: "Pérdida/Merma", emoji: "⚠️", dir: "out" },
-  transferencia:    { label: "Transferencia", emoji: "🔄", dir: "out" },
+const TYPE_LABELS: Record<string, { label: string; Icon: LucideIcon; dir: "in" | "out" }> = {
+  compra:           { label: "Compra",        Icon: Package, dir: "in" },
+  devolucion:       { label: "Devolución",    Icon: Undo2, dir: "in" },
+  ajuste_positivo:  { label: "Ajuste (+)",    Icon: Plus, dir: "in" },
+  venta:            { label: "Venta",         Icon: ShoppingCart, dir: "out" },
+  venta_online:     { label: "Venta online",  Icon: Globe, dir: "out" },
+  ajuste_negativo:  { label: "Ajuste (−)",    Icon: Minus, dir: "out" },
+  merma:            { label: "Pérdida/Merma", Icon: AlertTriangle, dir: "out" },
+  transferencia:    { label: "Transferencia", Icon: ArrowLeftRight, dir: "out" },
 };
 
 function fmtDate(iso: string): string {
@@ -100,7 +102,7 @@ export default function SimpleMovementsTab() {
     return movements
       .map(m => {
         const prod = productMap.get(m.productId);
-        const meta = TYPE_LABELS[m.type] ?? { label: m.type, emoji: "❓", dir: "out" as const };
+        const meta = TYPE_LABELS[m.type] ?? { label: m.type, Icon: HelpCircle, dir: "out" as const };
         return { ...m, productName: m.productName ?? prod?.name ?? `#${m.productId}`, unit: prod?.unit ?? "und", ...meta };
       })
       .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
@@ -235,8 +237,8 @@ export default function SimpleMovementsTab() {
                       m.dir === "in" ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-950/30 dark:text-emerald-400"
                         : "bg-amber-100 text-amber-700 dark:bg-amber-950/30 dark:text-amber-400"
                     )}>
-                      {m.dir === "in" ? <TrendingUp className="h-3 w-3" /> : <TrendingDown className="h-3 w-3" />}
-                      {m.emoji} {m.label}
+                      <m.Icon className="h-3 w-3" strokeWidth={1.75} />
+                      {m.label}
                     </span>
                   </td>
                   <td className="px-4 py-3 text-right">

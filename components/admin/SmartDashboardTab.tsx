@@ -728,11 +728,11 @@ function SmartDashboardTab({ adminName = "Administrador" }: SmartDashboardTabPro
   const logro = useMemo(() => {
     const promedioVentas = revenueThisMonth / Math.max(1, new Date().getDate());
     const logros = [
-      revenueToday >= 1000 && { emoji: "trophy", texto: "S/1,000 en un dia!" },
-      salesToday.length >= 50 && { emoji: "fire", texto: "50 ventas en un dia!" },
-      promedioVentas > 0 && revenueToday > promedioVentas * 1.5 && { emoji: "chart", texto: "Mejor dia del mes!" },
-      clientesHoy >= 20 && { emoji: "people", texto: "20 clientes en un dia!" },
-    ].filter(Boolean) as { emoji: string; texto: string }[];
+      revenueToday >= 1000 && { texto: "S/1,000 en un día" },
+      salesToday.length >= 50 && { texto: "50 ventas en un día" },
+      promedioVentas > 0 && revenueToday > promedioVentas * 1.5 && { texto: "Mejor día del mes" },
+      clientesHoy >= 20 && { texto: "20 clientes en un día" },
+    ].filter(Boolean) as { texto: string }[];
     return logros[0] ?? null;
   }, [revenueToday, salesToday.length, revenueThisMonth, clientesHoy]);
 

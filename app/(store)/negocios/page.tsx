@@ -3,6 +3,29 @@ import { Suspense } from "react";
 import dynamic from "next/dynamic";
 import Link from "next/link";
 import { cacheLife, cacheTag } from "next/cache";
+import {
+  Store,
+  ShoppingCart,
+  Search,
+  CreditCard,
+  Truck,
+  Package,
+  BarChart3,
+  FileText,
+  Smartphone,
+  Wallet,
+  HelpCircle,
+  Clock,
+  Mail,
+  Rocket,
+  Star,
+  Zap,
+  Check,
+  ArrowUpRight,
+  ChevronDown,
+} from "lucide-react";
+import { getProductCategoryIcon } from "@/components/marketplace/_category-icons";
+import { cn } from "@/lib/utils";
 
 export const metadata: Metadata = {
   title: "Buleje para Negocios — Software ERP para Bodegas del Peru | Inventario, POS, Delivery",
@@ -145,59 +168,79 @@ async function BulejeHeroServer() {
         <div className="absolute -bottom-40 -right-40 h-100 w-100 rounded-full bg-green-400/10 blur-[100px]" />
       </div>
 
-      <div className="relative z-10 mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 text-center">
-        {/* Badge */}
-        <span className="inline-flex items-center gap-2 text-xs font-bold uppercase tracking-widest text-primary mb-6 bg-primary/10 rounded-full px-5 py-2 border border-primary/20">
-          🏪 La plataforma #1 para bodegas
+      <div className="relative z-10 mx-auto max-w-5xl px-4 sm:px-6 lg:px-8 text-center">
+        {/* Eyebrow */}
+        <span className="inline-flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-[0.25em] text-white/55 mb-6">
+          <Store className="h-3 w-3" strokeWidth={2} />
+          Software para bodegas del Perú
         </span>
 
-        <h1 className="text-4xl sm:text-5xl lg:text-6xl font-extrabold text-white leading-tight">
-          El software que potencia{" "}
-          <span className="text-transparent bg-clip-text bg-linear-to-r from-primary to-green-400">
-            tu bodega
-          </span>
+        {/* Hero PAS — Problem → Solution */}
+        <h1 className="text-4xl sm:text-5xl lg:text-6xl font-extrabold text-white leading-[1.02] tracking-[-0.025em]">
+          Cerrás cada noche{" "}
+          <span className="text-white/45">sin saber cuánto ganaste</span>
         </h1>
-        <p className="mt-5 text-lg sm:text-xl text-white/60 max-w-2xl mx-auto">
-          Inventario, punto de venta, delivery, fiado digital y facturacion SUNAT
-          — todo en un sistema facil de usar. Empieza gratis hoy.
+        <p className="mt-6 text-base sm:text-lg text-white/65 max-w-2xl mx-auto leading-relaxed">
+          Buleje automatiza inventario, ventas, delivery y facturación SUNAT.
+          Ves todo desde tu celular — sin instalar nada, sin anotar en cuaderno.
         </p>
 
-        {/* CTA buttons */}
-        <div className="mt-8 flex flex-wrap justify-center gap-4">
-          <Link
-            href="/marketplace"
-            className="inline-flex items-center gap-2 bg-primary hover:bg-primary-dark text-white font-bold px-8 py-4 rounded-xl transition-all shadow-lg shadow-primary/25 text-lg"
-          >
-            🛒 Explorar Marketplace
-          </Link>
+        {/* CTA buttons — monto visible + beneficio */}
+        <div className="mt-8 flex flex-wrap justify-center gap-3">
           <Link
             href="/marketplace/registrar"
-            className="inline-flex items-center gap-2 bg-white/10 hover:bg-white/20 text-white font-semibold px-8 py-4 rounded-xl border border-white/20 transition-all text-lg"
+            className="inline-flex items-center gap-2 bg-white text-gray-900 font-bold px-6 py-3 rounded-full transition-all hover:bg-gray-100 active:scale-[0.98] text-sm"
           >
-            🏪 Abre tu tienda gratis
+            Empezar gratis — sin tarjeta
+            <ArrowUpRight className="h-4 w-4" strokeWidth={2} />
+          </Link>
+          <Link
+            href="#preguntas"
+            className="inline-flex items-center gap-2 bg-transparent text-white font-bold px-6 py-3 rounded-full border border-white/20 hover:bg-white/10 transition-all text-sm"
+          >
+            Ver demo de 15 minutos
           </Link>
         </div>
 
-        {/* Stats */}
-        <div className="mt-14 grid grid-cols-3 gap-4 max-w-xl mx-auto">
-          <div className="bg-white/5 rounded-xl p-4 border border-white/10">
-            <p className="text-2xl sm:text-3xl font-extrabold text-white">
-              {stats.storeCount || "10+"}
-            </p>
-            <p className="text-xs text-white/50 mt-1">Tiendas activas</p>
-          </div>
-          <div className="bg-white/5 rounded-xl p-4 border border-white/10">
-            <p className="text-2xl sm:text-3xl font-extrabold text-white">
-              {stats.productCount || "500+"}
-            </p>
-            <p className="text-xs text-white/50 mt-1">Productos</p>
-          </div>
-          <div className="bg-white/5 rounded-xl p-4 border border-white/10">
-            <p className="text-2xl sm:text-3xl font-extrabold text-primary">
-              ⭐ {stats.avgRating}
-            </p>
-            <p className="text-xs text-white/50 mt-1">Valoracion promedio</p>
-          </div>
+        {/* Trust row — reduce fricción signup (Cialdini) */}
+        <div className="mt-6 flex flex-wrap items-center justify-center gap-x-6 gap-y-2 text-[11px] text-white/45">
+          <span className="inline-flex items-center gap-1.5">
+            <span className="h-1 w-1 rounded-full bg-white/40" />
+            14 días gratis
+          </span>
+          <span className="inline-flex items-center gap-1.5">
+            <span className="h-1 w-1 rounded-full bg-white/40" />
+            Sin permanencia
+          </span>
+          <span className="inline-flex items-center gap-1.5">
+            <span className="h-1 w-1 rounded-full bg-white/40" />
+            Setup 5 minutos
+          </span>
+          <span className="inline-flex items-center gap-1.5">
+            <span className="h-1 w-1 rounded-full bg-white/40" />
+            Soporte WhatsApp
+          </span>
+        </div>
+
+        {/* Stats reales con rule dividers — social proof Cialdini */}
+        <div className="mt-14 grid grid-cols-3 gap-0 max-w-2xl mx-auto">
+          {[
+            { value: stats.storeCount || "10+", label: "Bodegas activas" },
+            { value: stats.productCount || "500+", label: "Productos en stock" },
+            { value: stats.avgRating, label: "Valoración promedio", isRating: true },
+          ].map((s, i) => (
+            <div
+              key={s.label}
+              className={i > 0 ? "border-l border-white/10 pl-4" : ""}
+            >
+              <p className="text-2xl sm:text-4xl font-extrabold text-white tabular-nums tracking-[-0.02em]">
+                {s.value}
+              </p>
+              <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-white/45 mt-2">
+                {s.label}
+              </p>
+            </div>
+          ))}
         </div>
       </div>
     </section>
@@ -220,8 +263,9 @@ async function MarketplaceReviewsServer() {
     <section className="py-16 sm:py-24 bg-primary/5">
       <div className="max-w-7xl mx-auto px-4">
         <div className="text-center mb-14">
-          <span className="inline-flex items-center gap-2 text-xs font-bold uppercase tracking-widest text-primary mb-3 bg-primary/8 rounded-full px-4 py-1.5">
-            ⭐ Opiniones
+          <span className="inline-flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-[0.25em] text-gray-400 mb-3">
+            <Star className="h-3 w-3" strokeWidth={2} />
+            Opiniones
           </span>
           <h2 className="text-3xl sm:text-4xl font-extrabold text-gray-900 dark:text-white">
             Lo que dicen nuestros <span className="text-primary">clientes</span>
@@ -255,36 +299,52 @@ async function MarketplaceReviewsServer() {
 // ── Cómo funciona ──
 function HowBulejeWorks() {
   const steps = [
-    { num: "01", emoji: "🔍", title: "Busca lo que necesitas", desc: "Entra al Marketplace, explora las tiendas o busca un producto especifico." },
-    { num: "02", emoji: "🛒", title: "Agrega al carrito", desc: "Elige tus productos de cualquier tienda. El carrito organiza todo por tienda automaticamente." },
-    { num: "03", emoji: "💳", title: "Paga facil", desc: "Elige Yape, Plin o efectivo contra entrega. Sin tarjetas, sin complicaciones." },
-    { num: "04", emoji: "🚚", title: "Recibe en tu puerta", desc: "Cada tienda prepara y envia tu pedido. Delivery rapido a toda tu zona." },
+    { num: "01", Icon: Search, title: "Buscá lo que necesitás", desc: "Entrá al Marketplace, explorá las tiendas o busca un producto específico." },
+    { num: "02", Icon: ShoppingCart, title: "Armá tu pedido", desc: "Elegí tus productos de cualquier tienda. El carrito organiza todo por tienda automáticamente." },
+    { num: "03", Icon: CreditCard, title: "Pagá fácil", desc: "Elegí Yape, Plin o efectivo contra entrega. Sin tarjetas, sin complicaciones." },
+    { num: "04", Icon: Truck, title: "Recibí en tu puerta", desc: "Cada tienda prepara y envía tu pedido. Delivery rápido a toda tu zona." },
   ];
 
   return (
-    <section className="py-16 sm:py-24 bg-white dark:bg-gray-950">
+    <section className="py-20 sm:py-24 bg-white dark:bg-gray-950">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="text-center mb-14">
-          <span className="inline-flex items-center gap-2 text-xs font-bold uppercase tracking-widest text-primary mb-3 bg-primary/8 rounded-full px-4 py-1.5">
-            ⚡ Asi de facil
+        <div className="mb-12 sm:mb-16 max-w-2xl">
+          <span className="inline-flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-[0.25em] text-gray-400 mb-3">
+            <Zap className="h-3 w-3" strokeWidth={2} />
+            Así de fácil
           </span>
-          <h2 className="text-3xl sm:text-4xl font-extrabold text-gray-900 dark:text-white">
-            ¿Como funciona el{" "}
-            <span className="text-primary">Marketplace</span>?
+          <h2 className="text-3xl sm:text-4xl lg:text-5xl font-extrabold tracking-[-0.02em] text-gray-900 dark:text-white leading-[1.05]">
+            ¿Cómo funciona el Marketplace?
           </h2>
-          <p className="mt-3 text-gray-500 dark:text-gray-400 max-w-xl mx-auto">
-            Comprar en Buleje es tan facil como ir a la bodega de la esquina — pero sin salir de casa.
+          <p className="mt-3 text-gray-500 dark:text-gray-400 leading-relaxed">
+            Comprar en Buleje es tan fácil como ir a la bodega de la esquina — pero sin salir de casa.
           </p>
         </div>
-        <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-6">
-          {steps.map((s) => (
-            <div key={s.num} className="relative bg-gray-50 dark:bg-gray-900 rounded-2xl p-6 border border-gray-100 dark:border-gray-800 hover:border-primary/30 transition-colors group">
-              <span className="text-4xl mb-4 block">{s.emoji}</span>
-              <span className="text-xs font-bold text-primary tracking-wider">PASO {s.num}</span>
-              <h3 className="text-lg font-bold text-gray-900 dark:text-white mt-1">{s.title}</h3>
-              <p className="text-sm text-gray-500 dark:text-gray-400 mt-2">{s.desc}</p>
-            </div>
-          ))}
+        <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-5">
+          {steps.map((s) => {
+            const SIcon = s.Icon;
+            return (
+              <div
+                key={s.num}
+                className="group relative bg-white dark:bg-gray-900 rounded-xl p-6 border border-gray-200 dark:border-gray-800 hover:border-gray-900 dark:hover:border-gray-500 transition-colors"
+              >
+                <div className="flex items-center justify-between">
+                  <div className="h-9 w-9 rounded-lg bg-gray-50 dark:bg-gray-950 border border-gray-200 dark:border-gray-800 flex items-center justify-center text-gray-700 dark:text-gray-200">
+                    <SIcon className="h-4 w-4" strokeWidth={1.5} aria-hidden="true" />
+                  </div>
+                  <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-gray-400 tabular-nums">
+                    Paso {s.num}
+                  </span>
+                </div>
+                <h3 className="mt-5 text-lg font-extrabold tracking-tight text-gray-900 dark:text-white">
+                  {s.title}
+                </h3>
+                <p className="mt-2 text-sm text-gray-500 dark:text-gray-400 leading-relaxed">
+                  {s.desc}
+                </p>
+              </div>
+            );
+          })}
         </div>
       </div>
     </section>
@@ -294,52 +354,58 @@ function HowBulejeWorks() {
 // ── Categorías — enlaza al marketplace ──
 function CategoriesSection() {
   const cats = [
-    { emoji: "🛒", label: "Abarrotes", slug: "abarrotes" },
-    { emoji: "🧃", label: "Bebidas", slug: "bebidas" },
-    { emoji: "🥩", label: "Carnes", slug: "carnes" },
-    { emoji: "🥦", label: "Verduras", slug: "verduras" },
-    { emoji: "🍎", label: "Frutas", slug: "frutas" },
-    { emoji: "🥛", label: "Lacteos", slug: "lacteos" },
-    { emoji: "🍞", label: "Panaderia", slug: "panaderia" },
-    { emoji: "🧹", label: "Limpieza", slug: "limpieza" },
-    { emoji: "🧴", label: "Higiene", slug: "higiene" },
-    { emoji: "🍿", label: "Snacks", slug: "snacks" },
-    { emoji: "🌭", label: "Embutidos", slug: "embutidos" },
-    { emoji: "🧊", label: "Congelados", slug: "congelados" },
+    { key: "abarrotes", label: "Abarrotes", slug: "abarrotes" },
+    { key: "bebidas", label: "Bebidas", slug: "bebidas" },
+    { key: "carnes", label: "Carnes", slug: "carnes" },
+    { key: "verduras", label: "Verduras", slug: "verduras" },
+    { key: "frutas", label: "Frutas", slug: "frutas" },
+    { key: "lacteos", label: "Lácteos", slug: "lacteos" },
+    { key: "panadería", label: "Panadería", slug: "panaderia" },
+    { key: "limpieza", label: "Limpieza", slug: "limpieza" },
+    { key: "otros", label: "Higiene", slug: "higiene" },
+    { key: "snacks", label: "Snacks", slug: "snacks" },
+    { key: "carnes", label: "Embutidos", slug: "embutidos" },
+    { key: "otros", label: "Congelados", slug: "congelados" },
   ];
 
   return (
-    <section className="py-16 sm:py-24 bg-gray-50 dark:bg-gray-900/50">
+    <section className="py-20 sm:py-24 bg-gray-50 dark:bg-gray-900/50 border-y border-gray-200 dark:border-gray-800">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="text-center mb-12">
-          <span className="inline-flex items-center gap-2 text-xs font-bold uppercase tracking-widest text-primary mb-3 bg-primary/8 rounded-full px-4 py-1.5">
-            📦 Categorias
+        <div className="mb-12 max-w-2xl">
+          <span className="inline-flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-[0.25em] text-gray-400 mb-3">
+            <Package className="h-3 w-3" strokeWidth={2} />
+            Categorías
           </span>
-          <h2 className="text-3xl sm:text-4xl font-extrabold text-gray-900 dark:text-white">
-            Encuentra{" "}
-            <span className="text-primary">todo</span>{" "}
-            lo que necesitas
+          <h2 className="text-3xl sm:text-4xl lg:text-5xl font-extrabold tracking-[-0.02em] text-gray-900 dark:text-white leading-[1.05]">
+            Encontrá todo lo que necesitás
           </h2>
-          <p className="mt-3 text-gray-500 dark:text-gray-400 max-w-lg mx-auto">
-            Miles de productos de distintas bodegas, organizados para ti.
+          <p className="mt-3 text-gray-500 dark:text-gray-400 leading-relaxed">
+            Miles de productos de distintas bodegas, organizados para vos.
           </p>
         </div>
-        <div className="grid grid-cols-3 sm:grid-cols-4 lg:grid-cols-6 gap-3 sm:gap-4">
-          {cats.map((c) => (
-            <Link
-              key={c.slug}
-              href={`/marketplace?categoria=${c.slug}`}
-              className="flex flex-col items-center gap-2 bg-white dark:bg-gray-800 rounded-2xl p-5 border border-gray-100 dark:border-gray-700 hover:border-primary/40 hover:shadow-lg hover:-translate-y-0.5 transition-all group"
-            >
-              <span className="text-3xl group-hover:scale-110 transition-transform">{c.emoji}</span>
-              <span className="text-sm font-semibold text-gray-700 dark:text-gray-200">{c.label}</span>
-            </Link>
-          ))}
+        <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-6 gap-3">
+          {cats.map((c, i) => {
+            const CIcon = getProductCategoryIcon(c.key);
+            return (
+              <Link
+                key={`${c.slug}-${i}`}
+                href={`/marketplace?categoria=${c.slug}`}
+                className="group flex flex-col gap-3 bg-white dark:bg-gray-900 rounded-xl p-5 border border-gray-200 dark:border-gray-800 hover:border-gray-900 dark:hover:border-gray-500 transition-all"
+              >
+                <div className="h-9 w-9 rounded-lg bg-gray-50 dark:bg-gray-950 border border-gray-200 dark:border-gray-800 flex items-center justify-center text-gray-700 dark:text-gray-200">
+                  <CIcon className="h-4 w-4" strokeWidth={1.5} />
+                </div>
+                <span className="text-sm font-extrabold tracking-tight text-gray-900 dark:text-white">
+                  {c.label}
+                </span>
+              </Link>
+            );
+          })}
         </div>
-        <div className="text-center mt-10">
+        <div className="mt-8">
           <Link
             href="/marketplace"
-            className="inline-flex items-center gap-2 text-primary font-bold hover:underline"
+            className="inline-flex items-center gap-1.5 text-xs font-bold text-gray-900 dark:text-white link-underline"
           >
             Ver todas las tiendas en el Marketplace →
           </Link>
@@ -352,37 +418,49 @@ function CategoriesSection() {
 // ── Lo que ofrece Buleje (features) ──
 function BulejeFeatures() {
   const features = [
-    { emoji: "📦", title: "Inventario inteligente", desc: "Control de stock en tiempo real con alertas automaticas cuando un producto esta por agotarse." },
-    { emoji: "🏪", title: "Punto de venta (POS)", desc: "Caja registradora digital con soporte para Yape, efectivo y multiples metodos de pago." },
-    { emoji: "🚚", title: "Delivery integrado", desc: "Tus clientes piden online y reciben en su puerta. Gestion de repartos incluida." },
-    { emoji: "📊", title: "Reportes y metricas", desc: "Dashboards con ventas del dia, productos mas vendidos, clientes frecuentes y mas." },
-    { emoji: "🧾", title: "Facturacion SUNAT", desc: "Genera boletas y facturas electronicas directamente desde el sistema." },
-    { emoji: "📱", title: "Tu tienda online", desc: "Cada negocio recibe su propia tienda web con catalogo, carrito y checkout." },
+    { Icon: Package, title: "Inventario inteligente", desc: "Control de stock en tiempo real con alertas automáticas cuando un producto está por agotarse." },
+    { Icon: Store, title: "Punto de venta (POS)", desc: "Caja registradora digital con soporte para Yape, efectivo y múltiples métodos de pago." },
+    { Icon: Truck, title: "Delivery integrado", desc: "Tus clientes piden online y reciben en su puerta. Gestión de repartos incluida." },
+    { Icon: BarChart3, title: "Reportes y métricas", desc: "Dashboards con ventas del día, productos más vendidos, clientes frecuentes y más." },
+    { Icon: FileText, title: "Facturación SUNAT", desc: "Generá boletas y facturas electrónicas directamente desde el sistema." },
+    { Icon: Smartphone, title: "Tu tienda online", desc: "Cada negocio recibe su propia tienda web con catálogo, carrito y checkout." },
   ];
 
   return (
-    <section className="py-16 sm:py-24 bg-white dark:bg-gray-950">
+    <section className="py-20 sm:py-24 bg-white dark:bg-gray-950">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="text-center mb-14">
-          <span className="inline-flex items-center gap-2 text-xs font-bold uppercase tracking-widest text-secondary mb-3 bg-secondary/8 rounded-full px-4 py-1.5">
-            🚀 Funcionalidades
+        <div className="mb-12 max-w-2xl">
+          <span className="inline-flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-[0.25em] text-gray-400 mb-3">
+            <Rocket className="h-3 w-3" strokeWidth={2} />
+            Funcionalidades
           </span>
-          <h2 className="text-3xl sm:text-4xl font-extrabold text-gray-900 dark:text-white">
-            Todo lo que tu bodega{" "}
-            <span className="text-secondary">necesita</span>
+          <h2 className="text-3xl sm:text-4xl lg:text-5xl font-extrabold tracking-[-0.02em] text-gray-900 dark:text-white leading-[1.05]">
+            Todo lo que tu bodega necesita
           </h2>
-          <p className="mt-3 text-gray-500 dark:text-gray-400 max-w-xl mx-auto">
-            Buleje es el sistema ERP disenado para bodegas, minimarkets y tiendas de barrio en Peru.
+          <p className="mt-3 text-gray-500 dark:text-gray-400 leading-relaxed">
+            Buleje es el sistema ERP diseñado para bodegas, minimarkets y tiendas de barrio en Perú.
           </p>
         </div>
-        <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
-          {features.map((f) => (
-            <div key={f.title} className="bg-gray-50 dark:bg-gray-900 rounded-2xl p-6 border border-gray-100 dark:border-gray-800 hover:border-secondary/30 transition-colors">
-              <span className="text-3xl mb-3 block">{f.emoji}</span>
-              <h3 className="text-lg font-bold text-gray-900 dark:text-white">{f.title}</h3>
-              <p className="text-sm text-gray-500 dark:text-gray-400 mt-2">{f.desc}</p>
-            </div>
-          ))}
+        <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-5">
+          {features.map((f) => {
+            const FIcon = f.Icon;
+            return (
+              <div
+                key={f.title}
+                className="group bg-white dark:bg-gray-900 rounded-xl p-6 border border-gray-200 dark:border-gray-800 hover:border-gray-900 dark:hover:border-gray-500 transition-colors"
+              >
+                <div className="h-10 w-10 rounded-lg bg-gray-50 dark:bg-gray-950 border border-gray-200 dark:border-gray-800 flex items-center justify-center text-gray-700 dark:text-gray-200 mb-5">
+                  <FIcon className="h-4 w-4" strokeWidth={1.5} />
+                </div>
+                <h3 className="text-lg font-extrabold tracking-tight text-gray-900 dark:text-white">
+                  {f.title}
+                </h3>
+                <p className="mt-2 text-sm text-gray-500 dark:text-gray-400 leading-relaxed">
+                  {f.desc}
+                </p>
+              </div>
+            );
+          })}
         </div>
       </div>
     </section>
@@ -391,65 +469,106 @@ function BulejeFeatures() {
 
 // ── Precios / Planes ──
 function PricingSection() {
+  const plans = [
+    {
+      name: "Gratis",
+      price: "S/0",
+      period: "/mes",
+      priceColor: "text-gray-900 dark:text-white",
+      features: ["Hasta 50 productos", "Tienda online básica", "POS digital", "Reportes básicos"],
+      cta: "Comenzar gratis",
+      ctaVariant: "secondary" as const,
+      popular: false,
+    },
+    {
+      name: "Pro",
+      price: "S/49",
+      period: "/mes",
+      priceColor: "text-gray-900 dark:text-white",
+      features: ["Productos ilimitados", "Facturación SUNAT", "Delivery integrado", "Reportes avanzados", "Soporte prioritario"],
+      cta: "Empezar ahora",
+      ctaVariant: "primary" as const,
+      popular: true,
+    },
+    {
+      name: "Enterprise",
+      price: "A medida",
+      period: "",
+      priceColor: "text-gray-900 dark:text-white",
+      features: ["Multi-sucursal", "API personalizada", "Integración ERP", "SLA dedicado", "Onboarding premium"],
+      cta: "Contactar ventas",
+      ctaVariant: "secondary" as const,
+      popular: false,
+    },
+  ];
+
   return (
-    <section className="py-16 sm:py-24 bg-gray-50 dark:bg-gray-900/50">
+    <section className="py-20 sm:py-24 bg-gray-50 dark:bg-gray-900/50 border-y border-gray-200 dark:border-gray-800">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="text-center mb-14">
-          <span className="inline-flex items-center gap-2 text-xs font-bold uppercase tracking-widest text-primary mb-3 bg-primary/8 rounded-full px-4 py-1.5">
-            💰 Planes
+        <div className="mb-12 max-w-2xl">
+          <span className="inline-flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-[0.25em] text-gray-400 mb-3">
+            <Wallet className="h-3 w-3" strokeWidth={2} />
+            Planes
           </span>
-          <h2 className="text-3xl sm:text-4xl font-extrabold text-gray-900 dark:text-white">
-            Empieza{" "}
-            <span className="text-primary">gratis</span>,{" "}
-            crece a tu ritmo
+          <h2 className="text-3xl sm:text-4xl lg:text-5xl font-extrabold tracking-[-0.02em] text-gray-900 dark:text-white leading-[1.05]">
+            Empezá gratis, crecé a tu ritmo
           </h2>
         </div>
-        <div className="grid sm:grid-cols-3 gap-6 max-w-4xl mx-auto">
-          {/* Free */}
-          <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 border border-gray-200 dark:border-gray-700">
-            <h3 className="text-lg font-bold text-gray-900 dark:text-white">Gratis</h3>
-            <p className="text-3xl font-extrabold text-gray-900 dark:text-white mt-2">S/0<span className="text-sm font-normal text-gray-400">/mes</span></p>
-            <ul className="mt-4 space-y-2 text-sm text-gray-600 dark:text-gray-300">
-              <li>✅ Hasta 50 productos</li>
-              <li>✅ Tienda online basica</li>
-              <li>✅ POS digital</li>
-              <li>✅ Reportes basicos</li>
-            </ul>
-            <Link href="/marketplace/registrar" className="mt-6 block text-center bg-gray-100 dark:bg-gray-700 text-gray-900 dark:text-white font-semibold py-2.5 rounded-xl hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors">
-              Comenzar gratis
-            </Link>
-          </div>
-          {/* Pro */}
-          <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 border-2 border-primary relative">
-            <span className="absolute -top-3 left-1/2 -translate-x-1/2 bg-primary text-white text-xs font-bold px-3 py-1 rounded-full">Popular</span>
-            <h3 className="text-lg font-bold text-gray-900 dark:text-white">Pro</h3>
-            <p className="text-3xl font-extrabold text-primary mt-2">S/49<span className="text-sm font-normal text-gray-400">/mes</span></p>
-            <ul className="mt-4 space-y-2 text-sm text-gray-600 dark:text-gray-300">
-              <li>✅ Productos ilimitados</li>
-              <li>✅ Facturacion SUNAT</li>
-              <li>✅ Delivery integrado</li>
-              <li>✅ Reportes avanzados</li>
-              <li>✅ Soporte prioritario</li>
-            </ul>
-            <Link href="/marketplace/registrar" className="mt-6 block text-center bg-primary text-white font-semibold py-2.5 rounded-xl hover:bg-primary-dark transition-colors">
-              Empezar ahora
-            </Link>
-          </div>
-          {/* Enterprise */}
-          <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 border border-gray-200 dark:border-gray-700">
-            <h3 className="text-lg font-bold text-gray-900 dark:text-white">Enterprise</h3>
-            <p className="text-3xl font-extrabold text-gray-900 dark:text-white mt-2">A medida</p>
-            <ul className="mt-4 space-y-2 text-sm text-gray-600 dark:text-gray-300">
-              <li>✅ Multi-sucursal</li>
-              <li>✅ API personalizada</li>
-              <li>✅ Integracion ERP</li>
-              <li>✅ SLA dedicado</li>
-              <li>✅ Onboarding premium</li>
-            </ul>
-            <Link href="/marketplace/registrar" className="mt-6 block text-center bg-gray-100 dark:bg-gray-700 text-gray-900 dark:text-white font-semibold py-2.5 rounded-xl hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors">
-              Contactar ventas
-            </Link>
-          </div>
+        <div className="grid sm:grid-cols-3 gap-4 max-w-5xl">
+          {plans.map((p) => (
+            <div
+              key={p.name}
+              className={cn(
+                "relative bg-white dark:bg-gray-900 rounded-xl p-6 sm:p-7 transition-colors",
+                p.popular
+                  ? "border-2 border-gray-900 dark:border-white"
+                  : "border border-gray-200 dark:border-gray-800",
+              )}
+            >
+              {p.popular && (
+                <span className="absolute -top-2.5 left-6 bg-gray-900 dark:bg-white text-white dark:text-gray-900 text-[10px] font-bold uppercase tracking-[0.15em] px-2.5 py-1 rounded-full">
+                  Popular
+                </span>
+              )}
+              <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-gray-400">
+                Plan
+              </p>
+              <h3 className="mt-1 text-2xl font-extrabold tracking-tight text-gray-900 dark:text-white">
+                {p.name}
+              </h3>
+              <p className={cn("mt-4 text-4xl font-extrabold tracking-tight tabular-nums", p.priceColor)}>
+                {p.price}
+                {p.period && (
+                  <span className="text-sm font-semibold text-gray-400">{p.period}</span>
+                )}
+              </p>
+              <ul className="mt-6 space-y-2.5">
+                {p.features.map((feat) => (
+                  <li
+                    key={feat}
+                    className="flex items-start gap-2 text-sm text-gray-600 dark:text-gray-300"
+                  >
+                    <Check
+                      className="h-4 w-4 mt-0.5 shrink-0 text-gray-900 dark:text-white"
+                      strokeWidth={2}
+                    />
+                    <span>{feat}</span>
+                  </li>
+                ))}
+              </ul>
+              <Link
+                href="/marketplace/registrar"
+                className={cn(
+                  "mt-7 block text-center font-bold text-sm py-2.5 rounded-full transition-colors border",
+                  p.ctaVariant === "primary"
+                    ? "bg-gray-900 dark:bg-white text-white dark:text-gray-900 border-gray-900 dark:border-white hover:bg-gray-800 dark:hover:bg-gray-100"
+                    : "bg-transparent text-gray-900 dark:text-white border-gray-200 dark:border-gray-700 hover:border-gray-900 dark:hover:border-gray-400",
+                )}
+              >
+                {p.cta}
+              </Link>
+            </div>
+          ))}
         </div>
       </div>
     </section>
@@ -473,21 +592,28 @@ function MarketplaceFAQ() {
     <section id="preguntas" className="py-16 sm:py-24 bg-white dark:bg-gray-950">
       <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="text-center mb-14">
-          <span className="inline-flex items-center gap-2 text-xs font-bold uppercase tracking-widest text-primary mb-3 bg-primary/8 rounded-full px-4 py-1.5">
-            ❓ Preguntas frecuentes
+          <span className="inline-flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-[0.25em] text-gray-400 mb-3">
+            <HelpCircle className="h-3 w-3" strokeWidth={2} />
+            Preguntas frecuentes
           </span>
-          <h2 className="text-3xl sm:text-4xl font-extrabold text-gray-900 dark:text-white">
-            ¿Tienes dudas?
+          <h2 className="text-3xl sm:text-4xl lg:text-5xl font-extrabold tracking-[-0.02em] text-gray-900 dark:text-white leading-[1.05]">
+            ¿Tenés dudas?
           </h2>
         </div>
-        <div className="space-y-3">
+        <div className="divide-y divide-gray-200 dark:divide-gray-800 border-y border-gray-200 dark:border-gray-800">
           {faqs.map((f) => (
-            <details key={f.q} className="group bg-gray-50 dark:bg-gray-900 rounded-xl border border-gray-100 dark:border-gray-800 overflow-hidden">
-              <summary className="flex items-center justify-between cursor-pointer p-5 text-left font-semibold text-gray-900 dark:text-white hover:text-primary transition-colors">
+            <details
+              key={f.q}
+              className="group"
+            >
+              <summary className="flex items-center justify-between cursor-pointer py-5 text-left font-extrabold text-gray-900 dark:text-white hover:text-gray-600 dark:hover:text-gray-400 transition-colors list-none">
                 <span>{f.q}</span>
-                <span className="ml-3 text-gray-400 group-open:rotate-180 transition-transform">▼</span>
+                <ChevronDown
+                  className="ml-3 h-4 w-4 shrink-0 text-gray-400 group-open:rotate-180 transition-transform"
+                  strokeWidth={1.75}
+                />
               </summary>
-              <div className="px-5 pb-5 text-sm text-gray-600 dark:text-gray-300 leading-relaxed">
+              <div className="pb-5 pr-8 text-sm text-gray-600 dark:text-gray-300 leading-relaxed">
                 {f.a}
               </div>
             </details>
@@ -511,8 +637,9 @@ function ScheduleSection() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="grid lg:grid-cols-2 gap-12 items-center">
           <div>
-            <span className="inline-flex items-center gap-2 text-xs font-bold uppercase tracking-widest text-secondary mb-3 bg-secondary/8 rounded-full px-4 py-1.5">
-              🕐 Horarios
+            <span className="inline-flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-[0.25em] text-gray-400 mb-3">
+              <Clock className="h-3 w-3" strokeWidth={2} />
+              Horarios
             </span>
             <h2 className="text-3xl sm:text-4xl font-extrabold text-gray-900 dark:text-white">
               Horario de{" "}
@@ -530,13 +657,22 @@ function ScheduleSection() {
               ))}
             </div>
           </div>
-          <div className="bg-linear-to-br from-primary to-primary-dark rounded-2xl p-8 text-white">
-            <h3 className="text-2xl font-extrabold mb-4">¿Tienes una bodega?</h3>
-            <p className="text-white/80 mb-6">
-              Registra tu negocio en Buleje y empieza a vender online hoy. Es gratis, rapido y sin compromisos.
+          <div className="bg-gray-900 dark:bg-white text-white dark:text-gray-900 rounded-2xl p-8 border border-gray-900 dark:border-gray-200">
+            <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-white/55 dark:text-gray-500 mb-3">
+              Dueños de bodega
             </p>
-            <Link href="/marketplace/registrar" className="inline-flex items-center gap-2 bg-white text-primary font-bold px-6 py-3 rounded-xl hover:bg-white/90 transition-colors">
-              🏪 Registrar mi bodega
+            <h3 className="text-2xl font-extrabold tracking-tight mb-4">
+              ¿Tenés una bodega?
+            </h3>
+            <p className="text-white/70 dark:text-gray-600 mb-6 text-sm leading-relaxed">
+              Registrá tu negocio en Buleje y empezá a vender online hoy. Es gratis, rápido y sin compromisos.
+            </p>
+            <Link
+              href="/marketplace/registrar"
+              className="inline-flex items-center gap-2 bg-white dark:bg-gray-900 text-gray-900 dark:text-white font-bold px-5 py-2.5 rounded-full text-sm hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+            >
+              Registrar mi bodega
+              <ArrowUpRight className="h-4 w-4" strokeWidth={2} />
             </Link>
           </div>
         </div>
@@ -551,14 +687,15 @@ function ContactSection() {
     <section id="contacto" className="py-16 sm:py-24 bg-white dark:bg-gray-950">
       <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="text-center mb-12">
-          <span className="inline-flex items-center gap-2 text-xs font-bold uppercase tracking-widest text-primary mb-3 bg-primary/8 rounded-full px-4 py-1.5">
-            📩 Contacto
+          <span className="inline-flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-[0.25em] text-gray-400 mb-3">
+            <Mail className="h-3 w-3" strokeWidth={2} />
+            Contacto
           </span>
-          <h2 className="text-3xl sm:text-4xl font-extrabold text-gray-900 dark:text-white">
-            ¿Quieres saber mas?
+          <h2 className="text-3xl sm:text-4xl lg:text-5xl font-extrabold tracking-[-0.02em] text-gray-900 dark:text-white leading-[1.05]">
+            ¿Querés saber más?
           </h2>
-          <p className="mt-3 text-gray-500 dark:text-gray-400 max-w-lg mx-auto">
-            Dejanos tus datos y te contactamos para mostrarte como Buleje puede ayudar a tu negocio.
+          <p className="mt-3 text-gray-500 dark:text-gray-400 max-w-lg mx-auto leading-relaxed">
+            Dejanos tus datos y te contactamos para mostrarte cómo Buleje puede ayudar a tu negocio.
           </p>
         </div>
         <form
@@ -621,9 +758,10 @@ function ContactSection() {
           </div>
           <button
             type="submit"
-            className="w-full sm:w-auto inline-flex items-center justify-center gap-2 bg-primary hover:bg-primary-dark text-white font-bold px-8 py-3.5 rounded-xl transition-all shadow-lg shadow-primary/25"
+            className="w-full sm:w-auto inline-flex items-center justify-center gap-2 bg-gray-900 dark:bg-white text-white dark:text-gray-900 font-bold px-7 py-3 rounded-full text-sm hover:bg-gray-800 dark:hover:bg-gray-100 transition-colors"
           >
-            📩 Enviar mensaje
+            Enviar mensaje
+            <ArrowUpRight className="h-4 w-4" strokeWidth={2} />
           </button>
         </form>
       </div>
@@ -643,18 +781,19 @@ function FinalCTA() {
         <p className="mt-4 text-lg text-white/60 max-w-xl mx-auto">
           Unete a las tiendas que ya confian en Buleje para crecer su negocio.
         </p>
-        <div className="mt-8 flex flex-wrap justify-center gap-4">
+        <div className="mt-8 flex flex-wrap justify-center gap-3">
           <Link
             href="/marketplace"
-            className="inline-flex items-center gap-2 bg-primary hover:bg-primary-dark text-white font-bold px-8 py-4 rounded-xl transition-all shadow-lg shadow-primary/25 text-lg"
+            className="inline-flex items-center gap-2 bg-white text-gray-900 font-bold px-6 py-3 rounded-full transition-all hover:bg-gray-100 text-sm"
           >
-            🛒 Ir al Marketplace
+            Ir al Marketplace
+            <ArrowUpRight className="h-4 w-4" strokeWidth={2} />
           </Link>
           <Link
             href="/marketplace/registrar"
-            className="inline-flex items-center gap-2 bg-white/10 hover:bg-white/20 text-white font-semibold px-8 py-4 rounded-xl border border-white/20 transition-all text-lg"
+            className="inline-flex items-center gap-2 bg-transparent text-white font-bold px-6 py-3 rounded-full border border-white/20 hover:bg-white/10 transition-all text-sm"
           >
-            🏪 Abrir mi tienda
+            Abrir mi tienda
           </Link>
         </div>
       </div>

@@ -30,7 +30,7 @@ function buildDemoLists(products: Array<{ id: number; name: string; price: numbe
       productName: p.name,
       price: p.price,
       inStock: p.stock > 0,
-      image: p.emoji ?? "🛒",
+      image: p.emoji ?? "",
     }));
     const convertedItems = Math.floor(items.length * 0.3);
     return {

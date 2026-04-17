@@ -32,6 +32,18 @@ import ReorderButton from "@/components/marketplace/ReorderButton";
 import QuickFilterChips, {
   type QuickChipId,
 } from "@/components/marketplace/QuickFilterChips";
+import MarketplaceHeroBanner from "@/components/marketplace/MarketplaceHeroBanner";
+import { LiveSocialProofBanner } from "@/components/marketing/LiveSocialProofBanner";
+import MarketplaceStories from "@/components/marketplace/MarketplaceStories";
+import MarketplaceTopToday from "@/components/marketplace/MarketplaceTopToday";
+import MarketplaceFreeShippingBar from "@/components/marketplace/MarketplaceFreeShippingBar";
+import MarketplaceMiniCart from "@/components/marketplace/MarketplaceMiniCart";
+import MarketplaceJungleProducts from "@/components/marketplace/MarketplaceJungleProducts";
+import MarketplaceRecipesWidget from "@/components/marketplace/MarketplaceRecipesWidget";
+import MarketplaceRecentViewed from "@/components/marketplace/MarketplaceRecentViewed";
+import MarketplaceWelcomeCoupon from "@/components/marketplace/MarketplaceWelcomeCoupon";
+import FlyToCartProvider from "@/components/marketplace/FlyToCart";
+import { getStoreCategoryIcon } from "@/components/marketplace/_category-icons";
 
 type ViewMode = "tiendas" | "catalogo";
 
@@ -221,6 +233,7 @@ export default function MarketplaceContent({ initialStores }: MarketplaceContent
   }, [fetchStores, search, category, zone, initialFetchDone]);
 
   return (
+    <FlyToCartProvider>
     <div className="relative">
       {/* Toast: carrito compartido importado */}
       {sharedCartToast && (
@@ -235,8 +248,18 @@ export default function MarketplaceContent({ initialStores }: MarketplaceContent
           {sharedCartToast}
         </m.div>
       )}
+
+      {/* ── Free shipping progress bar (sticky, aparece cuando hay items en carrito) ── */}
+      <MarketplaceFreeShippingBar />
+
+      {/* ── Hero banner rotativo (Pucallpa · delivery · selva · cupón) ── */}
+      <MarketplaceHeroBanner />
+
+      {/* ── Stories tipo Instagram — accesos rápidos ── */}
+      <MarketplaceStories />
+
       {/* ── Hero Section ── */}
-      <section className="relative overflow-hidden bg-linear-to-br from-primary/5 via-white to-secondary/5 dark:from-primary/10 dark:via-background dark:to-secondary/10 pb-6 pt-5 sm:pt-8 sm:pb-8">
+      <section className="relative overflow-hidden bg-[var(--surface-sunken)] border-b border-[var(--rule-soft)] pb-6 pt-5 sm:pt-8 sm:pb-8">
         {/* Background decoration */}
         <div className="absolute top-0 right-0 w-96 h-96 bg-primary/5 rounded-full blur-[120px] -translate-y-1/2 translate-x-1/3 pointer-events-none" />
         <div className="absolute bottom-0 left-0 w-72 h-72 bg-secondary/5 rounded-full blur-[100px] translate-y-1/2 -translate-x-1/3 pointer-events-none" />
@@ -276,9 +299,19 @@ export default function MarketplaceContent({ initialStores }: MarketplaceContent
               animate={{ opacity: 1 }}
               transition={{ duration: 0.5, delay: 0.15 }}
             >
-              Encuentra las mejores bodegas y tiendas cerca de ti.
-              Compra de varios negocios en un solo pedido.
+              Pedí a bodegas cerca tuyo. Delivery en 25 min.
+              Pagás con Yape o efectivo al recibir.
             </m.p>
+
+            {/* Social proof real desde DB — Cialdini Social Proof */}
+            <m.div
+              className="mt-3 flex justify-center"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ duration: 0.5, delay: 0.3 }}
+            >
+              <LiveSocialProofBanner variant="light" />
+            </m.div>
 
             {/* Search bar — SearchAutocomplete con sugerencias IA + did you mean */}
             <m.div
@@ -380,8 +413,16 @@ export default function MarketplaceContent({ initialStores }: MarketplaceContent
         </div>
       </section>
 
+      {/* ── Lo más pedido hoy (carrusel horizontal con ranking) ── */}
+      <MarketplaceTopToday />
+
+      {/* ── Productos de la selva (Pucallpa/Ucayali) ── */}
+      <MarketplaceJungleProducts />
+
       {/* ── Filters + Grid ── */}
       <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-10">
+        {/* Sticky filter cluster: se queda pegado arriba al scrollear (glassmorphism) */}
+        <div className="sticky top-[60px] z-20 -mx-4 sm:-mx-6 lg:-mx-8 px-4 sm:px-6 lg:px-8 py-3 glass rounded-2xl mb-3">
         {/* Category pills — arriba de todo */}
         <div
           role="group"
@@ -396,11 +437,14 @@ export default function MarketplaceContent({ initialStores }: MarketplaceContent
               className={cn(
                 "inline-flex items-center gap-1.5 px-4 py-2.5 rounded-xl text-sm font-bold whitespace-nowrap border transition-all shrink-0",
                 category === cat.id
-                  ? "bg-primary text-white border-primary shadow-md shadow-primary/25"
-                  : "bg-white dark:bg-card text-gray-600 dark:text-muted border-gray-200 dark:border-card-border hover:border-primary/40 hover:text-primary",
+                  ? "bg-gray-900 dark:bg-white text-white dark:text-gray-900 border-gray-900 dark:border-white"
+                  : "bg-white dark:bg-card text-gray-600 dark:text-muted border-gray-200 dark:border-card-border hover:border-gray-400",
               )}
             >
-              <span className="text-base" aria-hidden="true">{cat.emoji}</span>
+              {(() => {
+                const CatIcon = getStoreCategoryIcon(cat.id);
+                return <CatIcon className="h-4 w-4" strokeWidth={1.75} aria-hidden="true" />;
+              })()}
               {cat.label}
             </button>
           ))}
@@ -422,7 +466,7 @@ export default function MarketplaceContent({ initialStores }: MarketplaceContent
           >
             {ZONES.map((z) => (
               <option key={z.id} value={z.id}>
-                {z.id ? `📍 ${z.label}` : "📍 Todas las zonas"}
+                {z.label}
               </option>
             ))}
           </select>
@@ -455,6 +499,7 @@ export default function MarketplaceContent({ initialStores }: MarketplaceContent
             </button>
           )}
         </div>
+        </div> {/* ← end sticky filter cluster */}
 
         {/* ── Conditional View Rendering ── */}
         {viewMode === "catalogo" ? (
@@ -486,8 +531,14 @@ export default function MarketplaceContent({ initialStores }: MarketplaceContent
         )}
       </section>
 
+      {/* ── Recetas de la selva (widget con ingredientes al carrito) ── */}
+      <MarketplaceRecipesWidget />
+
+      {/* ── Productos vistos recientemente (local storage) ── */}
+      <MarketplaceRecentViewed />
+
       {/* ── CTA: Register Your Store ── */}
-      <section className="bg-linear-to-r from-primary/5 via-primary/10 to-secondary/5 dark:from-primary/10 dark:via-primary/15 dark:to-secondary/10 py-12 sm:py-16">
+      <section className="bg-[var(--surface-sunken)] border-y border-[var(--rule-soft)] py-12 sm:py-16">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
           <h2 className="text-2xl sm:text-3xl font-extrabold text-gray-900 dark:text-foreground mb-3">
             ¿Tienes una tienda?{" "}
@@ -506,6 +557,11 @@ export default function MarketplaceContent({ initialStores }: MarketplaceContent
           </Link>
         </div>
       </section>
+
+      {/* ── Floating: mini-cart sticky + welcome coupon ── */}
+      <MarketplaceMiniCart />
+      <MarketplaceWelcomeCoupon />
     </div>
+    </FlyToCartProvider>
   );
 }

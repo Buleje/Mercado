@@ -32,7 +32,6 @@ const VendorLowStockList = dynamic(() => import("@/components/admin/vendor-dashb
 const VendorRecentSales = dynamic(() => import("@/components/admin/vendor-dashboard/VendorRecentSales").then(m => ({ default: m.VendorRecentSales })), { ssr: false });
 const VendorWeeklyChart = dynamic(() => import("@/components/admin/vendor-dashboard/VendorWeeklyChart").then(m => ({ default: m.VendorWeeklyChart })), { ssr: false });
 const VendorQuickActions = dynamic(() => import("@/components/admin/vendor-dashboard/VendorQuickActions").then(m => ({ default: m.VendorQuickActions })), { ssr: false });
-const AdminMarketplaceOverview = dynamic(() => import("@/components/admin/unified/MarketplaceModule").then(m => ({ default: m.AdminMarketplaceOverview })), { ssr: false, loading: DashboardLoading });
 const StockoutPredictionWidget = dynamic(() => import("@/components/marketplace/StockoutPredictionWidget"), { ssr: false });
 const SponsoredAdminPanel = dynamic(() => import("@/components/marketplace/SponsoredAdminPanel"), { ssr: false });
 const SalesAnomalyAlert = dynamic(() => import("@/components/marketplace/SalesAnomalyAlert"), { ssr: false });
@@ -42,6 +41,12 @@ const InventarioDashboard = dynamic(() => import("@/components/admin/inicio/Inve
 const ComprasDashboard = dynamic(() => import("@/components/admin/inicio/ComprasDashboard"), { ssr: false, loading: DashboardLoading });
 const ProductosDashboard = dynamic(() => import("@/components/admin/inicio/ProductosDashboard"), { ssr: false, loading: DashboardLoading });
 const ClientesDashboard = dynamic(() => import("@/components/admin/inicio/ClientesDashboard"), { ssr: false, loading: DashboardLoading });
+
+// ADR-064 Ola B — TodayHub hero unificado (drop-in al tab "general")
+const TodayHub = dynamic(
+  () => import("@/components/admin/hoy/TodayHub").then((m) => ({ default: m.TodayHub })),
+  { ssr: false, loading: DashboardLoading },
+);
 
 const MODULE_ID = "vendor-dashboard";
 
@@ -176,7 +181,14 @@ export default function VendorDashboardModule() {
       </AdminModuleHeader>
 
       <AdminTabBar tabs={TABS} activeTab={tab} onTabChange={(t) => setTab(t as InicioTab)} onTabHover={(id) => TAB_PREFETCH[id as InicioTab]?.()} moduleId={MODULE_ID}>
-        {tab === "general" && <InicioDashboard dateRange={dateRange} />}
+        {tab === "general" && (
+          <div className="space-y-6">
+            {/* ADR-064 · Hub unificado "Hoy" con saludo dinámico por hora (Ola H) */}
+            <TodayHub />
+            {/* Dashboard legacy debajo (transición gradual) */}
+            <InicioDashboard dateRange={dateRange} />
+          </div>
+        )}
         {tab === "ventas" && <VentasDashboard dateRange={dateRange} />}
         {tab === "caja" && <CajaDashboard dateRange={dateRange} />}
         {tab === "inventario" && <InventarioDashboard dateRange={dateRange} />}
@@ -186,8 +198,6 @@ export default function VendorDashboardModule() {
 
         {tab === "marketplace" && (
           <div className="space-y-6">
-            <AdminMarketplaceOverview />
-
             {error && !data && (
               <div className="flex flex-col items-center justify-center gap-4 py-16">
                 <AlertTriangle className="h-10 w-10 text-amber-500" />

@@ -190,23 +190,31 @@ export default async function TiendaPage() {
       {/* Spacer to push content below fixed header (h-11 announcement + h-16/h-20 header) */}
       <div className="h-[6.75rem] sm:h-[7.75rem]" />
       <main id="main-content">
-        {/* Default hero — always visible */}
-        <section className="relative overflow-hidden py-12 sm:py-16 bg-gradient-to-br from-primary via-primary/90 to-primary-dark">
+        {/* Default hero — editorial dark · PAS+FAB copy */}
+        <section className="relative overflow-hidden py-16 sm:py-20 border-b border-gray-200 dark:border-gray-800" style={{ background: "#060a0d" }}>
           <div className="pointer-events-none absolute inset-0">
-            <div className="absolute -top-20 -right-20 h-60 w-60 rounded-full bg-white/10 blur-[80px]" />
-            <div className="absolute -bottom-20 -left-20 h-48 w-48 rounded-full bg-white/5 blur-[60px]" />
+            <div className="absolute -top-24 -right-24 h-80 w-80 rounded-full bg-white/5 blur-[100px]" />
           </div>
           <div className="relative z-10 mx-auto max-w-5xl px-4 sm:px-6 text-center">
-            <h1 className="text-2xl sm:text-3xl lg:text-4xl font-black text-white leading-tight">
-              Tu tienda online
+            <span className="inline-flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-[0.25em] text-white/55 mb-5">
+              Tienda online
+            </span>
+            <h1 className="text-3xl sm:text-4xl lg:text-5xl font-extrabold text-white leading-[1.02] tracking-[-0.025em]">
+              Tu despensa completa{" "}
+              <span className="text-white/45">en 25 minutos</span>
             </h1>
-            <p className="mt-3 text-sm sm:text-base text-white/70 max-w-xl mx-auto">
-              Explora nuestro catalogo completo. Compra facil, paga con Yape o efectivo, y recibe en tu puerta.
+            <p className="mt-5 text-sm sm:text-base text-white/65 max-w-xl mx-auto leading-relaxed">
+              Abarrotes, frescos, bebidas y limpieza. Delivery a tu puerta.
+              Pagás con Yape o efectivo al recibir.
             </p>
-            <div className="flex items-center justify-center gap-6 mt-5 text-xs sm:text-sm text-white/50">
-              <span>{initialProducts.length > 0 ? `${initialProducts.length} productos` : "Catalogo completo"}</span>
-              <span>Delivery rapido</span>
-              <span>Pago con Yape</span>
+            <div className="flex flex-wrap items-center justify-center gap-x-6 gap-y-2 mt-6 text-[10px] font-bold uppercase tracking-[0.2em] text-white/45 tabular-nums">
+              <span>{initialProducts.length > 0 ? `${initialProducts.length} productos` : "Catálogo completo"}</span>
+              <span className="h-1 w-1 rounded-full bg-white/30" />
+              <span>Delivery 25 min</span>
+              <span className="h-1 w-1 rounded-full bg-white/30" />
+              <span>Yape · Plin · Efectivo</span>
+              <span className="h-1 w-1 rounded-full bg-white/30" />
+              <span>Sin monto mínimo</span>
             </div>
           </div>
         </section>

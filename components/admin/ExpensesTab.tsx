@@ -1,7 +1,11 @@
 "use client";
 
 import { useState, useEffect, useMemo } from "react";
-import { Wallet, Loader2, Plus, Trash2, Calendar, TrendingUp, X, BarChart2 } from "lucide-react";
+import {
+  Wallet, Loader2, Plus, Trash2, Calendar, TrendingUp, X, BarChart2,
+  Home, Lightbulb, Users, Truck, Sparkles, Megaphone, Wrench, Package,
+  type LucideIcon,
+} from "lucide-react";
 import { cn } from "@/lib/utils";
 
 type Expense = { id: string; category: string; description: string; amount: number; date: string; recurring: boolean };
@@ -18,12 +22,18 @@ const CATEGORIES = [
   { value: "otros", label: "Otros" },
 ];
 
-function catEmoji(category: string): string {
-  const map: Record<string, string> = {
-    alquiler: "🏠", servicios: "💡", personal: "👥", transporte: "🚚",
-    limpieza: "🧹", marketing: "📢", mantenimiento: "🔧", otros: "📦",
+function catIcon(category: string): LucideIcon {
+  const map: Record<string, LucideIcon> = {
+    alquiler: Home,
+    servicios: Lightbulb,
+    personal: Users,
+    transporte: Truck,
+    limpieza: Sparkles,
+    marketing: Megaphone,
+    mantenimiento: Wrench,
+    otros: Package,
   };
-  return map[category] ?? "📦";
+  return map[category] ?? Package;
 }
 
 export default function ExpensesTab() {
@@ -225,17 +235,22 @@ export default function ExpensesTab() {
         </div>
       ) : (
         <div className="space-y-2 max-h-100 overflow-y-auto">
-          {expenses.map(e => (
+          {expenses.map(e => {
+            const CatIcon = catIcon(e.category);
+            return (
             <div key={e.id} className="flex flex-wrap items-center gap-3 bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl px-2 sm:px-4 py-2 sm:py-3">
-              <span className="text-xl">{catEmoji(e.category)}</span>
+              <div className="h-8 w-8 rounded-lg bg-gray-50 dark:bg-gray-950 border border-gray-200 dark:border-gray-800 flex items-center justify-center text-gray-700 dark:text-gray-200 shrink-0">
+                <CatIcon className="h-4 w-4" strokeWidth={1.5} />
+              </div>
               <div className="flex-1 min-w-0">
                 <p className="font-bold text-sm text-gray-900 dark:text-foreground truncate">{e.description}</p>
-                <p className="text-xs text-gray-400">{new Date(e.date).toLocaleDateString("es-PE")} · <span className="capitalize">{e.category}</span>{e.recurring && " · 🔄 Recurrente"}</p>
+                <p className="text-xs text-gray-400">{new Date(e.date).toLocaleDateString("es-PE")} · <span className="capitalize">{e.category}</span>{e.recurring && " · Recurrente"}</p>
               </div>
               <p className="font-extrabold text-red-600 shrink-0">-S/{e.amount.toFixed(2)}</p>
               <button onClick={() => remove(e.id)} className="text-gray-300 hover:text-red-500 transition"><Trash2 className="h-4 w-4" /></button>
             </div>
-          ))}
+            );
+          })}
         </div>
       )}
     </div>

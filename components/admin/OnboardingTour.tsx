@@ -2,7 +2,11 @@
 
 import React, { useEffect } from "react";
 import { TourSpotlight } from "./TourSpotlight";
-import { ChevronLeft, ChevronRight, X, Sparkles } from "lucide-react";
+import {
+  ChevronLeft, ChevronRight, X, Sparkles,
+  Brain, ShoppingCart, Package, Tag, Truck, Wallet, Users, Settings,
+  type LucideIcon,
+} from "lucide-react";
 
 type Tab =
   | "asistente-ia"
@@ -20,7 +24,7 @@ interface TourStep {
   title: string;
   text: string;
   example: string;
-  emoji: string;
+  Icon: LucideIcon;
 }
 
 const TOUR_STEPS: TourStep[] = [
@@ -29,56 +33,56 @@ const TOUR_STEPS: TourStep[] = [
     title: "Tu asistente personal",
     text: "Aquí tu asistente te cuenta cómo va el negocio. Te dice cuánto vendiste, qué se está acabando y te da consejos.",
     example: "Ej: 'Hoy vendiste S/.1,240. El arroz se está acabando, pide más.'",
-    emoji: "🧠",
+    Icon: Brain,
   },
   {
     tabId: "pedidos",
     title: "Vender y cobrar",
-    text: "Aqui gestionas los pedidos, cobras a tus clientes y llevas la cuenta de quien te debe.",
-    example: "Ej: Cobrar S/.25 de fideos a dona Rosa",
-    emoji: "🛒",
+    text: "Aquí gestionás los pedidos, cobrás a tus clientes y llevás la cuenta de quién te debe.",
+    example: "Ej: Cobrar S/.25 de fideos a doña Rosa",
+    Icon: ShoppingCart,
   },
   {
     tabId: "inventario",
     title: "Tu almacén",
-    text: "Aquí ves cuánto tienes de cada producto. También te avisa si algo se va a vencer pronto.",
+    text: "Aquí ves cuánto tenés de cada producto. También te avisa si algo se va a vencer pronto.",
     example: "Ej: Te quedan 50 bolsas de arroz, 12 se vencen en marzo",
-    emoji: "📦",
+    Icon: Package,
   },
   {
     tabId: "productos",
     title: "Tus productos y sus precios",
-    text: "Aquí agregas productos nuevos, cambias precios y creas ofertas para tus clientes.",
+    text: "Aquí agregás productos nuevos, cambiás precios y creás ofertas para tus clientes.",
     example: "Ej: Subir el aceite de S/.8 a S/.8.50 o hacer 2x1 en galletas",
-    emoji: "🏷️",
+    Icon: Tag,
   },
   {
     tabId: "compras",
     title: "Pedirle al proveedor",
-    text: "Aquí haces pedidos a tus proveedores y ves qué te llegó y qué falta.",
+    text: "Aquí hacés pedidos a tus proveedores y ves qué te llegó y qué falta.",
     example: "Ej: Pedir 100 bolsas de azúcar al proveedor Torres",
-    emoji: "🚚",
+    Icon: Truck,
   },
   {
     tabId: "plata",
     title: "Tu dinero",
-    text: "Aquí ves cuánto entró, cuánto salió y cuánto ganaste. También puedes exportar a Excel.",
+    text: "Aquí ves cuánto entró, cuánto salió y cuánto ganaste. También podés exportar a Excel.",
     example: "Ej: Este mes entraron S/.8,500 y salieron S/.5,300. Ganaste S/.3,200",
-    emoji: "💰",
+    Icon: Wallet,
   },
   {
     tabId: "clientes",
     title: "Tus clientes",
     text: "Aquí ves la lista de tus clientes, quién compra seguido, quién te debe y pedidos de delivery.",
     example: "Ej: María compra cada semana y le gusta el arroz integral",
-    emoji: "👥",
+    Icon: Users,
   },
   {
     tabId: "config",
     title: "Ajustes del sistema",
-    text: "Aquí agregas cajeros, cambias permisos y configuras tu página web.",
+    text: "Aquí agregás cajeros, cambiás permisos y configurás tu página web.",
     example: "Ej: Dar permiso a Juan para que solo vea ventas, no precios de compra",
-    emoji: "⚙️",
+    Icon: Settings,
   },
 ];
 
@@ -180,12 +184,19 @@ export function OnboardingTour({
 
         {/* Content */}
         <div className="px-4 pb-3">
-          <h3 className="text-base font-bold text-gray-900 dark:text-white mb-1.5">
-            {step.title}
-          </h3>
-          <p className="text-sm text-gray-600 dark:text-gray-300 leading-relaxed mb-2">
-            {step.text}
-          </p>
+          <div className="flex items-start gap-3 mb-2">
+            <div className="h-9 w-9 shrink-0 rounded-lg bg-gray-50 dark:bg-gray-950 border border-gray-200 dark:border-gray-800 flex items-center justify-center text-gray-700 dark:text-gray-200">
+              <step.Icon className="h-4 w-4" strokeWidth={1.5} aria-hidden="true" />
+            </div>
+            <div>
+              <h3 className="text-base font-extrabold tracking-tight text-gray-900 dark:text-white">
+                {step.title}
+              </h3>
+              <p className="text-sm text-gray-600 dark:text-gray-300 leading-relaxed mt-1.5">
+                {step.text}
+              </p>
+            </div>
+          </div>
           <div className="bg-[#f0fdf4] dark:bg-emerald-900/30 border border-emerald-200 dark:border-emerald-800 rounded-lg px-3 py-2">
             <p className="text-xs text-emerald-700 dark:text-emerald-300 font-medium">
               {step.example}

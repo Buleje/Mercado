@@ -4,8 +4,13 @@ import {
   BarChart3, Box, CreditCard, FileText, Globe, MessageCircle,
   Package, Percent, Shield, ShoppingCart, Smartphone, Star,
   TrendingUp, Truck, Users, Wallet, Zap, Check, ArrowRight,
+  Coins, Timer, TrendingDown, Trophy,
+  type LucideIcon,
 } from "lucide-react";
 import Footer from "@/components/Footer";
+import BusinessMarquee from "@/components/negocios/BusinessMarquee";
+import BusinessTabsShowcase from "@/components/negocios/BusinessTabsShowcase";
+import ROICalculator from "@/components/negocios/ROICalculator";
 
 export const metadata: Metadata = {
   title: "Buleje para Negocios — Software ERP para Bodegas del Peru",
@@ -28,11 +33,11 @@ const FEATURES = [
   { icon: Smartphone, title: "Funciona en Celular", desc: "App web responsiva. Administra tu bodega desde cualquier dispositivo, en cualquier lugar." },
 ];
 
-const BENEFITS = [
-  { emoji: "💰", title: "Aumenta tus ventas", desc: "Clientes compran 24/7 desde su celular. Delivery amplia tu zona de cobertura." },
-  { emoji: "⏱️", title: "Ahorra tiempo", desc: "Automatiza cobros, inventario y reportes. Lo que antes tomaba horas, ahora es 1 click." },
-  { emoji: "📉", title: "Reduce perdidas", desc: "Control de vencimientos, mermas y fiados. Sabe exactamente cuanto ganas y cuanto pierdes." },
-  { emoji: "🏆", title: "Compite con los grandes", desc: "Tu bodega con la misma tecnologia que las cadenas. Presencia online profesional." },
+const BENEFITS: { Icon: LucideIcon; title: string; desc: string }[] = [
+  { Icon: Coins, title: "Aumentá tus ventas", desc: "Clientes compran 24/7 desde su celular. Delivery amplía tu zona de cobertura." },
+  { Icon: Timer, title: "Ahorrá tiempo", desc: "Automatizá cobros, inventario y reportes. Lo que antes tomaba horas, ahora es 1 click." },
+  { Icon: TrendingDown, title: "Reducí pérdidas", desc: "Control de vencimientos, mermas y fiados. Sabés exactamente cuánto ganás y cuánto perdés." },
+  { Icon: Trophy, title: "Competí con los grandes", desc: "Tu bodega con la misma tecnología que las cadenas. Presencia online profesional." },
 ];
 
 const PLANS = [
@@ -136,6 +141,32 @@ export default function NegociosPage() {
         </div>
       </section>
 
+      {/* ── SOCIAL PROOF: marquee de logos ── */}
+      <BusinessMarquee />
+
+      {/* ── TABS SHOWCASE: 4 features principales con mockup interactivo ── */}
+      <section className="py-16 sm:py-20 bg-white dark:bg-gray-950">
+        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+          <div className="text-center">
+            <span className="inline-flex items-center gap-1.5 bg-primary/10 text-primary text-xs font-bold rounded-full px-3 py-1 mb-4">
+              <Zap className="h-3.5 w-3.5" />
+              Todo en un solo panel
+            </span>
+            <h2 className="text-3xl sm:text-4xl font-black text-gray-900 dark:text-white">
+              Mirá cómo funciona
+            </h2>
+            <p className="mt-3 text-gray-500 dark:text-gray-400 max-w-xl mx-auto">
+              Tocá cada feature para ver el mockup real. Son los mismos paneles que
+              usan 500+ bodegas hoy.
+            </p>
+          </div>
+          <BusinessTabsShowcase />
+        </div>
+      </section>
+
+      {/* ── CALCULADORA ROI ── */}
+      <ROICalculator />
+
       {/* ── QUE INCLUYE ── */}
       <section className="py-16 sm:py-20 bg-gray-50 dark:bg-gray-900/50">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
@@ -177,16 +208,28 @@ export default function NegociosPage() {
               Como Buleje ayuda a tu negocio
             </h2>
           </div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-8 max-w-4xl mx-auto">
-            {BENEFITS.map((b) => (
-              <div key={b.title} className="flex gap-5 p-6 rounded-2xl bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800">
-                <span className="text-4xl shrink-0">{b.emoji}</span>
-                <div>
-                  <h3 className="font-bold text-gray-900 dark:text-white text-lg mb-1">{b.title}</h3>
-                  <p className="text-sm text-gray-500 dark:text-gray-400 leading-relaxed">{b.desc}</p>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 max-w-4xl mx-auto">
+            {BENEFITS.map((b) => {
+              const BIcon = b.Icon;
+              return (
+                <div
+                  key={b.title}
+                  className="flex gap-4 p-6 rounded-xl bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 hover:border-gray-900 dark:hover:border-gray-500 transition-colors"
+                >
+                  <div className="h-10 w-10 shrink-0 rounded-lg bg-gray-50 dark:bg-gray-950 border border-gray-200 dark:border-gray-800 flex items-center justify-center text-gray-700 dark:text-gray-200">
+                    <BIcon className="h-4 w-4" strokeWidth={1.5} aria-hidden="true" />
+                  </div>
+                  <div>
+                    <h3 className="font-extrabold tracking-tight text-gray-900 dark:text-white text-base mb-1">
+                      {b.title}
+                    </h3>
+                    <p className="text-sm text-gray-500 dark:text-gray-400 leading-relaxed">
+                      {b.desc}
+                    </p>
+                  </div>
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         </div>
       </section>

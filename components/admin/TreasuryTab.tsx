@@ -127,9 +127,9 @@ export default function TreasuryTab() {
       </div>
 
       {/* Total saldo consolidado */}
-      <div className="bg-gradient-to-br from-primary/10 to-primary/5 dark:from-primary/20 dark:to-primary/5 border border-primary/20 rounded-xl p-3 sm:p-6">
-        <p className="text-sm font-semibold text-primary/70 mb-1">Saldo consolidado total</p>
-        <p className="text-2xl sm:text-4xl font-extrabold text-primary">
+      <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-xl p-3 sm:p-6">
+        <p className="text-[10px] font-bold uppercase tracking-[0.25em] text-[var(--text-tertiary)] mb-2">Saldo consolidado total</p>
+        <p className="text-2xl sm:text-4xl font-extrabold tabular-nums tracking-[-0.02em] text-[var(--text-primary)]">
           {hideBalances ? "S/ ••••••" : fmt(totalBalance)}
         </p>
         <p className="text-xs text-primary/60 mt-1">{accounts.length} cuentas activas · {unreconciled} movimiento{unreconciled !== 1 ? "s" : ""} sin conciliar</p>

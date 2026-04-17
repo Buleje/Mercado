@@ -2,7 +2,11 @@
 
 import { useState, useEffect, useMemo } from "react";
 import dynamic from "next/dynamic";
-import { Target, Trophy, Flame, TrendingUp, Pencil, Check, X, Calendar } from "lucide-react";
+import {
+  Target, Trophy, Flame, TrendingUp, Pencil, Check, X, Calendar,
+  Award, Rocket, Zap, Coins, Users, Star, Landmark, Sunrise, Smile,
+  type LucideIcon,
+} from "lucide-react";
 import { cn } from "@/lib/utils";
 import { formatCurrency } from "@/lib/currency";
 import AdminTabBar from "@/components/admin/shared/AdminTabBar";
@@ -32,7 +36,7 @@ interface Goal {
 
 interface Achievement {
   id: string;
-  emoji: string;
+  Icon: LucideIcon;
   name: string;
   desc: string;
   unlockedAt?: string;
@@ -41,20 +45,20 @@ interface Achievement {
 // ─── Constantes de logros ─────────────────────────────────────────────────────
 
 const ACHIEVEMENTS_DEF: Omit<Achievement, "unlockedAt">[] = [
-  { id: "primera-venta",    emoji: "🎯", name: "Primera Venta",      desc: "Registraste tu primera venta" },
-  { id: "100-ventas",       emoji: "💯", name: "100 Ventas",          desc: "Llegaste a 100 ventas" },
-  { id: "1000-ventas",      emoji: "🚀", name: "1000 Ventas",         desc: "Mil ventas! Increíble" },
-  { id: "mejor-dia",        emoji: "📈", name: "Mejor Día",           desc: "Superaste tu récord de ventas diarias" },
-  { id: "racha-7",          emoji: "🔥", name: "Racha 7",             desc: "7 días seguidos vendiendo" },
-  { id: "racha-30",         emoji: "⚡", name: "Racha 30",            desc: "30 días seguidos vendiendo" },
-  { id: "todo-cobrado",     emoji: "✅", name: "Todo Cobrado",        desc: "Todos los fiados al día" },
-  { id: "cobrador",         emoji: "💰", name: "Cobrador",            desc: "Cobraste más de S/ 1000 en fiados" },
-  { id: "50-clientes",      emoji: "👥", name: "50 Clientes",         desc: "Llegaste a 50 clientes registrados" },
-  { id: "vendedor-estrella",emoji: "⭐", name: "Vendedor Estrella",   desc: "Meta diaria alcanzada 5 veces en una semana" },
-  { id: "caja-perfecta",    emoji: "🏦", name: "Caja Perfecta",       desc: "Arqueo sin diferencias 3 veces seguidas" },
-  { id: "madrugador",       emoji: "🌅", name: "Madrugador",          desc: "Abriste caja antes de las 7am" },
-  { id: "cliente-feliz",    emoji: "😊", name: "Cliente Feliz",       desc: "Recibiste 5 reseñas de 5 estrellas" },
-  { id: "meta-cumplida",    emoji: "🏆", name: "Meta Cumplida",       desc: "Alcanzaste tu meta mensual" },
+  { id: "primera-venta",    Icon: Target,    name: "Primera Venta",      desc: "Registraste tu primera venta" },
+  { id: "100-ventas",       Icon: Award,     name: "100 Ventas",          desc: "Llegaste a 100 ventas" },
+  { id: "1000-ventas",      Icon: Rocket,    name: "1000 Ventas",         desc: "Mil ventas — increíble" },
+  { id: "mejor-dia",        Icon: TrendingUp, name: "Mejor Día",          desc: "Superaste tu récord de ventas diarias" },
+  { id: "racha-7",          Icon: Flame,     name: "Racha 7",             desc: "7 días seguidos vendiendo" },
+  { id: "racha-30",         Icon: Zap,       name: "Racha 30",            desc: "30 días seguidos vendiendo" },
+  { id: "todo-cobrado",     Icon: Check,     name: "Todo Cobrado",        desc: "Todos los fiados al día" },
+  { id: "cobrador",         Icon: Coins,     name: "Cobrador",            desc: "Cobraste más de S/ 1000 en fiados" },
+  { id: "50-clientes",      Icon: Users,     name: "50 Clientes",         desc: "Llegaste a 50 clientes registrados" },
+  { id: "vendedor-estrella",Icon: Star,      name: "Vendedor Estrella",   desc: "Meta diaria alcanzada 5 veces en una semana" },
+  { id: "caja-perfecta",    Icon: Landmark,  name: "Caja Perfecta",       desc: "Arqueo sin diferencias 3 veces seguidas" },
+  { id: "madrugador",       Icon: Sunrise,   name: "Madrugador",          desc: "Abriste caja antes de las 7am" },
+  { id: "cliente-feliz",    Icon: Smile,     name: "Cliente Feliz",       desc: "Recibiste 5 reseñas de 5 estrellas" },
+  { id: "meta-cumplida",    Icon: Trophy,    name: "Meta Cumplida",       desc: "Alcanzaste tu meta mensual" },
 ];
 
 const LS_ACHIEVEMENTS = "achievements";
@@ -374,7 +378,14 @@ function LogrosTab() {
                     <div className="absolute -inset-full animate-[spin_4s_linear_infinite] bg-gradient-conic from-transparent via-primary/10 to-transparent" />
                   </div>
                 )}
-                <span className="text-3xl leading-none">{a.emoji}</span>
+                <div className={cn(
+                  "h-10 w-10 shrink-0 rounded-lg flex items-center justify-center border",
+                  isUnlocked
+                    ? "bg-white border-primary/30 text-primary"
+                    : "bg-gray-100 border-gray-200 text-gray-400",
+                )}>
+                  <a.Icon className="h-5 w-5" strokeWidth={1.5} aria-hidden="true" />
+                </div>
                 <div>
                   <p className={cn(
                     "text-xs font-bold leading-tight",

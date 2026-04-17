@@ -104,13 +104,14 @@ export const TRACKING_STATUS_LABELS: Record<TrackingStatus, string> = {
   cancelled: "Cancelada",
 };
 
+// Deprecated — usar TRACKING_STATUS_ICON desde ./status-icons.tsx en vez.
 export const TRACKING_STATUS_EMOJI: Record<TrackingStatus, string> = {
-  preparing: "🧑‍🍳",
-  ready: "📦",
-  picked_up: "🛵",
-  in_transit: "🚴",
-  nearby: "📍",
-  delivered: "✅",
-  failed: "⚠️",
-  cancelled: "❌",
+  preparing: "",
+  ready: "",
+  picked_up: "",
+  in_transit: "",
+  nearby: "",
+  delivered: "",
+  failed: "",
+  cancelled: "",
 };

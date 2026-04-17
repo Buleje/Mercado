@@ -20,16 +20,16 @@ import {
 import { cn } from "@/lib/utils";
 
 const CATEGORIES = [
-  { value: "bodega", label: "🏪 Bodega" },
-  { value: "minimarket", label: "🛒 Minimarket" },
-  { value: "fruteria", label: "🍎 Frutería" },
-  { value: "panaderia", label: "🍞 Panadería" },
-  { value: "licoreria", label: "🍺 Licorería" },
-  { value: "farmacia", label: "💊 Farmacia" },
-  { value: "libreria", label: "📚 Librería" },
-  { value: "ferreteria", label: "🔧 Ferretería" },
-  { value: "restaurante", label: "🍽️ Restaurante" },
-  { value: "otro", label: "📦 Otro" },
+  { value: "bodega", label: "Bodega" },
+  { value: "minimarket", label: "Minimarket" },
+  { value: "fruteria", label: "Frutería" },
+  { value: "panaderia", label: "Panadería" },
+  { value: "licoreria", label: "Licorería" },
+  { value: "farmacia", label: "Farmacia" },
+  { value: "libreria", label: "Librería" },
+  { value: "ferreteria", label: "Ferretería" },
+  { value: "restaurante", label: "Restaurante" },
+  { value: "otro", label: "Otro" },
 ];
 
 const ZONES = [
@@ -125,14 +125,28 @@ export default function StoreRegistrationForm() {
             Tu tienda <strong>{storeName}</strong> está siendo revisada.
             Te avisaremos por WhatsApp cuando esté lista para vender.
           </p>
-          <div className="bg-primary/5 border border-primary/20 rounded-2xl p-4 text-sm text-gray-600 dark:text-gray-300 text-left space-y-2">
-            <p className="font-semibold text-primary">¿Qué sigue?</p>
-            <ul className="space-y-1.5">
-              <li>📱 Recibirás un WhatsApp de confirmación</li>
-              <li>✅ Revisamos tu solicitud (máximo 24 horas)</li>
-              <li>🏪 Te damos acceso a tu panel para subir productos</li>
-              <li>🚀 Tu tienda aparece en el marketplace</li>
-            </ul>
+          <div className="bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-2xl p-5 text-left space-y-3">
+            <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-gray-400">
+              ¿Qué sigue?
+            </p>
+            <ol className="space-y-2.5">
+              {[
+                "Recibirás un WhatsApp de confirmación",
+                "Revisamos tu solicitud (máximo 24 horas)",
+                "Te damos acceso a tu panel para subir productos",
+                "Tu tienda aparece en el marketplace",
+              ].map((step, i) => (
+                <li
+                  key={i}
+                  className="flex gap-3 text-sm text-gray-600 dark:text-gray-300"
+                >
+                  <span className="shrink-0 flex h-5 w-5 items-center justify-center rounded-full bg-gray-900 dark:bg-white text-white dark:text-gray-900 text-[10px] font-extrabold tabular-nums">
+                    {i + 1}
+                  </span>
+                  <span>{step}</span>
+                </li>
+              ))}
+            </ol>
           </div>
           <Link
             href="/marketplace"

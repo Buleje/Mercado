@@ -535,7 +535,7 @@ export default function MarketplaceCart({
             aria-label="Carrito de compras"
           >
             {/* header — glassmorphism */}
-            <div className="flex items-center justify-between px-5 py-4 bg-gradient-to-r from-primary/5 to-transparent border-b border-gray-200/80 dark:border-gray-800/80">
+            <div className="flex items-center justify-between px-5 py-4 bg-[var(--surface-sunken)] border-b border-[var(--rule-soft)]">
               <div className="flex items-center gap-2.5">
                 <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-primary/10 dark:bg-primary/20">
                   <svg aria-hidden="true" className="h-5 w-5 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -788,7 +788,7 @@ export default function MarketplaceCart({
                     {loyaltyPoints > 0 && (
                       <div className="mt-2 border-t border-gray-200 pt-2 dark:border-gray-700">
                         <div className="flex items-center justify-between text-xs">
-                          <span className="text-gray-600 dark:text-gray-400">⭐ Tus puntos: <strong>{loyaltyPoints}</strong></span>
+                          <span className="text-gray-600 dark:text-gray-400">Tus puntos: <strong className="tabular-nums">{loyaltyPoints}</strong></span>
                           <span className="text-gray-400 dark:text-gray-500">(100 pts = S/1)</span>
                         </div>
                         <div className="flex gap-1.5 mt-1">
@@ -969,7 +969,7 @@ export default function MarketplaceCart({
 
                   {/* Datos del cliente */}
                   <div className="rounded-xl border border-gray-200 bg-gray-50 p-3 dark:border-gray-800 dark:bg-gray-800/50 space-y-1.5">
-                    <p className="text-xs font-semibold text-gray-500 dark:text-gray-400 mb-1">📍 Datos de entrega</p>
+                    <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-gray-500 dark:text-gray-400 mb-2">Datos de entrega</p>
                     <div className="flex justify-between text-sm">
                       <span className="text-gray-500">Nombre</span>
                       <span className="font-medium text-gray-900 dark:text-white">{customerName}</span>
@@ -992,7 +992,7 @@ export default function MarketplaceCart({
 
                   {/* Método de pago */}
                   <div className="rounded-xl border border-gray-200 bg-gray-50 p-3 dark:border-gray-800 dark:bg-gray-800/50">
-                    <p className="text-xs font-semibold text-gray-500 dark:text-gray-400 mb-1">💳 Método de pago</p>
+                    <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-gray-500 dark:text-gray-400 mb-2">Método de pago</p>
                     <div className="flex items-center gap-2">
                       {paymentMethod === "yape" ? (
                         <>
@@ -1016,7 +1016,7 @@ export default function MarketplaceCart({
 
                   {/* Productos por tienda */}
                   <div className="rounded-xl border border-gray-200 bg-gray-50 p-3 dark:border-gray-800 dark:bg-gray-800/50">
-                    <p className="text-xs font-semibold text-gray-500 dark:text-gray-400 mb-2">🛒 Productos</p>
+                    <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-gray-500 dark:text-gray-400 mb-2">Productos</p>
                     {Object.keys(byStore).map((sid) => {
                       const g = byStore[sid];
                       const couponR = couponResults[g.storeSlug];

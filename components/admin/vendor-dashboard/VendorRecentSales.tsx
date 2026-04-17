@@ -1,7 +1,7 @@
 "use client";
 
 import type { VendorOrder } from "./vendor-dashboard.types";
-import { Receipt } from "lucide-react";
+import { Receipt, ShoppingCart } from "lucide-react";
 
 type Props = {
   sales: VendorOrder[];
@@ -26,9 +26,14 @@ export function VendorRecentSales({ sales }: Props) {
           Ventas recientes de hoy
         </h3>
         <div className="text-center py-8">
-          <span className="text-3xl">🛒</span>
-          <p className="mt-2 text-sm font-medium text-gray-600 dark:text-muted">
-            Todavía no hay ventas registradas hoy.
+          <div className="inline-flex h-10 w-10 items-center justify-center rounded-xl border border-gray-200 dark:border-gray-800 bg-gray-50 dark:bg-gray-950 text-gray-400 dark:text-gray-600 mb-2">
+            <ShoppingCart className="h-5 w-5" strokeWidth={1.5} />
+          </div>
+          <p className="mt-2 text-sm font-semibold text-gray-700 dark:text-gray-200">
+            Sin ventas hoy
+          </p>
+          <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
+            Aún no registraste ninguna venta hoy
           </p>
         </div>
       </div>

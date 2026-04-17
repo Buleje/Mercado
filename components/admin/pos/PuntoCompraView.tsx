@@ -764,11 +764,11 @@ export default function PuntoCompraView() {
                     : "bg-white text-amber-700 border-amber-300 hover:bg-amber-100",
                 )}
               >
-                {promo.tipo === "porcentaje" ? `🏷️ ${promo.valor}% OFF` :
-                 promo.tipo === "monto_fijo" ? `💰 S/ ${promo.valor} OFF` :
-                 promo.tipo === "2x1" ? "🎁 2×1" :
-                 promo.tipo === "3x2" ? "📦 3×2" :
-                 promo.tipo === "combo" ? `🛒 Combo S/ ${promo.valor}` : `🏷️ ${promo.nombre}`}
+                {promo.tipo === "porcentaje" ? `${promo.valor}% OFF` :
+                 promo.tipo === "monto_fijo" ? `S/ ${promo.valor} OFF` :
+                 promo.tipo === "2x1" ? "2×1" :
+                 promo.tipo === "3x2" ? "3×2" :
+                 promo.tipo === "combo" ? `Combo S/ ${promo.valor}` : promo.nombre}
                 <span className="ml-1 opacity-70 truncate max-w-[80px] inline-block align-bottom">
                   {promo.nombre}
                 </span>
@@ -1129,8 +1129,8 @@ export default function PuntoCompraView() {
                         {appliedPromo && (appliedPromo.tipo === "2x1" || appliedPromo.tipo === "3x2") &&
                           itemMatchesPromo(item, appliedPromo) &&
                           freeUnits(item.quantity, appliedPromo.tipo) > 0 && (
-                          <span className="text-[9px] bg-amber-100 text-amber-700 px-1 rounded font-bold">
-                            🎁 {freeUnits(item.quantity, appliedPromo.tipo)} gratis
+                          <span className="text-[9px] bg-amber-100 text-amber-700 px-1 rounded font-bold uppercase tracking-wider">
+                            +{freeUnits(item.quantity, appliedPromo.tipo)} gratis
                           </span>
                         )}
                       </p>

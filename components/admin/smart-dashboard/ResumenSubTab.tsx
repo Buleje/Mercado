@@ -107,7 +107,7 @@ export interface ResumenSubTabProps {
   // Logro
   showLogro: boolean;
   setShowLogro: (v: boolean) => void;
-  logro: { emoji: string; texto: string } | null;
+  logro: { texto: string } | null;
 }
 
 // ── Skeleton helpers ─────────────────────────────────────────────────────────────

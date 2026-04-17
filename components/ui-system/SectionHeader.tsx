@@ -1,0 +1,66 @@
+"use client";
+
+import { cn } from "@/lib/utils";
+import { Eyebrow } from "./Eyebrow";
+
+interface Props {
+  eyebrow?: string;
+  title: React.ReactNode;
+  description?: React.ReactNode;
+  action?: React.ReactNode;
+  size?: "sm" | "md" | "lg";
+  align?: "left" | "center";
+  ruled?: boolean;
+  className?: string;
+}
+
+const TITLE_SIZES = {
+  sm: "text-xl sm:text-2xl",
+  md: "text-2xl sm:text-3xl",
+  lg: "text-3xl sm:text-4xl lg:text-5xl",
+};
+
+/**
+ * SectionHeader — Editorial section header pattern.
+ * Eyebrow + title (tight tracking) + optional description + optional action on the right.
+ * Optional horizontal rule under.
+ */
+export function SectionHeader({
+  eyebrow,
+  title,
+  description,
+  action,
+  size = "md",
+  align = "left",
+  ruled = false,
+  className,
+}: Props) {
+  return (
+    <header
+      className={cn(
+        ruled && "pb-4 border-b border-gray-200 dark:border-gray-800 mb-6",
+        "flex flex-col sm:flex-row sm:items-end gap-4",
+        align === "center" && "items-center text-center",
+        className,
+      )}
+    >
+      <div className={cn("flex-1", align === "center" && "max-w-2xl mx-auto")}>
+        {eyebrow && <Eyebrow className="mb-2">{eyebrow}</Eyebrow>}
+        <h2
+          className={cn(
+            "font-extrabold tracking-[-0.02em] leading-[1.05] text-gray-900 dark:text-white",
+            TITLE_SIZES[size],
+          )}
+        >
+          {title}
+        </h2>
+        {description && (
+          <p className="mt-2 text-sm text-gray-500 dark:text-gray-400 max-w-xl leading-relaxed">
+            {description}
+          </p>
+        )}
+      </div>
+      {action && <div className="shrink-0">{action}</div>}
+    </header>
+  );
+}

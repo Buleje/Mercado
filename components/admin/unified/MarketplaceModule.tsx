@@ -16,7 +16,6 @@ import {
   Save,
   X,
   ChevronDown,
-  LayoutGrid,
   TrendingUp,
   Star,
   MessageSquare,
@@ -31,8 +30,6 @@ import AdminModuleHeader from "@/components/admin/shared/AdminModuleHeader";
 import AdminTabBar from "@/components/admin/shared/AdminTabBar";
 import ImageUpload from "@/components/admin/ImageUpload";
 
-// Dynamic import del dashboard multi-tienda (sólo para planes Business/Enterprise)
-const MultiStoreDashboard = lazy(() => import("@/components/admin/MultiStoreDashboard"));
 // Dynamic import del tab de precios competitivos
 const CompetitivePricingTab = lazy(() => import("@/components/admin/CompetitivePricingTab"));
 
@@ -134,7 +131,6 @@ const TABS = [
   { id: "cupones",      label: "Cupones",      icon: Ticket },
   { id: "resenas",      label: "Reseñas",      icon: Star },
   { id: "fidelidad",    label: "Fidelidad",    icon: Gift },
-  { id: "multitienda",  label: "Multi-tienda", icon: LayoutGrid },
 ];
 
 type TabId = string;
@@ -912,7 +908,7 @@ function ProductosTab() {
       if (!res.ok) throw new Error("Error al sincronizar");
       const data = await res.json();
       const d = data.data;
-      setSyncResult(`✅ ${d.created} nuevos · ${d.updated} reactivados · ${d.deactivated} desactivados`);
+      setSyncResult(`${d.created} nuevos · ${d.updated} reactivados · ${d.deactivated} desactivados`);
       load(); // recargar lista de productos
       setTimeout(() => setSyncResult(null), 5000);
     } catch {
@@ -2035,7 +2031,6 @@ export default function MarketplaceModule() {
     pendingCommissions: 0,
   });
   const [kpisLoading, setKpisLoading] = useState(true);
-  const [tenantPlan, setTenantPlan] = useState<string>("free");
 
   const refreshKpis = useCallback(() => {
     setKpisLoading(true);
@@ -2048,15 +2043,7 @@ export default function MarketplaceModule() {
 
   useEffect(() => {
     refreshKpis();
-    fetch("/api/settings")
-      .then((r) => (r.ok ? r.json() : null))
-      .then((d) => { if (d?.planName) setTenantPlan(d.planName as string); })
-      .catch(() => {});
   }, [refreshKpis]);
-
-  const isMultiStoreEnabled = tenantPlan === "business" || tenantPlan === "enterprise";
-
-  const visibleTabs = TABS.filter((t) => t.id !== "multitienda" || isMultiStoreEnabled);
 
   return (
     <div className="space-y-4">
@@ -2096,7 +2083,7 @@ export default function MarketplaceModule() {
       </div>
 
       <AdminTabBar
-        tabs={visibleTabs}
+        tabs={TABS}
         activeTab={tab}
         onTabChange={(id) => setTab(id)}
         moduleId={MODULE_ID}
@@ -2113,11 +2100,6 @@ export default function MarketplaceModule() {
         {tab === "cupones"     && <CuponesTab />}
         {tab === "resenas"     && <ResenasTab />}
         {tab === "fidelidad"   && <FidelidadTab />}
-        {tab === "multitienda" && isMultiStoreEnabled && (
-          <Suspense fallback={<Spinner />}>
-            <MultiStoreDashboard />
-          </Suspense>
-        )}
       </AdminTabBar>
     </div>
   );

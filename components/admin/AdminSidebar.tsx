@@ -565,6 +565,7 @@ interface CategorySectionProps {
   onHoverStart: (top: number) => void;
   onHoverEnd: () => void;
   isCollapsed: boolean;
+  isMobile: boolean;
   activeModule: string;
   activeTab: string;
   onModuleChange: (id: string) => void;
@@ -578,10 +579,14 @@ interface CategorySectionProps {
 
 function CategorySection({
   group, modules, isOpen, onToggle, onHoverStart, onHoverEnd,
-  isCollapsed, activeModule, activeTab,
+  isCollapsed, isMobile, activeModule, activeTab,
   onModuleChange, onTabChange, badges,
   editMode, moduleIndexMap, totalModules, onMoveModule,
 }: CategorySectionProps) {
+  // En desktop NO se usa el acordeon click-expand: solo flyout en hover.
+  // En mobile (sin hover) mantenemos el acordeon tradicional.
+  const allowAccordion = isMobile;
+  const accordionOpen = allowAccordion && isOpen;
   const col = GROUP_COLORS[group];
   const Icon = GROUP_ICONS[group];
   const isAnyActive = modules.some(m => m.id === activeModule);
@@ -599,9 +604,10 @@ function CategorySection({
         onMouseLeave={onHoverEnd}
       >
         <button
-          onClick={onToggle}
+          onClick={allowAccordion ? onToggle : undefined}
           className={cn(
             "w-full flex items-center gap-2.5 px-3 py-2 rounded-xl transition-all group",
+            allowAccordion ? "cursor-pointer" : "cursor-default",
             isAnyActive
               ? "bg-[#2563EB]/10"
               : "hover:bg-gray-50"
@@ -610,11 +616,11 @@ function CategorySection({
           {/* Icono de categoría con color */}
           <div className={cn(
             "h-7 w-7 rounded-lg flex items-center justify-center shrink-0 transition-all",
-            isOpen || isAnyActive ? cn(col.bg, "border", col.border) : "bg-gray-100"
+            accordionOpen || isAnyActive ? cn(col.bg, "border", col.border) : "bg-gray-100"
           )}>
             <Icon className={cn(
               "h-3.5 w-3.5 transition-colors",
-              isOpen || isAnyActive ? col.icon : "text-gray-400 group-hover:" + col.icon
+              accordionOpen || isAnyActive ? col.icon : "text-gray-400 group-hover:" + col.icon
             )} />
           </div>
 
@@ -633,11 +639,11 @@ function CategorySection({
                   {modules.length} módulo{modules.length !== 1 ? "s" : ""}
                 </span>
               </div>
-              {/* Chevron rotado cuando está abierto */}
-              <m.div animate={{ rotate: isOpen ? 90 : 0 }} transition={{ duration: 0.2 }}>
+              {/* Chevron: rotado cuando el acordeon está abierto (solo mobile) */}
+              <m.div animate={{ rotate: accordionOpen ? 90 : 0 }} transition={{ duration: 0.2 }}>
                 <ChevronRight className={cn(
                   "h-3.5 w-3.5 shrink-0 transition-colors",
-                  isOpen || isAnyActive ? col.icon : "text-gray-300"
+                  accordionOpen || isAnyActive ? col.icon : "text-gray-300"
                 )} />
               </m.div>
             </>
@@ -645,10 +651,10 @@ function CategorySection({
         </button>
       </div>
 
-      {/* Acordeón: módulos se despliegan hacia abajo al hacer clic */}
-      {!isCollapsed && (
+      {/* Acordeón: solo en mobile (desktop usa flyout en hover) */}
+      {!isCollapsed && allowAccordion && (
         <AnimatePresence initial={false}>
-          {isOpen && (
+          {accordionOpen && (
             <m.div
               key={`cat-${group}`}
               initial={{ height: 0, opacity: 0 }}
@@ -1094,10 +1100,9 @@ export default function AdminSidebar({
                   >
                     <button
                       id={`cat-icon-${group}`}
-                      onClick={() => toggleCategory(group)}
                       title={GROUP_LABELS[group]}
                       className={cn(
-                        "w-full flex items-center justify-center p-2 rounded-xl transition-all",
+                        "w-full flex items-center justify-center p-2 rounded-xl transition-all cursor-default",
                         isAnyActive
                           ? "bg-[#2563EB]/10"
                           : "hover:bg-gray-100"
@@ -1127,6 +1132,7 @@ export default function AdminSidebar({
                     onHoverStart={(top) => openFlyout(group, top)}
                     onHoverEnd={closeFlyoutDelayed}
                     isCollapsed={false}
+                    isMobile={isMobile}
                     activeModule={activeModule}
                     activeTab={activeTab}
                     onModuleChange={handleModuleChange}

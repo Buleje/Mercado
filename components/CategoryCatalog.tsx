@@ -494,8 +494,8 @@ export default function CategoryCatalog({
         {/* Stats bar */}
         <div className="flex items-center justify-between mb-6">
           <div>
-            <h2 className="text-2xl sm:text-3xl font-extrabold text-foreground">
-              {categoryEmoji} {categoryLabel}
+            <h2 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-foreground">
+              {categoryLabel}
             </h2>
             <p className="text-sm text-muted mt-1">
               {categoryProducts.length} productos disponibles

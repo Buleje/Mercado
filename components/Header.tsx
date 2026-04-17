@@ -5,7 +5,10 @@ import { useRouter, usePathname } from "next/navigation";
 import {
   Menu, X, ShoppingCart, Store,
   ChevronDown, ChevronLeft, ChevronRight, Leaf, Package, Beef, Milk, GlassWater, Sparkles, UserCircle, Settings,
-  Search, Trophy, History, PackageCheck, User, Mic, Flame, ChefHat, Globe, ClipboardList } from "lucide-react";
+  Search, Trophy, History, PackageCheck, User, Mic, Flame, ChefHat, Globe, ClipboardList,
+  Home, Zap, RotateCw, Star, Phone,
+  type LucideIcon,
+} from "lucide-react";
 import Link from "next/link";
 import Image from "next/image";
 import { useCart } from "@/contexts/cart-context";
@@ -32,39 +35,63 @@ function HighlightMatch({ text, query }: { text: string; query: string }) {
   );
 }
 
-const categoryMenuItems = [
-  { id: "frutas-verduras", label: "Frutas y Verduras", emoji: "🥬", icon: Leaf,
+interface CategoryItem {
+  id: string;
+  label: string;
+  icon: LucideIcon;
+  desc: string;
+  subs: string[];
+  iconBg: string;
+  iconColor: string;
+}
+
+const categoryMenuItems: CategoryItem[] = [
+  { id: "frutas-verduras", label: "Frutas y Verduras", icon: Leaf,
     desc: "Productos frescos del día",
     subs: ["Frutas", "Verduras", "Tubérculos", "Hierbas"],
-    iconBg: "bg-emerald-100 dark:bg-emerald-900/40", iconColor: "text-emerald-700 dark:text-emerald-400" },
-  { id: "abarrotes", label: "Abarrotes", emoji: "🏪", icon: Package,
+    iconBg: "bg-gray-50 dark:bg-gray-950 border border-gray-200 dark:border-gray-800",
+    iconColor: "text-gray-700 dark:text-gray-200" },
+  { id: "abarrotes", label: "Abarrotes", icon: Package,
     desc: "Arroz, fideos, aceite y más",
     subs: ["Arroz", "Aceite", "Azúcar", "Fideos", "Enlatados"],
-    iconBg: "bg-amber-100 dark:bg-amber-900/40", iconColor: "text-amber-700 dark:text-amber-400" },
-  { id: "carnes", label: "Carnes", emoji: "🥩", icon: Beef,
+    iconBg: "bg-gray-50 dark:bg-gray-950 border border-gray-200 dark:border-gray-800",
+    iconColor: "text-gray-700 dark:text-gray-200" },
+  { id: "carnes", label: "Carnes", icon: Beef,
     desc: "Carnes frescas de calidad",
     subs: ["Pollo", "Res", "Cerdo", "Pescado"],
-    iconBg: "bg-red-100 dark:bg-red-900/40", iconColor: "text-red-600 dark:text-red-400" },
-  { id: "lacteos", label: "Lácteos", emoji: "🧀", icon: Milk,
+    iconBg: "bg-gray-50 dark:bg-gray-950 border border-gray-200 dark:border-gray-800",
+    iconColor: "text-gray-700 dark:text-gray-200" },
+  { id: "lacteos", label: "Lácteos", icon: Milk,
     desc: "Leche, queso, yogurt",
     subs: ["Leche", "Queso", "Yogurt", "Mantequilla"],
-    iconBg: "bg-sky-100 dark:bg-sky-900/40", iconColor: "text-sky-600 dark:text-sky-400" },
-  { id: "bebidas", label: "Bebidas", emoji: "🥤", icon: GlassWater,
+    iconBg: "bg-gray-50 dark:bg-gray-950 border border-gray-200 dark:border-gray-800",
+    iconColor: "text-gray-700 dark:text-gray-200" },
+  { id: "bebidas", label: "Bebidas", icon: GlassWater,
     desc: "Agua, gaseosas, jugos",
     subs: ["Gaseosas", "Agua", "Jugos", "Cervezas"],
-    iconBg: "bg-emerald-100 dark:bg-emerald-900/40", iconColor: "text-emerald-600 dark:text-emerald-400" },
-  { id: "limpieza", label: "Limpieza", emoji: "🧹", icon: Sparkles,
+    iconBg: "bg-gray-50 dark:bg-gray-950 border border-gray-200 dark:border-gray-800",
+    iconColor: "text-gray-700 dark:text-gray-200" },
+  { id: "limpieza", label: "Limpieza", icon: Sparkles,
     desc: "Todo para tu hogar limpio",
     subs: ["Detergente", "Jabón", "Lejía", "Desinfectante"],
-    iconBg: "bg-violet-100 dark:bg-violet-900/40", iconColor: "text-violet-600 dark:text-violet-400" },
+    iconBg: "bg-gray-50 dark:bg-gray-950 border border-gray-200 dark:border-gray-800",
+    iconColor: "text-gray-700 dark:text-gray-200" },
 ];
 
-const inicioMenuItems = [
-  { id: "inicio-top", label: "Página Principal", emoji: "🏠", href: "/", desc: "Volver al inicio" },
-  { id: "beneficios", label: "Beneficios", emoji: "⚡", href: "#beneficios", desc: "¿Por qué elegirnos?" },
-  { id: "como-funciona", label: "Cómo Funciona", emoji: "🔄", href: "#como-funciona", desc: "Pasos para pedir" },
-  { id: "reseñas", label: "Reseñas", emoji: "⭐", href: "#reseñas", desc: "Lo que dicen nuestros clientes" },
-  { id: "contacto", label: "Contacto", emoji: "📞", href: "#contacto", desc: "Escríbenos" },
+interface InicioItem {
+  id: string;
+  label: string;
+  icon: LucideIcon;
+  href: string;
+  desc: string;
+}
+
+const inicioMenuItems: InicioItem[] = [
+  { id: "inicio-top", label: "Página Principal", icon: Home, href: "/", desc: "Volver al inicio" },
+  { id: "beneficios", label: "Beneficios", icon: Zap, href: "#beneficios", desc: "¿Por qué elegirnos?" },
+  { id: "como-funciona", label: "Cómo Funciona", icon: RotateCw, href: "#como-funciona", desc: "Pasos para pedir" },
+  { id: "reseñas", label: "Reseñas", icon: Star, href: "#reseñas", desc: "Lo que dicen nuestros clientes" },
+  { id: "contacto", label: "Contacto", icon: Phone, href: "#contacto", desc: "Escríbenos" },
 ];
 
 export default function Header() {
@@ -541,22 +568,25 @@ export default function Header() {
                 <p className="text-[10px] font-bold text-primary uppercase tracking-widest">Navegación</p>
               </div>
               <div className="grid grid-cols-2 gap-1 p-2.5">
-                {inicioMenuItems.map((item) => (
-                  <a
-                    key={item.id}
-                    href={item.href}
-                    onClick={() => setActiveDropdown(null)}
-                    className="flex items-center gap-3 p-2.5 rounded-xl border border-transparent hover:border-primary/15 hover:bg-primary/5 group"
-                  >
-                    <span className="flex items-center justify-center h-9 w-9 rounded-xl bg-gray-100 text-lg shrink-0 group-hover:bg-primary/10">
-                      {item.emoji}
-                    </span>
-                    <div>
-                      <p className="font-bold text-sm text-foreground group-hover:text-primary">{item.label}</p>
-                      <p className="text-[11px] text-muted mt-0.5">{item.desc}</p>
-                    </div>
-                  </a>
-                ))}
+                {inicioMenuItems.map((item) => {
+                  const IIcon = item.icon;
+                  return (
+                    <a
+                      key={item.id}
+                      href={item.href}
+                      onClick={() => setActiveDropdown(null)}
+                      className="flex items-center gap-3 p-2.5 rounded-xl border border-transparent hover:border-gray-200 dark:hover:border-gray-700 group"
+                    >
+                      <span className="flex items-center justify-center h-9 w-9 rounded-lg bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-800 text-gray-700 dark:text-gray-200 shrink-0 group-hover:bg-gray-100 dark:group-hover:bg-gray-800">
+                        <IIcon className="h-4 w-4" strokeWidth={1.5} />
+                      </span>
+                      <div>
+                        <p className="font-extrabold tracking-tight text-sm text-foreground group-hover:text-primary">{item.label}</p>
+                        <p className="text-[11px] text-muted mt-0.5">{item.desc}</p>
+                      </div>
+                    </a>
+                  );
+                })}
               </div>
               {/* Sección categorías */}
               <div className="px-4 py-3 border-t border-b border-gray-100 bg-linear-to-r from-primary/5 to-primary/5">
@@ -566,22 +596,25 @@ export default function Header() {
                 </div>
               </div>
               <div className="grid grid-cols-3 gap-1 p-2.5">
-                {filteredCategories.map((cat) => (
-                  <Link
-                    key={cat.id}
-                    href="/tienda"
-                    onClick={() => { setActiveDropdown(null); handleCategoryClick(cat.id); }}
-                    className="flex items-center gap-2.5 p-2.5 rounded-xl border border-transparent hover:shadow-sm hover:border-gray-200 hover:bg-gray-50 group"
-                  >
-                    <span className={cn("flex items-center justify-center h-9 w-9 rounded-xl text-xl shrink-0 group-hover:scale-110", cat.iconBg)}>
-                      {cat.emoji}
-                    </span>
-                    <div>
-                      <p className="font-bold text-xs text-foreground group-hover:text-primary">{cat.label}</p>
-                      <p className="text-[10px] text-muted mt-0.5">{cat.desc}</p>
-                    </div>
-                  </Link>
-                ))}
+                {filteredCategories.map((cat) => {
+                  const CIcon = cat.icon;
+                  return (
+                    <Link
+                      key={cat.id}
+                      href="/tienda"
+                      onClick={() => { setActiveDropdown(null); handleCategoryClick(cat.id); }}
+                      className="flex items-center gap-2.5 p-2.5 rounded-xl border border-transparent hover:border-gray-200 hover:bg-gray-50 dark:hover:border-gray-700 dark:hover:bg-gray-900 group"
+                    >
+                      <span className={cn("flex items-center justify-center h-9 w-9 rounded-lg shrink-0", cat.iconBg, cat.iconColor)}>
+                        <CIcon className="h-4 w-4" strokeWidth={1.5} />
+                      </span>
+                      <div>
+                        <p className="font-extrabold tracking-tight text-xs text-foreground group-hover:text-primary">{cat.label}</p>
+                        <p className="text-[10px] text-muted mt-0.5">{cat.desc}</p>
+                      </div>
+                    </Link>
+                  );
+                })}
               </div>
               <div className="px-3 py-2.5 bg-linear-to-r from-primary/5 to-primary/5 border-t border-gray-100">
                 <Link href="/tienda" onClick={() => setActiveDropdown(null)}
@@ -638,37 +671,45 @@ export default function Header() {
             {mobileInicioOpen && (
               <div className="overflow-hidden">
                 <div className="mx-4 my-2 space-y-1">
-                  {inicioMenuItems.map((item) => (
-                    <a
-                      key={item.id}
-                      href={item.href}
-                      onClick={() => { setMobileOpen(false); setMobileInicioOpen(false); }}
-                      className="flex items-center gap-3 p-3 rounded-xl border border-gray-100 hover:border-primary/25 hover:bg-primary/5"
-                    >
-                      <span className="text-xl">{item.emoji}</span>
-                      <div>
-                        <p className="text-sm font-bold text-foreground">{item.label}</p>
-                        <p className="text-xs text-muted">{item.desc}</p>
-                      </div>
-                    </a>
-                  ))}
+                  {inicioMenuItems.map((item) => {
+                    const IIcon = item.icon;
+                    return (
+                      <a
+                        key={item.id}
+                        href={item.href}
+                        onClick={() => { setMobileOpen(false); setMobileInicioOpen(false); }}
+                        className="flex items-center gap-3 p-3 rounded-xl border border-gray-200 dark:border-gray-800 hover:border-gray-900 dark:hover:border-gray-500"
+                      >
+                        <span className="flex items-center justify-center h-8 w-8 rounded-lg bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-800 text-gray-700 dark:text-gray-200 shrink-0">
+                          <IIcon className="h-4 w-4" strokeWidth={1.5} />
+                        </span>
+                        <div>
+                          <p className="text-sm font-extrabold tracking-tight text-foreground">{item.label}</p>
+                          <p className="text-xs text-muted">{item.desc}</p>
+                        </div>
+                      </a>
+                    );
+                  })}
                   {/* Categorías dentro del menú inicio mobile */}
-                  <div className="pt-2 border-t border-gray-100">
-                    <p className="px-1 pb-2 text-[10px] font-bold text-primary uppercase tracking-widest">Categorías</p>
+                  <div className="pt-2 border-t border-gray-200 dark:border-gray-800">
+                    <p className="px-1 pb-2 text-[10px] font-bold text-gray-400 uppercase tracking-[0.2em]">Categorías</p>
                     <div className="grid grid-cols-2 gap-2">
-                      {filteredCategories.map((cat) => (
-                        <Link
-                          key={cat.id}
-                          href="/tienda"
-                          onClick={() => { setMobileOpen(false); setMobileInicioOpen(false); handleCategoryClick(cat.id); }}
-                          className="flex items-center gap-2.5 p-2.5 rounded-xl border border-gray-100 hover:border-primary/20 hover:bg-primary/5"
-                        >
-                          <span className={cn("flex items-center justify-center h-8 w-8 rounded-lg text-lg shrink-0", cat.iconBg)}>
-                            {cat.emoji}
-                          </span>
-                          <span className="text-xs font-bold text-foreground">{cat.label}</span>
-                        </Link>
-                      ))}
+                      {filteredCategories.map((cat) => {
+                        const CIcon = cat.icon;
+                        return (
+                          <Link
+                            key={cat.id}
+                            href="/tienda"
+                            onClick={() => { setMobileOpen(false); setMobileInicioOpen(false); handleCategoryClick(cat.id); }}
+                            className="flex items-center gap-2.5 p-2.5 rounded-xl border border-gray-200 dark:border-gray-800 hover:border-gray-900 dark:hover:border-gray-500"
+                          >
+                            <span className={cn("flex items-center justify-center h-8 w-8 rounded-lg shrink-0", cat.iconBg, cat.iconColor)}>
+                              <CIcon className="h-4 w-4" strokeWidth={1.5} />
+                            </span>
+                            <span className="text-xs font-extrabold tracking-tight text-foreground">{cat.label}</span>
+                          </Link>
+                        );
+                      })}
                     </div>
                     <Link
                       href="/tienda"
@@ -724,10 +765,10 @@ export default function Header() {
           ? "background 0.4s ease, box-shadow 0.4s ease, top 0.35s cubic-bezier(0.4,0,0.2,1)"
           : "background 0.4s ease, top 0.35s cubic-bezier(0.4,0,0.2,1)",
         ...(scrolled ? {} : {
-          background: "rgba(30,27,75,0.65)",
-          backdropFilter: "blur(12px)",
-          WebkitBackdropFilter: "blur(12px)",
-          borderBottom: "1px solid rgba(45,106,79,0.18)",
+          background: "rgba(6,10,13,0.72)",
+          backdropFilter: "blur(14px) saturate(140%)",
+          WebkitBackdropFilter: "blur(14px) saturate(140%)",
+          borderBottom: "1px solid rgba(255,255,255,0.08)",
         }),
       }}
     >
@@ -737,16 +778,17 @@ export default function Header() {
           {/* Logo */}
           <Link href="/" className="flex items-center gap-2.5 shrink-0">
             <div
-              className="flex h-9 w-9 sm:h-11 sm:w-11 items-center justify-center rounded-xl text-white shadow-lg overflow-hidden"
-              style={{
-                background: "linear-gradient(135deg, #00B4A6 0%, #009690 50%, #007A72 100%)",
-                boxShadow: "0 4px 12px rgba(0, 180, 166, 0.35)"
-              }}
+              className={cn(
+                "flex h-9 w-9 sm:h-10 sm:w-10 items-center justify-center rounded-lg overflow-hidden transition-colors",
+                scrolled
+                  ? "bg-gray-900 text-white dark:bg-white dark:text-gray-900"
+                  : "bg-white/10 text-white border border-white/15",
+              )}
             >
               {storeTheme?.logo ? (
-                <Image src={storeTheme.logo} alt={storeTheme.name || businessName || "logo"} width={44} height={44} className="h-full w-full object-cover" />
+                <Image src={storeTheme.logo} alt={storeTheme.name || businessName || "logo"} width={40} height={40} className="h-full w-full object-cover" />
               ) : (
-                <Store className="h-5 w-5 sm:h-6 sm:w-6" />
+                <Store className="h-4 w-4 sm:h-5 sm:w-5" strokeWidth={1.75} aria-hidden />
               )}
             </div>
             <div className="hidden sm:flex flex-col">
@@ -862,16 +904,21 @@ export default function Header() {
                       <div className="px-4 pt-3 pb-3 border-t border-gray-100 dark:border-card-border first:border-t-0">
                         <p className="text-[10px] font-bold uppercase tracking-wider text-muted mb-3">Categorías</p>
                         <div className="grid grid-cols-2 gap-1.5">
-                          {filteredCategories.slice(0, 8).map(cat => (
-                            <button
-                              key={cat.id}
-                              onMouseDown={() => { setInlineSearchFocused(false); handleCategoryClick(cat.id); }}
-                              className="flex items-center gap-3 px-3.5 py-3 rounded-xl text-sm font-semibold text-foreground hover:bg-primary/8 hover:text-primary transition-colors text-left"
-                            >
-                              <span className="text-2xl leading-none">{cat.emoji}</span>
-                              <span className="truncate text-sm font-bold">{cat.label}</span>
-                            </button>
-                          ))}
+                          {filteredCategories.slice(0, 8).map(cat => {
+                            const CIcon = cat.icon;
+                            return (
+                              <button
+                                key={cat.id}
+                                onMouseDown={() => { setInlineSearchFocused(false); handleCategoryClick(cat.id); }}
+                                className="flex items-center gap-3 px-3.5 py-3 rounded-xl text-sm font-semibold text-foreground hover:bg-gray-50 dark:hover:bg-gray-900 transition-colors text-left"
+                              >
+                                <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-800 text-gray-700 dark:text-gray-200 shrink-0">
+                                  <CIcon className="h-4 w-4" strokeWidth={1.5} />
+                                </span>
+                                <span className="truncate text-sm font-extrabold tracking-tight">{cat.label}</span>
+                              </button>
+                            );
+                          })}
                         </div>
                       </div>
 
@@ -1218,21 +1265,24 @@ export default function Header() {
           </button>
 
           <div ref={categoryStripRef} className="scrollbar-hide flex gap-2 overflow-x-auto px-8 lg:justify-center lg:px-0">
-            {filteredCategories.map(cat => (
-              <button
-                key={cat.id}
-                onClick={() => handleCategoryClick(cat.id)}
-                className={cn(
-                  "flex shrink-0 items-center gap-2 whitespace-nowrap rounded-full px-4 py-2.5 text-sm font-bold transition-all",
-                  scrolled
-                    ? "bg-primary/8 text-primary hover:bg-primary/15 border border-primary/15"
-                    : "bg-white/12 text-white hover:bg-white/20 border border-white/20 backdrop-blur-sm"
-                )}
-              >
-                <span className="text-xl leading-none">{cat.emoji}</span>
-                {cat.label}
-              </button>
-            ))}
+            {filteredCategories.map(cat => {
+              const CIcon = cat.icon;
+              return (
+                <button
+                  key={cat.id}
+                  onClick={() => handleCategoryClick(cat.id)}
+                  className={cn(
+                    "flex shrink-0 items-center gap-2 whitespace-nowrap rounded-full px-4 py-2.5 text-sm font-bold transition-all",
+                    scrolled
+                      ? "bg-white text-foreground hover:bg-gray-50 border border-gray-200"
+                      : "bg-white/12 text-white hover:bg-white/20 border border-white/20 backdrop-blur-sm"
+                  )}
+                >
+                  <CIcon className="h-4 w-4" strokeWidth={1.75} />
+                  {cat.label}
+                </button>
+              );
+            })}
             <Link
               href="/tienda"
               onClick={() => {}}
@@ -1467,15 +1517,19 @@ export default function Header() {
                   <p className="text-sm font-bold text-foreground">No encontramos &ldquo;{searchQuery.trim()}&rdquo;</p>
                   <p className="text-xs text-muted mt-1">Prueba con otro término o explora nuestras categorías</p>
                   <div className="flex flex-wrap gap-2 justify-center mt-3">
-                    {filteredCategories.slice(0, 4).map(cat => (
-                      <button
-                        key={cat.id}
-                        onClick={() => { setSearchOpen(false); handleCategoryClick(cat.id); }}
-                        className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-surface border border-gray-200 dark:border-card-border text-xs font-semibold text-foreground hover:border-primary hover:text-primary transition-colors"
-                      >
-                        <span>{cat.emoji}</span> {cat.label}
-                      </button>
-                    ))}
+                    {filteredCategories.slice(0, 4).map(cat => {
+                      const CIcon = cat.icon;
+                      return (
+                        <button
+                          key={cat.id}
+                          onClick={() => { setSearchOpen(false); handleCategoryClick(cat.id); }}
+                          className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-surface border border-gray-200 dark:border-card-border text-xs font-semibold text-foreground hover:border-primary hover:text-primary transition-colors"
+                        >
+                          <CIcon className="h-3.5 w-3.5" strokeWidth={1.75} />
+                          {cat.label}
+                        </button>
+                      );
+                    })}
                   </div>
                 </div>
               )}
@@ -1530,16 +1584,19 @@ export default function Header() {
                 <div className="mt-3 border-t border-gray-100 dark:border-card-border pt-3">
                   <p className="text-[10px] font-bold uppercase tracking-wider text-muted mb-2">Categorías populares</p>
                   <div className="flex flex-wrap gap-2">
-                    {filteredCategories.map((cat) => (
-                      <button
-                        key={cat.id}
-                        onClick={() => { setSearchOpen(false); handleCategoryClick(cat.id); }}
-                        className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-surface dark:bg-surface border border-gray-200 dark:border-card-border text-sm font-semibold text-foreground hover:border-primary hover:text-primary transition-colors"
-                      >
-                        <span>{cat.emoji}</span>
-                        {cat.label}
-                      </button>
-                    ))}
+                    {filteredCategories.map((cat) => {
+                      const CIcon = cat.icon;
+                      return (
+                        <button
+                          key={cat.id}
+                          onClick={() => { setSearchOpen(false); handleCategoryClick(cat.id); }}
+                          className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-surface dark:bg-surface border border-gray-200 dark:border-card-border text-sm font-semibold text-foreground hover:border-primary hover:text-primary transition-colors"
+                        >
+                          <CIcon className="h-4 w-4" strokeWidth={1.75} />
+                          {cat.label}
+                        </button>
+                      );
+                    })}
                   </div>
                 </div>
               )}

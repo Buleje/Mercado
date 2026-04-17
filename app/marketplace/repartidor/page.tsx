@@ -101,9 +101,11 @@ export default function RepartidorPage() {
       {/* Hero */}
       <section className="bg-linear-to-br from-orange-500 to-amber-600 text-white">
         <div className="mx-auto max-w-7xl px-4 py-14 sm:py-20 text-center">
-          <span className="text-5xl block mb-4">🛵</span>
-          <h1 className="text-3xl sm:text-4xl lg:text-5xl font-extrabold">
-            Gana dinero repartiendo pedidos
+          <div className="inline-flex h-14 w-14 items-center justify-center rounded-xl bg-white/15 border border-white/20 text-white mb-5">
+            <Bike className="h-6 w-6" strokeWidth={1.5} aria-hidden="true" />
+          </div>
+          <h1 className="text-3xl sm:text-4xl lg:text-5xl font-extrabold tracking-[-0.02em] leading-[1.05]">
+            Ganá dinero repartiendo pedidos
           </h1>
           <p className="mt-4 text-lg text-white/80 max-w-xl mx-auto">
             Únete como repartidor en Buleje. Tú eliges tu horario, tu zona y tu vehículo.

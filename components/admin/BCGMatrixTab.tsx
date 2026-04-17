@@ -1,6 +1,10 @@
 "use client";
 import { useState, useMemo } from "react";
-import { Star, Download, Eye } from "lucide-react";
+import {
+  Star, Download, Eye,
+  Coins, HelpCircle, TrendingDown,
+  type LucideIcon,
+} from "lucide-react";
 import { cn, exportToCSV } from "@/lib/utils";
 import type { Product as BaseProduct } from "@/types/erp";
 
@@ -9,11 +13,11 @@ type Quadrant = "estrella" | "vaca" | "interrogante" | "perro";
 type Product = Omit<BaseProduct, "id"> & { id: number; quadrant: Quadrant; revenue: number; growth: number; marketShare: number; units: number };
 
 /* ── Config ── */
-const Q_CONFIG: Record<Quadrant, { label: string; emoji: string; color: string; bg: string; desc: string }> = {
-  estrella: { label: "Estrellas", emoji: "⭐", color: "text-amber-600 dark:text-amber-400", bg: "bg-amber-50 dark:bg-amber-950/20 border-amber-200 dark:border-amber-800", desc: "Alto crecimiento + alta participación. Invertir y potenciar." },
-  vaca: { label: "Vacas Lecheras", emoji: "🐄", color: "text-emerald-600 dark:text-emerald-400", bg: "bg-emerald-50 dark:bg-emerald-950/20 border-emerald-200 dark:border-emerald-800", desc: "Bajo crecimiento + alta participación. Máximo beneficio, mínima inversión." },
-  interrogante: { label: "Interrogantes", emoji: "❓", color: "text-emerald-600 dark:text-emerald-400", bg: "bg-emerald-50 dark:bg-emerald-950/20 border-emerald-200 dark:border-emerald-800", desc: "Alto crecimiento + baja participación. Evaluar si invertir o descartar." },
-  perro: { label: "Perros", emoji: "🐕", color: "text-gray-600 dark:text-gray-400", bg: "bg-gray-50 dark:bg-gray-950/20 border-gray-200 dark:border-gray-800", desc: "Bajo crecimiento + baja participación. Considerar eliminar." },
+const Q_CONFIG: Record<Quadrant, { label: string; Icon: LucideIcon; color: string; bg: string; desc: string }> = {
+  estrella: { label: "Estrellas", Icon: Star, color: "text-amber-600 dark:text-amber-400", bg: "bg-amber-50 dark:bg-amber-950/20 border-amber-200 dark:border-amber-800", desc: "Alto crecimiento + alta participación. Invertir y potenciar." },
+  vaca: { label: "Vacas Lecheras", Icon: Coins, color: "text-emerald-600 dark:text-emerald-400", bg: "bg-emerald-50 dark:bg-emerald-950/20 border-emerald-200 dark:border-emerald-800", desc: "Bajo crecimiento + alta participación. Máximo beneficio, mínima inversión." },
+  interrogante: { label: "Interrogantes", Icon: HelpCircle, color: "text-emerald-600 dark:text-emerald-400", bg: "bg-emerald-50 dark:bg-emerald-950/20 border-emerald-200 dark:border-emerald-800", desc: "Alto crecimiento + baja participación. Evaluar si invertir o descartar." },
+  perro: { label: "Perros", Icon: TrendingDown, color: "text-gray-600 dark:text-gray-400", bg: "bg-gray-50 dark:bg-gray-950/20 border-gray-200 dark:border-gray-800", desc: "Bajo crecimiento + baja participación. Considerar eliminar." },
 };
 
 /* ── Seed Data ── */
@@ -154,11 +158,15 @@ export default function BCGMatrixTab() {
       <div className="grid grid-cols-1 md:grid-cols-2 gap-2 sm:gap-4">
         {(["estrella", "vaca", "interrogante", "perro"] as Quadrant[]).map(q => {
           const c = Q_CONFIG[q];
+          const QIcon = c.Icon;
           return (
             <div key={q} className={cn("rounded-xl border-2 p-3 sm:p-5", c.bg)}>
-              <h4 className={cn("font-extrabold flex items-center gap-2", c.color)}>{c.emoji} {c.label}</h4>
+              <h4 className={cn("font-extrabold flex items-center gap-2", c.color)}>
+                <QIcon className="h-4 w-4" strokeWidth={1.75} />
+                {c.label}
+              </h4>
               <p className="text-sm text-gray-600 dark:text-muted mt-1">{c.desc}</p>
-              <p className="text-xs text-gray-400 dark:text-muted mt-2">{grouped[q].length} productos • {fmt(grouped[q].reduce((s, p) => s + p.revenue, 0))}</p>
+              <p className="text-xs text-gray-400 dark:text-muted mt-2 tabular-nums">{grouped[q].length} productos • {fmt(grouped[q].reduce((s, p) => s + p.revenue, 0))}</p>
             </div>
           );
         })}
@@ -177,7 +185,18 @@ export default function BCGMatrixTab() {
               <div className="bg-gray-50 dark:bg-surface rounded-xl p-3"><span className="text-xs text-gray-400">Crecimiento</span><p className={cn("font-bold", detail.growth >= 0 ? "text-emerald-600" : "text-red-500")}>{detail.growth > 0 && "+"}{detail.growth}%</p></div>
               <div className="bg-gray-50 dark:bg-surface rounded-xl p-3"><span className="text-xs text-gray-400">Participación</span><p className="font-bold">{detail.marketShare}%</p></div>
               <div className="bg-gray-50 dark:bg-surface rounded-xl p-3"><span className="text-xs text-gray-400">Unidades/mes</span><p className="font-bold">{detail.units}</p></div>
-              <div className="col-span-2 bg-gray-50 dark:bg-surface rounded-xl p-3"><span className="text-xs text-gray-400">Cuadrante</span><p className="font-bold">{Q_CONFIG[detail.quadrant].emoji} {Q_CONFIG[detail.quadrant].label}</p></div>
+              <div className="col-span-2 bg-gray-50 dark:bg-surface rounded-xl p-3">
+                <span className="text-xs text-gray-400">Cuadrante</span>
+                {(() => {
+                  const DIcon = Q_CONFIG[detail.quadrant].Icon;
+                  return (
+                    <p className="font-bold inline-flex items-center gap-1.5">
+                      <DIcon className="h-3.5 w-3.5" strokeWidth={1.75} />
+                      {Q_CONFIG[detail.quadrant].label}
+                    </p>
+                  );
+                })()}
+              </div>
               <div className="col-span-2 bg-emerald-50 dark:bg-emerald-950/20 rounded-xl p-3"><span className="text-xs font-bold text-emerald-800 dark:text-emerald-300">Recomendación</span><p className="text-xs text-emerald-600 dark:text-emerald-400 mt-1">{Q_CONFIG[detail.quadrant].desc}</p></div>
             </div>
           </div>
