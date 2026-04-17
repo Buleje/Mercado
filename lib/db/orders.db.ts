@@ -1,5 +1,6 @@
 import "server-only";
 import { prisma } from "@/lib/prisma";
+import { getOrSet } from "@/lib/cache";
 import { Prisma } from "@/lib/generated/prisma/client";
 import type {
   Order as POrder,
@@ -499,6 +500,57 @@ export const OrdersDB = {
       take: limit,
     });
     return rows.map(mapOrder);
+  },
+
+  /**
+   * Devuelve el último pedido marketplace de un cliente (por teléfono),
+   * junto con el storeSlug derivado del tenantId.
+   * Cachea 60s por teléfono para evitar queries repetidas en reorders.
+   */
+  async getLastByCustomer(phone: string): Promise<{
+    items: Array<{
+      productId: number;
+      name: string;
+      quantity: number;
+      price: number;
+      unit: string;
+      storeSlug: string;
+    }>;
+  } | null> {
+    const normalized = normalizePhone(phone);
+    const cacheKey = `orders:last-by-customer:${normalized}`;
+
+    return getOrSet(cacheKey, 60, async () => {
+      const order = await prisma.order.findFirst({
+        where: {
+          customerPhone: normalized,
+          source: "marketplace",
+          deletedAt: null,
+        },
+        include: { items: true },
+        orderBy: { createdAt: "desc" },
+      });
+
+      if (!order) return null;
+
+      // Derive storeSlug from tenantId via Store table
+      const store = await prisma.store.findFirst({
+        where: { tenantId: order.tenantId },
+        select: { slug: true },
+      });
+      const storeSlug = store?.slug ?? order.tenantId;
+
+      return {
+        items: order.items.map((i) => ({
+          productId: i.productId ?? 0,
+          name:      i.name,
+          quantity:  i.quantity,
+          price:     toNumOrZero(i.price),
+          unit:      i.unit,
+          storeSlug,
+        })),
+      };
+    });
   },
 
   /**
