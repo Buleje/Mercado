@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useRef } from "react";
 import { useSearchParams } from "next/navigation";
 import {
   Store,
@@ -25,6 +25,10 @@ import {
   useMarketplaceGeo,
   type MarketplaceStore,
 } from "@/components/marketplace/useMarketplaceGeo";
+import { deserializeCart } from "@/lib/marketplace/cart-sharing";
+import { useMarketplaceCart } from "@/hooks/use-marketplace-cart";
+import { useCustomer } from "@/contexts/customer-context";
+import ReorderButton from "@/components/marketplace/ReorderButton";
 
 type ViewMode = "tiendas" | "catalogo";
 
@@ -59,6 +63,51 @@ interface MarketplaceContentProps {
 
 export default function MarketplaceContent({ initialStores }: MarketplaceContentProps = {}) {
   const searchParams = useSearchParams();
+  const { addItem } = useMarketplaceCart();
+  const cartImportDone = useRef(false);
+  const [sharedCartToast, setSharedCartToast] = useState<string | null>(null);
+
+  // ── Import shared cart from ?cart= param ──
+  useEffect(() => {
+    if (cartImportDone.current) return;
+    const token = searchParams.get("cart");
+    if (!token) return;
+
+    cartImportDone.current = true;
+
+    const items = deserializeCart(token);
+    if (items.length === 0) return;
+
+    // Fetch store details to build full CartItem shape
+    // We only know productId + storeSlug + quantity — add minimal stubs;
+    // the full product data loads when the user opens the product card.
+    // For each unique storeSlug, we can import items directly into the cart.
+    for (const shared of items) {
+      addItem({
+        storeId: shared.s,
+        storeName: shared.s,         // stub — shown in cart until real name loads
+        storeSlug: shared.s,
+        storeProductId: `${shared.s}-${shared.p}`,
+        productId: shared.p,
+        name: `Producto #${shared.p}`,  // stub — updated when user sees cart
+        price: 0,                        // preview only — totals computed server-side
+        quantity: shared.q,
+        image: null,
+        unit: null,
+      });
+    }
+
+    setSharedCartToast(`Carrito importado: ${items.length} ${items.length === 1 ? "producto" : "productos"}`);
+    setTimeout(() => setSharedCartToast(null), 4000);
+
+    // Remove ?cart= from URL to prevent re-import on refresh
+    try {
+      const url = new URL(window.location.href);
+      url.searchParams.delete("cart");
+      window.history.replaceState({}, "", url.toString());
+    } catch { /* SSR guard */ }
+  }, [searchParams, addItem]);
+
   const initialCategoria = searchParams.get("categoria") ?? "todos";
   // Map landing category slugs to marketplace category IDs
   const CATEGORIA_MAP: Record<string, string> = {
@@ -155,6 +204,19 @@ export default function MarketplaceContent({ initialStores }: MarketplaceContent
 
   return (
     <div className="relative">
+      {/* Toast: carrito compartido importado */}
+      {sharedCartToast && (
+        <m.div
+          initial={{ opacity: 0, y: -16 }}
+          animate={{ opacity: 1, y: 0 }}
+          exit={{ opacity: 0, y: -16 }}
+          role="status"
+          aria-live="polite"
+          className="fixed left-1/2 top-4 z-[9999] -translate-x-1/2 rounded-xl bg-emerald-600 px-5 py-3 text-sm font-semibold text-white shadow-xl shadow-emerald-900/20"
+        >
+          {sharedCartToast}
+        </m.div>
+      )}
       {/* ── Hero Section ── */}
       <section className="relative overflow-hidden bg-linear-to-br from-primary/5 via-white to-secondary/5 dark:from-primary/10 dark:via-background dark:to-secondary/10 pb-6 pt-5 sm:pt-8 sm:pb-8">
         {/* Background decoration */}
