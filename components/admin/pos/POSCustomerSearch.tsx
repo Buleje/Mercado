@@ -234,7 +234,7 @@ export default function POSCustomerSearch({
             <p className="text-xs font-semibold text-gray-900 dark:text-foreground truncate">
               {selectedName || selectedPhone}
             </p>
-            <p className="text-[10px] text-gray-500 dark:text-muted">
+            <p className="text-[length:var(--ts-2xs)] text-gray-500 dark:text-muted">
               {selectedPhone}
             </p>
           </div>
@@ -250,7 +250,7 @@ export default function POSCustomerSearch({
           <div className="flex items-center gap-1.5 px-2 py-1.5 bg-yellow-50 dark:bg-yellow-950/20 border border-yellow-200 dark:border-yellow-800/30 rounded-lg">
             <Star className="h-3.5 w-3.5 text-yellow-500 shrink-0" />
             <span className={cn(
-              "text-[10px] font-bold",
+              "text-[length:var(--ts-2xs)] font-bold",
               reliabilityScore.score >= 4 ? "text-yellow-600 dark:text-yellow-400" :
               reliabilityScore.score >= 3 ? "text-amber-600 dark:text-amber-400" :
               "text-red-600 dark:text-red-400"
@@ -263,31 +263,31 @@ export default function POSCustomerSearch({
         {fiadoSaldo > 0 && (
           <div className="space-y-1">
             <div className="flex items-center gap-1.5 px-2 py-1.5 bg-red-50 dark:bg-red-950/20 border border-red-200 dark:border-red-800/30 rounded-lg">
-              <span className="text-[10px] font-bold text-red-600 dark:text-red-400 flex-1">
+              <span className="text-[length:var(--ts-2xs)] font-bold text-red-600 dark:text-red-400 flex-1">
                 Fiado pendiente: S/{fiadoSaldo.toFixed(2)}
               </span>
               <button
                 onClick={() => { setShowAbonoRapido(!showAbonoRapido); setAbonoMonto(fiadoSaldo.toFixed(2)); }}
-                className="text-[10px] font-bold text-emerald-600 bg-emerald-50 dark:bg-emerald-950/30 hover:bg-emerald-100 px-2 py-0.5 rounded transition-colors"
+                className="text-[length:var(--ts-2xs)] font-bold text-emerald-600 bg-emerald-50 dark:bg-emerald-950/30 hover:bg-emerald-100 px-2 py-0.5 rounded transition-colors"
               >
                 Abonar
               </button>
             </div>
             {showAbonoRapido && (
-              <div className="px-2 py-2 bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-lg space-y-1.5">
-                <p className="text-[10px] font-bold text-gray-600 dark:text-foreground">
+              <div className="px-2 py-2 bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-lg space-y-1.5">
+                <p className="text-[length:var(--ts-2xs)] font-bold text-gray-600 dark:text-foreground">
                   Abonar a fiado de {selectedName || selectedPhone}
                 </p>
                 <div className="flex gap-1.5">
                   <div className="relative flex-1">
-                    <span className="absolute left-2 top-1/2 -translate-y-1/2 text-gray-400 text-[10px] font-bold">S/</span>
+                    <span className="absolute left-2 top-1/2 -translate-y-1/2 text-gray-400 text-[length:var(--ts-2xs)] font-bold">S/</span>
                     <input
                       type="number"
                       inputMode="decimal"
                       step="0.10"
                       value={abonoMonto}
                       onChange={(e) => setAbonoMonto(e.target.value)}
-                      className="w-full pl-6 pr-2 py-1.5 rounded-lg border border-gray-200 dark:border-card-border text-xs font-bold text-gray-900 dark:text-foreground outline-none focus:border-primary"
+                      className="w-full pl-6 pr-2 py-1.5 rounded-lg border border-[var(--rule-base)] dark:border-card-border text-xs font-bold text-gray-900 dark:text-foreground outline-none focus:border-primary"
                     />
                   </div>
                   <button
@@ -310,7 +310,7 @@ export default function POSCustomerSearch({
                       setAbonoLoading(false);
                     }}
                     disabled={abonoLoading || !abonoMonto || Number(abonoMonto) <= 0}
-                    className="px-2.5 py-1.5 rounded-lg bg-[#00B4A6] text-white text-[10px] font-bold hover:bg-[#009690] transition-colors disabled:opacity-50"
+                    className="px-2.5 py-1.5 rounded-lg bg-[#00B4A6] text-white text-[length:var(--ts-2xs)] font-bold hover:bg-[#009690] transition-colors disabled:opacity-50"
                   >
                     {abonoLoading ? "..." : "Confirmar"}
                   </button>
@@ -323,7 +323,7 @@ export default function POSCustomerSearch({
         {customerNotes && (
           <div className="flex items-center gap-1.5 px-2 py-1.5 bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-800/30 rounded-lg">
             <span className="text-xs shrink-0">&#128221;</span>
-            <span className="text-[10px] text-amber-700 dark:text-amber-400 font-medium truncate">
+            <span className="text-[length:var(--ts-2xs)] text-amber-700 dark:text-amber-400 font-medium truncate">
               Nota: {customerNotes.slice(0, 50)}{customerNotes.length > 50 ? "..." : ""}
             </span>
           </div>
@@ -333,24 +333,24 @@ export default function POSCustomerSearch({
           <div className="space-y-1">
             <div className="flex items-center gap-1.5 px-2 py-1.5 bg-yellow-50 dark:bg-yellow-950/20 border border-yellow-200 dark:border-yellow-800/30 rounded-lg">
               <Star className="h-3.5 w-3.5 text-yellow-500 shrink-0" />
-              <span className="text-[10px] text-yellow-700 dark:text-yellow-400 font-bold">
+              <span className="text-[length:var(--ts-2xs)] text-yellow-700 dark:text-yellow-400 font-bold">
                 {loyaltyPoints} puntos (= S/{(loyaltyPoints * POINTS_RATE).toFixed(2)} en descuento)
               </span>
               {loyaltyPoints >= 100 && (
-                <span className="ml-auto text-[9px] font-bold px-1.5 py-0.5 rounded-full bg-emerald-100 text-emerald-700">Canjeable</span>
+                <span className="ml-auto text-[length:var(--ts-2xs)] font-bold px-1.5 py-0.5 rounded-full bg-emerald-100 text-emerald-700">Canjeable</span>
               )}
             </div>
             {loyaltyPoints >= 100 && !showRedeemSlider && (
               <button
                 onClick={() => { setShowRedeemSlider(true); setRedeemAmount(Math.min(100, loyaltyPoints)); }}
-                className="w-full text-[10px] font-bold text-[#00B4A6] hover:underline py-0.5 flex items-center justify-center gap-1"
+                className="w-full text-[length:var(--ts-2xs)] font-bold text-[#00B4A6] hover:underline py-0.5 flex items-center justify-center gap-1"
               >
                 <Star className="h-3 w-3" /> Canjear puntos
               </button>
             )}
             {showRedeemSlider && (
               <div className="px-2 py-1.5 bg-emerald-50 dark:bg-emerald-950/20 rounded-lg space-y-1">
-                <p className="text-[10px] text-gray-600 dark:text-gray-300 font-medium">
+                <p className="text-[length:var(--ts-2xs)] text-gray-600 dark:text-gray-300 font-medium">
                   Canjear {redeemAmount} pts = S/{(redeemAmount * POINTS_RATE).toFixed(2)} de descuento
                 </p>
                 <input
@@ -365,13 +365,13 @@ export default function POSCustomerSearch({
                 <div className="flex gap-1">
                   <button
                     onClick={() => setShowRedeemSlider(false)}
-                    className="flex-1 text-[10px] py-1 rounded bg-gray-100 text-gray-500 font-bold"
+                    className="flex-1 text-[length:var(--ts-2xs)] py-1 rounded bg-gray-100 text-gray-500 font-bold"
                   >
                     Cancelar
                   </button>
                   <button
                     onClick={() => setShowRedeemSlider(false)}
-                    className="flex-1 text-[10px] py-1 rounded bg-emerald-600 text-white font-bold"
+                    className="flex-1 text-[length:var(--ts-2xs)] py-1 rounded bg-emerald-600 text-white font-bold"
                   >
                     Aplicar -{" "}S/{(redeemAmount * POINTS_RATE).toFixed(2)}
                   </button>
@@ -383,7 +383,7 @@ export default function POSCustomerSearch({
         {/* Mejora 17: Producto que suele comprar */}
         {lastPurchase && lastPurchase.items.length > 0 && (
           <div className="flex items-center gap-1.5 px-2 py-1">
-            <span className="text-[10px] text-gray-400 dark:text-muted">
+            <span className="text-[length:var(--ts-2xs)] text-gray-400 dark:text-muted">
               🛒 Suele comprar: <span className="font-bold text-gray-600 dark:text-gray-300">{lastPurchase.items[0].name}</span>
               {lastPurchase.items.length > 1 && <span>, {lastPurchase.items[1].name}</span>}
             </span>
@@ -393,25 +393,25 @@ export default function POSCustomerSearch({
         {loadingLastPurchase && (
           <div className="flex items-center gap-1.5 px-2 py-1">
             <Loader2 className="h-3 w-3 animate-spin text-gray-400" />
-            <span className="text-[10px] text-gray-400">Cargando historial...</span>
+            <span className="text-[length:var(--ts-2xs)] text-gray-400">Cargando historial...</span>
           </div>
         )}
         {lastPurchase === null && !loadingLastPurchase && paymentHistory.length === 0 && (
-          <div className="flex items-center gap-1.5 px-2 py-1 bg-blue-50 dark:bg-blue-950/20 rounded-lg">
-            <ShoppingBag className="h-3 w-3 text-blue-500 shrink-0" />
-            <span className="text-[10px] text-blue-600 dark:text-blue-400 font-medium">Primera compra de este cliente</span>
+          <div className="flex items-center gap-1.5 px-2 py-1 bg-emerald-50 dark:bg-emerald-950/20 rounded-lg">
+            <ShoppingBag className="h-3 w-3 text-emerald-500 shrink-0" />
+            <span className="text-[length:var(--ts-2xs)] text-emerald-600 dark:text-emerald-400 font-medium">Primera compra de este cliente</span>
           </div>
         )}
         {/* Mejora 2: Payment history */}
         {paymentHistory.length > 0 && !loadingLastPurchase && (
           <div className="px-2 py-1">
-            <p className="text-[9px] font-bold text-gray-400 dark:text-muted uppercase tracking-wider mb-1">Ultimos pagos</p>
+            <p className="text-[length:var(--ts-2xs)] font-bold text-gray-400 dark:text-muted mb-1">Ultimos pagos</p>
             <div className="max-h-[3.5rem] overflow-y-auto space-y-0.5">
               {paymentHistory.map((p, i) => {
                 const d = new Date(p.date);
                 const dateStr = `${String(d.getDate()).padStart(2, "0")}/${String(d.getMonth() + 1).padStart(2, "0")}`;
                 return (
-                  <span key={i} className="inline-flex items-center text-[10px] text-gray-500 dark:text-muted mr-2">
+                  <span key={i} className="inline-flex items-center text-[length:var(--ts-2xs)] text-gray-500 dark:text-muted mr-2">
                     {dateStr} · S/{p.total.toFixed(0)} · {p.paymentMethod}
                     {i < paymentHistory.length - 1 && <span className="mx-1 text-gray-300">|</span>}
                   </span>
@@ -422,7 +422,7 @@ export default function POSCustomerSearch({
         )}
         {lastPurchase && !loadingLastPurchase && (
           <div className="bg-gray-50 dark:bg-surface rounded-lg px-2 py-1.5">
-            <p className="text-[10px] text-gray-500 dark:text-muted">
+            <p className="text-[length:var(--ts-2xs)] text-gray-500 dark:text-muted">
               Ultima compra: {getRelativeTime(lastPurchase.date)} — {lastPurchase.items.map(i => i.name).slice(0, 3).join(", ")}
               {lastPurchase.items.length > 3 && "..."} (S/{lastPurchase.total.toFixed(2)})
             </p>
@@ -437,7 +437,7 @@ export default function POSCustomerSearch({
                     price: i.price,
                   })));
                 }}
-                className="mt-1 flex items-center gap-1 text-[10px] font-bold text-[#00B4A6] hover:underline"
+                className="mt-1 flex items-center gap-1 text-[length:var(--ts-2xs)] font-bold text-[#00B4A6] hover:underline"
               >
                 <RotateCcw className="h-3 w-3" />
                 Repetir pedido
@@ -462,14 +462,14 @@ export default function POSCustomerSearch({
           }}
           onFocus={() => setShowResults(true)}
           placeholder="Buscar cliente (nombre o telefono)..."
-          className="w-full pl-8 pr-3 py-2.5 rounded-lg border border-gray-200 dark:border-card-border text-sm text-gray-900 dark:text-foreground outline-none focus:border-primary transition-colors"
+          className="w-full pl-8 pr-3 py-2.5 rounded-lg border border-[var(--rule-base)] dark:border-card-border text-sm text-gray-900 dark:text-foreground outline-none focus:border-primary transition-colors"
           autoComplete="off"
         />
       </div>
 
       {/* Dropdown */}
       {showResults && query.trim().length >= 3 && (
-        <div className="absolute z-40 left-0 right-0 mt-1 bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl shadow-lg max-h-60 overflow-y-auto">
+        <div className="absolute z-40 left-0 right-0 mt-1 bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl max-h-60 overflow-y-auto">
           {loading ? (
             <div className="py-4 text-center text-xs text-gray-400 dark:text-muted">
               Buscando...
@@ -477,7 +477,7 @@ export default function POSCustomerSearch({
           ) : results.length === 0 ? (
             <div className="py-3 text-center text-xs text-gray-400 dark:text-muted">
               <p>No se encontraron clientes</p>
-              <p className="text-[10px] mt-1 text-gray-300">
+              <p className="text-[length:var(--ts-2xs)] mt-1 text-gray-300">
                 Venta sin cliente registrado
               </p>
             </div>
@@ -493,16 +493,16 @@ export default function POSCustomerSearch({
                   <p className="text-xs font-semibold text-gray-900 dark:text-foreground truncate">
                     {c.name}
                   </p>
-                  <p className="text-[10px] text-gray-400 dark:text-muted">
+                  <p className="text-[length:var(--ts-2xs)] text-gray-400 dark:text-muted">
                     {c.phone}
                   </p>
                 </div>
                 {c.creditBalance != null && c.creditBalance > 0 ? (
-                  <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-red-50 dark:bg-red-950/20 text-red-500 shrink-0">
+                  <span className="text-[length:var(--ts-2xs)] font-bold px-1.5 py-0.5 rounded-full bg-red-50 dark:bg-red-950/20 text-red-500 shrink-0">
                     Fiado: S/{c.creditBalance.toFixed(2)}
                   </span>
                 ) : (
-                  <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-emerald-50 dark:bg-emerald-950/20 text-emerald-500 shrink-0">
+                  <span className="text-[length:var(--ts-2xs)] font-bold px-1.5 py-0.5 rounded-full bg-emerald-50 dark:bg-emerald-950/20 text-emerald-500 shrink-0">
                     Sin deuda
                   </span>
                 )}
@@ -517,7 +517,7 @@ export default function POSCustomerSearch({
               setShowCreateModal(true);
             }}
             className={cn(
-              "w-full flex items-center gap-2 px-3 py-2.5 hover:bg-primary/5 transition-colors text-left border-t border-gray-100 dark:border-card-border",
+              "w-full flex items-center gap-2 px-3 py-2.5 hover:bg-primary/5 transition-colors text-left border-t border-[var(--rule-soft)] dark:border-card-border",
               "text-primary"
             )}
           >

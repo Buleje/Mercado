@@ -86,7 +86,7 @@ function getConditionLabel(c: WeatherCondition): string {
 
 function WeatherIcon({ condition, className }: { condition: WeatherCondition; className?: string }) {
   if (condition === "hot") return <Sun className={cn("text-[#f97316]", className)} />;
-  if (condition === "rainy") return <CloudRain className={cn("text-blue-400", className)} />;
+  if (condition === "rainy") return <CloudRain className={cn("text-emerald-400", className)} />;
   if (condition === "cold") return <Wind className={cn("text-cyan-400", className)} />;
   return <Sun className={cn("text-yellow-400", className)} />;
 }
@@ -150,20 +150,9 @@ export default function WeatherDemandPredictor() {
   const suggestions = weather ? SUGGESTIONS[weather.condition] : [];
 
   return (
-    <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-700 overflow-hidden shadow-sm">
+    <div className="bg-white dark:bg-gray-900 rounded-xl border border-[var(--rule-base)] overflow-hidden ">
       {/* Header */}
-      <div
-        className={cn(
-          "p-5 flex items-center justify-between",
-          weather?.condition === "hot"
-            ? "bg-gradient-to-r from-orange-50 to-yellow-50 dark:from-orange-950/30 dark:to-yellow-950/30"
-            : weather?.condition === "rainy"
-              ? "bg-gradient-to-r from-blue-50 to-cyan-50 dark:from-blue-950/30 dark:to-cyan-950/30"
-              : weather?.condition === "cold"
-                ? "bg-gradient-to-r from-cyan-50 to-slate-50 dark:from-cyan-950/30 dark:to-slate-950/30"
-                : "bg-gradient-to-r from-green-50 to-emerald-50 dark:from-green-950/30 dark:to-emerald-950/30"
-        )}
-      >
+      <div className="p-5 flex items-center justify-between bg-[var(--surface-sunken)]">
         <div className="flex items-center gap-4">
           {loading ? (
             <div className="w-12 h-12 rounded-full bg-gray-200 dark:bg-gray-700 animate-pulse" />
@@ -176,7 +165,7 @@ export default function WeatherDemandPredictor() {
             </h2>
             {weather && (
               <>
-                <p className="text-2xl font-black text-gray-900 dark:text-white">
+                <p className="text-2xl font-extrabold text-gray-900 dark:text-white">
                   {weather.temp} C
                 </p>
                 <p className="text-sm text-gray-500 dark:text-gray-400">
@@ -192,7 +181,7 @@ export default function WeatherDemandPredictor() {
         <button
           onClick={fetchWeather}
           disabled={loading}
-          className="p-2 rounded-xl hover:bg-white/50 dark:hover:bg-gray-700/50 transition-colors"
+          className="p-2 rounded-lg hover:bg-white/50 dark:hover:bg-gray-700/50 transition-colors"
           aria-label="Actualizar clima"
         >
           <RefreshCw
@@ -203,7 +192,7 @@ export default function WeatherDemandPredictor() {
 
       {/* Suggestions */}
       <div className="p-4">
-        <p className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-3">
+        <p className="text-xs font-semibold text-gray-500 dark:text-gray-400 mb-3">
           Productos recomendados para stockear
         </p>
         <div className="space-y-2">
@@ -218,7 +207,7 @@ export default function WeatherDemandPredictor() {
             suggestions.map((sug, i) => (
               <div
                 key={i}
-                className="flex items-center justify-between gap-3 p-3 rounded-xl bg-gray-50 dark:bg-gray-800/50 border border-gray-100 dark:border-gray-700"
+                className="flex items-center justify-between gap-3 p-3 rounded-xl bg-gray-50 dark:bg-gray-800/50 border border-[var(--rule-base)]"
               >
                 <div className="flex items-center gap-3 min-w-0">
                   <Thermometer className="w-4 h-4 text-[#00B4A6] flex-shrink-0" />

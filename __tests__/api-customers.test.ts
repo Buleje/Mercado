@@ -54,6 +54,13 @@ vi.mock("@/lib/prisma", () => ({
   },
 }));
 
+vi.mock("@/lib/tenant", () => ({
+  prismaForTenant: () => ({
+    customer: { update: vi.fn(async () => ({})) },
+    activityLog: { create: vi.fn(async () => ({})) },
+  }),
+}));
+
 // ── Import handler AFTER mocks ────────────────────────────────────────────────
 
 import { GET, POST } from "@/app/api/customers/route";

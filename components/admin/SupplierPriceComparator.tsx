@@ -135,7 +135,7 @@ export default function SupplierPriceComparator({ productName = "" }: Props) {
 
   /* ── Render ── */
   return (
-    <div className="space-y-4">
+    <div className="space-y-6">
       {/* Header */}
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
         <div className="flex items-center gap-2">
@@ -158,7 +158,7 @@ export default function SupplierPriceComparator({ productName = "" }: Props) {
         value={search}
         onChange={(e) => setSearch(e.target.value)}
         placeholder="Filtrar por nombre de producto..."
-        className="w-full rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 px-3 py-2 text-sm text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-[#00B4A6]"
+        className="w-full rounded-lg border border-[var(--rule-base)] bg-white dark:bg-gray-800 px-3 py-2 text-sm text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-[#00B4A6]"
       />
 
       {/* Estados */}
@@ -186,7 +186,7 @@ export default function SupplierPriceComparator({ productName = "" }: Props) {
         groups.map((group) => (
           <div
             key={group.productName}
-            className="rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 overflow-hidden"
+            className="rounded-xl border border-[var(--rule-base)] bg-white dark:bg-gray-800 overflow-hidden"
           >
             <div className="flex items-center justify-between px-4 py-3 bg-gray-50 dark:bg-gray-750">
               <span className="font-medium text-gray-900 dark:text-gray-100 text-sm">
@@ -202,7 +202,7 @@ export default function SupplierPriceComparator({ productName = "" }: Props) {
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
                 <thead>
-                  <tr className="border-b border-gray-100 dark:border-gray-700">
+                  <tr className="border-b border-[var(--rule-base)]">
                     <th className="px-4 py-2.5 text-left font-medium text-gray-500 dark:text-gray-400">
                       Proveedor
                     </th>

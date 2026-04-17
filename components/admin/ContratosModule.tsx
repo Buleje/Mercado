@@ -625,7 +625,7 @@ const ESTADO_STYLES: Record<ContratoEstado, string> = {
   POR_VENCER: "bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400",
   VENCIDO: "bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400",
   ANULADO: "bg-gray-200 dark:bg-gray-800 text-gray-500 dark:text-gray-400",
-  BORRADOR: "bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400",
+  BORRADOR: "bg-emerald-100 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400",
 };
 
 const TIPO_LABELS: Record<string, string> = {
@@ -653,9 +653,9 @@ function LegalTooltip({ term, explanation, example }: { term: string; explanatio
   const [open, setOpen] = useState(false);
   return (
     <span className="relative inline-flex items-center">
-      <button onClick={() => setOpen(!open)} className="ml-1 w-5 h-5 rounded-full bg-blue-100 dark:bg-blue-900/40 text-blue-600 dark:text-blue-400 text-xs flex items-center justify-center hover:bg-blue-200 transition-colors" title="¿Qué significa esto?">?</button>
+      <button onClick={() => setOpen(!open)} className="ml-1 w-5 h-5 rounded-full bg-emerald-100 dark:bg-emerald-900/40 text-emerald-600 dark:text-emerald-400 text-xs flex items-center justify-center hover:bg-emerald-200 transition-colors" title="¿Qué significa esto?">?</button>
       {open && (
-        <div className="absolute bottom-7 left-0 z-50 w-72 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl shadow-xl p-3 text-xs">
+        <div className="absolute bottom-7 left-0 z-50 w-72 bg-white dark:bg-gray-800 border border-[var(--rule-base)] rounded-xl p-3 text-xs">
           <p className="font-bold text-gray-800 dark:text-gray-200 mb-1">{term}</p>
           <p className="text-gray-600 dark:text-gray-400 mb-2">{explanation}</p>
           <div className="bg-amber-50 dark:bg-amber-900/20 rounded-lg p-2">
@@ -1257,20 +1257,20 @@ ${content.split("\n\n").map(p => `<p>${p}</p>`).join("")}
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center gap-3">
         <div className="flex items-center gap-3 flex-1 min-w-0">
-          <div className="h-10 w-10 rounded-xl bg-[#00B4A6] text-white flex items-center justify-center shadow-sm shrink-0">
+          <div className="h-10 w-10 rounded-lg bg-primary text-white flex items-center justify-center  shrink-0">
             <FileSignature className="h-5 w-5" />
           </div>
           <div>
             <h1 className="text-xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
               Contratos
-              {contratos.length > 0 && <span className="bg-gray-200 dark:bg-gray-700 text-[10px] px-2 py-0.5 rounded-full font-bold text-gray-600 dark:text-gray-300">{contratos.length}</span>}
+              {contratos.length > 0 && <span className="bg-gray-200 dark:bg-gray-700 text-[length:var(--ts-2xs)] px-2 py-0.5 rounded-full font-bold text-gray-600 dark:text-gray-300">{contratos.length}</span>}
             </h1>
             <p className="text-sm text-gray-500">Gestion legal de contratos con plantillas peruanas</p>
           </div>
         </div>
         <button
           onClick={() => setActiveTab("plantillas")}
-          className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-bold text-white bg-[#00B4A6] hover:bg-[#009690] shadow-sm transition-colors shrink-0"
+          className="inline-flex items-center gap-2 px-4 py-2.5 rounded-lg text-sm font-bold text-white bg-primary hover:bg-primary-dark  transition-colors shrink-0"
         >
           <Plus className="h-4 w-4" />
           Nuevo Contrato
@@ -1288,7 +1288,7 @@ ${content.split("\n\n").map(p => `<p>${p}</p>`).join("")}
               className={cn(
                 "flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold whitespace-nowrap transition-all",
                 activeTab === tab.id
-                  ? "bg-[#00B4A6] text-white shadow-sm"
+                  ? "bg-primary text-white "
                   : "text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-white/5"
               )}
             >
@@ -1302,14 +1302,14 @@ ${content.split("\n\n").map(p => `<p>${p}</p>`).join("")}
       {/* Loading / Error */}
       {loading && (
         <div className="flex items-center justify-center py-16">
-          <Loader2 className="h-6 w-6 animate-spin text-[#00B4A6]" />
+          <Loader2 className="h-6 w-6 animate-spin text-primary" />
         </div>
       )}
       {error && !loading && (
         <div className="flex flex-col items-center justify-center py-12 gap-2">
           <AlertTriangle className="h-8 w-8 text-red-400" />
           <p className="text-sm text-red-600 dark:text-red-400">{error}</p>
-          <button onClick={fetchContratos} className="text-xs text-[#00B4A6] hover:underline font-semibold">Reintentar</button>
+          <button onClick={fetchContratos} className="text-xs text-primary hover:underline font-semibold">Reintentar</button>
         </div>
       )}
 
@@ -1329,14 +1329,14 @@ ${content.split("\n\n").map(p => `<p>${p}</p>`).join("")}
                 {/* KPI Cards */}
                 <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
                   {[
-                    { label: "Total Contratos", value: stats.total, icon: FileText, color: "bg-blue-500" },
+                    { label: "Total Contratos", value: stats.total, icon: FileText, color: "bg-emerald-500" },
                     { label: "Vigentes", value: stats.vigentes, icon: CheckCircle, color: "bg-emerald-500" },
                     { label: "Por Vencer", value: stats.porVencer, icon: Clock, color: "bg-amber-500" },
                     { label: "Vencidos", value: stats.vencidos, icon: AlertCircle, color: "bg-red-500" },
                   ].map(kpi => (
-                    <div key={kpi.label} className="bg-white dark:bg-white/5 border border-gray-200 dark:border-white/10 rounded-xl p-4">
+                    <div key={kpi.label} className="bg-white dark:bg-white/5 border border-[var(--rule-base)] dark:border-white/10 rounded-xl p-4">
                       <div className="flex items-center gap-3">
-                        <div className={cn("h-10 w-10 rounded-xl flex items-center justify-center text-white", kpi.color)}>
+                        <div className={cn("h-10 w-10 rounded-lg flex items-center justify-center text-white", kpi.color)}>
                           <kpi.icon className="h-5 w-5" />
                         </div>
                         <div>
@@ -1349,7 +1349,7 @@ ${content.split("\n\n").map(p => `<p>${p}</p>`).join("")}
                 </div>
 
                 {/* Monto Total */}
-                <div className="bg-gradient-to-r from-[#00B4A6] to-[#009690] rounded-xl p-6 text-white">
+                <div className="bg-[var(--brand-ink)] rounded-lg p-6 text-[var(--surface-canvas)]">
                   <p className="text-sm opacity-80">Monto Total en Contratos</p>
                   <p className="text-3xl font-bold mt-1">{formatCurrency(stats.montoTotal)}</p>
                 </div>
@@ -1357,7 +1357,7 @@ ${content.split("\n\n").map(p => `<p>${p}</p>`).join("")}
                 {/* Charts Row */}
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
                   {/* Por tipo */}
-                  <div className="bg-white dark:bg-white/5 border border-gray-200 dark:border-white/10 rounded-xl p-4">
+                  <div className="bg-white dark:bg-white/5 border border-[var(--rule-base)] dark:border-white/10 rounded-xl p-4">
                     <h3 className="text-sm font-bold text-gray-900 dark:text-white mb-4">Contratos por Tipo</h3>
                     {stats.typeData.length > 0 ? (
                       <ResponsiveContainer width="100%" height={250}>
@@ -1373,7 +1373,7 @@ ${content.split("\n\n").map(p => `<p>${p}</p>`).join("")}
                   </div>
 
                   {/* Por mes */}
-                  <div className="bg-white dark:bg-white/5 border border-gray-200 dark:border-white/10 rounded-xl p-4">
+                  <div className="bg-white dark:bg-white/5 border border-[var(--rule-base)] dark:border-white/10 rounded-xl p-4">
                     <h3 className="text-sm font-bold text-gray-900 dark:text-white mb-4">Contratos por Mes</h3>
                     {stats.monthData.length > 0 ? (
                       <ResponsiveContainer width="100%" height={250}>
@@ -1412,29 +1412,29 @@ ${content.split("\n\n").map(p => `<p>${p}</p>`).join("")}
 
             {/* ═══ PLANTILLAS ═══ */}
             {activeTab === "plantillas" && (
-              <div className="space-y-4">
+              <div className="space-y-6">
                 <p className="text-sm text-gray-500">Selecciona una plantilla para crear un contrato con clausulas legales peruanas reales.</p>
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                   {PLANTILLAS.map(tpl => (
                     <m.div
                       key={tpl.id}
                       whileHover={{ scale: 1.02 }}
-                      className="bg-white dark:bg-white/5 border border-gray-200 dark:border-white/10 rounded-xl p-4 cursor-pointer hover:border-[#00B4A6] hover:shadow-lg transition-all group"
+                      className="bg-white dark:bg-white/5 border border-[var(--rule-base)] dark:border-white/10 rounded-lg p-4 cursor-pointer hover:border-primary hover:shadow-lg transition-all group"
                       onClick={() => startWizard(tpl)}
                     >
                       <div className="flex items-start gap-3">
-                        <div className="h-10 w-10 rounded-xl bg-[#00B4A6]/10 dark:bg-[#00B4A6]/20 flex items-center justify-center shrink-0 group-hover:bg-[#00B4A6] group-hover:text-white transition-colors text-[#00B4A6]">
+                        <div className="h-10 w-10 rounded-lg bg-primary/10 dark:bg-primary/20 flex items-center justify-center shrink-0 group-hover:bg-primary group-hover:text-white transition-colors text-primary">
                           <TemplateIcon icon={tpl.icon} className="h-5 w-5" />
                         </div>
                         <div className="min-w-0 flex-1">
                           <h4 className="text-sm font-bold text-gray-900 dark:text-white">{tpl.name}</h4>
                           <p className="text-xs text-gray-500 mt-1 line-clamp-2">{tpl.description}</p>
                           <div className="mt-2 flex items-center gap-2 flex-wrap">
-                            <span className="text-[10px] px-2 py-0.5 rounded-full bg-[#00B4A6]/10 text-[#00B4A6] font-bold">{tpl.category}</span>
-                            <span className="text-[10px] text-gray-400">{tpl.fields.length} campos</span>
-                            <span className="text-[10px] text-gray-400">{tpl.clausulas.length} clausulas</span>
+                            <span className="text-[length:var(--ts-2xs)] px-2 py-0.5 rounded-full bg-primary/10 text-primary font-bold">{tpl.category}</span>
+                            <span className="text-[length:var(--ts-2xs)] text-gray-400">{tpl.fields.length} campos</span>
+                            <span className="text-[length:var(--ts-2xs)] text-gray-400">{tpl.clausulas.length} clausulas</span>
                           </div>
-                          <p className="text-[10px] text-gray-400 mt-1 italic">{tpl.legalBasis}</p>
+                          <p className="text-[length:var(--ts-2xs)] text-gray-400 mt-1 italic">{tpl.legalBasis}</p>
                         </div>
                       </div>
                     </m.div>
@@ -1445,7 +1445,7 @@ ${content.split("\n\n").map(p => `<p>${p}</p>`).join("")}
 
             {/* ═══ MIS CONTRATOS ═══ */}
             {activeTab === "contratos" && (
-              <div className="space-y-4">
+              <div className="space-y-6">
                 {/* Filters */}
                 <div className="flex flex-col sm:flex-row gap-2">
                   <div className="relative flex-1">
@@ -1455,22 +1455,22 @@ ${content.split("\n\n").map(p => `<p>${p}</p>`).join("")}
                       placeholder="Buscar por cliente, numero..."
                       value={search}
                       onChange={e => setSearch(e.target.value)}
-                      className="w-full pl-9 pr-3 py-2 rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 text-sm text-gray-900 dark:text-white placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#00B4A6]/30"
+                      className="w-full pl-9 pr-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-white/10 bg-white dark:bg-white/5 text-sm text-gray-900 dark:text-white placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-primary/30"
                     />
                   </div>
-                  <select value={filterTipo} onChange={e => setFilterTipo(e.target.value)} className="px-3 py-2 rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 text-sm text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-[#00B4A6]/30">
+                  <select value={filterTipo} onChange={e => setFilterTipo(e.target.value)} className="px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-white/10 bg-white dark:bg-white/5 text-sm text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary/30">
                     <option value="ALL">Todos los tipos</option>
                     {Object.entries(TIPO_LABELS).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
                   </select>
-                  <select value={filterEstado} onChange={e => setFilterEstado(e.target.value)} className="px-3 py-2 rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 text-sm text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-[#00B4A6]/30">
+                  <select value={filterEstado} onChange={e => setFilterEstado(e.target.value)} className="px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-white/10 bg-white dark:bg-white/5 text-sm text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary/30">
                     <option value="ALL">Todos los estados</option>
                     <option value="VIGENTE">Vigentes</option>
                     <option value="POR_VENCER">Por vencer</option>
                     <option value="VENCIDO">Vencidos</option>
                   </select>
                   <div className="flex items-center gap-1">
-                    <button onClick={() => setViewMode("cards")} className={cn("p-2 rounded-lg transition-colors", viewMode === "cards" ? "bg-[#00B4A6] text-white" : "bg-gray-100 dark:bg-white/5 text-gray-500")}><LayoutGrid className="h-4 w-4" /></button>
-                    <button onClick={() => setViewMode("list")} className={cn("p-2 rounded-lg transition-colors", viewMode === "list" ? "bg-[#00B4A6] text-white" : "bg-gray-100 dark:bg-white/5 text-gray-500")}><List className="h-4 w-4" /></button>
+                    <button onClick={() => setViewMode("cards")} className={cn("p-2 rounded-lg transition-colors", viewMode === "cards" ? "bg-primary text-white" : "bg-gray-100 dark:bg-white/5 text-gray-500")}><LayoutGrid className="h-4 w-4" /></button>
+                    <button onClick={() => setViewMode("list")} className={cn("p-2 rounded-lg transition-colors", viewMode === "list" ? "bg-primary text-white" : "bg-gray-100 dark:bg-white/5 text-gray-500")}><List className="h-4 w-4" /></button>
                   </div>
                 </div>
 
@@ -1479,7 +1479,7 @@ ${content.split("\n\n").map(p => `<p>${p}</p>`).join("")}
                     <FileText className="h-12 w-12 text-gray-300 mx-auto mb-3" />
                     <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">Sin contratos</h3>
                     <p className="text-sm text-gray-500 mb-6">Crea tu primer contrato desde una plantilla</p>
-                    <button onClick={() => setActiveTab("plantillas")} className="bg-[#00B4A6] text-white px-6 py-2.5 rounded-xl font-medium hover:bg-[#009690]">Ver Plantillas</button>
+                    <button onClick={() => setActiveTab("plantillas")} className="bg-primary text-white px-6 py-2.5 rounded-lg font-medium hover:bg-primary-dark">Ver Plantillas</button>
                   </div>
                 ) : viewMode === "cards" ? (
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -1491,7 +1491,7 @@ ${content.split("\n\n").map(p => `<p>${p}</p>`).join("")}
                         <div
                           key={c.id}
                           onClick={() => setSelected(c)}
-                          className={cn("bg-white dark:bg-white/5 border border-gray-200 dark:border-white/10 rounded-xl shadow-sm hover:shadow-lg transition-all cursor-pointer border-l-4", borderColor)}
+                          className={cn("bg-white dark:bg-white/5 border border-[var(--rule-base)] dark:border-white/10 rounded-lg  hover:shadow-lg transition-all cursor-pointer border-l-4", borderColor)}
                         >
                           <div className="p-4 space-y-3">
                             <div className="flex items-start justify-between">
@@ -1499,26 +1499,26 @@ ${content.split("\n\n").map(p => `<p>${p}</p>`).join("")}
                                 <p className="text-xs text-gray-400 font-mono">{c.numero}</p>
                                 <p className="text-sm font-bold text-gray-900 dark:text-white mt-0.5">{TIPO_LABELS[c.tipo] || c.tipo}</p>
                               </div>
-                              <span className={cn("px-2 py-0.5 rounded-lg text-[10px] font-bold shrink-0 ml-2", ESTADO_STYLES[estado])}>
+                              <span className={cn("px-2 py-0.5 rounded-lg text-[length:var(--ts-2xs)] font-bold shrink-0 ml-2", ESTADO_STYLES[estado])}>
                                 {estado === "VIGENTE" ? "Vigente" : estado === "POR_VENCER" ? "Por vencer" : estado === "VENCIDO" ? "Vencido" : estado}
                               </span>
                             </div>
                             <div className="flex items-center gap-2">
-                              <div className="h-7 w-7 rounded-full bg-[#f97316]/20 flex items-center justify-center shrink-0"><User className="h-3.5 w-3.5 text-[#f97316]" /></div>
+                              <div className="h-7 w-7 rounded-full bg-secondary/20 flex items-center justify-center shrink-0"><User className="h-3.5 w-3.5 text-secondary" /></div>
                               <div className="min-w-0">
                                 <p className="text-sm text-gray-700 dark:text-gray-300 truncate">{c.clienteNombre}</p>
-                                <p className="text-[10px] text-gray-400">{c.clienteDocumento}</p>
+                                <p className="text-[length:var(--ts-2xs)] text-gray-400">{c.clienteDocumento}</p>
                               </div>
                             </div>
                             <div className="text-xs text-gray-500 space-y-0.5">
                               <p>Fecha: {formatDatePeru(c.fechaContrato || c.createdAt)}</p>
                               {c.fechaVencimiento && <p>Vence: {formatDatePeru(c.fechaVencimiento)} {dias !== null && dias >= 0 ? `(${dias}d)` : dias !== null ? `(hace ${Math.abs(dias)}d)` : ""}</p>}
                             </div>
-                            <div className="flex items-center justify-between pt-2 border-t border-gray-100 dark:border-white/5">
-                              <p className="text-sm font-bold text-[#00B4A6]">{formatCurrency(c.montoTotal || 0)}</p>
+                            <div className="flex items-center justify-between pt-2 border-t border-[var(--rule-soft)] dark:border-white/5">
+                              <p className="text-sm font-bold text-primary">{formatCurrency(c.montoTotal || 0)}</p>
                               <div className="flex gap-1">
-                                <button onClick={e => { e.stopPropagation(); downloadPDF(c); }} className="p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-white/5 text-gray-400 hover:text-[#00B4A6] transition-colors" title="PDF"><Printer className="h-3.5 w-3.5" /></button>
-                                <button onClick={e => { e.stopPropagation(); downloadWord(c); }} className="p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-white/5 text-gray-400 hover:text-blue-600 transition-colors" title="Word"><Download className="h-3.5 w-3.5" /></button>
+                                <button onClick={e => { e.stopPropagation(); downloadPDF(c); }} className="p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-white/5 text-gray-400 hover:text-primary transition-colors" title="PDF"><Printer className="h-3.5 w-3.5" /></button>
+                                <button onClick={e => { e.stopPropagation(); downloadWord(c); }} className="p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-white/5 text-gray-400 hover:text-emerald-600 transition-colors" title="Word"><Download className="h-3.5 w-3.5" /></button>
                               </div>
                             </div>
                           </div>
@@ -1527,11 +1527,11 @@ ${content.split("\n\n").map(p => `<p>${p}</p>`).join("")}
                     })}
                   </div>
                 ) : (
-                  <div className="bg-white dark:bg-white/5 border border-gray-200 dark:border-white/10 rounded-xl overflow-hidden shadow-sm">
+                  <div className="bg-white dark:bg-white/5 border border-[var(--rule-base)] dark:border-white/10 rounded-xl overflow-hidden ">
                     <div className="overflow-x-auto">
                       <table className="w-full text-sm">
                         <thead>
-                          <tr className="border-b border-gray-100 dark:border-white/5 text-left">
+                          <tr className="border-b border-[var(--rule-soft)] dark:border-white/5 text-left">
                             <th className="px-4 py-3 font-semibold text-gray-500 dark:text-gray-400">N.o</th>
                             <th className="px-4 py-3 font-semibold text-gray-500 dark:text-gray-400">Cliente</th>
                             <th className="px-4 py-3 font-semibold text-gray-500 dark:text-gray-400 hidden sm:table-cell">Tipo</th>
@@ -1557,7 +1557,7 @@ ${content.split("\n\n").map(p => `<p>${p}</p>`).join("")}
                                 <td className="px-4 py-3 text-right font-bold text-gray-900 dark:text-white">{formatCurrency(c.montoTotal || 0)}</td>
                                 <td className="px-4 py-3 text-gray-500 hidden md:table-cell">{formatDatePeru(c.fechaContrato || c.createdAt)}</td>
                                 <td className="px-4 py-3 hidden lg:table-cell">
-                                  <span className={cn("px-2 py-0.5 rounded-lg text-[10px] font-bold", ESTADO_STYLES[estado])}>{estado}</span>
+                                  <span className={cn("px-2 py-0.5 rounded-lg text-[length:var(--ts-2xs)] font-bold", ESTADO_STYLES[estado])}>{estado}</span>
                                 </td>
                                 <td className="px-4 py-3">
                                   <div className="flex gap-1">
@@ -1595,14 +1595,14 @@ ${content.split("\n\n").map(p => `<p>${p}</p>`).join("")}
                     <BookOpen className="h-12 w-12 text-gray-300 mx-auto mb-3" />
                     <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">Selecciona una plantilla</h3>
                     <p className="text-sm text-gray-500 mb-6">Ve a la pestana &quot;Plantillas&quot; para elegir una plantilla legal</p>
-                    <button onClick={() => setActiveTab("plantillas")} className="bg-[#00B4A6] text-white px-6 py-2.5 rounded-xl font-medium hover:bg-[#009690]">Ver Plantillas</button>
+                    <button onClick={() => setActiveTab("plantillas")} className="bg-primary text-white px-6 py-2.5 rounded-lg font-medium hover:bg-primary-dark">Ver Plantillas</button>
                   </div>
                 ) : (
                   <>
                     {/* Wizard Header */}
-                    <div className="bg-white dark:bg-white/5 border border-gray-200 dark:border-white/10 rounded-xl p-4">
+                    <div className="bg-white dark:bg-white/5 border border-[var(--rule-base)] dark:border-white/10 rounded-xl p-4">
                       <div className="flex items-center gap-3 mb-4">
-                        <div className="h-10 w-10 rounded-xl bg-[#00B4A6]/10 flex items-center justify-center text-[#00B4A6]">
+                        <div className="h-10 w-10 rounded-xl bg-primary/10 flex items-center justify-center text-primary">
                           <TemplateIcon icon={selectedTemplate.icon} className="h-5 w-5" />
                         </div>
                         <div>
@@ -1622,11 +1622,11 @@ ${content.split("\n\n").map(p => `<p>${p}</p>`).join("")}
                             onClick={() => setWizardStep(i)}
                             className={cn(
                               "flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap transition-all",
-                              wizardStep === i ? "bg-[#00B4A6] text-white" : wizardStep > i ? "bg-[#00B4A6]/10 text-[#00B4A6]" : "bg-gray-100 dark:bg-white/5 text-gray-400"
+                              wizardStep === i ? "bg-primary text-white" : wizardStep > i ? "bg-primary/10 text-primary" : "bg-gray-100 dark:bg-white/5 text-gray-400"
                             )}
                           >
-                            <span className={cn("h-5 w-5 rounded-full flex items-center justify-center text-[10px] font-bold",
-                              wizardStep === i ? "bg-white/20 text-white" : wizardStep > i ? "bg-[#00B4A6] text-white" : "bg-gray-200 dark:bg-white/10 text-gray-500"
+                            <span className={cn("h-5 w-5 rounded-full flex items-center justify-center text-[length:var(--ts-2xs)] font-bold",
+                              wizardStep === i ? "bg-white/20 text-white" : wizardStep > i ? "bg-primary text-white" : "bg-gray-200 dark:bg-white/10 text-gray-500"
                             )}>
                               {wizardStep > i ? <CheckCircle className="h-3 w-3" /> : i + 1}
                             </span>
@@ -1643,14 +1643,14 @@ ${content.split("\n\n").map(p => `<p>${p}</p>`).join("")}
                       const filledRequired = allFields.filter(f => f.required && wizardData[f.key]?.trim()).length;
                       const progress = totalRequired > 0 ? Math.round((filledRequired / totalRequired) * 100) : 0;
                       return (
-                        <div className="bg-white dark:bg-white/5 border border-gray-200 dark:border-white/10 rounded-xl p-4">
+                        <div className="bg-white dark:bg-white/5 border border-[var(--rule-base)] dark:border-white/10 rounded-xl p-4">
                           <div className="flex items-center justify-between mb-2">
                             <span className="text-xs font-bold text-gray-600 dark:text-gray-400">Progreso del contrato</span>
                             <span className="text-xs font-bold text-gray-900 dark:text-white">{filledRequired} de {totalRequired} campos completados ({progress}%)</span>
                           </div>
                           <div className="relative h-3 bg-gray-200 dark:bg-white/10 rounded-full overflow-hidden">
                             <div
-                              className={cn("h-full rounded-full transition-all duration-500", progress === 100 ? "bg-emerald-500" : progress >= 60 ? "bg-[#00B4A6]" : "bg-[#f97316]")}
+                              className={cn("h-full rounded-full transition-all duration-[var(--dur-slow)]", progress === 100 ? "bg-emerald-500" : progress >= 60 ? "bg-primary" : "bg-secondary")}
                               style={{ width: `${progress}%` }}
                             />
                           </div>
@@ -1660,7 +1660,7 @@ ${content.split("\n\n").map(p => `<p>${p}</p>`).join("")}
 
                     {/* Wizard Steps 0-2: Form Fields */}
                     {wizardStep < 3 && (
-                      <div className="bg-white dark:bg-white/5 border border-gray-200 dark:border-white/10 rounded-xl p-6 space-y-4">
+                      <div className="bg-white dark:bg-white/5 border border-[var(--rule-base)] dark:border-white/10 rounded-xl p-6 space-y-4">
                         <h4 className="text-sm font-bold text-gray-900 dark:text-white">{wizardGroupLabels[wizardStep]}</h4>
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                           {wizardGroups[wizardStep]?.fields.map(field => {
@@ -1685,7 +1685,7 @@ ${content.split("\n\n").map(p => `<p>${p}</p>`).join("")}
                                   {field.label} {field.required && <span className="text-red-500">*</span>}
                                   {hasTooltip && <LegalTooltip term={field.label} explanation={hasTooltip.explanation} example={hasTooltip.example} />}
                                   {isAutoFilled && (
-                                    <span className="ml-1 px-1.5 py-0.5 rounded-full text-[9px] font-bold bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400">
+                                    <span className="ml-1 px-1.5 py-0.5 rounded-full text-[length:var(--ts-2xs)] font-bold bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400">
                                       Auto-completado
                                     </span>
                                   )}
@@ -1703,15 +1703,15 @@ ${content.split("\n\n").map(p => `<p>${p}</p>`).join("")}
                                       }}
                                       placeholder={field.placeholder}
                                       className={cn(
-                                        "flex-1 px-3 py-2 rounded-xl border text-sm text-gray-900 dark:text-white placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#00B4A6]/30",
-                                        isAutoFilled ? "border-emerald-300 dark:border-emerald-700 bg-emerald-50 dark:bg-emerald-900/10" : "border-gray-200 dark:border-white/10 bg-white dark:bg-white/5"
+                                        "flex-1 px-3 py-2 rounded-lg border text-sm text-gray-900 dark:text-white placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-primary/30",
+                                        isAutoFilled ? "border-emerald-300 dark:border-emerald-700 bg-emerald-50 dark:bg-emerald-900/10" : "border-[var(--rule-base)] dark:border-white/10 bg-white dark:bg-white/5"
                                       )}
                                     />
                                     <button
                                       type="button"
                                       onClick={detectLocation}
                                       disabled={geoLoading}
-                                      className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold text-white bg-blue-600 hover:bg-blue-700 disabled:opacity-50 transition-colors shrink-0"
+                                      className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-bold text-white bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 transition-colors shrink-0"
                                     >
                                       {geoLoading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <MapPin className="h-3.5 w-3.5" />}
                                       Detectar
@@ -1719,7 +1719,7 @@ ${content.split("\n\n").map(p => `<p>${p}</p>`).join("")}
                                   </div>
                                 )}
                                 {isCiudadField && geoResult && (
-                                  <p className="text-[10px] text-blue-600 dark:text-blue-400 flex items-center gap-1 mt-0.5 mb-1">
+                                  <p className="text-[length:var(--ts-2xs)] text-emerald-600 dark:text-emerald-400 flex items-center gap-1 mt-0.5 mb-1">
                                     <MapPin className="h-3 w-3" /> Ubicacion detectada: {geoResult}
                                   </p>
                                 )}
@@ -1740,7 +1740,7 @@ ${content.split("\n\n").map(p => `<p>${p}</p>`).join("")}
                                         }
                                         setAutoFilledFields(prev => { const n = new Set(prev); n.delete(field.key); return n; });
                                       }}
-                                      className="w-full px-3 py-2 rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 text-sm text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-[#00B4A6]/30"
+                                      className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-white/10 bg-white dark:bg-white/5 text-sm text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary/30"
                                     >
                                       <option value="">Seleccionar...</option>
                                       {selectOptions?.map(opt => <option key={opt} value={opt}>{opt}</option>)}
@@ -1755,7 +1755,7 @@ ${content.split("\n\n").map(p => `<p>${p}</p>`).join("")}
                                           setWizardData(p => ({ ...p, [field.key]: v || "Otro (escribir)" }));
                                         }}
                                         placeholder="Escriba el valor personalizado..."
-                                        className="w-full mt-2 px-3 py-2 rounded-xl border border-[#f97316]/50 bg-[#f97316]/5 dark:bg-[#f97316]/10 text-sm text-gray-900 dark:text-white placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#f97316]/30"
+                                        className="w-full mt-2 px-3 py-2 rounded-lg border border-secondary/50 bg-secondary/5 text-sm text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-secondary/30"
                                       />
                                     )}
                                   </>
@@ -1769,7 +1769,7 @@ ${content.split("\n\n").map(p => `<p>${p}</p>`).join("")}
                                       setWizardData(p => ({ ...p, [field.key]: e.target.value }));
                                       setAutoFilledFields(prev => { const n = new Set(prev); n.delete(field.key); return n; });
                                     }}
-                                    className="w-full px-3 py-2 rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 text-sm text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-[#00B4A6]/30"
+                                    className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-white/10 bg-white dark:bg-white/5 text-sm text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary/30"
                                   >
                                     <option value="">Seleccionar...</option>
                                     {field.options?.map(opt => <option key={opt} value={opt}>{opt}</option>)}
@@ -1786,7 +1786,7 @@ ${content.split("\n\n").map(p => `<p>${p}</p>`).join("")}
                                     }}
                                     placeholder={field.placeholder}
                                     rows={3}
-                                    className="w-full px-3 py-2 rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 text-sm text-gray-900 dark:text-white placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#00B4A6]/30 resize-none"
+                                    className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-white/10 bg-white dark:bg-white/5 text-sm text-gray-900 dark:text-white placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-primary/30 resize-none"
                                   />
                                 )}
 
@@ -1821,22 +1821,22 @@ ${content.split("\n\n").map(p => `<p>${p}</p>`).join("")}
                                     placeholder={field.placeholder}
                                     step={field.type === "number" ? "0.01" : undefined}
                                     className={cn(
-                                      "w-full px-3 py-2 rounded-xl border text-sm text-gray-900 dark:text-white placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#00B4A6]/30",
-                                      isAutoFilled && !isCiudadField ? "border-emerald-300 dark:border-emerald-700 bg-emerald-50 dark:bg-emerald-900/10" : validationError ? "border-red-300 dark:border-red-700 bg-red-50 dark:bg-red-900/10" : "border-gray-200 dark:border-white/10 bg-white dark:bg-white/5"
+                                      "w-full px-3 py-2 rounded-lg border text-sm text-gray-900 dark:text-white placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-primary/30",
+                                      isAutoFilled && !isCiudadField ? "border-emerald-300 dark:border-emerald-700 bg-emerald-50 dark:bg-emerald-900/10" : validationError ? "border-red-300 dark:border-red-700 bg-red-50 dark:bg-red-900/10" : "border-[var(--rule-base)] dark:border-white/10 bg-white dark:bg-white/5"
                                     )}
                                   />
                                 )}
 
                                 {/* Validation error */}
                                 {validationError && (
-                                  <p className="text-[10px] text-red-600 dark:text-red-400 mt-1 flex items-center gap-1">
+                                  <p className="text-[length:var(--ts-2xs)] text-red-600 dark:text-red-400 mt-1 flex items-center gap-1">
                                     <AlertCircle className="h-3 w-3 shrink-0" /> {validationError}
                                   </p>
                                 )}
 
                                 {/* Auto-generated letras preview */}
                                 {(field.key === "PRECIO_LETRAS" || field.key === "MONTO_LETRAS") && wizardData[field.key] && (
-                                  <p className="text-[10px] text-[#00B4A6] dark:text-emerald-400 mt-1 flex items-center gap-1">
+                                  <p className="text-[length:var(--ts-2xs)] text-primary dark:text-emerald-400 mt-1 flex items-center gap-1">
                                     <Info className="h-3 w-3 shrink-0" /> Auto-generado del monto numerico
                                   </p>
                                 )}
@@ -1849,20 +1849,20 @@ ${content.split("\n\n").map(p => `<p>${p}</p>`).join("")}
 
                     {/* Step 3: Preview */}
                     {wizardStep === 3 && (
-                      <div className="space-y-4">
+                      <div className="space-y-6">
                         {/* Summary Card */}
-                        <div className="bg-[#00B4A6]/5 dark:bg-[#00B4A6]/10 border border-[#00B4A6]/20 rounded-xl p-4">
+                        <div className="bg-primary/5 dark:bg-primary/10 border border-primary/20 rounded-xl p-4">
                           <div className="flex items-center gap-2 mb-2">
-                            <Scale className="h-4 w-4 text-[#00B4A6]" />
-                            <h4 className="text-sm font-bold text-[#00B4A6]">Resumen en Lenguaje Simple</h4>
+                            <Scale className="h-4 w-4 text-primary" />
+                            <h4 className="text-sm font-bold text-primary">Resumen en Lenguaje Simple</h4>
                           </div>
                           <p className="text-sm text-gray-700 dark:text-gray-300 leading-relaxed">{generateSummary()}</p>
                         </div>
 
                         {/* Full Document Preview — with highlighted filled fields */}
-                        <div className="bg-white dark:bg-white/5 border border-gray-200 dark:border-white/10 rounded-xl p-6 sm:p-8 max-h-[60vh] overflow-y-auto">
+                        <div className="bg-white dark:bg-white/5 border border-[var(--rule-base)] dark:border-white/10 rounded-xl p-6 sm:p-8 max-h-[60vh] overflow-y-auto">
                           <div className="max-w-[680px] mx-auto font-serif" ref={printRef}>
-                            <h2 className="text-center text-base font-bold uppercase tracking-wider mb-1">
+                            <h2 className="text-center text-base font-bold mb-1">
                               CONTRATO DE {selectedTemplate.name.toUpperCase()}
                             </h2>
                             <p className="text-center text-xs text-gray-400 mb-6">{selectedTemplate.legalBasis}</p>
@@ -1899,7 +1899,7 @@ ${content.split("\n\n").map(p => `<p>${p}</p>`).join("")}
                         </div>
 
                         {/* Preview legend */}
-                        <div className="flex items-center gap-4 text-[10px] text-gray-500">
+                        <div className="flex items-center gap-4 text-[length:var(--ts-2xs)] text-gray-500">
                           <span className="flex items-center gap-1"><span className="inline-block w-3 h-3 rounded bg-yellow-100 dark:bg-yellow-900/30 border border-yellow-300" /> Campos completados</span>
                           <span className="flex items-center gap-1"><span className="inline-block w-3 h-3 rounded bg-red-100 dark:bg-red-900/30 border border-red-300" /> Campos pendientes</span>
                         </div>
@@ -1908,10 +1908,10 @@ ${content.split("\n\n").map(p => `<p>${p}</p>`).join("")}
 
                     {/* Step 4: Confirm */}
                     {wizardStep === 4 && (
-                      <div className="space-y-4">
-                        <div className="bg-white dark:bg-white/5 border border-gray-200 dark:border-white/10 rounded-xl p-6 space-y-4">
+                      <div className="space-y-6">
+                        <div className="bg-white dark:bg-white/5 border border-[var(--rule-base)] dark:border-white/10 rounded-xl p-6 space-y-4">
                           <div className="flex items-center gap-3">
-                            <div className="h-12 w-12 rounded-xl bg-[#00B4A6] flex items-center justify-center text-white">
+                            <div className="h-12 w-12 rounded-lg bg-primary flex items-center justify-center text-white">
                               <CheckCircle className="h-6 w-6" />
                             </div>
                             <div>
@@ -1924,13 +1924,13 @@ ${content.split("\n\n").map(p => `<p>${p}</p>`).join("")}
                           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                             {selectedTemplate.fields.filter(f => wizardData[f.key]).map(f => (
                               <div key={f.key} className="p-2 bg-gray-50 dark:bg-white/5 rounded-lg">
-                                <p className="text-[10px] uppercase font-bold text-gray-400">{f.label}</p>
+                                <p className="text-[length:var(--ts-2xs)] uppercase font-bold text-gray-400">{f.label}</p>
                                 <p className="text-sm text-gray-700 dark:text-gray-300 truncate">{wizardData[f.key]}</p>
                               </div>
                             ))}
                           </div>
 
-                          <div className="bg-[#00B4A6]/5 dark:bg-[#00B4A6]/10 rounded-xl p-4">
+                          <div className="bg-primary/5 dark:bg-primary/10 rounded-xl p-4">
                             <p className="text-sm text-gray-700 dark:text-gray-300">{generateSummary()}</p>
                           </div>
 
@@ -1943,7 +1943,7 @@ ${content.split("\n\n").map(p => `<p>${p}</p>`).join("")}
                     <div className="flex items-center justify-between">
                       <button
                         onClick={() => wizardStep > 0 ? setWizardStep(s => s - 1) : setSelectedTemplate(null)}
-                        className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-bold text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-white/5 transition-colors"
+                        className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-bold text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-white/5 transition-colors"
                       >
                         <ArrowLeft className="h-4 w-4" />
                         {wizardStep === 0 ? "Cancelar" : "Anterior"}
@@ -1952,7 +1952,7 @@ ${content.split("\n\n").map(p => `<p>${p}</p>`).join("")}
                         {wizardStep < 4 && (
                           <button
                             onClick={() => setWizardStep(s => s + 1)}
-                            className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-bold text-white bg-[#00B4A6] hover:bg-[#009690] shadow-sm transition-colors"
+                            className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-bold text-white bg-primary hover:bg-primary-dark  transition-colors"
                           >
                             Siguiente
                             <ArrowRight className="h-4 w-4" />
@@ -1962,7 +1962,7 @@ ${content.split("\n\n").map(p => `<p>${p}</p>`).join("")}
                           <button
                             onClick={handleCreate}
                             disabled={creating}
-                            className="flex items-center gap-2 px-6 py-2.5 rounded-xl text-sm font-bold text-white bg-[#00B4A6] hover:bg-[#009690] disabled:opacity-50 shadow-sm transition-colors"
+                            className="flex items-center gap-2 px-6 py-2.5 rounded-lg text-sm font-bold text-white bg-primary hover:bg-primary-dark disabled:opacity-50  transition-colors"
                           >
                             {creating ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
                             Guardar Contrato
@@ -1977,7 +1977,7 @@ ${content.split("\n\n").map(p => `<p>${p}</p>`).join("")}
 
             {/* ═══ EDITOR ═══ */}
             {activeTab === "editor" && (
-              <div className="space-y-4">
+              <div className="space-y-6">
                 <div className="flex items-center gap-3">
                   <h3 className="text-sm font-bold text-gray-900 dark:text-white">Editor de Plantillas</h3>
                   <select
@@ -1990,7 +1990,7 @@ ${content.split("\n\n").map(p => `<p>${p}</p>`).join("")}
                         setEditorPreview(false);
                       }
                     }}
-                    className="px-3 py-1.5 rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 text-sm text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-[#00B4A6]/30"
+                    className="px-3 py-1.5 rounded-lg border border-[var(--rule-base)] dark:border-white/10 bg-white dark:bg-white/5 text-sm text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary/30"
                   >
                     <option value="">Seleccionar plantilla...</option>
                     {PLANTILLAS.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
@@ -1999,7 +1999,7 @@ ${content.split("\n\n").map(p => `<p>${p}</p>`).join("")}
                     <button
                       onClick={() => setEditorPreview(!editorPreview)}
                       className={cn("flex items-center gap-1 px-3 py-1.5 rounded-xl text-xs font-bold transition-colors",
-                        editorPreview ? "bg-[#00B4A6] text-white" : "bg-gray-100 dark:bg-white/5 text-gray-600 dark:text-gray-400"
+                        editorPreview ? "bg-primary text-white" : "bg-gray-100 dark:bg-white/5 text-gray-600 dark:text-gray-400"
                       )}
                     >
                       <Eye className="h-3.5 w-3.5" /> {editorPreview ? "Editando" : "Preview"}
@@ -2016,14 +2016,14 @@ ${content.split("\n\n").map(p => `<p>${p}</p>`).join("")}
                   <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
                     {/* Editor */}
                     <div className="space-y-3">
-                      <div className="bg-white dark:bg-white/5 border border-gray-200 dark:border-white/10 rounded-xl p-4">
+                      <div className="bg-white dark:bg-white/5 border border-[var(--rule-base)] dark:border-white/10 rounded-xl p-4">
                         <p className="text-xs font-bold text-gray-500 mb-2">Campos disponibles (clic para insertar):</p>
                         <div className="flex flex-wrap gap-1 mb-3">
                           {editorTemplate.fields.map(f => (
                             <button
                               key={f.key}
                               onClick={() => setEditorText(prev => prev + ` {{${f.key}}}`)}
-                              className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-[#00B4A6]/10 text-[#00B4A6] hover:bg-[#00B4A6]/20 transition-colors"
+                              className="px-2 py-0.5 rounded-full text-[length:var(--ts-2xs)] font-bold bg-primary/10 text-primary hover:bg-primary/20 transition-colors"
                             >
                               {`{{${f.key}}}`}
                             </button>
@@ -2033,14 +2033,14 @@ ${content.split("\n\n").map(p => `<p>${p}</p>`).join("")}
                           value={editorText}
                           onChange={e => setEditorText(e.target.value)}
                           rows={20}
-                          className="w-full px-4 py-3 rounded-xl border border-gray-200 dark:border-white/10 bg-gray-50 dark:bg-white/5 text-sm text-gray-900 dark:text-white font-mono leading-relaxed focus:outline-none focus:ring-2 focus:ring-[#00B4A6]/30 resize-none"
+                          className="w-full px-4 py-3 rounded-lg border border-[var(--rule-base)] dark:border-white/10 bg-gray-50 dark:bg-white/5 text-sm text-gray-900 dark:text-white font-mono leading-relaxed focus:outline-none focus:ring-2 focus:ring-primary/30 resize-none"
                           placeholder="Escribe o edita las clausulas del contrato..."
                         />
                       </div>
                     </div>
 
                     {/* Preview */}
-                    <div className="bg-white dark:bg-white/5 border border-gray-200 dark:border-white/10 rounded-xl p-6 max-h-[70vh] overflow-y-auto">
+                    <div className="bg-white dark:bg-white/5 border border-[var(--rule-base)] dark:border-white/10 rounded-xl p-6 max-h-[70vh] overflow-y-auto">
                       <h4 className="text-sm font-bold text-gray-900 dark:text-white mb-4">Vista Previa</h4>
                       <div className="font-serif space-y-3">
                         {editorText.split("\n\n").filter(p => p.trim()).map((para, i) => (
@@ -2072,7 +2072,7 @@ ${content.split("\n\n").map(p => `<p>${p}</p>`).join("")}
               animate={{ x: 0 }}
               exit={{ x: "100%" }}
               transition={{ type: "spring", damping: 25, stiffness: 250 }}
-              className="fixed inset-y-0 right-0 z-50 w-full max-w-lg bg-white dark:bg-[#1a1a2e] border-l border-gray-200 dark:border-white/10 shadow-2xl overflow-y-auto"
+              className="fixed inset-y-0 right-0 z-50 w-full max-w-lg bg-white dark:bg-[#1a1a2e] border-l border-[var(--rule-base)] dark:border-white/10 overflow-y-auto"
             >
               <div className="p-4 sm:p-6 space-y-5">
                 {/* Header */}
@@ -2081,7 +2081,7 @@ ${content.split("\n\n").map(p => `<p>${p}</p>`).join("")}
                     <h3 className="text-lg font-bold text-gray-900 dark:text-white">Contrato {selected.numero}</h3>
                     <p className="text-xs text-gray-400">{TIPO_LABELS[selected.tipo] || selected.tipo}</p>
                   </div>
-                  <button onClick={() => setSelected(null)} className="p-2 rounded-xl hover:bg-gray-100 dark:hover:bg-white/5">
+                  <button onClick={() => setSelected(null)} className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-white/5">
                     <X className="h-5 w-5 text-gray-500" />
                   </button>
                 </div>
@@ -2091,10 +2091,10 @@ ${content.split("\n\n").map(p => `<p>${p}</p>`).join("")}
                   const { summary } = getContractContent(selected);
                   if (!summary) return null;
                   return (
-                    <div className="bg-[#00B4A6]/5 dark:bg-[#00B4A6]/10 border border-[#00B4A6]/20 rounded-xl p-4">
+                    <div className="bg-primary/5 dark:bg-primary/10 border border-primary/20 rounded-xl p-4">
                       <div className="flex items-center gap-2 mb-2">
-                        <Scale className="h-4 w-4 text-[#00B4A6]" />
-                        <h4 className="text-xs font-bold text-[#00B4A6] uppercase">Resumen</h4>
+                        <Scale className="h-4 w-4 text-primary" />
+                        <h4 className="text-xs font-bold text-primary uppercase">Resumen</h4>
                       </div>
                       <p className="text-sm text-gray-700 dark:text-gray-300 leading-relaxed">{summary}</p>
                     </div>
@@ -2114,17 +2114,17 @@ ${content.split("\n\n").map(p => `<p>${p}</p>`).join("")}
                 {/* Parties */}
                 <div className="bg-gray-50 dark:bg-white/5 rounded-xl p-4 space-y-3">
                   <div className="flex items-center gap-3">
-                    <div className="h-10 w-10 rounded-full bg-[#f97316]/20 flex items-center justify-center">
-                      <User className="h-5 w-5 text-[#f97316]" />
+                    <div className="h-10 w-10 rounded-full bg-secondary/20 flex items-center justify-center">
+                      <User className="h-5 w-5 text-secondary" />
                     </div>
                     <div>
                       <p className="font-bold text-gray-900 dark:text-white">{selected.clienteNombre}</p>
                       <p className="text-xs text-gray-500">{selected.clienteDocumento}</p>
                     </div>
                   </div>
-                  <div className="grid grid-cols-2 gap-3 pt-3 border-t border-gray-200 dark:border-white/10">
-                    <div><p className="text-[10px] uppercase font-bold text-gray-400">Monto</p><p className="text-sm font-bold text-[#00B4A6]">{formatCurrency(selected.montoTotal || 0)}</p></div>
-                    <div><p className="text-[10px] uppercase font-bold text-gray-400">Fecha</p><p className="text-sm text-gray-700 dark:text-gray-300">{formatDatePeru(selected.fechaContrato || selected.createdAt)}</p></div>
+                  <div className="grid grid-cols-2 gap-3 pt-3 border-t border-[var(--rule-base)] dark:border-white/10">
+                    <div><p className="text-[length:var(--ts-2xs)] uppercase font-bold text-gray-400">Monto</p><p className="text-sm font-bold text-primary">{formatCurrency(selected.montoTotal || 0)}</p></div>
+                    <div><p className="text-[length:var(--ts-2xs)] uppercase font-bold text-gray-400">Fecha</p><p className="text-sm text-gray-700 dark:text-gray-300">{formatDatePeru(selected.fechaContrato || selected.createdAt)}</p></div>
                   </div>
 
                   {/* Vigencia Timeline */}
@@ -2135,14 +2135,14 @@ ${content.split("\n\n").map(p => `<p>${p}</p>`).join("")}
                     const total = vence - inicio;
                     const progreso = total > 0 ? Math.max(0, Math.min(((hoy - inicio) / total) * 100, 100)) : 0;
                     const diasRestantes = Math.ceil((vence - hoy) / (1000 * 60 * 60 * 24));
-                    const barColor = progreso >= 100 ? "bg-red-500" : progreso > 80 ? "bg-amber-500" : "bg-[#00B4A6]";
+                    const barColor = progreso >= 100 ? "bg-red-500" : progreso > 80 ? "bg-amber-500" : "bg-primary";
                     return (
-                      <div className="pt-3 border-t border-gray-200 dark:border-white/10 space-y-1.5">
-                        <p className="text-[10px] uppercase font-bold text-gray-400">Vigencia</p>
+                      <div className="pt-3 border-t border-[var(--rule-base)] dark:border-white/10 space-y-1.5">
+                        <p className="text-[length:var(--ts-2xs)] uppercase font-bold text-gray-400">Vigencia</p>
                         <div className="relative h-2.5 bg-gray-200 dark:bg-white/10 rounded-full overflow-hidden">
                           <div className={cn("h-full rounded-full transition-all", barColor)} style={{ width: `${progreso}%` }} />
                         </div>
-                        <div className="flex items-center justify-between text-[10px] text-gray-500">
+                        <div className="flex items-center justify-between text-[length:var(--ts-2xs)] text-gray-500">
                           <span>{formatDatePeru(selected.fechaContrato || selected.createdAt)}</span>
                           <span className="font-bold">{diasRestantes > 0 ? `${diasRestantes} dias restantes` : diasRestantes === 0 ? "Vence hoy" : `Vencido hace ${Math.abs(diasRestantes)}d`}</span>
                           <span>{formatDatePeru(selected.fechaVencimiento)}</span>
@@ -2174,7 +2174,7 @@ ${content.split("\n\n").map(p => `<p>${p}</p>`).join("")}
                     <div>
                       <h4 className="text-sm font-bold text-gray-900 dark:text-white mb-2 flex items-center gap-2">
                         <Clock className="h-4 w-4" /> Historial de Versiones
-                        <span className="text-[10px] bg-gray-100 dark:bg-white/10 px-2 py-0.5 rounded-full">{versions.length}</span>
+                        <span className="text-[length:var(--ts-2xs)] bg-gray-100 dark:bg-white/10 px-2 py-0.5 rounded-full">{versions.length}</span>
                       </h4>
                       <div className="space-y-1">
                         {versions.map(v => (
@@ -2191,18 +2191,18 @@ ${content.split("\n\n").map(p => `<p>${p}</p>`).join("")}
                 {/* Action Buttons */}
                 <div className="space-y-2">
                   <div className="grid grid-cols-2 gap-2">
-                    <button onClick={() => downloadPDF(selected)} className="flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-sm font-bold text-white bg-[#00B4A6] hover:bg-[#009690] shadow-sm transition-colors">
+                    <button onClick={() => downloadPDF(selected)} className="flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg text-sm font-bold text-white bg-primary hover:bg-primary-dark  transition-colors">
                       <Printer className="h-4 w-4" /> PDF
                     </button>
-                    <button onClick={() => downloadWord(selected)} className="flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-sm font-bold text-blue-700 bg-blue-100 dark:bg-blue-900/30 dark:text-blue-400 hover:bg-blue-200 transition-colors">
+                    <button onClick={() => downloadWord(selected)} className="flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg text-sm font-bold text-emerald-700 bg-emerald-100 dark:bg-emerald-900/30 dark:text-emerald-400 hover:bg-emerald-200 transition-colors">
                       <Download className="h-4 w-4" /> Word
                     </button>
                   </div>
                   <div className="grid grid-cols-2 gap-2">
-                    <button onClick={() => downloadTxt(selected)} className="flex items-center justify-center gap-2 px-4 py-2 rounded-xl text-xs font-bold text-gray-600 dark:text-gray-400 bg-gray-100 dark:bg-white/5 hover:bg-gray-200 transition-colors">
+                    <button onClick={() => downloadTxt(selected)} className="flex items-center justify-center gap-2 px-4 py-2 rounded-lg text-xs font-bold text-gray-600 dark:text-gray-400 bg-gray-100 dark:bg-white/5 hover:bg-gray-200 transition-colors">
                       <FileText className="h-3.5 w-3.5" /> Texto (.txt)
                     </button>
-                    <button onClick={() => copyToClipboard(selected)} className="flex items-center justify-center gap-2 px-4 py-2 rounded-xl text-xs font-bold text-gray-600 dark:text-gray-400 bg-gray-100 dark:bg-white/5 hover:bg-gray-200 transition-colors">
+                    <button onClick={() => copyToClipboard(selected)} className="flex items-center justify-center gap-2 px-4 py-2 rounded-lg text-xs font-bold text-gray-600 dark:text-gray-400 bg-gray-100 dark:bg-white/5 hover:bg-gray-200 transition-colors">
                       <ClipboardCopy className="h-3.5 w-3.5" /> Copiar
                     </button>
                   </div>
@@ -2230,7 +2230,7 @@ ${content.split("\n\n").map(p => `<p>${p}</p>`).join("")}
                         setSelected(null);
                       }
                     }}
-                    className="w-full flex items-center justify-center gap-2 px-4 py-2 rounded-xl text-xs font-bold text-[#f97316] bg-[#f97316]/10 hover:bg-[#f97316]/20 transition-colors"
+                    className="w-full flex items-center justify-center gap-2 px-4 py-2 rounded-lg text-xs font-bold text-secondary bg-secondary/10 hover:bg-secondary/20 transition-colors"
                   >
                     <Copy className="h-3.5 w-3.5" /> Duplicar Contrato
                   </button>

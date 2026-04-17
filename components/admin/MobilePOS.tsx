@@ -89,7 +89,7 @@ function ProductButton({ product, onAdd }: { product: POSProduct; onAdd: (p: POS
         onPointerLeave={handlePressEnd}
         onClick={handleAdd}
         className={cn(
-          "relative flex flex-col items-center justify-center rounded-2xl border border-gray-700 p-2 gap-1 transition-transform active:scale-95 select-none",
+          "relative flex flex-col items-center justify-center rounded-xl border border-gray-700 p-2 gap-1 transition-transform active:scale-95 select-none",
           "bg-gray-800 hover:bg-gray-700",
           flash && "bg-green-800 border-green-500",
         )}
@@ -104,8 +104,8 @@ function ProductButton({ product, onAdd }: { product: POSProduct; onAdd: (p: POS
             <Package className="h-4 w-4 text-gray-400" />
           </div>
         )}
-        <span className="text-[10px] font-semibold text-gray-100 text-center leading-tight line-clamp-2 w-full px-0.5">{product.name}</span>
-        <span className="text-[11px] font-extrabold text-green-400">S/{product.price.toFixed(2)}</span>
+        <span className="text-[length:var(--ts-2xs)] font-semibold text-gray-100 text-center leading-tight line-clamp-2 w-full px-0.5">{product.name}</span>
+        <span className="text-[length:var(--ts-xs)] font-extrabold text-green-400">S/{product.price.toFixed(2)}</span>
       </button>
 
       {/* Long press modal — cantidad */}
@@ -132,13 +132,13 @@ function ProductButton({ product, onAdd }: { product: POSProduct; onAdd: (p: POS
             <div className="flex gap-3">
               <button
                 onClick={() => setLongPressQty(null)}
-                className="flex-1 h-12 rounded-2xl bg-gray-700 text-gray-300 font-semibold active:scale-95"
+                className="flex-1 h-12 rounded-xl bg-gray-700 text-gray-300 font-semibold active:scale-95"
               >
                 Cancelar
               </button>
               <button
                 onClick={confirmLongPress}
-                className="flex-1 h-12 rounded-2xl bg-green-600 text-white font-bold active:scale-95"
+                className="flex-1 h-12 rounded-xl bg-green-600 text-white font-bold active:scale-95"
               >
                 Agregar {longPressQty}
               </button>
@@ -180,13 +180,13 @@ function CartItemRow({ item, onInc, onDec, onRemove }: {
       onTouchStart={onTouchStart}
       onTouchEnd={onTouchEnd}
       className={cn(
-        "flex items-center gap-2 py-2 px-1 rounded-xl border border-gray-800 bg-gray-900 transition-all duration-300",
+        "flex items-center gap-2 py-2 px-1 rounded-xl border border-gray-800 bg-gray-900 transition-all duration-[var(--dur-base)]",
         swiped && "-translate-x-full opacity-0",
       )}
     >
       <div className="flex-1 min-w-0">
         <p className="text-xs font-semibold text-gray-200 truncate">{item.product.name}</p>
-        <p className="text-[11px] text-green-400 font-bold">S/{item.product.price.toFixed(2)} c/u</p>
+        <p className="text-[length:var(--ts-xs)] text-green-400 font-bold">S/{item.product.price.toFixed(2)} c/u</p>
       </div>
       <div className="flex items-center gap-1.5 shrink-0">
         <button
@@ -300,7 +300,7 @@ export default function MobilePOS() {
               placeholder="Buscar producto..."
               value={query}
               onChange={e => setQuery(e.target.value)}
-              className="w-full bg-gray-900 text-white placeholder-gray-500 border border-gray-700 rounded-xl pl-9 pr-9 py-3 text-base focus:outline-none focus:border-green-600"
+              className="w-full bg-gray-900 text-white placeholder-gray-500 border border-gray-700 rounded-lg pl-9 pr-9 py-3 text-base focus:outline-none focus:border-green-600"
               style={{ fontSize: 16 }}
             />
             {query && (
@@ -335,7 +335,7 @@ export default function MobilePOS() {
           {loading ? (
             <div className="grid grid-cols-4 gap-2">
               {Array.from({ length: 12 }).map((_, i) => (
-                <div key={i} className="h-20 bg-gray-800 rounded-2xl animate-pulse" />
+                <div key={i} className="h-20 bg-gray-800 rounded-xl animate-pulse" />
               ))}
             </div>
           ) : filtered.length === 0 ? (
@@ -378,7 +378,7 @@ export default function MobilePOS() {
         {/* Total + botones de cobro */}
         <div className="px-3 pb-3 pt-2 space-y-2 shrink-0">
           {/* Total */}
-          <div className="flex items-center justify-between bg-gray-900 rounded-2xl px-4 py-2 border border-gray-800">
+          <div className="flex items-center justify-between bg-gray-900 rounded-xl px-4 py-2 border border-gray-800">
             <span className="text-gray-400 text-sm font-semibold">Total</span>
             <span className="text-4xl font-extrabold text-white">S/{total.toFixed(2)}</span>
           </div>
@@ -391,7 +391,7 @@ export default function MobilePOS() {
                 onClick={() => handlePay(method)}
                 disabled={!cart.length}
                 className={cn(
-                  "rounded-2xl font-bold text-white text-sm transition-colors active:scale-95 disabled:opacity-30",
+                  "rounded-xl font-bold text-white text-sm transition-colors active:scale-95 disabled:opacity-30",
                   color,
                 )}
                 style={{ height: 60, touchAction: "manipulation" }}
@@ -405,7 +405,7 @@ export default function MobilePOS() {
           <button
             onClick={() => handlePay("efectivo")}
             disabled={!cart.length}
-            className="w-full rounded-2xl bg-green-600 hover:bg-green-500 active:scale-95 text-white font-extrabold text-lg transition-all disabled:opacity-30"
+            className="w-full rounded-xl bg-green-600 hover:bg-green-500 active:scale-95 text-white font-extrabold text-lg transition-all disabled:opacity-30"
             style={{ height: 80, touchAction: "manipulation" }}
           >
             {paySuccess ? "Cobrado!" : `Cobrar S/${total.toFixed(2)}`}

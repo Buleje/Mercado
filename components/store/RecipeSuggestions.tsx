@@ -129,7 +129,7 @@ function RecipeCard({ recipe, cartItems, onAddIngredient }: RecipeCardProps) {
           ? "border-[#00B4A6]"
           : matchPct >= 50
             ? "border-[#f97316]"
-            : "border-gray-200 dark:border-gray-700"
+            : "border-[var(--rule-base)]"
       )}
     >
       <button
@@ -181,7 +181,7 @@ function RecipeCard({ recipe, cartItems, onAddIngredient }: RecipeCardProps) {
       </button>
 
       {expanded && (
-        <div className="border-t border-gray-100 dark:border-gray-800 p-4 pt-3">
+        <div className="border-t border-[var(--rule-base)] p-4 pt-3">
           <div className="space-y-1.5">
             {recipe.ingredients.map((ing) => {
               const present = hasIngredient(cartItems, ing);

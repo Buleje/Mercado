@@ -87,13 +87,14 @@ export default function FavoritesSection() {
             {/* Share via Web Share API or clipboard */}
             <button
               onClick={shareFavorites}
-              className="flex items-center gap-2 bg-[#f97316] text-white rounded-xl px-4 py-2.5 text-sm font-bold hover:opacity-90 active:scale-95 transition-all"
+              className="flex items-center gap-2 bg-secondary text-white rounded-xl px-4 py-2.5 text-sm font-bold hover:opacity-90 active:scale-95 transition-all"
               aria-label="Compartir mis favoritos"
             >
               <Share2 className="h-4 w-4" />
               <span className="hidden sm:inline">{copied ? "¡Copiado!" : "Compartir"}</span>
             </button>
             {/* Y2: Share via WhatsApp */}
+            {/* TODO(#1): bg-[#25D366] is WhatsApp brand green — intentional, no token */}
             <button
               onClick={shareWhatsApp}
               className="flex items-center gap-2 bg-[#25D366] text-white rounded-xl px-4 py-2.5 text-sm font-bold hover:opacity-90 active:scale-95 transition-all"

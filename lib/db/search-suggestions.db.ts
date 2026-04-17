@@ -23,6 +23,17 @@ export type DbFuzzyProduct = {
   similarity: number;
 };
 
+/** Shape consumed by marketplace SearchAutocomplete component. */
+export type MarketplaceAutocompleteItem = {
+  id: string;
+  type: "query" | "store" | "product" | "category";
+  label: string;
+  subtitle?: string;
+  href: string;
+  image?: string | null;
+  searchCount?: number;
+};
+
 // ─── Normalización ────────────────────────────────────────────────────────────
 
 /** Lowercase + sin tildes + trim. */
@@ -194,5 +205,41 @@ export const SearchSuggestionsDB = {
       image: r.image,
       similarity: typeof r.sim === "number" ? r.sim : Number(r.sim),
     }));
+  },
+
+  /**
+   * Marketplace autocomplete: returns items grouped by type (query/store/product/category).
+   *
+   * Minimal implementation using existing suggestions + fuzzy product matches.
+   * Stores and categories are not yet included — planned for a follow-up.
+   */
+  async getMarketplaceAutocomplete(
+    tenantId: string,
+    prefix: string,
+    limit = 12,
+  ): Promise<MarketplaceAutocompleteItem[]> {
+    const [queries, products] = await Promise.all([
+      this.getTopSuggestions(tenantId, prefix, Math.ceil(limit / 2)),
+      this.getProductFuzzyMatches(tenantId, prefix, Math.ceil(limit / 2)),
+    ]);
+
+    const queryItems: MarketplaceAutocompleteItem[] = queries.map((q) => ({
+      id: `q:${q.normalizedQuery}`,
+      type: "query",
+      label: q.query,
+      href: `/marketplace?q=${encodeURIComponent(q.query)}`,
+      searchCount: q.searchCount,
+    }));
+
+    const productItems: MarketplaceAutocompleteItem[] = products.map((p) => ({
+      id: `p:${p.productId}`,
+      type: "product",
+      label: p.productName,
+      subtitle: p.category,
+      href: `/marketplace/p/${p.productId}`,
+      image: p.image,
+    }));
+
+    return [...queryItems, ...productItems].slice(0, limit);
   },
 };

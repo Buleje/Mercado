@@ -93,12 +93,12 @@ export default function HeatMapTab() {
       {/* KPIs */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
         {[
-          { label: "Transacciones totales", value: totalTx.toLocaleString(), color: "text-blue-500" },
+          { label: "Transacciones totales", value: totalTx.toLocaleString(), color: "text-emerald-500" },
           { label: "Hora pico", value: `${peakHour.hour}:00`, color: "text-emerald-500" },
-          { label: "Día más activo", value: peakDay.day, color: "text-violet-500" },
+          { label: "Día más activo", value: peakDay.day, color: "text-[var(--text-secondary)]" },
           { label: "Monto total", value: `S/ ${totalAmount.toFixed(0)}`, color: "text-amber-500" },
         ].map(k => (
-          <div key={k.label} className="bg-white dark:bg-card rounded-xl border border-gray-200 dark:border-card-border p-4">
+          <div key={k.label} className="bg-white dark:bg-card rounded-xl border border-[var(--rule-base)] dark:border-card-border p-4">
             <p className="text-xs font-semibold text-gray-500 dark:text-muted">{k.label}</p>
             {loading
               ? <div className="h-7 w-20 bg-gray-100 dark:bg-surface rounded animate-pulse mt-1" />
@@ -108,7 +108,7 @@ export default function HeatMapTab() {
       </div>
 
       {/* Heatmap */}
-      <div className="bg-white dark:bg-card rounded-2xl border border-gray-200 dark:border-card-border p-3 sm:p-5 overflow-x-auto relative">
+      <div className="bg-white dark:bg-card rounded-xl border border-[var(--rule-base)] dark:border-card-border p-3 sm:p-5 overflow-x-auto relative">
         <h3 className="font-bold text-sm text-gray-900 dark:text-foreground mb-4">
           Transacciones por hora y día de la semana
         </h3>
@@ -131,7 +131,7 @@ export default function HeatMapTab() {
             <div className="grid" style={{ gridTemplateColumns: `44px repeat(${displayHours.length}, 1fr)` }}>
               <div />
               {displayHours.map(h => (
-                <div key={h} className="text-center text-[10px] font-bold text-gray-400 pb-1">{h}h</div>
+                <div key={h} className="text-center text-[length:var(--ts-2xs)] font-bold text-gray-400 pb-1">{h}h</div>
               ))}
               {DAYS.map(day => (
                 <div key={day} className="contents">
@@ -143,7 +143,7 @@ export default function HeatMapTab() {
                     return (
                       <div
                         key={`${day}-${hour}`}
-                        className={cn("m-0.5 rounded-md flex items-center justify-center text-[9px] font-bold h-8 cursor-default transition-all hover:ring-2 hover:ring-primary/50", getColor(ratio))}
+                        className={cn("m-0.5 rounded-md flex items-center justify-center text-[length:var(--ts-2xs)] font-bold h-8 cursor-default transition-all hover:ring-2 hover:ring-primary/50", getColor(ratio))}
                         onMouseEnter={e => {
                           const rect = (e.target as HTMLElement).getBoundingClientRect();
                           setTooltip({ x: rect.left, y: rect.top, day, hour, value: val, amount: cell?.amount ?? 0 });
@@ -160,11 +160,11 @@ export default function HeatMapTab() {
 
             {/* Leyenda */}
             <div className="flex flex-wrap items-center gap-2 mt-4 justify-center">
-              <span className="text-[10px] text-gray-400">Menos</span>
+              <span className="text-[length:var(--ts-2xs)] text-gray-400">Menos</span>
               {["bg-emerald-100", "bg-emerald-300", "bg-yellow-400", "bg-orange-400", "bg-red-500"].map((c, i) => (
                 <div key={i} className={cn("h-4 w-6 rounded", c)} />
               ))}
-              <span className="text-[10px] text-gray-400">Más</span>
+              <span className="text-[length:var(--ts-2xs)] text-gray-400">Más</span>
             </div>
           </div>
         )}
@@ -172,7 +172,7 @@ export default function HeatMapTab() {
         {/* Tooltip flotante */}
         {tooltip && (
           <div
-            className="fixed z-50 pointer-events-none bg-gray-900 text-white text-xs rounded-xl px-3 py-2 shadow-xl"
+            className="fixed z-50 pointer-events-none bg-gray-900 text-white text-xs rounded-lg px-3 py-2"
             style={{ left: tooltip.x + 8, top: tooltip.y - 56 }}
           >
             <p className="font-bold">{tooltip.day} {tooltip.hour}:00</p>
@@ -184,7 +184,7 @@ export default function HeatMapTab() {
 
       {/* Resumen por día */}
       {!loading && !error && cells.length > 0 && (
-        <div className="bg-white dark:bg-card rounded-2xl border border-gray-200 dark:border-card-border p-3 sm:p-5">
+        <div className="bg-white dark:bg-card rounded-xl border border-[var(--rule-base)] dark:border-card-border p-3 sm:p-5">
           <h3 className="font-bold text-sm text-gray-900 dark:text-foreground mb-3">Resumen por día</h3>
           <div className="space-y-2">
             {DAYS.map(day => {

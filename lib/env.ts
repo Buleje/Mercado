@@ -151,18 +151,34 @@ export function validateEnv(): void {
     logger.warn("[env] Optional env vars not set (OK for dev)", { warnings });
   }
 
-  // Soft-check for Upstash Redis rate-limiting (ADR-022). In production,
-  // missing env vars mean distributed rate limiting is disabled — we log
-  // a warning but do NOT throw, so existing deploys on Vercel continue to
-  // boot while the human toggles the Upstash integration.
+  // Upstash Redis rate-limiting (ADR-022). In production we now HARD-FAIL when
+  // the REST vars are missing, unless the operator opts into the in-memory
+  // fallback by setting ALLOW_IN_MEMORY_RATELIMIT=true. Keeping the fallback
+  // silent in prod masks DDoS protection gaps across Vercel replicas.
   const upstashUrl = process.env.UPSTASH_REDIS_REST_URL;
   const upstashToken = process.env.UPSTASH_REDIS_REST_TOKEN;
+  const allowInMemory = process.env.ALLOW_IN_MEMORY_RATELIMIT === "true";
   if (isProd && (!upstashUrl || !upstashToken)) {
-    logger.warn(
-      "[env] Upstash Redis REST env vars missing — rate limiting will fall " +
-        "back to per-instance in-memory (not distributed across Vercel " +
-        "replicas). Set UPSTASH_REDIS_REST_URL + UPSTASH_REDIS_REST_TOKEN to " +
-        "close this gap. See docs/adr/022-upstash-rate-limit-distribuido.md.",
+    if (allowInMemory) {
+      logger.warn(
+        "[env] Upstash Redis REST env vars missing — rate limiting will fall " +
+          "back to per-instance in-memory. ALLOW_IN_MEMORY_RATELIMIT=true is " +
+          "set, so boot continues. Distributed rate limiting DISABLED.",
+      );
+    } else {
+      missing.push(
+        "  ❌  UPSTASH_REDIS_REST_URL / UPSTASH_REDIS_REST_TOKEN — " +
+          "Distributed rate limiting (set ALLOW_IN_MEMORY_RATELIMIT=true " +
+          "to explicitly opt into the in-memory fallback, ADR-022)",
+      );
+    }
+  }
+
+  // Admin bypass login must NEVER be enabled in production via env var.
+  if (isProd && process.env.ALLOW_ADMIN_BYPASS_LOGIN === "true") {
+    missing.push(
+      "  ❌  ALLOW_ADMIN_BYPASS_LOGIN=true is set in production — refuse to boot. " +
+        "This flag grants passwordless admin access and is DEV-ONLY. Unset it or remove from Vercel env.",
     );
   }
 

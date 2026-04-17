@@ -16,7 +16,7 @@ const DEMO_ADMIN = `/t/${DEMO_SLUG}/admin`;
 const DEMO_STORE = `/t/${DEMO_SLUG}`;
 
 const DEMO_LINKS = [
-  { label: "Panel Admin", desc: "Dashboard, ventas, inventario, reportes, IA", icon: <LayoutDashboard className="h-4 w-4" />, href: DEMO_ADMIN, color: "bg-blue-50 dark:bg-blue-950/30 text-blue-600" },
+  { label: "Panel Admin", desc: "Dashboard, ventas, inventario, reportes, IA", icon: <LayoutDashboard className="h-4 w-4" />, href: DEMO_ADMIN, color: "bg-emerald-50 dark:bg-emerald-950/30 text-emerald-600" },
   { label: "Tienda Online", desc: "La tienda que ven tus clientes con delivery", icon: <Store className="h-4 w-4" />, href: DEMO_STORE, color: "bg-emerald-50 dark:bg-emerald-950/30 text-emerald-600" },
   { label: "POS / Caja", desc: "Punto de venta con Yape, efectivo y Plin", icon: <ShoppingCart className="h-4 w-4" />, href: `${DEMO_ADMIN}`, color: "bg-teal-50 dark:bg-teal-950/30 text-teal-600" },
   { label: "Catalogo", desc: "30 productos en 10 categorias con precios", icon: <Package className="h-4 w-4" />, href: `/t/${DEMO_SLUG}/tienda`, color: "bg-orange-50 dark:bg-orange-950/30 text-orange-600" },
@@ -24,7 +24,7 @@ const DEMO_LINKS = [
 
 const DATA_INCLUDED = [
   { icon: <Package className="h-3.5 w-3.5" />, text: "30 productos reales", color: "text-teal-400" },
-  { icon: <Users className="h-3.5 w-3.5" />, text: "10 clientes registrados", color: "text-blue-400" },
+  { icon: <Users className="h-3.5 w-3.5" />, text: "10 clientes registrados", color: "text-emerald-400" },
   { icon: <ShoppingCart className="h-3.5 w-3.5" />, text: "25 pedidos con tracking", color: "text-violet-400" },
   { icon: <Receipt className="h-3.5 w-3.5" />, text: "15 ventas POS con ticket", color: "text-emerald-400" },
   { icon: <Truck className="h-3.5 w-3.5" />, text: "4 proveedores + 6 compras", color: "text-orange-400" },

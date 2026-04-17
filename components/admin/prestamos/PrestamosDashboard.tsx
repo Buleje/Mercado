@@ -4,7 +4,7 @@ import { m } from "@/components/admin/providers";
 import {
   DollarSign, AlertTriangle, TrendingUp,
   ArrowUpFromLine, ArrowDownToLine, XCircle,
-  User, Shield, Scale,
+  User, Shield, Scale, BarChart3,
 } from "lucide-react";
 import {
   BarChart, Bar, AreaChart, Area, PieChart, Pie, Cell,
@@ -89,7 +89,7 @@ function genSparkData(base: number): { v: number }[] {
 function EmptyChartPrestamos({ message }: { message: string }) {
   return (
     <div className="flex flex-col items-center justify-center py-12 text-center">
-      <div className="text-4xl mb-3">📊</div>
+      <div className="h-12 w-12 rounded-xl bg-primary/10 flex items-center justify-center mb-3"><BarChart3 className="h-6 w-6 text-primary" /></div>
       <p className="text-sm font-medium text-gray-500 dark:text-gray-400">{message}</p>
       <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">Los datos aparecerán cuando registres préstamos</p>
     </div>
@@ -105,15 +105,15 @@ function SparklineKPICard({
   const gradId = `sp-${title.replace(/\W+/g, "")}`;
   return (
     <div
-      className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl shadow-sm p-3 relative overflow-hidden"
+      className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl  p-3 relative overflow-hidden"
       style={{ borderBottomColor: accentColor, borderBottomWidth: 4 }}
     >
       <div className="flex items-center gap-1.5 mb-1">
         <Icon className="h-3.5 w-3.5" style={{ color: accentColor }} />
-        <p className="text-[10px] uppercase font-bold text-gray-400 truncate">{title}</p>
+        <p className="text-[length:var(--ts-2xs)] uppercase font-bold text-gray-400 truncate">{title}</p>
       </div>
       <p className="text-xl font-extrabold font-mono text-gray-900 dark:text-white leading-tight">{value}</p>
-      {sub && <p className="text-[10px] text-gray-400 mt-0.5">{sub}</p>}
+      {sub && <p className="text-[length:var(--ts-2xs)] text-gray-400 mt-0.5">{sub}</p>}
       <div className="absolute bottom-0 right-0 w-20 h-10 opacity-50 pointer-events-none">
         <ResponsiveContainer width="100%" height={300}>
           <AreaChart data={sparkData} margin={{ top: 2, right: 2, bottom: 0, left: 0 }}>
@@ -206,8 +206,8 @@ export function PrestamosDashboard({ prestamos, resumen }: Props) {
 
       {moraAcumulada > 0 && (
         <m.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.05 }}>
-          <div className="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-700 rounded-2xl p-4 flex items-center gap-4">
-            <div className="h-12 w-12 rounded-xl bg-amber-500 flex items-center justify-center shrink-0 shadow-md">
+          <div className="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-700 rounded-xl p-4 flex items-center gap-4">
+            <div className="h-12 w-12 rounded-xl bg-amber-500 flex items-center justify-center shrink-0">
               <AlertTriangle className="h-6 w-6 text-white" />
             </div>
             <div className="flex-1 min-w-0">
@@ -226,15 +226,15 @@ export function PrestamosDashboard({ prestamos, resumen }: Props) {
       )}
 
       <m.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}>
-        <div className="bg-white dark:bg-card rounded-2xl border border-gray-200 dark:border-card-border p-6 shadow-sm">
+        <div className="bg-white dark:bg-card rounded-xl border border-[var(--rule-base)] dark:border-card-border p-6 ">
           <h3 className="text-sm font-bold text-gray-700 dark:text-foreground mb-4">Cobros vs Nuevos préstamos (6 meses)</h3>
           {areaData.some(d => d.cobrado > 0 || d.nuevos > 0) ? (
             <ResponsiveContainer width="100%" height={250}>
               <AreaChart data={areaData}>
                 <defs>
                   <linearGradient id="prestCobGrad" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="0%" stopColor="#00B4A6" stopOpacity={0.3} />
-                    <stop offset="100%" stopColor="#00B4A6" stopOpacity={0} />
+                    <stop offset="0%" stopColor="#2563EB" stopOpacity={0.3} />
+                    <stop offset="100%" stopColor="#2563EB" stopOpacity={0} />
                   </linearGradient>
                   <linearGradient id="prestNuevGrad" x1="0" y1="0" x2="0" y2="1">
                     <stop offset="0%" stopColor="#e63946" stopOpacity={0.3} />
@@ -246,7 +246,7 @@ export function PrestamosDashboard({ prestamos, resumen }: Props) {
                 <YAxis tickFormatter={(v: number) => `S/${v}`} tick={{ fontSize: 11 }} />
                 <Tooltip formatter={((v: number, name: string) => [formatCurrency(Number(v)), name === "cobrado" ? "Cobrado" : "Nuevos"]) as never} contentStyle={{ borderRadius: "12px", border: "1px solid #e5e7eb", fontSize: "12px" }} />
                 <Legend formatter={(v: string) => v === "cobrado" ? "Cobrado" : "Nuevos préstamos"} />
-                <Area type="monotone" dataKey="cobrado" stroke="#00B4A6" fill="url(#prestCobGrad)" strokeWidth={2} />
+                <Area type="monotone" dataKey="cobrado" stroke="#2563EB" fill="url(#prestCobGrad)" strokeWidth={2} />
                 <Area type="monotone" dataKey="nuevos" stroke="#e63946" fill="url(#prestNuevGrad)" strokeWidth={2} />
               </AreaChart>
             </ResponsiveContainer>
@@ -258,7 +258,7 @@ export function PrestamosDashboard({ prestamos, resumen }: Props) {
 
       <m.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}>
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          <div className="bg-white dark:bg-card rounded-2xl border border-gray-200 dark:border-card-border p-6 shadow-sm">
+          <div className="bg-white dark:bg-card rounded-xl border border-[var(--rule-base)] dark:border-card-border p-6 ">
             <h3 className="text-sm font-bold text-gray-700 dark:text-foreground mb-4 flex items-center gap-2">
               <User className="h-4 w-4 text-[#f97316]" /> Top 5 deudores
             </h3>
@@ -281,9 +281,9 @@ export function PrestamosDashboard({ prestamos, resumen }: Props) {
             )}
           </div>
 
-          <div className="bg-white dark:bg-card rounded-2xl border border-gray-200 dark:border-card-border p-6 shadow-sm">
+          <div className="bg-white dark:bg-card rounded-xl border border-[var(--rule-base)] dark:border-card-border p-6 ">
             <h3 className="text-sm font-bold text-gray-700 dark:text-foreground mb-2 flex items-center gap-2">
-              <Shield className="h-4 w-4 text-purple-500" /> Distribución por estado
+              <Shield className="h-4 w-4 text-[var(--text-secondary)]" /> Distribución por estado
             </h3>
             {donutData.length > 0 ? (
               <>
@@ -299,7 +299,7 @@ export function PrestamosDashboard({ prestamos, resumen }: Props) {
                   {donutData.map(d => (
                     <div key={d.name} className="flex items-center gap-1.5">
                       <div className="h-2.5 w-2.5 rounded-full shrink-0" style={{ backgroundColor: d.color }} />
-                      <span className="text-[10px] text-gray-600 dark:text-gray-400">{d.name}: <strong>{d.value}</strong></span>
+                      <span className="text-[length:var(--ts-2xs)] text-gray-600 dark:text-gray-400">{d.name}: <strong>{d.value}</strong></span>
                     </div>
                   ))}
                 </div>
@@ -309,11 +309,11 @@ export function PrestamosDashboard({ prestamos, resumen }: Props) {
             )}
           </div>
 
-          <div className="bg-white dark:bg-card rounded-2xl border border-gray-200 dark:border-card-border p-6 shadow-sm">
+          <div className="bg-white dark:bg-card rounded-xl border border-[var(--rule-base)] dark:border-card-border p-6 ">
             <h3 className="text-sm font-bold text-gray-700 dark:text-foreground mb-4 flex items-center gap-2">
-              <Scale className="h-4 w-4 text-blue-500" /> Dado vs Recibido
+              <Scale className="h-4 w-4 text-emerald-500" /> Dado vs Recibido
             </h3>
-            <div className="space-y-4">
+            <div className="space-y-6">
               <div>
                 <div className="flex justify-between items-center mb-1">
                   <div className="flex items-center gap-1.5">
@@ -325,7 +325,7 @@ export function PrestamosDashboard({ prestamos, resumen }: Props) {
                 <div className="h-3 bg-gray-100 dark:bg-gray-800 rounded-full overflow-hidden">
                   <m.div className="h-full bg-red-500 rounded-full" initial={{ width: 0 }} animate={{ width: `${(totalDados / maxDireccion) * 100}%` }} transition={{ duration: 0.8, delay: 0.3 }} />
                 </div>
-                <p className="text-[10px] text-gray-400 mt-0.5">{prestamos.filter(p=>p.direccion==="DADO").length} préstamos</p>
+                <p className="text-[length:var(--ts-2xs)] text-gray-400 mt-0.5">{prestamos.filter(p=>p.direccion==="DADO").length} préstamos</p>
               </div>
               <div>
                 <div className="flex justify-between items-center mb-1">
@@ -338,14 +338,14 @@ export function PrestamosDashboard({ prestamos, resumen }: Props) {
                 <div className="h-3 bg-gray-100 dark:bg-gray-800 rounded-full overflow-hidden">
                   <m.div className="h-full bg-emerald-500 rounded-full" initial={{ width: 0 }} animate={{ width: `${(totalRecibidos / maxDireccion) * 100}%` }} transition={{ duration: 0.8, delay: 0.5 }} />
                 </div>
-                <p className="text-[10px] text-gray-400 mt-0.5">{prestamos.filter(p=>p.direccion==="RECIBIDO").length} préstamos</p>
+                <p className="text-[length:var(--ts-2xs)] text-gray-400 mt-0.5">{prestamos.filter(p=>p.direccion==="RECIBIDO").length} préstamos</p>
               </div>
-              <div className="pt-3 border-t border-gray-100 dark:border-white/10">
+              <div className="pt-3 border-t border-[var(--rule-soft)] dark:border-white/10">
                 <p className="text-xs text-gray-500 dark:text-gray-400">Balance neto</p>
                 <p className={cn("text-lg font-extrabold font-mono", totalDados > totalRecibidos ? "text-red-600 dark:text-red-400" : "text-emerald-600 dark:text-emerald-400")}>
                   {totalDados > totalRecibidos ? "− " : "+ "}{formatCurrency(Math.abs(totalDados - totalRecibidos))}
                 </p>
-                <p className="text-[10px] text-gray-400">{totalDados > totalRecibidos ? "Más dado que recibido" : "Más recibido que dado"}</p>
+                <p className="text-[length:var(--ts-2xs)] text-gray-400">{totalDados > totalRecibidos ? "Más dado que recibido" : "Más recibido que dado"}</p>
               </div>
             </div>
           </div>

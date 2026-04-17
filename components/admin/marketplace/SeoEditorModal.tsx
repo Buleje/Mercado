@@ -52,7 +52,7 @@ function TagInput({
   };
 
   return (
-    <div className="flex flex-wrap gap-1.5 p-2 rounded-xl border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-900 min-h-[44px] focus-within:ring-2 focus-within:ring-[#00B4A6]">
+    <div className="flex flex-wrap gap-1.5 p-2 rounded-xl border border-[var(--rule-base)] bg-white dark:bg-gray-900 min-h-[44px] focus-within:ring-2 focus-within:ring-[#00B4A6]">
       {tags.map((tag) => (
         <span
           key={tag}
@@ -86,12 +86,12 @@ function SerpPreview({ title, description }: { title: string; description: strin
   const displayDesc = description || "Descripción de la página en los resultados de Google.";
 
   return (
-    <div className="rounded-xl border border-gray-200 dark:border-gray-700 p-4 bg-white dark:bg-gray-950">
+    <div className="rounded-xl border border-[var(--rule-base)] p-4 bg-white dark:bg-gray-950">
       <p className="text-xs text-gray-400 dark:text-gray-500 mb-3 flex items-center gap-1.5">
         <Search className="h-3.5 w-3.5" /> Vista previa en Google
       </p>
       <div className="space-y-0.5">
-        <p className="text-[#1558d6] text-[17px] leading-snug hover:underline cursor-pointer truncate font-normal">
+        <p className="text-[#1558d6] text-[length:var(--ts-base)] leading-snug hover:underline cursor-pointer truncate font-normal">
           {displayTitle.slice(0, 70)}
         </p>
         <p className="text-[#006621] dark:text-green-400 text-xs">
@@ -178,9 +178,9 @@ export default function SeoEditorModal({ open, productId, onClose, onSave }: Seo
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 px-4">
-      <div className="bg-white dark:bg-gray-900 rounded-2xl w-full max-w-lg shadow-2xl flex flex-col max-h-[90vh]">
+      <div className="bg-white dark:bg-gray-900 rounded-xl w-full max-w-lg flex flex-col max-h-[90vh]">
         {/* Header */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100 dark:border-gray-800 shrink-0">
+        <div className="flex items-center justify-between px-6 py-4 border-b border-[var(--rule-base)] shrink-0">
           <h2 className="text-base font-semibold text-gray-900 dark:text-gray-100">Editor SEO</h2>
           <button
             onClick={onClose}
@@ -216,10 +216,10 @@ export default function SeoEditorModal({ open, productId, onClose, onSave }: Seo
                   value={form.metaTitle}
                   onChange={(e) => setForm((f) => ({ ...f, metaTitle: e.target.value }))}
                   className={cn(
-                    "w-full px-3 py-2.5 rounded-xl border bg-white dark:bg-gray-950 text-sm focus:outline-none focus:ring-2 focus:ring-[#00B4A6]",
+                    "w-full px-3 py-2.5 rounded-lg border bg-white dark:bg-gray-950 text-sm focus:outline-none focus:ring-2 focus:ring-[#00B4A6]",
                     errors.metaTitle
                       ? "border-red-400 dark:border-red-600"
-                      : "border-gray-300 dark:border-gray-700"
+                      : "border-[var(--rule-base)]"
                   )}
                   placeholder="Título optimizado para Google"
                 />
@@ -246,10 +246,10 @@ export default function SeoEditorModal({ open, productId, onClose, onSave }: Seo
                   value={form.metaDescription}
                   onChange={(e) => setForm((f) => ({ ...f, metaDescription: e.target.value }))}
                   className={cn(
-                    "w-full px-3 py-2.5 rounded-xl border bg-white dark:bg-gray-950 text-sm focus:outline-none focus:ring-2 focus:ring-[#00B4A6] resize-none",
+                    "w-full px-3 py-2.5 rounded-lg border bg-white dark:bg-gray-950 text-sm focus:outline-none focus:ring-2 focus:ring-[#00B4A6] resize-none",
                     errors.metaDescription
                       ? "border-red-400 dark:border-red-600"
-                      : "border-gray-300 dark:border-gray-700"
+                      : "border-[var(--rule-base)]"
                   )}
                   placeholder="Descripción que aparecerá en los resultados de búsqueda"
                 />
@@ -283,7 +283,7 @@ export default function SeoEditorModal({ open, productId, onClose, onSave }: Seo
                   type="text"
                   value={form.ogImage}
                   onChange={(e) => setForm((f) => ({ ...f, ogImage: e.target.value }))}
-                  className="w-full px-3 py-2.5 rounded-xl border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-950 text-sm focus:outline-none focus:ring-2 focus:ring-[#00B4A6]"
+                  className="w-full px-3 py-2.5 rounded-lg border border-[var(--rule-base)] bg-white dark:bg-gray-950 text-sm focus:outline-none focus:ring-2 focus:ring-[#00B4A6]"
                   placeholder="https://..."
                 />
               </div>
@@ -295,18 +295,18 @@ export default function SeoEditorModal({ open, productId, onClose, onSave }: Seo
         </div>
 
         {/* Footer */}
-        <div className="px-6 py-4 border-t border-gray-100 dark:border-gray-800 flex gap-3 shrink-0">
+        <div className="px-6 py-4 border-t border-[var(--rule-base)] flex gap-3 shrink-0">
           <button
             onClick={onClose}
             disabled={saving}
-            className="flex-1 py-2.5 rounded-xl border border-gray-300 dark:border-gray-700 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 disabled:opacity-50"
+            className="flex-1 py-2.5 rounded-lg border border-[var(--rule-base)] text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 disabled:opacity-50"
           >
             Cancelar
           </button>
           <button
             onClick={handleSave}
             disabled={saving || loading}
-            className="flex-1 py-2.5 rounded-xl bg-[#00B4A6] text-white text-sm font-medium hover:bg-[#00a090] disabled:opacity-50 flex items-center justify-center gap-2"
+            className="flex-1 py-2.5 rounded-lg bg-[#00B4A6] text-white text-sm font-medium hover:bg-[#00a090] disabled:opacity-50 flex items-center justify-center gap-2"
           >
             {saving && <Loader2 className="h-4 w-4 animate-spin" />}
             Guardar
@@ -317,7 +317,7 @@ export default function SeoEditorModal({ open, productId, onClose, onSave }: Seo
       {/* Toast */}
       {toast && (
         <div className={cn(
-          "fixed bottom-6 right-6 z-[60] flex items-center gap-2 px-4 py-3 rounded-xl shadow-lg text-sm font-semibold",
+          "fixed bottom-6 right-6 z-[60] flex items-center gap-2 px-4 py-3 rounded-xl text-sm font-semibold",
           toast.type === "success" ? "bg-emerald-600 text-white" : "bg-red-600 text-white"
         )}>
           {toast.type === "success"

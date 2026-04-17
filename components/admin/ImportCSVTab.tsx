@@ -138,7 +138,7 @@ export default function ImportCSVTab() {
   const previewRows = allRows.slice(0, 5);
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-6">
       <div className="flex items-center justify-between flex-wrap gap-2">
         <h3 className="text-sm font-extrabold text-gray-900 dark:text-foreground flex items-center gap-2">
           <Upload className="h-4 w-4 text-primary" /> Importar CSV
@@ -152,7 +152,7 @@ export default function ImportCSVTab() {
 
       {/* Idle: File input */}
       {phase === "idle" && (
-        <div className="bg-white dark:bg-card border-2 border-dashed border-gray-300 dark:border-card-border rounded-2xl p-8 text-center">
+        <div className="bg-white dark:bg-card border-2 border-dashed border-[var(--rule-base)] dark:border-card-border rounded-xl p-8 text-center">
           <Upload className="h-10 w-10 text-gray-300 dark:text-muted mx-auto mb-3" />
           <p className="text-sm font-bold text-gray-700 dark:text-foreground mb-1">
             Selecciona un archivo CSV
@@ -172,7 +172,7 @@ export default function ImportCSVTab() {
           />
           <button
             onClick={() => fileRef.current?.click()}
-            className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-primary text-white text-sm font-bold hover:bg-primary/90 transition-colors"
+            className="inline-flex items-center gap-2 px-5 py-2.5 rounded-lg bg-primary text-white text-sm font-bold hover:bg-primary/90 transition-colors"
           >
             <FileText className="h-4 w-4" />
             Elegir archivo
@@ -190,23 +190,23 @@ export default function ImportCSVTab() {
 
       {/* Preview */}
       {phase === "preview" && (
-        <div className="space-y-4">
-          <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl p-4">
+        <div className="space-y-6">
+          <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl p-4">
             <div className="flex items-center justify-between mb-3">
               <p className="text-xs font-bold text-gray-700 dark:text-foreground flex items-center gap-1">
                 <Table className="h-3.5 w-3.5 text-primary" />
                 Vista previa — {allRows.length} filas encontradas
               </p>
-              <span className="text-[10px] text-gray-400 dark:text-muted">{fileName}</span>
+              <span className="text-[length:var(--ts-2xs)] text-gray-400 dark:text-muted">{fileName}</span>
             </div>
             <div className="overflow-x-auto">
               <table className="w-full min-w-[400px] text-xs">
                 <thead>
-                  <tr className="border-b border-gray-100 dark:border-card-border">
-                    <th className="pb-2 text-[10px] font-bold text-gray-400 uppercase tracking-wide text-left">#</th>
+                  <tr className="border-b border-[var(--rule-soft)] dark:border-card-border">
+                    <th className="pb-2 text-[length:var(--ts-2xs)] font-bold text-gray-400 text-left">#</th>
                     {headers.map(h => (
                       <th key={h} className={cn(
-                        "pb-2 text-[10px] font-bold uppercase tracking-wide text-left",
+                        "pb-2 text-[length:var(--ts-2xs)] font-bold text-left",
                         EXPECTED_FIELDS.includes(h) ? "text-primary" : "text-gray-400"
                       )}>
                         {h}
@@ -227,19 +227,19 @@ export default function ImportCSVTab() {
               </table>
             </div>
             {allRows.length > 5 && (
-              <p className="text-[10px] text-gray-400 dark:text-muted mt-2 text-center">
+              <p className="text-[length:var(--ts-2xs)] text-gray-400 dark:text-muted mt-2 text-center">
                 ... y {allRows.length - 5} filas más
               </p>
             )}
           </div>
 
           <div className="flex flex-wrap gap-2">
-            <button onClick={reset} className="flex-1 py-2.5 rounded-xl border-2 border-gray-200 dark:border-card-border text-sm font-bold text-gray-600 dark:text-muted hover:bg-gray-50 dark:hover:bg-surface">
+            <button onClick={reset} className="flex-1 py-2.5 rounded-lg border-2 border-[var(--rule-base)] dark:border-card-border text-sm font-bold text-gray-600 dark:text-muted hover:bg-gray-50 dark:hover:bg-surface">
               Cancelar
             </button>
             <button
               onClick={handleConfirm}
-              className="flex-1 py-2.5 rounded-xl bg-primary text-white text-sm font-bold hover:bg-primary/90 flex items-center justify-center gap-1"
+              className="flex-1 py-2.5 rounded-lg bg-primary text-white text-sm font-bold hover:bg-primary/90 flex items-center justify-center gap-1"
             >
               <Upload className="h-4 w-4" />
               Confirmar Importación ({allRows.length} productos)
@@ -259,7 +259,7 @@ export default function ImportCSVTab() {
 
       {/* Success */}
       {phase === "success" && (
-        <div className="bg-white dark:bg-card border border-emerald-200 dark:border-emerald-800 rounded-2xl p-6 text-center">
+        <div className="bg-white dark:bg-card border border-emerald-200 dark:border-emerald-800 rounded-xl p-6 text-center">
           <CheckCircle className="h-10 w-10 text-emerald-500 mx-auto mb-3" />
           <p className="text-sm font-extrabold text-gray-900 dark:text-foreground mb-1">
             Importación exitosa
@@ -275,14 +275,14 @@ export default function ImportCSVTab() {
               </p>
               <div className="max-h-32 overflow-y-auto space-y-1">
                 {errors.map((err, i) => (
-                  <p key={i} className="text-[10px] text-amber-600 dark:text-amber-500">
+                  <p key={i} className="text-[length:var(--ts-2xs)] text-amber-600 dark:text-amber-500">
                     Fila {err.row}: {err.message}
                   </p>
                 ))}
               </div>
             </div>
           )}
-          <button onClick={reset} className="px-5 py-2 rounded-xl bg-primary text-white text-sm font-bold hover:bg-primary/90 transition-colors">
+          <button onClick={reset} className="px-5 py-2 rounded-lg bg-primary text-white text-sm font-bold hover:bg-primary/90 transition-colors">
             Importar otro archivo
           </button>
         </div>
@@ -290,7 +290,7 @@ export default function ImportCSVTab() {
 
       {/* Error */}
       {phase === "error" && (
-        <div className="bg-white dark:bg-card border border-red-200 dark:border-red-800 rounded-2xl p-6 text-center">
+        <div className="bg-white dark:bg-card border border-red-200 dark:border-red-800 rounded-xl p-6 text-center">
           <X className="h-10 w-10 text-red-400 mx-auto mb-3" />
           <p className="text-sm font-extrabold text-gray-900 dark:text-foreground mb-1">
             Error en la importación
@@ -298,13 +298,13 @@ export default function ImportCSVTab() {
           <div className="bg-red-50 dark:bg-red-950/20 rounded-xl p-3 text-left mb-3 border border-red-200 dark:border-red-900/30">
             <div className="max-h-32 overflow-y-auto space-y-1">
               {errors.map((err, i) => (
-                <p key={i} className="text-[10px] text-red-600 dark:text-red-400">
+                <p key={i} className="text-[length:var(--ts-2xs)] text-red-600 dark:text-red-400">
                   {err.row > 0 ? `Fila ${err.row}: ` : ""}{err.message}
                 </p>
               ))}
             </div>
           </div>
-          <button onClick={reset} className="px-5 py-2 rounded-xl bg-primary text-white text-sm font-bold hover:bg-primary/90 transition-colors">
+          <button onClick={reset} className="px-5 py-2 rounded-lg bg-primary text-white text-sm font-bold hover:bg-primary/90 transition-colors">
             Intentar de nuevo
           </button>
         </div>
@@ -312,9 +312,9 @@ export default function ImportCSVTab() {
 
       {/* Help box */}
       {phase === "idle" && (
-        <div className="bg-blue-50 dark:bg-blue-950/20 rounded-xl p-3 border border-blue-200 dark:border-blue-900/30">
-          <p className="text-xs font-bold text-blue-700 dark:text-blue-400 mb-1">Formato esperado del CSV</p>
-          <code className="text-[10px] text-blue-600 dark:text-blue-500 block bg-blue-100/50 dark:bg-blue-900/20 rounded-lg p-2">
+        <div className="bg-emerald-50 dark:bg-emerald-950/20 rounded-xl p-3 border border-emerald-200 dark:border-emerald-900/30">
+          <p className="text-xs font-bold text-emerald-700 dark:text-emerald-400 mb-1">Formato esperado del CSV</p>
+          <code className="text-[length:var(--ts-2xs)] text-emerald-600 dark:text-emerald-500 block bg-emerald-100/50 dark:bg-emerald-900/20 rounded-lg p-2">
             sku,nombre,precio,stock,costo<br />
             PRD001,Arroz Extra 5kg,25.50,100,18.00<br />
             PRD002,Aceite Vegetal 1L,12.90,50,9.50

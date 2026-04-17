@@ -3,6 +3,7 @@ import { z } from "zod";
 import { getHybridRecommendations } from "@/lib/recommender/hybrid";
 import { getTenantIdFromRequest } from "@/lib/tenant";
 import { logger } from "@/lib/logger";
+import { reportAICall } from "@/lib/billing/wire-up/ai-metering-middleware";
 
 const QuerySchema = z.object({
   productId: z.coerce.number().int().positive(),
@@ -44,6 +45,21 @@ export async function GET(req: NextRequest) {
     parsed.data.productId,
     parsed.data.limit,
   );
+
+  // ADR-047 billing wire-up: meter each recommender call (fire-and-forget)
+  // Idempotency key: tenantId+productId+minute → max 1 event/min per product
+  if (result.source !== "empty") {
+    const minuteBucket = Math.floor(Date.now() / 60_000);
+    try {
+      reportAICall(
+        tenantId,
+        "ai.recommend.call",
+        `rec:${tenantId}:${parsed.data.productId}:${minuteBucket}`,
+      );
+    } catch {
+      // Metering nunca bloquea la respuesta al usuario
+    }
+  }
 
   return NextResponse.json({
     source: result.source,

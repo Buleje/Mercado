@@ -40,7 +40,7 @@ const STATUS_META: Record<ContractStatus, { label: string; color: string; bg: st
   "por-vencer":     { label: "Por vencer",       color: "text-amber-700 dark:text-amber-400",    bg: "bg-amber-100 dark:bg-amber-900/30",    icon: Clock         },
   vencido:          { label: "Vencido",          color: "text-red-700 dark:text-red-400",         bg: "bg-red-100 dark:bg-red-900/30",        icon: AlertTriangle },
   cancelado:        { label: "Cancelado",        color: "text-gray-600 dark:text-muted",          bg: "bg-gray-100 dark:bg-surface",          icon: X             },
-  "en-negociacion": { label: "En negociación",   color: "text-blue-700 dark:text-blue-400",       bg: "bg-blue-100 dark:bg-blue-900/30",      icon: RefreshCw     },
+  "en-negociacion": { label: "En negociación",   color: "text-emerald-700 dark:text-emerald-400",       bg: "bg-emerald-100 dark:bg-emerald-900/30",      icon: RefreshCw     },
 };
 
 type Contract = {
@@ -122,10 +122,10 @@ export default function PurchaseContractsTab() {
           <p className="text-sm text-gray-500 dark:text-muted mt-0.5">Gestión de contratos de compra, plazos, descuentos y renovaciones</p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
-          <button onClick={() => exportToCSV(processed.map(c => ({ codigo: c.code, proveedor: c.supplierName, ruc: c.supplierRuc, categoria: c.category, inicio: c.startDate, fin: c.endDate, credito_dias: c.creditDays, pedido_min: c.minOrderAmount, descuento_pct: c.agreedDiscount, estado: c.computedStatus, renovacion_auto: c.autoRenew, ocs_vinculadas: c.linkedPOs, gasto_total: c.totalSpend })), "contratos-proveedores")} className="flex items-center gap-1.5 px-3 py-2 rounded-xl border border-gray-200 dark:border-card-border bg-white dark:bg-surface text-sm font-semibold text-gray-700 dark:text-foreground hover:bg-gray-50 dark:hover:bg-accent transition-colors">
+          <button onClick={() => exportToCSV(processed.map(c => ({ codigo: c.code, proveedor: c.supplierName, ruc: c.supplierRuc, categoria: c.category, inicio: c.startDate, fin: c.endDate, credito_dias: c.creditDays, pedido_min: c.minOrderAmount, descuento_pct: c.agreedDiscount, estado: c.computedStatus, renovacion_auto: c.autoRenew, ocs_vinculadas: c.linkedPOs, gasto_total: c.totalSpend })), "contratos-proveedores")} className="flex items-center gap-1.5 px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-card-border bg-white dark:bg-surface text-sm font-semibold text-gray-700 dark:text-foreground hover:bg-gray-50 dark:hover:bg-accent transition-colors">
             <Download className="h-4 w-4" /> Exportar
           </button>
-          <button onClick={() => setShowForm(v => !v)} className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-primary text-white text-sm font-semibold hover:bg-primary/90 transition-colors">
+          <button onClick={() => setShowForm(v => !v)} className="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-primary text-white text-sm font-semibold hover:bg-primary/90 transition-colors">
             <Plus className="h-4 w-4" /> Nuevo contrato
           </button>
         </div>
@@ -138,9 +138,9 @@ export default function PurchaseContractsTab() {
           { label: "Activos",         value: String(stats.activo), color: "text-emerald-600",                    bg: "bg-emerald-50 dark:bg-emerald-950/30" },
           { label: "Por vencer",      value: String(stats.porVencer), color: "text-amber-600",                   bg: "bg-amber-50 dark:bg-amber-950/30" },
           { label: "Vencidos",        value: String(stats.vencido), color: "text-red-500",                       bg: "bg-red-50 dark:bg-red-950/30" },
-          { label: "Gasto total",     value: fmt(stats.totalSpend), color: "text-violet-600",                    bg: "bg-violet-50 dark:bg-violet-950/30" },
+          { label: "Gasto total",     value: fmt(stats.totalSpend), color: "text-[var(--text-secondary)]",                    bg: "bg-[var(--surface-sunken)]" },
         ].map(({ label, value, color, bg }) => (
-          <div key={label} className={cn("rounded-2xl p-4", bg)}>
+          <div key={label} className={cn("rounded-xl p-4", bg)}>
             <p className="text-xs font-semibold text-gray-500 dark:text-muted mb-1">{label}</p>
             <p className={cn("text-xl font-extrabold", color)}>{value}</p>
           </div>
@@ -149,7 +149,7 @@ export default function PurchaseContractsTab() {
 
       {/* Alerts */}
       {(stats.porVencer > 0 || stats.vencido > 0) && (
-        <div className="bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-800 rounded-2xl p-4 flex flex-wrap items-start gap-3">
+        <div className="bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-800 rounded-xl p-4 flex flex-wrap items-start gap-3">
           <AlertTriangle className="h-5 w-5 text-amber-500 shrink-0 mt-0.5" />
           <div>
             <p className="font-bold text-amber-700 dark:text-amber-400 text-sm">Contratos que necesitan atención</p>
@@ -163,7 +163,7 @@ export default function PurchaseContractsTab() {
 
       {/* New contract form */}
       {showForm && (
-        <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl p-3 sm:p-5 space-y-4">
+        <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl p-3 sm:p-5 space-y-4">
           <div className="flex items-center justify-between">
             <h3 className="font-bold text-gray-900 dark:text-foreground text-sm flex flex-wrap items-center gap-2"><Plus className="h-4 w-4 text-primary" /> Nuevo contrato</h3>
             <button onClick={() => setShowForm(false)}><X className="h-4 w-4 text-gray-400" /></button>
@@ -173,7 +173,7 @@ export default function PurchaseContractsTab() {
             <CF label="RUC" value={form.supplierRuc} onChange={v => setForm(p => ({ ...p, supplierRuc: v }))} placeholder="20XXXXXXXXX" />
             <div>
               <label className="text-xs font-semibold text-gray-500 dark:text-muted block mb-1">Categoría</label>
-              <select value={form.category} onChange={e => setForm(p => ({ ...p, category: e.target.value }))} className="w-full text-sm border border-gray-200 dark:border-card-border rounded-lg px-3 py-2 bg-white dark:bg-surface text-gray-700 dark:text-foreground">
+              <select value={form.category} onChange={e => setForm(p => ({ ...p, category: e.target.value }))} className="w-full text-sm border border-[var(--rule-base)] dark:border-card-border rounded-lg px-3 py-2 bg-white dark:bg-surface text-gray-700 dark:text-foreground">
                 {CATEGORIES.map(c => <option key={c} value={c}>{c}</option>)}
               </select>
             </div>
@@ -182,15 +182,15 @@ export default function PurchaseContractsTab() {
             <CF label="Fecha fin *" value={form.endDate} onChange={v => setForm(p => ({ ...p, endDate: v }))} type="date" />
             <div>
               <label className="text-xs font-semibold text-gray-500 dark:text-muted block mb-1">Crédito (días)</label>
-              <input type="number" value={form.creditDays} onChange={e => setForm(p => ({ ...p, creditDays: parseInt(e.target.value) || 0 }))} min="0" className="w-full text-sm border border-gray-200 dark:border-card-border rounded-lg px-3 py-2 bg-white dark:bg-surface text-gray-700 dark:text-foreground" />
+              <input type="number" value={form.creditDays} onChange={e => setForm(p => ({ ...p, creditDays: parseInt(e.target.value) || 0 }))} min="0" className="w-full text-sm border border-[var(--rule-base)] dark:border-card-border rounded-lg px-3 py-2 bg-white dark:bg-surface text-gray-700 dark:text-foreground" />
             </div>
             <div>
               <label className="text-xs font-semibold text-gray-500 dark:text-muted block mb-1">Pedido mínimo (S/)</label>
-              <input type="number" value={form.minOrderAmount} onChange={e => setForm(p => ({ ...p, minOrderAmount: parseFloat(e.target.value) || 0 }))} min="0" step="100" className="w-full text-sm border border-gray-200 dark:border-card-border rounded-lg px-3 py-2 bg-white dark:bg-surface text-gray-700 dark:text-foreground" />
+              <input type="number" value={form.minOrderAmount} onChange={e => setForm(p => ({ ...p, minOrderAmount: parseFloat(e.target.value) || 0 }))} min="0" step="100" className="w-full text-sm border border-[var(--rule-base)] dark:border-card-border rounded-lg px-3 py-2 bg-white dark:bg-surface text-gray-700 dark:text-foreground" />
             </div>
             <div>
               <label className="text-xs font-semibold text-gray-500 dark:text-muted block mb-1">Descuento acordado (%)</label>
-              <input type="number" value={form.agreedDiscount} onChange={e => setForm(p => ({ ...p, agreedDiscount: parseFloat(e.target.value) || 0 }))} min="0" max="100" step="0.5" className="w-full text-sm border border-gray-200 dark:border-card-border rounded-lg px-3 py-2 bg-white dark:bg-surface text-gray-700 dark:text-foreground" />
+              <input type="number" value={form.agreedDiscount} onChange={e => setForm(p => ({ ...p, agreedDiscount: parseFloat(e.target.value) || 0 }))} min="0" max="100" step="0.5" className="w-full text-sm border border-[var(--rule-base)] dark:border-card-border rounded-lg px-3 py-2 bg-white dark:bg-surface text-gray-700 dark:text-foreground" />
             </div>
             <div className="flex items-end pb-2">
               <label className="flex flex-wrap items-center gap-2 cursor-pointer">
@@ -203,8 +203,8 @@ export default function PurchaseContractsTab() {
             <CF label="Notas" value={form.notes} onChange={v => setForm(p => ({ ...p, notes: v }))} placeholder="Condiciones especiales..." span={2} />
           </div>
           <div className="flex flex-wrap gap-2 justify-end">
-            <button onClick={() => setShowForm(false)} className="px-2 sm:px-4 py-1.5 sm:py-2 text-sm rounded-xl border border-gray-200 dark:border-card-border text-gray-600 dark:text-muted">Cancelar</button>
-            <button onClick={handleAdd} className="px-2 sm:px-4 py-1.5 sm:py-2 text-sm rounded-xl bg-primary text-white font-semibold hover:bg-primary/90">Registrar contrato</button>
+            <button onClick={() => setShowForm(false)} className="px-2 sm:px-4 py-1.5 sm:py-2 text-sm rounded-lg border border-[var(--rule-base)] dark:border-card-border text-gray-600 dark:text-muted">Cancelar</button>
+            <button onClick={handleAdd} className="px-2 sm:px-4 py-1.5 sm:py-2 text-sm rounded-lg bg-primary text-white font-semibold hover:bg-primary/90">Registrar contrato</button>
           </div>
         </div>
       )}
@@ -213,27 +213,27 @@ export default function PurchaseContractsTab() {
       <div className="flex flex-col sm:flex-row gap-3">
         <div className="relative flex-1 max-w-sm">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
-          <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Proveedor, código, categoría..." className="w-full pl-9 pr-3 py-2 text-sm border border-gray-200 dark:border-card-border rounded-xl bg-white dark:bg-surface text-gray-700 dark:text-foreground" />
+          <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Proveedor, código, categoría..." className="w-full pl-9 pr-3 py-2 text-sm border border-[var(--rule-base)] dark:border-card-border rounded-lg bg-white dark:bg-surface text-gray-700 dark:text-foreground" />
         </div>
-        <select value={filterStatus} onChange={e => setFilterStatus(e.target.value as ContractStatus | "todos")} className="text-sm border border-gray-200 dark:border-card-border rounded-xl px-3 py-2 bg-white dark:bg-surface text-gray-700 dark:text-foreground">
+        <select value={filterStatus} onChange={e => setFilterStatus(e.target.value as ContractStatus | "todos")} className="text-sm border border-[var(--rule-base)] dark:border-card-border rounded-lg px-3 py-2 bg-white dark:bg-surface text-gray-700 dark:text-foreground">
           <option value="todos">Todos los estados</option>
           {(Object.keys(STATUS_META) as ContractStatus[]).map(s => <option key={s} value={s}>{STATUS_META[s].label}</option>)}
         </select>
-        <select value={filterCat} onChange={e => setFilterCat(e.target.value)} className="text-sm border border-gray-200 dark:border-card-border rounded-xl px-3 py-2 bg-white dark:bg-surface text-gray-700 dark:text-foreground">
+        <select value={filterCat} onChange={e => setFilterCat(e.target.value)} className="text-sm border border-[var(--rule-base)] dark:border-card-border rounded-lg px-3 py-2 bg-white dark:bg-surface text-gray-700 dark:text-foreground">
           <option value="todos">Todas las categorías</option>
           {CATEGORIES.map(c => <option key={c} value={c}>{c}</option>)}
         </select>
       </div>
 
       {/* Cards */}
-      <div className="space-y-4">
+      <div className="space-y-6">
         {processed.length === 0 && <p className="text-center text-sm text-gray-400 dark:text-muted py-8">No se encontraron contratos con los filtros seleccionados.</p>}
         {processed.map(c => {
           const meta = STATUS_META[c.computedStatus];
           const Icon = meta.icon;
           const dLeft = daysUntil(c.endDate);
           return (
-            <div key={c.id} className={cn("bg-white dark:bg-card border rounded-2xl p-3 sm:p-5", c.computedStatus === "vencido" ? "border-red-200 dark:border-red-800" : c.computedStatus === "por-vencer" ? "border-amber-200 dark:border-amber-800" : "border-gray-200 dark:border-card-border")}>
+            <div key={c.id} className={cn("bg-white dark:bg-card border rounded-xl p-3 sm:p-5", c.computedStatus === "vencido" ? "border-red-200 dark:border-red-800" : c.computedStatus === "por-vencer" ? "border-amber-200 dark:border-amber-800" : "border-[var(--rule-base)] dark:border-card-border")}>
               <div className="flex flex-col sm:flex-row sm:items-start gap-2 sm:gap-4">
                 <div className="flex-1 min-w-0">
                   <div className="flex flex-wrap items-start gap-3 mb-2">
@@ -241,7 +241,7 @@ export default function PurchaseContractsTab() {
                       <div className="flex items-center gap-2 flex-wrap mb-0.5">
                         <span className="text-xs font-mono font-bold text-gray-400">{c.code}</span>
                         <span className={cn("inline-flex items-center gap-1 text-xs font-bold px-2 py-0.5 rounded-full", meta.bg, meta.color)}><Icon className="h-3 w-3" />{meta.label}</span>
-                        {c.autoRenew && <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400">Auto-renovación</span>}
+                        {c.autoRenew && <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400">Auto-renovación</span>}
                       </div>
                       <p className="font-extrabold text-gray-900 dark:text-foreground">{c.supplierName}</p>
                       <p className="text-xs text-gray-500 dark:text-muted">{c.category} · {c.description}</p>
@@ -262,7 +262,7 @@ export default function PurchaseContractsTab() {
                     </div>
                     <div className="bg-gray-50 dark:bg-surface/50 rounded-xl p-3">
                       <p className="text-xs text-gray-400 dark:text-muted mb-0.5">Gasto acumulado</p>
-                      <p className="font-bold text-violet-600">{fmt(c.totalSpend)}</p>
+                      <p className="font-bold text-[var(--text-secondary)]">{fmt(c.totalSpend)}</p>
                     </div>
                   </div>
                 </div>
@@ -271,11 +271,11 @@ export default function PurchaseContractsTab() {
                     {dLeft < 0 ? `${Math.abs(dLeft)}d vencido` : dLeft === 0 ? "Vence hoy" : `${dLeft}d restantes`}
                   </div>
                   <div className="flex flex-wrap gap-2">
-                    <button onClick={() => setDetail(c)} className="p-2 rounded-xl border border-gray-200 dark:border-card-border text-gray-500 hover:text-blue-500 hover:bg-blue-50 dark:hover:bg-blue-950/20 transition-colors">
+                    <button onClick={() => setDetail(c)} className="p-2 rounded-lg border border-[var(--rule-base)] dark:border-card-border text-gray-500 hover:text-emerald-500 hover:bg-emerald-50 dark:hover:bg-emerald-950/20 transition-colors">
                       <Eye className="h-3.5 w-3.5" />
                     </button>
                     {(c.computedStatus === "vencido" || c.computedStatus === "por-vencer") && (
-                      <button onClick={() => handleRenew(c.id)} className="flex items-center gap-1 px-3 py-1.5 rounded-xl bg-emerald-50 dark:bg-emerald-950/20 text-emerald-700 dark:text-emerald-400 text-xs font-semibold hover:bg-emerald-100 dark:hover:bg-emerald-900/30 transition-colors">
+                      <button onClick={() => handleRenew(c.id)} className="flex items-center gap-1 px-3 py-1.5 rounded-lg bg-emerald-50 dark:bg-emerald-950/20 text-emerald-700 dark:text-emerald-400 text-xs font-semibold hover:bg-emerald-100 dark:hover:bg-emerald-900/30 transition-colors">
                         <RefreshCw className="h-3 w-3" /> Renovar +1 año
                       </button>
                     )}
@@ -290,7 +290,7 @@ export default function PurchaseContractsTab() {
       {/* Detail modal */}
       {detail && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4" onClick={() => setDetail(null)}>
-          <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl shadow-2xl p-3 sm:p-6 w-full max-w-md space-y-4" onClick={e => e.stopPropagation()}>
+          <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl p-3 sm:p-6 w-full max-w-md space-y-4" onClick={e => e.stopPropagation()}>
             <div className="flex items-center justify-between">
               <h3 className="font-extrabold text-gray-900 dark:text-foreground text-sm">Detalle del contrato</h3>
               <button onClick={() => setDetail(null)}><X className="h-4 w-4 text-gray-400" /></button>
@@ -322,7 +322,7 @@ function CF({ label, value, onChange, type = "text", placeholder, span }: { labe
   return (
     <div className={span ? `col-span-${span}` : ""}>
       <label className="text-xs font-semibold text-gray-500 dark:text-muted block mb-1">{label}</label>
-      <input type={type} value={value} onChange={e => onChange(e.target.value)} placeholder={placeholder} className="w-full text-sm border border-gray-200 dark:border-card-border rounded-lg px-3 py-2 bg-white dark:bg-surface text-gray-700 dark:text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30" />
+      <input type={type} value={value} onChange={e => onChange(e.target.value)} placeholder={placeholder} className="w-full text-sm border border-[var(--rule-base)] dark:border-card-border rounded-lg px-3 py-2 bg-white dark:bg-surface text-gray-700 dark:text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30" />
     </div>
   );
 }

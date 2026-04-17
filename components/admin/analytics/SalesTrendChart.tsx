@@ -74,7 +74,7 @@ function CustomTooltip({ active, payload }: { active?: boolean; payload?: Array<
   if (!active || !payload?.[0]) return null;
   const d = payload[0].payload;
   return (
-    <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg border border-gray-100 dark:border-gray-700 px-4 py-3 min-w-[160px]">
+    <div className="bg-white dark:bg-gray-800 rounded-xl border border-[var(--rule-base)] px-4 py-3 min-w-[160px]">
       <p className="text-xs font-semibold text-gray-900 dark:text-white mb-1.5">{formatDate(d.fecha, "full")}</p>
       <p className="text-xs text-gray-500 flex justify-between gap-4">
         <span>Ventas</span>
@@ -222,7 +222,7 @@ export default function SalesTrendChart() {
   // ── Loading ──
   if (loading) {
     return (
-      <div className="rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 p-4">
+      <div className="rounded-xl border border-[var(--rule-base)] bg-white dark:bg-gray-900 p-4">
         <div className="h-5 w-40 bg-gray-200 dark:bg-gray-700 rounded mb-4 animate-pulse" />
         <div className="h-64 bg-gray-100 dark:bg-gray-800 rounded-lg animate-pulse" />
       </div>
@@ -250,14 +250,14 @@ export default function SalesTrendChart() {
   // ── Empty ──
   if (!chartData.length) {
     return (
-      <div className="rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 p-6 flex items-center justify-center h-64">
+      <div className="rounded-xl border border-[var(--rule-base)] bg-white dark:bg-gray-900 p-6 flex items-center justify-center h-64">
         <p className="text-sm text-gray-500 dark:text-gray-400">No hay datos de ventas para este periodo</p>
       </div>
     );
   }
 
   return (
-    <div className="rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 p-4">
+    <div className="rounded-xl border border-[var(--rule-base)] bg-white dark:bg-gray-900 p-4">
       {/* Header + pills */}
       <div className="flex items-center justify-between mb-4">
         <h3 className="text-sm font-semibold text-gray-900 dark:text-white">

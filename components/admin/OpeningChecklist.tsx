@@ -75,7 +75,7 @@ export function OpeningChecklist({ className }: { className?: string }) {
   if (!mounted) {
     // Evitar hydration mismatch — render skeleton hasta montar
     return (
-      <div className={cn("rounded-xl border border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-900 p-4", className)}>
+      <div className={cn("rounded-xl border border-[var(--rule-base)] bg-white dark:border-[var(--rule-base)] dark:bg-gray-900 p-4", className)}>
         <div className="h-40 animate-pulse rounded-lg bg-gray-100 dark:bg-gray-800" />
       </div>
     );
@@ -85,8 +85,8 @@ export function OpeningChecklist({ className }: { className?: string }) {
     <div
       className={cn(
         "rounded-xl border bg-white dark:bg-gray-900",
-        "border-gray-200 dark:border-gray-700",
-        "p-4 shadow-sm",
+        "border-[var(--rule-base)]",
+        "p-4 ",
         className
       )}
       role="region"
@@ -121,7 +121,7 @@ export function OpeningChecklist({ className }: { className?: string }) {
         >
           <div
             className={cn(
-              "h-full rounded-full transition-all duration-500",
+              "h-full rounded-full transition-all duration-[var(--dur-slow)]",
               allDone ? "bg-[#f97316]" : "bg-[#00B4A6]"
             )}
             style={{ width: `${pct}%` }}
@@ -138,7 +138,7 @@ export function OpeningChecklist({ className }: { className?: string }) {
               onClick={() => toggle(index)}
               className={cn(
                 "flex w-full items-center gap-3 rounded-lg px-3 py-2 text-left text-sm",
-                "transition-colors duration-150",
+                "transition-colors duration-[var(--dur-fast)]",
                 item.done
                   ? "bg-[#00B4A6]/10 dark:bg-[#00B4A6]/20"
                   : "bg-gray-50 hover:bg-gray-100 dark:bg-gray-800 dark:hover:bg-gray-700",

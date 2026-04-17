@@ -6,6 +6,8 @@ import {
   Loader2, ShieldCheck, ShieldAlert, ShieldOff, Eye, EyeOff,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import StatusBadge from "@/components/admin/shared/StatusBadge";
+import type { BadgeVariant } from "@/components/admin/shared/StatusBadge";
 
 type AdminUserRow = {
   id: string;
@@ -16,10 +18,10 @@ type AdminUserRow = {
   createdAt: string;
 };
 
-const ROLE_CONFIG: Record<string, { label: string; color: string; icon: React.ElementType }> = {
-  admin: { label: "Administrador", color: "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400", icon: ShieldCheck },
-  cajero: { label: "Cajero", color: "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400", icon: ShieldAlert },
-  almacenero: { label: "Almacenero", color: "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400", icon: ShieldOff },
+const ROLE_CONFIG: Record<string, { label: string; color: string; variant: BadgeVariant; icon: React.ElementType }> = {
+  admin: { label: "Administrador", color: "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400", variant: "error", icon: ShieldCheck },
+  cajero: { label: "Cajero", color: "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400", variant: "info", icon: ShieldAlert },
+  almacenero: { label: "Almacenero", color: "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400", variant: "warning", icon: ShieldOff },
 };
 
 type FormMode = "create" | "edit-info" | "reset-password" | null;
@@ -198,7 +200,7 @@ export default function AdminUsersTab() {
         </div>
         <button
           onClick={openCreate}
-          className="inline-flex items-center gap-2 px-2 sm:px-4 py-1.5 sm:py-2.5 rounded-xl text-sm font-bold text-white bg-primary hover:bg-primary/90 shadow-sm transition-colors"
+          className="inline-flex items-center gap-2 px-2 sm:px-4 py-1.5 sm:py-2.5 rounded-lg text-sm font-bold text-white bg-primary hover:bg-primary/90  transition-colors"
         >
           <Plus className="h-4 w-4" /> Nuevo usuario
         </button>
@@ -219,7 +221,7 @@ export default function AdminUsersTab() {
       )}
 
       {/* Users list */}
-      <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl shadow-sm overflow-y-hidden overflow-x-auto">
+      <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl  overflow-y-hidden overflow-x-auto">
         {loading ? (
           <div className="h-40 flex flex-wrap items-center justify-center text-gray-400 dark:text-muted gap-2">
             <Loader2 className="h-5 w-5 animate-spin" /> Cargando…
@@ -233,11 +235,11 @@ export default function AdminUsersTab() {
           <div className="overflow-x-auto -mx-2 px-2">
           <table className="w-full min-w-[600px] text-sm">
             <thead>
-              <tr className="border-b border-gray-100 dark:border-card-border bg-gray-50 dark:bg-surface">
-                <th className="text-left px-5 py-3 text-xs font-bold text-gray-500 dark:text-muted uppercase tracking-wide">Usuario</th>
-                <th className="text-left px-5 py-3 text-xs font-bold text-gray-500 dark:text-muted uppercase tracking-wide hidden sm:table-cell">Rol</th>
-                <th className="text-left px-5 py-3 text-xs font-bold text-gray-500 dark:text-muted uppercase tracking-wide hidden md:table-cell">Estado</th>
-                <th className="text-right px-5 py-3 text-xs font-bold text-gray-500 dark:text-muted uppercase tracking-wide">Acciones</th>
+              <tr className="border-b border-[var(--rule-soft)] dark:border-card-border bg-gray-50 dark:bg-surface">
+                <th className="text-left px-5 py-3 text-xs font-bold text-gray-500 dark:text-muted">Usuario</th>
+                <th className="text-left px-5 py-3 text-xs font-bold text-gray-500 dark:text-muted hidden sm:table-cell">Rol</th>
+                <th className="text-left px-5 py-3 text-xs font-bold text-gray-500 dark:text-muted hidden md:table-cell">Estado</th>
+                <th className="text-right px-5 py-3 text-xs font-bold text-gray-500 dark:text-muted">Acciones</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-100 dark:divide-card-border">
@@ -258,16 +260,10 @@ export default function AdminUsersTab() {
                       </div>
                     </td>
                     <td className="px-5 py-4 hidden sm:table-cell">
-                      <span className={cn("inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold", rc.color)}>
-                        <RoleIcon className="h-3 w-3" /> {rc.label}
-                      </span>
+                      <StatusBadge variant={rc.variant} label={rc.label} icon={RoleIcon} />
                     </td>
                     <td className="px-5 py-4 hidden md:table-cell">
-                      <span className={cn("inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold",
-                        u.active ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400" : "bg-gray-100 text-gray-500 dark:bg-surface dark:text-muted"
-                      )}>
-                        {u.active ? "Activo" : "Inactivo"}
-                      </span>
+                      <StatusBadge variant={u.active ? "success" : "neutral"} label={u.active ? "Activo" : "Inactivo"} />
                     </td>
                     <td className="px-5 py-4">
                       <div className="flex flex-wrap items-center gap-2 justify-end">
@@ -281,7 +277,7 @@ export default function AdminUsersTab() {
                         <button
                           onClick={() => openResetPw(u)}
                           title="Cambiar contraseña"
-                          className="p-2 rounded-lg text-gray-400 dark:text-muted hover:bg-blue-50 dark:hover:bg-blue-950/30 hover:text-blue-600 transition-colors"
+                          className="p-2 rounded-lg text-gray-400 dark:text-muted hover:bg-emerald-50 dark:hover:bg-emerald-950/30 hover:text-emerald-600 transition-colors"
                         >
                           <KeyRound className="h-4 w-4" />
                         </button>
@@ -306,7 +302,7 @@ export default function AdminUsersTab() {
       {/* ── Modal: Create user ─────────────────────────────────────────────── */}
       {formMode === "create" && (
         <ModalWrapper title="Nuevo usuario" onClose={closeForm}>
-          <form onSubmit={handleCreate} className="space-y-4">
+          <form onSubmit={handleCreate} className="space-y-6">
             <Field label="Nombre completo">
               <input
                 required minLength={1} maxLength={64}
@@ -350,7 +346,7 @@ export default function AdminUsersTab() {
       {/* ── Modal: Edit info ───────────────────────────────────────────────── */}
       {formMode === "edit-info" && selectedUser && (
         <ModalWrapper title={`Editar — @${selectedUser.username}`} onClose={closeForm}>
-          <form onSubmit={handleEditInfo} className="space-y-4">
+          <form onSubmit={handleEditInfo} className="space-y-6">
             <Field label="Nombre completo">
               <input
                 required minLength={1} maxLength={64}
@@ -383,7 +379,7 @@ export default function AdminUsersTab() {
       {/* ── Modal: Reset password ──────────────────────────────────────────── */}
       {formMode === "reset-password" && selectedUser && (
         <ModalWrapper title={`Cambiar contraseña — @${selectedUser.username}`} onClose={closeForm}>
-          <form onSubmit={handleResetPw} className="space-y-4">
+          <form onSubmit={handleResetPw} className="space-y-6">
             <Field label="Nueva contraseña">
               <div className="relative">
                 <input
@@ -407,7 +403,7 @@ export default function AdminUsersTab() {
       {/* ── Delete confirmation ────────────────────────────────────────────── */}
       {confirmDeleteId && (
         <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4" onClick={() => setConfirmDeleteId(null)}>
-          <div className="bg-white dark:bg-card rounded-2xl shadow-2xl w-full max-w-sm p-3 sm:p-6" onClick={e => e.stopPropagation()}>
+          <div className="bg-white dark:bg-card rounded-xl w-full max-w-sm p-3 sm:p-6" onClick={e => e.stopPropagation()}>
             <div className="flex flex-wrap items-center gap-3 mb-4">
               <div className="w-10 h-10 rounded-xl bg-red-100 dark:bg-red-900/30 flex items-center justify-center shrink-0">
                 <Trash2 className="h-5 w-5 text-red-500" />
@@ -421,14 +417,14 @@ export default function AdminUsersTab() {
             <div className="flex flex-wrap gap-3 mt-2">
               <button
                 onClick={() => { setConfirmDeleteId(null); setError(null); }}
-                className="flex-1 py-2.5 rounded-xl text-sm font-semibold text-gray-600 dark:text-muted bg-gray-100 dark:bg-accent hover:bg-gray-200 transition-colors"
+                className="flex-1 py-2.5 rounded-lg text-sm font-semibold text-gray-600 dark:text-muted bg-gray-100 dark:bg-accent hover:bg-gray-200 transition-colors"
               >
                 Cancelar
               </button>
               <button
                 onClick={() => handleDelete(confirmDeleteId)}
                 disabled={deleting}
-                className="flex-1 py-2.5 rounded-xl text-sm font-bold text-white bg-red-500 hover:bg-red-600 transition-colors disabled:opacity-60"
+                className="flex-1 py-2.5 rounded-lg text-sm font-bold text-white bg-red-500 hover:bg-red-600 transition-colors disabled:opacity-60"
               >
                 {deleting ? <Loader2 className="h-4 w-4 animate-spin mx-auto" /> : "Eliminar"}
               </button>
@@ -442,12 +438,12 @@ export default function AdminUsersTab() {
 
 // ── Sub-components ─────────────────────────────────────────────────────────────
 
-const inputCls = "w-full px-3 py-2.5 text-sm bg-gray-50 dark:bg-surface border border-gray-200 dark:border-card-border rounded-xl outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-colors text-gray-900 dark:text-foreground placeholder:text-gray-400 dark:placeholder:text-muted";
+const inputCls = "w-full px-3 py-2.5 text-sm bg-gray-50 dark:bg-surface border border-[var(--rule-base)] dark:border-card-border rounded-lg outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-colors text-gray-900 dark:text-foreground placeholder:text-gray-400 dark:placeholder:text-muted";
 
 function Field({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <div>
-      <label className="block text-xs font-bold text-gray-600 dark:text-muted mb-1.5 uppercase tracking-wide">{label}</label>
+      <label className="block text-xs font-bold text-gray-600 dark:text-muted mb-1.5">{label}</label>
       <div className="flex flex-wrap items-center gap-2">{children}</div>
     </div>
   );
@@ -479,11 +475,11 @@ function FormFooter({ onCancel, saving, label }: { onCancel: () => void; saving:
   return (
     <div className="flex flex-wrap justify-end gap-3 pt-2">
       <button type="button" onClick={onCancel}
-        className="px-2 sm:px-4 py-1.5 sm:py-2.5 rounded-xl text-sm font-semibold text-gray-600 dark:text-muted hover:bg-gray-100 dark:hover:bg-accent transition-colors">
+        className="px-2 sm:px-4 py-1.5 sm:py-2.5 rounded-lg text-sm font-semibold text-gray-600 dark:text-muted hover:bg-gray-100 dark:hover:bg-accent transition-colors">
         Cancelar
       </button>
       <button type="submit" disabled={saving}
-        className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-bold text-white bg-primary hover:bg-primary/90 transition-colors disabled:opacity-60 shadow-sm">
+        className="inline-flex items-center gap-2 px-5 py-2.5 rounded-lg text-sm font-bold text-white bg-primary hover:bg-primary/90 transition-colors disabled:opacity-60 ">
         {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Check className="h-4 w-4" />}
         {label}
       </button>
@@ -494,8 +490,8 @@ function FormFooter({ onCancel, saving, label }: { onCancel: () => void; saving:
 function ModalWrapper({ title, onClose, children }: { title: string; onClose: () => void; children: React.ReactNode }) {
   return (
     <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4" onClick={onClose}>
-      <div className="bg-white dark:bg-card rounded-2xl shadow-2xl w-full max-w-md" onClick={e => e.stopPropagation()}>
-        <div className="flex items-center justify-between px-3 sm:px-6 py-4 border-b border-gray-100 dark:border-card-border">
+      <div className="bg-white dark:bg-card rounded-xl w-full max-w-md" onClick={e => e.stopPropagation()}>
+        <div className="flex items-center justify-between px-3 sm:px-6 py-4 border-b border-[var(--rule-soft)] dark:border-card-border">
           <h3 className="font-extrabold text-gray-900 dark:text-foreground flex flex-wrap items-center gap-2">
             <UserCog className="h-5 w-5 text-primary" />
             {title}

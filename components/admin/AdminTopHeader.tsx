@@ -55,9 +55,8 @@ export function AdminTopHeader({
   return (
     <header
       className={cn(
-        "bg-white dark:bg-card border-b border-gray-200 dark:border-card-border px-4 sm:px-6 py-2.5 flex items-center justify-between gap-2 sticky z-40",
-        presentationMode && "hidden!",
-        isSuperAdminImpersonating ? "top-10" : "top-0"
+        "bg-white dark:bg-card border-b border-[var(--rule-base)] dark:border-card-border px-4 sm:px-6 py-2 flex items-center justify-between gap-2 sticky top-0 z-40",
+        presentationMode && "hidden!"
       )}
     >
       {/* Left: hamburger (mobile) + search */}
@@ -73,13 +72,13 @@ export function AdminTopHeader({
         <button
           onClick={onOpenSearch}
           title="Búsqueda global (Ctrl+K)"
-          className="flex items-center gap-2.5 px-4 h-10 rounded-2xl text-gray-400 dark:text-muted bg-gray-50 dark:bg-surface hover:bg-gray-100 dark:hover:bg-accent hover:text-primary transition-all text-sm font-medium border border-gray-200 dark:border-card-border flex-1 max-w-xl group cursor-pointer"
+          className="flex items-center gap-2.5 px-4 h-10 rounded-xl text-gray-400 dark:text-muted bg-gray-50 dark:bg-surface hover:bg-gray-100 dark:hover:bg-accent hover:text-primary transition-all text-sm font-medium border border-[var(--rule-base)] dark:border-card-border flex-1 max-w-xl group cursor-pointer"
         >
           <Search className="h-4.5 w-4.5 shrink-0 group-hover:text-primary transition-colors" />
           <span className="flex-1 text-left text-gray-400 dark:text-muted truncate">
             Buscar módulos, productos, clientes...
           </span>
-          <kbd className="text-[10px] bg-white dark:bg-card px-2 py-0.5 rounded-lg font-mono text-gray-400 border border-gray-200 dark:border-card-border hidden sm:inline">
+          <kbd className="text-[length:var(--ts-2xs)] bg-white dark:bg-card px-2 py-0.5 rounded-lg font-mono text-gray-400 border border-[var(--rule-base)] dark:border-card-border hidden sm:inline">
             ⌘K
           </kbd>
         </button>

@@ -147,7 +147,7 @@ export async function GET(req: NextRequest) {
             body: parts.join(" · "),
             actionUrl: "/admin?tab=demand-prediction",
             actionLabel: "Ver predicciones",
-          }).catch(() => {});
+          }).catch((err) => logger.error("[cron/demand-forecast] notification create failed", { error: String(err), tenantId }));
         }
 
         const tenantDuration = Date.now() - tenantStart;

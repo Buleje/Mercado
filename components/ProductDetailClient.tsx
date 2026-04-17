@@ -470,16 +470,16 @@ export default function ProductDetailClient({ product }: ProductDetailClientProp
                 .filter((p) => p.category === product.category && p.id !== product.id && (p.stock == null || p.stock > 0))
                 .slice(0, 3);
               return (
-                <div className="bg-blue-50 dark:bg-blue-900/15 border border-blue-200 dark:border-blue-700/40 rounded-2xl p-4">
+                <div className="bg-emerald-50 dark:bg-emerald-900/15 border border-emerald-200 dark:border-emerald-700/40 rounded-2xl p-4">
                   {alternatives.length > 0 ? (
                     <>
-                      <p className="text-sm font-bold text-blue-700 dark:text-blue-300 mb-3">Prueba estas alternativas:</p>
+                      <p className="text-sm font-bold text-emerald-700 dark:text-emerald-300 mb-3">Prueba estas alternativas:</p>
                       <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
                         {alternatives.map((alt) => (
                           <Link
                             key={alt.id}
                             href={`/tienda/producto/${getProductSlug(alt)}`}
-                            className="flex items-center gap-3 bg-white dark:bg-surface rounded-xl p-2.5 border border-blue-100 dark:border-card-border hover:border-primary/40 transition-colors group"
+                            className="flex items-center gap-3 bg-white dark:bg-surface rounded-xl p-2.5 border border-emerald-100 dark:border-card-border hover:border-primary/40 transition-colors group"
                           >
                             <Image src={alt.image} alt={alt.name} width={48} height={48} className="rounded-lg object-cover shrink-0" />
                             <div className="min-w-0 flex-1">
@@ -491,7 +491,7 @@ export default function ProductDetailClient({ product }: ProductDetailClientProp
                       </div>
                     </>
                   ) : (
-                    <p className="text-sm text-blue-600 dark:text-blue-400 font-semibold">Vuelve pronto, estamos reabasteciendo.</p>
+                    <p className="text-sm text-emerald-600 dark:text-emerald-400 font-semibold">Vuelve pronto, estamos reabasteciendo.</p>
                   )}
                 </div>
               );
@@ -649,7 +649,7 @@ export default function ProductDetailClient({ product }: ProductDetailClientProp
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               {[
                 { icon: Truck, text: "Delivery gratis a domicilio", color: "text-emerald-500" },
-                { icon: Clock, text: "Entrega en 30-60 minutos", color: "text-blue-500" },
+                { icon: Clock, text: "Entrega en 30-60 minutos", color: "text-emerald-500" },
                 { icon: Shield, text: "Pago seguro: Yape o efectivo", color: "text-violet-500" },
                 { icon: Package, text: "Productos frescos garantizados", color: "text-amber-500" },
               ].map((b, i) => (

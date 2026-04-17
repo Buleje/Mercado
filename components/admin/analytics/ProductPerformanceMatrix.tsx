@@ -31,7 +31,7 @@ const QUADRANT_META: Record<BCGQuadrant, {
 }> = {
   star:     { label: "Estrellas",    icon: "↑↑", color: "#00B4A6", bg: "bg-green-100 dark:bg-green-900/30", text: "text-green-800 dark:text-green-300", recommendation: "Invertir para crecer — alta prioridad" },
   cow:      { label: "Vacas",        icon: "→↑", color: "#f97316", bg: "bg-amber-100 dark:bg-amber-900/30", text: "text-amber-800 dark:text-amber-300", recommendation: "Mantener y cosechar — generan caja" },
-  question: { label: "Interrogantes",icon: "↑↓", color: "#3b82f6", bg: "bg-blue-100 dark:bg-blue-900/30",  text: "text-blue-800 dark:text-blue-300",  recommendation: "Evaluar potencial — requieren inversion" },
+  question: { label: "Interrogantes",icon: "↑↓", color: "#3b82f6", bg: "bg-emerald-100 dark:bg-emerald-900/30",  text: "text-emerald-800 dark:text-emerald-300",  recommendation: "Evaluar potencial — requieren inversion" },
   dog:      { label: "Perros",       icon: "↓↓", color: "#ef4444", bg: "bg-red-100 dark:bg-red-900/30",    text: "text-red-800 dark:text-red-300",    recommendation: "Reducir o descontinuar" },
 };
 
@@ -54,7 +54,7 @@ function BubblePoint({ product }: { product: BCGProduct }) {
 
   return (
     <div
-      className="absolute cursor-pointer transition-transform duration-150"
+      className="absolute cursor-pointer transition-transform duration-[var(--dur-fast)]"
       style={{
         left: `${product.xPct}%`,
         bottom: `${product.yPct}%`,
@@ -65,7 +65,7 @@ function BubblePoint({ product }: { product: BCGProduct }) {
       onMouseLeave={() => setHover(false)}
     >
       <div
-        className="rounded-full border-2 border-white dark:border-gray-800 shadow-sm transition-transform duration-150"
+        className="rounded-full border-2 border-white dark:border-[var(--rule-base)]  transition-transform duration-[var(--dur-fast)]"
         style={{
           width: size,
           height: size,
@@ -74,7 +74,7 @@ function BubblePoint({ product }: { product: BCGProduct }) {
         }}
       />
       {hover && (
-        <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 bg-gray-900 dark:bg-gray-700 text-white rounded-lg px-2 py-1.5 text-[10px] whitespace-nowrap z-30 shadow-lg pointer-events-none min-w-[120px]">
+        <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 bg-gray-900 dark:bg-gray-700 text-white rounded-lg px-2 py-1.5 text-[length:var(--ts-2xs)] whitespace-nowrap z-30 pointer-events-none min-w-[120px]">
           <p className="font-semibold">{product.name}</p>
           <p>Participacion: {product.share.toFixed(1)}%</p>
           <p>Crecimiento: {fmtPct(product.growth)}</p>
@@ -197,34 +197,34 @@ export default function ProductPerformanceMatrix({ products, sales }: ProductPer
       </div>
 
       {/* Matrix plot */}
-      <div className="relative rounded-lg border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/50 overflow-hidden">
+      <div className="relative rounded-lg border border-[var(--rule-base)] bg-gray-50 dark:bg-gray-800/50 overflow-hidden">
         {/* Axis labels */}
-        <div className="absolute top-1 right-2 text-[9px] text-gray-400 dark:text-gray-500 z-10">
+        <div className="absolute top-1 right-2 text-[length:var(--ts-2xs)] text-gray-400 dark:text-gray-500 z-10">
           Crecimiento (%)
         </div>
-        <div className="absolute bottom-1 right-2 text-[9px] text-gray-400 dark:text-gray-500 z-10">
+        <div className="absolute bottom-1 right-2 text-[length:var(--ts-2xs)] text-gray-400 dark:text-gray-500 z-10">
           Participacion →
         </div>
 
         {/* Quadrant backgrounds */}
         <div className="absolute inset-0 grid grid-cols-2 grid-rows-2">
-          <div className="bg-blue-50/30 dark:bg-blue-900/10 border-r border-b border-dashed border-gray-300 dark:border-gray-600" />
-          <div className="bg-green-50/30 dark:bg-green-900/10 border-b border-dashed border-gray-300 dark:border-gray-600" />
-          <div className="bg-red-50/30 dark:bg-red-900/10 border-r border-dashed border-gray-300 dark:border-gray-600" />
+          <div className="bg-emerald-50/30 dark:bg-emerald-900/10 border-r border-b border-dashed border-[var(--rule-base)] dark:border-gray-600" />
+          <div className="bg-green-50/30 dark:bg-green-900/10 border-b border-dashed border-[var(--rule-base)] dark:border-gray-600" />
+          <div className="bg-red-50/30 dark:bg-red-900/10 border-r border-dashed border-[var(--rule-base)] dark:border-gray-600" />
           <div className="bg-amber-50/30 dark:bg-amber-900/10" />
         </div>
 
         {/* Quadrant labels in corners */}
-        <div className="absolute top-1 left-2 text-[9px] text-blue-400 dark:text-blue-500 font-medium">
+        <div className="absolute top-1 left-2 text-[length:var(--ts-2xs)] text-emerald-400 dark:text-emerald-500 font-medium">
           Interrogantes
         </div>
-        <div className="absolute top-1 right-8 text-[9px] text-green-600 dark:text-green-400 font-medium">
+        <div className="absolute top-1 right-8 text-[length:var(--ts-2xs)] text-green-600 dark:text-green-400 font-medium">
           Estrellas
         </div>
-        <div className="absolute bottom-4 left-2 text-[9px] text-red-400 dark:text-red-500 font-medium">
+        <div className="absolute bottom-4 left-2 text-[length:var(--ts-2xs)] text-red-400 dark:text-red-500 font-medium">
           Perros
         </div>
-        <div className="absolute bottom-4 right-8 text-[9px] text-amber-500 dark:text-amber-400 font-medium">
+        <div className="absolute bottom-4 right-8 text-[length:var(--ts-2xs)] text-amber-500 dark:text-amber-400 font-medium">
           Vacas
         </div>
 
@@ -251,7 +251,7 @@ export default function ProductPerformanceMatrix({ products, sales }: ProductPer
             {byQuadrant[activeQuadrant].map((p) => (
               <div
                 key={p.id}
-                className="flex items-center gap-2 px-2 py-1 rounded bg-gray-50 dark:bg-gray-800 border border-gray-100 dark:border-gray-700 text-xs"
+                className="flex items-center gap-2 px-2 py-1 rounded bg-gray-50 dark:bg-gray-800 border border-[var(--rule-base)] text-xs"
               >
                 <span
                   className="w-2 h-2 rounded-full shrink-0"

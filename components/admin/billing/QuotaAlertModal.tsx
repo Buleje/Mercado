@@ -70,7 +70,7 @@ function MetricRow({ event, snapshot }: MetricRowProps) {
   const label = EVENT_LABELS[event];
 
   return (
-    <li className="flex flex-col gap-1.5 py-3 border-b border-gray-100 dark:border-gray-800 last:border-0">
+    <li className="flex flex-col gap-1.5 py-3 border-b border-[var(--rule-base)] last:border-0">
       <div className="flex items-center justify-between">
         <span className="text-sm font-medium text-gray-900 dark:text-gray-100">{label}</span>
         <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${
@@ -93,7 +93,7 @@ function MetricRow({ event, snapshot }: MetricRowProps) {
         aria-label={`${pct}% de cuota utilizada para ${label}`}
       >
         <div
-          className={`h-full rounded-full transition-all duration-500 ${BAR_COLORS[light]}`}
+          className={`h-full rounded-full transition-all duration-[var(--dur-slow)] ${BAR_COLORS[light]}`}
           style={{ width: `${pct}%` }}
         />
       </div>
@@ -180,10 +180,10 @@ export function QuotaAlertModal({ snapshot, onClose, upgradeHref = "/admin/billi
         aria-describedby={descId}
         className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-4"
       >
-        <div className="relative w-full max-w-lg max-h-[85vh] flex flex-col rounded-2xl bg-white dark:bg-gray-900 shadow-2xl border border-gray-200 dark:border-gray-700">
+        <div className="relative w-full max-w-lg max-h-[85vh] flex flex-col rounded-xl bg-white dark:bg-gray-900 border border-[var(--rule-base)]">
 
           {/* Header */}
-          <div className="flex items-center justify-between px-6 pt-6 pb-4 border-b border-gray-100 dark:border-gray-800 flex-shrink-0">
+          <div className="flex items-center justify-between px-6 pt-6 pb-4 border-b border-[var(--rule-base)] flex-shrink-0">
             <div>
               <h2
                 id={titleId}
@@ -205,7 +205,7 @@ export function QuotaAlertModal({ snapshot, onClose, upgradeHref = "/admin/billi
             <button
               ref={closeRef}
               onClick={onClose}
-              className="min-h-[44px] min-w-[44px] flex items-center justify-center rounded-xl text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#2d6a4f]"
+              className="min-h-[44px] min-w-[44px] flex items-center justify-center rounded-lg text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#2d6a4f]"
               aria-label="Cerrar modal de detalles de cuota"
             >
               <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-5 h-5" aria-hidden="true">
@@ -224,7 +224,7 @@ export function QuotaAlertModal({ snapshot, onClose, upgradeHref = "/admin/billi
           </div>
 
           {/* Footer */}
-          <div className="px-6 py-4 border-t border-gray-100 dark:border-gray-800 flex flex-col sm:flex-row items-center gap-3 flex-shrink-0">
+          <div className="px-6 py-4 border-t border-[var(--rule-base)] flex flex-col sm:flex-row items-center gap-3 flex-shrink-0">
             <div className="flex-1 text-sm text-gray-500 dark:text-gray-400">
               Costo estimado del período:{" "}
               <strong className="text-gray-900 dark:text-gray-100">
@@ -235,7 +235,7 @@ export function QuotaAlertModal({ snapshot, onClose, upgradeHref = "/admin/billi
             <div className="flex gap-2">
               <button
                 onClick={onClose}
-                className="min-h-[44px] px-4 py-2 rounded-xl border border-gray-200 dark:border-gray-700 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#2d6a4f]"
+                className="min-h-[44px] px-4 py-2 rounded-lg border border-[var(--rule-base)] text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#2d6a4f]"
               >
                 Cerrar
               </button>
@@ -243,7 +243,7 @@ export function QuotaAlertModal({ snapshot, onClose, upgradeHref = "/admin/billi
               {showUpgrade && (
                 <a
                   href={upgradeHref}
-                  className="min-h-[44px] inline-flex items-center px-4 py-2 rounded-xl bg-[#2d6a4f] hover:bg-[#245a42] text-white text-sm font-semibold transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#2d6a4f]"
+                  className="min-h-[44px] inline-flex items-center px-4 py-2 rounded-lg bg-[#2d6a4f] hover:bg-[#245a42] text-white text-sm font-semibold transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#2d6a4f]"
                   aria-label="Mejorar plan de facturación"
                 >
                   Mejorar plan

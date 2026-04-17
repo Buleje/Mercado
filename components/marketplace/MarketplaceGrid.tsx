@@ -3,6 +3,8 @@
 import { useState, useEffect, useCallback, useDeferredValue } from "react";
 import Link from "next/link";
 import Image from "next/image";
+import { useHoverPrefetch } from "@/hooks/use-hover-prefetch";
+import LiveViewers from "@/components/marketplace/LiveViewers";
 
 // ---------- tipos ----------
 
@@ -78,7 +80,7 @@ function StoreInitials({ name }: { name: string }) {
 
 function StoreCardSkeleton() {
   return (
-    <div className="animate-pulse rounded-2xl border border-gray-200 bg-white dark:border-gray-800 dark:bg-gray-900">
+    <div aria-hidden="true" className="animate-pulse rounded-2xl border border-gray-200 bg-white dark:border-gray-800 dark:bg-gray-900">
       <div className="h-32 rounded-t-2xl bg-gray-200 dark:bg-gray-800" />
       <div className="p-4 space-y-2">
         <div className="h-4 w-3/4 rounded bg-gray-200 dark:bg-gray-800" />
@@ -92,13 +94,17 @@ function StoreCardSkeleton() {
 
 // ---------- card de tienda ----------
 
-function StoreCard({ store }: { store: Store }) {
+function StoreCard({ store, priority = false }: { store: Store; priority?: boolean }) {
   const isOpen = store.isOpen ?? true; // fallback optimista
+  const href = `/marketplace/${store.slug}`;
+  const { onMouseEnter, onMouseLeave } = useHoverPrefetch(href);
 
   return (
     <article
       className="group flex flex-col rounded-2xl border border-gray-200 bg-white transition-shadow hover:shadow-lg dark:border-gray-800 dark:bg-gray-900"
       aria-label={`Tienda ${store.name}`}
+      onMouseEnter={onMouseEnter}
+      onMouseLeave={onMouseLeave}
     >
       {/* imagen / iniciales */}
       <div className="relative h-32 overflow-hidden rounded-t-2xl bg-gray-100 dark:bg-gray-800">
@@ -107,8 +113,12 @@ function StoreCard({ store }: { store: Store }) {
             src={store.logo}
             alt={`Logo de ${store.name}`}
             fill
+            priority={priority}
+            loading={priority ? "eager" : "lazy"}
             className="object-cover transition-transform duration-300 group-hover:scale-105"
             sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
+            placeholder="blur"
+            blurDataURL="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIxMCIgaGVpZ2h0PSIxMCI+PGZpbHRlciBpZD0iYiI+PGZlR2F1c3NpYW5CbHVyIHN0ZERldmlhdGlvbj0iMiIvPjwvZmlsdGVyPjxyZWN0IHdpZHRoPSIxMCIgaGVpZ2h0PSIxMCIgZmlsdGVyPSJ1cmwoI2IpIiBmaWxsPSIjZWVlIi8+PC9zdmc+"
           />
         ) : (
           <StoreInitials name={store.name} />
@@ -150,8 +160,11 @@ function StoreCard({ store }: { store: Store }) {
           </p>
         )}
 
+        <LiveViewers storeSlug={store.slug} compact className="mt-2" />
+
         <Link
-          href={`/marketplace/${store.slug}`}
+          href={href}
+          aria-label={`Ver tienda ${store.name}`}
           className="mt-auto pt-4 block w-full min-h-[44px] rounded-xl text-center text-sm font-bold text-white transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-teal-600"
           style={{
             background: "linear-gradient(135deg, #00B4A6 0%, #0d6560 100%)",
@@ -290,16 +303,20 @@ export default function MarketplaceGrid() {
 
       {/* ── CONTENIDO ──────────────────────────────────────────── */}
       {error && (
-        <div className="mb-6 rounded-xl bg-red-50 p-4 text-sm text-red-700 dark:bg-red-900/20 dark:text-red-400">
+        <div role="alert" className="mb-6 rounded-xl bg-red-50 p-4 text-sm text-red-700 dark:bg-red-900/20 dark:text-red-400">
           {error}{" "}
-          <button onClick={fetchStores} className="underline hover:no-underline">
+          <button onClick={fetchStores} aria-label="Reintentar cargar tiendas" className="underline hover:no-underline">
             Reintentar
           </button>
         </div>
       )}
 
       {loading ? (
-        <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
+        <div
+          aria-busy="true"
+          aria-label="Cargando tiendas..."
+          className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3"
+        >
           {[...Array(6)].map((_, i) => <StoreCardSkeleton key={i} />)}
         </div>
       ) : stores.length === 0 ? (
@@ -321,6 +338,7 @@ export default function MarketplaceGrid() {
           </p>
           <button
             onClick={() => { setSearch(""); setZone(""); setCategory(""); }}
+            aria-label="Limpiar todos los filtros y ver todas las tiendas"
             className="mt-4 min-h-[44px] rounded-xl bg-teal-700 px-6 text-sm font-semibold text-white hover:bg-teal-800 focus-visible:outline focus-visible:outline-2 focus-visible:outline-teal-600"
           >
             Limpiar filtros
@@ -328,12 +346,23 @@ export default function MarketplaceGrid() {
         </div>
       ) : (
         <>
-          <p className="mb-4 text-sm text-gray-500 dark:text-gray-400">
+          <p
+            aria-live="polite"
+            aria-atomic="true"
+            className="mb-4 text-sm text-gray-500 dark:text-gray-400"
+          >
             {stores.length} {stores.length === 1 ? "tienda encontrada" : "tiendas encontradas"}
           </p>
-          <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
-            {stores.map((s) => (
-              <StoreCard key={s.id} store={s} />
+          <div
+            role="list"
+            aria-label={`${stores.length} ${stores.length === 1 ? "tienda encontrada" : "tiendas encontradas"}`}
+            className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3"
+          >
+            {stores.map((s, idx) => (
+              <div key={s.id} role="listitem">
+                {/* First 6 cards render eagerly with priority for LCP — rest lazy */}
+                <StoreCard store={s} priority={idx < 6} />
+              </div>
             ))}
           </div>
         </>

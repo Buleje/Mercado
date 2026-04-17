@@ -34,10 +34,12 @@ function getPopularProducts(allProducts: Product[]) {
   return scored.sort((a, b) => b.score - a.score).slice(0, 6);
 }
 
-export default function PopularProducts() {
+export default function PopularProducts({ serverProducts, showEmpty = false }: { serverProducts?: Product[]; showEmpty?: boolean }) {
   const { addItem, items, updateQty } = useCart();
   const [ref, inView] = useInView({ threshold: 0.1 });
-  const { products, isLoading } = useStoreProducts();
+  const hook = useStoreProducts();
+  const products = serverProducts && serverProducts.length > 0 ? serverProducts : hook.products;
+  const isLoading = serverProducts ? false : hook.isLoading;
   const popular = useMemo(() => getPopularProducts(products), [products]);
   const lastClickRef = useRef(0);
   const guardedAdd = useCallback((p: Product) => {
@@ -47,8 +49,9 @@ export default function PopularProducts() {
     addItem(p);
   }, [addItem]);
 
-  // No render while loading or if empty — prevents blank gaps
-  if (isLoading || popular.length === 0) return <SectionPlaceholder title="Productos Populares" hint="Se muestran automaticamente los mas vendidos" cols={4} />;
+  // Show skeleton only while loading, hide section if no products after load
+  if (isLoading) return <SectionPlaceholder title="Mas Vendidos" hint="Cargando..." cols={6} />;
+  if (popular.length === 0) return showEmpty ? <SectionPlaceholder title="Mas Vendidos" hint="Los productos populares apareceran aqui automaticamente" cols={6} /> : null;
 
   return (
     <section ref={ref} className="py-14 sm:py-20 bg-surface">
@@ -121,7 +124,7 @@ export default function PopularProducts() {
                   {product.badge && (
                     <span
                       className="absolute bottom-2 right-2 text-white text-[10px] font-bold px-2 py-0.5 rounded-full shadow-md"
-                      style={{ background: product.badge === "Popular" ? "#00B4A6" : product.badge === "Oferta" ? "#ef4444" : product.badge === "Fresco" ? "#10b981" : "#6b7280" }}
+                      style={{ background: product.badge === "Popular" ? "#2563EB" : product.badge === "Oferta" ? "#ef4444" : product.badge === "Fresco" ? "#10b981" : "#6b7280" }}
                     >
                       {product.badge}
                     </span>

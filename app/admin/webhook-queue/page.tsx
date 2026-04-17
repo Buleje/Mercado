@@ -205,7 +205,7 @@ export default function WebhookQueuePage() {
                     (h) => (
                       <th
                         key={h}
-                        className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400"
+                        className="px-4 py-3 text-left text-xs font-semibold text-gray-500 dark:text-gray-400"
                       >
                         {h}
                       </th>

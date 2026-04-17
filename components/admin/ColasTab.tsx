@@ -80,8 +80,8 @@ function QueueCard({ queue }: { queue: QueueStats }) {
   return (
     <div
       className={cn(
-        "rounded-xl border bg-white p-5 shadow-sm transition-shadow hover:shadow-md",
-        "dark:border-gray-700 dark:bg-gray-800",
+        "rounded-xl border bg-white p-5  transition-shadow hover:shadow-sm",
+        "dark:border-[var(--rule-base)] dark:bg-gray-800",
         hasFailed && "border-red-300 dark:border-red-700",
       )}
     >
@@ -109,7 +109,7 @@ function QueueCard({ queue }: { queue: QueueStats }) {
         <StatBadge
           label="Activos"
           value={queue.active}
-          colorClasses="bg-blue-50 text-blue-700 dark:bg-blue-900/20 dark:text-blue-400"
+          colorClasses="bg-emerald-50 text-emerald-700 dark:bg-emerald-900/20 dark:text-emerald-400"
           icon={<Loader2 className="h-4 w-4" />}
         />
         <StatBadge
@@ -269,7 +269,7 @@ export default function ColasTab() {
               "flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-xs font-medium transition-colors",
               autoRefresh
                 ? "border-teal-300 bg-teal-50 text-teal-700 dark:border-teal-700 dark:bg-teal-900/20 dark:text-teal-400"
-                : "border-gray-300 bg-gray-50 text-gray-600 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-400",
+                : "border-[var(--rule-base)] bg-gray-50 text-gray-600 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-400",
             )}
             title={autoRefresh ? "Desactivar auto-refresco" : "Activar auto-refresco"}
           >
@@ -312,13 +312,13 @@ export default function ColasTab() {
             <p className="text-xs text-amber-600 dark:text-amber-400">En espera (total)</p>
           </div>
         </div>
-        <div className="flex items-center gap-3 rounded-xl border bg-blue-50 p-4 dark:border-blue-800 dark:bg-blue-900/10">
-          <Activity className="h-8 w-8 text-blue-600 dark:text-blue-400" />
+        <div className="flex items-center gap-3 rounded-xl border bg-emerald-50 p-4 dark:border-emerald-800 dark:bg-emerald-900/10">
+          <Activity className="h-8 w-8 text-emerald-600 dark:text-emerald-400" />
           <div>
-            <p className="text-2xl font-bold text-blue-700 dark:text-blue-300">
+            <p className="text-2xl font-bold text-emerald-700 dark:text-emerald-300">
               {totalActive.toLocaleString("es-PE")}
             </p>
-            <p className="text-xs text-blue-600 dark:text-blue-400">Activos (total)</p>
+            <p className="text-xs text-emerald-600 dark:text-emerald-400">Activos (total)</p>
           </div>
         </div>
         <div className="flex items-center gap-3 rounded-xl border bg-red-50 p-4 dark:border-red-800 dark:bg-red-900/10">

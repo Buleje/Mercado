@@ -98,7 +98,7 @@ export default function DeliveryScheduleTab() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <h2 className="text-base sm:text-xl font-bold text-white flex flex-wrap items-center gap-2">
-          <Clock className="w-5 h-5 text-blue-400" />
+          <Clock className="w-5 h-5 text-emerald-400" />
           Horarios y Zonas de Delivery
         </h2>
         <button
@@ -107,7 +107,7 @@ export default function DeliveryScheduleTab() {
           className={`flex items-center gap-2 px-2 sm:px-4 py-1.5 sm:py-2 rounded-lg text-sm font-medium transition ${
             saved
               ? "bg-green-600 text-white"
-              : "bg-blue-600 hover:bg-blue-700 text-white"
+              : "bg-emerald-600 hover:bg-emerald-700 text-white"
           } disabled:opacity-50`}
         >
           {saved ? <CheckCircle className="w-4 h-4" /> : <Save className="w-4 h-4" />}
@@ -143,7 +143,7 @@ export default function DeliveryScheduleTab() {
                   type="checkbox"
                   checked={h.enabled}
                   onChange={(e) => updateHour(i, "enabled", e.target.checked)}
-                  className="accent-blue-500"
+                  className="accent-emerald-500"
                 />
                 <span className="text-sm text-white font-medium">{h.day}</span>
               </label>

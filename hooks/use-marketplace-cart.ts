@@ -15,6 +15,8 @@ export interface CartItem {
   quantity: number;
   image: string | null;
   unit: string | null;
+  category?: string | null;
+  storeZone?: string | null;
 }
 
 interface CartState {

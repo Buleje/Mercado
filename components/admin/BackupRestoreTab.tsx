@@ -7,7 +7,7 @@ import type { BackupEntry } from "@/app/api/backups/route";
 
 const STATUS_CONFIG: Record<string, { icon: React.ElementType; color: string; label: string }> = {
   completado:    { icon: CheckCircle,  color: "text-emerald-500", label: "Completado" },
-  "en-progreso": { icon: RefreshCw,    color: "text-blue-500 animate-spin", label: "En progreso" },
+  "en-progreso": { icon: RefreshCw,    color: "text-emerald-500 animate-spin", label: "En progreso" },
   fallido:       { icon: AlertTriangle,color: "text-red-500",     label: "Fallido" },
 };
 
@@ -127,12 +127,12 @@ export default function BackupRestoreTab() {
       {/* KPIs */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
         {[
-          { label: "Backups totales",   value: backups.length,              color: "text-blue-500",    icon: Database },
-          { label: "Almacenamiento",    value: fmtBytes(totalSizeBytes),    color: "text-violet-500",  icon: HardDrive },
+          { label: "Backups totales",   value: backups.length,              color: "text-emerald-500",    icon: Database },
+          { label: "Almacenamiento",    value: fmtBytes(totalSizeBytes),    color: "text-[var(--text-secondary)]",  icon: HardDrive },
           { label: "Último exitoso",    value: lastSuccessful ? fmtDate(lastSuccessful.createdAt) : "—", color: "text-emerald-500", icon: CheckCircle },
           { label: "Fallidos",          value: failedCount,                 color: failedCount > 0 ? "text-red-500" : "text-gray-400", icon: AlertTriangle },
         ].map(k => (
-          <div key={k.label} className="bg-white dark:bg-card rounded-xl border border-gray-200 dark:border-card-border p-4">
+          <div key={k.label} className="bg-white dark:bg-card rounded-xl border border-[var(--rule-base)] dark:border-card-border p-4">
             <div className="flex items-center gap-1.5 mb-1">
               <k.icon className={cn("h-3.5 w-3.5 shrink-0", k.color)} />
               <p className="text-xs font-semibold text-gray-500 dark:text-muted">{k.label}</p>
@@ -149,7 +149,7 @@ export default function BackupRestoreTab() {
           {/* Botón crear backup */}
           <div className="flex justify-end">
             <button onClick={handleCreateBackup} disabled={creating}
-              className="flex items-center gap-1.5 px-4 py-2 rounded-xl text-sm font-bold bg-primary text-white hover:bg-primary/90 disabled:opacity-60">
+              className="flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-bold bg-primary text-white hover:bg-primary/90 disabled:opacity-60">
               {creating ? <RefreshCw className="h-4 w-4 animate-spin" /> : <Play className="h-4 w-4" />}
               {creating ? "Creando backup…" : "Crear backup ahora"}
             </button>
@@ -159,11 +159,11 @@ export default function BackupRestoreTab() {
           {loading ? (
             <div className="space-y-2">
               {Array.from({ length: 4 }).map((_, i) => (
-                <div key={i} className="h-20 bg-white dark:bg-card rounded-xl border border-gray-200 dark:border-card-border animate-pulse" />
+                <div key={i} className="h-20 bg-white dark:bg-card rounded-xl border border-[var(--rule-base)] dark:border-card-border animate-pulse" />
               ))}
             </div>
           ) : backups.length === 0 ? (
-            <div className="flex flex-col items-center justify-center py-12 text-gray-400 bg-white dark:bg-card rounded-2xl border border-dashed border-gray-300 dark:border-card-border">
+            <div className="flex flex-col items-center justify-center py-12 text-gray-400 bg-white dark:bg-card rounded-xl border border-dashed border-[var(--rule-base)] dark:border-card-border">
               <Database className="h-12 w-12 mb-3 text-gray-300" />
               <p className="font-bold text-gray-500 dark:text-muted">Sin backups registrados</p>
               <p className="text-sm mt-1">Crea el primer backup manual</p>
@@ -177,20 +177,20 @@ export default function BackupRestoreTab() {
               {backups.map(b => {
                 const S = STATUS_CONFIG[b.status];
                 return (
-                  <div key={b.id} className={cn("bg-white dark:bg-card rounded-xl border p-4", b.status === "fallido" ? "border-red-200 dark:border-red-900/30" : "border-gray-200 dark:border-card-border")}>
+                  <div key={b.id} className={cn("bg-white dark:bg-card rounded-xl border p-4", b.status === "fallido" ? "border-red-200 dark:border-red-900/30" : "border-[var(--rule-base)] dark:border-card-border")}>
                     <div className="flex flex-wrap items-center justify-between gap-3">
                       <div className="flex flex-wrap items-center gap-3 flex-1 min-w-0">
                         <S.icon className={cn("h-5 w-5 shrink-0", S.color)} />
                         <div className="min-w-0">
                           <div className="flex items-center gap-2 flex-wrap">
                             <h4 className="font-bold text-sm text-gray-900 dark:text-foreground">{b.name}</h4>
-                            <span className={cn("text-[10px] font-bold px-2 py-0.5 rounded-full",
-                              b.type === "auto" ? "bg-blue-100 text-blue-600 dark:bg-blue-900/30 dark:text-blue-400" : "bg-amber-100 text-amber-600 dark:bg-amber-900/30 dark:text-amber-400")}>
+                            <span className={cn("text-[length:var(--ts-2xs)] font-bold px-2 py-0.5 rounded-full",
+                              b.type === "auto" ? "bg-emerald-100 text-emerald-600 dark:bg-emerald-900/30 dark:text-emerald-400" : "bg-amber-100 text-amber-600 dark:bg-amber-900/30 dark:text-amber-400")}>
                               {b.type === "auto" ? "Automático" : "Manual"}
                             </span>
-                            <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-gray-100 dark:bg-surface text-gray-500 dark:text-muted">{S.label}</span>
+                            <span className="text-[length:var(--ts-2xs)] font-bold px-1.5 py-0.5 rounded-full bg-gray-100 dark:bg-surface text-gray-500 dark:text-muted">{S.label}</span>
                           </div>
-                          <div className="flex items-center gap-3 sm:gap-4 text-[10px] text-gray-400 mt-0.5 flex-wrap">
+                          <div className="flex items-center gap-3 sm:gap-4 text-[length:var(--ts-2xs)] text-gray-400 mt-0.5 flex-wrap">
                             <span><Clock className="h-2.5 w-2.5 inline mr-0.5" />{fmtDate(b.createdAt)}</span>
                             <span><HardDrive className="h-2.5 w-2.5 inline mr-0.5" />{b.size}</span>
                             <span>Módulos: {b.modules.join(", ")}</span>
@@ -202,7 +202,7 @@ export default function BackupRestoreTab() {
                         {b.status === "completado" && (
                           <>
                             <a href="/api/backup" download={`bodega-backup-${b.createdAt.slice(0, 10)}.json`}
-                              className="p-1.5 rounded-lg hover:bg-blue-50 dark:hover:bg-blue-950/20 text-blue-500" title="Descargar">
+                              className="p-1.5 rounded-lg hover:bg-emerald-50 dark:hover:bg-emerald-950/20 text-emerald-500" title="Descargar">
                               <Download className="h-4 w-4" />
                             </a>
                             <button className="p-1.5 rounded-lg hover:bg-amber-50 dark:hover:bg-amber-950/20 text-amber-500" title="Restaurar (próximamente)">
@@ -223,10 +223,10 @@ export default function BackupRestoreTab() {
           )}
         </>
       ) : (
-        <div className="bg-white dark:bg-card rounded-2xl border border-gray-200 dark:border-card-border p-4 sm:p-6 space-y-5">
+        <div className="bg-white dark:bg-card rounded-xl border border-[var(--rule-base)] dark:border-card-border p-4 sm:p-6 space-y-5">
           <h3 className="font-extrabold text-gray-900 dark:text-foreground">Configuración de backup automático</h3>
 
-          <div className="flex items-center justify-between py-3 border-b border-gray-100 dark:border-card-border">
+          <div className="flex items-center justify-between py-3 border-b border-[var(--rule-soft)] dark:border-card-border">
             <div>
               <p className="font-bold text-sm text-gray-900 dark:text-foreground">Backup automático</p>
               <p className="text-xs text-gray-500 dark:text-muted">Activar copias automáticas programadas</p>
@@ -250,13 +250,13 @@ export default function BackupRestoreTab() {
           <div>
             <label className="text-xs font-bold text-gray-500 dark:text-muted">Retención de backups diarios (días)</label>
             <input type="number" value={retentionDays} onChange={e => setRetentionDays(Number(e.target.value))} min={7} max={365}
-              className="w-full mt-1 px-3 py-2 rounded-xl border border-gray-200 dark:border-card-border bg-white dark:bg-surface text-sm" />
-            <p className="text-[10px] text-gray-400 mt-1">Backups más antiguos se eliminarán automáticamente</p>
+              className="w-full mt-1 px-3 py-2 rounded-xl border border-[var(--rule-base)] dark:border-card-border bg-white dark:bg-surface text-sm" />
+            <p className="text-[length:var(--ts-2xs)] text-gray-400 mt-1">Backups más antiguos se eliminarán automáticamente</p>
           </div>
 
-          <div className="bg-blue-50 dark:bg-blue-900/10 border border-blue-100 dark:border-blue-900/20 rounded-xl p-3">
-            <p className="text-xs font-bold text-blue-700 dark:text-blue-400 mb-1">Almacenamiento del backup</p>
-            <p className="text-xs text-blue-600 dark:text-blue-500">Los backups se descargan como archivos JSON encriptados. Para almacenamiento en nube, configura un webhook en Configuración → Integraciones.</p>
+          <div className="bg-emerald-50 dark:bg-emerald-900/10 border border-emerald-100 dark:border-emerald-900/20 rounded-xl p-3">
+            <p className="text-xs font-bold text-emerald-700 dark:text-emerald-400 mb-1">Almacenamiento del backup</p>
+            <p className="text-xs text-emerald-600 dark:text-emerald-500">Los backups se descargan como archivos JSON encriptados. Para almacenamiento en nube, configura un webhook en Configuración → Integraciones.</p>
           </div>
         </div>
       )}

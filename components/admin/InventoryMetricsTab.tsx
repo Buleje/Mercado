@@ -279,7 +279,7 @@ export default function InventoryMetricsTab() {
         </div>
         <button
           onClick={fetchData}
-          className="flex flex-wrap items-center gap-2 px-3 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+          className="flex flex-wrap items-center gap-2 px-3 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 border border-[var(--rule-base)] dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
         >
           <RefreshCw className="h-4 w-4" />
           Actualizar
@@ -321,8 +321,8 @@ export default function InventoryMetricsTab() {
         {/* Valor total inventario */}
         <KPICard
           icon={<DollarSign className="h-5 w-5" />}
-          iconBg="bg-blue-100 dark:bg-blue-900/40"
-          iconColor="text-blue-600 dark:text-blue-400"
+          iconBg="bg-emerald-100 dark:bg-emerald-900/40"
+          iconColor="text-emerald-600 dark:text-emerald-400"
           label="Valor inventario"
           value={formatCurrency(totalInventoryValue)}
         />
@@ -342,7 +342,7 @@ export default function InventoryMetricsTab() {
       {/* ─── Charts Section ───────────────────────────────────────────────────── */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Movimientos por tipo */}
-        <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-3 sm:p-5">
+        <div className="bg-white dark:bg-gray-800 rounded-xl border border-[var(--rule-base)] p-3 sm:p-5">
           <div className="flex flex-wrap items-center gap-2 mb-4">
             <BarChart3 className="h-5 w-5 text-emerald-600 dark:text-emerald-400" />
             <h3 className="font-semibold text-gray-900 dark:text-white">
@@ -376,7 +376,7 @@ export default function InventoryMetricsTab() {
         </div>
 
         {/* Top 5 rotación */}
-        <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-3 sm:p-5">
+        <div className="bg-white dark:bg-gray-800 rounded-xl border border-[var(--rule-base)] p-3 sm:p-5">
           <div className="flex flex-wrap items-center gap-2 mb-4">
             <TrendingUp className="h-5 w-5 text-emerald-600 dark:text-emerald-400" />
             <h3 className="font-semibold text-gray-900 dark:text-white">
@@ -427,7 +427,7 @@ export default function InventoryMetricsTab() {
       </div>
 
       {/* ─── Critical Batches Table ───────────────────────────────────────────── */}
-      <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-3 sm:p-5">
+      <div className="bg-white dark:bg-gray-800 rounded-xl border border-[var(--rule-base)] p-3 sm:p-5">
         <div className="flex flex-wrap items-center gap-2 mb-4">
           <AlertTriangle className="h-5 w-5 text-red-500 dark:text-red-400" />
           <h3 className="font-semibold text-gray-900 dark:text-white">
@@ -449,7 +449,7 @@ export default function InventoryMetricsTab() {
           <div className="overflow-x-auto">
             <table className="w-full min-w-[600px] text-sm">
               <thead>
-                <tr className="border-b border-gray-200 dark:border-gray-700">
+                <tr className="border-b border-[var(--rule-base)]">
                   <th className="text-left py-2.5 px-3 font-medium text-gray-500 dark:text-gray-400">
                     Producto
                   </th>
@@ -525,7 +525,7 @@ export default function InventoryMetricsTab() {
                 })}
               </tbody>
               <tfoot>
-                <tr className="border-t-2 border-gray-200 dark:border-gray-600">
+                <tr className="border-t-2 border-[var(--rule-base)] dark:border-gray-600">
                   <td
                     colSpan={6}
                     className="py-2.5 px-3 text-right font-semibold text-gray-700 dark:text-gray-300"
@@ -575,7 +575,7 @@ function KPICard({
   return (
     <div
       className={cn(
-        'bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-4 flex flex-col gap-3 transition-shadow',
+        'bg-white dark:bg-gray-800 rounded-xl border border-[var(--rule-base)] p-4 flex flex-col gap-3 transition-shadow',
         alert && `ring-2 ${ringColors[alertColor] || ringColors.amber}`
       )}
     >

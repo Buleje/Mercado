@@ -48,8 +48,8 @@ const COL_CONFIG: Record<Column, { label: string; color: string; bg: string }> =
   },
   doing: {
     label: "En proceso",
-    color: "text-blue-700 dark:text-blue-400",
-    bg: "bg-blue-50 dark:bg-blue-900/10",
+    color: "text-emerald-700 dark:text-emerald-400",
+    bg: "bg-emerald-50 dark:bg-emerald-900/10",
   },
   done: {
     label: "Listo",
@@ -136,7 +136,7 @@ export default function TaskKanban() {
 
   /* ── Render ── */
   return (
-    <div className="space-y-4">
+    <div className="space-y-6">
       {/* Header */}
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
         <div className="flex items-center gap-2">
@@ -184,7 +184,7 @@ export default function TaskKanban() {
             </button>
             <button
               onClick={() => setShowReset(false)}
-              className="px-3 py-1 rounded-lg border border-gray-200 dark:border-gray-700 text-xs text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-750 transition-colors"
+              className="px-3 py-1 rounded-lg border border-[var(--rule-base)] text-xs text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-750 transition-colors"
             >
               Cancelar
             </button>
@@ -202,19 +202,19 @@ export default function TaskKanban() {
               value={form.title}
               onChange={(e) => setForm((f) => ({ ...f, title: e.target.value }))}
               placeholder="Titulo de la tarea"
-              className="sm:col-span-3 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 px-3 py-2 text-sm text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-[#00B4A6]"
+              className="sm:col-span-3 rounded-lg border border-[var(--rule-base)] bg-white dark:bg-gray-800 px-3 py-2 text-sm text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-[#00B4A6]"
             />
             <input
               type="text"
               value={form.assignedTo}
               onChange={(e) => setForm((f) => ({ ...f, assignedTo: e.target.value }))}
               placeholder="Asignado a"
-              className="rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 px-3 py-2 text-sm text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-[#00B4A6]"
+              className="rounded-lg border border-[var(--rule-base)] bg-white dark:bg-gray-800 px-3 py-2 text-sm text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-[#00B4A6]"
             />
             <select
               value={form.priority}
               onChange={(e) => setForm((f) => ({ ...f, priority: e.target.value as Priority }))}
-              className="rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 px-3 py-2 text-sm text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-[#00B4A6]"
+              className="rounded-lg border border-[var(--rule-base)] bg-white dark:bg-gray-800 px-3 py-2 text-sm text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-[#00B4A6]"
             >
               <option value="urgente">Urgente</option>
               <option value="normal">Normal</option>
@@ -238,11 +238,11 @@ export default function TaskKanban() {
           const { label, color, bg } = COL_CONFIG[col];
 
           return (
-            <div key={col} className={cn("rounded-xl border border-gray-200 dark:border-gray-700 overflow-hidden", bg)}>
+            <div key={col} className={cn("rounded-xl border border-[var(--rule-base)] overflow-hidden", bg)}>
               {/* Header de columna */}
-              <div className="px-4 py-3 border-b border-gray-200 dark:border-gray-700 flex items-center justify-between">
+              <div className="px-4 py-3 border-b border-[var(--rule-base)] flex items-center justify-between">
                 <span className={cn("font-semibold text-sm", color)}>{label}</span>
-                <span className="text-xs text-gray-400 dark:text-gray-500 bg-white dark:bg-gray-800 px-2 py-0.5 rounded-full border border-gray-200 dark:border-gray-700">
+                <span className="text-xs text-gray-400 dark:text-gray-500 bg-white dark:bg-gray-800 px-2 py-0.5 rounded-full border border-[var(--rule-base)]">
                   {colTasks.length}
                 </span>
               </div>
@@ -262,7 +262,7 @@ export default function TaskKanban() {
                   return (
                     <div
                       key={task.id}
-                      className="rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 p-3 space-y-2 shadow-sm"
+                      className="rounded-lg border border-[var(--rule-base)] bg-white dark:bg-gray-800 p-3 space-y-2 "
                     >
                       {isEditing ? (
                         <div className="space-y-2">
@@ -270,18 +270,18 @@ export default function TaskKanban() {
                             type="text"
                             value={form.title}
                             onChange={(e) => setForm((f) => ({ ...f, title: e.target.value }))}
-                            className="w-full rounded border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-750 px-2 py-1 text-sm text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-1 focus:ring-[#00B4A6]"
+                            className="w-full rounded border border-[var(--rule-base)] bg-gray-50 dark:bg-gray-750 px-2 py-1 text-sm text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-1 focus:ring-[#00B4A6]"
                           />
                           <input
                             type="text"
                             value={form.assignedTo}
                             onChange={(e) => setForm((f) => ({ ...f, assignedTo: e.target.value }))}
-                            className="w-full rounded border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-750 px-2 py-1 text-sm text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-1 focus:ring-[#00B4A6]"
+                            className="w-full rounded border border-[var(--rule-base)] bg-gray-50 dark:bg-gray-750 px-2 py-1 text-sm text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-1 focus:ring-[#00B4A6]"
                           />
                           <select
                             value={form.priority}
                             onChange={(e) => setForm((f) => ({ ...f, priority: e.target.value as Priority }))}
-                            className="w-full rounded border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-750 px-2 py-1 text-sm text-gray-900 dark:text-gray-100"
+                            className="w-full rounded border border-[var(--rule-base)] bg-gray-50 dark:bg-gray-750 px-2 py-1 text-sm text-gray-900 dark:text-gray-100"
                           >
                             <option value="urgente">Urgente</option>
                             <option value="normal">Normal</option>
@@ -297,7 +297,7 @@ export default function TaskKanban() {
                             </button>
                             <button
                               onClick={() => setEditingId(null)}
-                              className="flex-1 flex items-center justify-center gap-1 py-1 rounded border border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-400 text-xs"
+                              className="flex-1 flex items-center justify-center gap-1 py-1 rounded border border-[var(--rule-base)] text-gray-600 dark:text-gray-400 text-xs"
                             >
                               <X className="w-3 h-3" />
                               Cancelar
@@ -331,7 +331,7 @@ export default function TaskKanban() {
                           </div>
 
                           {/* Acciones */}
-                          <div className="flex items-center gap-1 pt-1 border-t border-gray-100 dark:border-gray-700">
+                          <div className="flex items-center gap-1 pt-1 border-t border-[var(--rule-base)]">
                             {PREV_COL[task.column] && (
                               <button
                                 onClick={() => moveTask(task.id, "prev")}
@@ -353,7 +353,7 @@ export default function TaskKanban() {
                             <div className="flex-1" />
                             <button
                               onClick={() => startEdit(task)}
-                              className="p-1 rounded hover:bg-blue-50 dark:hover:bg-blue-900/20 text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
+                              className="p-1 rounded hover:bg-emerald-50 dark:hover:bg-emerald-900/20 text-gray-400 hover:text-emerald-600 dark:hover:text-emerald-400 transition-colors"
                             >
                               <Pencil className="w-3.5 h-3.5" />
                             </button>

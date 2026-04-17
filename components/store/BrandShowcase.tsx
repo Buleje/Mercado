@@ -63,8 +63,8 @@ export default function BrandShowcase() {
               href={`/tienda?marca=${encodeURIComponent(brand.name)}`}
               className={cn(
                 "snap-start shrink-0 flex flex-col items-center gap-2 px-5 py-4 rounded-2xl",
-                "border border-gray-100 dark:border-card-border",
-                "hover:shadow-lg hover:scale-105 transition-all duration-300 cursor-pointer",
+                "border border-[var(--rule-soft)] dark:border-card-border",
+                "hover:shadow-lg hover:scale-105 transition-all duration-[var(--dur-base)] cursor-pointer",
                 "min-w-[100px]"
               )}
               style={{ backgroundColor: brand.bg + "40" }}
@@ -78,7 +78,7 @@ export default function BrandShowcase() {
               </div>
               <div className="text-center">
                 <p className="text-xs font-bold text-gray-900 dark:text-foreground whitespace-nowrap">{brand.name}</p>
-                <p className="text-[10px] text-gray-500">{brand.count} producto{brand.count !== 1 ? "s" : ""}</p>
+                <p className="text-[length:var(--ts-2xs)] text-gray-500">{brand.count} producto{brand.count !== 1 ? "s" : ""}</p>
               </div>
             </Link>
           ))}

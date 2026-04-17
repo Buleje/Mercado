@@ -4,6 +4,7 @@ import { requireAdmin } from "@/lib/require-admin";
 import { toErrorPayload, newTraceId, ApiError } from "@/lib/api-error";
 import { LoyaltyDB } from "@/lib/db/loyalty.db";
 import { prisma } from "@/lib/prisma";
+import { logger } from "@/lib/logger";
 
 /**
  * Marketplace loyalty route — TD-030 / ADR-024
@@ -136,7 +137,7 @@ export async function POST(req: NextRequest) {
     const auth = await requireAdmin(req, ["admin", "manager", "cajero"]);
     if (auth instanceof NextResponse) return auth;
 
-    const body = await req.json().catch(() => null);
+    const body = await req.json().catch((err) => { logger.error("[marketplace/loyalty] parse JSON body failed", { error: String(err) }); return null; });
     if (!body || typeof body !== "object") {
       return NextResponse.json({ error: "Body JSON requerido" }, { status: 400 });
     }

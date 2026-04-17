@@ -31,7 +31,7 @@ interface PendingChange {
 function Toast({ msg, type }: { msg: string; type: "success" | "error" }) {
   return (
     <div className={cn(
-      "fixed bottom-6 right-6 z-50 flex items-center gap-2 px-4 py-3 rounded-xl shadow-lg text-sm font-semibold",
+      "fixed bottom-6 right-6 z-50 flex items-center gap-2 px-4 py-3 rounded-xl text-sm font-semibold",
       type === "success" ? "bg-emerald-600 text-white" : "bg-red-600 text-white"
     )}>
       {type === "success" ? <CheckCircle className="h-4 w-4 shrink-0" /> : <XCircle className="h-4 w-4 shrink-0" />}
@@ -55,7 +55,7 @@ function ConfirmModal({
 }) {
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 px-4">
-      <div className="bg-white dark:bg-gray-900 rounded-2xl p-6 w-full max-w-sm shadow-xl">
+      <div className="bg-white dark:bg-gray-900 rounded-xl p-6 w-full max-w-sm">
         <h3 className="text-lg font-bold text-gray-900 dark:text-gray-100 mb-2">Confirmar cambios</h3>
         <p className="text-sm text-gray-600 dark:text-gray-400 mb-6">
           Se aplicarán <span className="font-semibold text-[#00B4A6]">{changeCount}</span> cambios a productos.
@@ -65,14 +65,14 @@ function ConfirmModal({
           <button
             onClick={onCancel}
             disabled={applying}
-            className="flex-1 py-2.5 rounded-xl border border-gray-300 dark:border-gray-700 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 disabled:opacity-50"
+            className="flex-1 py-2.5 rounded-lg border border-[var(--rule-base)] text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 disabled:opacity-50"
           >
             Cancelar
           </button>
           <button
             onClick={onConfirm}
             disabled={applying}
-            className="flex-1 py-2.5 rounded-xl bg-[#00B4A6] text-white text-sm font-medium hover:bg-[#00a090] disabled:opacity-50 flex items-center justify-center gap-2"
+            className="flex-1 py-2.5 rounded-lg bg-[#00B4A6] text-white text-sm font-medium hover:bg-[#00a090] disabled:opacity-50 flex items-center justify-center gap-2"
           >
             {applying && <Loader2 className="h-4 w-4 animate-spin" />}
             Confirmar
@@ -288,7 +288,7 @@ export default function BulkPriceEditorTab() {
   }
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-6">
       {/* Barra de herramientas */}
       <div className="flex flex-wrap items-center gap-2">
         <div className="relative flex-1 min-w-[160px]">
@@ -298,7 +298,7 @@ export default function BulkPriceEditorTab() {
             placeholder="Buscar producto..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="w-full pl-9 pr-4 py-2.5 rounded-xl border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-900 text-sm focus:outline-none focus:ring-2 focus:ring-[#00B4A6]"
+            className="w-full pl-9 pr-4 py-2.5 rounded-lg border border-[var(--rule-base)] bg-white dark:bg-gray-900 text-sm focus:outline-none focus:ring-2 focus:ring-[#00B4A6]"
           />
           {search && (
             <button onClick={() => setSearch("")} className="absolute right-3 top-1/2 -translate-y-1/2">
@@ -310,7 +310,7 @@ export default function BulkPriceEditorTab() {
         <select
           value={categoryFilter}
           onChange={(e) => setCategoryFilter(e.target.value)}
-          className="py-2.5 px-3 rounded-xl border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-900 text-sm focus:outline-none focus:ring-2 focus:ring-[#00B4A6]"
+          className="py-2.5 px-3 rounded-lg border border-[var(--rule-base)] bg-white dark:bg-gray-900 text-sm focus:outline-none focus:ring-2 focus:ring-[#00B4A6]"
         >
           {categories.map((c) => (
             <option key={c} value={c}>{c === "todas" ? "Todas las categorías" : c}</option>
@@ -322,34 +322,34 @@ export default function BulkPriceEditorTab() {
           placeholder="Precio mín"
           value={minPrice}
           onChange={(e) => setMinPrice(e.target.value)}
-          className="w-28 py-2.5 px-3 rounded-xl border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-900 text-sm focus:outline-none focus:ring-2 focus:ring-[#00B4A6]"
+          className="w-28 py-2.5 px-3 rounded-lg border border-[var(--rule-base)] bg-white dark:bg-gray-900 text-sm focus:outline-none focus:ring-2 focus:ring-[#00B4A6]"
         />
         <input
           type="number"
           placeholder="Precio máx"
           value={maxPrice}
           onChange={(e) => setMaxPrice(e.target.value)}
-          className="w-28 py-2.5 px-3 rounded-xl border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-900 text-sm focus:outline-none focus:ring-2 focus:ring-[#00B4A6]"
+          className="w-28 py-2.5 px-3 rounded-lg border border-[var(--rule-base)] bg-white dark:bg-gray-900 text-sm focus:outline-none focus:ring-2 focus:ring-[#00B4A6]"
         />
 
         <div className="flex gap-2 ml-auto">
           <input ref={fileInputRef} type="file" accept=".csv" onChange={handleImport} className="hidden" />
           <button
             onClick={() => fileInputRef.current?.click()}
-            className="flex items-center gap-1.5 px-3 py-2.5 rounded-xl border border-gray-300 dark:border-gray-700 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800"
+            className="flex items-center gap-1.5 px-3 py-2.5 rounded-lg border border-[var(--rule-base)] text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800"
           >
             <Upload className="h-4 w-4" /> Importar CSV
           </button>
           <button
             onClick={exportCsv}
-            className="flex items-center gap-1.5 px-3 py-2.5 rounded-xl border border-gray-300 dark:border-gray-700 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800"
+            className="flex items-center gap-1.5 px-3 py-2.5 rounded-lg border border-[var(--rule-base)] text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800"
           >
             <Download className="h-4 w-4" /> Exportar CSV
           </button>
           <button
             onClick={() => changeCount > 0 && setShowConfirm(true)}
             disabled={changeCount === 0}
-            className="flex items-center gap-1.5 px-4 py-2.5 rounded-xl bg-[#00B4A6] text-white text-sm font-medium hover:bg-[#00a090] disabled:opacity-40"
+            className="flex items-center gap-1.5 px-4 py-2.5 rounded-lg bg-[#00B4A6] text-white text-sm font-medium hover:bg-[#00a090] disabled:opacity-40"
           >
             Aplicar cambios {changeCount > 0 && `(${changeCount})`}
           </button>
@@ -360,7 +360,7 @@ export default function BulkPriceEditorTab() {
       {progress > 0 && (
         <div className="h-1.5 w-full bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
           <div
-            className="h-full bg-[#00B4A6] transition-all duration-300"
+            className="h-full bg-[#00B4A6] transition-all duration-[var(--dur-base)]"
             style={{ width: `${progress}%` }}
           />
         </div>
@@ -375,16 +375,16 @@ export default function BulkPriceEditorTab() {
       )}
 
       {/* Tabla */}
-      <div className="overflow-x-auto rounded-xl border border-gray-200 dark:border-gray-800">
+      <div className="overflow-x-auto rounded-xl border border-[var(--rule-base)]">
         <table className="min-w-full text-sm">
           <thead>
-            <tr className="bg-gray-50 dark:bg-gray-900 border-b border-gray-200 dark:border-gray-800">
+            <tr className="bg-gray-50 dark:bg-gray-900 border-b border-[var(--rule-base)]">
               <th className="px-4 py-3 text-left">
                 <input
                   type="checkbox"
                   checked={filtered.length > 0 && selected.size === filtered.length}
                   onChange={toggleSelectAll}
-                  className="rounded border-gray-300"
+                  className="rounded border-[var(--rule-base)]"
                 />
               </th>
               <th className="px-4 py-3 text-left text-gray-500 dark:text-gray-400 font-medium">ID</th>
@@ -422,7 +422,7 @@ export default function BulkPriceEditorTab() {
                         type="checkbox"
                         checked={selected.has(p.id)}
                         onChange={() => toggleSelect(p.id)}
-                        className="rounded border-gray-300"
+                        className="rounded border-[var(--rule-base)]"
                       />
                     </td>
                     <td className="px-4 py-3 text-gray-500 dark:text-gray-400">{p.id}</td>
@@ -468,7 +468,7 @@ export default function BulkPriceEditorTab() {
                             });
                           }
                         }}
-                        className="w-24 px-2 py-1.5 rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-900 text-sm focus:outline-none focus:ring-2 focus:ring-[#00B4A6]"
+                        className="w-24 px-2 py-1.5 rounded-lg border border-[var(--rule-base)] bg-white dark:bg-gray-900 text-sm focus:outline-none focus:ring-2 focus:ring-[#00B4A6]"
                       />
                     </td>
                     <td className="px-4 py-3">
@@ -481,7 +481,7 @@ export default function BulkPriceEditorTab() {
                           const v = parseInt(e.target.value);
                           if (!isNaN(v)) applyChange(p.id, "stock", v);
                         }}
-                        className="w-20 px-2 py-1.5 rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-900 text-sm focus:outline-none focus:ring-2 focus:ring-[#00B4A6]"
+                        className="w-20 px-2 py-1.5 rounded-lg border border-[var(--rule-base)] bg-white dark:bg-gray-900 text-sm focus:outline-none focus:ring-2 focus:ring-[#00B4A6]"
                       />
                     </td>
                     <td className="px-4 py-3">

@@ -1,7 +1,11 @@
 "use client";
 
 import { useState, useEffect, useMemo } from "react";
-import { Wallet, Loader2, Plus, Trash2, Calendar, TrendingUp, X, BarChart2 } from "lucide-react";
+import {
+  Wallet, Loader2, Plus, Trash2, Calendar, TrendingUp, X, BarChart2,
+  Home, Lightbulb, Users, Truck, Sparkles, Megaphone, Wrench, Package,
+  type LucideIcon,
+} from "lucide-react";
 import { cn } from "@/lib/utils";
 
 type Expense = { id: string; category: string; description: string; amount: number; date: string; recurring: boolean };
@@ -18,12 +22,18 @@ const CATEGORIES = [
   { value: "otros", label: "Otros" },
 ];
 
-function catEmoji(category: string): string {
-  const map: Record<string, string> = {
-    alquiler: "🏠", servicios: "💡", personal: "👥", transporte: "🚚",
-    limpieza: "🧹", marketing: "📢", mantenimiento: "🔧", otros: "📦",
+function catIcon(category: string): LucideIcon {
+  const map: Record<string, LucideIcon> = {
+    alquiler: Home,
+    servicios: Lightbulb,
+    personal: Users,
+    transporte: Truck,
+    limpieza: Sparkles,
+    marketing: Megaphone,
+    mantenimiento: Wrench,
+    otros: Package,
   };
-  return map[category] ?? "📦";
+  return map[category] ?? Package;
 }
 
 export default function ExpensesTab() {
@@ -120,22 +130,22 @@ export default function ExpensesTab() {
     <div className="space-y-3 sm:space-y-6">
       <div className="flex items-center justify-between flex-wrap gap-3">
         <h2 className="text-xl font-extrabold text-gray-900 dark:text-foreground flex flex-wrap items-center gap-2"><Wallet className="h-6 w-6 text-primary" />Control de Gastos</h2>
-        <button onClick={() => setShowForm(true)} className="px-2 sm:px-4 py-1.5 sm:py-2 bg-primary text-white rounded-xl text-sm font-bold hover:bg-primary/90 transition flex flex-wrap items-center gap-2"><Plus className="h-4 w-4" />Nuevo Gasto</button>
+        <button onClick={() => setShowForm(true)} className="px-2 sm:px-4 py-1.5 sm:py-2 bg-primary text-white rounded-lg text-sm font-bold hover:bg-primary/90 transition flex flex-wrap items-center gap-2"><Plus className="h-4 w-4" />Nuevo Gasto</button>
       </div>
 
       {/* Date filter + stats */}
       <div className="grid grid-cols-1 sm:grid-cols-4 gap-2 sm:gap-4">
-        <div className="sm:col-span-2 flex flex-wrap items-center gap-2 bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl p-3">
+        <div className="sm:col-span-2 flex flex-wrap items-center gap-2 bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl p-3">
           <Calendar className="h-4 w-4 text-gray-400 shrink-0" />
           <input type="date" value={from} onChange={e => setFrom(e.target.value)} className="bg-transparent text-sm flex-1 min-w-0" />
           <span className="text-gray-300">→</span>
           <input type="date" value={to} onChange={e => setTo(e.target.value)} className="bg-transparent text-sm flex-1 min-w-0" />
         </div>
-        <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl p-4 text-center">
+        <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl p-4 text-center">
           <p className="text-xl sm:text-2xl font-extrabold text-red-600">S/{totalPeriod.toFixed(2)}</p>
           <p className="text-xs text-gray-400">Este periodo</p>
         </div>
-        <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl p-4 text-center">
+        <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl p-4 text-center">
           <p className="text-xl sm:text-2xl font-extrabold text-gray-900 dark:text-foreground">S/{totalAll.toFixed(2)}</p>
           <p className="text-xs text-gray-400">Total histórico</p>
         </div>
@@ -145,9 +155,9 @@ export default function ExpensesTab() {
       {summary.length > 0 && (
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
           {summary.map(s => (
-            <div key={s.category} className={cn("bg-white dark:bg-card border rounded-2xl p-3 text-center", s.category === maxCat?.category ? "border-red-300 dark:border-red-700" : "border-gray-200 dark:border-card-border")}>
+            <div key={s.category} className={cn("bg-white dark:bg-card border rounded-xl p-3 text-center", s.category === maxCat?.category ? "border-red-300 dark:border-red-700" : "border-[var(--rule-base)] dark:border-card-border")}>
               <p className="font-extrabold text-sm text-gray-900 dark:text-foreground">S/{s.total.toFixed(0)}</p>
-              <p className="text-[10px] text-gray-400 capitalize">{s.category} ({s.count})</p>
+              <p className="text-[length:var(--ts-2xs)] text-gray-400 capitalize">{s.category} ({s.count})</p>
               {totalAll > 0 && <div className="mt-1 h-1 bg-gray-100 dark:bg-surface rounded-full overflow-hidden"><div className="h-full bg-primary rounded-full" style={{ width: `${(s.total / totalAll) * 100}%` }} /></div>}
             </div>
           ))}
@@ -158,7 +168,7 @@ export default function ExpensesTab() {
       {monthlyExpenseData.some(m => m.total > 0) && (() => {
         const maxVal = Math.max(...monthlyExpenseData.map(m => m.total), 1);
         return (
-          <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl p-4 shadow-sm">
+          <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl p-4 ">
             <div className="flex flex-wrap items-center gap-2 mb-4">
               <BarChart2 className="h-4 w-4 text-primary" />
               <h3 className="font-extrabold text-sm text-gray-900 dark:text-foreground">Gastos mensuales (6 meses)</h3>
@@ -169,7 +179,7 @@ export default function ExpensesTab() {
                 const isCurrent = i === 5;
                 return (
                   <div key={i} className="flex flex-col items-center gap-1 flex-1 group">
-                    <span className="text-[9px] font-bold text-gray-400 dark:text-muted opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap">
+                    <span className="text-[length:var(--ts-2xs)] font-bold text-gray-400 dark:text-muted opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap">
                       S/{m.total.toFixed(0)}
                     </span>
                     <div
@@ -177,7 +187,7 @@ export default function ExpensesTab() {
                       style={{ height: `${barH}px`, opacity: m.total > 0 ? 1 : 0.25 }}
                       title={`${m.label}: S/${m.total.toFixed(2)}`}
                     />
-                    <p className="text-[10px] text-gray-400 dark:text-muted capitalize">{m.label}</p>
+                    <p className="text-[length:var(--ts-2xs)] text-gray-400 dark:text-muted capitalize">{m.label}</p>
                   </div>
                 );
               })}
@@ -189,27 +199,27 @@ export default function ExpensesTab() {
       {/* Form modal */}
       {showForm && (
         <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4" onClick={() => setShowForm(false)}>
-          <div className="bg-white dark:bg-card rounded-2xl w-full max-w-md p-3 sm:p-6 space-y-4" onClick={e => e.stopPropagation()}>
+          <div className="bg-white dark:bg-card rounded-xl w-full max-w-md p-3 sm:p-6 space-y-4" onClick={e => e.stopPropagation()}>
             <div className="flex items-center justify-between">
               <h3 className="font-extrabold text-lg">Registrar Gasto</h3>
               <button onClick={() => setShowForm(false)}><X className="h-5 w-5 text-gray-400" /></button>
             </div>
-            <select value={form.category} onChange={e => setForm(f => ({ ...f, category: e.target.value }))} className="w-full px-3 py-2 border border-gray-200 dark:border-card-border rounded-xl bg-white dark:bg-surface text-sm">
+            <select value={form.category} onChange={e => setForm(f => ({ ...f, category: e.target.value }))} className="w-full px-3 py-2 border border-[var(--rule-base)] dark:border-card-border rounded-lg bg-white dark:bg-surface text-sm">
               {CATEGORIES.map(c => <option key={c.value} value={c.value}>{c.label}</option>)}
             </select>
-            <input value={form.description} onChange={e => setForm(f => ({ ...f, description: e.target.value }))} placeholder="Descripción del gasto" className="w-full px-3 py-2 border border-gray-200 dark:border-card-border rounded-xl bg-white dark:bg-surface text-sm" />
+            <input value={form.description} onChange={e => setForm(f => ({ ...f, description: e.target.value }))} placeholder="Descripción del gasto" className="w-full px-3 py-2 border border-[var(--rule-base)] dark:border-card-border rounded-lg bg-white dark:bg-surface text-sm" />
             <div className="flex flex-wrap gap-3">
               <div className="relative flex-1">
                 <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm">S/</span>
-                <input type="number" step="0.01" value={form.amount} onChange={e => setForm(f => ({ ...f, amount: e.target.value }))} placeholder="0.00" className="w-full pl-8 pr-3 py-2 border border-gray-200 dark:border-card-border rounded-xl bg-white dark:bg-surface text-sm" />
+                <input type="number" step="0.01" value={form.amount} onChange={e => setForm(f => ({ ...f, amount: e.target.value }))} placeholder="0.00" className="w-full pl-8 pr-3 py-2 border border-[var(--rule-base)] dark:border-card-border rounded-lg bg-white dark:bg-surface text-sm" />
               </div>
-              <input type="date" value={form.date} onChange={e => setForm(f => ({ ...f, date: e.target.value }))} className="px-3 py-2 border border-gray-200 dark:border-card-border rounded-xl bg-white dark:bg-surface text-sm" />
+              <input type="date" value={form.date} onChange={e => setForm(f => ({ ...f, date: e.target.value }))} className="px-3 py-2 border border-[var(--rule-base)] dark:border-card-border rounded-lg bg-white dark:bg-surface text-sm" />
             </div>
             <label className="flex flex-wrap items-center gap-2 text-sm">
               <input type="checkbox" checked={form.recurring} onChange={e => setForm(f => ({ ...f, recurring: e.target.checked }))} className="rounded" />
               Gasto recurrente (mensual)
             </label>
-            <button onClick={add} disabled={saving || !form.description || !form.amount} className="w-full py-2.5 bg-primary text-white rounded-xl font-bold text-sm hover:bg-primary/90 transition disabled:opacity-50 flex flex-wrap items-center justify-center gap-2">
+            <button onClick={add} disabled={saving || !form.description || !form.amount} className="w-full py-2.5 bg-primary text-white rounded-lg font-bold text-sm hover:bg-primary/90 transition disabled:opacity-50 flex flex-wrap items-center justify-center gap-2">
               {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Plus className="h-4 w-4" />}Guardar Gasto
             </button>
           </div>
@@ -218,24 +228,29 @@ export default function ExpensesTab() {
 
       {/* Expenses list */}
       {expenses.length === 0 ? (
-        <div className="text-center py-12 bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl">
+        <div className="text-center py-12 bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl">
           <TrendingUp className="h-12 w-12 text-gray-300 mx-auto mb-3" />
           <p className="font-bold text-gray-900 dark:text-foreground">Sin gastos registrados</p>
           <p className="text-sm text-gray-400">Agrega un gasto para empezar</p>
         </div>
       ) : (
         <div className="space-y-2 max-h-100 overflow-y-auto">
-          {expenses.map(e => (
-            <div key={e.id} className="flex flex-wrap items-center gap-3 bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl px-2 sm:px-4 py-2 sm:py-3">
-              <span className="text-xl">{catEmoji(e.category)}</span>
+          {expenses.map(e => {
+            const CatIcon = catIcon(e.category);
+            return (
+            <div key={e.id} className="flex flex-wrap items-center gap-3 bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl px-2 sm:px-4 py-2 sm:py-3">
+              <div className="h-8 w-8 rounded-lg bg-gray-50 dark:bg-gray-950 border border-[var(--rule-base)] flex items-center justify-center text-gray-700 dark:text-gray-200 shrink-0">
+                <CatIcon className="h-4 w-4" strokeWidth={1.5} />
+              </div>
               <div className="flex-1 min-w-0">
                 <p className="font-bold text-sm text-gray-900 dark:text-foreground truncate">{e.description}</p>
-                <p className="text-xs text-gray-400">{new Date(e.date).toLocaleDateString("es-PE")} · <span className="capitalize">{e.category}</span>{e.recurring && " · 🔄 Recurrente"}</p>
+                <p className="text-xs text-gray-400">{new Date(e.date).toLocaleDateString("es-PE")} · <span className="capitalize">{e.category}</span>{e.recurring && " · Recurrente"}</p>
               </div>
               <p className="font-extrabold text-red-600 shrink-0">-S/{e.amount.toFixed(2)}</p>
               <button onClick={() => remove(e.id)} className="text-gray-300 hover:text-red-500 transition"><Trash2 className="h-4 w-4" /></button>
             </div>
-          ))}
+            );
+          })}
         </div>
       )}
     </div>

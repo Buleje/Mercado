@@ -148,7 +148,7 @@ export default function VentasHeatmap() {
   // ── Loading ──
   if (loading) {
     return (
-      <div className="rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 p-4">
+      <div className="rounded-xl border border-[var(--rule-base)] bg-white dark:bg-gray-900 p-4">
         <div className="h-5 w-48 bg-gray-200 dark:bg-gray-700 rounded mb-4 animate-pulse" />
         <div className="space-y-1">
           {Array.from({ length: 7 }).map((_, i) => (
@@ -183,7 +183,7 @@ export default function VentasHeatmap() {
   // ── Empty ──
   if (grid.size === 0) {
     return (
-      <div className="rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 p-6 flex items-center justify-center h-64">
+      <div className="rounded-xl border border-[var(--rule-base)] bg-white dark:bg-gray-900 p-6 flex items-center justify-center h-64">
         <p className="text-sm text-gray-500 dark:text-gray-400">No hay datos para el mapa de calor</p>
       </div>
     );
@@ -192,7 +192,7 @@ export default function VentasHeatmap() {
   const _insightText = insight || `Tu hora pico es los ${DOW_LABELS[peakDow]} a las ${formatHour(peakHour)}. Asegurate de tener personal suficiente en ese horario.`;
 
   return (
-    <div className="rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 p-4">
+    <div className="rounded-xl border border-[var(--rule-base)] bg-white dark:bg-gray-900 p-4">
       {/* Header + period pills */}
       <div className="flex items-center justify-between mb-4">
         <h3 className="text-sm font-semibold text-gray-900 dark:text-white">
@@ -224,7 +224,7 @@ export default function VentasHeatmap() {
             {HOURS.map((h) => (
               <div
                 key={h}
-                className="w-9 text-center text-[10px] font-mono text-gray-400 dark:text-gray-500"
+                className="w-9 text-center text-[length:var(--ts-2xs)] font-mono text-gray-400 dark:text-gray-500"
               >
                 {formatHour(h)}
               </div>
@@ -245,7 +245,7 @@ export default function VentasHeatmap() {
                   <div
                     key={hour}
                     className={cn(
-                      "w-9 h-9 rounded-md transition-all cursor-default hover:ring-2 hover:ring-[#00B4A6] hover:shadow-md",
+                      "w-9 h-9 rounded-md transition-all cursor-default hover:ring-2 hover:ring-[#00B4A6] hover:shadow-sm",
                       getColor(avgTotal, maxValue)
                     )}
                     onMouseEnter={(e) => {
@@ -268,7 +268,7 @@ export default function VentasHeatmap() {
               className="fixed z-50 pointer-events-none"
               style={{ left: hoveredCell.x, top: hoveredCell.y - 8, transform: "translate(-50%, -100%)" }}
             >
-              <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg border border-gray-100 dark:border-gray-700 px-4 py-3 min-w-[160px]">
+              <div className="bg-white dark:bg-gray-800 rounded-xl border border-[var(--rule-base)] px-4 py-3 min-w-[160px]">
                 <p className="text-xs font-semibold text-gray-900 dark:text-white mb-1.5">
                   {DOW_LABELS[hoveredCell.dow]} {formatHour(hoveredCell.hour)}
                 </p>
@@ -288,7 +288,7 @@ export default function VentasHeatmap() {
 
       {/* Legend */}
       <div className="flex items-center justify-center gap-2 mt-5">
-        <span className="text-[10px] text-gray-400 dark:text-gray-500 font-medium">Menor</span>
+        <span className="text-[length:var(--ts-2xs)] text-gray-400 dark:text-gray-500 font-medium">Menor</span>
         <div className="flex w-48 h-4 rounded-full overflow-hidden">
           <div className="flex-1 bg-gray-50 dark:bg-gray-800" />
           <div className="flex-1 bg-emerald-100 dark:bg-emerald-900/30" />
@@ -297,7 +297,7 @@ export default function VentasHeatmap() {
           <div className="flex-1 bg-emerald-700 dark:bg-emerald-400" />
           <div className="flex-1 bg-emerald-900 dark:bg-emerald-300" />
         </div>
-        <span className="text-[10px] text-gray-400 dark:text-gray-500 font-medium">Mayor</span>
+        <span className="text-[length:var(--ts-2xs)] text-gray-400 dark:text-gray-500 font-medium">Mayor</span>
       </div>
 
       {/* Mejora 20: Analisis de horario optimo */}
@@ -325,11 +325,11 @@ export default function VentasHeatmap() {
         const bestIsQuincena = bestSlot.dow === 1 || bestSlot.dow === 3; // Lun o Mie (quincenas tipicas)
 
         return (
-          <div className="mt-4 bg-blue-50 dark:bg-blue-900/20 border-l-4 border-blue-500 p-4 rounded-r-lg space-y-3">
+          <div className="mt-4 bg-emerald-50 dark:bg-emerald-900/20 border-l-4 border-emerald-500 p-4 rounded-r-lg space-y-3">
             <div className="flex items-center gap-2">
-              <span className="text-sm font-bold text-blue-800 dark:text-blue-300">Analisis de Horario</span>
+              <span className="text-sm font-bold text-emerald-800 dark:text-emerald-300">Analisis de Horario</span>
             </div>
-            <div className="space-y-2 text-xs text-blue-800 dark:text-blue-300">
+            <div className="space-y-2 text-xs text-emerald-800 dark:text-emerald-300">
               {bestSlot.avg > 0 && (
                 <p>
                   <span className="font-bold">Tu mejor horario:</span> {DOW_LABELS[bestSlot.dow]} a las {formatHour(bestSlot.hour)} — promedio S/ {bestSlot.avg.toFixed(0)} ({bestSlot.count} ventas)
@@ -341,12 +341,12 @@ export default function VentasHeatmap() {
                 </p>
               )}
               {worstSlot.avg > 0 && isBusinessHour(worstSlot.hour) && (
-                <p className="bg-blue-100 dark:bg-blue-800/30 rounded-lg p-2">
+                <p className="bg-emerald-100 dark:bg-emerald-800/30 rounded-lg p-2">
                   <span className="font-bold">Sugerencia:</span> Considera una promocion especial los {DOW_LABELS[worstSlot.dow]} a las {formatHour(worstSlot.hour)} para impulsar ventas
                 </p>
               )}
               {bestIsQuincena && bestSlot.avg > 0 && (
-                <p className="bg-blue-100 dark:bg-blue-800/30 rounded-lg p-2">
+                <p className="bg-emerald-100 dark:bg-emerald-800/30 rounded-lg p-2">
                   <span className="font-bold">Tus picos coinciden con inicio de semana — prepara stock extra esos dias</span>
                 </p>
               )}

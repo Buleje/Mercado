@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { Wallet, Store, Check, ChevronDown, ArrowUpRight } from "lucide-react";
 
 export const metadata: Metadata = {
   title: "Planes y Precios — Buleje | Software ERP para Bodegas",
@@ -95,8 +96,9 @@ export default function PlanesPage() {
       {/* Hero */}
       <section className="bg-linear-to-b from-[#060e08] to-[#0a1f0d] text-white py-16 sm:py-24">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-          <span className="inline-flex items-center gap-2 text-xs font-bold uppercase tracking-widest text-[#00B4A6] mb-4 bg-[#00B4A6]/10 rounded-full px-4 py-1.5">
-            💰 Planes y Precios
+          <span className="inline-flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-[0.25em] text-white/55 mb-4">
+            <Wallet className="h-3 w-3" strokeWidth={2} />
+            Planes y Precios
           </span>
           <h1 className="text-4xl sm:text-5xl font-extrabold">
             Empieza{" "}
@@ -142,7 +144,11 @@ export default function PlanesPage() {
                   {plan.features.map((f) => (
                     <li key={f.text} className="flex items-start gap-2.5 text-sm">
                       <span className={`mt-0.5 shrink-0 ${f.included ? "text-[#00B4A6]" : "text-gray-300 dark:text-gray-600"}`}>
-                        {f.included ? "✅" : "—"}
+                        {f.included ? (
+                          <Check className="h-4 w-4" strokeWidth={2} />
+                        ) : (
+                          <span aria-hidden="true">—</span>
+                        )}
                       </span>
                       <span className={f.included ? "text-gray-700 dark:text-gray-200" : "text-gray-400 dark:text-gray-500"}>
                         {f.text}
@@ -190,9 +196,12 @@ export default function PlanesPage() {
           <div className="space-y-3">
             {faqs.map((f) => (
               <details key={f.q} className="group bg-gray-50 dark:bg-gray-900 rounded-xl border border-gray-100 dark:border-gray-800 overflow-hidden">
-                <summary className="flex items-center justify-between cursor-pointer p-5 text-left font-semibold text-gray-900 dark:text-white hover:text-[#00B4A6] transition-colors">
+                <summary className="flex items-center justify-between cursor-pointer p-5 text-left font-semibold text-gray-900 dark:text-white hover:text-[#00B4A6] transition-colors list-none">
                   <span>{f.q}</span>
-                  <span className="ml-3 text-gray-400 group-open:rotate-180 transition-transform">▼</span>
+                  <ChevronDown
+                    className="ml-3 h-4 w-4 shrink-0 text-gray-400 group-open:rotate-180 transition-transform"
+                    strokeWidth={1.75}
+                  />
                 </summary>
                 <div className="px-5 pb-5 text-sm text-gray-600 dark:text-gray-300 leading-relaxed">
                   {f.a}
@@ -216,9 +225,11 @@ export default function PlanesPage() {
           <div className="mt-8 flex flex-wrap justify-center gap-4">
             <Link
               href="/marketplace/registrar"
-              className="inline-flex items-center gap-2 bg-[#00B4A6] text-white font-bold px-8 py-4 rounded-xl hover:bg-[#009b8f] transition-colors shadow-lg text-lg"
+              className="inline-flex items-center gap-2 bg-white text-gray-900 font-bold px-6 py-3 rounded-full hover:bg-gray-100 transition-colors text-sm"
             >
-              🏪 Registrar mi tienda
+              <Store className="h-4 w-4" strokeWidth={1.75} />
+              Registrar mi tienda
+              <ArrowUpRight className="h-4 w-4" strokeWidth={2} />
             </Link>
             <Link
               href="/"

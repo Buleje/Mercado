@@ -609,30 +609,30 @@ export default function ReportsTab() {
           const isFullMetrics = r.type === "metricas-completas";
           const isPdfOnly = r.pdfOnly;
           return (
-            <div key={r.type} className={r.type === "informe-mensual" ? "sm:col-span-2 bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-blue-950/30 dark:to-indigo-950/30 border border-blue-200 dark:border-blue-800 rounded-2xl p-3 sm:p-6 flex flex-col" : "bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl p-3 sm:p-6 flex flex-col"}>
+            <div key={r.type} className={r.type === "informe-mensual" ? "sm:col-span-2 bg-[var(--surface-sunken)] border border-[var(--rule-base)] rounded-xl p-3 sm:p-6 flex flex-col" : "bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl p-3 sm:p-6 flex flex-col"}>
               <div className="flex flex-wrap items-center gap-3 mb-2">
-                <div className={r.type === "informe-mensual" ? "p-2 rounded-xl bg-blue-600/10" : "p-2 rounded-xl bg-primary/10"}>
-                  <Icon className={r.type === "informe-mensual" ? "h-6 w-6 text-blue-600" : "h-6 w-6 text-primary"} />
+                <div className={r.type === "informe-mensual" ? "p-2 rounded-xl bg-emerald-600/10" : "p-2 rounded-xl bg-primary/10"}>
+                  <Icon className={r.type === "informe-mensual" ? "h-6 w-6 text-emerald-600" : "h-6 w-6 text-primary"} />
                 </div>
                 <h3 className="font-extrabold text-gray-900 dark:text-foreground">{r.label}</h3>
               </div>
               <p className="text-sm text-gray-500 dark:text-muted flex-1">{r.desc}</p>
               <div className="mt-4 flex flex-wrap gap-2">
                 {!isPdfOnly && (
-                  <button onClick={() => generateCSV(r.type)} disabled={!!generating} className="flex-1 flex flex-wrap items-center justify-center gap-2 bg-primary text-white px-2 sm:px-4 py-1.5 sm:py-2 rounded-xl text-sm font-bold hover:bg-primary/90 transition disabled:opacity-50">
+                  <button onClick={() => generateCSV(r.type)} disabled={!!generating} className="flex-1 flex flex-wrap items-center justify-center gap-2 bg-primary text-white px-2 sm:px-4 py-1.5 sm:py-2 rounded-lg text-sm font-bold hover:bg-primary/90 transition disabled:opacity-50">
                     {isGenerating ? <Loader2 className="h-4 w-4 animate-spin" /> : <Download className="h-4 w-4" />}
                     {isGenerating ? "Generando..." : "CSV"}
                   </button>
                 )}
                 {!isFullMetrics && (
-                  <button onClick={() => generatePDF(r.type)} disabled={!!generating} className={isPdfOnly ? "flex-1 flex items-center justify-center gap-2 bg-blue-600 text-white px-2 sm:px-4 py-1.5 sm:py-2 rounded-xl text-sm font-bold hover:bg-blue-700 transition disabled:opacity-50" : "flex-1 flex items-center justify-center gap-2 bg-blue-600 text-white px-2 sm:px-4 py-1.5 sm:py-2 rounded-xl text-sm font-bold hover:bg-blue-700 transition disabled:opacity-50"}>
+                  <button onClick={() => generatePDF(r.type)} disabled={!!generating} className={isPdfOnly ? "flex-1 flex items-center justify-center gap-2 bg-emerald-600 text-white px-2 sm:px-4 py-1.5 sm:py-2 rounded-lg text-sm font-bold hover:bg-emerald-700 transition disabled:opacity-50" : "flex-1 flex items-center justify-center gap-2 bg-emerald-600 text-white px-2 sm:px-4 py-1.5 sm:py-2 rounded-lg text-sm font-bold hover:bg-emerald-700 transition disabled:opacity-50"}>
                     {isGenerating ? <Loader2 className="h-4 w-4 animate-spin" /> : <Printer className="h-4 w-4" />}
                     {isGenerating ? "Generando..." : isPdfOnly ? "Generar Informe PDF" : "PDF"}
                   </button>
                 )}
               </div>
               {isFullMetrics && (
-                <p className="text-[10px] text-gray-400 dark:text-muted text-center mt-2">
+                <p className="text-[length:var(--ts-2xs)] text-gray-400 dark:text-muted text-center mt-2">
                   💼 Export completo en formato CSV. Ideal para análisis en Excel o importar a otros sistemas.
                 </p>
               )}

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getSessionPayload, SESSION, createSessionToken } from "@/lib/session";
 import { prisma } from "@/lib/prisma";
 import { z } from "zod";
+import { logger } from "@/lib/logger";
 
 export async function GET(req: NextRequest) {
   const token = req.cookies.get(SESSION.COOKIE_NAME)?.value;
@@ -22,7 +23,8 @@ export async function PATCH(req: NextRequest) {
   const payload = await getSessionPayload(token);
   if (!payload) return NextResponse.json({ error: "session expired" }, { status: 401 });
 
-  const body = await req.json();
+  const body = await req.json().catch((err) => { logger.warn("[auth/me] invalid JSON body", { error: String(err) }); return null; });
+  if (!body) return NextResponse.json({ error: "Invalid JSON" }, { status: 400 });
   const parsed = UpdateProfileSchema.safeParse(body);
   if (!parsed.success) {
     return NextResponse.json({ issues: parsed.error.issues }, { status: 400 });

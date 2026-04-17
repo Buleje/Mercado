@@ -1,6 +1,10 @@
 "use client";
 import { useState, useMemo } from "react";
-import { Star, Download, Eye } from "lucide-react";
+import {
+  Star, Download, Eye,
+  Coins, HelpCircle, TrendingDown,
+  type LucideIcon,
+} from "lucide-react";
 import { cn, exportToCSV } from "@/lib/utils";
 import type { Product as BaseProduct } from "@/types/erp";
 
@@ -9,11 +13,11 @@ type Quadrant = "estrella" | "vaca" | "interrogante" | "perro";
 type Product = Omit<BaseProduct, "id"> & { id: number; quadrant: Quadrant; revenue: number; growth: number; marketShare: number; units: number };
 
 /* ── Config ── */
-const Q_CONFIG: Record<Quadrant, { label: string; emoji: string; color: string; bg: string; desc: string }> = {
-  estrella: { label: "Estrellas", emoji: "⭐", color: "text-amber-600 dark:text-amber-400", bg: "bg-amber-50 dark:bg-amber-950/20 border-amber-200 dark:border-amber-800", desc: "Alto crecimiento + alta participación. Invertir y potenciar." },
-  vaca: { label: "Vacas Lecheras", emoji: "🐄", color: "text-emerald-600 dark:text-emerald-400", bg: "bg-emerald-50 dark:bg-emerald-950/20 border-emerald-200 dark:border-emerald-800", desc: "Bajo crecimiento + alta participación. Máximo beneficio, mínima inversión." },
-  interrogante: { label: "Interrogantes", emoji: "❓", color: "text-blue-600 dark:text-blue-400", bg: "bg-blue-50 dark:bg-blue-950/20 border-blue-200 dark:border-blue-800", desc: "Alto crecimiento + baja participación. Evaluar si invertir o descartar." },
-  perro: { label: "Perros", emoji: "🐕", color: "text-gray-600 dark:text-gray-400", bg: "bg-gray-50 dark:bg-gray-950/20 border-gray-200 dark:border-gray-800", desc: "Bajo crecimiento + baja participación. Considerar eliminar." },
+const Q_CONFIG: Record<Quadrant, { label: string; Icon: LucideIcon; color: string; bg: string; desc: string }> = {
+  estrella: { label: "Estrellas", Icon: Star, color: "text-amber-600 dark:text-amber-400", bg: "bg-amber-50 dark:bg-amber-950/20 border-amber-200 dark:border-amber-800", desc: "Alto crecimiento + alta participación. Invertir y potenciar." },
+  vaca: { label: "Vacas Lecheras", Icon: Coins, color: "text-emerald-600 dark:text-emerald-400", bg: "bg-emerald-50 dark:bg-emerald-950/20 border-emerald-200 dark:border-emerald-800", desc: "Bajo crecimiento + alta participación. Máximo beneficio, mínima inversión." },
+  interrogante: { label: "Interrogantes", Icon: HelpCircle, color: "text-emerald-600 dark:text-emerald-400", bg: "bg-emerald-50 dark:bg-emerald-950/20 border-emerald-200 dark:border-emerald-800", desc: "Alto crecimiento + baja participación. Evaluar si invertir o descartar." },
+  perro: { label: "Perros", Icon: TrendingDown, color: "text-gray-600 dark:text-gray-400", bg: "bg-gray-50 dark:bg-gray-950/20 border-[var(--rule-base)]", desc: "Bajo crecimiento + baja participación. Considerar eliminar." },
 };
 
 /* ── Seed Data ── */
@@ -52,7 +56,7 @@ export default function BCGMatrixTab() {
           </h2>
           <p className="text-sm text-gray-500 dark:text-muted mt-1">Clasifica productos por crecimiento y participación de mercado</p>
         </div>
-        <button onClick={() => exportToCSV(PRODUCTS.map(p => ({ Producto: p.name, Categoría: p.category, Ingreso: p.revenue, Crecimiento: `${p.growth}%`, Participación: `${p.marketShare}%`, Cuadrante: Q_CONFIG[p.quadrant].label })), "bcg-matrix")} className="flex flex-wrap items-center gap-2 px-2 sm:px-4 py-1.5 sm:py-2.5 rounded-xl bg-primary text-white text-sm font-bold hover:bg-primary/90 transition-colors">
+        <button onClick={() => exportToCSV(PRODUCTS.map(p => ({ Producto: p.name, Categoría: p.category, Ingreso: p.revenue, Crecimiento: `${p.growth}%`, Participación: `${p.marketShare}%`, Cuadrante: Q_CONFIG[p.quadrant].label })), "bcg-matrix")} className="flex flex-wrap items-center gap-2 px-2 sm:px-4 py-1.5 sm:py-2.5 rounded-lg bg-primary text-white text-sm font-bold hover:bg-primary/90 transition-colors">
           <Download className="h-4 w-4" /> Exportar
         </button>
       </div>
@@ -64,7 +68,7 @@ export default function BCGMatrixTab() {
           const items = grouped[q];
           const rev = items.reduce((s, p) => s + p.revenue, 0);
           return (
-            <button key={q} onClick={() => setSelectedQ(selectedQ === q ? "todas" : q)} className={cn("rounded-2xl border-2 p-3 sm:p-5 text-left transition-all hover:shadow-md", c.bg, selectedQ === q && "ring-2 ring-primary ring-offset-2 dark:ring-offset-card")}>
+            <button key={q} onClick={() => setSelectedQ(selectedQ === q ? "todas" : q)} className={cn("rounded-xl border-2 p-3 sm:p-5 text-left transition-all hover:shadow-sm", c.bg, selectedQ === q && "ring-2 ring-primary ring-offset-2 dark:ring-offset-card")}>
               <div className="flex flex-wrap items-center gap-2 mb-2">
                 <span className={cn("font-extrabold text-sm", c.color)}>{c.label}</span>
               </div>
@@ -76,18 +80,18 @@ export default function BCGMatrixTab() {
       </div>
 
       {/* Visual Matrix */}
-      <div className="bg-white dark:bg-card rounded-2xl border border-gray-200 dark:border-card-border p-3 sm:p-6">
+      <div className="bg-white dark:bg-card rounded-xl border border-[var(--rule-base)] dark:border-card-border p-3 sm:p-6">
         <h3 className="text-sm font-extrabold text-gray-900 dark:text-foreground mb-4">Mapa Visual BCG</h3>
         <div className="relative w-full aspect-square max-w-[500px] mx-auto" style={{ minHeight: 400 }}>
           {/* Axes */}
           <div className="absolute inset-0 grid grid-cols-1 sm:grid-cols-2 grid-rows-2 rounded-xl overflow-hidden">
-            <div className="border-b-2 border-r-2 border-gray-200 dark:border-card-border bg-green-50/50 dark:bg-green-950/10 flex items-center justify-center p-2">
+            <div className="border-b-2 border-r-2 border-[var(--rule-base)] dark:border-card-border bg-green-50/50 dark:bg-green-950/10 flex items-center justify-center p-2">
               <span className="text-sm font-semibold text-green-600/40 dark:text-green-400/40">Estrellas</span>
             </div>
-            <div className="border-b-2 border-gray-200 dark:border-card-border bg-blue-50/50 dark:bg-blue-950/10 flex items-center justify-center p-2">
-              <span className="text-sm font-semibold text-blue-600/40 dark:text-blue-400/40">Interrogantes</span>
+            <div className="border-b-2 border-[var(--rule-base)] dark:border-card-border bg-emerald-50/50 dark:bg-emerald-950/10 flex items-center justify-center p-2">
+              <span className="text-sm font-semibold text-emerald-600/40 dark:text-emerald-400/40">Interrogantes</span>
             </div>
-            <div className="border-r-2 border-gray-200 dark:border-card-border bg-amber-50/50 dark:bg-amber-950/10 flex items-center justify-center p-2">
+            <div className="border-r-2 border-[var(--rule-base)] dark:border-card-border bg-amber-50/50 dark:bg-amber-950/10 flex items-center justify-center p-2">
               <span className="text-sm font-semibold text-amber-600/40 dark:text-amber-400/40">Vacas Lecheras</span>
             </div>
             <div className="bg-red-50/50 dark:bg-red-950/10 flex items-center justify-center p-2">
@@ -104,7 +108,7 @@ export default function BCGMatrixTab() {
             const y = pos.y;
             const size = Math.max(24, Math.min(48, (p.revenue / totalRevenue) * 400));
             return (
-              <button key={p.id} onClick={() => setDetail(p)} title={p.name} className={cn("absolute rounded-full border-2 border-white dark:border-card flex items-center justify-center text-[9px] font-bold shadow-lg hover:scale-125 transition-transform z-10", p.quadrant === "estrella" ? "bg-green-500 text-white" : p.quadrant === "vaca" ? "bg-amber-500 text-white" : p.quadrant === "interrogante" ? "bg-blue-500 text-white" : "bg-gray-400 text-white")} style={{ left: `${x}%`, top: `${y}%`, width: size, height: size }}>
+              <button key={p.id} onClick={() => setDetail(p)} title={p.name} className={cn("absolute rounded-full border-2 border-white dark:border-card flex items-center justify-center text-[length:var(--ts-2xs)] font-bold hover:scale-125 transition-transform z-10", p.quadrant === "estrella" ? "bg-green-500 text-white" : p.quadrant === "vaca" ? "bg-amber-500 text-white" : p.quadrant === "interrogante" ? "bg-emerald-500 text-white" : "bg-gray-400 text-white")} style={{ left: `${x}%`, top: `${y}%`, width: size, height: size }}>
                 {p.name.slice(0, 2)}
               </button>
             );
@@ -113,8 +117,8 @@ export default function BCGMatrixTab() {
       </div>
 
       {/* Product Table */}
-      <div className="bg-white dark:bg-card rounded-2xl border border-gray-200 dark:border-card-border overflow-hidden">
-        <div className="px-5 py-4 border-b border-gray-100 dark:border-card-border">
+      <div className="bg-white dark:bg-card rounded-xl border border-[var(--rule-base)] dark:border-card-border overflow-hidden">
+        <div className="px-5 py-4 border-b border-[var(--rule-soft)] dark:border-card-border">
           <h3 className="text-sm font-extrabold text-gray-900 dark:text-foreground">Detalle de Productos ({filtered.length})</h3>
         </div>
         <div className="overflow-x-auto">
@@ -154,11 +158,15 @@ export default function BCGMatrixTab() {
       <div className="grid grid-cols-1 md:grid-cols-2 gap-2 sm:gap-4">
         {(["estrella", "vaca", "interrogante", "perro"] as Quadrant[]).map(q => {
           const c = Q_CONFIG[q];
+          const QIcon = c.Icon;
           return (
-            <div key={q} className={cn("rounded-2xl border-2 p-3 sm:p-5", c.bg)}>
-              <h4 className={cn("font-extrabold flex items-center gap-2", c.color)}>{c.emoji} {c.label}</h4>
+            <div key={q} className={cn("rounded-xl border-2 p-3 sm:p-5", c.bg)}>
+              <h4 className={cn("font-extrabold flex items-center gap-2", c.color)}>
+                <QIcon className="h-4 w-4" strokeWidth={1.75} />
+                {c.label}
+              </h4>
               <p className="text-sm text-gray-600 dark:text-muted mt-1">{c.desc}</p>
-              <p className="text-xs text-gray-400 dark:text-muted mt-2">{grouped[q].length} productos • {fmt(grouped[q].reduce((s, p) => s + p.revenue, 0))}</p>
+              <p className="text-xs text-gray-400 dark:text-muted mt-2 tabular-nums">{grouped[q].length} productos • {fmt(grouped[q].reduce((s, p) => s + p.revenue, 0))}</p>
             </div>
           );
         })}
@@ -167,8 +175,8 @@ export default function BCGMatrixTab() {
       {/* Detail modal */}
       {detail && (
         <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4" onClick={() => setDetail(null)}>
-          <div className="bg-white dark:bg-card rounded-2xl shadow-xl w-full max-w-md" onClick={e => e.stopPropagation()}>
-            <div className="px-3 sm:px-6 py-4 border-b border-gray-100 dark:border-card-border flex items-center justify-between">
+          <div className="bg-white dark:bg-card rounded-xl w-full max-w-md" onClick={e => e.stopPropagation()}>
+            <div className="px-3 sm:px-6 py-4 border-b border-[var(--rule-soft)] dark:border-card-border flex items-center justify-between">
               <h3 className="font-extrabold text-gray-900 dark:text-foreground">{detail.name}</h3>
               <button onClick={() => setDetail(null)} className="text-base sm:text-xl font-bold text-gray-400 hover:text-gray-600">×</button>
             </div>
@@ -177,8 +185,19 @@ export default function BCGMatrixTab() {
               <div className="bg-gray-50 dark:bg-surface rounded-xl p-3"><span className="text-xs text-gray-400">Crecimiento</span><p className={cn("font-bold", detail.growth >= 0 ? "text-emerald-600" : "text-red-500")}>{detail.growth > 0 && "+"}{detail.growth}%</p></div>
               <div className="bg-gray-50 dark:bg-surface rounded-xl p-3"><span className="text-xs text-gray-400">Participación</span><p className="font-bold">{detail.marketShare}%</p></div>
               <div className="bg-gray-50 dark:bg-surface rounded-xl p-3"><span className="text-xs text-gray-400">Unidades/mes</span><p className="font-bold">{detail.units}</p></div>
-              <div className="col-span-2 bg-gray-50 dark:bg-surface rounded-xl p-3"><span className="text-xs text-gray-400">Cuadrante</span><p className="font-bold">{Q_CONFIG[detail.quadrant].emoji} {Q_CONFIG[detail.quadrant].label}</p></div>
-              <div className="col-span-2 bg-blue-50 dark:bg-blue-950/20 rounded-xl p-3"><span className="text-xs font-bold text-blue-800 dark:text-blue-300">Recomendación</span><p className="text-xs text-blue-600 dark:text-blue-400 mt-1">{Q_CONFIG[detail.quadrant].desc}</p></div>
+              <div className="col-span-2 bg-gray-50 dark:bg-surface rounded-xl p-3">
+                <span className="text-xs text-gray-400">Cuadrante</span>
+                {(() => {
+                  const DIcon = Q_CONFIG[detail.quadrant].Icon;
+                  return (
+                    <p className="font-bold inline-flex items-center gap-1.5">
+                      <DIcon className="h-3.5 w-3.5" strokeWidth={1.75} />
+                      {Q_CONFIG[detail.quadrant].label}
+                    </p>
+                  );
+                })()}
+              </div>
+              <div className="col-span-2 bg-emerald-50 dark:bg-emerald-950/20 rounded-xl p-3"><span className="text-xs font-bold text-emerald-800 dark:text-emerald-300">Recomendación</span><p className="text-xs text-emerald-600 dark:text-emerald-400 mt-1">{Q_CONFIG[detail.quadrant].desc}</p></div>
             </div>
           </div>
         </div>

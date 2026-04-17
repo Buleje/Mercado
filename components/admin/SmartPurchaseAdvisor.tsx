@@ -72,9 +72,9 @@ function getUrgencyLabel(u: AdvisedItem["urgency"]): string {
 }
 
 const URGENCY_COLORS: Record<AdvisedItem["urgency"], string> = {
-  critical: "text-red-600 bg-red-50 dark:bg-red-950/30 dark:text-red-400",
-  high: "text-[#f97316] bg-[#f97316]/10",
-  medium: "text-blue-600 bg-blue-50 dark:bg-blue-950/30 dark:text-blue-400",
+  critical: "text-red-600 bg-red-50",
+  high: "text-secondary bg-secondary/10",
+  medium: "text-emerald-600 bg-emerald-50",
 };
 
 // ── Mock data ─────────────────────────────────────────────────────────────────
@@ -235,22 +235,22 @@ export default function SmartPurchaseAdvisor() {
   }, [advised]);
 
   return (
-    <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-700 overflow-hidden shadow-sm">
+    <div className="bg-white rounded-xl border border-[var(--rule-base)] overflow-hidden ">
       {/* Header */}
-      <div className="p-5 border-b border-gray-100 dark:border-gray-800">
+      <div className="p-5 border-b border-[var(--rule-soft)]">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="p-2 rounded-xl bg-[#00B4A6]/10">
-              <Brain className="w-5 h-5 text-[#00B4A6]" />
+            <div className="p-2 rounded-xl bg-primary/10">
+              <Brain className="w-5 h-5 text-primary" />
             </div>
             <div>
-              <h2 className="font-bold text-gray-900 dark:text-white">
+              <h2 className="font-bold text-gray-900">
                 Advisor de compras
               </h2>
-              <p className="text-xs text-gray-500 dark:text-gray-400">
+              <p className="text-xs text-gray-500">
                 Combina stock, velocidad de venta y historial de precios
                 {usingMock && (
-                  <span className="ml-2 text-[#f97316]">(datos demo)</span>
+                  <span className="ml-2 text-secondary">(datos demo)</span>
                 )}
               </p>
             </div>
@@ -259,7 +259,7 @@ export default function SmartPurchaseAdvisor() {
             {advised.length > 0 && (
               <button
                 onClick={exportCSV}
-                className="p-2 rounded-xl hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+                className="p-2 rounded-lg hover:bg-gray-100 transition-colors"
                 title="Exportar CSV"
               >
                 <Download className="w-5 h-5 text-gray-500" />
@@ -268,7 +268,7 @@ export default function SmartPurchaseAdvisor() {
             <button
               onClick={fetchAll}
               disabled={loading}
-              className="p-2 rounded-xl hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+              className="p-2 rounded-lg hover:bg-gray-100 transition-colors"
               aria-label="Actualizar"
             >
               <RefreshCw
@@ -281,23 +281,23 @@ export default function SmartPurchaseAdvisor() {
         {/* Summary */}
         {!loading && (
           <div className="mt-4 grid grid-cols-3 gap-3">
-            <div className="text-center p-3 rounded-xl bg-red-50 dark:bg-red-950/20 border border-red-100 dark:border-red-900">
-              <p className="text-xl font-black text-red-600 dark:text-red-400">
+            <div className="text-center p-3 rounded-xl bg-red-50 border border-red-100">
+              <p className="text-xl font-extrabold text-red-600">
                 {advised.filter((i) => i.urgency === "critical").length}
               </p>
               <p className="text-xs text-red-500 font-semibold">Criticos</p>
             </div>
-            <div className="text-center p-3 rounded-xl bg-[#f97316]/5 border border-[#f97316]/20">
-              <p className="text-xl font-black text-[#f97316]">
+            <div className="text-center p-3 rounded-xl bg-secondary/5 border border-secondary/20">
+              <p className="text-xl font-extrabold text-secondary">
                 {advised.filter((i) => i.urgency === "high").length}
               </p>
-              <p className="text-xs text-[#f97316] font-semibold">Urgentes</p>
+              <p className="text-xs text-secondary font-semibold">Urgentes</p>
             </div>
-            <div className="text-center p-3 rounded-xl bg-[#00B4A6]/5 border border-[#00B4A6]/20">
-              <p className="text-xl font-black text-[#00B4A6] dark:text-[#2dd4bf]">
+            <div className="text-center p-3 rounded-xl bg-primary/5 border border-primary/20">
+              <p className="text-xl font-extrabold text-primary">
                 {fmt(totalEstimated)}
               </p>
-              <p className="text-xs text-[#00B4A6] dark:text-[#2dd4bf] font-semibold">
+              <p className="text-xs text-primary font-semibold">
                 Costo estimado
               </p>
             </div>
@@ -306,24 +306,24 @@ export default function SmartPurchaseAdvisor() {
       </div>
 
       {/* List */}
-      <div className="divide-y divide-gray-100 dark:divide-gray-800">
+      <div className="divide-y divide-gray-100">
         {loading ? (
           Array.from({ length: 5 }).map((_, i) => (
             <div key={i} className="p-5 flex gap-4 animate-pulse">
               <div className="flex-1 space-y-2">
-                <div className="h-4 bg-gray-100 dark:bg-gray-800 rounded w-3/4" />
-                <div className="h-3 bg-gray-100 dark:bg-gray-800 rounded w-1/2" />
+                <div className="h-4 bg-gray-100 rounded w-3/4" />
+                <div className="h-3 bg-gray-100 rounded w-1/2" />
               </div>
-              <div className="w-24 h-10 bg-gray-100 dark:bg-gray-800 rounded-xl" />
+              <div className="w-24 h-10 bg-gray-100 rounded-xl" />
             </div>
           ))
         ) : advised.length === 0 ? (
           <div className="p-8 text-center">
-            <Package className="w-10 h-10 text-[#00B4A6] mx-auto mb-3" />
-            <p className="font-semibold text-gray-900 dark:text-white">
+            <Package className="w-10 h-10 text-primary mx-auto mb-3" />
+            <p className="font-semibold text-gray-900">
               Stock en buen estado
             </p>
-            <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
+            <p className="text-sm text-gray-500 mt-1">
               No se requieren compras urgentes en este momento.
             </p>
           </div>
@@ -337,17 +337,17 @@ export default function SmartPurchaseAdvisor() {
                     setExpandedId((p) => (p === item.product.id ? null : item.product.id))
                   }
                   className={cn(
-                    "w-full text-left flex items-center gap-4 px-5 py-4 hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors border-l-4",
+                    "w-full text-left flex items-center gap-4 px-5 py-4 hover:bg-gray-50 transition-colors border-l-4",
                     item.urgency === "critical"
                       ? "border-l-red-500"
                       : item.urgency === "high"
-                        ? "border-l-[#f97316]"
-                        : "border-l-blue-400"
+                        ? "border-l-secondary"
+                        : "border-l-emerald-400"
                   )}
                 >
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 flex-wrap">
-                      <p className="font-semibold text-gray-900 dark:text-white text-sm">
+                      <p className="font-semibold text-gray-900 text-sm">
                         {item.product.name}
                       </p>
                       <span
@@ -359,7 +359,7 @@ export default function SmartPurchaseAdvisor() {
                         {getUrgencyLabel(item.urgency)}
                       </span>
                     </div>
-                    <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
+                    <p className="text-xs text-gray-500 mt-0.5">
                       Stock: {item.product.stock} {item.product.unit ?? "u"} —
                       Ventas 7d: {item.weeklySales} —
                       {item.daysUntilOut >= 99
@@ -367,7 +367,7 @@ export default function SmartPurchaseAdvisor() {
                         : ` ${item.daysUntilOut} dias restantes`}
                     </p>
                     {item.bestSupplier && (
-                      <p className="text-xs text-[#00B4A6] dark:text-[#2dd4bf] mt-0.5 flex items-center gap-1">
+                      <p className="text-xs text-primary mt-0.5 flex items-center gap-1">
                         <Star className="w-3 h-3" />
                         Mejor proveedor: {item.bestSupplier} — {fmt(item.bestCost ?? 0)}/u
                       </p>
@@ -376,10 +376,10 @@ export default function SmartPurchaseAdvisor() {
                   <div className="flex items-center gap-3 flex-shrink-0">
                     <div className="text-right">
                       <p className="text-xs text-gray-400">Comprar</p>
-                      <p className="font-black text-gray-900 dark:text-white">
+                      <p className="font-extrabold text-gray-900">
                         {item.suggestedQty} {item.product.unit ?? "u"}
                       </p>
-                      <p className="text-xs text-[#00B4A6] dark:text-[#2dd4bf] font-semibold">
+                      <p className="text-xs text-primary font-semibold">
                         {fmt(item.estimatedTotal)}
                       </p>
                     </div>
@@ -392,47 +392,47 @@ export default function SmartPurchaseAdvisor() {
                 </button>
 
                 {isExpanded && (
-                  <div className="px-5 pb-4 bg-gray-50 dark:bg-gray-800/30 border-t border-gray-100 dark:border-gray-800">
+                  <div className="px-5 pb-4 bg-gray-50 border-t border-[var(--rule-soft)]">
                     <div className="grid grid-cols-2 gap-3 pt-3">
-                      <div className="p-3 rounded-xl bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800">
+                      <div className="p-3 rounded-xl bg-white border border-[var(--rule-soft)]">
                         <p className="text-xs text-gray-400 mb-1">Analisis de stock</p>
-                        <p className="text-sm font-medium text-gray-900 dark:text-white">
+                        <p className="text-sm font-medium text-gray-900">
                           Stock minimo: {item.product.stockMin} {item.product.unit ?? "u"}
                         </p>
-                        <p className="text-sm font-medium text-gray-900 dark:text-white">
+                        <p className="text-sm font-medium text-gray-900">
                           Venta diaria: {Math.round((item.weeklySales / 7) * 10) / 10} {item.product.unit ?? "u"}
                         </p>
                         {item.daysUntilOut < 99 && (
                           <div className="flex items-center gap-1 mt-1">
                             <AlertTriangle className="w-3 h-3 text-red-500" />
-                            <p className="text-xs text-red-600 dark:text-red-400 font-semibold">
+                            <p className="text-xs text-red-600 font-semibold">
                               Se agota en {item.daysUntilOut} dias
                             </p>
                           </div>
                         )}
                       </div>
-                      <div className="p-3 rounded-xl bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800">
+                      <div className="p-3 rounded-xl bg-white border border-[var(--rule-soft)]">
                         <p className="text-xs text-gray-400 mb-1">Orden sugerida</p>
-                        <p className="text-sm font-bold text-[#00B4A6] dark:text-[#2dd4bf]">
+                        <p className="text-sm font-bold text-primary">
                           {item.suggestedQty} {item.product.unit ?? "u"}
                         </p>
                         <p className="text-xs text-gray-500 mt-0.5">
                           Cubre 14 dias de ventas + stock minimo
                         </p>
                         {item.bestCost && (
-                          <p className="text-xs font-semibold text-gray-700 dark:text-gray-300 mt-1">
+                          <p className="text-xs font-semibold text-gray-700 mt-1">
                             {fmt(item.bestCost)}/u x {item.suggestedQty} = {fmt(item.estimatedTotal)}
                           </p>
                         )}
                       </div>
                     </div>
                     {item.season && (
-                      <div className="mt-3 p-3 rounded-xl bg-[#f97316]/10 border border-[#f97316]/20">
-                        <p className="text-xs font-semibold text-[#f97316] flex items-center gap-1.5">
+                      <div className="mt-3 p-3 rounded-xl bg-secondary/10 border border-secondary/20">
+                        <p className="text-xs font-semibold text-secondary flex items-center gap-1.5">
                           <TrendingDown className="w-3 h-3" />
                           Tip de temporada
                         </p>
-                        <p className="text-xs text-gray-700 dark:text-gray-300 mt-0.5">
+                        <p className="text-xs text-gray-700 mt-0.5">
                           {item.season}
                         </p>
                       </div>

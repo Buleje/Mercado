@@ -48,8 +48,8 @@ const fmt = (n: number) => "S/ " + n.toLocaleString("es-PE", { minimumFractionDi
 
 const ORDER_STATUS: Record<OrderStatus, { label: string; color: string; bg: string }> = {
   pendiente:    { label: "Pendiente",   color: "text-amber-600",    bg: "bg-amber-100 dark:bg-amber-900/30" },
-  procesando:   { label: "Procesando",  color: "text-blue-600",     bg: "bg-blue-100 dark:bg-blue-900/30" },
-  "en-transito":{ label: "En tránsito", color: "text-violet-600",   bg: "bg-violet-100 dark:bg-violet-900/30" },
+  procesando:   { label: "Procesando",  color: "text-emerald-600",     bg: "bg-emerald-100 dark:bg-emerald-900/30" },
+  "en-transito":{ label: "En tránsito", color: "text-[var(--text-secondary)]",   bg: "bg-[var(--surface-sunken)]" },
   entregado:    { label: "Entregado",   color: "text-emerald-600",  bg: "bg-emerald-100 dark:bg-emerald-900/30" },
   parcial:      { label: "Entrega parcial", color: "text-orange-600", bg: "bg-orange-100 dark:bg-orange-900/30" },
 };
@@ -110,19 +110,19 @@ export default function SupplierPortalTab() {
           </h1>
           <p className="text-sm text-gray-500 dark:text-muted mt-0.5">Consulta de pedidos, facturas y mensajería con proveedores</p>
         </div>
-        <button onClick={() => exportToCSV(ORDERS.map(o => ({ ref: o.orderRef, proveedor: o.supplier, fecha: o.date, items: o.items, total: o.total, estado: ORDER_STATUS[o.status].label, entrega_est: o.estimatedDelivery })), "portal-proveedor")} className="flex items-center gap-1.5 px-3 py-2 rounded-xl border border-gray-200 dark:border-card-border bg-white dark:bg-surface text-sm font-semibold text-gray-700 dark:text-foreground hover:bg-gray-50 dark:hover:bg-accent transition-colors">
+        <button onClick={() => exportToCSV(ORDERS.map(o => ({ ref: o.orderRef, proveedor: o.supplier, fecha: o.date, items: o.items, total: o.total, estado: ORDER_STATUS[o.status].label, entrega_est: o.estimatedDelivery })), "portal-proveedor")} className="flex items-center gap-1.5 px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-card-border bg-white dark:bg-surface text-sm font-semibold text-gray-700 dark:text-foreground hover:bg-gray-50 dark:hover:bg-accent transition-colors">
           <Download className="h-4 w-4" /> Exportar
         </button>
       </div>
 
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
         {[
-          { label: "Pedidos activos", value: String(stats.activeOrders), color: "text-blue-600", bg: "bg-blue-50 dark:bg-blue-950/30" },
+          { label: "Pedidos activos", value: String(stats.activeOrders), color: "text-emerald-600", bg: "bg-emerald-50 dark:bg-emerald-950/30" },
           { label: "Facturas por pagar", value: fmt(stats.pendingInvoices), color: "text-amber-600", bg: "bg-amber-50 dark:bg-amber-950/30" },
           { label: "Facturas vencidas", value: String(stats.overdueInvoices), color: "text-red-600", bg: "bg-red-50 dark:bg-red-950/30" },
-          { label: "Mensajes sin leer", value: String(stats.unreadMessages), color: "text-violet-600", bg: "bg-violet-50 dark:bg-violet-950/30" },
+          { label: "Mensajes sin leer", value: String(stats.unreadMessages), color: "text-[var(--text-secondary)]", bg: "bg-[var(--surface-sunken)]" },
         ].map(({ label, value, color, bg }) => (
-          <div key={label} className={cn("rounded-2xl p-4", bg)}>
+          <div key={label} className={cn("rounded-xl p-4", bg)}>
             <p className="text-xs font-semibold text-gray-500 dark:text-muted mb-1">{label}</p>
             <p className={cn("text-xl font-extrabold", color)}>{value}</p>
           </div>
@@ -134,24 +134,24 @@ export default function SupplierPortalTab() {
         {(["pedidos", "facturas", "mensajes"] as const).map((v) => {
           const label = v === "pedidos" ? "Pedidos" : v === "facturas" ? "Facturas" : "Mensajes";
           return (
-          <button key={v} onClick={() => setView(v)} className={cn("flex-1 px-3 py-2 rounded-lg text-sm font-bold transition-colors", view === v ? "bg-white dark:bg-card text-gray-900 dark:text-foreground shadow-sm" : "text-gray-500 dark:text-muted hover:text-gray-700")}>{label}</button>
+          <button key={v} onClick={() => setView(v)} className={cn("flex-1 px-3 py-2 rounded-lg text-sm font-bold transition-colors", view === v ? "bg-white dark:bg-card text-gray-900 dark:text-foreground " : "text-gray-500 dark:text-muted hover:text-gray-700")}>{label}</button>
           );
         })}
       </div>
 
       <div className="relative max-w-sm">
         <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
-        <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Buscar proveedor, referencia..." className="w-full pl-9 pr-3 py-2 text-sm border border-gray-200 dark:border-card-border rounded-xl bg-white dark:bg-surface text-gray-700 dark:text-foreground" />
+        <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Buscar proveedor, referencia..." className="w-full pl-9 pr-3 py-2 text-sm border border-[var(--rule-base)] dark:border-card-border rounded-lg bg-white dark:bg-surface text-gray-700 dark:text-foreground" />
       </div>
 
       {view === "pedidos" && (
-        <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl overflow-hidden">
+        <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl overflow-hidden">
           <div className="overflow-x-auto">
             <table className="w-full min-w-[600px] text-sm">
               <thead><tr className="text-left text-xs font-bold text-gray-400 bg-gray-50 dark:bg-surface"><th className="px-2 sm:px-4 py-2 sm:py-3">Ref</th><th className="px-2 sm:px-4 py-2 sm:py-3">Proveedor</th><th className="px-2 sm:px-4 py-2 sm:py-3">Fecha</th><th className="px-2 sm:px-4 py-2 sm:py-3">Items</th><th className="px-2 sm:px-4 py-2 sm:py-3">Total</th><th className="px-2 sm:px-4 py-2 sm:py-3">Estado</th><th className="px-2 sm:px-4 py-2 sm:py-3">Entrega est.</th><th className="px-2 sm:px-4 py-2 sm:py-3"></th></tr></thead>
               <tbody>
                 {filteredOrders.map(o => (
-                  <tr key={o.id} className="border-t border-gray-100 dark:border-card-border hover:bg-gray-50 dark:hover:bg-accent/20">
+                  <tr key={o.id} className="border-t border-[var(--rule-soft)] dark:border-card-border hover:bg-gray-50 dark:hover:bg-accent/20">
                     <td className="px-2 sm:px-4 py-2 sm:py-3 font-mono text-xs font-bold text-gray-700 dark:text-foreground">{o.orderRef}</td>
                     <td className="px-2 sm:px-4 py-2 sm:py-3 font-bold text-gray-800 dark:text-foreground">{o.supplier}</td>
                     <td className="px-2 sm:px-4 py-2 sm:py-3 text-gray-500">{o.date}</td>
@@ -169,13 +169,13 @@ export default function SupplierPortalTab() {
       )}
 
       {view === "facturas" && (
-        <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl overflow-hidden">
+        <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl overflow-hidden">
           <div className="overflow-x-auto">
             <table className="w-full min-w-[600px] text-sm">
               <thead><tr className="text-left text-xs font-bold text-gray-400 bg-gray-50 dark:bg-surface"><th className="px-2 sm:px-4 py-2 sm:py-3">Factura</th><th className="px-2 sm:px-4 py-2 sm:py-3">Proveedor</th><th className="px-2 sm:px-4 py-2 sm:py-3">Emisión</th><th className="px-2 sm:px-4 py-2 sm:py-3">Vencimiento</th><th className="px-2 sm:px-4 py-2 sm:py-3">Total</th><th className="px-2 sm:px-4 py-2 sm:py-3">Estado</th></tr></thead>
               <tbody>
                 {filteredInvoices.map(i => (
-                  <tr key={i.id} className="border-t border-gray-100 dark:border-card-border hover:bg-gray-50 dark:hover:bg-accent/20">
+                  <tr key={i.id} className="border-t border-[var(--rule-soft)] dark:border-card-border hover:bg-gray-50 dark:hover:bg-accent/20">
                     <td className="px-2 sm:px-4 py-2 sm:py-3 font-mono text-xs font-bold text-gray-700 dark:text-foreground">{i.invoiceRef}</td>
                     <td className="px-2 sm:px-4 py-2 sm:py-3 font-bold text-gray-800 dark:text-foreground">{i.supplier}</td>
                     <td className="px-2 sm:px-4 py-2 sm:py-3 text-gray-500">{i.date}</td>
@@ -193,7 +193,7 @@ export default function SupplierPortalTab() {
       {view === "mensajes" && (
         <div className="space-y-2">
           {filteredMessages.map(m => (
-            <div key={m.id} className={cn("bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl p-4 flex items-start gap-3 cursor-pointer hover:shadow transition-shadow", !m.read && "border-l-4 border-l-primary")}>
+            <div key={m.id} className={cn("bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-lg p-4 flex items-start gap-3 cursor-pointer hover:shadow transition-shadow", !m.read && "border-l-4 border-l-primary")}>
               <MessageSquare className={cn("h-5 w-5 mt-0.5 shrink-0", m.read ? "text-gray-300" : "text-primary")} />
               <div className="flex-1 min-w-0">
                 <p className={cn("text-sm font-bold truncate", m.read ? "text-gray-600 dark:text-muted" : "text-gray-900 dark:text-foreground")}>{m.subject}</p>
@@ -207,7 +207,7 @@ export default function SupplierPortalTab() {
 
       {detail && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4" onClick={() => setDetail(null)}>
-          <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl shadow-2xl p-3 sm:p-6 w-full max-w-md space-y-3" onClick={e => e.stopPropagation()}>
+          <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl p-3 sm:p-6 w-full max-w-md space-y-3" onClick={e => e.stopPropagation()}>
             <div className="flex items-center justify-between">
               <h3 className="font-extrabold text-gray-900 dark:text-foreground">{detail.orderRef}</h3>
               <button onClick={() => setDetail(null)}><X className="h-4 w-4 text-gray-400" /></button>

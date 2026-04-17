@@ -1,14 +1,16 @@
-﻿"use client";
+"use client";
 
 import { useState, useEffect, useCallback, useRef, useMemo, type FormEvent } from "react";
 import {
   Package, AlertTriangle, ArrowUp, ArrowDown, RefreshCw,
   Search, Loader2, ClipboardList, Plus, Pencil, Trash2,
-  ScanBarcode, X, Camera, Download, CheckSquare,
+  ScanBarcode, X, Camera, Download, CheckSquare, Filter, ChevronDown,
   TrendingUp, PackagePlus, Eye, EyeOff, Layers, ChevronRight, Upload, CheckCircle, BookOpen,
-  Warehouse,
+  Warehouse, Maximize2, Copy,
 } from "lucide-react";
+import AdminModuleHeader from "@/components/admin/shared/AdminModuleHeader";
 import EmptyState from "@/components/admin/shared/EmptyState";
+import StatusBadge from "@/components/admin/shared/StatusBadge";
 import Image from "next/image";
 import { cn, exportToCSV } from "@/lib/utils";
 import { exportToExcel } from "@/lib/export-excel";
@@ -21,28 +23,15 @@ import dynamic from "next/dynamic";
 import { usePagination, Paginator } from "@/hooks/use-pagination";
 
 const BarcodeScanner = dynamic(() => import("@/components/admin/BarcodeScanner"), { ssr: false });
+const ExpandedStockModal = dynamic(() => import("@/components/admin/inventario/ExpandedStockModal"), { ssr: false });
 
 // ── Types ────────────────────────────────────────────────────────────────────
 
-type View = "productos" | "stock" | "movimientos" | "merma" | "conteo" | "kanban";
+type View = "productos" | "kanban";
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
 
 function fmt(n: number) { return `S/${n.toFixed(2)}`; }
-function fmtDate(iso: string) {
-  const d = new Date(iso);
-  return d.toLocaleDateString("es-PE", { day: "2-digit", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" });
-}
-
-const MOVEMENT_LABELS: Record<string, { label: string; color: string }> = {
-  compra: { label: "Compra", color: "text-blue-600 bg-blue-50" },
-  venta: { label: "Venta", color: "text-orange-600 bg-orange-50" },
-  venta_online: { label: "Venta online", color: "text-purple-600 bg-purple-50" },
-  devolucion: { label: "Devolución", color: "text-cyan-600 bg-cyan-50" },
-  ajuste_positivo: { label: "Ajuste +", color: "text-emerald-600 bg-emerald-50" },
-  ajuste_negativo: { label: "Ajuste −", color: "text-red-600 bg-red-50" },
-  merma: { label: "Pérdida", color: "text-gray-600 dark:text-muted bg-gray-100 dark:bg-accent" },
-};
 
 const realCategories = categories.filter(c => c.id !== "todos");
 
@@ -112,6 +101,81 @@ async function resizeImage(file: File, maxPx = 800, quality = 0.8): Promise<stri
   });
 }
 
+// ── InventoryContextMenu (right-click menu for product rows) ───────────────
+
+interface InventoryContextMenuProps {
+  product: DbProduct;
+  x: number;
+  y: number;
+  onClose: () => void;
+  onEdit: (p: DbProduct) => void;
+  onView: (p: DbProduct) => void;
+  onDuplicate: (p: DbProduct) => void;
+  onDelete: (p: DbProduct) => void;
+}
+
+function InventoryContextMenu({ product, x, y, onClose, onEdit, onView, onDuplicate, onDelete }: InventoryContextMenuProps) {
+  const menuRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    function handleClickOutside(e: MouseEvent) {
+      if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
+        onClose();
+      }
+    }
+    function handleEscape(e: KeyboardEvent) {
+      if (e.key === "Escape") onClose();
+    }
+    const timer = setTimeout(() => {
+      document.addEventListener("mousedown", handleClickOutside);
+      document.addEventListener("keydown", handleEscape);
+    }, 0);
+    return () => {
+      clearTimeout(timer);
+      document.removeEventListener("mousedown", handleClickOutside);
+      document.removeEventListener("keydown", handleEscape);
+    };
+  }, [onClose]);
+
+  const items: Array<{ label: string; icon: typeof Pencil; onClick: () => void; variant?: "default" | "danger"; divider?: boolean }> = [
+    { label: "Editar producto", icon: Pencil, onClick: () => onEdit(product) },
+    { label: "Ver detalles", icon: Eye, onClick: () => onView(product) },
+    { label: "Duplicar", icon: Copy, onClick: () => onDuplicate(product) },
+    { label: "Eliminar", icon: Trash2, onClick: () => onDelete(product), variant: "danger", divider: true },
+  ];
+
+  return (
+    <div
+      ref={menuRef}
+      className="fixed z-[9999] bg-white dark:bg-zinc-900 rounded-xl border border-[var(--rule-soft)] dark:border-zinc-800 min-w-[180px] py-1 animate-in fade-in zoom-in-95 duration-[var(--dur-fast)]"
+      style={{ left: x, top: y }}
+    >
+      {items.map((item, i) => {
+        const Icon = item.icon;
+        return (
+          <div key={i}>
+            {item.divider && (
+              <div className="my-1 border-t border-[var(--rule-soft)] dark:border-zinc-800" />
+            )}
+            <button
+              onClick={item.onClick}
+              className={cn(
+                "w-full px-3 py-2 text-sm flex items-center gap-2 cursor-pointer transition-colors",
+                item.variant === "danger"
+                  ? "text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20"
+                  : "text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-zinc-800",
+              )}
+            >
+              <Icon className="h-4 w-4 shrink-0" />
+              <span>{item.label}</span>
+            </button>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
 // ── Component ────────────────────────────────────────────────────────────────
 
 export default function InventoryTab() {
@@ -132,6 +196,7 @@ export default function InventoryTab() {
   const [showInactive, setShowInactive] = useState(false);
   // Mejora 8R2: Filtro sin imagen
   const [noImageOnly, setNoImageOnly] = useState(false);
+  const [showFilters, setShowFilters] = useState(false);
   const [expandedOC, setExpandedOC] = useState(false);
   const [generatingOC, setGeneratingOC] = useState(false);
 
@@ -140,6 +205,9 @@ export default function InventoryTab() {
   const [editForm, setEditForm] = useState<Partial<DbProduct & { expiryDate?: string; isVariant?: boolean; variantOf?: string; variantAttr?: string }>>({});
   const [saving, setSaving] = useState(false);
   const [showAdd, setShowAdd] = useState(false);
+  const [showPicker, setShowPicker] = useState(false);
+  const [pickerSearch, setPickerSearch] = useState("");
+  const [pickerCat, setPickerCat] = useState("todos");
   const EMPTY_ADD = { name: "", category: "abarrotes", price: "", unit: "und", badge: "", image: "", barcode: "", costPrice: "", stock: "", stockMin: "", stockMax: "", expiryDate: "", isVariant: false, variantOf: "", variantAttr: "" };
   const [addForm, setAddForm] = useState(EMPTY_ADD);
   const [showScanner, setShowScanner] = useState(false);
@@ -162,9 +230,6 @@ export default function InventoryTab() {
   const [bulkDeleteConfirm, setBulkDeleteConfirm] = useState(false);
   const [bulkDeleting, setBulkDeleting] = useState(false);
 
-  // Stocktaking
-  const [stockCounts, setStockCounts] = useState<Record<number, string>>({});
-
   // Mejora 5 nueva: Auto-reorden config
   const [autoReorderConfigs, setAutoReorderConfigs] = useState<Record<number, { threshold: number; qty: number; supplierId: string }>>(() => {
     if (typeof window === "undefined") return {};
@@ -186,13 +251,19 @@ export default function InventoryTab() {
     try { return localStorage.getItem("inv-extended-cols") === "true"; } catch { return false; }
   });
 
+  // Expanded table modal
+  const [showExpandedTable, setShowExpandedTable] = useState(false);
+
   // CSV Import
   const csvImportRef = useRef<HTMLInputElement>(null);
   const [csvImporting, setCsvImporting] = useState(false);
   const [csvResult, setCsvResult] = useState<{ created: number; errors: string[] } | null>(null);
   const [kardexProduct, setKardexProduct] = useState<{ id: number; name: string } | null>(null);
 
-  useScrollLock(!!(showAdd || editModalProduct || showScanner || bulkModal || bulkDeleteConfirm));
+  // Context menu state for right-click on product rows
+  const [ctxMenu, setCtxMenu] = useState<{ product: DbProduct; x: number; y: number } | null>(null);
+
+  useScrollLock(!!(showAdd || showPicker || editModalProduct || showScanner || bulkModal || bulkDeleteConfirm));
 
   const handleDbSearch = async () => {
     if (!dbQuery.trim()) return;
@@ -644,24 +715,39 @@ export default function InventoryTab() {
   // ── Render ─────────────────────────────────────────────────────────────────
 
   if (loading) return (
-    <div className="space-y-4 animate-pulse">
-      {/* Toolbar skeleton */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-        <div className="space-y-1.5">
-          <div className="h-6 w-40 bg-gray-200 dark:bg-accent rounded-lg" />
+    <div className="space-y-6 animate-pulse">
+      {/* Header skeleton */}
+      <div className="flex items-center gap-4 mb-6">
+        <div className="w-11 h-11 rounded-xl bg-gray-200 dark:bg-accent shrink-0" />
+        <div className="flex-1 space-y-1.5">
+          <div className="h-6 w-32 bg-gray-200 dark:bg-accent rounded-lg" />
           <div className="h-4 w-56 bg-gray-200 dark:bg-accent rounded" />
         </div>
-        <div className="flex flex-wrap items-center gap-2">
-          <div className="h-8 w-64 bg-gray-200 dark:bg-accent rounded-lg" />
+        <div className="flex items-center gap-2">
           <div className="h-8 w-24 bg-gray-200 dark:bg-accent rounded-lg" />
-          <div className="h-8 w-28 bg-gray-200 dark:bg-accent rounded-lg" />
+          <div className="h-8 w-24 bg-gray-200 dark:bg-accent rounded-lg" />
         </div>
       </div>
-      {/* Search bar skeleton */}
-      <div className="h-9 w-full max-w-xs bg-gray-200 dark:bg-accent rounded-xl" />
+      {/* Toolbar skeleton */}
+      <div className="flex flex-wrap items-center gap-2">
+        <div className="h-9 flex-1 min-w-45 bg-gray-200 dark:bg-accent rounded-lg" />
+        <div className="h-9 w-28 bg-gray-200 dark:bg-accent rounded-lg" />
+        <div className="h-9 w-24 bg-gray-200 dark:bg-accent rounded-lg" />
+        <div className="h-9 w-20 bg-gray-200 dark:bg-accent rounded-lg" />
+      </div>
+      {/* KPI skeleton */}
+      <div className="grid grid-cols-2 sm:grid-cols-5 gap-4">
+        {[...Array(5)].map((_, i) => (
+          <div key={i} className="bg-white dark:bg-card border border-[var(--rule-soft)] dark:border-card-border rounded-xl p-5">
+            <div className="h-3 w-1/3 bg-gray-200 dark:bg-accent rounded mb-3" />
+            <div className="h-7 w-1/2 bg-gray-200 dark:bg-accent rounded mb-2" />
+            <div className="h-1 w-full bg-gray-200 dark:bg-accent rounded mt-3" />
+          </div>
+        ))}
+      </div>
       {/* Product row skeletons */}
-      {[...Array(8)].map((_, i) => (
-        <div key={i} className="flex flex-wrap items-center gap-3 p-3 bg-white dark:bg-card rounded-xl border border-gray-100 dark:border-card-border">
+      {[...Array(6)].map((_, i) => (
+        <div key={i} className="flex flex-wrap items-center gap-3 p-3 bg-white dark:bg-card rounded-xl border border-[var(--rule-soft)] dark:border-card-border">
           <div className="h-10 w-10 bg-gray-200 dark:bg-accent rounded-lg shrink-0" />
           <div className="flex-1 space-y-2">
             <div className="h-4 bg-gray-200 dark:bg-accent rounded w-1/3" />
@@ -675,77 +761,153 @@ export default function InventoryTab() {
   );
 
   return (
-    <div className="space-y-4">
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-        <div>
-          <h2 className="text-xl font-extrabold text-gray-900 dark:text-foreground">Inventario</h2>
-          <p className="text-sm text-gray-500 dark:text-muted flex items-center flex-wrap gap-2">
-            {totalProducts} productos · {activeProducts} activos
-            {lowStockCount > 0 && (
-              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-amber-100 text-amber-700 text-xs font-bold">
-                <AlertTriangle className="h-3 w-3" /> {lowStockCount} con pocas existencias
-              </span>
-            )}
-          </p>
+    <div className="space-y-6">
+      {/* Header — formato estandar: icono + titulo + subtitulo + acciones */}
+      <AdminModuleHeader
+        icon={Warehouse}
+        bgTint="bg-amber-50 dark:bg-amber-900/20"
+        iconColorClass="text-amber-500 dark:text-amber-400"
+        title="Inventario"
+        description="Productos, stock y movimientos"
+      >
+        {/* View toggle */}
+        <div className="flex bg-gray-100 dark:bg-accent rounded-lg p-0.5 overflow-x-auto">
+          {(["productos", "kanban"] as const).map(v => (
+            <button
+              key={v}
+              onClick={() => setView(v)}
+              className={cn(
+                "px-3 py-1.5 rounded-md text-xs font-bold transition-colors capitalize whitespace-nowrap",
+                view === v ? "bg-white dark:bg-card text-gray-900 dark:text-foreground " : "text-gray-500 dark:text-muted hover:text-gray-700 dark:hover:text-foreground"
+              )}
+            >
+              {v === "productos" ? "Productos" : "Vista rapida"}
+            </button>
+          ))}
         </div>
-        <div className="flex items-center gap-2 flex-wrap">
-          {/* View toggle */}
-          <div className="flex bg-gray-100 dark:bg-accent rounded-lg p-0.5 overflow-x-auto">
-            {(["productos", "stock", "kanban", "movimientos", "merma", "conteo"] as const).map(v => (
-              <button
-                key={v}
-                onClick={() => setView(v)}
-                className={cn(
-                  "px-3 py-1.5 rounded-md text-xs font-bold transition-colors capitalize whitespace-nowrap",
-                  view === v ? "bg-white dark:bg-card text-gray-900 dark:text-foreground shadow-sm" : "text-gray-500 dark:text-muted hover:text-gray-700 dark:hover:text-foreground"
-                )}
-              >
-                {v === "productos" ? "Productos" : v === "stock" ? "Existencias" : v === "kanban" ? "Vista rápida" : v === "movimientos" ? "Movimientos" : v === "merma" ? "Pérdidas" : "Conteo"}
-              </button>
-            ))}
-          </div>
-          <button
-            onClick={() => setShowScanner(true)}
-            disabled={scanLoading}
-            className="flex items-center gap-1.5 text-sm font-bold text-primary border border-primary/30 hover:bg-primary/5 px-3 py-1.5 rounded-lg transition-colors"
-          >
-            {scanLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <ScanBarcode className="h-4 w-4" />}
-            {scanLoading ? "Buscando…" : "Escanear"}
-          </button>
-          <button
-            onClick={() => setShowAdd(true)}
-            className="flex items-center gap-1.5 text-sm font-bold text-white bg-primary hover:bg-primary-dark px-3 py-1.5 rounded-lg transition-colors shadow-sm"
-          >
-            <Plus className="h-4 w-4" /> Nuevo
-          </button>
-          <button onClick={load} disabled={loading} className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-accent transition-colors text-gray-500 dark:text-muted">
-            <RefreshCw className={cn("h-4 w-4", loading && "animate-spin")} />
-          </button>
+        <button
+          onClick={() => setShowScanner(true)}
+          disabled={scanLoading}
+          className="flex items-center gap-1.5 text-sm font-medium rounded-lg border border-[var(--rule-base)] dark:border-zinc-700 hover:bg-gray-50 dark:hover:bg-zinc-800 px-4 py-2.5 transition-colors"
+        >
+          {scanLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <ScanBarcode className="h-4 w-4" />}
+          {scanLoading ? "Buscando..." : "Escanear"}
+        </button>
+        <button
+          onClick={() => { setPickerSearch(""); setPickerCat("todos"); setShowPicker(true); }}
+          className="flex items-center gap-1.5 text-sm font-medium text-white rounded-lg bg-emerald-600 hover:bg-emerald-700 px-4 py-2.5 transition-colors"
+        >
+          <Plus className="h-4 w-4" /> Nuevo
+        </button>
+        <button onClick={load} disabled={loading} className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-accent transition-colors text-gray-500 dark:text-muted">
+          <RefreshCw className={cn("h-4 w-4", loading && "animate-spin")} />
+        </button>
+      </AdminModuleHeader>
+
+      {/* Toolbar — busqueda + filtros + acciones en UNA barra */}
+      <div className="flex flex-wrap items-center gap-2">
+        {/* Search */}
+        <div className="relative flex-1 min-w-45">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400 dark:text-muted" />
+          <input
+            value={search}
+            onChange={e => setSearch(e.target.value)}
+            placeholder={searchPlaceholders[phIndex]}
+            className="w-full pl-10 pr-4 py-2 rounded-lg border border-[var(--rule-base)] dark:border-card-border text-sm text-gray-900 dark:text-foreground outline-none focus:border-primary transition-colors"
+          />
         </div>
+        {/* Category filter */}
+        <select
+          value={catFilter}
+          onChange={e => setCatFilter(e.target.value)}
+          className="px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-card-border text-sm text-gray-700 dark:text-foreground outline-none focus:border-primary"
+        >
+          {categories.map(c => (
+            <option key={c.id} value={c.id}>{c.label}</option>
+          ))}
+        </select>
+        {/* Filter chips inline */}
+        <button
+          onClick={() => setLowOnly(!lowOnly)}
+          className={cn(
+            "flex items-center gap-1 px-3 py-2 rounded-lg text-xs font-bold border transition-colors whitespace-nowrap",
+            lowOnly ? "border-amber-300 bg-amber-50 text-amber-700 dark:border-amber-700 dark:bg-amber-950/20 dark:text-amber-400" : "border-[var(--rule-base)] dark:border-card-border text-gray-500 dark:text-muted hover:bg-gray-50 dark:hover:bg-surface"
+          )}
+        >
+          <AlertTriangle className="h-3.5 w-3.5" /> Bajo stock
+        </button>
+        <button
+          onClick={() => setShowInactive(!showInactive)}
+          className={cn(
+            "flex items-center gap-1 px-3 py-2 rounded-lg text-xs font-bold border transition-colors whitespace-nowrap",
+            showInactive ? "border-gray-400 bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300" : "border-[var(--rule-base)] dark:border-card-border text-gray-500 dark:text-muted hover:bg-gray-50 dark:hover:bg-surface"
+          )}
+        >
+          {showInactive ? <Eye className="h-3.5 w-3.5" /> : <EyeOff className="h-3.5 w-3.5" />}
+          Inactivos
+        </button>
+        <button
+          onClick={() => setNoImageOnly(!noImageOnly)}
+          className={cn(
+            "flex items-center gap-1 px-3 py-2 rounded-lg text-xs font-bold border transition-colors whitespace-nowrap",
+            noImageOnly ? "border-violet-300 bg-[var(--surface-sunken)] text-[var(--text-secondary)] dark:border-violet-700 dark:bg-violet-950/20 dark:text-[var(--text-primary)]" : "border-[var(--rule-base)] dark:border-card-border text-gray-500 dark:text-muted hover:bg-gray-50 dark:hover:bg-surface"
+          )}
+        >
+          <Camera className="h-3.5 w-3.5" /> Sin foto ({noImageCount})
+        </button>
+        {(lowOnly || showInactive || noImageOnly) && (
+          <button
+            onClick={() => { setLowOnly(false); setShowInactive(false); setNoImageOnly(false); }}
+            className="flex items-center gap-1 px-3 py-2 rounded-lg text-xs font-bold text-red-500 hover:bg-red-50 dark:hover:bg-red-950/20 transition-colors whitespace-nowrap"
+          >
+            <X className="h-3.5 w-3.5" /> Limpiar
+          </button>
+        )}
+        {/* Mas filtros (vista, import/export) */}
+        <button
+          onClick={() => setShowFilters(!showFilters)}
+          className={cn(
+            "flex items-center gap-1 px-3 py-2 rounded-lg text-xs font-bold border transition-colors whitespace-nowrap",
+            showFilters ? "border-primary bg-primary/5 text-primary" : "border-[var(--rule-base)] dark:border-card-border text-gray-500 dark:text-muted hover:bg-gray-50 dark:hover:bg-surface"
+          )}
+        >
+          <Filter className="h-3.5 w-3.5" />
+          Mas
+          <ChevronDown className={cn("h-3 w-3 transition-transform", showFilters && "rotate-180")} />
+        </button>
       </div>
 
-      {/* Stats */}
-      <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
-        <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl p-3">
-          <p className="text-[10px] font-bold text-gray-400 dark:text-muted uppercase tracking-wider">Productos</p>
-          <p className="text-xl font-extrabold text-gray-900 dark:text-foreground mt-0.5">{totalProducts}</p>
+      {/* KPIs — grid-cols-5 */}
+      <div className="grid grid-cols-2 sm:grid-cols-5 gap-4">
+        <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl p-5 ">
+          <p className="text-xs text-gray-500 dark:text-zinc-400 font-medium">Productos</p>
+          <p className="text-2xl font-mono font-bold text-gray-900 dark:text-foreground mt-1">{totalProducts}</p>
+          <p className="text-[length:var(--ts-2xs)] text-gray-400 dark:text-zinc-500 mt-1">{activeProducts} activos</p>
+          <div className="h-1 rounded-full mt-2 bg-primary" />
         </div>
-        <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl p-3">
-          <p className="text-[10px] font-bold text-gray-400 dark:text-muted uppercase tracking-wider">Activos</p>
-          <p className="text-xl font-extrabold text-emerald-600 mt-0.5">{activeProducts}</p>
+        <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl p-5 ">
+          <p className="text-xs text-gray-500 dark:text-zinc-400 font-medium">Activos</p>
+          <p className="text-2xl font-mono font-bold text-emerald-600 mt-1">{activeProducts}</p>
+          <p className="text-[length:var(--ts-2xs)] text-gray-400 dark:text-zinc-500 mt-1">{totalProducts - activeProducts} inactivos</p>
+          <div className="h-1 rounded-full mt-2 bg-emerald-500" />
         </div>
-        <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl p-3">
-          <p className="text-[10px] font-bold text-gray-400 dark:text-muted uppercase tracking-wider">Bajo stock</p>
-          <p className={cn("text-xl font-extrabold mt-0.5", lowStockCount > 0 ? "text-amber-600" : "text-gray-900 dark:text-foreground")}>{lowStockCount}</p>
+        <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl p-5 ">
+          <p className="text-xs text-gray-500 dark:text-zinc-400 font-medium">Bajo stock</p>
+          <p className={cn("text-2xl font-mono font-bold mt-1", lowStockCount > 0 ? "text-amber-600" : "text-gray-900 dark:text-foreground")}>{lowStockCount}</p>
+          <p className="text-[length:var(--ts-2xs)] text-gray-400 dark:text-zinc-500 mt-1">{lowStockCount > 0 ? "Requieren reposicion" : "Stock saludable"}</p>
+          <div className={cn("h-1 rounded-full mt-2", lowStockCount > 0 ? "bg-amber-500" : "bg-gray-200 dark:bg-zinc-700")} />
         </div>
-        <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl p-3">
-          <p className="text-[10px] font-bold text-gray-400 dark:text-muted uppercase tracking-wider">Próx. a vencer</p>
-          <p className={cn("text-xl font-extrabold mt-0.5", expiringSoonCount > 0 ? "text-orange-600" : "text-gray-900 dark:text-foreground")}>{expiringSoonCount}</p>
+        <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl p-5 ">
+          <p className="text-xs text-gray-500 dark:text-zinc-400 font-medium">Prox. a vencer</p>
+          <p className={cn("text-2xl font-mono font-bold mt-1", expiringSoonCount > 0 ? "text-orange-600" : "text-gray-900 dark:text-foreground")}>{expiringSoonCount}</p>
+          <p className="text-[length:var(--ts-2xs)] text-gray-400 dark:text-zinc-500 mt-1">Proximos 30 dias</p>
+          <div className={cn("h-1 rounded-full mt-2", expiringSoonCount > 0 ? "bg-orange-500" : "bg-gray-200 dark:bg-zinc-700")} />
         </div>
-        <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl p-3">
-          <p className="text-[10px] font-bold text-gray-400 dark:text-muted uppercase tracking-wider">Valor total</p>
-          <p className="text-xl font-extrabold text-primary mt-0.5">{fmt(totalStockValue)}</p>
+        <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl p-5 ">
+          <p className="text-xs text-gray-500 dark:text-zinc-400 font-medium">Valor total</p>
+          <p className="text-2xl font-mono font-bold text-primary mt-1">{fmt(totalStockValue)}</p>
+          <p className="text-[length:var(--ts-2xs)] text-gray-400 dark:text-zinc-500 mt-1">En inventario</p>
+          <div className="h-1 rounded-full mt-2 bg-emerald-500" />
         </div>
       </div>
 
@@ -763,12 +925,12 @@ export default function InventoryTab() {
       {/* Mejora P-8: Margen promedio por categoria */}
       {categoryMargins.length > 0 && (
         <div className="flex flex-wrap items-center gap-1.5">
-          <span className="text-[10px] text-gray-400 dark:text-muted font-medium mr-1">Margen:</span>
+          <span className="text-[length:var(--ts-2xs)] text-gray-400 dark:text-muted font-medium mr-1">Margen:</span>
           {categoryMargins.map(cm => (
             <span
               key={cm.cat}
               className={cn(
-                "text-[10px] font-mono font-bold px-2 py-0.5 rounded-full",
+                "text-[length:var(--ts-2xs)] font-mono font-bold px-2 py-0.5 rounded-full",
                 cm.margin > 25 ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400"
                 : cm.margin >= 15 ? "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400"
                 : "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400"
@@ -782,7 +944,7 @@ export default function InventoryTab() {
 
       {/* OC Alerts Section (IMPROVEMENT 1) */}
       {lowStockProducts.length > 0 && (
-        <div className="bg-linear-to-r from-amber-50 to-red-50 dark:from-amber-950/20 dark:to-red-950/20 border-2 border-amber-300 dark:border-amber-700 rounded-2xl overflow-hidden shadow-sm">
+        <div className="bg-[var(--surface-sunken)] border border-[var(--data-warning)]/40 rounded-xl overflow-hidden ">
           <div className="px-5 py-4">
             <div className="flex flex-wrap items-start justify-between gap-3">
               <div className="flex flex-wrap items-center gap-3">
@@ -790,7 +952,7 @@ export default function InventoryTab() {
                   <AlertTriangle className="h-5 w-5 text-amber-600 dark:text-amber-400" />
                 </div>
                 <div>
-                  <h3 className="text-base font-extrabold text-gray-900 dark:text-foreground flex flex-wrap items-center gap-2">
+                  <h3 className="text-lg font-semibold text-gray-900 dark:text-foreground flex flex-wrap items-center gap-2">
                     Alertas de Orden de Compra
                     <span className="inline-flex items-center px-2 py-0.5 rounded-full bg-amber-200 dark:bg-amber-800 text-amber-900 dark:text-amber-100 text-xs font-bold">
                       {lowStockProducts.length}
@@ -805,7 +967,7 @@ export default function InventoryTab() {
                 <button
                   onClick={generateBulkOC}
                   disabled={generatingOC}
-                  className="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-amber-600 hover:bg-amber-700 text-white text-xs font-bold transition-colors disabled:opacity-60 shadow-sm"
+                  className="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-amber-600 hover:bg-amber-700 text-white text-xs font-bold transition-colors disabled:opacity-60 "
                 >
                   {generatingOC ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <PackagePlus className="h-3.5 w-3.5" />}
                   Generar OC para todos
@@ -829,7 +991,7 @@ export default function InventoryTab() {
                   return (
                     <div key={p.id} className="bg-white dark:bg-card border border-amber-200 dark:border-amber-800 rounded-xl p-3 flex flex-wrap items-center gap-3">
                       {p.image ? (
-                        <Image src={p.image} alt={p.name} width={40} height={40} unoptimized={p.image.startsWith("data:")} className="rounded-lg object-cover border border-gray-100 dark:border-card-border shrink-0" />
+                        <Image src={p.image} alt={p.name} width={40} height={40} unoptimized={p.image.startsWith("data:")} className="rounded-lg object-cover border border-[var(--rule-soft)] dark:border-card-border shrink-0" />
                       ) : (
                         <div className="h-10 w-10 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
                           <Package className="h-5 w-5 text-primary/40" />
@@ -861,134 +1023,95 @@ export default function InventoryTab() {
         </div>
       )}
 
-      {/* Filter bar */}
-      <div className="flex flex-wrap items-center gap-2">
-        <div className="relative flex-1 min-w-45">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400 dark:text-muted" />
-          <input
-            value={search}
-            onChange={e => setSearch(e.target.value)}
-            placeholder={view === "movimientos" ? "Buscar movimiento..." : searchPlaceholders[phIndex]}
-            className="w-full pl-10 pr-4 py-2 rounded-lg border border-gray-200 dark:border-card-border text-sm text-gray-900 dark:text-foreground outline-none focus:border-primary transition-colors"
-          />
-        </div>
-        {view !== "movimientos" && (
-          <>
-            <select
-              value={catFilter}
-              onChange={e => setCatFilter(e.target.value)}
-              className="px-3 py-2 rounded-lg border border-gray-200 dark:border-card-border text-sm text-gray-700 dark:text-foreground outline-none focus:border-primary"
-            >
-              {categories.map(c => (
-                <option key={c.id} value={c.id}>{c.emoji} {c.label}</option>
-              ))}
-            </select>
-            <button
-              onClick={() => setLowOnly(!lowOnly)}
-              className={cn(
-                "flex items-center gap-1 px-3 py-2 rounded-lg text-xs font-bold border transition-colors",
-                lowOnly ? "border-amber-300 bg-amber-50 text-amber-700" : "border-gray-200 dark:border-card-border text-gray-500 dark:text-muted hover:bg-gray-50 dark:hover:bg-surface"
-              )}
-            >
-              <AlertTriangle className="h-3.5 w-3.5" /> Bajo stock
-            </button>
-            {/* IMPROVEMENT 2: Show Inactive Toggle */}
-            <button
-              onClick={() => setShowInactive(!showInactive)}
-              className={cn(
-                "flex items-center gap-1 px-3 py-2 rounded-lg text-xs font-bold border transition-colors",
-                showInactive ? "border-gray-400 bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300" : "border-gray-200 dark:border-card-border text-gray-500 dark:text-muted hover:bg-gray-50 dark:hover:bg-surface"
-              )}
-            >
-              {showInactive ? <Eye className="h-3.5 w-3.5" /> : <EyeOff className="h-3.5 w-3.5" />}
-              Mostrar inactivos
-            </button>
-            {/* Mejora 8R2: Filtro sin foto */}
-            <button
-              onClick={() => setNoImageOnly(!noImageOnly)}
-              className={cn(
-                "flex items-center gap-1 px-3 py-2 rounded-lg text-xs font-bold border transition-colors",
-                noImageOnly ? "border-violet-300 bg-violet-50 text-violet-700 dark:border-violet-700 dark:bg-violet-950/20 dark:text-violet-400" : "border-gray-200 dark:border-card-border text-gray-500 dark:text-muted hover:bg-gray-50 dark:hover:bg-surface"
-              )}
-            >
-              <Camera className="h-3.5 w-3.5" /> Sin foto ({noImageCount})
-            </button>
-            {/* Toggle columnas extendidas */}
-            <button
-              onClick={() => { const next = !showExtendedCols; setShowExtendedCols(next); try { localStorage.setItem("inv-extended-cols", String(next)); } catch {} }}
-              className={cn(
-                "flex items-center gap-1 px-3 py-2 rounded-lg text-xs font-bold border transition-colors",
-                showExtendedCols ? "border-blue-300 bg-blue-50 text-blue-700 dark:border-blue-700 dark:bg-blue-950/20 dark:text-blue-400" : "border-gray-200 dark:border-card-border text-gray-500 dark:text-muted hover:bg-gray-50 dark:hover:bg-surface"
-              )}
-            >
-              <Layers className="h-3.5 w-3.5" /> {showExtendedCols ? "Menos columnas" : "Mas columnas"}
-            </button>
-            {view === "productos" && (
+      {/* Expanded options panel (Vista + Import/Export) — collapsible from toolbar "Mas" button */}
+      {showFilters && (
+        <div className="bg-gray-50 dark:bg-surface rounded-xl p-3 border border-[var(--rule-soft)] dark:border-card-border space-y-3">
+          {/* Grupo: Vista */}
+          <div>
+            <p className="text-[length:var(--ts-2xs)] font-bold text-gray-400 dark:text-muted mb-2">Vista</p>
+            <div className="flex flex-wrap gap-2">
               <button
-                onClick={() => { setBulkField("pricePercent"); setBulkValue(""); setBulkModal(true); }}
-                className="flex items-center gap-1 px-3 py-2 rounded-lg text-xs font-bold border border-primary/30 text-primary hover:bg-primary/5 transition-colors"
-                title="Ajustar precios por porcentaje"
+                onClick={() => { const next = !showExtendedCols; setShowExtendedCols(next); try { localStorage.setItem("inv-extended-cols", String(next)); } catch {} }}
+                className={cn(
+                  "flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-bold border transition-colors",
+                  showExtendedCols ? "border-emerald-300 bg-emerald-50 text-emerald-700 dark:border-emerald-700 dark:bg-emerald-950/20 dark:text-emerald-400" : "border-[var(--rule-base)] dark:border-card-border text-gray-500 dark:text-muted hover:bg-white dark:hover:bg-card"
+                )}
               >
-                <TrendingUp className="h-3.5 w-3.5" /> Ajuste %
+                <Layers className="h-3.5 w-3.5" /> {showExtendedCols ? "Menos columnas" : "Mas columnas"}
               </button>
-            )}
-            {/* AB4: Export inventory CSV */}
-            <button
-              onClick={() => {
-                const filtered = products.filter(p => {
-                  if (catFilter !== "todos" && p.category !== catFilter) return false;
-                  if (search && !p.name.toLowerCase().includes(search.toLowerCase()) && !(p.barcode ?? "").includes(search)) return false;
-                  return true;
-                });
-                exportToCSV(filtered.map(p => ({
-                  nombre: p.name, categoria: p.category, precio: p.price,
-                  costo: p.costPrice ?? "", stock: p.stock ?? "",
-                  stockMin: p.stockMin ?? "", stockMax: p.stockMax ?? "",
-                  unidad: p.unit, codigo: p.barcode ?? "", activo: p.active ? "Sí" : "No",
-                })), `inventario_${new Date().toISOString().slice(0, 10)}.csv`);
-              }}
-              className="flex items-center gap-1 px-3 py-2 rounded-lg text-xs font-bold border border-gray-200 dark:border-card-border text-gray-500 dark:text-muted hover:bg-gray-50 dark:hover:bg-surface transition-colors"
-              title="Descargar inventario filtrado como CSV"
-            >
-              <Download className="h-3.5 w-3.5" /> CSV
-            </button>
-            {/* Excel Export */}
-            <button
-              onClick={() => {
-                const filtered = products.filter(p => {
-                  if (catFilter !== "todos" && p.category !== catFilter) return false;
-                  if (search && !p.name.toLowerCase().includes(search.toLowerCase()) && !(p.barcode ?? "").includes(search)) return false;
-                  return true;
-                });
-                exportToExcel(filtered.map(p => ({
-                  Nombre: p.name, Categoría: p.category, "Precio (S/)": p.price,
-                  "Costo (S/)": p.costPrice ?? "", Stock: p.stock ?? "",
-                  "Stock Mín": p.stockMin ?? "", "Stock Máx": p.stockMax ?? "",
-                  Unidad: p.unit, Código: p.barcode ?? "", Activo: p.active ? "Sí" : "No",
-                })), `inventario-${new Date().toISOString().slice(0, 10)}`, "Inventario");
-              }}
-              className="flex items-center gap-1 px-3 py-2 rounded-lg text-xs font-bold border border-emerald-300 dark:border-emerald-800/50 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-950/20 transition-colors"
-              title="Descargar inventario como Excel"
-            >
-              <Download className="h-3.5 w-3.5" /> Excel
-            </button>
-            {/* AB5: Import CSV */}
-            <input ref={csvImportRef} type="file" accept=".csv,text/csv" className="hidden" onChange={handleCsvImport} />
-            <button
-              onClick={() => { setCsvResult(null); csvImportRef.current?.click(); }}
-              disabled={csvImporting}
-              className="flex items-center gap-1 px-3 py-2 rounded-lg text-xs font-bold border border-emerald-200 dark:border-emerald-800/50 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-950/20 transition-colors disabled:opacity-50"
-              title="Subir productos desde CSV (columnas: nombre, precio, categoria, stock, costo, unidad, codigo)"
-            >
-              {csvImporting ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Upload className="h-3.5 w-3.5" />} Subir
-            </button>
-          </>
-        )}
-      </div>
+              <button
+                onClick={() => setShowExpandedTable(true)}
+                className="flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-bold border border-emerald-300 bg-emerald-50 text-emerald-700 dark:border-emerald-700 dark:bg-emerald-950/20 dark:text-emerald-400 hover:bg-emerald-100 dark:hover:bg-emerald-950/30 transition-colors"
+              >
+                <Maximize2 className="h-3.5 w-3.5" /> Expandir tabla
+              </button>
+              {view === "productos" && (
+                <button
+                  onClick={() => { setBulkField("pricePercent"); setBulkValue(""); setBulkModal(true); }}
+                  className="flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-bold border border-primary/30 text-primary hover:bg-primary/5 transition-colors"
+                >
+                  <TrendingUp className="h-3.5 w-3.5" /> Ajuste %
+                </button>
+              )}
+            </div>
+          </div>
+
+          {/* Grupo: Importar / Exportar */}
+          <div>
+            <p className="text-[length:var(--ts-2xs)] font-bold text-gray-400 dark:text-muted mb-2">Importar / Exportar</p>
+            <div className="flex flex-wrap gap-2">
+              <button
+                onClick={() => {
+                  const filtered = products.filter(p => {
+                    if (catFilter !== "todos" && p.category !== catFilter) return false;
+                    if (search && !p.name.toLowerCase().includes(search.toLowerCase()) && !(p.barcode ?? "").includes(search)) return false;
+                    return true;
+                  });
+                  exportToCSV(filtered.map(p => ({
+                    nombre: p.name, categoria: p.category, precio: p.price,
+                    costo: p.costPrice ?? "", stock: p.stock ?? "",
+                    stockMin: p.stockMin ?? "", stockMax: p.stockMax ?? "",
+                    unidad: p.unit, codigo: p.barcode ?? "", activo: p.active ? "Si" : "No",
+                  })), `inventario_${new Date().toISOString().slice(0, 10)}.csv`);
+                }}
+                className="flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-bold border border-[var(--rule-base)] dark:border-card-border text-gray-500 dark:text-muted hover:bg-white dark:hover:bg-card transition-colors"
+              >
+                <Download className="h-3.5 w-3.5" /> CSV
+              </button>
+              <button
+                onClick={() => {
+                  const filtered = products.filter(p => {
+                    if (catFilter !== "todos" && p.category !== catFilter) return false;
+                    if (search && !p.name.toLowerCase().includes(search.toLowerCase()) && !(p.barcode ?? "").includes(search)) return false;
+                    return true;
+                  });
+                  exportToExcel(filtered.map(p => ({
+                    Nombre: p.name, Categoria: p.category, "Precio (S/)": p.price,
+                    "Costo (S/)": p.costPrice ?? "", Stock: p.stock ?? "",
+                    "Stock Min": p.stockMin ?? "", "Stock Max": p.stockMax ?? "",
+                    Unidad: p.unit, Codigo: p.barcode ?? "", Activo: p.active ? "Si" : "No",
+                  })), `inventario-${new Date().toISOString().slice(0, 10)}`, "Inventario");
+                }}
+                className="flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-bold border border-emerald-300 dark:border-emerald-800/50 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-950/20 transition-colors"
+              >
+                <Download className="h-3.5 w-3.5" /> Excel
+              </button>
+              <input ref={csvImportRef} type="file" accept=".csv,text/csv" className="hidden" onChange={handleCsvImport} />
+              <button
+                onClick={() => { setCsvResult(null); csvImportRef.current?.click(); }}
+                disabled={csvImporting}
+                className="flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-bold border border-emerald-200 dark:border-emerald-800/50 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-950/20 transition-colors disabled:opacity-50"
+              >
+                {csvImporting ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Upload className="h-3.5 w-3.5" />} Subir CSV
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Contador de resultados filtrados */}
-      {view !== "movimientos" && filteredProducts.length !== products.length && (
-        <p className="text-[10px] text-gray-400">Mostrando {filteredProducts.length} de {products.length} productos</p>
+      {filteredProducts.length !== products.length && (
+        <p className="text-[length:var(--ts-2xs)] text-gray-400">Mostrando {filteredProducts.length} de {products.length} productos</p>
       )}
 
       {/* Content */}
@@ -1038,21 +1161,19 @@ export default function InventoryTab() {
                 <div
                   key={p.id}
                   className={cn(
-                    "bg-white dark:bg-card border rounded-2xl p-4 shadow-sm transition-all relative",
+                    "bg-white dark:bg-card border rounded-xl p-4  transition-all relative",
                     !p.active && "opacity-60 bg-gray-50 dark:bg-gray-900",
-                    lowStock ? "border-amber-300" : "border-gray-200 dark:border-card-border"
+                    lowStock ? "border-amber-300" : "border-[var(--rule-base)] dark:border-card-border"
                   )}
                 >
                   {!p.active && (
                     <div className="absolute top-2 right-2 z-10">
-                      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-gray-200 dark:bg-gray-700 text-gray-600 dark:text-gray-300 text-xs font-bold">
-                        <EyeOff className="h-3 w-3" /> Inactivo
-                      </span>
+                      <StatusBadge variant="neutral" label="Inactivo" icon={EyeOff} />
                     </div>
                   )}
                   <div className="flex flex-wrap items-start gap-3">
                     {p.image ? (
-                      <Image src={p.image} alt={p.name} width={56} height={56} unoptimized={p.image.startsWith("data:")} className="rounded-xl object-cover border border-gray-100 dark:border-card-border shrink-0 bg-gray-50 dark:bg-surface" />
+                      <Image src={p.image} alt={p.name} width={56} height={56} unoptimized={p.image.startsWith("data:")} className="rounded-xl object-cover border border-[var(--rule-soft)] dark:border-card-border shrink-0 bg-gray-50 dark:bg-surface" />
                     ) : (
                       <div className="h-14 w-14 rounded-xl bg-primary/10 flex items-center justify-center shrink-0">
                         <Package className="h-6 w-6 text-primary/40" />
@@ -1062,10 +1183,10 @@ export default function InventoryTab() {
                       <div className="flex items-center gap-1.5 flex-wrap">
                         <p className="font-bold text-gray-900 dark:text-foreground text-sm leading-tight">{p.name}</p>
                         {topRentables.includes(p.id) && (
-                          <span className="inline-flex px-1.5 py-0.5 rounded-full bg-emerald-100 text-emerald-700 dark:bg-emerald-950/30 dark:text-emerald-400 text-[10px] font-bold">Alta rentabilidad</span>
+                          <StatusBadge variant="success" label="Alta rentabilidad" size="sm" />
                         )}
                       </div>
-                      <p className="text-xs text-gray-400 dark:text-muted mt-0.5">{cat?.emoji} {cat?.label ?? p.category} · {p.unit}</p>
+                      <p className="text-xs text-gray-400 dark:text-muted mt-0.5">{cat?.label ?? p.category} · {p.unit}</p>
                       <div className="flex items-center gap-1.5 mt-1.5">
                         <span className="font-extrabold text-primary text-base">S/{p.price.toFixed(2)}</span>
                         {p.costPrice && <span className="text-xs text-gray-400 dark:text-muted">costo S/{p.costPrice.toFixed(2)}</span>}
@@ -1073,18 +1194,18 @@ export default function InventoryTab() {
                       </div>
                     </div>
                     <div className="flex flex-col gap-1.5 shrink-0">
-                      <button onClick={() => openEditModal(p)} className="p-2 rounded-xl bg-gray-50 dark:bg-surface text-gray-500 dark:text-muted hover:bg-primary/10 hover:text-primary transition-colors border border-gray-100 dark:border-card-border" title="Editar">
+                      <button onClick={() => openEditModal(p)} className="p-2 rounded-lg bg-gray-50 dark:bg-surface text-gray-500 dark:text-muted hover:bg-primary/10 hover:text-primary transition-colors border border-[var(--rule-soft)] dark:border-card-border" title="Editar">
                         <Pencil className="h-4 w-4" />
                       </button>
-                      <button onClick={() => deleteProduct(p.id)} className="p-2 rounded-xl bg-gray-50 dark:bg-surface text-gray-500 dark:text-muted hover:bg-red-50 hover:text-red-500 transition-colors border border-gray-100 dark:border-card-border" title="Eliminar">
+                      <button onClick={() => deleteProduct(p.id)} className="p-2 rounded-lg bg-gray-50 dark:bg-surface text-gray-500 dark:text-muted hover:bg-red-50 hover:text-red-500 transition-colors border border-[var(--rule-soft)] dark:border-card-border" title="Eliminar">
                         <Trash2 className="h-4 w-4" />
                       </button>
-                      <button onClick={() => setKardexProduct({ id: p.id, name: p.name })} className="p-2 rounded-xl bg-gray-50 dark:bg-surface text-gray-500 dark:text-muted hover:bg-blue-50 hover:text-blue-600 transition-colors border border-gray-100 dark:border-card-border" title="Ver Kardex">
+                      <button onClick={() => setKardexProduct({ id: p.id, name: p.name })} className="p-2 rounded-lg bg-gray-50 dark:bg-surface text-gray-500 dark:text-muted hover:bg-emerald-50 hover:text-emerald-600 transition-colors border border-[var(--rule-soft)] dark:border-card-border" title="Ver Kardex">
                         <BookOpen className="h-4 w-4" />
                       </button>
                     </div>
                   </div>
-                  <div className="flex items-center gap-2 flex-wrap mt-3 pt-3 border-t border-gray-100 dark:border-card-border">
+                  <div className="flex items-center gap-2 flex-wrap mt-3 pt-3 border-t border-[var(--rule-soft)] dark:border-card-border">
                     <button
                       onClick={() => toggleActive(p)}
                       className={cn(
@@ -1098,7 +1219,7 @@ export default function InventoryTab() {
                     {p.stock !== undefined ? (
                       <div className={cn(
                         "inline-flex items-center gap-1 px-3 py-1.5 rounded-full text-xs font-bold",
-                        lowStock ? "bg-amber-100 text-amber-700" : "bg-blue-50 text-blue-600"
+                        lowStock ? "bg-amber-100 text-amber-700" : "bg-emerald-50 text-emerald-600"
                       )}>
                         {lowStock && <AlertTriangle className="h-3 w-3" />}
                         Stock: {p.stock}
@@ -1114,44 +1235,55 @@ export default function InventoryTab() {
             })}
             {filteredProducts.length === 0 && (
               <EmptyState
-                icon={products.length === 0 ? Warehouse : Package}
+                illustration={products.length === 0 ? "products" : "search"}
                 title={products.length === 0 ? "Sin inventario" : "Sin resultados"}
-                description={products.length === 0 ? "Agrega productos y registra movimientos de stock." : "Prueba con otro filtro o búsqueda."}
+                description={products.length === 0 ? "Agrega productos y registra movimientos de stock." : "Prueba con otro filtro o busqueda."}
               />
             )}
             <Paginator page={pgProducts.page} totalPages={pgProducts.totalPages} total={pgProducts.total} pageSize={pgProducts.pageSize} onPage={pgProducts.setPage} onPageSize={pgProducts.setPageSize} />
           </div>
 
           {/* Desktop table — UX Mejora 18: Sticky header */}
-          <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl overflow-hidden shadow-sm hidden sm:block">
+          <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl overflow-hidden  hidden sm:block">
             <div className="max-h-[65vh] overflow-y-auto overflow-x-auto">
               <table className="w-full min-w-[600px] text-sm">
-                <thead className="sticky top-0 bg-white dark:bg-card z-10 shadow-[0_1px_0_0_rgba(0,0,0,0.05)]">
-                  <tr className="border-b border-gray-100 dark:border-card-border text-left">
+                <thead className="sticky top-0 bg-white dark:bg-card z-10 shadow-[var(--shadow-sm)]">
+                  <tr className="border-b border-[var(--rule-soft)] dark:border-card-border text-left">
                     <th className="px-3 py-3 w-10">
-                      <input type="checkbox" checked={filteredProducts.length > 0 && selectedIds.size === filteredProducts.length} onChange={toggleSelectAll} className="rounded border-gray-300 text-primary focus:ring-primary" />
+                      <input type="checkbox" checked={filteredProducts.length > 0 && selectedIds.size === filteredProducts.length} onChange={toggleSelectAll} className="rounded border-[var(--rule-base)] text-primary focus:ring-primary" />
                     </th>
-                    <th className="px-2 sm:px-4 py-2 sm:py-3 text-xs font-bold text-gray-500 dark:text-muted uppercase tracking-wider w-12">Img</th>
-                    <th className="px-2 sm:px-4 py-2 sm:py-3 text-xs font-bold text-gray-500 dark:text-muted uppercase tracking-wider">Producto</th>
-                    <th className="px-2 sm:px-4 py-2 sm:py-3 text-xs font-bold text-gray-500 dark:text-muted uppercase tracking-wider">Categoría</th>
-                    <th className="px-2 sm:px-4 py-2 sm:py-3 text-xs font-bold text-gray-500 dark:text-muted uppercase tracking-wider">Precio</th>
-                    <th className={cn("px-2 sm:px-4 py-2 sm:py-3 text-xs font-bold text-gray-500 dark:text-muted uppercase tracking-wider", !showExtendedCols && "hidden")}>Historial</th>
-                    <th className={cn("px-2 sm:px-4 py-2 sm:py-3 text-xs font-bold text-gray-500 dark:text-muted uppercase tracking-wider", !showExtendedCols && "hidden")}>Badge</th>
-                    <th className="px-2 sm:px-4 py-2 sm:py-3 text-xs font-bold text-gray-500 dark:text-muted uppercase tracking-wider">Stock</th>
-                    <th className={cn("px-2 sm:px-4 py-2 sm:py-3 text-xs font-bold text-gray-500 dark:text-muted uppercase tracking-wider", !showExtendedCols && "hidden")} title="Basado en las ultimas compras">Costo Prom.</th>
-                    <th className={cn("px-2 sm:px-4 py-2 sm:py-3 text-xs font-bold text-gray-500 dark:text-muted uppercase tracking-wider", !showExtendedCols && "hidden")}>Rotacion</th>
-                    <th className={cn("px-2 sm:px-4 py-2 sm:py-3 text-xs font-bold text-gray-500 dark:text-muted uppercase tracking-wider", !showExtendedCols && "hidden")}>Cambio 30d</th>
-                    <th className="px-2 sm:px-4 py-2 sm:py-3 text-xs font-bold text-gray-500 dark:text-muted uppercase tracking-wider">Estado</th>
-                    <th className="px-2 sm:px-4 py-2 sm:py-3 text-xs font-bold text-gray-500 dark:text-muted uppercase tracking-wider">Acciones</th>
+                    <th className="px-2 sm:px-4 py-2 sm:py-3 text-xs font-bold text-gray-500 dark:text-muted w-12">Img</th>
+                    <th className="px-2 sm:px-4 py-2 sm:py-3 text-xs font-bold text-gray-500 dark:text-muted">Producto</th>
+                    <th className="px-2 sm:px-4 py-2 sm:py-3 text-xs font-bold text-gray-500 dark:text-muted">Categoría</th>
+                    <th className="px-2 sm:px-4 py-2 sm:py-3 text-xs font-bold text-gray-500 dark:text-muted">Precio</th>
+                    <th className={cn("px-2 sm:px-4 py-2 sm:py-3 text-xs font-bold text-gray-500 dark:text-muted", !showExtendedCols && "hidden")}>Historial</th>
+                    <th className={cn("px-2 sm:px-4 py-2 sm:py-3 text-xs font-bold text-gray-500 dark:text-muted", !showExtendedCols && "hidden")}>Badge</th>
+                    <th className="px-2 sm:px-4 py-2 sm:py-3 text-xs font-bold text-gray-500 dark:text-muted">Stock</th>
+                    <th className={cn("px-2 sm:px-4 py-2 sm:py-3 text-xs font-bold text-gray-500 dark:text-muted", !showExtendedCols && "hidden")} title="Basado en las ultimas compras">Costo Prom.</th>
+                    <th className={cn("px-2 sm:px-4 py-2 sm:py-3 text-xs font-bold text-gray-500 dark:text-muted", !showExtendedCols && "hidden")}>Rotacion</th>
+                    <th className={cn("px-2 sm:px-4 py-2 sm:py-3 text-xs font-bold text-gray-500 dark:text-muted", !showExtendedCols && "hidden")}>Cambio 30d</th>
+                    <th className="px-2 sm:px-4 py-2 sm:py-3 text-xs font-bold text-gray-500 dark:text-muted">Estado</th>
+                    <th className="px-2 sm:px-4 py-2 sm:py-3 text-xs font-bold text-gray-500 dark:text-muted">Acciones</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-50">
                   {pgProducts.items.map(p => {
                     const lowStock = isLowStock(p);
                     return (
-                      <tr key={p.id} className={cn("hover:bg-gray-50 dark:hover:bg-surface transition-colors", !p.active && "opacity-50 bg-gray-50 dark:bg-gray-900/30", lowStock && "bg-amber-50/40", selectedIds.has(p.id) && "bg-primary/5")}>
+                      <tr
+                        key={p.id}
+                        className={cn("hover:bg-gray-50 dark:hover:bg-surface transition-colors", !p.active && "opacity-50 bg-gray-50 dark:bg-gray-900/30", lowStock && "bg-amber-50/40", selectedIds.has(p.id) && "bg-primary/5")}
+                        onContextMenu={(e) => {
+                          e.preventDefault();
+                          let x = e.clientX;
+                          let y = e.clientY;
+                          if (x + 200 > window.innerWidth) x = window.innerWidth - 208;
+                          if (y + 200 > window.innerHeight) y = window.innerHeight - 208;
+                          setCtxMenu({ product: p, x, y });
+                        }}
+                      >
                         <td className="px-3 py-3">
-                          <input type="checkbox" checked={selectedIds.has(p.id)} onChange={() => toggleSelect(p.id)} className="rounded border-gray-300 text-primary focus:ring-primary" />
+                          <input type="checkbox" checked={selectedIds.has(p.id)} onChange={() => toggleSelect(p.id)} className="rounded border-[var(--rule-base)] text-primary focus:ring-primary" />
                         </td>
                         <td className="px-2 sm:px-4 py-2 sm:py-3">
                           {p.image ? (
@@ -1176,19 +1308,15 @@ export default function InventoryTab() {
                             <span className="font-semibold text-gray-900 dark:text-foreground truncate-25">{p.name}</span>
                             {/* Mejora QW-10i: Badge alta rentabilidad */}
                             {topRentables.includes(p.id) && (
-                              <span className="inline-flex px-1.5 py-0.5 rounded-full bg-emerald-100 text-emerald-700 dark:bg-emerald-950/30 dark:text-emerald-400 text-[10px] font-bold">
-                                Alta rentabilidad
-                              </span>
+                              <StatusBadge variant="success" label="Alta rentabilidad" size="sm" />
                             )}
                             {!p.active && (
-                              <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded bg-gray-200 dark:bg-gray-700 text-gray-600 dark:text-gray-300 text-[10px] font-bold">
-                                <EyeOff className="h-2.5 w-2.5" /> Inactivo
-                              </span>
+                              <StatusBadge variant="neutral" label="Inactivo" icon={EyeOff} size="sm" />
                             )}
                           </div>
                         </td>
                         <td className="px-2 sm:px-4 py-2 sm:py-3 text-gray-600 dark:text-muted">
-                          {categories.find(c => c.id === p.category)?.emoji} {categories.find(c => c.id === p.category)?.label ?? p.category}
+                          {categories.find(c => c.id === p.category)?.label ?? p.category}
                         </td>
                         <td className="px-2 sm:px-4 py-2 sm:py-3 font-bold text-primary">S/{p.price.toFixed(2)}</td>
                         <td className={cn("px-2 sm:px-4 py-2 sm:py-3", !showExtendedCols && "hidden")}>
@@ -1203,7 +1331,7 @@ export default function InventoryTab() {
                               <span className={cn("h-2.5 w-2.5 rounded-full shrink-0",
                                 (p.stock ?? 0) === 0 ? "bg-red-500" :
                                 lowStock ? "bg-amber-500" :
-                                (p.stock ?? 0) > (p.stockMax ?? 999) ? "bg-blue-500" :
+                                (p.stock ?? 0) > (p.stockMax ?? 999) ? "bg-emerald-500" :
                                 "bg-emerald-500"
                               )} />
                               <span className={cn("inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-bold",
@@ -1230,9 +1358,9 @@ export default function InventoryTab() {
                           {(() => {
                             const spw = computeSalesPerWeek(p.id, movements);
                             const info = getRotationInfo(spw, p.stock ?? 0);
-                            if (!info) return <span className="text-[10px] text-gray-400 dark:text-muted">Normal</span>;
+                            if (!info) return <span className="text-[length:var(--ts-2xs)] text-gray-400 dark:text-muted">Normal</span>;
                             return (
-                              <span className={cn("inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold", info.className)}>
+                              <span className={cn("inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[length:var(--ts-2xs)] font-bold", info.className)}>
                                 {info.level === "rapido" && <TrendingUp className="h-2.5 w-2.5" />}
                                 {info.label}
                               </span>
@@ -1287,7 +1415,7 @@ export default function InventoryTab() {
                                 });
                                 setShowAdd(true);
                               }}
-                              className="p-1.5 rounded-lg text-gray-400 dark:text-muted hover:text-blue-500 hover:bg-blue-50 transition-colors"
+                              className="p-1.5 rounded-lg text-gray-400 dark:text-muted hover:text-emerald-500 hover:bg-emerald-50 transition-colors"
                               title="Duplicar"
                             >
                               <ClipboardList className="h-4 w-4" />
@@ -1296,7 +1424,7 @@ export default function InventoryTab() {
                               <Trash2 className="h-4 w-4" />
                             </button>
                             {/* Mejora 6 nueva: QR */}
-                            <button onClick={() => setShowQRProduct(p)} className="p-1.5 rounded-lg text-gray-400 dark:text-muted hover:text-violet-500 hover:bg-violet-50 transition-colors" title="QR">
+                            <button onClick={() => setShowQRProduct(p)} className="p-1.5 rounded-lg text-gray-400 dark:text-muted hover:text-[var(--text-primary)] hover:bg-[var(--surface-sunken)] transition-colors" title="QR">
                               <ScanBarcode className="h-4 w-4" />
                             </button>
                             {/* Mejora 5 nueva: Auto-reorden toggle */}
@@ -1330,172 +1458,14 @@ export default function InventoryTab() {
             </div>
             {filteredProducts.length === 0 && (
               <EmptyState
-                icon={products.length === 0 ? Warehouse : Package}
+                illustration={products.length === 0 ? "products" : "search"}
                 title={products.length === 0 ? "Sin inventario" : "Sin resultados"}
-                description={products.length === 0 ? "Agrega productos y registra movimientos de stock." : "Prueba con otro filtro o búsqueda."}
+                description={products.length === 0 ? "Agrega productos y registra movimientos de stock." : "Prueba con otro filtro o busqueda."}
               />
             )}
             <Paginator page={pgProducts.page} totalPages={pgProducts.totalPages} total={pgProducts.total} pageSize={pgProducts.pageSize} onPage={pgProducts.setPage} onPageSize={pgProducts.setPageSize} />
           </div>
         </>
-      ) : view === "stock" ? (
-        /* ── Stock View ─────────────────────────────────────────── */
-        <div className="space-y-5">
-          {/* ── Visual KPI Tiles ─────────────────────────────────── */}
-          {(() => {
-            const all = filteredProducts.filter(p => p.stock !== undefined);
-            const agotado = all.filter(p => (p.stock ?? 0) === 0);
-            const bajo = all.filter(p => (p.stock ?? 0) > 0 && (p.stock ?? 0) <= (p.stockMin ?? 5));
-            const normal = all.filter(p => (p.stock ?? 0) > (p.stockMin ?? 5));
-            const valorTotal = all.reduce((s, p) => s + (p.stock ?? 0) * p.price, 0);
-            const lowList = [...agotado, ...bajo].slice(0, 10);
-            return (
-              <>
-                <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-                  <div className="bg-red-50 dark:bg-red-950/20 border border-red-200 dark:border-red-800/30 rounded-2xl p-4 flex flex-col gap-1">
-                    <span className="text-[11px] font-bold uppercase tracking-wider text-red-500">Agotado</span>
-                    <span className="text-xl sm:text-3xl font-extrabold text-red-600 dark:text-red-400">{agotado.length}</span>
-                    <span className="text-xs text-red-400">productos agotados</span>
-                  </div>
-                  <div className="bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-800/30 rounded-2xl p-4 flex flex-col gap-1">
-                    <span className="text-[11px] font-bold uppercase tracking-wider text-amber-500">Pocas Existencias</span>
-                    <span className="text-xl sm:text-3xl font-extrabold text-amber-600 dark:text-amber-400">{bajo.length}</span>
-                    <span className="text-xs text-amber-400">bajo mínimo</span>
-                  </div>
-                  <div className="bg-emerald-50 dark:bg-emerald-950/20 border border-emerald-200 dark:border-emerald-800/30 rounded-2xl p-4 flex flex-col gap-1">
-                    <span className="text-[11px] font-bold uppercase tracking-wider text-emerald-500">Normal</span>
-                    <span className="text-xl sm:text-3xl font-extrabold text-emerald-600 dark:text-emerald-400">{normal.length}</span>
-                    <span className="text-xs text-emerald-400">con stock suficiente</span>
-                  </div>
-                  <div className="bg-blue-50 dark:bg-blue-950/20 border border-blue-200 dark:border-blue-800/30 rounded-2xl p-4 flex flex-col gap-1">
-                    <span className="text-[11px] font-bold uppercase tracking-wider text-blue-500">Valor total</span>
-                    <span className="text-xl font-extrabold text-blue-600 dark:text-blue-400">{fmt(valorTotal)}</span>
-                    <span className="text-xs text-blue-400">inventario en stock</span>
-                  </div>
-                </div>
-
-                {/* ── Low-stock bar chart ───────────────────────── */}
-                {lowList.length > 0 && (
-                  <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl p-3 sm:p-5 shadow-sm">
-                    <div className="flex items-center justify-between mb-4">
-                      <h3 className="font-extrabold text-gray-900 dark:text-foreground flex flex-wrap items-center gap-2">
-                        <AlertTriangle className="h-4 w-4 text-amber-500" />
-                        Productos críticos — reordenar ya
-                      </h3>
-                      <span className="text-xs text-muted">{lowList.length} producto{lowList.length !== 1 ? "s" : ""}</span>
-                    </div>
-                    <div className="space-y-2.5">
-                      {lowList.map(p => {
-                        const stock = p.stock ?? 0;
-                        const min = p.stockMin ?? 5;
-                        const pct = stock === 0 ? 0 : Math.min(100, Math.round((stock / (min * 2)) * 100));
-                        const barColor = stock === 0 ? "bg-red-500" : "bg-amber-400";
-                        const reorderQty = Math.max(min * 3 - stock, min);
-                        return (
-                          <div key={p.id} className="flex flex-wrap items-center gap-3">
-                            <div className="w-32 sm:w-44 truncate text-xs font-semibold text-foreground">{p.name}</div>
-                            <div className="flex-1 h-4 bg-gray-100 dark:bg-surface rounded-full overflow-hidden">
-                              <div
-                                className={cn("h-full rounded-full transition-all duration-500", barColor)}
-                                style={{ width: `${pct}%` }}
-                              />
-                            </div>
-                            <div className="w-16 text-right text-xs font-bold shrink-0">
-                              <span className={stock === 0 ? "text-red-600 dark:text-red-400" : "text-amber-600 dark:text-amber-400"}>{stock} ud.</span>
-                            </div>
-                            <div className="hidden sm:block w-32 text-xs text-muted shrink-0">
-                              → pedir ~<span className="font-bold text-primary">{reorderQty}</span> ud.
-                            </div>
-                          </div>
-                        );
-                      })}
-                    </div>
-                  </div>
-                )}
-              </>
-            );
-          })()}
-
-          <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl overflow-hidden shadow-sm">
-          <div className="overflow-x-auto">
-            <table className="w-full min-w-[600px] text-sm">
-              <thead>
-                <tr className="border-b border-gray-100 dark:border-card-border text-left">
-                  <th className="px-2 sm:px-4 py-2 sm:py-3 text-xs font-bold text-gray-500 dark:text-muted uppercase tracking-wider">Producto</th>
-                  <th className="px-2 sm:px-4 py-2 sm:py-3 text-xs font-bold text-gray-500 dark:text-muted uppercase tracking-wider">Categoría</th>
-                  <th className="px-2 sm:px-4 py-2 sm:py-3 text-xs font-bold text-gray-500 dark:text-muted uppercase tracking-wider text-right">Stock</th>
-                  <th className="px-2 sm:px-4 py-2 sm:py-3 text-xs font-bold text-gray-500 dark:text-muted uppercase tracking-wider text-right hidden sm:table-cell">Mín</th>
-                  <th className="px-2 sm:px-4 py-2 sm:py-3 text-xs font-bold text-gray-500 dark:text-muted uppercase tracking-wider text-right hidden sm:table-cell">Máx</th>
-                  <th className="px-2 sm:px-4 py-2 sm:py-3 text-xs font-bold text-gray-500 dark:text-muted uppercase tracking-wider hidden md:table-cell">Vence</th>
-                  <th className="px-2 sm:px-4 py-2 sm:py-3 text-xs font-bold text-gray-500 dark:text-muted uppercase tracking-wider text-right">Valor</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-50">
-                {pgProducts.items.map(p => {
-                  const low = isLowStock(p);
-                  return (
-                    <tr key={p.id} className={cn("hover:bg-gray-50 dark:hover:bg-surface transition-colors", low && "bg-amber-50/40", !p.active && "opacity-50")}>
-                      <td className="px-2 sm:px-4 py-2 sm:py-3">
-                        <div className="flex flex-wrap items-center gap-2">
-                          {p.image ? (
-                            <Image src={p.image} alt="" width={32} height={32} unoptimized={p.image.startsWith("data:")} className="rounded-lg object-cover border border-gray-100 dark:border-card-border shrink-0" />
-                          ) : (
-                            <div className="h-8 w-8 rounded-lg bg-gray-100 dark:bg-accent flex items-center justify-center shrink-0">
-                              <Package className="h-4 w-4 text-gray-400 dark:text-muted" />
-                            </div>
-                          )}
-                          <span className="font-semibold text-gray-900 dark:text-foreground truncate">{p.name}</span>
-                        </div>
-                      </td>
-                      <td className="px-2 sm:px-4 py-2 sm:py-3 text-gray-500 dark:text-muted text-xs">
-                        {categories.find(c => c.id === p.category)?.emoji} {categories.find(c => c.id === p.category)?.label ?? p.category}
-                      </td>
-                      <td className="px-2 sm:px-4 py-2 sm:py-3 text-right">
-                        {p.stock !== undefined ? (
-                          <span className={cn(
-                            "inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-bold",
-                            low ? "bg-amber-100 text-amber-700" : "bg-blue-50 text-blue-600"
-                          )}>
-                            {low && <AlertTriangle className="h-3 w-3" />}
-                            {p.stock}
-                          </span>
-                        ) : (
-                          <span className="text-gray-300 dark:text-muted">—</span>
-                        )}
-                      </td>
-                      <td className="px-2 sm:px-4 py-2 sm:py-3 text-right text-gray-500 dark:text-muted text-xs hidden sm:table-cell">{p.stockMin ?? "—"}</td>
-                      <td className="px-2 sm:px-4 py-2 sm:py-3 text-right text-gray-500 dark:text-muted text-xs hidden sm:table-cell">{p.stockMax ?? "—"}</td>
-                      <td className="px-2 sm:px-4 py-2 sm:py-3 hidden md:table-cell">{(() => {
-                        const expiry = (p as DbProduct & { expiryDate?: string }).expiryDate;
-                        if (!expiry) return <span className="text-gray-300 dark:text-muted">—</span>;
-                        const expiryDate = new Date(expiry);
-                        const now = new Date();
-                        const diffDays = Math.floor((expiryDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
-                        const color = diffDays < 0 ? "text-gray-400 line-through" : diffDays <= 7 ? "text-red-600 font-bold" : diffDays <= 30 ? "text-amber-600 font-semibold" : "text-gray-600";
-                        const badge = diffDays < 0 ? "Vencido" : diffDays <= 7 ? `${diffDays}d` : diffDays <= 15 ? `${diffDays}d` : null;
-                        const badgeColor = diffDays < 0 ? "bg-gray-200 text-gray-600" : diffDays <= 7 ? "bg-red-100 text-red-700" : "bg-amber-100 text-amber-700";
-                        return (
-                          <div className="flex items-center gap-1.5">
-                            <span className={cn("text-xs", color)}>{expiryDate.toLocaleDateString("es-PE", { day: "2-digit", month: "short", year: "numeric" })}</span>
-                            {badge && <span className={cn("text-[9px] font-bold px-1 py-0.5 rounded", badgeColor)}>{badge}</span>}
-                          </div>
-                        );
-                      })()}</td>
-                      <td className="px-2 sm:px-4 py-2 sm:py-3 text-right font-bold text-gray-900 dark:text-foreground text-xs">{p.stock !== undefined ? fmt(p.stock * p.price) : "—"}</td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
-          {filteredProducts.length === 0 && (
-            <div className="h-32 flex items-center justify-center text-gray-400 dark:text-muted text-sm">
-              No se encontraron productos
-            </div>
-          )}
-          <Paginator page={pgProducts.page} totalPages={pgProducts.totalPages} total={pgProducts.total} pageSize={pgProducts.pageSize} onPage={pgProducts.setPage} onPageSize={pgProducts.setPageSize} />
-        </div>
-        </div>
       ) : view === "kanban" ? (
         /* ── Kanban Stock View ────────────────────────────────────── */
         (() => {
@@ -1503,7 +1473,7 @@ export default function InventoryTab() {
             { key: "agotado", label: "Agotado", color: "border-red-400 bg-red-50 dark:bg-red-950/20", badgeColor: "bg-red-500", filter: (p: DbProduct) => (p.stock ?? 0) === 0 },
             { key: "bajo", label: "Pocas Existencias", color: "border-amber-400 bg-amber-50 dark:bg-amber-950/20", badgeColor: "bg-amber-500", filter: (p: DbProduct) => (p.stock ?? 0) > 0 && (p.stock ?? 0) <= (p.stockMin ?? 5) },
             { key: "normal", label: "Normal", color: "border-emerald-400 bg-emerald-50 dark:bg-emerald-950/20", badgeColor: "bg-emerald-500", filter: (p: DbProduct) => (p.stock ?? 0) > (p.stockMin ?? 5) && (p.stock ?? 0) <= (p.stockMax ?? 999) },
-            { key: "exceso", label: "Exceso", color: "border-blue-400 bg-blue-50 dark:bg-blue-950/20", badgeColor: "bg-blue-500", filter: (p: DbProduct) => (p.stock ?? 0) > (p.stockMax ?? 999) },
+            { key: "exceso", label: "Exceso", color: "border-emerald-400 bg-emerald-50 dark:bg-emerald-950/20", badgeColor: "bg-emerald-500", filter: (p: DbProduct) => (p.stock ?? 0) > (p.stockMax ?? 999) },
           ];
           return (
             <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-2 sm:gap-4">
@@ -1519,11 +1489,11 @@ export default function InventoryTab() {
                       {items.length === 0 ? (
                         <p className="text-xs text-gray-400 dark:text-muted text-center py-4">Sin productos</p>
                       ) : items.map(p => (
-                        <div key={p.id} className="bg-white dark:bg-card rounded-lg p-2.5 shadow-sm border border-gray-100 dark:border-border cursor-pointer hover:shadow-md transition-shadow"
+                        <div key={p.id} className="bg-white dark:bg-card rounded-lg p-2.5  border border-[var(--rule-soft)] dark:border-border cursor-pointer hover:shadow-sm transition-shadow"
                           onClick={() => { setEditModalProduct(p); }}>
                           <p className="text-xs font-bold text-gray-800 dark:text-foreground truncate">{p.name}</p>
                           <div className="flex items-center justify-between mt-1">
-                            <span className="text-[10px] text-gray-500 dark:text-muted">{p.category}</span>
+                            <span className="text-[length:var(--ts-2xs)] text-gray-500 dark:text-muted">{p.category}</span>
                             <span className="text-xs font-bold">{p.stock ?? 0} uds</span>
                           </div>
                         </div>
@@ -1535,259 +1505,113 @@ export default function InventoryTab() {
             </div>
           );
         })()
-      ) : view === "conteo" ? (
-        /* ── Stocktaking View ────────────────────────────────────── */
-        (() => {
-          const productsWithStock = filteredProducts.filter(p => p.stock !== undefined);
-          const counted = Object.keys(stockCounts).length;
-          const differences = Object.entries(stockCounts).filter(([id, val]) => {
-            const p = products.find(pr => pr.id === Number(id));
-            return p && p.stock !== undefined && Number(val) !== p.stock;
-          }).length;
-          const totalAdjustment = Object.entries(stockCounts).reduce((sum, [id, val]) => {
-            const p = products.find(pr => pr.id === Number(id));
-            if (!p || p.stock === undefined || !val) return sum;
-            return sum + Math.abs(Number(val) - p.stock);
-          }, 0);
-
-          const saveStocktaking = async () => {
-            setSaving(true);
-            for (const [id, countedStr] of Object.entries(stockCounts)) {
-              const counted = Number(countedStr);
-              const p = products.find(pr => pr.id === Number(id));
-              if (!p || p.stock === undefined || !countedStr) continue;
-              if (counted === p.stock) continue;
-              const type = counted > p.stock ? "ajuste_positivo" : "ajuste_negativo";
-              const quantity = Math.abs(counted - p.stock);
-              await fetch("/api/inventory-movements", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ productId: Number(id), type, quantity, notes: "Conteo físico" }),
-              });
-            }
-            setSaving(false);
-            setStockCounts({});
-            load();
-          };
-
-          return (
-            <div className="space-y-4">
-              {/* Summary card */}
-              <div className="bg-linear-to-r from-primary/10 to-primary/5 dark:from-primary/20 dark:to-primary/10 border border-primary/20 rounded-2xl p-4">
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 text-center">
-                  <div>
-                    <p className="text-xl sm:text-2xl font-extrabold text-primary">{counted}</p>
-                    <p className="text-xs text-gray-600 dark:text-muted">Contados</p>
-                  </div>
-                  <div>
-                    <p className="text-xl sm:text-2xl font-extrabold text-amber-600">{differences}</p>
-                    <p className="text-xs text-gray-600 dark:text-muted">Diferencias</p>
-                  </div>
-                  <div>
-                    <p className="text-xl sm:text-2xl font-extrabold text-red-600">{totalAdjustment}</p>
-                    <p className="text-xs text-gray-600 dark:text-muted">Ajuste total (ud.)</p>
-                  </div>
-                </div>
-              </div>
-
-              {/* Product cards */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-                {productsWithStock.map(p => {
-                  const countedVal = stockCounts[p.id] ?? "";
-                  const counted = countedVal ? Number(countedVal) : null;
-                  const diff = counted !== null && p.stock !== undefined ? counted - p.stock : 0;
-                  const diffColor = diff === 0 && counted !== null ? "border-emerald-300 bg-emerald-50/50" : Math.abs(diff) <= 3 ? "border-amber-300 bg-amber-50/50" : diff !== 0 ? "border-red-300 bg-red-50/50" : "border-gray-200 dark:border-card-border";
-                  return (
-                    <div key={p.id} className={cn("bg-white dark:bg-card rounded-2xl p-4 border transition-all", diffColor)}>
-                      <div className="flex flex-wrap items-start gap-3 mb-3">
-                        {p.image ? (
-                          <Image src={p.image} alt={p.name} width={48} height={48} unoptimized={p.image.startsWith("data:")} className="rounded-lg object-cover border border-gray-100 dark:border-card-border shrink-0 bg-gray-50 dark:bg-surface" />
-                        ) : (
-                          <div className="h-12 w-12 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
-                            <Package className="h-5 w-5 text-primary/40" />
-                          </div>
-                        )}
-                        <div className="flex-1 min-w-0">
-                          <p className="font-bold text-sm text-gray-900 dark:text-foreground leading-tight truncate">{p.name}</p>
-                          <p className="text-xs text-gray-400 dark:text-muted mt-0.5">Sistema: {p.stock} {p.unit}</p>
-                        </div>
-                      </div>
-                      <div>
-                        <label className="block text-xs font-semibold text-gray-600 dark:text-muted mb-1">Conteo físico</label>
-                        <input
-                          type="number"
-                          min="0"
-                          value={stockCounts[p.id] ?? ""}
-                          onChange={e => setStockCounts(prev => ({ ...prev, [p.id]: e.target.value }))}
-                          placeholder={String(p.stock)}
-                          className="w-full px-3 py-2 rounded-lg border border-gray-200 dark:border-card-border text-gray-900 dark:text-foreground focus:border-primary outline-none text-sm font-mono"
-                        />
-                      </div>
-                      {diff !== 0 && counted !== null && (
-                        <div className={cn("mt-2 text-xs font-bold text-center py-1 rounded", diff > 0 ? "text-emerald-700 bg-emerald-100" : "text-red-700 bg-red-100")}>
-                          {diff > 0 ? "+" : ""}{diff} unidades
-                        </div>
-                      )}
-                    </div>
-                  );
-                })}
-              </div>
-
-              {productsWithStock.length === 0 && (
-                <div className="h-32 flex items-center justify-center text-gray-400 dark:text-muted text-sm">
-                  No hay productos con stock para contar
-                </div>
-              )}
-
-              {/* Save button */}
-              {counted > 0 && (
-                <div className="flex justify-center pt-2">
-                  <button
-                    onClick={saveStocktaking}
-                    disabled={saving}
-                    className="flex flex-wrap items-center gap-2 px-3 sm:px-6 py-3 rounded-xl bg-primary text-white font-bold hover:bg-primary-dark transition-colors shadow-lg disabled:opacity-60"
-                  >
-                    {saving ? <Loader2 className="h-5 w-5 animate-spin" /> : <CheckSquare className="h-5 w-5" />}
-                    {saving ? "Guardando conteo..." : "Guardar conteo físico"}
-                  </button>
-                </div>
-              )}
-            </div>
-          );
-        })()
-      ) : (
-        /* ── Movements View ────────────────────────────────────── */
-        <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl overflow-hidden shadow-sm">
-          {filteredMovements.length === 0 ? (
-            <div className="h-32 flex flex-col items-center justify-center text-gray-400 dark:text-muted">
-              <ClipboardList className="h-6 w-6 mb-1" />
-              <p className="text-sm">Sin movimientos de inventario</p>
-            </div>
-          ) : (
-            <div className="divide-y divide-gray-50">
-              {pgMovements.items.map(m => {
-                const product = products.find(p => p.id === m.productId);
-                const meta = MOVEMENT_LABELS[m.type] ?? { label: m.type, color: "text-gray-600 dark:text-muted bg-gray-50 dark:bg-surface" };
-                const isPositive = ["compra", "devolucion", "ajuste_positivo"].includes(m.type);
-                return (
-                  <div key={m.id} className="px-2 sm:px-4 py-2 sm:py-3 flex flex-wrap items-center gap-3">
-                    <div className={cn("h-8 w-8 rounded-lg flex items-center justify-center shrink-0", isPositive ? "bg-emerald-50" : "bg-red-50")}>
-                      {isPositive ? <ArrowUp className="h-4 w-4 text-emerald-500" /> : <ArrowDown className="h-4 w-4 text-red-500" />}
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm font-semibold text-gray-900 dark:text-foreground truncate">{product?.name ?? `Producto #${m.productId}`}</p>
-                      <p className="text-xs text-gray-400 dark:text-muted">{fmtDate(m.createdAt)}{m.notes ? ` · ${m.notes}` : ""}</p>
-                    </div>
-                    <span className={cn("text-[10px] font-bold px-2 py-0.5 rounded-full shrink-0", meta.color)}>{meta.label}</span>
-                    <div className="text-right shrink-0 w-20">
-                      <p className={cn("text-sm font-bold", isPositive ? "text-emerald-600" : "text-red-600")}>
-                        {isPositive ? "+" : ""}{m.quantity}
-                      </p>
-                      <p className="text-[10px] text-gray-400 dark:text-muted">{m.previousStock} → {m.newStock}</p>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          )}
-          <Paginator page={pgMovements.page} totalPages={pgMovements.totalPages} total={pgMovements.total} pageSize={pgMovements.pageSize} onPage={pgMovements.setPage} onPageSize={pgMovements.setPageSize} />
-        </div>
-      )}
-
-      {/* ── Shrinkage Report View ─────────────────────────────────────── */}
-      {view === "merma" && (() => {
-        const LOSS_LABELS: Record<string, string> = {
-          damages: "Daños", theft: "Robo/Hurto", expiry: "Vencimiento", obsolescence: "Obsolescencia",
-        };
-        const shrinkage = movements.filter(m => m.type === "merma");
-        const byType: Record<string, { count: number; qty: number }> = {};
-        for (const m of shrinkage) {
-          const key = m.lossType ?? "other";
-          byType[key] = byType[key] ?? { count: 0, qty: 0 };
-          byType[key].count++;
-          byType[key].qty += m.quantity;
-        }
-        const totalQty = shrinkage.reduce((s, m) => s + m.quantity, 0);
-        // By product
-        const byProduct: Record<number, { name: string; qty: number; count: number }> = {};
-        for (const m of shrinkage) {
-          const p = products.find(pr => pr.id === m.productId);
-          const name = p?.name ?? `Producto #${m.productId}`;
-          byProduct[m.productId] = byProduct[m.productId] ?? { name, qty: 0, count: 0 };
-          byProduct[m.productId].qty += m.quantity;
-          byProduct[m.productId].count++;
-        }
-        const productRows = Object.entries(byProduct).sort((a, b) => b[1].qty - a[1].qty).slice(0, 10);
-        return (
-          <div className="space-y-4">
-            {/* KPIs */}
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-              <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl p-3 text-center">
-                <p className="text-lg font-extrabold text-red-600">{shrinkage.length}</p>
-                <p className="text-[10px] text-gray-400 dark:text-muted">Registros de merma</p>
-              </div>
-              <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl p-3 text-center">
-                <p className="text-lg font-extrabold text-red-600">{totalQty}</p>
-                <p className="text-[10px] text-gray-400 dark:text-muted">Unidades perdidas</p>
-              </div>
-              <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl p-3 text-center">
-                <p className="text-lg font-extrabold text-gray-900 dark:text-foreground">{Object.keys(byProduct).length}</p>
-                <p className="text-[10px] text-gray-400 dark:text-muted">Productos afectados</p>
-              </div>
-              <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl p-3 text-center">
-                <p className="text-lg font-extrabold text-gray-900 dark:text-foreground">{Object.keys(byType).length}</p>
-                <p className="text-[10px] text-gray-400 dark:text-muted">Tipos de pérdida</p>
-              </div>
-            </div>
-            {shrinkage.length === 0 ? (
-              <div className="bg-white dark:bg-card border-2 border-dashed border-gray-200 dark:border-card-border rounded-2xl p-10 text-center text-gray-400 dark:text-muted">
-                <p className="text-sm font-semibold">Sin mermas registradas</p>
-                <p className="text-xs mt-1">Registra movimientos de tipo &quot;merma&quot; con su causa</p>
-              </div>
-            ) : (
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-4">
-                {/* By loss type */}
-                <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl p-4">
-                  <h4 className="font-bold text-sm text-gray-900 dark:text-foreground mb-3">Por tipo de p&eacute;rdida</h4>
-                  <div className="space-y-2">
-                    {Object.entries(byType).map(([key, val]) => (
-                      <div key={key} className="flex items-center justify-between text-xs p-2 rounded-lg bg-gray-50 dark:bg-surface">
-                        <span className="font-semibold text-gray-700 dark:text-foreground">{LOSS_LABELS[key] ?? key}</span>
-                        <div className="flex flex-wrap items-center gap-3">
-                          <span className="text-gray-400 dark:text-muted">{val.count} reg.</span>
-                          <span className="font-bold text-red-600">{val.qty} ud.</span>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-                {/* Top products */}
-                <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl p-4">
-                  <h4 className="font-bold text-sm text-gray-900 dark:text-foreground mb-3">Productos más afectados</h4>
-                  <div className="space-y-2">
-                    {productRows.map(([id, row]) => (
-                      <div key={id} className="flex items-center justify-between text-xs p-2 rounded-lg bg-gray-50 dark:bg-surface">
-                        <span className="font-semibold text-gray-700 dark:text-foreground truncate max-w-40">{row.name}</span>
-                        <span className="font-bold text-red-600 shrink-0">{row.qty} ud.</span>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              </div>
-            )}
-          </div>
-        );
-      })()}
+      ) : null}
 
       {/* Barcode Scanner */}
       {showScanner && (
         <BarcodeScanner onDetected={handleBarcodeScan} onClose={() => setShowScanner(false)} />
       )}
 
+      {/* ── Product Picker Modal ── */}
+      {showPicker && (() => {
+        const q = pickerSearch.toLowerCase();
+        const pickerProducts = products.filter(p => {
+          if (!p.active) return false;
+          if (pickerCat !== "todos" && p.category !== pickerCat) return false;
+          if (q && !p.name.toLowerCase().includes(q) && !(p.barcode ?? "").toLowerCase().includes(q)) return false;
+          return true;
+        });
+        return (
+          <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/50" onClick={(e) => e.target === e.currentTarget && setShowPicker(false)}>
+            <div className="bg-white dark:bg-card w-full sm:max-w-4xl sm:rounded-xl rounded-t-2xl overflow-hidden max-h-[90dvh] flex flex-col">
+              <div className="flex items-center justify-between px-5 py-4 border-b sticky top-0 bg-white dark:bg-card z-10">
+                <h3 className="font-extrabold text-gray-900 dark:text-foreground">Escoger producto</h3>
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={() => { setShowPicker(false); setShowAdd(true); }}
+                    className="text-xs font-bold text-primary hover:underline"
+                  >
+                    + Crear nuevo
+                  </button>
+                  <button onClick={() => setShowPicker(false)} className="p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-accent transition-colors">
+                    <X className="h-5 w-5 text-gray-500 dark:text-muted" />
+                  </button>
+                </div>
+              </div>
+              <div className="px-5 py-3 border-b flex flex-wrap gap-2">
+                <div className="relative flex-1 min-w-[200px]">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+                  <input
+                    value={pickerSearch}
+                    onChange={e => setPickerSearch(e.target.value)}
+                    placeholder="Buscar producto..."
+                    className="w-full pl-10 pr-4 py-2 rounded-lg border border-[var(--rule-base)] dark:border-card-border text-sm outline-none focus:border-primary"
+                    autoFocus
+                  />
+                </div>
+                <select
+                  value={pickerCat}
+                  onChange={e => setPickerCat(e.target.value)}
+                  className="px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-card-border text-sm outline-none"
+                >
+                  <option value="todos">Todos</option>
+                  {realCategories.map(c => (
+                    <option key={c.id} value={c.id}>{c.label}</option>
+                  ))}
+                </select>
+              </div>
+              <div className="flex-1 overflow-y-auto p-5">
+                {pickerProducts.length === 0 ? (
+                  <EmptyState
+                    icon={Package}
+                    title="Sin resultados"
+                    description="No se encontraron productos con esos filtros."
+                  />
+                ) : (
+                  <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
+                    {pickerProducts.map(p => (
+                      <button
+                        key={p.id}
+                        onClick={() => {
+                          setShowPicker(false);
+                          setEditModalProduct(p);
+                          setEditForm({ ...p });
+                        }}
+                        className="flex flex-col items-center gap-2 p-3 rounded-xl border border-[var(--rule-base)] dark:border-card-border hover:border-primary hover:shadow-sm transition-all text-center group"
+                      >
+                        <div className="w-16 h-16 rounded-lg bg-gray-100 dark:bg-accent overflow-hidden flex-shrink-0">
+                          {p.image ? (
+                            <Image src={p.image} alt={p.name} width={64} height={64} className="w-full h-full object-cover" />
+                          ) : (
+                            <div className="w-full h-full flex items-center justify-center">
+                              <Package className="h-6 w-6 text-gray-300 dark:text-muted" />
+                            </div>
+                          )}
+                        </div>
+                        <span className="text-xs font-bold text-gray-800 dark:text-foreground line-clamp-2 group-hover:text-primary transition-colors">{p.name}</span>
+                        <span className="text-[length:var(--ts-xs)] text-gray-500 dark:text-muted">{fmt(p.price)}</span>
+                        {p.stock != null && (
+                          <span className={cn(
+                            "text-[length:var(--ts-2xs)] font-bold px-2 py-0.5 rounded-full",
+                            (p.stock ?? 0) === 0 ? "bg-red-100 text-red-700" : (p.stock ?? 0) <= (p.stockMin ?? 5) ? "bg-amber-100 text-amber-700" : "bg-emerald-100 text-emerald-700"
+                          )}>
+                            Stock: {p.stock}
+                          </span>
+                        )}
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        );
+      })()}
+
       {/* ── Add product modal ── */}
       {showAdd && (
         <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/50" onClick={(e) => e.target === e.currentTarget && setShowAdd(false)}>
-          <div className="bg-white dark:bg-card w-full sm:max-w-2xl sm:rounded-2xl rounded-t-2xl shadow-2xl overflow-y-auto max-h-[90dvh]">
+          <div className="bg-white dark:bg-card w-full sm:max-w-2xl sm:rounded-xl rounded-t-2xl overflow-y-auto max-h-[90dvh]">
             <div className="flex items-center justify-between px-5 py-4 border-b sticky top-0 bg-white dark:bg-card z-10">
               <h3 className="font-extrabold text-gray-900 dark:text-foreground">Agregar producto</h3>
               <button onClick={() => setShowAdd(false)} className="p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-accent transition-colors">
@@ -1796,8 +1620,8 @@ export default function InventoryTab() {
             </div>
             <form onSubmit={addProduct} className="p-5 space-y-5">
               {/* National product DB search */}
-              <div className="bg-blue-50 border border-blue-100 rounded-xl p-4 space-y-3">
-                <p className="text-xs font-bold text-blue-700 uppercase tracking-wide flex items-center gap-1.5">
+              <div className="bg-emerald-50 border border-emerald-100 rounded-xl p-4 space-y-3">
+                <p className="text-xs font-bold text-emerald-700 flex items-center gap-1.5">
                   <Search className="h-3.5 w-3.5" /> Buscar en base nacional de productos
                 </p>
                 <div className="flex flex-wrap gap-2">
@@ -1806,28 +1630,28 @@ export default function InventoryTab() {
                     onChange={(e) => setDbQuery(e.target.value)}
                     onKeyDown={(e) => e.key === "Enter" && (e.preventDefault(), handleDbSearch())}
                     placeholder="Ej: arroz costeño, aceite vegetal…"
-                    className="flex-1 px-3 py-2 rounded-lg border border-blue-200 bg-white dark:bg-card text-gray-900 dark:text-foreground focus:border-blue-400 outline-none text-sm"
+                    className="flex-1 px-3 py-2 rounded-lg border border-emerald-200 bg-white dark:bg-card text-gray-900 dark:text-foreground focus:border-emerald-400 outline-none text-sm"
                   />
                   <button
                     type="button"
                     onClick={handleDbSearch}
                     disabled={dbSearching || !dbQuery.trim()}
-                    className="px-3 py-2 rounded-lg bg-blue-600 text-white hover:bg-blue-700 transition-colors disabled:opacity-50 flex items-center gap-1 text-sm font-bold"
+                    className="px-3 py-2 rounded-lg bg-emerald-600 text-white hover:bg-emerald-700 transition-colors disabled:opacity-50 flex items-center gap-1 text-sm font-bold"
                   >
                     {dbSearching ? <Loader2 className="h-4 w-4 animate-spin" /> : <Search className="h-4 w-4" />}
                   </button>
                 </div>
                 {dbResults.length > 0 && (
-                  <div className="space-y-1 max-h-52 overflow-y-auto rounded-xl border border-blue-100 bg-white dark:bg-card">
+                  <div className="space-y-1 max-h-52 overflow-y-auto rounded-xl border border-emerald-100 bg-white dark:bg-card">
                     {dbResults.map((r, i) => (
                       <button
                         key={i}
                         type="button"
                         onClick={() => applyDbResult(r)}
-                        className="w-full text-left px-3 py-2.5 hover:bg-blue-50 flex flex-wrap items-center gap-3 transition-colors border-b border-gray-50 last:border-0"
+                        className="w-full text-left px-3 py-2.5 hover:bg-emerald-50 flex flex-wrap items-center gap-3 transition-colors border-b border-gray-50 last:border-0"
                       >
                         {r.image && (
-                          <Image src={r.image} alt={r.name} width={40} height={40} className="rounded-lg object-cover border border-gray-100 dark:border-card-border shrink-0 bg-gray-50 dark:bg-surface" />
+                          <Image src={r.image} alt={r.name} width={40} height={40} className="rounded-lg object-cover border border-[var(--rule-soft)] dark:border-card-border shrink-0 bg-gray-50 dark:bg-surface" />
                         )}
                         <div className="flex-1 min-w-0">
                           <p className="text-sm font-semibold text-gray-900 dark:text-foreground truncate">{r.name}</p>
@@ -1841,53 +1665,53 @@ export default function InventoryTab() {
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-4">
                 <div>
                   <label className="block text-xs font-semibold text-gray-500 dark:text-muted mb-1">Nombre *</label>
-                  <input required value={addForm.name} onChange={(e) => setAddForm(f => ({ ...f, name: e.target.value }))} placeholder="Arroz costeño 1kg" className="w-full px-3 py-2 rounded-lg border border-gray-200 dark:border-card-border text-gray-900 dark:text-foreground focus:border-primary outline-none text-sm" />
+                  <input required value={addForm.name} onChange={(e) => setAddForm(f => ({ ...f, name: e.target.value }))} placeholder="Arroz costeño 1kg" className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-card-border text-gray-900 dark:text-foreground focus:border-primary outline-none text-sm" />
                 </div>
                 <div>
                   <label className="block text-xs font-semibold text-gray-500 dark:text-muted mb-1">Categoría *</label>
-                  <select value={addForm.category} onChange={(e) => setAddForm(f => ({ ...f, category: e.target.value }))} className="w-full px-3 py-2 rounded-lg border border-gray-200 dark:border-card-border text-gray-900 dark:text-foreground focus:border-primary outline-none text-sm">
-                    {realCategories.map((c) => <option key={c.id} value={c.id}>{c.emoji} {c.label}</option>)}
+                  <select value={addForm.category} onChange={(e) => setAddForm(f => ({ ...f, category: e.target.value }))} className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-card-border text-gray-900 dark:text-foreground focus:border-primary outline-none text-sm">
+                    {realCategories.map((c) => <option key={c.id} value={c.id}>{c.label}</option>)}
                   </select>
                 </div>
                 <div>
                   <label className="block text-xs font-semibold text-gray-500 dark:text-muted mb-1">Precio de venta (S/) *</label>
-                  <input required type="number" step="0.01" min="0" value={addForm.price} onChange={(e) => setAddForm(f => ({ ...f, price: e.target.value }))} placeholder="5.50" className="w-full px-3 py-2 rounded-lg border border-gray-200 dark:border-card-border text-gray-900 dark:text-foreground focus:border-primary outline-none text-sm" />
+                  <input required type="number" step="0.01" min="0" value={addForm.price} onChange={(e) => setAddForm(f => ({ ...f, price: e.target.value }))} placeholder="5.50" className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-card-border text-gray-900 dark:text-foreground focus:border-primary outline-none text-sm" />
                 </div>
                 <div>
                   <label className="block text-xs font-semibold text-gray-500 dark:text-muted mb-1">Precio de costo (S/)</label>
-                  <input type="number" step="0.01" min="0" value={addForm.costPrice} onChange={(e) => setAddForm(f => ({ ...f, costPrice: e.target.value }))} placeholder="3.50" className="w-full px-3 py-2 rounded-lg border border-gray-200 dark:border-card-border text-gray-900 dark:text-foreground focus:border-primary outline-none text-sm" />
+                  <input type="number" step="0.01" min="0" value={addForm.costPrice} onChange={(e) => setAddForm(f => ({ ...f, costPrice: e.target.value }))} placeholder="3.50" className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-card-border text-gray-900 dark:text-foreground focus:border-primary outline-none text-sm" />
                 </div>
                 <div>
                   <label className="block text-xs font-semibold text-gray-500 dark:text-muted mb-1">Unidad</label>
-                  <input value={addForm.unit} onChange={(e) => setAddForm(f => ({ ...f, unit: e.target.value }))} placeholder="kg, und, bolsa…" className="w-full px-3 py-2 rounded-lg border border-gray-200 dark:border-card-border text-gray-900 dark:text-foreground focus:border-primary outline-none text-sm" />
+                  <input value={addForm.unit} onChange={(e) => setAddForm(f => ({ ...f, unit: e.target.value }))} placeholder="kg, und, bolsa…" className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-card-border text-gray-900 dark:text-foreground focus:border-primary outline-none text-sm" />
                 </div>
                 <div>
                   <label className="block text-xs font-semibold text-gray-500 dark:text-muted mb-1">Badge</label>
-                  <select value={addForm.badge} onChange={(e) => setAddForm(f => ({ ...f, badge: e.target.value }))} className="w-full px-3 py-2 rounded-lg border border-gray-200 dark:border-card-border text-gray-900 dark:text-foreground focus:border-primary outline-none text-sm">
+                  <select value={addForm.badge} onChange={(e) => setAddForm(f => ({ ...f, badge: e.target.value }))} className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-card-border text-gray-900 dark:text-foreground focus:border-primary outline-none text-sm">
                     <option value="">Sin badge</option>
                     {["Oferta", "Popular", "Fresco", "Premium"].map((b) => <option key={b} value={b}>{b}</option>)}
                   </select>
                 </div>
                 <div>
                   <label className="block text-xs font-semibold text-gray-500 dark:text-muted mb-1">Stock actual</label>
-                  <input type="number" min="0" value={addForm.stock} onChange={(e) => setAddForm(f => ({ ...f, stock: e.target.value }))} placeholder="0" className="w-full px-3 py-2 rounded-lg border border-gray-200 dark:border-card-border text-gray-900 dark:text-foreground focus:border-primary outline-none text-sm" />
+                  <input type="number" min="0" value={addForm.stock} onChange={(e) => setAddForm(f => ({ ...f, stock: e.target.value }))} placeholder="0" className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-card-border text-gray-900 dark:text-foreground focus:border-primary outline-none text-sm" />
                 </div>
                 <div>
                   <label className="block text-xs font-semibold text-gray-500 dark:text-muted mb-1" title="Cantidad mínima antes de generar alerta de stock bajo">Stock mínimo</label>
-                  <input type="number" min="0" value={addForm.stockMin} onChange={(e) => setAddForm(f => ({ ...f, stockMin: e.target.value }))} placeholder="5" className="w-full px-3 py-2 rounded-lg border border-gray-200 dark:border-card-border text-gray-900 dark:text-foreground focus:border-primary outline-none text-sm" />
+                  <input type="number" min="0" value={addForm.stockMin} onChange={(e) => setAddForm(f => ({ ...f, stockMin: e.target.value }))} placeholder="5" className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-card-border text-gray-900 dark:text-foreground focus:border-primary outline-none text-sm" />
                 </div>
                 <div>
                   <label className="block text-xs font-semibold text-gray-500 dark:text-muted mb-1">Stock máximo</label>
-                  <input type="number" min="0" value={addForm.stockMax} onChange={(e) => setAddForm(f => ({ ...f, stockMax: e.target.value }))} placeholder="100" className="w-full px-3 py-2 rounded-lg border border-gray-200 dark:border-card-border text-gray-900 dark:text-foreground focus:border-primary outline-none text-sm" />
+                  <input type="number" min="0" value={addForm.stockMax} onChange={(e) => setAddForm(f => ({ ...f, stockMax: e.target.value }))} placeholder="100" className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-card-border text-gray-900 dark:text-foreground focus:border-primary outline-none text-sm" />
                 </div>
                 <div>
                   <label className="block text-xs font-semibold text-gray-500 dark:text-muted mb-1">Fecha de vencimiento</label>
-                  <input type="date" value={addForm.expiryDate} onChange={(e) => setAddForm(f => ({ ...f, expiryDate: e.target.value }))} className="w-full px-3 py-2 rounded-lg border border-gray-200 dark:border-card-border text-gray-900 dark:text-foreground focus:border-primary outline-none text-sm" />
+                  <input type="date" value={addForm.expiryDate} onChange={(e) => setAddForm(f => ({ ...f, expiryDate: e.target.value }))} className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-card-border text-gray-900 dark:text-foreground focus:border-primary outline-none text-sm" />
                 </div>
                 <div>
                   <label className="block text-xs font-semibold text-gray-500 dark:text-muted mb-1">Código de barras</label>
                   <div className="flex flex-wrap gap-2">
-                    <input value={addForm.barcode} onChange={(e) => setAddForm(f => ({ ...f, barcode: e.target.value }))} placeholder="7750000000000" className="flex-1 px-3 py-2 rounded-lg border border-gray-200 dark:border-card-border text-gray-900 dark:text-foreground focus:border-primary outline-none text-sm font-mono" />
+                    <input value={addForm.barcode} onChange={(e) => setAddForm(f => ({ ...f, barcode: e.target.value }))} placeholder="7750000000000" className="flex-1 px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-card-border text-gray-900 dark:text-foreground focus:border-primary outline-none text-sm font-mono" />
                     <button type="button" onClick={() => setShowScanner(true)} className="px-3 py-2 rounded-lg border border-primary/30 text-primary hover:bg-primary/5 transition-colors">
                       <ScanBarcode className="h-4 w-4" />
                     </button>
@@ -1896,31 +1720,31 @@ export default function InventoryTab() {
               </div>
 
               {/* IMPROVEMENT 3: Variant Management */}
-              <div className="bg-purple-50 dark:bg-purple-950/20 border border-purple-200 dark:border-purple-800 rounded-xl p-4 space-y-3">
+              <div className="bg-[var(--surface-sunken)] border border-[var(--rule-base)] rounded-xl p-4 space-y-3">
                 <div className="flex items-center justify-between">
                   <div className="flex flex-wrap items-center gap-2">
-                    <Layers className="h-4 w-4 text-purple-600 dark:text-purple-400" />
-                    <p className="text-sm font-bold text-purple-900 dark:text-purple-100">Gestionar variantes / presentaciones</p>
+                    <Layers className="h-4 w-4 text-[var(--text-secondary)] dark:text-[var(--text-primary)]" />
+                    <p className="text-sm font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)]">Gestionar variantes / presentaciones</p>
                   </div>
                   <button
                     type="button"
                     onClick={() => setAddForm(f => ({ ...f, isVariant: !f.isVariant }))}
                     className={cn(
                       "relative inline-flex h-5 w-9 shrink-0 rounded-full border-2 border-transparent transition-colors cursor-pointer",
-                      addForm.isVariant ? "bg-purple-500" : "bg-gray-200"
+                      addForm.isVariant ? "bg-[var(--text-primary)]" : "bg-gray-200"
                     )}
                   >
                     <span className={cn("inline-block h-4 w-4 rounded-full bg-white shadow transition-transform", addForm.isVariant ? "translate-x-4" : "translate-x-0")} />
                   </button>
                 </div>
                 {addForm.isVariant && (
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2 border-t border-purple-200 dark:border-purple-800">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2 border-t border-[var(--rule-base)]">
                     <div>
-                      <label className="block text-xs font-semibold text-purple-700 dark:text-purple-300 mb-1">Variante de (producto padre)</label>
+                      <label className="block text-xs font-semibold text-[var(--text-secondary)] dark:text-[var(--text-primary)] mb-1">Variante de (producto padre)</label>
                       <select
                         value={addForm.variantOf}
                         onChange={(e) => setAddForm(f => ({ ...f, variantOf: e.target.value }))}
-                        className="w-full px-3 py-2 rounded-lg border border-purple-200 dark:border-purple-700 bg-white dark:bg-card text-gray-900 dark:text-foreground focus:border-purple-400 outline-none text-sm"
+                        className="w-full px-3 py-2 rounded-lg border border-purple-200 dark:border-purple-700 bg-white dark:bg-card text-gray-900 dark:text-foreground focus:border-[var(--text-primary)] outline-none text-sm"
                       >
                         <option value="">Ninguno (es producto padre)</option>
                         {products.filter(p => p.active).map(p => (
@@ -1929,12 +1753,12 @@ export default function InventoryTab() {
                       </select>
                     </div>
                     <div>
-                      <label className="block text-xs font-semibold text-purple-700 dark:text-purple-300 mb-1">Atributo de variante</label>
+                      <label className="block text-xs font-semibold text-[var(--text-secondary)] dark:text-[var(--text-primary)] mb-1">Atributo de variante</label>
                       <input
                         value={addForm.variantAttr}
                         onChange={(e) => setAddForm(f => ({ ...f, variantAttr: e.target.value }))}
                         placeholder="Ej: 500ml, 1L, pack 6 unid"
-                        className="w-full px-3 py-2 rounded-lg border border-purple-200 dark:border-purple-700 bg-white dark:bg-card text-gray-900 dark:text-foreground focus:border-purple-400 outline-none text-sm"
+                        className="w-full px-3 py-2 rounded-lg border border-purple-200 dark:border-purple-700 bg-white dark:bg-card text-gray-900 dark:text-foreground focus:border-[var(--text-primary)] outline-none text-sm"
                       />
                     </div>
                   </div>
@@ -1946,8 +1770,8 @@ export default function InventoryTab() {
                   <label className="block text-xs font-semibold text-gray-500 dark:text-muted mb-1">Imagen del producto</label>
                   <div className="flex flex-wrap gap-3 items-start">
                     {addForm.image && (
-                      <div className="relative h-16 w-16 rounded-xl overflow-hidden border border-gray-200 dark:border-card-border shrink-0 bg-gray-50 dark:bg-surface">
-                        <Image src={addForm.image} alt="preview" fill unoptimized={addForm.image.startsWith("data:")} className="object-cover" />
+                      <div className="relative h-16 w-16 rounded-xl overflow-hidden border border-[var(--rule-base)] dark:border-card-border shrink-0 bg-gray-50 dark:bg-surface">
+                        <Image src={addForm.image} alt="preview" fill unoptimized={addForm.image.startsWith("data:")} className="object-cover" sizes="64px" />
                       </div>
                     )}
                     <div className="flex-1 space-y-1.5">
@@ -1964,7 +1788,7 @@ export default function InventoryTab() {
                         value={addForm.image}
                         onChange={(e) => setAddForm(f => ({ ...f, image: e.target.value }))}
                         placeholder="o pegar URL de imagen"
-                        className="w-full px-3 py-2 rounded-lg border border-gray-200 dark:border-card-border text-gray-900 dark:text-foreground focus:border-primary outline-none text-sm"
+                        className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-card-border text-gray-900 dark:text-foreground focus:border-primary outline-none text-sm"
                       />
                       <input
                         ref={addImgRef}
@@ -1989,8 +1813,8 @@ export default function InventoryTab() {
                 </div>
               </div>
               <div className="flex flex-wrap gap-3 pt-1">
-                <button type="button" onClick={() => setShowAdd(false)} className="flex-1 py-2.5 rounded-xl border border-gray-200 dark:border-card-border text-sm font-semibold text-gray-600 dark:text-muted hover:bg-gray-50 dark:hover:bg-surface transition-colors">Cancelar</button>
-                <button type="submit" disabled={saving} className="flex-1 py-2.5 rounded-xl bg-primary text-white text-sm font-bold hover:bg-primary-dark transition-colors disabled:opacity-60">
+                <button type="button" onClick={() => setShowAdd(false)} className="flex-1 py-2.5 rounded-lg border border-[var(--rule-base)] dark:border-card-border text-sm font-semibold text-gray-600 dark:text-muted hover:bg-gray-50 dark:hover:bg-surface transition-colors">Cancelar</button>
+                <button type="submit" disabled={saving} className="flex-1 py-2.5 rounded-lg bg-primary text-white text-sm font-bold hover:bg-primary-dark transition-colors disabled:opacity-60">
                   {saving ? "Guardando…" : "Agregar producto"}
                 </button>
               </div>
@@ -2002,7 +1826,7 @@ export default function InventoryTab() {
       {/* ── Edit product modal ── */}
       {editModalProduct && (
         <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/50" onClick={(e) => e.target === e.currentTarget && closeEditModal()}>
-          <div className="bg-white dark:bg-card w-full sm:max-w-2xl sm:rounded-2xl rounded-t-2xl shadow-2xl overflow-y-auto max-h-[90dvh]">
+          <div className="bg-white dark:bg-card w-full sm:max-w-2xl sm:rounded-xl rounded-t-2xl overflow-y-auto max-h-[90dvh]">
             <div className="flex items-center justify-between px-5 py-4 border-b sticky top-0 bg-white dark:bg-card z-10">
               <h3 className="font-extrabold text-gray-900 dark:text-foreground truncate pr-2">Editar: {editModalProduct.name}</h3>
               <button onClick={closeEditModal} className="p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-accent transition-colors shrink-0">
@@ -2013,52 +1837,52 @@ export default function InventoryTab() {
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-4">
                 <div>
                   <label className="block text-xs font-semibold text-gray-500 dark:text-muted mb-1">Nombre *</label>
-                  <input required value={editForm.name ?? ""} onChange={(e) => setEditForm(f => ({ ...f, name: e.target.value }))} className="w-full px-3 py-2 rounded-lg border border-gray-200 dark:border-card-border text-gray-900 dark:text-foreground focus:border-primary outline-none text-sm" />
+                  <input required value={editForm.name ?? ""} onChange={(e) => setEditForm(f => ({ ...f, name: e.target.value }))} className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-card-border text-gray-900 dark:text-foreground focus:border-primary outline-none text-sm" />
                 </div>
                 <div>
                   <label className="block text-xs font-semibold text-gray-500 dark:text-muted mb-1">Categoría</label>
-                  <select value={editForm.category ?? ""} onChange={(e) => setEditForm(f => ({ ...f, category: e.target.value }))} className="w-full px-3 py-2 rounded-lg border border-gray-200 dark:border-card-border text-gray-900 dark:text-foreground focus:border-primary outline-none text-sm">
-                    {realCategories.map((c) => <option key={c.id} value={c.id}>{c.emoji} {c.label}</option>)}
+                  <select value={editForm.category ?? ""} onChange={(e) => setEditForm(f => ({ ...f, category: e.target.value }))} className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-card-border text-gray-900 dark:text-foreground focus:border-primary outline-none text-sm">
+                    {realCategories.map((c) => <option key={c.id} value={c.id}>{c.label}</option>)}
                   </select>
                 </div>
                 <div>
                   <label className="block text-xs font-semibold text-gray-500 dark:text-muted mb-1">Precio de venta (S/)</label>
-                  <input type="number" step="0.01" min="0" value={editForm.price ?? ""} onChange={(e) => setEditForm(f => ({ ...f, price: Number(e.target.value) }))} className="w-full px-3 py-2 rounded-lg border border-gray-200 dark:border-card-border text-gray-900 dark:text-foreground focus:border-primary outline-none text-sm" />
+                  <input type="number" step="0.01" min="0" value={editForm.price ?? ""} onChange={(e) => setEditForm(f => ({ ...f, price: Number(e.target.value) }))} className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-card-border text-gray-900 dark:text-foreground focus:border-primary outline-none text-sm" />
                 </div>
                 <div>
                   <label className="block text-xs font-semibold text-gray-500 dark:text-muted mb-1">Precio de costo (S/)</label>
-                  <input type="number" step="0.01" min="0" value={editForm.costPrice ?? ""} onChange={(e) => setEditForm(f => ({ ...f, costPrice: Number(e.target.value) || undefined }))} className="w-full px-3 py-2 rounded-lg border border-gray-200 dark:border-card-border text-gray-900 dark:text-foreground focus:border-primary outline-none text-sm" />
+                  <input type="number" step="0.01" min="0" value={editForm.costPrice ?? ""} onChange={(e) => setEditForm(f => ({ ...f, costPrice: Number(e.target.value) || undefined }))} className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-card-border text-gray-900 dark:text-foreground focus:border-primary outline-none text-sm" />
                 </div>
                 <div>
                   <label className="block text-xs font-semibold text-gray-500 dark:text-muted mb-1">Unidad</label>
-                  <input value={editForm.unit ?? ""} onChange={(e) => setEditForm(f => ({ ...f, unit: e.target.value }))} className="w-full px-3 py-2 rounded-lg border border-gray-200 dark:border-card-border text-gray-900 dark:text-foreground focus:border-primary outline-none text-sm" />
+                  <input value={editForm.unit ?? ""} onChange={(e) => setEditForm(f => ({ ...f, unit: e.target.value }))} className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-card-border text-gray-900 dark:text-foreground focus:border-primary outline-none text-sm" />
                 </div>
                 <div>
                   <label className="block text-xs font-semibold text-gray-500 dark:text-muted mb-1">Badge</label>
-                  <select value={editForm.badge ?? ""} onChange={(e) => setEditForm(f => ({ ...f, badge: e.target.value || undefined }))} className="w-full px-3 py-2 rounded-lg border border-gray-200 dark:border-card-border text-gray-900 dark:text-foreground focus:border-primary outline-none text-sm">
+                  <select value={editForm.badge ?? ""} onChange={(e) => setEditForm(f => ({ ...f, badge: e.target.value || undefined }))} className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-card-border text-gray-900 dark:text-foreground focus:border-primary outline-none text-sm">
                     <option value="">Sin badge</option>
                     {["Oferta", "Popular", "Fresco", "Premium"].map((b) => <option key={b} value={b}>{b}</option>)}
                   </select>
                 </div>
                 <div>
                   <label className="block text-xs font-semibold text-gray-500 dark:text-muted mb-1">Stock actual</label>
-                  <input type="number" min="0" value={editForm.stock ?? ""} onChange={(e) => setEditForm(f => ({ ...f, stock: e.target.value !== "" ? Number(e.target.value) : undefined }))} className="w-full px-3 py-2 rounded-lg border border-gray-200 dark:border-card-border text-gray-900 dark:text-foreground focus:border-primary outline-none text-sm" />
+                  <input type="number" min="0" value={editForm.stock ?? ""} onChange={(e) => setEditForm(f => ({ ...f, stock: e.target.value !== "" ? Number(e.target.value) : undefined }))} className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-card-border text-gray-900 dark:text-foreground focus:border-primary outline-none text-sm" />
                 </div>
                 <div>
                   <label className="block text-xs font-semibold text-gray-500 dark:text-muted mb-1" title="Cantidad mínima antes de generar alerta de stock bajo">Stock mínimo</label>
-                  <input type="number" min="0" value={editForm.stockMin ?? ""} onChange={(e) => setEditForm(f => ({ ...f, stockMin: e.target.value !== "" ? Number(e.target.value) : undefined }))} className="w-full px-3 py-2 rounded-lg border border-gray-200 dark:border-card-border text-gray-900 dark:text-foreground focus:border-primary outline-none text-sm" />
+                  <input type="number" min="0" value={editForm.stockMin ?? ""} onChange={(e) => setEditForm(f => ({ ...f, stockMin: e.target.value !== "" ? Number(e.target.value) : undefined }))} className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-card-border text-gray-900 dark:text-foreground focus:border-primary outline-none text-sm" />
                 </div>
                 <div>
                   <label className="block text-xs font-semibold text-gray-500 dark:text-muted mb-1">Stock máximo</label>
-                  <input type="number" min="0" value={editForm.stockMax ?? ""} onChange={(e) => setEditForm(f => ({ ...f, stockMax: e.target.value !== "" ? Number(e.target.value) : undefined }))} className="w-full px-3 py-2 rounded-lg border border-gray-200 dark:border-card-border text-gray-900 dark:text-foreground focus:border-primary outline-none text-sm" />
+                  <input type="number" min="0" value={editForm.stockMax ?? ""} onChange={(e) => setEditForm(f => ({ ...f, stockMax: e.target.value !== "" ? Number(e.target.value) : undefined }))} className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-card-border text-gray-900 dark:text-foreground focus:border-primary outline-none text-sm" />
                 </div>
                 <div>
                   <label className="block text-xs font-semibold text-gray-500 dark:text-muted mb-1">Fecha de vencimiento</label>
-                  <input type="date" value={editForm.expiryDate ?? ""} onChange={(e) => setEditForm(f => ({ ...f, expiryDate: e.target.value || undefined }))} className="w-full px-3 py-2 rounded-lg border border-gray-200 dark:border-card-border text-gray-900 dark:text-foreground focus:border-primary outline-none text-sm" />
+                  <input type="date" value={editForm.expiryDate ?? ""} onChange={(e) => setEditForm(f => ({ ...f, expiryDate: e.target.value || undefined }))} className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-card-border text-gray-900 dark:text-foreground focus:border-primary outline-none text-sm" />
                 </div>
                 <div>
                   <label className="block text-xs font-semibold text-gray-500 dark:text-muted mb-1">Código de barras</label>
-                  <input value={editForm.barcode ?? ""} onChange={(e) => setEditForm(f => ({ ...f, barcode: e.target.value || undefined }))} className="w-full px-3 py-2 rounded-lg border border-gray-200 dark:border-card-border text-gray-900 dark:text-foreground focus:border-primary outline-none text-sm font-mono" />
+                  <input value={editForm.barcode ?? ""} onChange={(e) => setEditForm(f => ({ ...f, barcode: e.target.value || undefined }))} className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-card-border text-gray-900 dark:text-foreground focus:border-primary outline-none text-sm font-mono" />
                 </div>
                 <div className="sm:col-span-2">
                   <label className="block text-xs font-semibold text-gray-500 dark:text-muted mb-1">Descripción del producto</label>
@@ -2067,37 +1891,37 @@ export default function InventoryTab() {
                     value={editForm.description ?? ""}
                     onChange={(e) => setEditForm(f => ({ ...f, description: e.target.value || undefined }))}
                     placeholder="Ej: Aceite de girasol puro, ideal para frituras ligeras. Botella de 1 litro."
-                    className="w-full px-3 py-2 rounded-lg border border-gray-200 dark:border-card-border text-gray-900 dark:text-foreground focus:border-primary outline-none text-sm resize-none"
+                    className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-card-border text-gray-900 dark:text-foreground focus:border-primary outline-none text-sm resize-none"
                   />
                 </div>
               </div>
 
               {/* IMPROVEMENT 3: Variant Management in Edit */}
-              <div className="bg-purple-50 dark:bg-purple-950/20 border border-purple-200 dark:border-purple-800 rounded-xl p-4 space-y-3">
+              <div className="bg-[var(--surface-sunken)] border border-[var(--rule-base)] rounded-xl p-4 space-y-3">
                 <div className="flex items-center justify-between">
                   <div className="flex flex-wrap items-center gap-2">
-                    <Layers className="h-4 w-4 text-purple-600 dark:text-purple-400" />
-                    <p className="text-sm font-bold text-purple-900 dark:text-purple-100">Gestionar variantes / presentaciones</p>
+                    <Layers className="h-4 w-4 text-[var(--text-secondary)] dark:text-[var(--text-primary)]" />
+                    <p className="text-sm font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)]">Gestionar variantes / presentaciones</p>
                   </div>
                   <button
                     type="button"
                     onClick={() => setEditForm(f => ({ ...f, isVariant: !f.isVariant }))}
                     className={cn(
                       "relative inline-flex h-5 w-9 shrink-0 rounded-full border-2 border-transparent transition-colors cursor-pointer",
-                      editForm.isVariant ? "bg-purple-500" : "bg-gray-200"
+                      editForm.isVariant ? "bg-[var(--text-primary)]" : "bg-gray-200"
                     )}
                   >
                     <span className={cn("inline-block h-4 w-4 rounded-full bg-white shadow transition-transform", editForm.isVariant ? "translate-x-4" : "translate-x-0")} />
                   </button>
                 </div>
                 {editForm.isVariant && (
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2 border-t border-purple-200 dark:border-purple-800">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2 border-t border-[var(--rule-base)]">
                     <div>
-                      <label className="block text-xs font-semibold text-purple-700 dark:text-purple-300 mb-1">Variante de (producto padre)</label>
+                      <label className="block text-xs font-semibold text-[var(--text-secondary)] dark:text-[var(--text-primary)] mb-1">Variante de (producto padre)</label>
                       <select
                         value={editForm.variantOf ?? ""}
                         onChange={(e) => setEditForm(f => ({ ...f, variantOf: e.target.value }))}
-                        className="w-full px-3 py-2 rounded-lg border border-purple-200 dark:border-purple-700 bg-white dark:bg-card text-gray-900 dark:text-foreground focus:border-purple-400 outline-none text-sm"
+                        className="w-full px-3 py-2 rounded-lg border border-purple-200 dark:border-purple-700 bg-white dark:bg-card text-gray-900 dark:text-foreground focus:border-[var(--text-primary)] outline-none text-sm"
                       >
                         <option value="">Ninguno (es producto padre)</option>
                         {products.filter(p => p.active && p.id !== editModalProduct?.id).map(p => (
@@ -2106,12 +1930,12 @@ export default function InventoryTab() {
                       </select>
                     </div>
                     <div>
-                      <label className="block text-xs font-semibold text-purple-700 dark:text-purple-300 mb-1">Atributo de variante</label>
+                      <label className="block text-xs font-semibold text-[var(--text-secondary)] dark:text-[var(--text-primary)] mb-1">Atributo de variante</label>
                       <input
                         value={editForm.variantAttr ?? ""}
                         onChange={(e) => setEditForm(f => ({ ...f, variantAttr: e.target.value }))}
                         placeholder="Ej: 500ml, 1L, pack 6 unid"
-                        className="w-full px-3 py-2 rounded-lg border border-purple-200 dark:border-purple-700 bg-white dark:bg-card text-gray-900 dark:text-foreground focus:border-purple-400 outline-none text-sm"
+                        className="w-full px-3 py-2 rounded-lg border border-purple-200 dark:border-purple-700 bg-white dark:bg-card text-gray-900 dark:text-foreground focus:border-[var(--text-primary)] outline-none text-sm"
                       />
                     </div>
                   </div>
@@ -2123,8 +1947,8 @@ export default function InventoryTab() {
                   <label className="block text-xs font-semibold text-gray-500 dark:text-muted mb-1">Imagen del producto</label>
                   <div className="flex flex-wrap gap-3 items-start">
                     {editForm.image && (
-                      <div className="relative h-16 w-16 rounded-xl overflow-hidden border border-gray-200 dark:border-card-border shrink-0 bg-gray-50 dark:bg-surface">
-                        <Image src={editForm.image} alt="preview" fill unoptimized={editForm.image.startsWith("data:")} className="object-cover" />
+                      <div className="relative h-16 w-16 rounded-xl overflow-hidden border border-[var(--rule-base)] dark:border-card-border shrink-0 bg-gray-50 dark:bg-surface">
+                        <Image src={editForm.image} alt="preview" fill unoptimized={editForm.image.startsWith("data:")} className="object-cover" sizes="64px" />
                       </div>
                     )}
                     <div className="flex-1 space-y-1.5">
@@ -2141,7 +1965,7 @@ export default function InventoryTab() {
                         value={editForm.image ?? ""}
                         onChange={(e) => setEditForm(f => ({ ...f, image: e.target.value }))}
                         placeholder="o pegar URL de imagen"
-                        className="w-full px-3 py-2 rounded-lg border border-gray-200 dark:border-card-border text-gray-900 dark:text-foreground focus:border-primary outline-none text-sm"
+                        className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-card-border text-gray-900 dark:text-foreground focus:border-primary outline-none text-sm"
                       />
                       <input
                         ref={editImgRef}
@@ -2182,8 +2006,8 @@ export default function InventoryTab() {
                 </button>
               </div>
               <div className="flex flex-wrap gap-3">
-                <button type="button" onClick={closeEditModal} className="flex-1 py-2.5 rounded-xl border border-gray-200 dark:border-card-border text-sm font-semibold text-gray-600 dark:text-muted hover:bg-gray-50 dark:hover:bg-surface transition-colors">Cancelar</button>
-                <button type="button" onClick={saveEdit} disabled={saving} className="flex-1 py-2.5 rounded-xl bg-primary text-white text-sm font-bold hover:bg-primary-dark transition-colors disabled:opacity-60">
+                <button type="button" onClick={closeEditModal} className="flex-1 py-2.5 rounded-lg border border-[var(--rule-base)] dark:border-card-border text-sm font-semibold text-gray-600 dark:text-muted hover:bg-gray-50 dark:hover:bg-surface transition-colors">Cancelar</button>
+                <button type="button" onClick={saveEdit} disabled={saving} className="flex-1 py-2.5 rounded-lg bg-primary text-white text-sm font-bold hover:bg-primary-dark transition-colors disabled:opacity-60">
                   {saving ? "Guardando…" : "Guardar cambios"}
                 </button>
               </div>
@@ -2194,7 +2018,7 @@ export default function InventoryTab() {
 
       {/* Bulk action bar */}
       {selectedIds.size > 0 && (
-        <div className="fixed bottom-4 left-1/2 -translate-x-1/2 z-40 bg-primary text-white rounded-2xl shadow-2xl px-5 py-3 flex flex-wrap items-center gap-2 sm:gap-4 animate-[slideUp_0.2s_ease-out]">
+        <div className="fixed bottom-4 left-1/2 -translate-x-1/2 z-40 bg-primary text-white rounded-xl px-5 py-3 flex flex-wrap items-center gap-2 sm:gap-4 animate-[slideUp_0.2s_ease-out]">
           <CheckSquare className="h-5 w-5 shrink-0" />
           <span className="text-sm font-bold">{selectedIds.size} seleccionado{selectedIds.size > 1 ? "s" : ""}</span>
           <button onClick={() => { setBulkField("active"); setBulkValue("true"); setBulkModal(true); }}
@@ -2248,7 +2072,7 @@ export default function InventoryTab() {
       {/* Bulk delete confirmation modal */}
       {bulkDeleteConfirm && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
-          <div className="bg-white dark:bg-card rounded-2xl shadow-2xl max-w-sm w-full overflow-hidden">
+          <div className="bg-white dark:bg-card rounded-xl max-w-sm w-full overflow-hidden">
             <div className="p-5 space-y-4">
               <div className="flex items-center gap-3">
                 <div className="p-2.5 rounded-xl bg-red-100 dark:bg-red-950/30">
@@ -2265,14 +2089,14 @@ export default function InventoryTab() {
               <div className="flex gap-3">
                 <button
                   onClick={() => setBulkDeleteConfirm(false)}
-                  className="flex-1 py-2.5 rounded-xl border border-gray-200 dark:border-card-border text-sm font-semibold text-gray-600 dark:text-muted hover:bg-gray-100 transition-colors"
+                  className="flex-1 py-2.5 rounded-lg border border-[var(--rule-base)] dark:border-card-border text-sm font-semibold text-gray-600 dark:text-muted hover:bg-gray-100 transition-colors"
                 >
                   Cancelar
                 </button>
                 <button
                   onClick={executeBulkDelete}
                   disabled={bulkDeleting}
-                  className="flex-1 py-2.5 rounded-xl bg-red-600 hover:bg-red-700 text-white text-sm font-semibold transition-colors disabled:opacity-50"
+                  className="flex-1 py-2.5 rounded-lg bg-red-600 hover:bg-red-700 text-white text-sm font-semibold transition-colors disabled:opacity-50"
                 >
                   {bulkDeleting ? "Eliminando…" : `Sí, eliminar ${selectedIds.size}`}
                 </button>
@@ -2285,8 +2109,8 @@ export default function InventoryTab() {
       {/* Bulk edit modal */}
       {bulkModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
-          <div className="bg-white dark:bg-card rounded-2xl shadow-2xl max-w-sm w-full overflow-hidden">
-            <div className="flex items-center justify-between px-3 sm:px-6 py-4 border-b border-gray-100 dark:border-card-border">
+          <div className="bg-white dark:bg-card rounded-xl max-w-sm w-full overflow-hidden">
+            <div className="flex items-center justify-between px-3 sm:px-6 py-4 border-b border-[var(--rule-soft)] dark:border-card-border">
               <h3 className="text-lg font-bold text-foreground">Edición masiva — {selectedIds.size} producto{selectedIds.size > 1 ? "s" : ""}</h3>
               <button onClick={() => setBulkModal(false)} className="p-2 rounded-lg hover:bg-black/5 dark:hover:bg-white/5"><X className="h-5 w-5" /></button>
             </div>
@@ -2294,7 +2118,7 @@ export default function InventoryTab() {
               <div>
                 <label className="text-xs font-bold text-gray-600 dark:text-muted">Campo a modificar</label>
                 <select value={bulkField} onChange={e => { setBulkField(e.target.value as typeof bulkField); setBulkValue(""); }}
-                  className="mt-1 w-full rounded-xl border border-gray-200 dark:border-card-border bg-white dark:bg-surface px-3 py-2 text-sm">
+                  className="mt-1 w-full rounded-xl border border-[var(--rule-base)] dark:border-card-border bg-white dark:bg-surface px-3 py-2 text-sm">
                   <option value="active">Estado (activo/inactivo)</option>
                   <option value="category">Categoría</option>
                   <option value="priceAdjust">Ajuste de precio (S/)</option>
@@ -2306,40 +2130,40 @@ export default function InventoryTab() {
                 <label className="text-xs font-bold text-gray-600 dark:text-muted">Nuevo valor</label>
                 {bulkField === "active" ? (
                   <select value={bulkValue} onChange={e => setBulkValue(e.target.value)}
-                    className="mt-1 w-full rounded-xl border border-gray-200 dark:border-card-border bg-white dark:bg-surface px-3 py-2 text-sm">
+                    className="mt-1 w-full rounded-xl border border-[var(--rule-base)] dark:border-card-border bg-white dark:bg-surface px-3 py-2 text-sm">
                     <option value="true">Activo</option>
                     <option value="false">Inactivo</option>
                   </select>
                 ) : bulkField === "category" ? (
                   <select value={bulkValue} onChange={e => setBulkValue(e.target.value)}
-                    className="mt-1 w-full rounded-xl border border-gray-200 dark:border-card-border bg-white dark:bg-surface px-3 py-2 text-sm">
+                    className="mt-1 w-full rounded-xl border border-[var(--rule-base)] dark:border-card-border bg-white dark:bg-surface px-3 py-2 text-sm">
                     <option value="">Seleccionar…</option>
-                    {categories.map(c => <option key={c.id} value={c.id}>{c.emoji} {c.label}</option>)}
+                    {categories.map(c => <option key={c.id} value={c.id}>{c.label}</option>)}
                   </select>
                 ) : bulkField === "priceAdjust" ? (
                   <div className="mt-1">
                     <input type="number" step="0.01" value={bulkValue} onChange={e => setBulkValue(e.target.value)} placeholder="Ej: 1.50 para aumentar S/1.50"
-                      className="w-full rounded-xl border border-gray-200 dark:border-card-border bg-white dark:bg-surface px-3 py-2 text-sm" />
+                      className="w-full rounded-xl border border-[var(--rule-base)] dark:border-card-border bg-white dark:bg-surface px-3 py-2 text-sm" />
                     <p className="text-xs text-gray-400 mt-1">Monto en soles a sumar o restar del precio</p>
                   </div>
                 ) : bulkField === "pricePercent" ? (
                   <div className="mt-1">
                     <input type="number" step="1" value={bulkValue} onChange={e => setBulkValue(e.target.value)} placeholder="Ej: 10 para +10%, -5 para -5%"
-                      className="w-full rounded-xl border border-gray-200 dark:border-card-border bg-white dark:bg-surface px-3 py-2 text-sm" />
+                      className="w-full rounded-xl border border-[var(--rule-base)] dark:border-card-border bg-white dark:bg-surface px-3 py-2 text-sm" />
                     <p className="text-xs text-gray-400 mt-1">
                       Esto ajustará el precio de {selectedIds.size} producto{selectedIds.size > 1 ? "s" : ""} un {bulkValue ? `${bulkValue}%` : "...%"}
                     </p>
                   </div>
                 ) : (
                   <input type="number" min="0" value={bulkValue} onChange={e => setBulkValue(e.target.value)} placeholder="Cantidad"
-                    className="mt-1 w-full rounded-xl border border-gray-200 dark:border-card-border bg-white dark:bg-surface px-3 py-2 text-sm" />
+                    className="mt-1 w-full rounded-xl border border-[var(--rule-base)] dark:border-card-border bg-white dark:bg-surface px-3 py-2 text-sm" />
                 )}
               </div>
             </div>
-            <div className="px-3 sm:px-6 py-4 bg-gray-50 dark:bg-surface border-t border-gray-100 dark:border-card-border flex flex-wrap gap-3">
-              <button onClick={() => setBulkModal(false)} className="flex-1 py-2.5 rounded-xl border border-gray-200 dark:border-card-border text-sm font-semibold text-gray-600 dark:text-muted hover:bg-gray-100 transition-colors">Cancelar</button>
+            <div className="px-3 sm:px-6 py-4 bg-gray-50 dark:bg-surface border-t border-[var(--rule-soft)] dark:border-card-border flex flex-wrap gap-3">
+              <button onClick={() => setBulkModal(false)} className="flex-1 py-2.5 rounded-lg border border-[var(--rule-base)] dark:border-card-border text-sm font-semibold text-gray-600 dark:text-muted hover:bg-gray-100 transition-colors">Cancelar</button>
               <button onClick={executeBulk} disabled={bulkSaving || (!bulkValue && bulkField !== "active")}
-                className="flex-1 py-2.5 rounded-xl bg-primary text-white text-sm font-bold hover:bg-primary-dark transition-colors disabled:opacity-60">
+                className="flex-1 py-2.5 rounded-lg bg-primary text-white text-sm font-bold hover:bg-primary-dark transition-colors disabled:opacity-60">
                 {bulkSaving ? "Aplicando…" : "Aplicar"}
               </button>
             </div>
@@ -2361,14 +2185,14 @@ export default function InventoryTab() {
         <>
           <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-sm" onClick={() => setShowQRProduct(null)} />
           <div className="fixed inset-0 z-50 flex items-center justify-center p-4" onClick={e => e.target === e.currentTarget && setShowQRProduct(null)}>
-            <div className="w-full max-w-sm bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl shadow-2xl p-5 space-y-4 text-center">
+            <div className="w-full max-w-sm bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl p-5 space-y-4 text-center">
               <div className="flex items-center justify-between">
                 <h3 className="text-sm font-bold text-gray-900 dark:text-foreground">Codigo QR</h3>
                 <button onClick={() => setShowQRProduct(null)} className="p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-accent">
                   <X className="h-4 w-4 text-gray-500" />
                 </button>
               </div>
-              <img
+              <Image
                 src={`https://chart.googleapis.com/chart?chs=200x200&cht=qr&chl=${encodeURIComponent(`PROD:${showQRProduct.id}|${showQRProduct.name}|S/${showQRProduct.price}`)}`}
                 alt={`QR ${showQRProduct.name}`}
                 className="mx-auto"
@@ -2383,11 +2207,11 @@ export default function InventoryTab() {
                   onClick={() => {
                     const w = window.open("", "_blank");
                     if (w) {
-                      w.document.write(`<html><head><title>QR ${showQRProduct.name}</title><style>body{text-align:center;font-family:sans-serif;padding:40px}img{margin:20px auto}@media print{button{display:none}}</style></head><body><h2>${showQRProduct.name}</h2><img src="https://chart.googleapis.com/chart?chs=300x300&cht=qr&chl=${encodeURIComponent(`PROD:${showQRProduct.id}|${showQRProduct.name}|S/${showQRProduct.price}`)}" /><p style="font-size:24px;font-weight:bold;color:#00B4A6">S/${showQRProduct.price.toFixed(2)}</p><button onclick="window.print()">Imprimir</button></body></html>`);
+                      w.document.write(`<html><head><title>QR ${showQRProduct.name}</title><style>body{text-align:center;font-family:sans-serif;padding:40px}img{margin:20px auto}@media print{button{display:none}}</style></head><body><h2>${showQRProduct.name}</h2><img src="https://chart.googleapis.com/chart?chs=300x300&cht=qr&chl=${encodeURIComponent(`PROD:${showQRProduct.id}|${showQRProduct.name}|S/${showQRProduct.price}`)}" /><p style="font-size:24px;font-weight:bold;color:var(--color-primary)">S/${showQRProduct.price.toFixed(2)}</p><button onclick="window.print()">Imprimir</button></body></html>`);
                       w.document.close();
                     }
                   }}
-                  className="flex-1 py-2 rounded-lg border border-gray-200 dark:border-card-border text-gray-700 dark:text-foreground font-bold text-xs hover:bg-gray-50 transition-colors flex items-center justify-center gap-1.5"
+                  className="flex-1 py-2 rounded-lg border border-[var(--rule-base)] dark:border-card-border text-gray-700 dark:text-foreground font-bold text-xs hover:bg-gray-50 transition-colors flex items-center justify-center gap-1.5"
                 >
                   Imprimir
                 </button>
@@ -2409,7 +2233,7 @@ export default function InventoryTab() {
         <>
           <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-sm" onClick={() => setShowAutoReorder(null)} />
           <div className="fixed inset-0 z-50 flex items-center justify-center p-4" onClick={e => e.target === e.currentTarget && setShowAutoReorder(null)}>
-            <div className="w-full max-w-sm bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl shadow-2xl p-5 space-y-4">
+            <div className="w-full max-w-sm bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl p-5 space-y-4">
               <div className="flex items-center justify-between">
                 <h3 className="text-sm font-bold text-gray-900 dark:text-foreground">Configurar Auto-Reorden</h3>
                 <button onClick={() => setShowAutoReorder(null)} className="p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-accent">
@@ -2420,7 +2244,7 @@ export default function InventoryTab() {
                 <label className="block text-xs font-bold text-gray-600 dark:text-gray-400 mb-1">Reordenar cuando stock sea menor o igual a:</label>
                 <input
                   type="number" min="1" value={arThreshold} onChange={e => setArThreshold(e.target.value)}
-                  className="w-full px-3 py-2 rounded-xl border border-gray-200 dark:border-card-border text-sm outline-none focus:ring-2 focus:ring-primary/30"
+                  className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-card-border text-sm outline-none focus:ring-2 focus:ring-primary/30"
                   placeholder="5"
                 />
               </div>
@@ -2428,15 +2252,15 @@ export default function InventoryTab() {
                 <label className="block text-xs font-bold text-gray-600 dark:text-gray-400 mb-1">Cantidad a pedir:</label>
                 <input
                   type="number" min="1" value={arQty} onChange={e => setArQty(e.target.value)}
-                  className="w-full px-3 py-2 rounded-xl border border-gray-200 dark:border-card-border text-sm outline-none focus:ring-2 focus:ring-primary/30"
+                  className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-card-border text-sm outline-none focus:ring-2 focus:ring-primary/30"
                   placeholder="10"
                 />
               </div>
               <div className="flex gap-2 pt-1">
-                <button onClick={() => setShowAutoReorder(null)} className="flex-1 px-4 py-2 rounded-xl text-sm font-bold text-gray-600 bg-gray-100 hover:bg-gray-200 transition-colors">
+                <button onClick={() => setShowAutoReorder(null)} className="flex-1 px-4 py-2 rounded-lg text-sm font-bold text-gray-600 bg-gray-100 hover:bg-gray-200 transition-colors">
                   Cancelar
                 </button>
-                <button onClick={() => saveAutoReorder(showAutoReorder)} className="flex-1 px-4 py-2 rounded-xl text-sm font-bold text-white bg-primary hover:bg-primary-dark shadow-sm transition-colors">
+                <button onClick={() => saveAutoReorder(showAutoReorder)} className="flex-1 px-4 py-2 rounded-lg text-sm font-bold text-white bg-primary hover:bg-primary-dark  transition-colors">
                   Guardar
                 </button>
               </div>
@@ -2453,6 +2277,45 @@ export default function InventoryTab() {
             {autoReorderCount} producto{autoReorderCount > 1 ? "s" : ""} con reorden automatico configurado
           </p>
         </div>
+      )}
+
+      {/* Expanded table modal */}
+      {showExpandedTable && (
+        <ExpandedStockModal products={products} movements={movements} onClose={() => setShowExpandedTable(false)} />
+      )}
+
+      {/* Context menu for product rows (right-click) */}
+      {ctxMenu && (
+        <InventoryContextMenu
+          product={ctxMenu.product}
+          x={ctxMenu.x}
+          y={ctxMenu.y}
+          onClose={() => setCtxMenu(null)}
+          onEdit={(p) => { openEditModal(p); setCtxMenu(null); }}
+          onView={(p) => { setKardexProduct({ id: p.id, name: p.name }); setCtxMenu(null); }}
+          onDuplicate={(p) => {
+            setAddForm({
+              name: `${p.name} (Copia)`,
+              category: p.category,
+              price: String(p.price),
+              unit: p.unit,
+              badge: p.badge ?? "",
+              image: p.image ?? "",
+              barcode: "",
+              costPrice: p.costPrice != null ? String(p.costPrice) : "",
+              stock: "0",
+              stockMin: p.stockMin != null ? String(p.stockMin) : "",
+              stockMax: p.stockMax != null ? String(p.stockMax) : "",
+              expiryDate: "",
+              isVariant: false,
+              variantOf: "",
+              variantAttr: "",
+            });
+            setShowAdd(true);
+            setCtxMenu(null);
+          }}
+          onDelete={(p) => { deleteProduct(p.id); setCtxMenu(null); }}
+        />
       )}
     </div>
   );

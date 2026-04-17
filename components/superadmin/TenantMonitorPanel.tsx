@@ -244,7 +244,7 @@ export default function TenantMonitorPanel() {
 
 const STAT_COLORS: Record<string, string> = {
   teal: "text-teal-600 bg-teal-50",
-  blue: "text-blue-600 bg-blue-50",
+  blue: "text-emerald-600 bg-emerald-50",
   purple: "text-purple-600 bg-purple-50",
   orange: "text-orange-600 bg-orange-50",
 };

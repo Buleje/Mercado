@@ -108,10 +108,10 @@ export default function InactivityLock({
         <div
           className={cn(
             "fixed bottom-4 left-1/2 -translate-x-1/2 z-40",
-            "flex items-center gap-3 px-5 py-3 rounded-xl shadow-lg",
+            "flex items-center gap-3 px-5 py-3 rounded-xl",
             "bg-amber-50 dark:bg-amber-900/30 border border-amber-200 dark:border-amber-700",
             "text-amber-800 dark:text-amber-300 text-sm font-medium",
-            "animate-in slide-in-from-bottom-4 duration-300"
+            "animate-in slide-in-from-bottom-4 duration-[var(--dur-base)]"
           )}
           role="alert"
         >

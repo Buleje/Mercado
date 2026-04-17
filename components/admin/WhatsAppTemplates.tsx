@@ -154,22 +154,22 @@ export default function WhatsAppTemplates() {
   }, []);
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-6">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <div className="h-9 w-9 rounded-xl bg-[#25D366] text-white flex items-center justify-center">
+          <div className="h-9 w-9 rounded-lg bg-[#25D366] text-white flex items-center justify-center">
             <MessageSquare className="h-5 w-5" />
           </div>
           <div>
             <p className="text-sm font-bold text-gray-900 dark:text-white">Plantillas WhatsApp</p>
-            <p className="text-[10px] text-gray-500 dark:text-gray-400">{allTemplates.length} plantillas disponibles</p>
+            <p className="text-[length:var(--ts-2xs)] text-gray-500 dark:text-gray-400">{allTemplates.length} plantillas disponibles</p>
           </div>
         </div>
         {!creating && (
           <button
             onClick={() => { setCreating(true); setEditingId(null); setNewName(""); setNewText(""); }}
-            className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-[#00B4A6] text-white text-xs font-bold hover:bg-[#245a41] transition-colors"
+            className="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-[#00B4A6] text-white text-xs font-bold hover:bg-[#245a41] transition-colors"
           >
             <Plus className="h-3.5 w-3.5" /> Nueva plantilla
           </button>
@@ -178,7 +178,7 @@ export default function WhatsAppTemplates() {
 
       {/* Create/Edit form */}
       {creating && (
-        <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl p-4 space-y-3">
+        <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl p-4 space-y-3">
           <p className="text-sm font-semibold text-gray-700 dark:text-gray-300">
             {editingId ? "Editar plantilla" : "Nueva plantilla"}
           </p>
@@ -187,32 +187,32 @@ export default function WhatsAppTemplates() {
             value={newName}
             onChange={e => setNewName(e.target.value)}
             placeholder="Nombre (ej: Recordatorio pago)"
-            className="w-full px-3 py-2 rounded-xl border border-gray-200 dark:border-card-border bg-white dark:bg-card text-sm text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-[#00B4A6]/40"
+            className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-card-border bg-white dark:bg-card text-sm text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-[#00B4A6]/40"
           />
           <textarea
             value={newText}
             onChange={e => setNewText(e.target.value)}
             placeholder="Mensaje. Usa {nombre}, {monto}, etc. para variables"
             rows={3}
-            className="w-full px-3 py-2 rounded-xl border border-gray-200 dark:border-card-border bg-white dark:bg-card text-sm text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-[#00B4A6]/40 resize-none"
+            className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-card-border bg-white dark:bg-card text-sm text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-[#00B4A6]/40 resize-none"
           />
           {newText && (
             <div className="p-2.5 rounded-lg bg-gray-50 dark:bg-surface text-xs text-gray-700 dark:text-gray-300 leading-relaxed">
-              <p className="text-[10px] text-gray-400 mb-1">Vista previa:</p>
+              <p className="text-[length:var(--ts-2xs)] text-gray-400 mb-1">Vista previa:</p>
               <HighlightedText text={newText} />
             </div>
           )}
           <div className="flex justify-end gap-2">
             <button
               onClick={() => { setCreating(false); setEditingId(null); setNewName(""); setNewText(""); }}
-              className="px-3 py-2 rounded-xl text-xs font-medium text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+              className="px-3 py-2 rounded-lg text-xs font-medium text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
             >
               Cancelar
             </button>
             <button
               onClick={handleSaveNew}
               disabled={!newName.trim() || !newText.trim()}
-              className="px-4 py-2 rounded-xl text-xs font-medium bg-[#00B4A6] text-white hover:bg-[#245a41] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              className="px-4 py-2 rounded-lg text-xs font-medium bg-[#00B4A6] text-white hover:bg-[#245a41] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {editingId ? "Guardar cambios" : "Crear plantilla"}
             </button>
@@ -225,7 +225,7 @@ export default function WhatsAppTemplates() {
         {allTemplates.map(template => (
           <div
             key={template.id}
-            className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl p-4 hover:shadow-md transition-shadow"
+            className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl p-4 hover:shadow-sm transition-shadow"
           >
             <div className="flex items-start justify-between mb-2">
               <div className="flex items-center gap-2">
@@ -259,7 +259,7 @@ export default function WhatsAppTemplates() {
             {template.variables.length > 0 && (
               <div className="flex flex-wrap gap-1 mb-3">
                 {template.variables.map(v => (
-                  <span key={v} className="px-1.5 py-0.5 rounded-md bg-gray-100 dark:bg-surface text-[10px] font-semibold text-gray-500 dark:text-gray-400">
+                  <span key={v} className="px-1.5 py-0.5 rounded-md bg-gray-100 dark:bg-surface text-[length:var(--ts-2xs)] font-semibold text-gray-500 dark:text-gray-400">
                     {v}
                   </span>
                 ))}

@@ -100,7 +100,7 @@ const TYPE_LABEL: Record<PendingItem["type"], string> = {
 };
 
 const TYPE_COLOR: Record<PendingItem["type"], string> = {
-  compra:        "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400",
+  compra:        "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400",
   eliminacion:   "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400",
   cambio_precio: "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400",
 };
@@ -132,7 +132,7 @@ function ResolveModal({
   const [note, setNote] = useState("");
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4">
-      <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl shadow-xl w-full max-w-md p-6 space-y-4">
+      <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl w-full max-w-md p-6 space-y-4">
         <h3 className="text-base font-semibold text-gray-900 dark:text-white">
           {decision === "aprobado" ? "Aprobar solicitud" : "Rechazar solicitud"}
         </h3>
@@ -146,20 +146,20 @@ function ResolveModal({
             value={note}
             onChange={e => setNote(e.target.value)}
             placeholder={decision === "aprobado" ? "Todo correcto, proceder..." : "Motivo del rechazo..."}
-            className="w-full px-3 py-2 rounded-xl border border-gray-200 dark:border-card-border bg-white dark:bg-card text-gray-900 dark:text-white text-sm resize-none focus:outline-none focus:ring-2 focus:ring-[#00B4A6]/40"
+            className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-card-border bg-white dark:bg-card text-gray-900 dark:text-white text-sm resize-none focus:outline-none focus:ring-2 focus:ring-[#00B4A6]/40"
           />
         </div>
         <div className="flex justify-end gap-2">
           <button
             onClick={onCancel}
-            className="px-4 py-2 rounded-xl text-sm font-medium text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+            className="px-4 py-2 rounded-lg text-sm font-medium text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
           >
             Cancelar
           </button>
           <button
             onClick={() => onConfirm(note)}
             className={cn(
-              "px-4 py-2 rounded-xl text-sm font-medium text-white transition-colors",
+              "px-4 py-2 rounded-lg text-sm font-medium text-white transition-colors",
               decision === "aprobado" ? "bg-[#00B4A6] hover:bg-[#245a41]" : "bg-red-600 hover:bg-red-700"
             )}
           >
@@ -184,7 +184,7 @@ function ConfigPanel({ config, onSave }: { config: ApprovalConfig; onSave: (c: A
   };
 
   return (
-    <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl p-5 space-y-4">
+    <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl p-5 space-y-4">
       <p className="text-sm font-semibold text-gray-700 dark:text-gray-300">Que requiere aprobacion</p>
 
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
@@ -197,7 +197,7 @@ function ConfigPanel({ config, onSave }: { config: ApprovalConfig; onSave: (c: A
             value={local.purchaseThreshold}
             min={0}
             onChange={e => setLocal(c => ({ ...c, purchaseThreshold: Number(e.target.value) }))}
-            className="w-full px-3 py-2 rounded-xl border border-gray-200 dark:border-card-border bg-white dark:bg-card text-gray-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-[#00B4A6]/40"
+            className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-card-border bg-white dark:bg-card text-gray-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-[#00B4A6]/40"
           />
         </div>
 
@@ -211,7 +211,7 @@ function ConfigPanel({ config, onSave }: { config: ApprovalConfig; onSave: (c: A
             min={0}
             max={100}
             onChange={e => setLocal(c => ({ ...c, priceChangeThreshold: Number(e.target.value) }))}
-            className="w-full px-3 py-2 rounded-xl border border-gray-200 dark:border-card-border bg-white dark:bg-card text-gray-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-[#00B4A6]/40"
+            className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-card-border bg-white dark:bg-card text-gray-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-[#00B4A6]/40"
           />
         </div>
 
@@ -225,7 +225,7 @@ function ConfigPanel({ config, onSave }: { config: ApprovalConfig; onSave: (c: A
               "w-full flex items-center justify-center gap-2 px-3 py-2 rounded-xl border text-sm font-medium transition-colors",
               local.requireDeleteApproval
                 ? "border-[#00B4A6] bg-[#00B4A6]/10 text-[#00B4A6] dark:text-[#4a9e78]"
-                : "border-gray-200 dark:border-card-border text-gray-400 dark:text-gray-600"
+                : "border-[var(--rule-base)] dark:border-card-border text-gray-400 dark:text-gray-600"
             )}
           >
             {local.requireDeleteApproval ? "Requiere aprobacion" : "Sin restriccion"}
@@ -237,7 +237,7 @@ function ConfigPanel({ config, onSave }: { config: ApprovalConfig; onSave: (c: A
         <button
           onClick={handleSave}
           className={cn(
-            "px-4 py-2 rounded-xl text-sm font-medium text-white transition-colors",
+            "px-4 py-2 rounded-lg text-sm font-medium text-white transition-colors",
             saved ? "bg-emerald-600" : "bg-[#00B4A6] hover:bg-[#245a41]"
           )}
         >
@@ -298,7 +298,7 @@ export default function ApprovalWorkflow() {
         </div>
         <button
           onClick={() => setShowConfig(v => !v)}
-          className="flex items-center gap-2 px-3 py-2 rounded-xl border border-gray-200 dark:border-card-border text-gray-600 dark:text-gray-400 text-sm hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
+          className="flex items-center gap-2 px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-card-border text-gray-600 dark:text-gray-400 text-sm hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
         >
           <Settings className="w-4 h-4" />
           Configuracion
@@ -322,7 +322,7 @@ export default function ApprovalWorkflow() {
           return (
             <div
               key={item.id}
-              className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl p-4 shadow-sm space-y-3"
+              className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl p-4  space-y-3"
             >
               <div className="flex flex-wrap items-start gap-3">
                 <span className={cn("px-2.5 py-1 rounded-lg text-xs font-medium shrink-0", TYPE_COLOR[item.type])}>
@@ -353,14 +353,14 @@ export default function ApprovalWorkflow() {
               <div className="flex gap-2 pt-1">
                 <button
                   onClick={() => setResolving({ item, decision: "aprobado" })}
-                  className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-[#00B4A6] text-white text-sm font-medium hover:bg-[#245a41] transition-colors"
+                  className="flex items-center gap-1.5 px-4 py-2 rounded-lg bg-[#00B4A6] text-white text-sm font-medium hover:bg-[#245a41] transition-colors"
                 >
                   <CheckCircle className="w-4 h-4" />
                   Aprobar
                 </button>
                 <button
                   onClick={() => setResolving({ item, decision: "rechazado" })}
-                  className="flex items-center gap-1.5 px-4 py-2 rounded-xl border border-red-200 dark:border-red-800 text-red-600 dark:text-red-400 text-sm font-medium hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
+                  className="flex items-center gap-1.5 px-4 py-2 rounded-lg border border-red-200 dark:border-red-800 text-red-600 dark:text-red-400 text-sm font-medium hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
                 >
                   <XCircle className="w-4 h-4" />
                   Rechazar
@@ -389,7 +389,7 @@ export default function ApprovalWorkflow() {
                 return (
                   <div
                     key={item.id}
-                    className="bg-white dark:bg-card border border-gray-100 dark:border-card-border/50 rounded-xl p-3 opacity-75"
+                    className="bg-white dark:bg-card border border-[var(--rule-soft)] dark:border-card-border/50 rounded-xl p-3 opacity-75"
                   >
                     <div className="flex flex-wrap items-center gap-2">
                       <span className={cn("px-2 py-0.5 rounded-lg text-xs font-medium", TYPE_COLOR[item.type])}>

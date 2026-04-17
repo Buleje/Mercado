@@ -348,6 +348,7 @@ export default function OrderStatusModal({ isOpen, onClose }: OrderStatusModalPr
         style={{ zIndex: 2147483646 }}
         onClick={handleClose}
       >
+        {/* TODO(#1): dark:bg-[#0f1117] and dark:bg-[#1a1f2e] = custom dark surfaces, add token when standardized. bg-[#25D366] = WhatsApp brand green, intentional. */}
         <m.div
           id="osm-card"
           ref={cardRef}

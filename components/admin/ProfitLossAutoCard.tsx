@@ -120,7 +120,7 @@ export default function ProfitLossAutoCard() {
   // ── Render ──────────────────────────────────────────────────────────────────
 
   return (
-    <div className="rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 shadow-sm overflow-hidden">
+    <div className="rounded-xl border border-[var(--rule-base)] bg-white dark:bg-gray-900  overflow-hidden">
       {/* Header */}
       <div className="bg-[#00B4A6] px-5 py-4 flex items-center justify-between">
         <div className="flex items-center gap-2">
@@ -159,9 +159,9 @@ export default function ProfitLossAutoCard() {
                 className={cn(
                   "flex items-center justify-between py-2",
                   row.isFinal
-                    ? "border-t-2 border-gray-300 dark:border-gray-600 pt-3 mt-2"
+                    ? "border-t-2 border-[var(--rule-base)] dark:border-gray-600 pt-3 mt-2"
                     : i < rows.length - 2
-                    ? "border-b border-gray-100 dark:border-gray-800"
+                    ? "border-b border-[var(--rule-base)]"
                     : ""
                 )}
               >
@@ -196,7 +196,7 @@ export default function ProfitLossAutoCard() {
             ))}
 
             {/* Margen neto */}
-            <div className="mt-3 pt-3 border-t border-gray-100 dark:border-gray-800">
+            <div className="mt-3 pt-3 border-t border-[var(--rule-base)]">
               <div className="flex items-center justify-between">
                 <span className="text-xs text-gray-500 dark:text-gray-400">Margen neto</span>
                 <div className={cn(
@@ -215,7 +215,7 @@ export default function ProfitLossAutoCard() {
             </div>
 
             {/* Aviso COGS estimado */}
-            <p className="text-[10px] text-gray-400 dark:text-gray-500 mt-2">
+            <p className="text-[length:var(--ts-2xs)] text-gray-400 dark:text-gray-500 mt-2">
               COGS calculado sobre costo registrado o estimado al 60% si no hay precio de costo.
             </p>
           </div>

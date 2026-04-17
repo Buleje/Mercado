@@ -158,12 +158,12 @@ export default function AIHealthPanel() {
           {/* Score text */}
           <div className="absolute inset-0 flex flex-col items-center justify-center">
             <span
-              className="text-3xl font-bold transition-all duration-1000"
+              className="text-3xl font-bold transition-all duration-[var(--dur-slower)]"
               style={{ color: overall.color }}
             >
               {data.score}%
             </span>
-            <span className="text-[10px] font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">
+            <span className="text-[length:var(--ts-2xs)] font-medium text-gray-500 dark:text-gray-400">
               Salud IA
             </span>
           </div>
@@ -195,7 +195,7 @@ export default function AIHealthPanel() {
           >
             <RefreshCw className="h-3 w-3" /> Actualizar
           </button>
-          <span className="text-[10px] text-gray-400 dark:text-gray-500 tabular-nums">
+          <span className="text-[length:var(--ts-2xs)] text-gray-400 dark:text-gray-500 tabular-nums">
             Auto-refresh en {Math.floor(countdown / 60)}:{String(countdown % 60).padStart(2, "0")}
           </span>
         </div>
@@ -211,7 +211,7 @@ export default function AIHealthPanel() {
         return (
           <div
             key={cat}
-            className="rounded-xl border border-gray-200 dark:border-gray-700/50 overflow-hidden"
+            className="rounded-xl border border-[var(--rule-base)] overflow-hidden"
             style={{
               opacity: animateIn ? 1 : 0,
               transform: animateIn ? "translateY(0)" : "translateY(20px)",
@@ -219,7 +219,7 @@ export default function AIHealthPanel() {
             }}
           >
             {/* Category header */}
-            <div className="flex items-center gap-2 px-4 py-2.5 bg-gray-50 dark:bg-gray-800/50 border-b border-gray-200 dark:border-gray-700/50">
+            <div className="flex items-center gap-2 px-4 py-2.5 bg-gray-50 dark:bg-gray-800/50 border-b border-[var(--rule-base)]">
               <CatIcon className="h-4 w-4" style={{ color: config.color }} />
               <span className="text-sm font-semibold text-gray-700 dark:text-gray-300">
                 {config.label}

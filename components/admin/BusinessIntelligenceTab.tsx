@@ -84,7 +84,7 @@ export default function BusinessIntelligenceTab() {
           </h1>
           <p className="text-sm text-gray-500 dark:text-muted mt-0.5">Proyecciones, tendencias, anomalías y KPIs clave</p>
         </div>
-        <button onClick={() => exportToCSV(CATEGORY_TRENDS.map(t => ({ categoria: t.category, ventas_actual: t.currentSales, ventas_anterior: t.previousSales, crecimiento: t.growthPct + "%", top_producto: t.topProduct })), "bi-tendencias")} className="flex items-center gap-1.5 px-3 py-2 rounded-xl border border-gray-200 dark:border-card-border bg-white dark:bg-surface text-sm font-semibold text-gray-700 dark:text-foreground hover:bg-gray-50 dark:hover:bg-accent transition-colors">
+        <button onClick={() => exportToCSV(CATEGORY_TRENDS.map(t => ({ categoria: t.category, ventas_actual: t.currentSales, ventas_anterior: t.previousSales, crecimiento: t.growthPct + "%", top_producto: t.topProduct })), "bi-tendencias")} className="flex items-center gap-1.5 px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-card-border bg-white dark:bg-surface text-sm font-semibold text-gray-700 dark:text-foreground hover:bg-gray-50 dark:hover:bg-accent transition-colors">
           <Download className="h-4 w-4" /> Exportar
         </button>
       </div>
@@ -92,7 +92,7 @@ export default function BusinessIntelligenceTab() {
       {/* KPIs */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
         {KPIS.map(kpi => (
-          <div key={kpi.label} className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl p-4">
+          <div key={kpi.label} className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl p-4">
             <p className="text-xs font-semibold text-gray-500 dark:text-muted mb-1">{kpi.label}</p>
             <p className="text-xl font-extrabold text-gray-900 dark:text-foreground">{kpi.value}</p>
             <div className="flex items-center gap-1 mt-1">
@@ -105,7 +105,7 @@ export default function BusinessIntelligenceTab() {
       </div>
 
       {/* Forecast */}
-      <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl p-3 sm:p-5">
+      <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl p-3 sm:p-5">
         <div className="flex items-center justify-between mb-4">
           <h3 className="font-extrabold text-sm text-gray-900 dark:text-foreground flex flex-wrap items-center gap-2"><Target className="h-4 w-4 text-primary" /> Proyección de ventas</h3>
           <div className="flex flex-wrap gap-1">
@@ -129,14 +129,14 @@ export default function BusinessIntelligenceTab() {
       </div>
 
       {/* Category Trends */}
-      <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl p-3 sm:p-5">
+      <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl p-3 sm:p-5">
         <h3 className="font-extrabold text-sm text-gray-900 dark:text-foreground flex flex-wrap items-center gap-2 mb-4"><BarChart3 className="h-4 w-4 text-primary" /> Tendencias por categoría</h3>
         <div className="overflow-x-auto">
           <table className="w-full min-w-[600px] text-sm">
             <thead><tr className="text-left text-xs font-bold text-gray-400"><th className="py-2 pr-4">Categoría</th><th className="py-2 pr-4">Ventas actual</th><th className="py-2 pr-4">Ventas anterior</th><th className="py-2 pr-4">Crecimiento</th><th className="py-2">Top producto</th></tr></thead>
             <tbody>
               {sortedTrends.map(t => (
-                <tr key={t.category} className="border-t border-gray-100 dark:border-card-border">
+                <tr key={t.category} className="border-t border-[var(--rule-soft)] dark:border-card-border">
                   <td className="py-2.5 pr-4 font-bold text-gray-800 dark:text-foreground">{t.category}</td>
                   <td className="py-2.5 pr-4 text-gray-600 dark:text-muted">{fmt(t.currentSales)}</td>
                   <td className="py-2.5 pr-4 text-gray-400">{fmt(t.previousSales)}</td>
@@ -155,12 +155,12 @@ export default function BusinessIntelligenceTab() {
       </div>
 
       {/* Anomaly alerts */}
-      <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl p-3 sm:p-5">
+      <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl p-3 sm:p-5">
         <h3 className="font-extrabold text-sm text-gray-900 dark:text-foreground flex flex-wrap items-center gap-2 mb-4"><AlertTriangle className="h-4 w-4 text-amber-500" /> Alertas de anomalías</h3>
         <div className="space-y-2">
           {ANOMALIES.map(a => {
-            const sevMeta = { alta: "bg-red-50 dark:bg-red-950/30 border-red-200 dark:border-red-900/50", media: "bg-amber-50 dark:bg-amber-950/30 border-amber-200 dark:border-amber-900/50", baja: "bg-blue-50 dark:bg-blue-950/30 border-blue-200 dark:border-blue-900/50" };
-            const sevColor = { alta: "text-red-600", media: "text-amber-600", baja: "text-blue-600" };
+            const sevMeta = { alta: "bg-red-50 dark:bg-red-950/30 border-red-200 dark:border-red-900/50", media: "bg-amber-50 dark:bg-amber-950/30 border-amber-200 dark:border-amber-900/50", baja: "bg-emerald-50 dark:bg-emerald-950/30 border-emerald-200 dark:border-emerald-900/50" };
+            const sevColor = { alta: "text-red-600", media: "text-amber-600", baja: "text-emerald-600" };
             return (
               <div key={a.id} className={cn("rounded-xl p-3 border", sevMeta[a.severity])}>
                 <div className="flex flex-wrap items-start justify-between gap-2">

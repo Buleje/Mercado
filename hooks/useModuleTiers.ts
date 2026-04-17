@@ -23,7 +23,7 @@ export const TIER_LABELS: Record<ModuleTier, { label: string; description: strin
     label: "Avanzado",
     description: "Todo lo disponible — para expertos",
     emoji: "🔵",
-    color: "text-blue-600 dark:text-blue-400",
+    color: "text-emerald-600 dark:text-emerald-400",
   },
 };
 
@@ -35,7 +35,6 @@ export const TIER_LABELS: Record<ModuleTier, { label: string; description: strin
 export const MODULE_TIER_MAP: Record<string, ModuleTier> = {
   // Principal — operaciones básicas del día a día
   "asistente-ia": "principal",
-  "ventas-caja": "principal",
   "inventario": "principal",
   "productos": "principal",
   "compras": "principal",

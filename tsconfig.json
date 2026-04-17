@@ -19,7 +19,9 @@
       }
     ],
     "paths": {
-      "@/*": ["./*"]
+      "@/*": ["./*"],
+      "@buleje/design-system": ["./packages/design-system/src/index.ts"],
+      "@buleje/design-system/*": ["./packages/design-system/src/*"]
     }
   },
   "include": [
@@ -30,5 +32,5 @@
     ".next/dev/types/**/*.ts",
     "**/*.mts"
   ],
-  "exclude": ["node_modules"]
+  "exclude": ["node_modules", "tools/mcp-bodega/**"]
 }

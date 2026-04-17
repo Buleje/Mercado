@@ -3,6 +3,7 @@ import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { requireAdmin } from "@/lib/require-admin";
 import { enqueueActivityLog } from "@/lib/queue";
+import { logger } from "@/lib/logger";
 
 // ─── Validation schemas ───────────────────────────────────────────────────────
 
@@ -95,7 +96,12 @@ export async function POST(req: NextRequest) {
   const auth = await requireAdmin(req, ["admin"]);
   if (auth instanceof NextResponse) return auth;
 
-  const body = await req.json();
+  let body: unknown;
+  try {
+    body = await req.json();
+  } catch {
+    return NextResponse.json({ error: "Invalid JSON" }, { status: 400 });
+  }
   const parsed = CreateSchema.safeParse(body);
   if (!parsed.success) {
     return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 });
@@ -118,7 +124,7 @@ export async function POST(req: NextRequest) {
     },
   });
 
-  enqueueActivityLog({ action: "campaign_created", resource: "campaign", resourceId: campaign.id, userId: auth.username, tenantId: auth.tenantId, details: { description: `Campaña "${name}" creada` }, timestamp: new Date().toISOString() }).catch(() => {});
+  enqueueActivityLog({ action: "campaign_created", resource: "campaign", resourceId: campaign.id, userId: auth.username, tenantId: auth.tenantId, details: { description: `Campaña "${name}" creada` }, timestamp: new Date().toISOString() }).catch((err) => logger.warn("enqueueActivityLog failed (non-critical)", { err }));
 
   return NextResponse.json(campaign, { status: 201 });
 }
@@ -148,7 +154,7 @@ export async function PATCH(req: NextRequest) {
 
   const updated = await prisma.campaign.update({ where: { id }, data });
 
-  enqueueActivityLog({ action: "campaign_updated", resource: "campaign", resourceId: id, userId: auth.username, tenantId: auth.tenantId, details: { description: `Campaña "${existing.name}" actualizada → ${parsed.data.status ?? "—"}` }, timestamp: new Date().toISOString() }).catch(() => {});
+  enqueueActivityLog({ action: "campaign_updated", resource: "campaign", resourceId: id, userId: auth.username, tenantId: auth.tenantId, details: { description: `Campaña "${existing.name}" actualizada → ${parsed.data.status ?? "—"}` }, timestamp: new Date().toISOString() }).catch((err) => logger.warn("enqueueActivityLog failed (non-critical)", { err }));
 
   return NextResponse.json(updated);
 }
@@ -167,7 +173,7 @@ export async function DELETE(req: NextRequest) {
 
   await prisma.campaign.delete({ where: { id } });
 
-  enqueueActivityLog({ action: "campaign_deleted", resource: "campaign", resourceId: id, userId: auth.username, tenantId: auth.tenantId, details: { description: `Campaña "${existing.name}" eliminada` }, timestamp: new Date().toISOString() }).catch(() => {});
+  enqueueActivityLog({ action: "campaign_deleted", resource: "campaign", resourceId: id, userId: auth.username, tenantId: auth.tenantId, details: { description: `Campaña "${existing.name}" eliminada` }, timestamp: new Date().toISOString() }).catch((err) => logger.warn("enqueueActivityLog failed (non-critical)", { err }));
 
   return NextResponse.json({ ok: true });
 }

@@ -132,12 +132,12 @@ export async function GET(req: NextRequest) {
           recipient: phone,
           message: msg,
           tenantId: store.tenantId,
-        }).catch(() => {});
+        }).catch((err) => logger.error("[cron/marketplace-weekly-report] store WhatsApp enqueue failed", { error: String(err), storeId: store.id }));
         sendPushToPhone(phone, {
           title: `📊 Reporte semanal — ${store.name}`,
           body: `${orders.length} pedidos · S/${revenue.toFixed(2)} en ventas esta semana`,
           url: "/admin#marketplace",
-        }).catch(() => {});
+        }).catch((err) => logger.error("[cron/marketplace-weekly-report] store push failed", { error: String(err), storeId: store.id }));
 
         sentCount++;
       }
@@ -176,12 +176,12 @@ export async function GET(req: NextRequest) {
           recipient: adminPhone,
           message: adminMsg,
           tenantId: "main",
-        }).catch(() => {});
+        }).catch((err) => logger.error("[cron/marketplace-weekly-report] admin WhatsApp enqueue failed", { error: String(err) }));
         sendPushToPhone(adminPhone, {
           title: "📊 Reporte semanal marketplace",
           body: `${stores.length} tiendas · ${totalMarketplaceOrders} pedidos · S/${totalMarketplaceRevenue.toFixed(2)}`,
           url: "/admin#marketplace",
-        }).catch(() => {});
+        }).catch((err) => logger.error("[cron/marketplace-weekly-report] admin push failed", { error: String(err) }));
       }
 
       return { sent: sentCount, stores: stores.length, orders: totalMarketplaceOrders, revenue: totalMarketplaceRevenue };

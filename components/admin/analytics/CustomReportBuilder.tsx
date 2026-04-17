@@ -102,10 +102,10 @@ function StepBadge({ step, current }: { step: number; current: number }) {
       className={cn(
         "w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold transition-colors",
         current === step
-          ? "bg-[#00B4A6] text-white"
+          ? "bg-primary text-white"
           : current > step
-          ? "bg-[#00B4A6]/30 text-[#00B4A6] dark:text-[#2dd4bf]"
-          : "bg-gray-100 dark:bg-gray-700 text-gray-400 dark:text-gray-500"
+          ? "bg-primary/30 text-primary"
+          : "bg-gray-100 text-gray-400"
       )}
     >
       {step}
@@ -349,12 +349,12 @@ export default function CustomReportBuilder({
               <StepBadge step={s} current={step} />
               <span className={cn(
                 "text-xs font-medium",
-                step === s ? "text-[#00B4A6] dark:text-[#2dd4bf]" : "text-gray-500 dark:text-gray-400"
+                step === s ? "text-primary" : "text-gray-500"
               )}>
                 {s === 1 ? "Metricas" : s === 2 ? "Periodo" : "Filtros"}
               </span>
             </button>
-            {s < 3 && <div className="w-8 h-px bg-gray-200 dark:bg-gray-700" />}
+            {s < 3 && <div className="w-8 h-px bg-gray-200" />}
           </div>
         ))}
       </div>
@@ -362,7 +362,7 @@ export default function CustomReportBuilder({
       {/* Step 1 — Metrics */}
       {step === 1 && (
         <div className="flex flex-col gap-3">
-          <p className="text-xs font-semibold text-gray-700 dark:text-gray-300">
+          <p className="text-xs font-semibold text-gray-700">
             Selecciona las metricas a incluir:
           </p>
           <div className="grid grid-cols-1 gap-2">
@@ -372,15 +372,15 @@ export default function CustomReportBuilder({
                 className={cn(
                   "flex items-center gap-3 px-3 py-2 rounded-lg border cursor-pointer transition-colors",
                   selectedMetrics.includes(key)
-                    ? "bg-[#00B4A6]/10 dark:bg-[#00B4A6]/20 border-[#00B4A6]/40 text-[#00B4A6] dark:text-[#2dd4bf]"
-                    : "bg-white dark:bg-card border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-300 hover:border-[#00B4A6]/40"
+                    ? "bg-primary/10 border-primary/40 text-primary"
+                    : "bg-white border-[var(--rule-base)] text-gray-700 hover:border-primary/40"
                 )}
               >
                 <input
                   type="checkbox"
                   checked={selectedMetrics.includes(key)}
                   onChange={() => toggleMetric(key)}
-                  className="accent-[#00B4A6]"
+                  className="accent-primary"
                 />
                 <span className="text-sm">{label}</span>
               </label>
@@ -389,7 +389,7 @@ export default function CustomReportBuilder({
           <button
             onClick={() => setStep(2)}
             disabled={selectedMetrics.length === 0}
-            className="mt-2 px-4 py-2 rounded-lg bg-[#00B4A6] text-white text-sm font-medium hover:bg-[#245a41] disabled:opacity-50 transition-colors"
+            className="mt-2 px-4 py-2 rounded-lg bg-primary text-white text-sm font-medium hover:bg-[#245a41] disabled:opacity-50 transition-colors"
           >
             Siguiente: Periodo
           </button>
@@ -399,29 +399,29 @@ export default function CustomReportBuilder({
       {/* Step 2 — Period & grouping */}
       {step === 2 && (
         <div className="flex flex-col gap-3">
-          <p className="text-xs font-semibold text-gray-700 dark:text-gray-300">Periodo:</p>
+          <p className="text-xs font-semibold text-gray-700">Periodo:</p>
           <div className="grid grid-cols-2 gap-2">
             <div>
-              <label className="text-xs text-gray-500 dark:text-gray-400">Desde</label>
+              <label className="text-xs text-gray-500">Desde</label>
               <input
                 type="date"
                 value={from}
                 onChange={(e) => setFrom(e.target.value)}
-                className="mt-0.5 w-full px-2 py-1.5 text-sm rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-card text-gray-800 dark:text-foreground"
+                className="mt-0.5 w-full px-2 py-1.5 text-sm rounded-lg border border-[var(--rule-base)] bg-white text-gray-800"
               />
             </div>
             <div>
-              <label className="text-xs text-gray-500 dark:text-gray-400">Hasta</label>
+              <label className="text-xs text-gray-500">Hasta</label>
               <input
                 type="date"
                 value={to}
                 onChange={(e) => setTo(e.target.value)}
-                className="mt-0.5 w-full px-2 py-1.5 text-sm rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-card text-gray-800 dark:text-foreground"
+                className="mt-0.5 w-full px-2 py-1.5 text-sm rounded-lg border border-[var(--rule-base)] bg-white text-gray-800"
               />
             </div>
           </div>
 
-          <p className="text-xs font-semibold text-gray-700 dark:text-gray-300 mt-1">Agrupar por:</p>
+          <p className="text-xs font-semibold text-gray-700 mt-1">Agrupar por:</p>
           <div className="flex gap-2">
             {(Object.entries(GROUPING_LABELS) as [Grouping, string][]).map(([key, label]) => (
               <button
@@ -430,8 +430,8 @@ export default function CustomReportBuilder({
                 className={cn(
                   "flex-1 px-3 py-1.5 rounded-lg text-xs font-medium border transition-colors",
                   grouping === key
-                    ? "bg-[#00B4A6] text-white border-[#00B4A6]"
-                    : "text-gray-600 dark:text-gray-400 border-gray-200 dark:border-gray-700 hover:border-[#00B4A6]"
+                    ? "bg-primary text-white border-primary"
+                    : "text-gray-600 border-[var(--rule-base)] hover:border-primary"
                 )}
               >
                 {label}
@@ -442,13 +442,13 @@ export default function CustomReportBuilder({
           <div className="flex gap-2 mt-2">
             <button
               onClick={() => setStep(1)}
-              className="flex-1 px-3 py-2 rounded-lg border border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-400 text-sm hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
+              className="flex-1 px-3 py-2 rounded-lg border border-[var(--rule-base)] text-gray-600 text-sm hover:bg-gray-50 transition-colors"
             >
               Atras
             </button>
             <button
               onClick={() => setStep(3)}
-              className="flex-1 px-3 py-2 rounded-lg bg-[#00B4A6] text-white text-sm font-medium hover:bg-[#245a41] transition-colors"
+              className="flex-1 px-3 py-2 rounded-lg bg-primary text-white text-sm font-medium hover:bg-[#245a41] transition-colors"
             >
               Siguiente: Filtros
             </button>
@@ -460,11 +460,11 @@ export default function CustomReportBuilder({
       {step === 3 && (
         <div className="flex flex-col gap-3">
           <div>
-            <p className="text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">Categoria de producto:</p>
+            <p className="text-xs font-semibold text-gray-700 mb-1">Categoria de producto:</p>
             <select
               value={category}
               onChange={(e) => setCategory(e.target.value)}
-              className="w-full px-2 py-1.5 text-sm rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-card text-gray-800 dark:text-foreground"
+              className="w-full px-2 py-1.5 text-sm rounded-lg border border-[var(--rule-base)] bg-white text-gray-800"
             >
               {categories.map((c) => (
                 <option key={c} value={c}>{c === "todas" ? "Todas las categorias" : c}</option>
@@ -473,7 +473,7 @@ export default function CustomReportBuilder({
           </div>
 
           <div>
-            <p className="text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">Metodo de pago:</p>
+            <p className="text-xs font-semibold text-gray-700 mb-1">Metodo de pago:</p>
             <div className="flex flex-wrap gap-1.5">
               {(Object.entries(PAYMENT_LABELS) as [PaymentFilter, string][]).map(([key, label]) => (
                 <button
@@ -482,8 +482,8 @@ export default function CustomReportBuilder({
                   className={cn(
                     "px-2 py-1 rounded-lg text-xs border transition-colors",
                     payment === key
-                      ? "bg-[#00B4A6] text-white border-[#00B4A6]"
-                      : "text-gray-600 dark:text-gray-400 border-gray-200 dark:border-gray-700 hover:border-[#00B4A6]"
+                      ? "bg-primary text-white border-primary"
+                      : "text-gray-600 border-[var(--rule-base)] hover:border-primary"
                   )}
                 >
                   {label}
@@ -495,13 +495,13 @@ export default function CustomReportBuilder({
           <div className="flex gap-2 mt-1">
             <button
               onClick={() => setStep(2)}
-              className="flex-1 px-3 py-2 rounded-lg border border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-400 text-sm hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
+              className="flex-1 px-3 py-2 rounded-lg border border-[var(--rule-base)] text-gray-600 text-sm hover:bg-gray-50 transition-colors"
             >
               Atras
             </button>
             <button
               onClick={() => setStep(4)}
-              className="flex-1 px-3 py-2 rounded-lg bg-[#00B4A6] text-white text-sm font-medium hover:bg-[#245a41] transition-colors"
+              className="flex-1 px-3 py-2 rounded-lg bg-primary text-white text-sm font-medium hover:bg-[#245a41] transition-colors"
             >
               Ver reporte
             </button>
@@ -516,36 +516,36 @@ export default function CustomReportBuilder({
           <div className="flex flex-wrap gap-2">
             <button
               onClick={() => setStep(1)}
-              className="px-3 py-1.5 rounded-lg border border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-400 text-xs hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
+              className="px-3 py-1.5 rounded-lg border border-[var(--rule-base)] text-gray-600 text-xs hover:bg-gray-50 transition-colors"
             >
               Editar reporte
             </button>
             <button
               onClick={exportCSV}
               disabled={reportRows.length === 0}
-              className="px-3 py-1.5 rounded-lg bg-[#f97316] text-white text-xs font-medium hover:bg-[#e8923d] disabled:opacity-50 transition-colors"
+              className="px-3 py-1.5 rounded-lg bg-secondary text-white text-xs font-medium hover:bg-[#e8923d] disabled:opacity-50 transition-colors"
             >
               Exportar CSV
             </button>
             <button
               onClick={exportPDF}
               disabled={reportRows.length === 0 || exporting}
-              className="px-3 py-1.5 rounded-lg bg-[#00B4A6] text-white text-xs font-medium hover:bg-[#245a41] disabled:opacity-50 transition-colors"
+              className="px-3 py-1.5 rounded-lg bg-primary text-white text-xs font-medium hover:bg-[#245a41] disabled:opacity-50 transition-colors"
             >
               {exporting ? "Generando PDF..." : "Exportar PDF"}
             </button>
           </div>
 
           {/* Data table */}
-          <div className="overflow-auto max-h-64 rounded-lg border border-gray-200 dark:border-gray-700">
+          <div className="overflow-auto max-h-64 rounded-lg border border-[var(--rule-base)]">
             <table className="w-full text-xs">
               <thead>
-                <tr className="bg-gray-50 dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 sticky top-0">
-                  <th className="text-left px-2 py-1.5 font-semibold text-gray-600 dark:text-gray-300 whitespace-nowrap">
+                <tr className="bg-gray-50 border-b border-[var(--rule-base)] sticky top-0">
+                  <th className="text-left px-2 py-1.5 font-semibold text-gray-600 whitespace-nowrap">
                     Periodo
                   </th>
                   {selectedMetrics.map((m) => (
-                    <th key={m} className="text-right px-2 py-1.5 font-semibold text-gray-600 dark:text-gray-300 whitespace-nowrap">
+                    <th key={m} className="text-right px-2 py-1.5 font-semibold text-gray-600 whitespace-nowrap">
                       {METRIC_LABELS[m]}
                     </th>
                   ))}
@@ -554,7 +554,7 @@ export default function CustomReportBuilder({
               <tbody>
                 {reportRows.length === 0 && (
                   <tr>
-                    <td colSpan={selectedMetrics.length + 1} className="text-center py-6 text-gray-400 dark:text-gray-500">
+                    <td colSpan={selectedMetrics.length + 1} className="text-center py-6 text-gray-400">
                       Sin datos para los filtros seleccionados
                     </td>
                   </tr>
@@ -562,13 +562,13 @@ export default function CustomReportBuilder({
                 {reportRows.map((row, i) => (
                   <tr
                     key={i}
-                    className="border-b border-gray-100 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800/50"
+                    className="border-b border-[var(--rule-soft)] hover:bg-gray-50"
                   >
-                    <td className="px-2 py-1.5 text-gray-700 dark:text-gray-300 font-medium whitespace-nowrap">
+                    <td className="px-2 py-1.5 text-gray-700 font-medium whitespace-nowrap">
                       {row.period}
                     </td>
                     {selectedMetrics.map((m) => (
-                      <td key={m} className="px-2 py-1.5 text-right text-gray-600 dark:text-gray-300">
+                      <td key={m} className="px-2 py-1.5 text-right text-gray-600">
                         {row[m] !== undefined ? fmtNum(row[m]!, m) : "—"}
                       </td>
                     ))}
@@ -577,25 +577,25 @@ export default function CustomReportBuilder({
               </tbody>
             </table>
           </div>
-          <p className="text-[10px] text-gray-400 dark:text-gray-500 text-right">
+          <p className="text-[length:var(--ts-2xs)] text-gray-400 text-right">
             {reportRows.length} filas — {from} al {to} — agrupado por {GROUPING_LABELS[grouping]}
           </p>
 
           {/* Save template */}
-          <div className="rounded-lg border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/50 p-3">
-            <p className="text-xs font-semibold text-gray-700 dark:text-gray-300 mb-2">Guardar como plantilla</p>
+          <div className="rounded-lg border border-[var(--rule-base)] bg-gray-50 p-3">
+            <p className="text-xs font-semibold text-gray-700 mb-2">Guardar como plantilla</p>
             <div className="flex gap-2">
               <input
                 type="text"
                 value={templateName}
                 onChange={(e) => setTemplateName(e.target.value)}
                 placeholder="Nombre de la plantilla..."
-                className="flex-1 px-2 py-1.5 text-xs rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-card text-gray-800 dark:text-foreground placeholder-gray-400 dark:placeholder-gray-500"
+                className="flex-1 px-2 py-1.5 text-xs rounded-lg border border-[var(--rule-base)] bg-white text-gray-800 placeholder-gray-400"
               />
               <button
                 onClick={saveTemplate}
                 disabled={!templateName.trim()}
-                className="px-3 py-1.5 rounded-lg bg-[#00B4A6] text-white text-xs font-medium hover:bg-[#245a41] disabled:opacity-50 transition-colors"
+                className="px-3 py-1.5 rounded-lg bg-primary text-white text-xs font-medium hover:bg-[#245a41] disabled:opacity-50 transition-colors"
               >
                 Guardar
               </button>
@@ -607,28 +607,28 @@ export default function CustomReportBuilder({
       {/* Saved templates */}
       {templates.length > 0 && (
         <div>
-          <p className="text-xs font-semibold text-gray-700 dark:text-gray-300 mb-2">Plantillas guardadas</p>
+          <p className="text-xs font-semibold text-gray-700 mb-2">Plantillas guardadas</p>
           <div className="flex flex-col gap-1.5">
             {templates.map((t) => (
               <div
                 key={t.id}
-                className="flex items-center gap-2 px-3 py-2 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-card"
+                className="flex items-center gap-2 px-3 py-2 rounded-lg border border-[var(--rule-base)] bg-white"
               >
                 <div className="flex-1 min-w-0">
-                  <p className="text-xs font-medium text-gray-800 dark:text-foreground truncate">{t.name}</p>
-                  <p className="text-[10px] text-gray-400 dark:text-gray-500">
+                  <p className="text-xs font-medium text-gray-800 truncate">{t.name}</p>
+                  <p className="text-[length:var(--ts-2xs)] text-gray-400">
                     {t.metrics.map((m) => METRIC_LABELS[m]).join(", ")} — {t.period.from} al {t.period.to}
                   </p>
                 </div>
                 <button
                   onClick={() => loadTemplate(t)}
-                  className="px-2 py-1 rounded text-[10px] font-medium text-[#00B4A6] dark:text-[#2dd4bf] border border-[#00B4A6]/30 hover:bg-[#00B4A6]/10 transition-colors"
+                  className="px-2 py-1 rounded text-[length:var(--ts-2xs)] font-medium text-primary border border-primary/30 hover:bg-primary/10 transition-colors"
                 >
                   Cargar
                 </button>
                 <button
                   onClick={() => deleteTemplate(t.id)}
-                  className="px-2 py-1 rounded text-[10px] font-medium text-red-500 dark:text-red-400 border border-red-200 dark:border-red-800 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
+                  className="px-2 py-1 rounded text-[length:var(--ts-2xs)] font-medium text-red-500 border border-red-200 hover:bg-red-50 transition-colors"
                 >
                   Borrar
                 </button>

@@ -1,0 +1,23 @@
+{
+  "name": "@buleje/design-system",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Componentes shared de UI para admin + store + customer journey. POC workspace (ADR-069).",
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts",
+    "./button": "./src/PrimaryButton.tsx",
+    "./badge": "./src/IconBadge.tsx",
+    "./tokens": "./src/tokens.ts"
+  },
+  "peerDependencies": {
+    "react": "^19",
+    "react-dom": "^19"
+  },
+  "dependencies": {
+    "@radix-ui/react-slot": "^1.2.4",
+    "clsx": "^2.1.1",
+    "tailwind-merge": "^3.5.0"
+  },
+  "keywords": ["design-system", "internal", "buleje"]
+}

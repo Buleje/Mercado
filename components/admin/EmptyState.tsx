@@ -42,8 +42,8 @@ export function EmptyState({
     <div
       className={[
         "flex flex-col items-center justify-center text-center py-14 px-6",
-        "bg-white dark:bg-card border border-dashed border-gray-200 dark:border-card-border",
-        "rounded-2xl",
+        "bg-white dark:bg-card border border-dashed border-[var(--rule-base)] dark:border-card-border",
+        "rounded-xl",
         className,
       ]
         .filter(Boolean)

@@ -136,7 +136,7 @@ export default function ExpiringBatchesAlert() {
 
       {/* Lista */}
       {(loading || batches.length > 0) && (
-        <div className="rounded-xl border border-gray-100 dark:border-card-border bg-white dark:bg-card overflow-hidden">
+        <div className="rounded-xl border border-[var(--rule-soft)] dark:border-card-border bg-white dark:bg-card overflow-hidden">
           <div className="divide-y divide-gray-50 dark:divide-card-border">
             {loading
               ? Array.from({ length: 3 }).map((_, i) => (
@@ -182,7 +182,7 @@ export default function ExpiringBatchesAlert() {
                         <p className="text-xs font-semibold text-gray-800 dark:text-foreground truncate">
                           {batch.product?.name ?? batch.productName}
                         </p>
-                        <p className="text-[11px] text-gray-400 dark:text-muted">
+                        <p className="text-[length:var(--ts-xs)] text-gray-400 dark:text-muted">
                           Lote {batch.lote} · Vence {fmtDate(batch.expiryDate)}
                         </p>
                       </div>
@@ -193,7 +193,7 @@ export default function ExpiringBatchesAlert() {
                         </span>
                         <span
                           className={cn(
-                            "text-[10px] font-bold px-2 py-0.5 rounded-full",
+                            "text-[length:var(--ts-2xs)] font-bold px-2 py-0.5 rounded-full",
                             isUrgent
                               ? "bg-red-100 dark:bg-red-900/40 text-red-700 dark:text-red-400"
                               : isSoon

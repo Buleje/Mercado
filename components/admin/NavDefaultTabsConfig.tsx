@@ -5,19 +5,6 @@ import { Check } from "lucide-react";
 
 const NAV_MODULES = [
   {
-    id: "ventas-caja",
-    name: "Ventas & Caja",
-    tabs: [
-      { id: "dashboard", label: "Dashboard" },
-      { id: "vender", label: "Vender" },
-      { id: "turnos", label: "Turnos" },
-      { id: "caja", label: "Caja" },
-      { id: "pedidos", label: "Pedidos" },
-      { id: "fiados", label: "Me deben" },
-      { id: "cuadrar", label: "Cuadrar" },
-    ],
-  },
-  {
     id: "inventario",
     name: "Inventario",
     tabs: [
@@ -101,18 +88,18 @@ export function NavDefaultTabsConfig() {
   };
 
   return (
-    <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl p-5 shadow-sm">
+    <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl p-5 ">
       <div className="space-y-1">
         {NAV_MODULES.map((mod) => (
           <div
             key={mod.id}
-            className="flex items-center justify-between py-2.5 border-b border-gray-100 dark:border-white/5 last:border-b-0"
+            className="flex items-center justify-between py-2.5 border-b border-[var(--rule-soft)] dark:border-white/5 last:border-b-0"
           >
             <span className="text-sm font-medium text-gray-800 dark:text-foreground">{mod.name}</span>
             <select
               value={defaults[mod.id] ?? mod.tabs[0].id}
               onChange={(e) => handleChange(mod.id, e.target.value)}
-              className="text-xs border border-gray-200 dark:border-card-border bg-white dark:bg-card rounded-lg px-2.5 py-1.5 text-gray-700 dark:text-foreground focus:ring-2 focus:ring-[#00B4A6]/30 focus:border-[#00B4A6] outline-none transition-all"
+              className="text-xs border border-[var(--rule-base)] dark:border-card-border bg-white dark:bg-card rounded-lg px-2.5 py-1.5 text-gray-700 dark:text-foreground focus:ring-2 focus:ring-[#2563EB]/30 focus:border-[#2563EB] outline-none transition-all"
             >
               {mod.tabs.map((t) => (
                 <option key={t.id} value={t.id}>{t.label}</option>
@@ -121,7 +108,7 @@ export function NavDefaultTabsConfig() {
           </div>
         ))}
       </div>
-      <div className="flex items-center justify-between mt-4 pt-3 border-t border-gray-100 dark:border-white/5">
+      <div className="flex items-center justify-between mt-4 pt-3 border-t border-[var(--rule-soft)] dark:border-white/5">
         <button
           onClick={handleReset}
           className="text-xs text-gray-400 hover:text-red-500 transition-colors"

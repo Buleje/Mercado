@@ -166,7 +166,6 @@ export async function DELETE(
     return NextResponse.json(
       {
         error: "Error al limpiar datos de la tienda",
-        detail: e instanceof Error ? e.message : String(e),
       },
       { status: 500 },
     );

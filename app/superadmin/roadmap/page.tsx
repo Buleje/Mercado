@@ -33,6 +33,8 @@ import {
   SquareDashed,
   Target,
   X,
+  PartyPopper,
+  Flame,
 } from "lucide-react";
 import type {
   RoadmapEffort,
@@ -114,7 +116,7 @@ const PRIORITY_COLORS: Record<RoadmapPriority, string> = {
   P0: "bg-red-500/20 text-red-700 dark:text-red-400 border-red-500/40",
   P1: "bg-orange-500/20 text-orange-700 dark:text-orange-400 border-orange-500/40",
   P2: "bg-yellow-500/20 text-yellow-700 dark:text-yellow-500 border-yellow-500/40",
-  P3: "bg-blue-500/20 text-blue-700 dark:text-blue-400 border-blue-500/40",
+  P3: "bg-emerald-500/20 text-emerald-700 dark:text-emerald-400 border-emerald-500/40",
 };
 
 const EFFORT_COLORS: Record<RoadmapEffort, string> = {
@@ -125,10 +127,10 @@ const EFFORT_COLORS: Record<RoadmapEffort, string> = {
 };
 
 const TYPE_EMOJI: Record<RoadmapType, string> = {
-  fix: "🐛",
-  new: "🆕",
-  expansion: "📈",
-  complete: "✅",
+  fix: "",
+  new: "",
+  expansion: "",
+  complete: "",
 };
 
 const TYPE_LABEL: Record<RoadmapType, string> = {
@@ -169,7 +171,7 @@ const STATUS_META: Record<
   in_progress: {
     label: "En progreso",
     emoji: "🔄",
-    color: "bg-blue-500/10 text-blue-700 dark:text-blue-400 border-blue-500/40",
+    color: "bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border-emerald-500/40",
     icon: Loader2,
   },
   done: {
@@ -475,7 +477,7 @@ export default function RoadmapPage() {
         <StatBlock
           label="En progreso"
           value={data.stats.in_progress}
-          accent="from-blue-500 to-indigo-600"
+          accent="from-emerald-500 to-indigo-600"
           icon={<Loader2 className="w-4 h-4" />}
         />
         <StatBlock
@@ -633,7 +635,7 @@ export default function RoadmapPage() {
                 ? "bg-emerald-50/95 dark:bg-emerald-950/90 text-emerald-800 dark:text-emerald-200 border-emerald-200 dark:border-emerald-900"
                 : t.kind === "error"
                   ? "bg-red-50/95 dark:bg-red-950/90 text-red-800 dark:text-red-200 border-red-200 dark:border-red-900"
-                  : "bg-blue-50/95 dark:bg-blue-950/90 text-blue-800 dark:text-blue-200 border-blue-200 dark:border-blue-900",
+                  : "bg-emerald-50/95 dark:bg-emerald-950/90 text-emerald-800 dark:text-emerald-200 border-emerald-200 dark:border-emerald-900",
             ].join(" ")}
           >
             {t.message}
@@ -645,9 +647,9 @@ export default function RoadmapPage() {
       {celebratingId && (
         <div className="fixed inset-0 pointer-events-none z-50 flex items-center justify-center">
           <div className="animate-ping absolute inline-flex h-48 w-48 rounded-full bg-emerald-400/40" />
-          <div className="relative bg-white dark:bg-gray-900 border border-emerald-300 dark:border-emerald-800 rounded-2xl px-6 py-4 shadow-2xl text-center">
-            <div className="text-4xl mb-1">🎉</div>
-            <div className="text-sm font-bold text-emerald-700 dark:text-emerald-300">
+          <div className="relative bg-white dark:bg-gray-900 border border-emerald-300 dark:border-emerald-800 rounded-2xl px-6 py-4 text-center">
+            <PartyPopper className="h-8 w-8 text-emerald-600 dark:text-emerald-400 mx-auto mb-2" strokeWidth={1.5} />
+            <div className="text-sm font-extrabold tracking-tight text-emerald-700 dark:text-emerald-300">
               ¡Item completado!
             </div>
           </div>
@@ -790,12 +792,15 @@ function CriticalBugsHero({
                       type="button"
                       disabled={isUpdating}
                       onClick={() => onMarkInProgress(bug.id)}
-                      className="flex-1 px-2.5 py-1.5 rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold transition-colors disabled:opacity-50 flex items-center justify-center gap-1"
+                      className="flex-1 px-2.5 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold transition-colors disabled:opacity-50 flex items-center justify-center gap-1"
                     >
                       {isUpdating ? (
                         <Loader2 className="w-3 h-3 animate-spin" />
                       ) : (
-                        <>🔥 Arreglar ahora</>
+                        <>
+                          <Flame className="w-3 h-3" strokeWidth={2} />
+                          Arreglar ahora
+                        </>
                       )}
                     </button>
                   )}
@@ -917,10 +922,10 @@ function FilterBar({
           onChange={onStatusChange as (v: string) => void}
           options={[
             { v: "all", l: "Todos" },
-            { v: "planned", l: "📋 Planificado" },
-            { v: "in_progress", l: "🔄 En progreso" },
-            { v: "done", l: "✅ Hecho" },
-            { v: "blocked", l: "🚧 Bloqueado" },
+            { v: "planned", l: "Planificado" },
+            { v: "in_progress", l: "En progreso" },
+            { v: "done", l: "Hecho" },
+            { v: "blocked", l: "Bloqueado" },
             { v: "skipped", l: "⏭️ Omitido" },
           ]}
         />
@@ -1141,7 +1146,7 @@ function ItemCard({
           </div>
           <div className="h-1.5 bg-gray-100 dark:bg-gray-800 rounded-full overflow-hidden">
             <div
-              className="h-full bg-gradient-to-r from-blue-500 to-indigo-500 transition-all duration-500"
+              className="h-full bg-gradient-to-r from-emerald-500 to-indigo-500 transition-all duration-500"
               style={{ width: `${item.state.progress}%` }}
             />
           </div>
@@ -1236,10 +1241,10 @@ function StatusDropdown({
       ].join(" ")}
       aria-label="Cambiar estado"
     >
-      <option value="planned">📋 Planificado</option>
-      <option value="in_progress">🔄 En progreso</option>
-      <option value="done">✅ Hecho</option>
-      <option value="blocked">🚧 Bloqueado</option>
+      <option value="planned">Planificado</option>
+      <option value="in_progress">En progreso</option>
+      <option value="done">Hecho</option>
+      <option value="blocked">Bloqueado</option>
       <option value="skipped">⏭️ Omitido</option>
     </select>
   );
@@ -1459,35 +1464,35 @@ function DetailModal({
           <div className="grid grid-cols-2 md:grid-cols-5 gap-2">
             <ActionButton
               label="Planificado"
-              icon="📋"
+              Icon={Circle}
               active={item.state.status === "planned"}
               onClick={() => onChangeStatus("planned")}
               disabled={updating}
             />
             <ActionButton
               label="En progreso"
-              icon="🔄"
+              Icon={Loader2}
               active={item.state.status === "in_progress"}
               onClick={() => onChangeStatus("in_progress")}
               disabled={updating}
             />
             <ActionButton
               label="Hecho"
-              icon="✅"
+              Icon={CheckCircle2}
               active={item.state.status === "done"}
               onClick={() => onChangeStatus("done")}
               disabled={updating}
             />
             <ActionButton
               label="Bloqueado"
-              icon="🚧"
+              Icon={PauseCircle}
               active={item.state.status === "blocked"}
               onClick={() => onChangeStatus("blocked")}
               disabled={updating}
             />
             <ActionButton
               label="Omitido"
-              icon="⏭️"
+              Icon={SquareDashed}
               active={item.state.status === "skipped"}
               onClick={() => onChangeStatus("skipped")}
               disabled={updating}
@@ -1514,13 +1519,13 @@ function MetaCell({ label, value }: { label: string; value: string }) {
 
 function ActionButton({
   label,
-  icon,
+  Icon,
   active,
   onClick,
   disabled,
 }: {
   label: string;
-  icon: string;
+  Icon?: React.ComponentType<{ className?: string }>;
   active: boolean;
   onClick: () => void;
   disabled?: boolean;
@@ -1531,13 +1536,13 @@ function ActionButton({
       onClick={onClick}
       disabled={disabled}
       className={[
-        "px-3 py-2 rounded-xl text-xs font-semibold border transition-all disabled:opacity-50",
+        "px-3 py-2 rounded-xl text-xs font-semibold border transition-all disabled:opacity-50 flex flex-col items-center gap-1",
         active
-          ? "bg-teal-600 border-teal-600 text-white shadow-lg shadow-teal-500/20"
-          : "bg-white dark:bg-gray-900 border-gray-200 dark:border-gray-800 text-gray-700 dark:text-gray-300 hover:border-teal-500/50",
+          ? "bg-gray-900 border-gray-900 text-white dark:bg-white dark:text-gray-900 dark:border-white"
+          : "bg-white dark:bg-gray-900 border-gray-200 dark:border-gray-800 text-gray-700 dark:text-gray-300 hover:border-gray-900 dark:hover:border-gray-400",
       ].join(" ")}
     >
-      <span className="block text-lg mb-0.5">{icon}</span>
+      {Icon && <Icon className="h-4 w-4" />}
       <span className="block">{label}</span>
     </button>
   );

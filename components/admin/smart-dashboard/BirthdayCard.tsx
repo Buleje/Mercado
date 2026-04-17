@@ -31,7 +31,7 @@ export function BirthdayCard() {
 
   if (birthdays.length === 0) return null;
   return (
-    <div className="rounded-xl border border-gray-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 p-4">
+    <div className="rounded-xl border border-[var(--rule-base)] dark:border-zinc-700 bg-white dark:bg-zinc-800 p-4">
       <div className="flex items-center gap-2 mb-2">
         <span className="text-xs font-bold text-gray-600 dark:text-zinc-300">Cumpleanos</span>
       </div>
@@ -45,7 +45,7 @@ export function BirthdayCard() {
               <a
                 href={`https://wa.me/${b.phone.replace(/\D/g, "")}?text=${encodeURIComponent(`Feliz cumpleanos ${b.name}! De parte de Buleje.`)}`}
                 target="_blank" rel="noopener noreferrer"
-                className="shrink-0 px-2 py-1 rounded-lg bg-emerald-50 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400 text-[10px] font-bold hover:bg-emerald-100 transition-colors"
+                className="shrink-0 px-2 py-1 rounded-lg bg-emerald-50 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400 text-[length:var(--ts-2xs)] font-bold hover:bg-emerald-100 transition-colors"
               >
                 Felicitar
               </a>

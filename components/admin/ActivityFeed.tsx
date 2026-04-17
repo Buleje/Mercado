@@ -15,8 +15,8 @@ interface ActivityEntry {
 
 const ICON_MAP: Record<string, { icon: typeof ShoppingCart; color: string; bg: string }> = {
   sale:     { icon: ShoppingCart,   color: "text-emerald-600", bg: "bg-emerald-50 dark:bg-emerald-900/20" },
-  order:    { icon: ShoppingCart,   color: "text-blue-600",    bg: "bg-blue-50 dark:bg-blue-900/20" },
-  product:  { icon: Package,        color: "text-violet-600",  bg: "bg-violet-50 dark:bg-violet-900/20" },
+  order:    { icon: ShoppingCart,   color: "text-emerald-600",    bg: "bg-emerald-50 dark:bg-emerald-900/20" },
+  product:  { icon: Package,        color: "text-[var(--text-secondary)]",  bg: "bg-[var(--surface-sunken)]" },
   payment:  { icon: DollarSign,     color: "text-amber-600",   bg: "bg-amber-50 dark:bg-amber-900/20" },
   customer: { icon: UserPlus,       color: "text-primary",     bg: "bg-primary/10" },
   fiado:    { icon: DollarSign,     color: "text-orange-600",  bg: "bg-orange-50 dark:bg-orange-900/20" },
@@ -81,7 +81,7 @@ export default function ActivityFeed() {
   }, []);
 
   return (
-    <div className="rounded-xl border border-gray-100 dark:border-zinc-700 bg-white dark:bg-zinc-800 p-4">
+    <div className="rounded-xl border border-[var(--rule-soft)] dark:border-zinc-700 bg-white dark:bg-zinc-800 p-4">
       <div className="flex items-center gap-2 mb-3">
         <div className="flex items-center justify-center w-6 h-6 rounded-lg bg-primary/10">
           <ShoppingCart className="w-3.5 h-3.5 text-primary" />
@@ -117,12 +117,12 @@ export default function ActivityFeed() {
                     {entry.action}
                   </p>
                   {entry.details && (
-                    <p className="text-[10px] text-gray-400 dark:text-zinc-500 truncate mt-0.5">
+                    <p className="text-[length:var(--ts-2xs)] text-gray-400 dark:text-zinc-500 truncate mt-0.5">
                       {entry.details}
                     </p>
                   )}
                 </div>
-                <span className="text-[10px] text-gray-400 dark:text-zinc-500 shrink-0 mt-0.5">
+                <span className="text-[length:var(--ts-2xs)] text-gray-400 dark:text-zinc-500 shrink-0 mt-0.5">
                   {timeAgo(entry.createdAt)}
                 </span>
               </div>

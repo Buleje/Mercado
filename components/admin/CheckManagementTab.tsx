@@ -43,9 +43,9 @@ type PayableRecord = {
 const fmt = (n: number) => "S/ " + n.toLocaleString("es-PE", { minimumFractionDigits: 2 });
 
 const STATUS_MAP: Record<CheckStatus, { label: string; color: string; bg: string }> = {
-  "en-cartera":    { label: "En cartera",    color: "text-blue-600",    bg: "bg-blue-100 dark:bg-blue-900/30"    },
+  "en-cartera":    { label: "En cartera",    color: "text-emerald-600",    bg: "bg-emerald-100 dark:bg-emerald-900/30"    },
   "por-depositar": { label: "Por depositar", color: "text-amber-600",   bg: "bg-amber-100 dark:bg-amber-900/30"  },
-  depositado:      { label: "Depositado",    color: "text-violet-600",  bg: "bg-violet-100 dark:bg-violet-900/30"},
+  depositado:      { label: "Depositado",    color: "text-[var(--text-secondary)]",  bg: "bg-[var(--surface-sunken)]"},
   cobrado:         { label: "Cobrado",       color: "text-emerald-600", bg: "bg-emerald-100 dark:bg-emerald-900/30"},
   pagado:          { label: "Pagado",        color: "text-emerald-600", bg: "bg-emerald-100 dark:bg-emerald-900/30"},
   rebotado:        { label: "Rebotado",      color: "text-red-600",     bg: "bg-red-100 dark:bg-red-900/30"      },
@@ -147,7 +147,7 @@ export default function CheckManagementTab() {
         <p className="text-gray-500 dark:text-muted text-sm">Error cargando datos</p>
         <button
           onClick={load}
-          className="flex items-center gap-2 px-4 py-2 rounded-xl bg-primary text-white text-sm font-semibold"
+          className="flex items-center gap-2 px-4 py-2 rounded-lg bg-primary text-white text-sm font-semibold"
         >
           <RefreshCw className="h-4 w-4" /> Reintentar
         </button>
@@ -184,7 +184,7 @@ export default function CheckManagementTab() {
               "cheques"
             )
           }
-          className="flex items-center gap-1.5 px-3 py-2 rounded-xl border border-gray-200 dark:border-card-border bg-white dark:bg-surface text-sm font-semibold text-gray-700 dark:text-foreground hover:bg-gray-50 dark:hover:bg-accent transition-colors"
+          className="flex items-center gap-1.5 px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-card-border bg-white dark:bg-surface text-sm font-semibold text-gray-700 dark:text-foreground hover:bg-gray-50 dark:hover:bg-accent transition-colors"
         >
           <Download className="h-4 w-4" /> Exportar
         </button>
@@ -210,8 +210,8 @@ export default function CheckManagementTab() {
           {
             label: "Por depositar",
             value: String(stats.toDeposit),
-            color: "text-blue-600",
-            bg: "bg-blue-50 dark:bg-blue-950/30",
+            color: "text-emerald-600",
+            bg: "bg-emerald-50 dark:bg-emerald-950/30",
             icon: Calendar,
           },
           {
@@ -222,7 +222,7 @@ export default function CheckManagementTab() {
             icon: Ban,
           },
         ].map(({ label, value, color, bg, icon: Icon }) => (
-          <div key={label} className={cn("rounded-2xl p-4 flex items-start gap-3", bg)}>
+          <div key={label} className={cn("rounded-xl p-4 flex items-start gap-3", bg)}>
             <Icon className={cn("h-5 w-5 mt-0.5", color)} />
             <div>
               <p className="text-xs font-semibold text-gray-500 dark:text-muted">{label}</p>
@@ -248,7 +248,7 @@ export default function CheckManagementTab() {
       )}
 
       {/* Distribución visual por estado */}
-      <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl p-4">
+      <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl p-4">
         <h3 className="text-sm font-bold text-gray-700 dark:text-foreground mb-3">Distribución por estado</h3>
         <div className="flex flex-wrap gap-2">
           {(Object.keys(STATUS_MAP) as CheckStatus[]).map((s) => {
@@ -283,13 +283,13 @@ export default function CheckManagementTab() {
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder="Buscar por entidad, número, banco..."
-            className="w-full pl-9 pr-3 py-2 text-sm border border-gray-200 dark:border-card-border rounded-xl bg-white dark:bg-surface text-gray-700 dark:text-foreground"
+            className="w-full pl-9 pr-3 py-2 text-sm border border-[var(--rule-base)] dark:border-card-border rounded-xl bg-white dark:bg-surface text-gray-700 dark:text-foreground"
           />
         </div>
         <select
           value={filterType}
           onChange={(e) => setFilterType(e.target.value as typeof filterType)}
-          className="px-3 py-2 text-sm border border-gray-200 dark:border-card-border rounded-xl bg-white dark:bg-surface text-gray-700 dark:text-foreground"
+          className="px-3 py-2 text-sm border border-[var(--rule-base)] dark:border-card-border rounded-xl bg-white dark:bg-surface text-gray-700 dark:text-foreground"
         >
           <option value="todos">Todos</option>
           <option value="recibido">Recibidos</option>
@@ -298,7 +298,7 @@ export default function CheckManagementTab() {
         <select
           value={filterStatus}
           onChange={(e) => setFilterStatus(e.target.value as typeof filterStatus)}
-          className="px-3 py-2 text-sm border border-gray-200 dark:border-card-border rounded-xl bg-white dark:bg-surface text-gray-700 dark:text-foreground"
+          className="px-3 py-2 text-sm border border-[var(--rule-base)] dark:border-card-border rounded-xl bg-white dark:bg-surface text-gray-700 dark:text-foreground"
         >
           <option value="todos">Todos los estados</option>
           {(Object.entries(STATUS_MAP) as [CheckStatus, typeof STATUS_MAP[CheckStatus]][]).map(([k, v]) => (
@@ -310,7 +310,7 @@ export default function CheckManagementTab() {
       </div>
 
       {/* Tabla */}
-      <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl overflow-hidden">
+      <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full min-w-[600px] text-sm">
             <thead>
@@ -333,7 +333,7 @@ export default function CheckManagementTab() {
                   <tr
                     key={c.id}
                     className={cn(
-                      "border-t border-gray-100 dark:border-card-border hover:bg-gray-50 dark:hover:bg-accent/20",
+                      "border-t border-[var(--rule-soft)] dark:border-card-border hover:bg-gray-50 dark:hover:bg-accent/20",
                       c.status === "rebotado" && "bg-red-50/50 dark:bg-red-950/10",
                       isOverdue && "bg-amber-50/30 dark:bg-amber-950/5"
                     )}
@@ -348,7 +348,7 @@ export default function CheckManagementTab() {
                           "text-xs font-bold px-2 py-0.5 rounded-full",
                           c.type === "recibido"
                             ? "bg-emerald-100 dark:bg-emerald-900/30 text-emerald-600"
-                            : "bg-blue-100 dark:bg-blue-900/30 text-blue-600"
+                            : "bg-emerald-100 dark:bg-emerald-900/30 text-emerald-600"
                         )}
                       >
                         {c.type === "recibido" ? "Recibido" : "Emitido"}
@@ -409,7 +409,7 @@ export default function CheckManagementTab() {
           onClick={() => setDetail(null)}
         >
           <div
-            className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl shadow-2xl p-6 w-full max-w-md space-y-4"
+            className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl p-6 w-full max-w-md space-y-4"
             onClick={(e) => e.stopPropagation()}
           >
             <div className="flex items-center justify-between">
@@ -438,7 +438,7 @@ export default function CheckManagementTab() {
               ))}
             </div>
             {detail.notes && (
-              <p className="text-xs text-gray-400 italic border-t border-gray-100 dark:border-card-border pt-2">
+              <p className="text-xs text-gray-400 italic border-t border-[var(--rule-soft)] dark:border-card-border pt-2">
                 {detail.notes}
               </p>
             )}

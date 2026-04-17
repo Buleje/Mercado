@@ -77,14 +77,16 @@ function loadOrCreateDeals(allProducts: Product[], discount: number) {
   return deals;
 }
 
-export default function FlashDeals() {
+export default function FlashDeals({ serverProducts, showEmpty = false }: { serverProducts?: Product[]; showEmpty?: boolean }) {
   const { homepage: hp } = useSettings();
   const [deals, setDeals] = useState<Array<Product & { originalPrice: number; discount: number }>>([]);
   const [endTime] = useState(getEndOfDay);
   const [time, setTime] = useState(getTimeLeft(endTime));
   const { addItem, items, updateQty } = useCart();
   const { showToast } = useToast();
-  const { products, isLoading } = useStoreProducts();
+  const hook = useStoreProducts();
+  const products = serverProducts && serverProducts.length > 0 ? serverProducts : hook.products;
+  const isLoading = serverProducts ? false : hook.isLoading;
   const discount = hp.flashDealDiscount ?? 20;
 
   useEffect(() => {
@@ -101,8 +103,8 @@ export default function FlashDeals() {
     return () => clearInterval(t);
   }, [endTime]);
 
-  // No render while loading or if no deals — prevents blank gaps
-  if (isLoading || deals.length === 0) return <SectionPlaceholder title="Ofertas Relampago" hint="Configura desde Admin → Mi Tienda → Secciones" cols={6} />;
+  if (isLoading) return <SectionPlaceholder title="Ofertas Relampago" hint="Cargando..." cols={6} />;
+  if (deals.length === 0) return showEmpty ? <SectionPlaceholder title="Ofertas Relampago" hint="Configura ofertas desde Mi Tienda en el panel admin" cols={6} /> : null;
 
   /* JSON-LD Offer schema for flash deals */
   const flashOffersSchema = {

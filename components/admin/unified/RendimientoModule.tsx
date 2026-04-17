@@ -9,11 +9,7 @@ import AdminModuleHeader from "@/components/admin/shared/AdminModuleHeader";
 import AdminTabBar from "@/components/admin/shared/AdminTabBar";
 import { cn } from "@/lib/utils";
 
-const S = () => (
-  <div className="flex items-center justify-center py-12">
-    <div className="h-8 w-8 border-4 border-primary border-t-transparent rounded-full animate-spin" />
-  </div>
-);
+import { TabLoadingSkeleton as S } from "@/components/ui/skeletons";
 
 const WebVitalsWidget = dynamic(
   () => import("@/components/admin/WebVitalsWidget"),
@@ -69,8 +65,8 @@ function BrowserInfoTab() {
       <ConnectionQualityCard />
 
       {/* Browser details */}
-      <div className="rounded-2xl border border-gray-200 bg-white overflow-hidden">
-        <div className="px-4 py-3 border-b border-gray-100">
+      <div className="rounded-xl border border-[var(--rule-base)] bg-white overflow-hidden">
+        <div className="px-4 py-3 border-b border-[var(--rule-soft)]">
           <h3 className="text-sm font-bold text-gray-900 flex items-center gap-2">
             <Monitor className="h-4 w-4 text-primary" />
             Información del Navegador
@@ -123,7 +119,7 @@ function ConnectionQualityCard() {
 
   if (!quality) {
     return (
-      <div className="rounded-2xl border border-gray-200 bg-white p-4 text-center">
+      <div className="rounded-xl border border-[var(--rule-base)] bg-white p-4 text-center">
         <Wifi className="h-6 w-6 text-gray-400 mx-auto mb-2" />
         <p className="text-xs text-gray-500">
           Tu navegador no permite medir la calidad de conexión
@@ -133,22 +129,22 @@ function ConnectionQualityCard() {
   }
 
   const GRADE_STYLES = {
-    buena: { color: "text-emerald-600", bg: "bg-emerald-50", emoji: "🟢" },
-    regular: { color: "text-amber-600", bg: "bg-amber-50", emoji: "🟡" },
-    lenta: { color: "text-red-600", bg: "bg-red-50", emoji: "🔴" },
+    buena: { color: "text-emerald-600", bg: "bg-emerald-50", dot: "bg-emerald-500" },
+    regular: { color: "text-amber-600", bg: "bg-amber-50", dot: "bg-amber-500" },
+    lenta: { color: "text-red-600", bg: "bg-red-50", dot: "bg-red-500" },
   };
   const style = GRADE_STYLES[quality.grade];
 
   return (
-    <div className={cn("rounded-2xl border border-gray-200 p-4", style.bg)}>
+    <div className={cn("rounded-xl border border-[var(--rule-base)] p-4", style.bg)}>
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <div className="h-10 w-10 rounded-xl bg-white flex items-center justify-center shadow-sm">
+          <div className="h-10 w-10 rounded-xl bg-white flex items-center justify-center ">
             <Wifi className={cn("h-5 w-5", style.color)} />
           </div>
           <div>
             <p className={cn("text-sm font-bold", style.color)}>
-              {style.emoji} Conexión {quality.grade}
+              <span className={cn("inline-block w-2.5 h-2.5 rounded-full", style.dot)} /> Conexión {quality.grade}
             </p>
             <p className="text-xs text-gray-500">
               {quality.grade === "buena"
@@ -161,7 +157,7 @@ function ConnectionQualityCard() {
         </div>
         <div className="text-right">
           <p className="text-lg font-bold text-gray-900">{quality.speed} <span className="text-xs font-normal text-gray-500">Mbps</span></p>
-          <p className="text-[10px] text-gray-400">{quality.type} · {quality.rtt}ms</p>
+          <p className="text-[length:var(--ts-2xs)] text-gray-400">{quality.type} · {quality.rtt}ms</p>
         </div>
       </div>
     </div>
@@ -269,9 +265,9 @@ function PerformanceHistoryTab() {
   const maxTtfb = Math.max(...history.map(h => h.ttfb), 1);
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-6">
       {/* Record button */}
-      <div className="rounded-2xl border border-gray-200 bg-white p-4">
+      <div className="rounded-xl border border-[var(--rule-base)] bg-white p-4">
         <div className="flex items-center justify-between mb-3">
           <div>
             <h3 className="text-sm font-bold text-gray-900 flex items-center gap-2">
@@ -297,7 +293,7 @@ function PerformanceHistoryTab() {
               disabled={recording}
               className="px-3 py-1.5 bg-primary text-white text-xs font-bold rounded-lg hover:bg-primary/90 transition-colors disabled:opacity-50"
             >
-              {recording ? "Midiendo..." : "📊 Medir ahora"}
+              {recording ? "Midiendo..." : <><BarChart3 className="h-3.5 w-3.5 inline -mt-0.5" /> Medir ahora</>}
             </button>
           </div>
         </div>
@@ -313,7 +309,7 @@ function PerformanceHistoryTab() {
           <div className="space-y-3">
             {/* LCP chart */}
             <div>
-              <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1.5">
+              <p className="text-[length:var(--ts-2xs)] font-bold text-gray-400 mb-1.5">
                 LCP — Tiempo de carga principal (ms)
               </p>
               <div className="space-y-1">
@@ -322,7 +318,7 @@ function PerformanceHistoryTab() {
                   const width = Math.max((snap.lcp / maxLcp) * 100, 5);
                   return (
                     <div key={i} className="flex items-center gap-2">
-                      <span className="text-[9px] text-gray-400 w-14 shrink-0">
+                      <span className="text-[length:var(--ts-2xs)] text-gray-400 w-14 shrink-0">
                         {new Date(snap.date).toLocaleDateString("es", { day: "2-digit", month: "short" })}
                       </span>
                       <div className="flex-1 h-4 bg-gray-100 rounded-full overflow-hidden">
@@ -331,7 +327,7 @@ function PerformanceHistoryTab() {
                           style={{ width: `${width}%` }}
                         />
                       </div>
-                      <span className="text-[10px] font-bold text-gray-700 w-14 text-right">
+                      <span className="text-[length:var(--ts-2xs)] font-bold text-gray-700 w-14 text-right">
                         {snap.lcp}ms
                       </span>
                     </div>
@@ -342,7 +338,7 @@ function PerformanceHistoryTab() {
 
             {/* TTFB chart */}
             <div>
-              <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1.5">
+              <p className="text-[length:var(--ts-2xs)] font-bold text-gray-400 mb-1.5">
                 TTFB — Tiempo de respuesta del servidor (ms)
               </p>
               <div className="space-y-1">
@@ -351,7 +347,7 @@ function PerformanceHistoryTab() {
                   const width = Math.max((snap.ttfb / maxTtfb) * 100, 5);
                   return (
                     <div key={i} className="flex items-center gap-2">
-                      <span className="text-[9px] text-gray-400 w-14 shrink-0">
+                      <span className="text-[length:var(--ts-2xs)] text-gray-400 w-14 shrink-0">
                         {new Date(snap.date).toLocaleDateString("es", { day: "2-digit", month: "short" })}
                       </span>
                       <div className="flex-1 h-4 bg-gray-100 rounded-full overflow-hidden">
@@ -360,7 +356,7 @@ function PerformanceHistoryTab() {
                           style={{ width: `${width}%` }}
                         />
                       </div>
-                      <span className="text-[10px] font-bold text-gray-700 w-14 text-right">
+                      <span className="text-[length:var(--ts-2xs)] font-bold text-gray-700 w-14 text-right">
                         {snap.ttfb}ms
                       </span>
                     </div>
@@ -370,15 +366,15 @@ function PerformanceHistoryTab() {
             </div>
 
             {/* CLS summary */}
-            <div className="flex items-center gap-3 pt-2 border-t border-gray-100">
-              <p className="text-[10px] text-gray-500">
+            <div className="flex items-center gap-3 pt-2 border-t border-[var(--rule-soft)]">
+              <p className="text-[length:var(--ts-2xs)] text-gray-500">
                 Última estabilidad visual (CLS):
               </p>
               {history.length > 0 && (() => {
                 const last = history[history.length - 1];
                 const grade = getGrade("cls", last.cls);
                 return (
-                  <span className={cn("text-[10px] font-bold px-2 py-0.5 rounded-full text-white", grade.color)}>
+                  <span className={cn("text-[length:var(--ts-2xs)] font-bold px-2 py-0.5 rounded-full text-white", grade.color)}>
                     {last.cls} — {grade.label}
                   </span>
                 );
@@ -470,9 +466,9 @@ function StorageTab() {
   const usagePct = storage.quota > 0 ? (storage.usage / storage.quota) * 100 : 0;
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-6">
       {/* Storage overview */}
-      <div className="rounded-2xl border border-gray-200 bg-white p-4">
+      <div className="rounded-xl border border-[var(--rule-base)] bg-white p-4">
         <h3 className="text-sm font-bold text-gray-900 flex items-center gap-2 mb-3">
           <HardDrive className="h-4 w-4 text-primary" />
           Espacio utilizado
@@ -485,7 +481,7 @@ function StorageTab() {
         <div className="relative h-4 bg-gray-100 rounded-full overflow-hidden mb-2">
           <div
             className={cn(
-              "absolute inset-y-0 left-0 rounded-full transition-all duration-500",
+              "absolute inset-y-0 left-0 rounded-full transition-all duration-[var(--dur-slow)]",
               usagePct < 50 ? "bg-emerald-500" : usagePct < 80 ? "bg-amber-500" : "bg-red-500"
             )}
             style={{ width: `${Math.min(usagePct, 100)}%` }}
@@ -508,14 +504,14 @@ function StorageTab() {
           label="Datos guardados"
           value={formatBytes(storage.localStorage)}
           description="Configuración, preferencias y datos temporales"
-          color="text-blue-500"
+          color="text-emerald-500"
         />
         <StorageCard
           icon={MemoryStick}
           label="Sesión actual"
           value={formatBytes(storage.sessionStorage)}
           description="Datos del momento — se borran al cerrar"
-          color="text-purple-500"
+          color="text-[var(--text-secondary)]"
         />
         <StorageCard
           icon={Globe}
@@ -543,13 +539,13 @@ function StorageCard({
   color: string;
 }) {
   return (
-    <div className="rounded-xl border border-gray-200 bg-white p-3">
+    <div className="rounded-xl border border-[var(--rule-base)] bg-white p-3">
       <div className="flex items-center gap-2 mb-1.5">
         <Icon className={cn("h-4 w-4", color)} />
         <span className="text-xs font-semibold text-gray-900">{label}</span>
       </div>
       <p className="text-lg font-bold text-gray-900">{value}</p>
-      <p className="text-[10px] text-gray-500 mt-0.5">{description}</p>
+      <p className="text-[length:var(--ts-2xs)] text-gray-500 mt-0.5">{description}</p>
     </div>
   );
 }
@@ -560,7 +556,7 @@ export default function RendimientoModule() {
   const [sub, setSub] = useState(TABS[0].id);
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-6">
       <AdminModuleHeader
         title="Rendimiento"
         description="Velocidad de tu tienda, salud del sistema y datos de tu dispositivo"
@@ -574,8 +570,8 @@ export default function RendimientoModule() {
         moduleId={MODULE_ID}
       >
         {sub === "web-vitals" && (
-          <div className="space-y-4">
-            <div className="rounded-2xl border border-gray-200 bg-white p-4">
+          <div className="space-y-6">
+            <div className="rounded-xl border border-[var(--rule-base)] bg-white p-4">
               <h3 className="text-sm font-bold text-gray-900 mb-1">
                 ¿Qué tan rápido carga tu tienda?
               </h3>

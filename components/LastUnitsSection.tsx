@@ -21,10 +21,12 @@ function getLowStockProducts(allProducts: Product[]): Product[] {
     .slice(0, 8);
 }
 
-export default function LastUnitsSection() {
+export default function LastUnitsSection({ serverProducts, showEmpty = false }: { serverProducts?: Product[]; showEmpty?: boolean }) {
   const { addItem, items, updateQty } = useCart();
   const [ref, inView] = useInView({ threshold: 0.1 });
-  const { products, isLoading } = useStoreProducts();
+  const hook = useStoreProducts();
+  const products = serverProducts && serverProducts.length > 0 ? serverProducts : hook.products;
+  const isLoading = serverProducts ? false : hook.isLoading;
   const lowStock = useMemo(() => getLowStockProducts(products), [products]);
   const lastClickRef = useRef(0);
 
@@ -38,8 +40,9 @@ export default function LastUnitsSection() {
     [addItem]
   );
 
-  // No render while loading or if empty — prevents blank gaps
-  if (isLoading || lowStock.length === 0) return <SectionPlaceholder title="Ultimas Unidades" hint="Se muestran automaticamente productos con bajo stock" cols={4} />;
+  // Show skeleton only while loading, hide section if no products after load
+  if (isLoading) return <SectionPlaceholder title="Ultimas Unidades" hint="Cargando..." cols={4} />;
+  if (lowStock.length === 0) return showEmpty ? <SectionPlaceholder title="Ultimas Unidades" hint="Productos con stock bajo apareceran aqui" cols={4} /> : null;
 
   return (
     <section

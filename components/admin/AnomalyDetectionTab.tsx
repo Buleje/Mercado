@@ -20,9 +20,9 @@ const TYPE_CONFIG: Record<AnomalyType, { label: string; color: string; icon: typ
   "venta-alta": { label: "Venta Inusual Alta", color: "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400", icon: TrendingUp },
   "venta-baja": { label: "Venta Inusual Baja", color: "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400", icon: TrendingDown },
   "stock-inusual": { label: "Stock Inusual", color: "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400", icon: Boxes },
-  "precio-anomalo": { label: "Precio Anómalo", color: "bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400", icon: DollarSign },
+  "precio-anomalo": { label: "Precio Anómalo", color: "bg-[var(--surface-sunken)] text-[var(--text-primary)]", icon: DollarSign },
   "fraude-potencial": { label: "Fraude Potencial", color: "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400", icon: AlertTriangle },
-  "patron-raro": { label: "Patrón Raro", color: "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400", icon: ShoppingCart },
+  "patron-raro": { label: "Patrón Raro", color: "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400", icon: ShoppingCart },
 };
 const SEV_COLORS: Record<Severity, string> = {
   baja: "bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-400",
@@ -64,26 +64,26 @@ export default function AnomalyDetectionTab() {
           </h2>
           <p className="text-sm text-gray-500 dark:text-muted mt-1">Detección automática de patrones inusuales en ventas, stock y operaciones</p>
         </div>
-        <button onClick={() => exportToCSV(ANOMALIES.map(a => ({ Fecha: a.date, Tipo: a.type, Severidad: a.severity, Titulo: a.title, Valor: a.value, Esperado: a.expected })), "anomalias")} className="flex flex-wrap items-center gap-2 px-2 sm:px-4 py-1.5 sm:py-2.5 rounded-xl bg-primary text-white text-sm font-bold hover:bg-primary/90 transition-colors">
+        <button onClick={() => exportToCSV(ANOMALIES.map(a => ({ Fecha: a.date, Tipo: a.type, Severidad: a.severity, Titulo: a.title, Valor: a.value, Esperado: a.expected })), "anomalias")} className="flex flex-wrap items-center gap-2 px-2 sm:px-4 py-1.5 sm:py-2.5 rounded-lg bg-primary text-white text-sm font-bold hover:bg-primary/90 transition-colors">
           <Download className="h-4 w-4" /> Exportar
         </button>
       </div>
 
       {/* KPIs */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-4">
-        <div className="bg-white dark:bg-card rounded-2xl border border-gray-200 dark:border-card-border p-3 sm:p-5">
+        <div className="bg-white dark:bg-card rounded-xl border border-[var(--rule-base)] dark:border-card-border p-3 sm:p-5">
           <p className="text-xs font-semibold text-gray-500 dark:text-muted uppercase">Sin Resolver</p>
           <p className="text-xl sm:text-2xl font-extrabold text-amber-600 dark:text-amber-400 mt-1">{unresolvedCount}</p>
         </div>
-        <div className="bg-white dark:bg-card rounded-2xl border border-gray-200 dark:border-card-border p-3 sm:p-5">
+        <div className="bg-white dark:bg-card rounded-xl border border-[var(--rule-base)] dark:border-card-border p-3 sm:p-5">
           <p className="text-xs font-semibold text-gray-500 dark:text-muted uppercase">Críticas/Altas</p>
           <p className="text-xl sm:text-2xl font-extrabold text-red-600 dark:text-red-400 mt-1">{criticalCount}</p>
         </div>
-        <div className="bg-white dark:bg-card rounded-2xl border border-gray-200 dark:border-card-border p-3 sm:p-5">
+        <div className="bg-white dark:bg-card rounded-xl border border-[var(--rule-base)] dark:border-card-border p-3 sm:p-5">
           <p className="text-xs font-semibold text-gray-500 dark:text-muted uppercase">Total Detectadas</p>
           <p className="text-xl sm:text-2xl font-extrabold text-gray-900 dark:text-foreground mt-1">{ANOMALIES.length}</p>
         </div>
-        <div className="bg-white dark:bg-card rounded-2xl border border-gray-200 dark:border-card-border p-3 sm:p-5">
+        <div className="bg-white dark:bg-card rounded-xl border border-[var(--rule-base)] dark:border-card-border p-3 sm:p-5">
           <p className="text-xs font-semibold text-gray-500 dark:text-muted uppercase">Resueltas</p>
           <p className="text-xl sm:text-2xl font-extrabold text-emerald-600 dark:text-emerald-400 mt-1">{resolvedIds.size}</p>
         </div>
@@ -91,11 +91,11 @@ export default function AnomalyDetectionTab() {
 
       {/* Filters */}
       <div className="flex flex-wrap items-center gap-3">
-        <select value={filter} onChange={e => setFilter(e.target.value as AnomalyType | "todas")} className="px-2 sm:px-4 py-1.5 sm:py-2.5 rounded-xl border-2 border-gray-200 dark:border-card-border bg-white dark:bg-card text-sm font-semibold text-gray-900 dark:text-foreground outline-none focus:border-primary">
+        <select value={filter} onChange={e => setFilter(e.target.value as AnomalyType | "todas")} className="px-2 sm:px-4 py-1.5 sm:py-2.5 rounded-lg border-2 border-[var(--rule-base)] dark:border-card-border bg-white dark:bg-card text-sm font-semibold text-gray-900 dark:text-foreground outline-none focus:border-primary">
           <option value="todas">Todos los tipos</option>
           {Object.entries(TYPE_CONFIG).map(([k, v]) => <option key={k} value={k}>{v.label}</option>)}
         </select>
-        <select value={sevFilter} onChange={e => setSevFilter(e.target.value as Severity | "todas")} className="px-2 sm:px-4 py-1.5 sm:py-2.5 rounded-xl border-2 border-gray-200 dark:border-card-border bg-white dark:bg-card text-sm font-semibold text-gray-900 dark:text-foreground outline-none focus:border-primary">
+        <select value={sevFilter} onChange={e => setSevFilter(e.target.value as Severity | "todas")} className="px-2 sm:px-4 py-1.5 sm:py-2.5 rounded-lg border-2 border-[var(--rule-base)] dark:border-card-border bg-white dark:bg-card text-sm font-semibold text-gray-900 dark:text-foreground outline-none focus:border-primary">
           <option value="todas">Todas severidades</option>
           <option value="critica">Crítica</option><option value="alta">Alta</option>
           <option value="media">Media</option><option value="baja">Baja</option>
@@ -113,7 +113,7 @@ export default function AnomalyDetectionTab() {
           const Icon = config.icon;
           const isResolved = resolvedIds.has(a.id);
           return (
-            <div key={a.id} className={cn("bg-white dark:bg-card rounded-2xl border border-gray-200 dark:border-card-border p-3 sm:p-5 hover:shadow-md transition-shadow", isResolved && "opacity-60")}>
+            <div key={a.id} className={cn("bg-white dark:bg-card rounded-xl border border-[var(--rule-base)] dark:border-card-border p-3 sm:p-5 hover:shadow-sm transition-shadow", isResolved && "opacity-60")}>
               <div className="flex flex-wrap items-start gap-2 sm:gap-4">
                 <div className={cn("w-10 h-10 rounded-xl flex items-center justify-center shrink-0", config.color)}>
                   <Icon className="h-5 w-5" />
@@ -131,7 +131,7 @@ export default function AnomalyDetectionTab() {
                     <span>Módulo: {a.module}</span>
                     <span>Valor: {typeof a.value === "number" && a.value > 10 ? fmt(a.value) : a.value}</span>
                     <span>Esperado: {typeof a.expected === "number" && a.expected > 10 ? fmt(a.expected) : a.expected}</span>
-                    <span className={cn("font-bold", a.deviation > 0 ? "text-red-500" : "text-blue-500")}>
+                    <span className={cn("font-bold", a.deviation > 0 ? "text-red-500" : "text-emerald-500")}>
                       Desviación: {a.deviation > 0 ? "+" : ""}{a.deviation}%
                     </span>
                   </div>
@@ -154,8 +154,8 @@ export default function AnomalyDetectionTab() {
       {/* Detail modal */}
       {selected && (
         <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4" onClick={() => setSelected(null)}>
-          <div className="bg-white dark:bg-card rounded-2xl shadow-xl w-full max-w-lg" onClick={e => e.stopPropagation()}>
-            <div className="px-3 sm:px-6 py-4 border-b border-gray-100 dark:border-card-border flex items-center justify-between">
+          <div className="bg-white dark:bg-card rounded-xl w-full max-w-lg" onClick={e => e.stopPropagation()}>
+            <div className="px-3 sm:px-6 py-4 border-b border-[var(--rule-soft)] dark:border-card-border flex items-center justify-between">
               <h3 className="font-extrabold text-gray-900 dark:text-foreground">{selected.title}</h3>
               <button onClick={() => setSelected(null)} className="p-1.5 rounded-lg text-gray-400 hover:bg-gray-100 dark:hover:bg-accent text-base sm:text-xl font-bold">×</button>
             </div>
@@ -167,9 +167,9 @@ export default function AnomalyDetectionTab() {
                 <div className="bg-gray-50 dark:bg-surface rounded-xl p-3"><span className="text-xs text-gray-400">Valor Detectado</span><p className="font-bold text-red-500">{selected.value}</p></div>
                 <div className="bg-gray-50 dark:bg-surface rounded-xl p-3"><span className="text-xs text-gray-400">Valor Esperado</span><p className="font-bold text-emerald-500">{selected.expected}</p></div>
               </div>
-              <div className="bg-blue-50 dark:bg-blue-950/20 rounded-xl p-4">
-                <h4 className="text-sm font-bold text-blue-800 dark:text-blue-300 mb-1">Recomendación</h4>
-                <p className="text-xs text-blue-700 dark:text-blue-400">
+              <div className="bg-emerald-50 dark:bg-emerald-950/20 rounded-xl p-4">
+                <h4 className="text-sm font-bold text-emerald-800 dark:text-emerald-300 mb-1">Recomendación</h4>
+                <p className="text-xs text-emerald-700 dark:text-emerald-400">
                   {selected.type === "fraude-potencial" ? "Revisar cámaras de seguridad y confrontar con el empleado. Verificar recibos anulados." :
                    selected.type === "stock-inusual" ? "Realizar conteo físico inmediato. Revisar movimientos de almacén y mermas." :
                    selected.type === "precio-anomalo" ? "Corregir precio en el sistema. Verificar si se pueden revertir las ventas afectadas." :

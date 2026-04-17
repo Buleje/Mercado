@@ -253,9 +253,9 @@ type DeliveryOrder = { id: string; client: string; status: DeliveryStatus; color
 
 function DeliveryMiniApp() {
   const [orders, setOrders] = useState<DeliveryOrder[]>([
-    { id: "#1845", client: "Maria Lopez", status: "preparando", color: "text-blue-600" },
+    { id: "#1845", client: "Maria Lopez", status: "preparando", color: "text-emerald-600" },
     { id: "#1844", client: "Juan Perez", status: "en_camino", color: "text-orange-600" },
-    { id: "#1843", client: "Rosa Torres", status: "preparando", color: "text-blue-600" },
+    { id: "#1843", client: "Rosa Torres", status: "preparando", color: "text-emerald-600" },
   ]);
 
   const advance = (id: string) => {
@@ -369,7 +369,7 @@ const DEMO_TABS: DemoTab[] = [
     icon: <Package className="h-4 w-4" />,
     title: "Controla tu stock en tiempo real",
     description: "Ve niveles de stock, alertas y repone con un click. FEFO automatico incluido.",
-    gradient: "from-blue-500 to-indigo-600",
+    gradient: "from-emerald-500 to-indigo-600",
     miniApp: <InventoryMiniApp />,
     links: [
       { label: "Ver inventario completo", href: "/admin" },

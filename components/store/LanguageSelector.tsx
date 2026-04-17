@@ -151,7 +151,7 @@ export default function LanguageSelector({ className, compact = false }: Languag
   return (
     <div
       className={cn(
-        "bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-700 p-4 shadow-sm",
+        "bg-white dark:bg-gray-900 rounded-2xl border border-[var(--rule-base)] p-4 shadow-sm",
         className
       )}
     >
@@ -162,7 +162,7 @@ export default function LanguageSelector({ className, compact = false }: Languag
         </h3>
       </div>
 
-      <div className="flex rounded-xl overflow-hidden border border-gray-200 dark:border-gray-700">
+      <div className="flex rounded-xl overflow-hidden border border-[var(--rule-base)]">
         {options.map((opt) => (
           <button
             key={opt.value}

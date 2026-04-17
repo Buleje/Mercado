@@ -2,11 +2,14 @@
 
 import React, { useEffect } from "react";
 import { TourSpotlight } from "./TourSpotlight";
-import { ChevronLeft, ChevronRight, X, Sparkles } from "lucide-react";
+import {
+  ChevronLeft, ChevronRight, X, Sparkles,
+  Brain, ShoppingCart, Package, Tag, Truck, Wallet, Users, Settings,
+  type LucideIcon,
+} from "lucide-react";
 
 type Tab =
   | "asistente-ia"
-  | "ventas-caja"
   | "inventario"
   | "productos"
   | "compras"
@@ -21,7 +24,7 @@ interface TourStep {
   title: string;
   text: string;
   example: string;
-  emoji: string;
+  Icon: LucideIcon;
 }
 
 const TOUR_STEPS: TourStep[] = [
@@ -30,56 +33,56 @@ const TOUR_STEPS: TourStep[] = [
     title: "Tu asistente personal",
     text: "Aquí tu asistente te cuenta cómo va el negocio. Te dice cuánto vendiste, qué se está acabando y te da consejos.",
     example: "Ej: 'Hoy vendiste S/.1,240. El arroz se está acabando, pide más.'",
-    emoji: "🧠",
+    Icon: Brain,
   },
   {
-    tabId: "ventas-caja",
+    tabId: "pedidos",
     title: "Vender y cobrar",
-    text: "Aquí cobras a tus clientes. Puedes ver cuánto hay en la caja y llevar la cuenta de quién te debe.",
+    text: "Aquí gestionás los pedidos, cobrás a tus clientes y llevás la cuenta de quién te debe.",
     example: "Ej: Cobrar S/.25 de fideos a doña Rosa",
-    emoji: "🛒",
+    Icon: ShoppingCart,
   },
   {
     tabId: "inventario",
     title: "Tu almacén",
-    text: "Aquí ves cuánto tienes de cada producto. También te avisa si algo se va a vencer pronto.",
+    text: "Aquí ves cuánto tenés de cada producto. También te avisa si algo se va a vencer pronto.",
     example: "Ej: Te quedan 50 bolsas de arroz, 12 se vencen en marzo",
-    emoji: "📦",
+    Icon: Package,
   },
   {
     tabId: "productos",
     title: "Tus productos y sus precios",
-    text: "Aquí agregas productos nuevos, cambias precios y creas ofertas para tus clientes.",
+    text: "Aquí agregás productos nuevos, cambiás precios y creás ofertas para tus clientes.",
     example: "Ej: Subir el aceite de S/.8 a S/.8.50 o hacer 2x1 en galletas",
-    emoji: "🏷️",
+    Icon: Tag,
   },
   {
     tabId: "compras",
     title: "Pedirle al proveedor",
-    text: "Aquí haces pedidos a tus proveedores y ves qué te llegó y qué falta.",
+    text: "Aquí hacés pedidos a tus proveedores y ves qué te llegó y qué falta.",
     example: "Ej: Pedir 100 bolsas de azúcar al proveedor Torres",
-    emoji: "🚚",
+    Icon: Truck,
   },
   {
     tabId: "plata",
     title: "Tu dinero",
-    text: "Aquí ves cuánto entró, cuánto salió y cuánto ganaste. También puedes exportar a Excel.",
+    text: "Aquí ves cuánto entró, cuánto salió y cuánto ganaste. También podés exportar a Excel.",
     example: "Ej: Este mes entraron S/.8,500 y salieron S/.5,300. Ganaste S/.3,200",
-    emoji: "💰",
+    Icon: Wallet,
   },
   {
     tabId: "clientes",
     title: "Tus clientes",
     text: "Aquí ves la lista de tus clientes, quién compra seguido, quién te debe y pedidos de delivery.",
     example: "Ej: María compra cada semana y le gusta el arroz integral",
-    emoji: "👥",
+    Icon: Users,
   },
   {
     tabId: "config",
     title: "Ajustes del sistema",
-    text: "Aquí agregas cajeros, cambias permisos y configuras tu página web.",
+    text: "Aquí agregás cajeros, cambiás permisos y configurás tu página web.",
     example: "Ej: Dar permiso a Juan para que solo vea ventas, no precios de compra",
-    emoji: "⚙️",
+    Icon: Settings,
   },
 ];
 
@@ -152,11 +155,11 @@ export function OnboardingTour({
 
   return (
     <TourSpotlight targetSelector={targetSelector}>
-      <div className="w-[320px] sm:w-[340px] bg-white dark:bg-[#1e293b] rounded-2xl shadow-2xl border border-gray-200 dark:border-gray-700 overflow-hidden">
+      <div className="w-[320px] sm:w-[340px] bg-white dark:bg-[#1e293b] rounded-xl border border-[var(--rule-base)] overflow-hidden">
         {/* Header with step counter */}
         <div className="flex items-center justify-between px-4 pt-3 pb-1">
           <div className="flex items-center gap-2">
-            <span className="text-xs font-bold text-[#00B4A6] dark:text-emerald-400 uppercase tracking-wider">
+            <span className="text-xs font-bold text-[#2563EB] dark:text-emerald-400">
               Paso {currentStep + 1} de {totalSteps}
             </span>
           </div>
@@ -173,7 +176,7 @@ export function OnboardingTour({
         <div className="px-4 pb-2">
           <div className="h-1 bg-gray-100 dark:bg-gray-700 rounded-full overflow-hidden">
             <div
-              className="h-full bg-[#00B4A6] rounded-full transition-all duration-500 ease-out"
+              className="h-full bg-[#2563EB] rounded-full transition-all duration-[var(--dur-slow)] ease-out"
               style={{ width: `${((currentStep + 1) / totalSteps) * 100}%` }}
             />
           </div>
@@ -181,12 +184,19 @@ export function OnboardingTour({
 
         {/* Content */}
         <div className="px-4 pb-3">
-          <h3 className="text-base font-bold text-gray-900 dark:text-white mb-1.5">
-            {step.title}
-          </h3>
-          <p className="text-sm text-gray-600 dark:text-gray-300 leading-relaxed mb-2">
-            {step.text}
-          </p>
+          <div className="flex items-start gap-3 mb-2">
+            <div className="h-9 w-9 shrink-0 rounded-lg bg-gray-50 dark:bg-gray-950 border border-[var(--rule-base)] flex items-center justify-center text-gray-700 dark:text-gray-200">
+              <step.Icon className="h-4 w-4" strokeWidth={1.5} aria-hidden="true" />
+            </div>
+            <div>
+              <h3 className="text-base font-extrabold tracking-tight text-gray-900 dark:text-white">
+                {step.title}
+              </h3>
+              <p className="text-sm text-gray-600 dark:text-gray-300 leading-relaxed mt-1.5">
+                {step.text}
+              </p>
+            </div>
+          </div>
           <div className="bg-[#f0fdf4] dark:bg-emerald-900/30 border border-emerald-200 dark:border-emerald-800 rounded-lg px-3 py-2">
             <p className="text-xs text-emerald-700 dark:text-emerald-300 font-medium">
               {step.example}
@@ -195,7 +205,7 @@ export function OnboardingTour({
         </div>
 
         {/* Footer with navigation */}
-        <div className="flex items-center justify-between px-4 py-3 bg-gray-50 dark:bg-gray-800/50 border-t border-gray-100 dark:border-gray-700">
+        <div className="flex items-center justify-between px-4 py-3 bg-gray-50 dark:bg-gray-800/50 border-t border-[var(--rule-base)]">
           <button
             onClick={onPrev}
             disabled={currentStep === 0}
@@ -214,7 +224,7 @@ export function OnboardingTour({
 
           <button
             onClick={isLastStep ? onComplete : onNext}
-            className="flex items-center gap-1 px-4 py-1.5 rounded-lg text-sm font-bold text-white bg-[#00B4A6] hover:bg-[#009690] shadow-sm transition-colors"
+            className="flex items-center gap-1 px-4 py-1.5 rounded-lg text-sm font-bold text-white bg-[#2563EB] hover:bg-[#1D4ED8]  transition-colors"
           >
             {isLastStep ? (
               <>

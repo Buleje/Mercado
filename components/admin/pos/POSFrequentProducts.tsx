@@ -46,7 +46,7 @@ export default function POSFrequentProducts({
   if (loading || products.length === 0) return null;
 
   return (
-    <div className="px-3 py-2 border-b border-gray-100 dark:border-card-border bg-amber-50/30 dark:bg-amber-950/10">
+    <div className="px-3 py-2 border-b border-[var(--rule-soft)] dark:border-card-border bg-amber-50/30 dark:bg-amber-950/10">
       <div className="flex items-center gap-1.5 mb-1.5">
         <TrendingUp className="h-3.5 w-3.5 text-amber-500" />
         <span className="text-xs font-bold text-gray-600 dark:text-muted">
@@ -70,7 +70,7 @@ export default function POSFrequentProducts({
             >
               <span className="truncate max-w-24">{p.name}</span>
               <span className="text-primary font-bold">{fmt(p.price)}</span>
-              <span className="text-[10px] text-amber-500 font-bold">
+              <span className="text-[length:var(--ts-2xs)] text-amber-500 font-bold">
                 x{p.soldToday}
               </span>
             </button>

@@ -41,7 +41,7 @@ export function QuotationComparator({ orders, suppliers }: {
     return (
       <button
         onClick={() => setOpen(true)}
-        className="flex items-center gap-1.5 text-sm font-bold text-indigo-600 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-950/30 hover:bg-indigo-100 dark:hover:bg-indigo-900/30 px-3 py-2 rounded-lg transition-colors"
+        className="flex items-center gap-1.5 text-sm font-bold text-[var(--text-secondary)] dark:text-[var(--text-primary)] bg-[var(--surface-sunken)] hover:bg-[var(--surface-sunken)] dark:hover:bg-indigo-900/30 px-3 py-2 rounded-lg transition-colors"
       >
         <BarChart3 className="h-4 w-4" /> Comparar cotizaciones
       </button>
@@ -100,10 +100,10 @@ export function QuotationComparator({ orders, suppliers }: {
 
   return (
     <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4" onClick={() => setOpen(false)}>
-      <div className="bg-white dark:bg-card rounded-2xl shadow-xl w-full max-w-3xl max-h-[85vh] overflow-y-auto p-5 space-y-4" onClick={e => e.stopPropagation()}>
+      <div className="bg-white dark:bg-card rounded-xl w-full max-w-3xl max-h-[85vh] overflow-y-auto p-5 space-y-4" onClick={e => e.stopPropagation()}>
         <div className="flex items-center justify-between">
           <h3 className="text-lg font-extrabold text-gray-900 dark:text-foreground flex items-center gap-2">
-            <BarChart3 className="h-5 w-5 text-indigo-600" /> Comparar cotizaciones completas
+            <BarChart3 className="h-5 w-5 text-[var(--text-secondary)]" /> Comparar cotizaciones completas
           </h3>
           <button onClick={() => setOpen(false)} className="p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-accent transition-colors">
             <X className="h-5 w-5 text-gray-400" />
@@ -125,8 +125,8 @@ export function QuotationComparator({ orders, suppliers }: {
                   className={cn(
                     "text-left px-3 py-2 rounded-xl border text-xs transition-colors",
                     isSelected
-                      ? "border-indigo-400 bg-indigo-50 dark:bg-indigo-950/30 text-indigo-700 dark:text-indigo-400 font-bold"
-                      : "border-gray-200 dark:border-card-border hover:bg-gray-50 dark:hover:bg-surface text-gray-700 dark:text-foreground",
+                      ? "border-indigo-400 bg-[var(--surface-sunken)] text-[var(--text-secondary)] dark:text-[var(--text-primary)] font-bold"
+                      : "border-[var(--rule-base)] dark:border-card-border hover:bg-gray-50 dark:hover:bg-surface text-gray-700 dark:text-foreground",
                     !isSelected && selectedOCIds.length >= 3 && "opacity-40 cursor-not-allowed"
                   )}
                 >
@@ -145,7 +145,7 @@ export function QuotationComparator({ orders, suppliers }: {
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
-                <tr className="border-b border-gray-200 dark:border-card-border">
+                <tr className="border-b border-[var(--rule-base)] dark:border-card-border">
                   <th className="text-left py-2 px-2 text-xs font-bold text-gray-500 dark:text-muted">Producto</th>
                   {selectedOCs.map(oc => (
                     <th key={oc.id} className="text-right py-2 px-2 text-xs font-bold text-gray-500 dark:text-muted">
@@ -159,7 +159,7 @@ export function QuotationComparator({ orders, suppliers }: {
                 {productIds.map(pid => {
                   const best = bestPerProduct[pid];
                   return (
-                    <tr key={pid} className="border-b border-gray-100 dark:border-card-border/50">
+                    <tr key={pid} className="border-b border-[var(--rule-soft)] dark:border-card-border/50">
                       <td className="py-2 px-2 text-gray-700 dark:text-foreground font-medium">{productNames[pid]}</td>
                       {selectedOCs.map(oc => {
                         const item = oc.items.find(i => i.productId === pid);
@@ -172,7 +172,7 @@ export function QuotationComparator({ orders, suppliers }: {
                       })}
                       <td className="py-2 px-2 text-center">
                         {best && (
-                          <span className="text-[10px] font-bold text-emerald-600 dark:text-emerald-400">
+                          <span className="text-[length:var(--ts-2xs)] font-bold text-emerald-600 dark:text-emerald-400">
                             {selectedOCs.find(oc => oc.id === best.ocId)?.supplierName?.split(" ")[0] ?? ""} ✓
                           </span>
                         )}
@@ -181,7 +181,7 @@ export function QuotationComparator({ orders, suppliers }: {
                   );
                 })}
                 {/* TOTAL row */}
-                <tr className="border-t-2 border-gray-300 dark:border-gray-600 font-bold">
+                <tr className="border-t-2 border-[var(--rule-base)] dark:border-gray-600 font-bold">
                   <td className="py-2 px-2 text-gray-900 dark:text-foreground">TOTAL</td>
                   {selectedOCs.map(oc => {
                     const total = ocTotals.find(t => t.id === oc.id)?.total ?? 0;
@@ -193,7 +193,7 @@ export function QuotationComparator({ orders, suppliers }: {
                     );
                   })}
                   <td className="py-2 px-2 text-center">
-                    <span className="text-[10px] font-bold text-emerald-600 dark:text-emerald-400">
+                    <span className="text-[length:var(--ts-2xs)] font-bold text-emerald-600 dark:text-emerald-400">
                       {selectedOCs.find(oc => oc.id === bestTotalOcId)?.supplierName?.split(" ")[0] ?? ""} ✓
                     </span>
                   </td>
@@ -269,7 +269,7 @@ export default function SupplierPriceComparison({ productId, productName }: Supp
 
   return (
     <div className="space-y-2">
-      <h4 className="text-xs font-bold text-gray-500 dark:text-muted uppercase tracking-wide">
+      <h4 className="text-xs font-bold text-gray-500 dark:text-muted">
         Comparacion de precios: {productName}
       </h4>
 
@@ -283,7 +283,7 @@ export default function SupplierPriceComparison({ productId, productName }: Supp
       <div className="overflow-x-auto">
         <table className="w-full text-sm">
           <thead>
-            <tr className="border-b border-gray-200 dark:border-card-border">
+            <tr className="border-b border-[var(--rule-base)] dark:border-card-border">
               <th className="text-left py-2 px-2 text-xs font-bold text-gray-500 dark:text-muted">Proveedor</th>
               <th className="text-right py-2 px-2 text-xs font-bold text-gray-500 dark:text-muted">Ultimo precio</th>
               <th className="text-right py-2 px-2 text-xs font-bold text-gray-500 dark:text-muted">Fecha</th>
@@ -298,14 +298,14 @@ export default function SupplierPriceComparison({ productId, productName }: Supp
                 <tr
                   key={c.supplierId}
                   className={cn(
-                    "border-b border-gray-100 dark:border-card-border/50 transition-colors",
+                    "border-b border-[var(--rule-soft)] dark:border-card-border/50 transition-colors",
                     c.isCheapest && "bg-green-50 dark:bg-green-950/10",
                   )}
                 >
                   <td className="py-2 px-2 font-semibold text-gray-900 dark:text-foreground">
                     {c.supplierName}
                     {c.isCheapest && (
-                      <span className="ml-2 inline-flex items-center gap-0.5 text-[10px] font-bold text-emerald-700 dark:text-emerald-400 bg-emerald-100 dark:bg-emerald-900/30 px-1.5 py-0.5 rounded-full">
+                      <span className="ml-2 inline-flex items-center gap-0.5 text-[length:var(--ts-2xs)] font-bold text-emerald-700 dark:text-emerald-400 bg-emerald-100 dark:bg-emerald-900/30 px-1.5 py-0.5 rounded-full">
                         <TrendingDown className="h-2.5 w-2.5" /> Mejor precio
                       </span>
                     )}

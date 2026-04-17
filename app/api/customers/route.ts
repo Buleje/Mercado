@@ -4,7 +4,7 @@ import { CustomersDB, normalizePhone } from "@/lib/jsondb";
 import { requireAdmin } from "@/lib/require-admin";
 import { applyRateLimit } from "@/lib/rate-limit";
 import { logger } from "@/lib/logger";
-import { prisma } from "@/lib/prisma";
+import { prismaForTenant } from "@/lib/tenant";
 import { invalidate } from "@/lib/cache";
 import { withDbRetry } from "@/lib/db-retry";
 
@@ -190,14 +190,14 @@ export async function POST(req: NextRequest) {
     if (body.observaciones !== undefined) fichaUpdate.observaciones = body.observaciones;
 
     if (Object.keys(fichaUpdate).length > 0) {
-      await prisma.customer.update({
+      await prismaForTenant(auth.tenantId).customer.update({
         where: { phone: normalizedPhone },
         data: fichaUpdate,
       }).catch(() => {});
     }
 
     // Audit log — fire-and-forget
-    prisma.activityLog.create({
+    prismaForTenant(auth.tenantId).activityLog.create({
       data: { action: "create", entity: "customer", entityId: record.phone, detail: `Cliente creado: ${record.name} (${record.phone})`, user: auth.username, tenantId: auth.tenantId },
     }).catch(() => {});
 
@@ -214,7 +214,7 @@ export async function POST(req: NextRequest) {
         actionUrl: `https://wa.me/${normalizedPhone}?text=${waMsg}`,
         actionLabel: "Saludar por WhatsApp",
         entityId: normalizedPhone,
-      }).catch(() => {});
+      }).catch((err) => logger.error("[customers] welcome notification failed", { error: String(err), tenantId: auth.tenantId }));
     } catch { /* createNotification not available */ }
 
     invalidate(`dashboard:${auth.tenantId}`);

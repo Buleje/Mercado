@@ -244,7 +244,7 @@ export default function ComisionesTab() {
     <div className="space-y-3 sm:space-y-6">
       {/* Toast */}
       {toast && (
-        <div className="fixed top-4 right-4 z-50 bg-emerald-600 text-white px-2 sm:px-4 py-1.5 sm:py-2.5 rounded-xl shadow-lg text-sm font-bold flex flex-wrap items-center gap-2">
+        <div className="fixed top-4 right-4 z-50 bg-emerald-600 text-white px-2 sm:px-4 py-1.5 sm:py-2.5 rounded-lg text-sm font-bold flex flex-wrap items-center gap-2">
           <CheckCircle2 className="h-4 w-4" /> {toast}
         </div>
       )}
@@ -258,36 +258,36 @@ export default function ComisionesTab() {
           <p className="text-sm text-gray-500 dark:text-muted mt-0.5">Seguimiento de ventas por cajero y cálculo de comisiones</p>
         </div>
         <div className="flex gap-2 flex-wrap">
-          <button onClick={() => setShowConfig(!showConfig)} className={cn("px-2 sm:px-4 py-1.5 sm:py-2 border rounded-xl text-sm font-bold flex items-center gap-2 transition-all", showConfig ? "border-primary text-primary bg-primary/10" : "border-gray-300 dark:border-card-border text-gray-700 dark:text-foreground hover:bg-gray-50 dark:hover:bg-accent")}>
+          <button onClick={() => setShowConfig(!showConfig)} className={cn("px-2 sm:px-4 py-1.5 sm:py-2 border rounded-lg text-sm font-bold flex items-center gap-2 transition-all", showConfig ? "border-primary text-primary bg-primary/10" : "border-[var(--rule-base)] dark:border-card-border text-gray-700 dark:text-foreground hover:bg-gray-50 dark:hover:bg-accent")}>
             <Settings className="h-4 w-4" /> Tasas
           </button>
-          <button onClick={handleExport} className="px-2 sm:px-4 py-1.5 sm:py-2 border border-gray-300 dark:border-card-border rounded-xl text-sm font-bold text-gray-700 dark:text-foreground hover:bg-gray-50 dark:hover:bg-accent flex flex-wrap items-center gap-2">
+          <button onClick={handleExport} className="px-2 sm:px-4 py-1.5 sm:py-2 border border-[var(--rule-base)] dark:border-card-border rounded-lg text-sm font-bold text-gray-700 dark:text-foreground hover:bg-gray-50 dark:hover:bg-accent flex flex-wrap items-center gap-2">
             <Download className="h-4 w-4" /> Exportar
           </button>
-          <button onClick={loadData} disabled={loading} className="px-2 sm:px-4 py-1.5 sm:py-2 bg-primary text-white rounded-xl text-sm font-bold hover:bg-primary/90 flex flex-wrap items-center gap-2 disabled:opacity-60">
+          <button onClick={loadData} disabled={loading} className="px-2 sm:px-4 py-1.5 sm:py-2 bg-primary text-white rounded-lg text-sm font-bold hover:bg-primary/90 flex flex-wrap items-center gap-2 disabled:opacity-60">
             <RefreshCw className={cn("h-4 w-4", loading && "animate-spin")} /> Actualizar
           </button>
         </div>
       </div>
 
       {/* Period selector */}
-      <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl p-4">
+      <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl p-4">
         <div className="flex items-center gap-2 flex-wrap">
           <Calendar className="h-4 w-4 text-gray-500 dark:text-muted shrink-0" />
           <span className="text-sm font-bold text-gray-700 dark:text-foreground shrink-0">Período:</span>
           <div className="flex gap-2 flex-wrap">
             {PERIOD_OPTIONS.map(p => (
-              <button key={p.id} onClick={() => setPeriod(p.id)} className={cn("px-3 py-1.5 rounded-xl text-xs font-bold border-2 transition-all", period === p.id ? "border-primary bg-primary/10 text-primary" : "border-gray-200 dark:border-card-border text-gray-500 dark:text-muted hover:border-gray-400")}>
+              <button key={p.id} onClick={() => setPeriod(p.id)} className={cn("px-3 py-1.5 rounded-lg text-xs font-bold border-2 transition-all", period === p.id ? "border-primary bg-primary/10 text-primary" : "border-[var(--rule-base)] dark:border-card-border text-gray-500 dark:text-muted hover:border-gray-400")}>
                 {p.label}
               </button>
             ))}
           </div>
           {period === "personalizado" && (
             <div className="flex gap-2 items-center flex-wrap">
-              <input type="date" value={customFrom} onChange={e => setCustomFrom(e.target.value)} className="border border-gray-300 dark:border-card-border rounded-xl px-3 py-1.5 text-xs bg-white dark:bg-surface text-gray-900 dark:text-foreground" />
+              <input type="date" value={customFrom} onChange={e => setCustomFrom(e.target.value)} className="border border-[var(--rule-base)] dark:border-card-border rounded-lg px-3 py-1.5 text-xs bg-white dark:bg-surface text-gray-900 dark:text-foreground" />
               <span className="text-xs text-gray-500">—</span>
-              <input type="date" value={customTo} onChange={e => setCustomTo(e.target.value)} className="border border-gray-300 dark:border-card-border rounded-xl px-3 py-1.5 text-xs bg-white dark:bg-surface text-gray-900 dark:text-foreground" />
-              <button onClick={loadData} className="px-3 py-1.5 bg-primary text-white rounded-xl text-xs font-bold hover:bg-primary/90">Aplicar</button>
+              <input type="date" value={customTo} onChange={e => setCustomTo(e.target.value)} className="border border-[var(--rule-base)] dark:border-card-border rounded-lg px-3 py-1.5 text-xs bg-white dark:bg-surface text-gray-900 dark:text-foreground" />
+              <button onClick={loadData} className="px-3 py-1.5 bg-primary text-white rounded-lg text-xs font-bold hover:bg-primary/90">Aplicar</button>
             </div>
           )}
         </div>
@@ -296,12 +296,12 @@ export default function ComisionesTab() {
       {/* KPIs */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
         {[
-          { label: "Ingresos totales", value: fmt(totals.revenue), icon: TrendingUp, color: "text-blue-600 dark:text-blue-400" },
+          { label: "Ingresos totales", value: fmt(totals.revenue), icon: TrendingUp, color: "text-emerald-600 dark:text-emerald-400" },
           { label: "Ganancia neta", value: fmt(totals.profit), icon: BarChart3, color: "text-emerald-600 dark:text-emerald-400" },
-          { label: "Comisiones totales", value: fmt(totals.commission), icon: DollarSign, color: "text-violet-600 dark:text-violet-400" },
+          { label: "Comisiones totales", value: fmt(totals.commission), icon: DollarSign, color: "text-[var(--text-secondary)] dark:text-[var(--text-primary)]" },
           { label: "Por pagar", value: fmt(totals.pending), icon: Wallet, color: "text-amber-600 dark:text-amber-400" },
         ].map(k => (
-          <div key={k.label} className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl p-4">
+          <div key={k.label} className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl p-4">
             <div className="flex flex-wrap items-center gap-2 mb-1">
               <k.icon className={cn("h-4 w-4", k.color)} />
               <p className="text-xs text-gray-500 dark:text-muted font-bold">{k.label}</p>
@@ -313,7 +313,7 @@ export default function ComisionesTab() {
 
       {/* Rate config panel */}
       {showConfig && (
-        <div className="bg-amber-50 dark:bg-amber-900/10 border border-amber-200 dark:border-amber-900/30 rounded-2xl p-3 sm:p-5 space-y-5">
+        <div className="bg-amber-50 dark:bg-amber-900/10 border border-amber-200 dark:border-amber-900/30 rounded-xl p-3 sm:p-5 space-y-5">
           <h3 className="font-extrabold text-amber-900 dark:text-amber-300 flex flex-wrap items-center gap-2">
             <Settings className="h-4 w-4" /> Reglas de comisión por tramos
           </h3>
@@ -321,7 +321,7 @@ export default function ComisionesTab() {
           {/* Existing DB tiers */}
           {dbRules.length > 0 && (
             <div className="space-y-2">
-              <p className="text-xs font-bold text-amber-700 dark:text-amber-400 uppercase tracking-wide">Reglas guardadas</p>
+              <p className="text-xs font-bold text-amber-700 dark:text-amber-400">Reglas guardadas</p>
               {dbRules.map(r => (
                 <div key={r.id} className="flex flex-wrap items-center gap-3 bg-white dark:bg-card rounded-xl p-3 border border-amber-100 dark:border-amber-900/20">
                   <div className="flex-1 min-w-0">
@@ -340,33 +340,33 @@ export default function ComisionesTab() {
 
           {/* Add new tier form */}
           <div className="border-t border-amber-200 dark:border-amber-900/30 pt-4">
-            <p className="text-xs font-bold text-amber-700 dark:text-amber-400 uppercase tracking-wide mb-3">Nueva regla</p>
+            <p className="text-xs font-bold text-amber-700 dark:text-amber-400 mb-3">Nueva regla</p>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div>
                 <label className="block text-xs font-bold text-gray-700 dark:text-foreground mb-1">Cajero ID</label>
-                <select value={newTier.cashierId} onChange={e => setNewTier(v => ({ ...v, cashierId: e.target.value }))} className="w-full border border-gray-300 dark:border-card-border rounded-xl px-3 py-2 text-sm bg-white dark:bg-surface text-gray-900 dark:text-foreground">
+                <select value={newTier.cashierId} onChange={e => setNewTier(v => ({ ...v, cashierId: e.target.value }))} className="w-full border border-[var(--rule-base)] dark:border-card-border rounded-lg px-3 py-2 text-sm bg-white dark:bg-surface text-gray-900 dark:text-foreground">
                   <option value="">Seleccionar cajero…</option>
                   {stats.map(s => <option key={s.cashierId} value={s.cashierId}>{s.cashierName} ({s.cashierId})</option>)}
                 </select>
               </div>
               <div>
                 <label className="block text-xs font-bold text-gray-700 dark:text-foreground mb-1">Etiqueta (opcional)</label>
-                <input value={newTier.label} onChange={e => setNewTier(v => ({ ...v, label: e.target.value }))} placeholder="ej: Objetivo Q1" className="w-full border border-gray-300 dark:border-card-border rounded-xl px-3 py-2 text-sm bg-white dark:bg-surface text-gray-900 dark:text-foreground" />
+                <input value={newTier.label} onChange={e => setNewTier(v => ({ ...v, label: e.target.value }))} placeholder="ej: Objetivo Q1" className="w-full border border-[var(--rule-base)] dark:border-card-border rounded-lg px-3 py-2 text-sm bg-white dark:bg-surface text-gray-900 dark:text-foreground" />
               </div>
               <div>
                 <label className="block text-xs font-bold text-gray-700 dark:text-foreground mb-1">Ingresos mín. (S/)</label>
-                <input type="number" min={0} value={newTier.minSales} onChange={e => setNewTier(v => ({ ...v, minSales: Number(e.target.value) }))} className="w-full border border-gray-300 dark:border-card-border rounded-xl px-3 py-2 text-sm bg-white dark:bg-surface text-gray-900 dark:text-foreground" />
+                <input type="number" min={0} value={newTier.minSales} onChange={e => setNewTier(v => ({ ...v, minSales: Number(e.target.value) }))} className="w-full border border-[var(--rule-base)] dark:border-card-border rounded-lg px-3 py-2 text-sm bg-white dark:bg-surface text-gray-900 dark:text-foreground" />
               </div>
               <div>
                 <label className="block text-xs font-bold text-gray-700 dark:text-foreground mb-1">Ingresos máx. (S/, vacío = sin límite)</label>
-                <input type="number" min={0} value={newTier.maxSales} onChange={e => setNewTier(v => ({ ...v, maxSales: e.target.value }))} placeholder="Sin límite" className="w-full border border-gray-300 dark:border-card-border rounded-xl px-3 py-2 text-sm bg-white dark:bg-surface text-gray-900 dark:text-foreground" />
+                <input type="number" min={0} value={newTier.maxSales} onChange={e => setNewTier(v => ({ ...v, maxSales: e.target.value }))} placeholder="Sin límite" className="w-full border border-[var(--rule-base)] dark:border-card-border rounded-lg px-3 py-2 text-sm bg-white dark:bg-surface text-gray-900 dark:text-foreground" />
               </div>
               <div className="sm:col-span-2 flex flex-wrap items-end gap-3">
                 <div className="flex-1">
                   <label className="block text-xs font-bold text-gray-700 dark:text-foreground mb-1">Tasa (%)</label>
-                  <input type="number" min={0} max={20} step={0.5} value={newTier.rate} onChange={e => setNewTier(v => ({ ...v, rate: Number(e.target.value) }))} className="w-full border border-gray-300 dark:border-card-border rounded-xl px-3 py-2 text-sm bg-white dark:bg-surface text-gray-900 dark:text-foreground" />
+                  <input type="number" min={0} max={20} step={0.5} value={newTier.rate} onChange={e => setNewTier(v => ({ ...v, rate: Number(e.target.value) }))} className="w-full border border-[var(--rule-base)] dark:border-card-border rounded-lg px-3 py-2 text-sm bg-white dark:bg-surface text-gray-900 dark:text-foreground" />
                 </div>
-                <button onClick={handleAddTier} disabled={savingRule || !newTier.cashierId || newTier.rate <= 0} className="px-2 sm:px-4 py-1.5 sm:py-2 bg-primary text-white rounded-xl text-sm font-bold hover:bg-primary/90 flex flex-wrap items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed">
+                <button onClick={handleAddTier} disabled={savingRule || !newTier.cashierId || newTier.rate <= 0} className="px-2 sm:px-4 py-1.5 sm:py-2 bg-primary text-white rounded-lg text-sm font-bold hover:bg-primary/90 flex flex-wrap items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed">
                   {savingRule ? <RefreshCw className="h-4 w-4 animate-spin" /> : <Plus className="h-4 w-4" />} Guardar
                 </button>
               </div>
@@ -375,7 +375,7 @@ export default function ComisionesTab() {
 
           {/* Legacy flat rate quick-edit */}
           <div className="border-t border-amber-200 dark:border-amber-900/30 pt-4">
-            <p className="text-xs font-bold text-amber-700 dark:text-amber-400 uppercase tracking-wide mb-3">Tasa plana rápida (no persiste)</p>
+            <p className="text-xs font-bold text-amber-700 dark:text-amber-400 mb-3">Tasa plana rápida (no persiste)</p>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               {rules.map(r => {
                 const cashier = stats.find(s => s.cashierId === r.cashierId);
@@ -386,7 +386,7 @@ export default function ComisionesTab() {
                       <p className="text-xs text-gray-500 dark:text-muted">{ROLE_LABEL[cashier?.role ?? ""] ?? cashier?.role}</p>
                     </div>
                     <div className="flex flex-wrap items-center gap-2">
-                      <input type="number" min={0} max={20} step={0.5} value={r.rate} onChange={e => updateRate(r.cashierId, Number(e.target.value))} className="w-16 border border-gray-300 dark:border-card-border rounded-xl px-2 py-1.5 text-sm text-center bg-white dark:bg-surface text-gray-900 dark:text-foreground" />
+                      <input type="number" min={0} max={20} step={0.5} value={r.rate} onChange={e => updateRate(r.cashierId, Number(e.target.value))} className="w-16 border border-[var(--rule-base)] dark:border-card-border rounded-lg px-2 py-1.5 text-sm text-center bg-white dark:bg-surface text-gray-900 dark:text-foreground" />
                       <span className="text-sm font-bold text-gray-500 dark:text-muted">%</span>
                     </div>
                   </div>
@@ -400,8 +400,8 @@ export default function ComisionesTab() {
       )}
 
       {/* Table */}
-      <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl overflow-hidden">
-        <div className="p-4 border-b border-gray-100 dark:border-card-border">
+      <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl overflow-hidden">
+        <div className="p-4 border-b border-[var(--rule-soft)] dark:border-card-border">
           <h3 className="font-extrabold text-gray-900 dark:text-foreground flex flex-wrap items-center gap-2">
             <Users className="h-4 w-4 text-primary" /> Detalle por empleado
           </h3>
@@ -413,10 +413,10 @@ export default function ComisionesTab() {
             {/* Desktop table */}
             <div className="hidden sm:block overflow-x-auto">
               <table className="w-full min-w-[600px] text-sm">
-                <thead className="bg-gray-50 dark:bg-surface border-b border-gray-100 dark:border-card-border">
+                <thead className="bg-gray-50 dark:bg-surface border-b border-[var(--rule-soft)] dark:border-card-border">
                   <tr>
                     {["Empleado", "Rol", "Ventas", "Ingresos", "Ganancia", "Tasa", "Comisión", "Estado"].map(h => (
-                      <th key={h} className="px-2 sm:px-4 py-2 sm:py-3 text-left text-xs font-extrabold text-gray-500 dark:text-muted uppercase tracking-wide">{h}</th>
+                      <th key={h} className="px-2 sm:px-4 py-2 sm:py-3 text-left text-xs font-extrabold text-gray-500 dark:text-muted">{h}</th>
                     ))}
                   </tr>
                 </thead>
@@ -426,27 +426,27 @@ export default function ComisionesTab() {
                       <td className="px-2 sm:px-4 py-2 sm:py-3 font-bold text-gray-900 dark:text-foreground">{s.cashierName}</td>
                       <td className="px-2 sm:px-4 py-2 sm:py-3 text-gray-500 dark:text-muted">{ROLE_LABEL[s.role] ?? s.role}</td>
                       <td className="px-2 sm:px-4 py-2 sm:py-3 text-gray-700 dark:text-foreground">{s.sales}</td>
-                      <td className="px-2 sm:px-4 py-2 sm:py-3 font-bold text-blue-600 dark:text-blue-400">{fmtCompact(s.revenue)}</td>
+                      <td className="px-2 sm:px-4 py-2 sm:py-3 font-bold text-emerald-600 dark:text-emerald-400">{fmtCompact(s.revenue)}</td>
                       <td className="px-2 sm:px-4 py-2 sm:py-3 font-bold text-emerald-600 dark:text-emerald-400">{fmtCompact(s.profit)}</td>
                       <td className="px-2 sm:px-4 py-2 sm:py-3 text-gray-500 dark:text-muted">
                         {s.rate}%{s.tierLabel && <span className="ml-1 text-xs text-primary font-normal">({s.tierLabel})</span>}
                       </td>
-                      <td className="px-2 sm:px-4 py-2 sm:py-3 font-extrabold text-violet-600 dark:text-violet-400">{fmt(s.commission)}</td>
+                      <td className="px-2 sm:px-4 py-2 sm:py-3 font-extrabold text-[var(--text-secondary)] dark:text-[var(--text-primary)]">{fmt(s.commission)}</td>
                       <td className="px-2 sm:px-4 py-2 sm:py-3">
-                        <button onClick={() => togglePaid(s.cashierId)} className={cn("px-2.5 py-1 rounded-xl text-xs font-bold transition-all", s.paid ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400" : "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400")}>
+                        <button onClick={() => togglePaid(s.cashierId)} className={cn("px-2.5 py-1 rounded-lg text-xs font-bold transition-all", s.paid ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400" : "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400")}>
                           {s.paid ? "Pagado" : "Pendiente"}
                         </button>
                       </td>
                     </tr>
                   ))}
                 </tbody>
-                <tfoot className="bg-gray-50 dark:bg-surface border-t border-gray-200 dark:border-card-border">
+                <tfoot className="bg-gray-50 dark:bg-surface border-t border-[var(--rule-base)] dark:border-card-border">
                   <tr>
                     <td colSpan={3} className="px-2 sm:px-4 py-2 sm:py-3 font-extrabold text-gray-900 dark:text-foreground text-xs uppercase">TOTAL</td>
-                    <td className="px-2 sm:px-4 py-2 sm:py-3 font-extrabold text-blue-600 dark:text-blue-400">{fmt(totals.revenue)}</td>
+                    <td className="px-2 sm:px-4 py-2 sm:py-3 font-extrabold text-emerald-600 dark:text-emerald-400">{fmt(totals.revenue)}</td>
                     <td className="px-2 sm:px-4 py-2 sm:py-3 font-extrabold text-emerald-600 dark:text-emerald-400">{fmt(totals.profit)}</td>
                     <td className="px-2 sm:px-4 py-2 sm:py-3" />
-                    <td className="px-2 sm:px-4 py-2 sm:py-3 font-extrabold text-violet-600 dark:text-violet-400">{fmt(totals.commission)}</td>
+                    <td className="px-2 sm:px-4 py-2 sm:py-3 font-extrabold text-[var(--text-secondary)] dark:text-[var(--text-primary)]">{fmt(totals.commission)}</td>
                     <td className="px-2 sm:px-4 py-2 sm:py-3 text-amber-600 dark:text-amber-400 font-bold text-xs">
                       {fmt(totals.pending)} por pagar
                     </td>
@@ -464,14 +464,14 @@ export default function ComisionesTab() {
                       <p className="font-extrabold text-gray-900 dark:text-foreground">{s.cashierName}</p>
                       <p className="text-xs text-gray-500 dark:text-muted">{ROLE_LABEL[s.role] ?? s.role}</p>
                     </div>
-                    <button onClick={() => togglePaid(s.cashierId)} className={cn("px-2.5 py-1 rounded-xl text-xs font-bold", s.paid ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400" : "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400")}>
+                    <button onClick={() => togglePaid(s.cashierId)} className={cn("px-2.5 py-1 rounded-lg text-xs font-bold", s.paid ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400" : "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400")}>
                       {s.paid ? "Pagado" : "Pendiente"}
                     </button>
                   </div>
                   <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2 text-xs">
-                    <div><p className="text-gray-500 dark:text-muted font-bold">Ingresos</p><p className="font-extrabold text-blue-600 dark:text-blue-400">{fmtCompact(s.revenue)}</p></div>
+                    <div><p className="text-gray-500 dark:text-muted font-bold">Ingresos</p><p className="font-extrabold text-emerald-600 dark:text-emerald-400">{fmtCompact(s.revenue)}</p></div>
                     <div><p className="text-gray-500 dark:text-muted font-bold">Ganancia</p><p className="font-extrabold text-emerald-600 dark:text-emerald-400">{fmtCompact(s.profit)}</p></div>
-                    <div><p className="text-gray-500 dark:text-muted font-bold">Comisión ({s.rate}%{s.tierLabel ? ` · ${s.tierLabel}` : ""})</p><p className="font-extrabold text-violet-600 dark:text-violet-400">{fmt(s.commission)}</p></div>
+                    <div><p className="text-gray-500 dark:text-muted font-bold">Comisión ({s.rate}%{s.tierLabel ? ` · ${s.tierLabel}` : ""})</p><p className="font-extrabold text-[var(--text-secondary)] dark:text-[var(--text-primary)]">{fmt(s.commission)}</p></div>
                   </div>
                 </div>
               ))}
@@ -481,8 +481,8 @@ export default function ComisionesTab() {
       </div>
 
       {/* Info note */}
-      <div className="bg-blue-50 dark:bg-blue-900/10 border border-blue-200 dark:border-blue-900/30 rounded-xl p-4">
-        <p className="text-xs text-blue-700 dark:text-blue-400">
+      <div className="bg-emerald-50 dark:bg-emerald-900/10 border border-emerald-200 dark:border-emerald-900/30 rounded-xl p-4">
+        <p className="text-xs text-emerald-700 dark:text-emerald-400">
           <strong>ℹ️ Nota:</strong> Las comisiones se calculan sobre los ingresos brutos de cada cajero en el POS. Los datos se cargan desde <code className="font-mono">/api/commissions</code>. Para que aparezcan ventas reales, cada venta del POS debe registrar el <code className="font-mono">cashierId</code> del cajero activo.
         </p>
       </div>

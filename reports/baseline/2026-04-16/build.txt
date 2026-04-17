@@ -1,0 +1,38 @@
+
+> buleje@0.1.1 build
+> next build
+
+Warning: Custom Cache-Control headers detected for the following routes:
+  - /_next/static/:path*
+
+Setting a custom Cache-Control header can break Next.js development behavior.
+▲ Next.js 16.2.3 (Turbopack)
+- Environments: .env.production.local, .env.local, .env
+- Cache Components enabled
+- Experiments (use with caution):
+  · optimizePackageImports
+
+  Creating an optimized production build ...
+✓ Compiled successfully in 49s
+  Skipping validation of types
+  Finished TypeScript config validation in 74ms ...
+  Collecting page data using 15 workers ...
+⚠ Using edge runtime on a page currently disables static generation for that page
+Error: Failed to load external module @prisma/client-2c3a283f134fdcb6/runtime/client: Error: Cannot find module '@prisma/client-2c3a283f134fdcb6/runtime/client'
+Require stack:
+- C:\dev\bodega-san-martin\bodega-san-martin\.next\server\chunks\[root-of-the-server]__0-7c0zz._.js
+- C:\dev\bodega-san-martin\bodega-san-martin\.next\server\chunks\[turbopack]_runtime.js
+- C:\dev\bodega-san-martin\bodega-san-martin\.next\server\app\api\ab-tests\events\route.js
+- C:\dev\bodega-san-martin\bodega-san-martin\node_modules\next\dist\server\require.js
+- C:\dev\bodega-san-martin\bodega-san-martin\node_modules\next\dist\server\load-components.js
+- C:\dev\bodega-san-martin\bodega-san-martin\node_modules\next\dist\build\utils.js
+- C:\dev\bodega-san-martin\bodega-san-martin\node_modules\next\dist\build\worker.js
+- C:\dev\bodega-san-martin\bodega-san-martin\node_modules\next\dist\compiled\jest-worker\processChild.js
+    at module evaluation (lib\generated\prisma\internal\class.ts:14:1)
+    at <unknown> (lib\prisma.ts:1:1)
+
+> Build error occurred
+Error: Failed to collect page data for /api/ab-tests/events
+    at ignore-listed frames {
+  type: 'Error'
+}

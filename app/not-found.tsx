@@ -3,6 +3,7 @@ import { Home, ShoppingBag, Search, MapPin } from "lucide-react";
 import type { Metadata } from "next";
 import { zones } from "@/data/zones";
 import { categories } from "@/data/products";
+import { BrujulaPerdida } from "@/components/ui-system/illustrations";
 
 export const metadata: Metadata = {
   title: "404 — Pagina no encontrada | Buleje",
@@ -16,28 +17,31 @@ const topCategories = categories.filter((c) => c.id !== "todos").slice(0, 4);
 
 export default function NotFound() {
   return (
-    <main className="min-h-screen flex items-center justify-center bg-background px-4 py-12">
+    <main className="min-h-screen flex items-center justify-center bg-[var(--surface-canvas)] px-4 py-12">
       <div className="text-center max-w-lg">
-        {/* Big 404 */}
-        <p className="text-[8rem] sm:text-[10rem] leading-none font-black text-primary/20 select-none">
-          404
-        </p>
+        {/* Illustration Buleje — brújula perdida */}
+        <div className="text-[var(--text-primary)] flex justify-center mb-6">
+          <BrujulaPerdida size={160} />
+        </div>
 
-        <h1 className="text-2xl sm:text-3xl font-extrabold text-foreground -mt-6">
-          Pagina no encontrada
+        <p className="text-[10px] font-bold uppercase tracking-[0.25em] text-[var(--text-tertiary)] mb-3">
+          Error 404
+        </p>
+        <h1 className="text-3xl sm:text-4xl font-extrabold tracking-[-0.02em] text-[var(--text-primary)]">
+          Página no encontrada
         </h1>
-        <p className="mt-3 text-muted text-base">
-          Lo sentimos, esta pagina no existe o fue movida.
+        <p className="mt-3 text-[var(--text-secondary)] text-base leading-relaxed">
+          Esta página no existe o fue movida. Probá volviendo al inicio o buscando lo que necesitás.
         </p>
 
         {/* Search prompt */}
         <div className="mt-6">
           <Link
             href="/buscar"
-            className="inline-flex items-center gap-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-5 py-3 text-sm text-slate-500 hover:border-emerald-300 hover:text-emerald-600 transition-colors shadow-sm"
+            className="inline-flex items-center gap-2 rounded-full border border-[var(--rule-base)] bg-[var(--surface-raised)] px-5 py-3 text-sm text-[var(--text-tertiary)] hover:border-[var(--rule-strong)] hover:text-[var(--text-primary)] transition-colors"
           >
-            <Search className="h-4 w-4" />
-            Buscar productos...
+            <Search className="h-4 w-4" strokeWidth={1.75} />
+            Buscar productos…
           </Link>
         </div>
 
@@ -45,16 +49,16 @@ export default function NotFound() {
         <div className="mt-6 flex flex-col sm:flex-row items-center justify-center gap-3">
           <Link
             href="/"
-            className="flex items-center gap-2 bg-primary text-white font-bold rounded-xl px-6 py-3 hover:bg-primary-dark active:scale-95 transition-all shadow-lg"
+            className="inline-flex items-center gap-2 bg-[var(--text-primary)] text-[var(--surface-canvas)] font-bold rounded-full px-6 py-3 text-sm hover:opacity-90 active:scale-95 transition-all"
           >
-            <Home className="h-4 w-4" />
+            <Home className="h-4 w-4" strokeWidth={1.75} />
             Ir al inicio
           </Link>
           <Link
             href="/tienda"
-            className="flex items-center gap-2 bg-white dark:bg-card text-foreground font-bold rounded-xl px-6 py-3 border border-gray-200 dark:border-card-border hover:shadow-md active:scale-95 transition-all"
+            className="inline-flex items-center gap-2 bg-transparent text-[var(--text-primary)] font-bold rounded-full px-6 py-3 text-sm border border-[var(--rule-base)] hover:border-[var(--rule-strong)] active:scale-95 transition-all"
           >
-            <ShoppingBag className="h-4 w-4" />
+            <ShoppingBag className="h-4 w-4" strokeWidth={1.75} />
             Ver productos
           </Link>
         </div>

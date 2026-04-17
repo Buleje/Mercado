@@ -37,13 +37,13 @@ const pct = (n: number) => n.toFixed(1) + "%";
 
 const TYPE_META: Record<ProjectType, { label: string; icon: typeof Wrench; color: string }> = {
   remodelacion: { label: "Remodelación", icon: Wrench,          color: "text-orange-600" },
-  equipo:       { label: "Equipo",       icon: MoreHorizontal, color: "text-blue-600" },
+  equipo:       { label: "Equipo",       icon: MoreHorizontal, color: "text-emerald-600" },
   expansion:    { label: "Expansión",    icon: Expand,          color: "text-emerald-600" },
   otro:         { label: "Otro",         icon: MoreHorizontal, color: "text-gray-500" },
 };
 
 const STATUS_META: Record<ProjectStatus, { label: string; icon: typeof Pause; color: string; bg: string }> = {
-  planificacion: { label: "Planificación", icon: Calendar,    color: "text-blue-600",    bg: "bg-blue-100 dark:bg-blue-900/30" },
+  planificacion: { label: "Planificación", icon: Calendar,    color: "text-emerald-600",    bg: "bg-emerald-100 dark:bg-emerald-900/30" },
   "en-curso":    { label: "En Curso",      icon: TrendingUp,  color: "text-amber-600",   bg: "bg-amber-100 dark:bg-amber-900/30" },
   completado:    { label: "Completado",    icon: CheckCircle2, color: "text-emerald-600", bg: "bg-emerald-100 dark:bg-emerald-900/30" },
   cancelado:     { label: "Cancelado",     icon: Ban,          color: "text-red-500",     bg: "bg-red-100 dark:bg-red-900/30" },
@@ -92,7 +92,7 @@ export default function ProjectsTab() {
           </h1>
           <p className="text-sm text-gray-500 dark:text-muted mt-0.5">Gestión de inversiones, presupuesto y ROI por proyecto</p>
         </div>
-        <button onClick={() => exportToCSV(projects.map(p => ({ nombre: p.name, tipo: TYPE_META[p.type].label, estado: STATUS_META[p.status].label, presupuesto: p.budget, ejecutado: p.expenses.reduce((a, e) => a + e.amount, 0), roi_proyectado: p.roiProjected, roi_actual: p.roiActual ?? "N/A", responsable: p.responsible })), "proyectos-capex")} className="flex items-center gap-1.5 px-3 py-2 rounded-xl border border-gray-200 dark:border-card-border bg-white dark:bg-surface text-sm font-semibold text-gray-700 dark:text-foreground hover:bg-gray-50 dark:hover:bg-accent transition-colors">
+        <button onClick={() => exportToCSV(projects.map(p => ({ nombre: p.name, tipo: TYPE_META[p.type].label, estado: STATUS_META[p.status].label, presupuesto: p.budget, ejecutado: p.expenses.reduce((a, e) => a + e.amount, 0), roi_proyectado: p.roiProjected, roi_actual: p.roiActual ?? "N/A", responsable: p.responsible })), "proyectos-capex")} className="flex items-center gap-1.5 px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-card-border bg-white dark:bg-surface text-sm font-semibold text-gray-700 dark:text-foreground hover:bg-gray-50 dark:hover:bg-accent transition-colors">
           <Download className="h-4 w-4" /> Exportar
         </button>
       </div>
@@ -101,11 +101,11 @@ export default function ProjectsTab() {
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
         {[
           { label: "En Curso", value: String(stats.activeCount), color: "text-amber-600", bg: "bg-amber-50 dark:bg-amber-950/30" },
-          { label: "Presupuesto Total", value: fmt(stats.totalBudget), color: "text-blue-600", bg: "bg-blue-50 dark:bg-blue-950/30" },
+          { label: "Presupuesto Total", value: fmt(stats.totalBudget), color: "text-emerald-600", bg: "bg-emerald-50 dark:bg-emerald-950/30" },
           { label: "Ejecutado Total", value: fmt(stats.totalSpent), color: "text-emerald-600", bg: "bg-emerald-50 dark:bg-emerald-950/30" },
-          { label: "ROI Prom. Real", value: pct(stats.avgRoi), color: "text-violet-600", bg: "bg-violet-50 dark:bg-violet-950/30" },
+          { label: "ROI Prom. Real", value: pct(stats.avgRoi), color: "text-[var(--text-secondary)]", bg: "bg-[var(--surface-sunken)]" },
         ].map(({ label, value, color, bg }) => (
-          <div key={label} className={cn("rounded-2xl p-4", bg)}>
+          <div key={label} className={cn("rounded-xl p-4", bg)}>
             <p className="text-xs font-semibold text-gray-500 dark:text-muted mb-1">{label}</p>
             <p className={cn("text-xl font-extrabold", color)}>{value}</p>
           </div>
@@ -116,13 +116,13 @@ export default function ProjectsTab() {
       <div className="flex flex-col sm:flex-row gap-3 flex-wrap">
         <div className="relative flex-1 max-w-sm">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
-          <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Nombre, responsable..." className="w-full pl-9 pr-3 py-2 text-sm border border-gray-200 dark:border-card-border rounded-xl bg-white dark:bg-surface text-gray-700 dark:text-foreground" />
+          <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Nombre, responsable..." className="w-full pl-9 pr-3 py-2 text-sm border border-[var(--rule-base)] dark:border-card-border rounded-lg bg-white dark:bg-surface text-gray-700 dark:text-foreground" />
         </div>
-        <select value={filterStatus} onChange={e => setFilterStatus(e.target.value as ProjectStatus | "todos")} className="text-sm border border-gray-200 dark:border-card-border rounded-xl px-3 py-2 bg-white dark:bg-surface text-gray-700 dark:text-foreground">
+        <select value={filterStatus} onChange={e => setFilterStatus(e.target.value as ProjectStatus | "todos")} className="text-sm border border-[var(--rule-base)] dark:border-card-border rounded-lg px-3 py-2 bg-white dark:bg-surface text-gray-700 dark:text-foreground">
           <option value="todos">Todos los estados</option>
           {(Object.keys(STATUS_META) as ProjectStatus[]).map(s => <option key={s} value={s}>{STATUS_META[s].label}</option>)}
         </select>
-        <select value={filterType} onChange={e => setFilterType(e.target.value as ProjectType | "todos")} className="text-sm border border-gray-200 dark:border-card-border rounded-xl px-3 py-2 bg-white dark:bg-surface text-gray-700 dark:text-foreground">
+        <select value={filterType} onChange={e => setFilterType(e.target.value as ProjectType | "todos")} className="text-sm border border-[var(--rule-base)] dark:border-card-border rounded-lg px-3 py-2 bg-white dark:bg-surface text-gray-700 dark:text-foreground">
           <option value="todos">Todos los tipos</option>
           {(Object.keys(TYPE_META) as ProjectType[]).map(t => <option key={t} value={t}>{TYPE_META[t].label}</option>)}
         </select>
@@ -136,7 +136,7 @@ export default function ProjectsTab() {
           const st = STATUS_META[p.status];
           const StIcon = st.icon;
           return (
-            <div key={p.id} className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl p-4 space-y-3 hover:shadow-lg transition-shadow">
+            <div key={p.id} className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl p-4 space-y-3 hover:shadow-lg transition-shadow">
               <div className="flex flex-wrap items-start justify-between gap-2">
                 <div>
                   <p className="font-bold text-sm text-gray-900 dark:text-foreground">{p.name}</p>
@@ -154,7 +154,7 @@ export default function ProjectsTab() {
                 <div className="h-2 bg-gray-100 dark:bg-surface rounded-full overflow-hidden">
                   <div className={cn("h-full rounded-full transition-all", execPct > 100 ? "bg-red-500" : execPct > 80 ? "bg-amber-500" : "bg-emerald-500")} style={{ width: `${Math.min(execPct, 100)}%` }} />
                 </div>
-                <p className="text-[10px] text-gray-400 text-right">{pct(execPct)} ejecutado</p>
+                <p className="text-[length:var(--ts-2xs)] text-gray-400 text-right">{pct(execPct)} ejecutado</p>
               </div>
               <div className="flex items-center justify-between text-xs">
                 <span className="text-gray-500 dark:text-muted">ROI Proy. / Real</span>
@@ -174,7 +174,7 @@ export default function ProjectsTab() {
       {/* Detail modal */}
       {detail && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4" onClick={() => setDetail(null)}>
-          <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl shadow-2xl p-3 sm:p-6 w-full max-w-lg space-y-4 max-h-[90vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
+          <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl p-3 sm:p-6 w-full max-w-lg space-y-4 max-h-[90vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
             <div className="flex items-center justify-between">
               <h3 className="font-extrabold text-gray-900 dark:text-foreground">{detail.name}</h3>
               <button onClick={() => setDetail(null)}><X className="h-4 w-4 text-gray-400" /></button>

@@ -156,13 +156,13 @@ export default function BudgetAlertWidget({ monthlyBudget = 5000 }: BudgetAlertW
           <div>
             <div className="h-2.5 w-full rounded-full bg-gray-200 dark:bg-gray-700 overflow-hidden">
               <div
-                className={cn("h-full rounded-full transition-all duration-500", cfg.bar)}
+                className={cn("h-full rounded-full transition-all duration-[var(--dur-slow)]", cfg.bar)}
                 style={{ width: `${pct}%` }}
               />
             </div>
             <div className="flex justify-between mt-1">
-              <span className="text-[10px] text-gray-400">{pct.toFixed(0)}% usado</span>
-              <span className="text-[10px] text-gray-400">Presupuesto: {fmt(monthlyBudget)}</span>
+              <span className="text-[length:var(--ts-2xs)] text-gray-400">{pct.toFixed(0)}% usado</span>
+              <span className="text-[length:var(--ts-2xs)] text-gray-400">Presupuesto: {fmt(monthlyBudget)}</span>
             </div>
           </div>
 
@@ -184,8 +184,8 @@ export default function BudgetAlertWidget({ monthlyBudget = 5000 }: BudgetAlertW
 
           {/* Desglose por categoria si existe */}
           {summary?.byCategory && Object.keys(summary.byCategory).length > 0 && (
-            <div className="pt-1 border-t border-gray-200 dark:border-gray-700">
-              <p className="text-[10px] font-medium text-gray-500 dark:text-gray-400 mb-1.5">
+            <div className="pt-1 border-t border-[var(--rule-base)]">
+              <p className="text-[length:var(--ts-2xs)] font-medium text-gray-500 dark:text-gray-400 mb-1.5">
                 Por categoria
               </p>
               <ul className="space-y-1">
@@ -194,10 +194,10 @@ export default function BudgetAlertWidget({ monthlyBudget = 5000 }: BudgetAlertW
                   .slice(0, 4)
                   .map(([cat, amount]) => (
                     <li key={cat} className="flex items-center justify-between">
-                      <span className="text-[10px] text-gray-600 dark:text-gray-400 capitalize truncate max-w-[60%]">
+                      <span className="text-[length:var(--ts-2xs)] text-gray-600 dark:text-gray-400 capitalize truncate max-w-[60%]">
                         {cat}
                       </span>
-                      <span className="text-[10px] font-medium text-gray-700 dark:text-gray-300">
+                      <span className="text-[length:var(--ts-2xs)] font-medium text-gray-700 dark:text-gray-300">
                         {fmt(amount)}
                       </span>
                     </li>

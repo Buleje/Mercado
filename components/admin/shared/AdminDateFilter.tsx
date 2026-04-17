@@ -62,7 +62,7 @@ export default function AdminDateFilter({
             className={cn(
               "px-3 py-1.5 rounded-md text-xs font-medium transition-all",
               value === p.id && !showCustom
-                ? "bg-white text-gray-900 shadow-sm"
+                ? "bg-white text-gray-900 "
                 : "text-gray-500 hover:text-gray-700 hover:bg-gray-50",
             )}
           >
@@ -74,7 +74,7 @@ export default function AdminDateFilter({
           className={cn(
             "px-2 py-1.5 rounded-md text-xs font-medium transition-all",
             showCustom
-              ? "bg-white text-gray-900 shadow-sm"
+              ? "bg-white text-gray-900 "
               : "text-gray-500 hover:text-gray-700 hover:bg-gray-50",
           )}
           title="Rango personalizado"
@@ -93,7 +93,7 @@ export default function AdminDateFilter({
               setCustomFrom(e.target.value);
               onChange("custom");
             }}
-            className="px-2 py-1 rounded-md border border-gray-200 text-xs text-gray-700 focus:outline-none focus:ring-1 focus:ring-[#00B4A6]"
+            className="px-2 py-1 rounded-md border border-[var(--rule-base)] text-xs text-gray-700 focus:outline-none focus:ring-1 focus:ring-primary"
           />
           <span className="text-xs text-gray-400">—</span>
           <input
@@ -103,7 +103,7 @@ export default function AdminDateFilter({
               setCustomTo(e.target.value);
               onChange("custom");
             }}
-            className="px-2 py-1 rounded-md border border-gray-200 text-xs text-gray-700 focus:outline-none focus:ring-1 focus:ring-[#00B4A6]"
+            className="px-2 py-1 rounded-md border border-[var(--rule-base)] text-xs text-gray-700 focus:outline-none focus:ring-1 focus:ring-primary"
           />
         </div>
       )}

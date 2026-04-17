@@ -119,7 +119,8 @@ export function PreferencesPanel() {
           value={preferences.theme || "system"}
           onChange={(value) => {
               updatePreference("theme", value as UserPreferences["theme"]);
-              setTheme(value as "light" | "dark" | "system" | "auto");
+              // "auto" fallback a "system" (Theme no tiene "auto")
+              setTheme(value === "auto" ? "system" : (value as "light" | "dark" | "system"));
             }}
           options={[
             { value: "light", label: "Claro" },

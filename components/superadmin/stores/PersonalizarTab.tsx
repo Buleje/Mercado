@@ -224,10 +224,11 @@ export function PersonalizarTab({ stores, onRefresh }: PersonalizarTabProps) {
                 {/* Logo */}
                 <div className="w-10 h-10 rounded-xl bg-gray-100 dark:bg-gray-800 flex items-center justify-center overflow-hidden shrink-0">
                   {store.logo ? (
-                    // eslint-disable-next-line @next/next/no-img-element
-                    <img
+                    <Image
                       src={store.logo}
                       alt={store.name}
+                      width={40}
+                      height={40}
                       className="w-full h-full object-cover grayscale"
                     />
                   ) : (
@@ -305,7 +306,7 @@ export function PersonalizarTab({ stores, onRefresh }: PersonalizarTabProps) {
           </div>
           <div className="rounded-xl border border-gray-100 dark:border-gray-800 p-4 bg-gray-50/50 dark:bg-gray-800/30">
             <div className="flex items-center gap-2 mb-2">
-              <Percent className="w-4 h-4 text-blue-500" />
+              <Percent className="w-4 h-4 text-emerald-500" />
               <span className="text-xs font-semibold text-gray-600 dark:text-gray-400">Comisiones</span>
             </div>
             <p className="text-xs text-gray-400">

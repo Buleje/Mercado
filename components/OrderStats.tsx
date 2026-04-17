@@ -34,8 +34,8 @@ export function OrderStats({
       label: "Total Pedidos",
       value: totalOrders.toString(),
       icon: ShoppingCart,
-      color: "text-blue-600 dark:text-blue-400",
-      bgColor: "bg-blue-50 dark:bg-blue-950/20",
+      color: "text-emerald-600 dark:text-emerald-400",
+      bgColor: "bg-emerald-50 dark:bg-emerald-950/20",
       change: previousPeriodComparison?.orders,
     },
     {

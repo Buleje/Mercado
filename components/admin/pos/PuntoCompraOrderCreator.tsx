@@ -117,9 +117,9 @@ export default function PuntoCompraOrderCreator({ open, onClose, cartItems }: Pr
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-      <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-xl w-full max-w-lg max-h-[90vh] overflow-hidden flex flex-col">
+      <div className="bg-white dark:bg-gray-900 rounded-xl w-full max-w-lg max-h-[90vh] overflow-hidden flex flex-col">
         {/* Header */}
-        <div className="flex items-center justify-between p-4 border-b border-gray-200 dark:border-card-border">
+        <div className="flex items-center justify-between p-4 border-b border-[var(--rule-base)] dark:border-card-border">
           <div className="flex items-center gap-2">
             <ShoppingCart className="h-4 w-4 text-[#00B4A6]" />
             <h3 className="text-sm font-bold text-gray-900 dark:text-white">
@@ -150,7 +150,7 @@ export default function PuntoCompraOrderCreator({ open, onClose, cartItems }: Pr
               <button
                 type="button"
                 onClick={onClose}
-                className="mt-4 px-6 py-2 bg-[#00B4A6] text-white rounded-xl text-xs font-medium hover:bg-[#009690] transition-colors"
+                className="mt-4 px-6 py-2 bg-[#00B4A6] text-white rounded-lg text-xs font-medium hover:bg-[#009690] transition-colors"
               >
                 Cerrar
               </button>
@@ -170,7 +170,7 @@ export default function PuntoCompraOrderCreator({ open, onClose, cartItems }: Pr
                         {selectedCustomer.name}
                       </p>
                       {selectedCustomer.phone && (
-                        <p className="text-[10px] text-gray-400">{selectedCustomer.phone}</p>
+                        <p className="text-[length:var(--ts-2xs)] text-gray-400">{selectedCustomer.phone}</p>
                       )}
                     </div>
                     <button
@@ -179,7 +179,7 @@ export default function PuntoCompraOrderCreator({ open, onClose, cartItems }: Pr
                         setSelectedCustomer(null);
                         setCustomerSearch("");
                       }}
-                      className="text-[10px] text-gray-400 hover:text-red-500"
+                      className="text-[length:var(--ts-2xs)] text-gray-400 hover:text-red-500"
                     >
                       Cambiar
                     </button>
@@ -192,7 +192,7 @@ export default function PuntoCompraOrderCreator({ open, onClose, cartItems }: Pr
                       value={customerSearch}
                       onChange={(e) => setCustomerSearch(e.target.value)}
                       placeholder="Buscar por nombre o telefono..."
-                      className="w-full pl-9 pr-3 py-2 border border-gray-200 dark:border-card-border rounded-xl text-xs bg-white dark:bg-gray-800 text-gray-900 dark:text-white placeholder-gray-400 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#00B4A6]"
+                      className="w-full pl-9 pr-3 py-2 border border-[var(--rule-base)] dark:border-card-border rounded-lg text-xs bg-white dark:bg-gray-800 text-gray-900 dark:text-white placeholder-gray-400 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#00B4A6]"
                     />
                     {searchLoading && (
                       <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-gray-400 animate-spin" />
@@ -202,7 +202,7 @@ export default function PuntoCompraOrderCreator({ open, onClose, cartItems }: Pr
 
                 {/* Customer results */}
                 {!selectedCustomer && customers.length > 0 && (
-                  <div className="mt-1 border border-gray-200 dark:border-card-border rounded-xl overflow-hidden">
+                  <div className="mt-1 border border-[var(--rule-base)] dark:border-card-border rounded-xl overflow-hidden">
                     {customers.map((c) => (
                       <button
                         key={c.id}
@@ -212,13 +212,13 @@ export default function PuntoCompraOrderCreator({ open, onClose, cartItems }: Pr
                           setCustomers([]);
                           setCustomerSearch("");
                         }}
-                        className="w-full flex items-center gap-2 p-2 text-left hover:bg-gray-50 dark:hover:bg-white/5 transition-colors border-b border-gray-100 dark:border-card-border last:border-0"
+                        className="w-full flex items-center gap-2 p-2 text-left hover:bg-gray-50 dark:hover:bg-white/5 transition-colors border-b border-[var(--rule-soft)] dark:border-card-border last:border-0"
                       >
                         <User className="h-3 w-3 text-gray-400 shrink-0" />
                         <div className="min-w-0">
                           <p className="text-xs text-gray-900 dark:text-white truncate">{c.name}</p>
                           {c.phone && (
-                            <p className="text-[10px] text-gray-400">{c.phone}</p>
+                            <p className="text-[length:var(--ts-2xs)] text-gray-400">{c.phone}</p>
                           )}
                         </div>
                       </button>
@@ -252,17 +252,17 @@ export default function PuntoCompraOrderCreator({ open, onClose, cartItems }: Pr
                             "h-4 w-4 rounded border-2 shrink-0 flex items-center justify-center transition-colors",
                             checked
                               ? "bg-[#00B4A6] border-[#00B4A6] text-white"
-                              : "border-gray-300 dark:border-gray-600",
+                              : "border-[var(--rule-base)] dark:border-gray-600",
                           )}
                         >
-                          {checked && <span className="text-[8px] font-bold">&#10003;</span>}
+                          {checked && <span className="text-[length:var(--ts-2xs)] font-bold">&#10003;</span>}
                         </div>
                         <div className="flex-1 min-w-0">
                           <p className="text-xs text-gray-900 dark:text-white truncate">
                             {item.product.name}
                           </p>
                         </div>
-                        <span className="text-[10px] text-gray-400 shrink-0">
+                        <span className="text-[length:var(--ts-2xs)] text-gray-400 shrink-0">
                           x{item.quantity}
                         </span>
                         <span className="text-xs font-mono font-medium text-gray-700 dark:text-gray-300 shrink-0">

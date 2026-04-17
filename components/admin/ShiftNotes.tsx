@@ -125,7 +125,7 @@ export default function ShiftNotes() {
       </div>
 
       {/* New note form */}
-      <div className="rounded-xl border border-gray-200 bg-white p-5 dark:border-gray-700 dark:bg-gray-900">
+      <div className="rounded-xl border border-[var(--rule-base)] bg-white p-5 dark:border-[var(--rule-base)] dark:bg-gray-900">
         <h3 className="mb-3 text-sm font-semibold text-gray-800 dark:text-white">
           Dejar una nota para el siguiente turno
         </h3>
@@ -139,7 +139,7 @@ export default function ShiftNotes() {
             value={author}
             onChange={(e) => saveUser(e.target.value)}
             placeholder="Ej: Maria, Juan cajero turno manana..."
-            className="w-full rounded-lg border border-gray-200 bg-gray-50 px-3 py-2 text-sm focus:border-[#00B4A6] focus:outline-none dark:border-gray-700 dark:bg-gray-800 dark:text-white"
+            className="w-full rounded-lg border border-[var(--rule-base)] bg-gray-50 px-3 py-2 text-sm focus:border-[#00B4A6] focus:outline-none dark:border-[var(--rule-base)] dark:bg-gray-800 dark:text-white"
           />
         </div>
 
@@ -152,7 +152,7 @@ export default function ShiftNotes() {
           }}
           rows={3}
           placeholder="Escribe aqui tu nota... (Ctrl+Enter para enviar)"
-          className="w-full rounded-lg border border-gray-200 bg-gray-50 px-3 py-2 text-sm focus:border-[#00B4A6] focus:outline-none dark:border-gray-700 dark:bg-gray-800 dark:text-white"
+          className="w-full rounded-lg border border-[var(--rule-base)] bg-gray-50 px-3 py-2 text-sm focus:border-[#00B4A6] focus:outline-none dark:border-[var(--rule-base)] dark:bg-gray-800 dark:text-white"
         />
 
         <div className="mt-3 flex items-center justify-between">
@@ -182,7 +182,7 @@ export default function ShiftNotes() {
         </div>
 
         {notes.length === 0 ? (
-          <div className="flex flex-col items-center gap-3 rounded-xl border border-dashed border-gray-200 py-10 text-center dark:border-gray-700">
+          <div className="flex flex-col items-center gap-3 rounded-xl border border-dashed border-[var(--rule-base)] py-10 text-center dark:border-[var(--rule-base)]">
             <Clock className="h-8 w-8 text-gray-300 dark:text-gray-700" />
             <p className="text-sm text-gray-400">
               No hay notas de turno todavia. Escribe la primera nota arriba.
@@ -196,7 +196,7 @@ export default function ShiftNotes() {
                 className={cn(
                   "group relative rounded-xl border p-4 transition",
                   note.read
-                    ? "border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-900"
+                    ? "border-[var(--rule-base)] bg-white dark:border-[var(--rule-base)] dark:bg-gray-900"
                     : "border-[#f97316]/40 bg-amber-50 dark:border-[#f97316]/30 dark:bg-amber-900/10"
                 )}
               >

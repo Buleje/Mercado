@@ -27,8 +27,8 @@ type Return = {
 
 const STATUS_CONFIG: Record<ReturnStatus, { label: string; color: string; step: number }> = {
   solicitada:  { label: "Solicitada",  color: "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400",    step: 0 },
-  aprobada:    { label: "Aprobada",    color: "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400",          step: 1 },
-  recogida:    { label: "En recojo",   color: "bg-violet-100 text-violet-700 dark:bg-violet-900/30 dark:text-violet-400",  step: 2 },
+  aprobada:    { label: "Aprobada",    color: "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400",          step: 1 },
+  recogida:    { label: "En recojo",   color: "bg-[var(--surface-sunken)] text-[var(--text-primary)]",  step: 2 },
   inspeccion:  { label: "Inspección",  color: "bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400",  step: 3 },
   completada:  { label: "Completada",  color: "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400", step: 4 },
   rechazada:   { label: "Rechazada",   color: "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400",              step: -1 },
@@ -131,11 +131,11 @@ export default function ReturnLogisticsTab() {
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
         {[
           { label: "Devoluciones activas", value: kpis.active,             color: "text-amber-500",   icon: RotateCcw },
-          { label: "Total registradas",    value: returns.length,           color: "text-blue-500",    icon: BarChart3 },
+          { label: "Total registradas",    value: returns.length,           color: "text-emerald-500",    icon: BarChart3 },
           { label: "Reembolsado (mes)",    value: fmt(kpis.totalRefund),    color: "text-red-500",     icon: XCircle },
-          { label: "Tasa de rechazo",      value: `${kpis.rejectedPct}%`,   color: "text-violet-500",  icon: AlertTriangle },
+          { label: "Tasa de rechazo",      value: `${kpis.rejectedPct}%`,   color: "text-[var(--text-secondary)]",  icon: AlertTriangle },
         ].map(({ label, value, color, icon: Icon }) => (
-          <div key={label} className="bg-white dark:bg-card rounded-xl border border-gray-200 dark:border-card-border p-4 flex items-start gap-3">
+          <div key={label} className="bg-white dark:bg-card rounded-xl border border-[var(--rule-base)] dark:border-card-border p-4 flex items-start gap-3">
             <div className={cn("p-2 rounded-lg bg-gray-50 dark:bg-surface", color)}>
               <Icon className="h-4 w-4" />
             </div>
@@ -155,7 +155,7 @@ export default function ReturnLogisticsTab() {
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
               <input
                 value={search} onChange={e => setSearch(e.target.value)}
-                className="w-full pl-9 pr-3 py-2 rounded-xl border border-gray-200 dark:border-card-border bg-white dark:bg-surface text-sm"
+                className="w-full pl-9 pr-3 py-2 rounded-xl border border-[var(--rule-base)] dark:border-card-border bg-white dark:bg-surface text-sm"
                 placeholder="Buscar por pedido o cliente…"
               />
             </div>
@@ -181,7 +181,7 @@ export default function ReturnLogisticsTab() {
 
           <div className="space-y-3">
             {filtered.map(r => (
-              <div key={r.id} className="bg-white dark:bg-card rounded-2xl border border-gray-200 dark:border-card-border overflow-hidden">
+              <div key={r.id} className="bg-white dark:bg-card rounded-xl border border-[var(--rule-base)] dark:border-card-border overflow-hidden">
                 {/* Summary row */}
                 <button
                   onClick={() => setExpandedId(expandedId === r.id ? null : r.id)}
@@ -190,10 +190,10 @@ export default function ReturnLogisticsTab() {
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 flex-wrap mb-1">
                       <span className="font-bold text-sm text-gray-900 dark:text-foreground">{r.orderId}</span>
-                      <span className={cn("text-[10px] font-bold px-2 py-0.5 rounded-full", STATUS_CONFIG[r.status].color)}>
+                      <span className={cn("text-[length:var(--ts-2xs)] font-bold px-2 py-0.5 rounded-full", STATUS_CONFIG[r.status].color)}>
                         {STATUS_CONFIG[r.status].label}
                       </span>
-                      <span className="text-[10px] font-semibold text-gray-400 bg-gray-100 dark:bg-surface px-2 py-0.5 rounded-full">
+                      <span className="text-[length:var(--ts-2xs)] font-semibold text-gray-400 bg-gray-100 dark:bg-surface px-2 py-0.5 rounded-full">
                         {r.reason}
                       </span>
                     </div>
@@ -204,7 +204,7 @@ export default function ReturnLogisticsTab() {
                   <div className="flex items-center gap-3 shrink-0">
                     <div className="text-right">
                       <p className="text-sm font-extrabold text-red-600">{fmt(r.refundAmount)}</p>
-                      <p className="text-[10px] text-gray-400">{fmtDate(r.requestDate)}</p>
+                      <p className="text-[length:var(--ts-2xs)] text-gray-400">{fmtDate(r.requestDate)}</p>
                     </div>
                     {expandedId === r.id ? <ChevronUp className="h-4 w-4 text-gray-400" /> : <ChevronDown className="h-4 w-4 text-gray-400" />}
                   </div>
@@ -212,7 +212,7 @@ export default function ReturnLogisticsTab() {
 
                 {/* Expanded: timeline + items */}
                 {expandedId === r.id && (
-                  <div className="px-4 pb-4 border-t border-gray-100 dark:border-card-border pt-4 space-y-4">
+                  <div className="px-4 pb-4 border-t border-[var(--rule-soft)] dark:border-card-border pt-4 space-y-4">
                     {/* Timeline */}
                     {r.status !== "rechazada" && (
                       <div className="relative flex items-center gap-0">
@@ -230,11 +230,11 @@ export default function ReturnLogisticsTab() {
                                     ? "bg-primary border-primary text-white"
                                     : current
                                     ? "bg-primary/10 border-primary text-primary"
-                                    : "bg-gray-100 dark:bg-surface border-gray-200 dark:border-card-border text-gray-400"
+                                    : "bg-gray-100 dark:bg-surface border-[var(--rule-base)] dark:border-card-border text-gray-400"
                                 )}>
                                   <Icon className="h-3.5 w-3.5" />
                                 </div>
-                                <span className="text-[9px] text-gray-500 dark:text-muted mt-1 text-center leading-tight w-14">{step.label}</span>
+                                <span className="text-[length:var(--ts-2xs)] text-gray-500 dark:text-muted mt-1 text-center leading-tight w-14">{step.label}</span>
                               </div>
                               {idx < TIMELINE_STEPS.length - 1 && (
                                 <div className={cn("flex-1 h-0.5 mb-4", done ? "bg-primary" : "bg-gray-200 dark:bg-card-border")} />
@@ -254,7 +254,7 @@ export default function ReturnLogisticsTab() {
                     {/* Items */}
                     <div className="flex flex-wrap gap-2">
                       {r.items.map((item, i) => (
-                        <span key={i} className="text-[10px] bg-gray-50 dark:bg-surface px-2 py-1.5 rounded-lg text-gray-600 dark:text-muted border border-gray-100 dark:border-card-border">
+                        <span key={i} className="text-[length:var(--ts-2xs)] bg-gray-50 dark:bg-surface px-2 py-1.5 rounded-lg text-gray-600 dark:text-muted border border-[var(--rule-soft)] dark:border-card-border">
                           {item.name} ×{item.qty} <span className="text-primary font-bold">({fmt(item.price)})</span>
                         </span>
                       ))}
@@ -262,14 +262,14 @@ export default function ReturnLogisticsTab() {
 
                     {/* Notes */}
                     {r.notes && (
-                      <div className="flex items-start gap-2 text-xs bg-blue-50 dark:bg-blue-950/10 text-blue-700 dark:text-blue-400 px-3 py-2 rounded-xl">
+                      <div className="flex items-start gap-2 text-xs bg-emerald-50 dark:bg-emerald-950/10 text-emerald-700 dark:text-emerald-400 px-3 py-2 rounded-xl">
                         <AlertTriangle className="h-3.5 w-3.5 shrink-0 mt-0.5" />
                         {r.notes}
                       </div>
                     )}
 
                     {r.resolvedDate && (
-                      <p className="text-[10px] text-emerald-600 font-semibold flex items-center gap-1">
+                      <p className="text-[length:var(--ts-2xs)] text-emerald-600 font-semibold flex items-center gap-1">
                         <CheckCircle2 className="h-3 w-3" /> Resuelto el {fmtDate(r.resolvedDate)}
                       </p>
                     )}
@@ -282,7 +282,7 @@ export default function ReturnLogisticsTab() {
       )}
 
       {view === "reasons" && (
-        <div className="bg-white dark:bg-card rounded-2xl border border-gray-200 dark:border-card-border p-4 sm:p-6 space-y-4">
+        <div className="bg-white dark:bg-card rounded-xl border border-[var(--rule-base)] dark:border-card-border p-4 sm:p-6 space-y-4">
           <h3 className="font-bold text-sm text-gray-700 dark:text-foreground">Motivos más frecuentes de devolución</h3>
           {reasonFreq.length === 0 ? (
             <p className="text-sm text-gray-400 text-center py-6">Sin datos todavía</p>

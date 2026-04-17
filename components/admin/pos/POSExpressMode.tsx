@@ -110,7 +110,7 @@ export default function POSExpressMode({
     return (
       <button
         onClick={() => setEnabled(true)}
-        className="flex items-center gap-1.5 text-xs font-bold text-amber-600 border border-amber-200 dark:border-amber-800/30 hover:bg-amber-50 dark:hover:bg-amber-950/20 px-3 py-2 rounded-xl transition-colors"
+        className="flex items-center gap-1.5 text-xs font-bold text-amber-600 border border-amber-200 dark:border-amber-800/30 hover:bg-amber-50 dark:hover:bg-amber-950/20 px-3 py-2 rounded-lg transition-colors"
         title="Modo Express - escaneo rapido por codigo"
       >
         <Zap className="h-4 w-4" /> Express
@@ -169,7 +169,7 @@ export default function POSExpressMode({
             <button
               key={p.id}
               onClick={() => onAddToCart(p.id)}
-              className="shrink-0 px-2 py-1 rounded-lg text-[11px] font-medium bg-white dark:bg-card border border-amber-200 dark:border-amber-800/30 text-gray-700 dark:text-foreground hover:border-primary transition-all whitespace-nowrap flex items-center gap-1"
+              className="shrink-0 px-2 py-1 rounded-lg text-[length:var(--ts-xs)] font-medium bg-white dark:bg-card border border-amber-200 dark:border-amber-800/30 text-gray-700 dark:text-foreground hover:border-primary transition-all whitespace-nowrap flex items-center gap-1"
             >
               <span className="truncate max-w-20">{p.name}</span>
               <span className="font-bold text-primary">{fmt(p.price)}</span>

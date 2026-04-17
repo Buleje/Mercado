@@ -59,24 +59,24 @@ function BarChart({
         return (
           <div key={i} className="group relative flex flex-1 flex-col items-center">
             {/* Tooltip */}
-            <div className="absolute -top-16 left-1/2 z-10 hidden -translate-x-1/2 rounded-lg border border-gray-200 bg-white px-2 py-1 text-center shadow-lg group-hover:block dark:border-gray-600 dark:bg-gray-800">
-              <p className="text-xs font-semibold text-gray-800 dark:text-gray-100">
+            <div className="absolute -top-16 left-1/2 z-10 hidden -translate-x-1/2 rounded-lg border border-[var(--rule-base)] bg-white px-2 py-1 text-center group-hover:block">
+              <p className="text-xs font-semibold text-gray-800">
                 {fmt(p.price)}
               </p>
-              <p className="text-xs text-[#00B4A6]">{fmt(p.profit)}/mes</p>
+              <p className="text-xs text-primary">{fmt(p.profit)}/mes</p>
             </div>
             <div
               className={cn(
                 "w-full rounded-t-sm transition-all",
                 isOptimal
-                  ? "bg-[#f97316]"
+                  ? "bg-secondary"
                   : isCurrent
-                  ? "bg-[#00B4A6]"
-                  : "bg-gray-200 dark:bg-gray-700"
+                  ? "bg-primary"
+                  : "bg-gray-200"
               )}
               style={{ height: `${Math.max(pct, 2)}%` }}
             />
-            <span className="mt-1 text-center text-[9px] leading-tight text-gray-500 dark:text-gray-400">
+            <span className="mt-1 text-center text-[length:var(--ts-2xs)] leading-tight text-gray-500">
               {fmt(p.price).replace("S/ ", "")}
             </span>
           </div>
@@ -173,17 +173,17 @@ export default function ProfitabilityCalculator() {
     <div className="flex flex-col gap-6">
       <div className="grid gap-6 md:grid-cols-2">
         {/* Inputs */}
-        <div className="rounded-xl border border-gray-200 bg-white p-5 dark:border-gray-700 dark:bg-gray-900">
+        <div className="rounded-xl border border-[var(--rule-base)] bg-white p-5">
           <div className="mb-4 flex items-center gap-2">
-            <Calculator className="h-5 w-5 text-[#00B4A6]" />
-            <h3 className="text-sm font-semibold text-gray-800 dark:text-gray-100">
+            <Calculator className="h-5 w-5 text-primary" />
+            <h3 className="text-sm font-semibold text-gray-800">
               Parámetros
             </h3>
           </div>
 
           {/* Product selector */}
           <div className="mb-4">
-            <label className="mb-1 block text-xs font-medium text-gray-600 dark:text-gray-400">
+            <label className="mb-1 block text-xs font-medium text-gray-600">
               Producto
             </label>
             <div className="relative">
@@ -192,9 +192,9 @@ export default function ProfitabilityCalculator() {
                 onChange={(e) => setSelectedId(Number(e.target.value))}
                 disabled={loadingProds}
                 className={cn(
-                  "w-full appearance-none rounded-lg border border-gray-200 bg-gray-50 py-2 pl-3 pr-8 text-sm",
-                  "text-gray-800 outline-none focus:border-[#00B4A6] focus:ring-2 focus:ring-[#00B4A6]/20",
-                  "dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100"
+                  "w-full appearance-none rounded-lg border border-[var(--rule-base)] bg-gray-50 py-2 pl-3 pr-8 text-sm",
+                  "text-gray-800 outline-none focus:border-primary focus:ring-2 focus:ring-primary/20",
+                  ""
                 )}
               >
                 {products.map((p) => (
@@ -218,7 +218,7 @@ export default function ProfitabilityCalculator() {
               { label: "Ventas mensuales (und)", value: monthlySales, setter: setMonthlySales, min: 1 },
             ].map(({ label, value, setter, min }) => (
               <div key={label}>
-                <label className="mb-1 block text-xs font-medium text-gray-600 dark:text-gray-400">
+                <label className="mb-1 block text-xs font-medium text-gray-600">
                   {label}
                 </label>
                 <input
@@ -228,9 +228,9 @@ export default function ProfitabilityCalculator() {
                   value={value}
                   onChange={(e) => setter(Number(e.target.value))}
                   className={cn(
-                    "w-full rounded-lg border border-gray-200 bg-gray-50 px-3 py-2 text-sm",
-                    "text-gray-800 outline-none focus:border-[#00B4A6] focus:ring-2 focus:ring-[#00B4A6]/20",
-                    "dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100"
+                    "w-full rounded-lg border border-[var(--rule-base)] bg-gray-50 px-3 py-2 text-sm",
+                    "text-gray-800 outline-none focus:border-primary focus:ring-2 focus:ring-primary/20",
+                    ""
                   )}
                 />
               </div>
@@ -238,7 +238,7 @@ export default function ProfitabilityCalculator() {
 
             {/* Elasticity slider */}
             <div className="col-span-2">
-              <label className="mb-1 block text-xs font-medium text-gray-600 dark:text-gray-400">
+              <label className="mb-1 block text-xs font-medium text-gray-600">
                 Si bajo S/1, ventas suben: {elasticity}%
               </label>
               <input
@@ -248,7 +248,7 @@ export default function ProfitabilityCalculator() {
                 step={5}
                 value={elasticity}
                 onChange={(e) => setElasticity(Number(e.target.value))}
-                className="w-full accent-[#00B4A6]"
+                className="w-full accent-primary"
               />
               <div className="mt-0.5 flex justify-between text-xs text-gray-400">
                 <span>Poca demanda</span>
@@ -260,15 +260,15 @@ export default function ProfitabilityCalculator() {
           {/* Current metrics */}
           {currentPoint && price > cost && (
             <div className="mt-4 grid grid-cols-2 gap-2">
-              <div className="rounded-lg bg-gray-50 p-3 dark:bg-gray-800">
-                <p className="text-xs text-gray-500 dark:text-gray-400">Margen actual</p>
-                <p className="text-sm font-bold text-gray-800 dark:text-gray-100">
+              <div className="rounded-lg bg-gray-50 p-3">
+                <p className="text-xs text-gray-500">Margen actual</p>
+                <p className="text-sm font-bold text-gray-800">
                   {(((price - cost) / price) * 100).toFixed(1)}%
                 </p>
               </div>
-              <div className="rounded-lg bg-gray-50 p-3 dark:bg-gray-800">
-                <p className="text-xs text-gray-500 dark:text-gray-400">Ganancia/mes</p>
-                <p className="text-sm font-bold text-[#00B4A6]">
+              <div className="rounded-lg bg-gray-50 p-3">
+                <p className="text-xs text-gray-500">Ganancia/mes</p>
+                <p className="text-sm font-bold text-primary">
                   {fmt(currentPoint.profit)}
                 </p>
               </div>
@@ -276,7 +276,7 @@ export default function ProfitabilityCalculator() {
           )}
 
           {price <= cost && cost > 0 && (
-            <div className="mt-3 flex items-center gap-2 rounded-lg border border-red-200 bg-red-50 p-3 text-xs text-red-700 dark:border-red-800 dark:bg-red-900/20 dark:text-red-300">
+            <div className="mt-3 flex items-center gap-2 rounded-lg border border-red-200 bg-red-50 p-3 text-xs text-red-700">
               <TrendingDown className="h-4 w-4 shrink-0" />
               El precio es menor o igual al costo. Estás vendiendo a pérdida.
             </div>
@@ -284,10 +284,10 @@ export default function ProfitabilityCalculator() {
         </div>
 
         {/* Chart + optimal */}
-        <div className="rounded-xl border border-gray-200 bg-white p-5 dark:border-gray-700 dark:bg-gray-900">
+        <div className="rounded-xl border border-[var(--rule-base)] bg-white p-5">
           <div className="mb-4 flex items-center gap-2">
-            <TrendingUp className="h-5 w-5 text-[#f97316]" />
-            <h3 className="text-sm font-semibold text-gray-800 dark:text-gray-100">
+            <TrendingUp className="h-5 w-5 text-secondary" />
+            <h3 className="text-sm font-semibold text-gray-800">
               Precio vs ganancia mensual
             </h3>
           </div>
@@ -299,34 +299,34 @@ export default function ProfitabilityCalculator() {
               {/* Legend */}
               <div className="mt-3 flex flex-wrap gap-3 text-xs">
                 <div className="flex items-center gap-1.5">
-                  <div className="h-2.5 w-2.5 rounded-sm bg-[#00B4A6]" />
-                  <span className="text-gray-500 dark:text-gray-400">Precio actual</span>
+                  <div className="h-2.5 w-2.5 rounded-sm bg-primary" />
+                  <span className="text-gray-500">Precio actual</span>
                 </div>
                 <div className="flex items-center gap-1.5">
-                  <div className="h-2.5 w-2.5 rounded-sm bg-[#f97316]" />
-                  <span className="text-gray-500 dark:text-gray-400">Precio óptimo</span>
+                  <div className="h-2.5 w-2.5 rounded-sm bg-secondary" />
+                  <span className="text-gray-500">Precio óptimo</span>
                 </div>
               </div>
 
               {/* Optimal suggestion */}
               {optimalPoint && currentPoint && (
-                <div className="mt-4 rounded-lg border border-[#f97316]/30 bg-[#f97316]/5 p-4 dark:bg-[#f97316]/10">
+                <div className="mt-4 rounded-lg border border-secondary/30 bg-secondary/5 p-4">
                   <div className="flex items-start gap-2">
-                    <Star className="mt-0.5 h-4 w-4 shrink-0 text-[#f97316]" />
+                    <Star className="mt-0.5 h-4 w-4 shrink-0 text-secondary" />
                     <div>
-                      <p className="text-sm font-semibold text-gray-800 dark:text-gray-100">
+                      <p className="text-sm font-semibold text-gray-800">
                         Punto óptimo sugerido: {fmt(optimalPoint.price)}
                       </p>
                       {optimalPoint.price !== price ? (
-                        <p className="mt-0.5 text-xs text-gray-600 dark:text-gray-400">
+                        <p className="mt-0.5 text-xs text-gray-600">
                           Proyección: {fmt(optimalPoint.profit)}/mes
                           {" · "}
                           <span
                             className={cn(
                               "font-semibold",
                               diffVsCurrent(optimalPoint) > 0
-                                ? "text-green-600 dark:text-green-400"
-                                : "text-red-600 dark:text-red-400"
+                                ? "text-green-600"
+                                : "text-red-600"
                             )}
                           >
                             {diffVsCurrent(optimalPoint) > 0 ? "+" : ""}
@@ -334,7 +334,7 @@ export default function ProfitabilityCalculator() {
                           </span>
                         </p>
                       ) : (
-                        <p className="mt-0.5 text-xs text-gray-600 dark:text-gray-400">
+                        <p className="mt-0.5 text-xs text-gray-600">
                           El precio actual ya es el óptimo según los parámetros ingresados.
                         </p>
                       )}
@@ -353,27 +353,27 @@ export default function ProfitabilityCalculator() {
 
       {/* Simulation table */}
       {simPoints.length > 0 && currentPoint && (
-        <div className="rounded-xl border border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-900">
-          <div className="border-b border-gray-100 px-5 py-3 dark:border-gray-700">
-            <p className="text-sm font-semibold text-gray-800 dark:text-gray-100">
+        <div className="rounded-xl border border-[var(--rule-base)] bg-white">
+          <div className="border-b border-[var(--rule-soft)] px-5 py-3">
+            <p className="text-sm font-semibold text-gray-800">
               Tabla de simulación
             </p>
           </div>
           <div className="overflow-x-auto">
             <table className="w-full text-xs">
               <thead>
-                <tr className="border-b border-gray-100 dark:border-gray-700">
+                <tr className="border-b border-[var(--rule-soft)]">
                   {["Precio", "Variación", "Ventas/mes", "Ganancia/mes", "vs Actual"].map((h) => (
                     <th
                       key={h}
-                      className="px-4 py-2 text-left font-semibold text-gray-500 dark:text-gray-400"
+                      className="px-4 py-2 text-left font-semibold text-gray-500"
                     >
                       {h}
                     </th>
                   ))}
                 </tr>
               </thead>
-              <tbody className="divide-y divide-gray-100 dark:divide-gray-700/50">
+              <tbody className="divide-y divide-gray-100">
                 {simPoints.map((p, i) => {
                   const diff = diffVsCurrent(p);
                   const isCurrent = i === 4;
@@ -383,24 +383,24 @@ export default function ProfitabilityCalculator() {
                       key={i}
                       className={cn(
                         "transition",
-                        isOptimal && "bg-[#f97316]/5 dark:bg-[#f97316]/10",
-                        isCurrent && "bg-[#00B4A6]/5 dark:bg-[#00B4A6]/10"
+                        isOptimal && "bg-secondary/5",
+                        isCurrent && "bg-primary/5"
                       )}
                     >
-                      <td className="px-4 py-2 font-medium text-gray-800 dark:text-gray-100">
+                      <td className="px-4 py-2 font-medium text-gray-800">
                         {fmt(p.price)}
                         {isOptimal && (
-                          <Star className="ml-1 inline h-3 w-3 text-[#f97316]" />
+                          <Star className="ml-1 inline h-3 w-3 text-secondary" />
                         )}
                         {isCurrent && (
-                          <span className="ml-1 text-[10px] text-[#00B4A6]">(actual)</span>
+                          <span className="ml-1 text-[length:var(--ts-2xs)] text-primary">(actual)</span>
                         )}
                       </td>
-                      <td className="px-4 py-2 text-gray-500 dark:text-gray-400">{p.label}</td>
-                      <td className="px-4 py-2 text-gray-700 dark:text-gray-300">
+                      <td className="px-4 py-2 text-gray-500">{p.label}</td>
+                      <td className="px-4 py-2 text-gray-700">
                         {Math.round(monthlySales * p.salesMultiplier)}
                       </td>
-                      <td className="px-4 py-2 font-semibold text-gray-800 dark:text-gray-100">
+                      <td className="px-4 py-2 font-semibold text-gray-800">
                         {fmt(p.profit)}
                       </td>
                       <td
@@ -409,8 +409,8 @@ export default function ProfitabilityCalculator() {
                           isCurrent
                             ? "text-gray-400"
                             : diff > 0
-                            ? "text-green-600 dark:text-green-400"
-                            : "text-red-600 dark:text-red-400"
+                            ? "text-green-600"
+                            : "text-red-600"
                         )}
                       >
                         {isCurrent ? "-" : `${diff > 0 ? "+" : ""}${fmt(diff)}`}

@@ -73,7 +73,7 @@ const SECTION_LABELS: Record<BannerSection, string> = {
 function Toast({ msg, type }: { msg: string; type: "success" | "error" }) {
   return (
     <div className={cn(
-      "fixed bottom-6 right-6 z-50 flex items-center gap-2 px-4 py-3 rounded-xl shadow-lg text-sm font-semibold",
+      "fixed bottom-6 right-6 z-50 flex items-center gap-2 px-4 py-3 rounded-xl text-sm font-semibold",
       type === "success" ? "bg-emerald-600 text-white" : "bg-red-600 text-white"
     )}>
       {type === "success" ? <CheckCircle className="h-4 w-4 shrink-0" /> : <XCircle className="h-4 w-4 shrink-0" />}
@@ -104,8 +104,8 @@ function BannerModal({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 px-4">
-      <div className="bg-white dark:bg-gray-900 rounded-2xl w-full max-w-md shadow-2xl">
-        <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100 dark:border-gray-800">
+      <div className="bg-white dark:bg-gray-900 rounded-xl w-full max-w-md">
+        <div className="flex items-center justify-between px-6 py-4 border-b border-[var(--rule-base)]">
           <h3 className="text-base font-semibold text-gray-900 dark:text-gray-100">
             Banner — {SECTION_LABELS[section]}
           </h3>
@@ -128,7 +128,7 @@ function BannerModal({
                 value={form[key as keyof BannerFormData] as string}
                 onChange={(e) => set(key as keyof BannerFormData, e.target.value)}
                 placeholder={placeholder}
-                className="w-full px-3 py-2.5 rounded-xl border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-950 text-sm focus:outline-none focus:ring-2 focus:ring-[#00B4A6]"
+                className="w-full px-3 py-2.5 rounded-lg border border-[var(--rule-base)] bg-white dark:bg-gray-950 text-sm focus:outline-none focus:ring-2 focus:ring-[#00B4A6]"
               />
             </div>
           ))}
@@ -140,7 +140,7 @@ function BannerModal({
                 type="date"
                 value={form.startDate}
                 onChange={(e) => set("startDate", e.target.value)}
-                className="w-full px-3 py-2.5 rounded-xl border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-950 text-sm focus:outline-none focus:ring-2 focus:ring-[#00B4A6]"
+                className="w-full px-3 py-2.5 rounded-lg border border-[var(--rule-base)] bg-white dark:bg-gray-950 text-sm focus:outline-none focus:ring-2 focus:ring-[#00B4A6]"
               />
             </div>
             <div>
@@ -149,7 +149,7 @@ function BannerModal({
                 type="date"
                 value={form.endDate}
                 onChange={(e) => set("endDate", e.target.value)}
-                className="w-full px-3 py-2.5 rounded-xl border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-950 text-sm focus:outline-none focus:ring-2 focus:ring-[#00B4A6]"
+                className="w-full px-3 py-2.5 rounded-lg border border-[var(--rule-base)] bg-white dark:bg-gray-950 text-sm focus:outline-none focus:ring-2 focus:ring-[#00B4A6]"
               />
             </div>
           </div>
@@ -164,18 +164,18 @@ function BannerModal({
           </div>
         </div>
 
-        <div className="px-6 py-4 border-t border-gray-100 dark:border-gray-800 flex gap-3">
+        <div className="px-6 py-4 border-t border-[var(--rule-base)] flex gap-3">
           <button
             onClick={onClose}
             disabled={saving}
-            className="flex-1 py-2.5 rounded-xl border border-gray-300 dark:border-gray-700 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 disabled:opacity-50"
+            className="flex-1 py-2.5 rounded-lg border border-[var(--rule-base)] text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 disabled:opacity-50"
           >
             Cancelar
           </button>
           <button
             onClick={() => onSave(form)}
             disabled={saving || !form.title.trim()}
-            className="flex-1 py-2.5 rounded-xl bg-[#00B4A6] text-white text-sm font-medium hover:bg-[#00a090] disabled:opacity-50 flex items-center justify-center gap-2"
+            className="flex-1 py-2.5 rounded-lg bg-[#00B4A6] text-white text-sm font-medium hover:bg-[#00a090] disabled:opacity-50 flex items-center justify-center gap-2"
           >
             {saving && <Loader2 className="h-4 w-4 animate-spin" />}
             Guardar
@@ -212,8 +212,8 @@ function SortableBannerCard({
       ref={setNodeRef}
       style={style}
       className={cn(
-        "flex items-center gap-3 p-3 rounded-xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 transition-shadow",
-        isDragging && "shadow-lg ring-2 ring-[#00B4A6] opacity-90"
+        "flex items-center gap-3 p-3 rounded-xl border border-[var(--rule-base)] bg-white dark:bg-gray-900 transition-shadow",
+        isDragging && "ring-2 ring-[#00B4A6] opacity-90"
       )}
     >
       {/* Drag handle — min 44px touch target */}
@@ -456,14 +456,14 @@ export default function BannerEditorTab({ storeSlug }: BannerEditorTabProps) {
             </h3>
             <button
               onClick={() => { setEditingBanner(null); setModalSection(section); }}
-              className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-[#00B4A6]/10 dark:bg-[#00B4A6]/20 text-[#00B4A6] text-xs font-medium hover:bg-[#00B4A6]/20 dark:hover:bg-[#00B4A6]/30 min-h-[44px]"
+              className="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-[#00B4A6]/10 dark:bg-[#00B4A6]/20 text-[#00B4A6] text-xs font-medium hover:bg-[#00B4A6]/20 dark:hover:bg-[#00B4A6]/30 min-h-[44px]"
             >
               <Plus className="h-3.5 w-3.5" /> Nuevo banner
             </button>
           </div>
 
           {bannersBySection[section].length === 0 ? (
-            <div className="py-8 border-2 border-dashed border-gray-200 dark:border-gray-800 rounded-xl text-center text-sm text-gray-400 dark:text-gray-500">
+            <div className="py-8 border-2 border-dashed border-[var(--rule-base)] rounded-xl text-center text-sm text-gray-400 dark:text-gray-500">
               Sin banners en esta sección
             </div>
           ) : (

@@ -27,7 +27,7 @@ export function DeliveryZonesConfig() {
   };
 
   return (
-    <div className="rounded-xl border border-gray-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 p-4">
+    <div className="rounded-xl border border-[var(--rule-base)] dark:border-zinc-700 bg-white dark:bg-zinc-800 p-4">
       <div className="flex items-center justify-between mb-3">
         <div className="flex items-center gap-2">
           <span className="text-sm font-bold text-gray-700 dark:text-zinc-300">Tarifas de Delivery por Zona</span>
@@ -54,20 +54,20 @@ export function DeliveryZonesConfig() {
       </div>
       {addingZone ? (
         <div className="mt-2 flex items-center gap-2">
-          <input type="text" placeholder="Nombre zona" value={newZone.zona} onChange={e => setNewZone({...newZone, zona: e.target.value})} className="flex-1 text-xs border border-gray-200 dark:border-zinc-600 rounded-lg px-2 py-1.5 bg-white dark:bg-zinc-900 text-gray-900 dark:text-zinc-100" />
+          <input type="text" placeholder="Nombre zona" value={newZone.zona} onChange={e => setNewZone({...newZone, zona: e.target.value})} className="flex-1 text-xs border border-[var(--rule-base)] dark:border-zinc-600 rounded-lg px-2 py-1.5 bg-white dark:bg-zinc-900 text-gray-900 dark:text-zinc-100" />
           <div className="flex items-center gap-1">
             <span className="text-xs text-gray-400">S/</span>
-            <input type="number" min={0} value={newZone.tarifa} onChange={e => setNewZone({...newZone, tarifa: Number(e.target.value) || 0})} className="w-16 text-xs border border-gray-200 dark:border-zinc-600 rounded-lg px-2 py-1.5 bg-white dark:bg-zinc-900 text-gray-900 dark:text-zinc-100" />
+            <input type="number" min={0} value={newZone.tarifa} onChange={e => setNewZone({...newZone, tarifa: Number(e.target.value) || 0})} className="w-16 text-xs border border-[var(--rule-base)] dark:border-zinc-600 rounded-lg px-2 py-1.5 bg-white dark:bg-zinc-900 text-gray-900 dark:text-zinc-100" />
           </div>
-          <button onClick={() => { if (newZone.zona.trim()) { saveZones([...zones, { zona: newZone.zona.trim(), tarifa: newZone.tarifa }]); setNewZone({ zona: "", tarifa: 0 }); setAddingZone(false); } }} className="px-2 py-1.5 rounded-lg bg-[#00B4A6] text-white text-xs font-bold">OK</button>
+          <button onClick={() => { if (newZone.zona.trim()) { saveZones([...zones, { zona: newZone.zona.trim(), tarifa: newZone.tarifa }]); setNewZone({ zona: "", tarifa: 0 }); setAddingZone(false); } }} className="px-2 py-1.5 rounded-lg bg-primary text-white text-xs font-bold">OK</button>
           <button onClick={() => setAddingZone(false)} className="text-xs text-gray-400">&times;</button>
         </div>
       ) : (
-        <button onClick={() => setAddingZone(true)} className="mt-2 w-full py-1.5 rounded-lg border border-dashed border-gray-200 dark:border-zinc-600 text-xs font-bold text-gray-400 hover:text-[#00B4A6] hover:border-[#00B4A6]/40 transition-colors">
+        <button onClick={() => setAddingZone(true)} className="mt-2 w-full py-1.5 rounded-lg border border-dashed border-[var(--rule-base)] dark:border-zinc-600 text-xs font-bold text-gray-400 hover:text-primary hover:border-primary/40 transition-colors">
           + Agregar zona
         </button>
       )}
-      <p className="text-[10px] text-gray-400 dark:text-zinc-500 mt-2">Estas tarifas se aplican automaticamente al checkout segun la zona del cliente.</p>
+      <p className="text-[length:var(--ts-2xs)] text-gray-400 dark:text-zinc-500 mt-2">Estas tarifas se aplican automaticamente al checkout segun la zona del cliente.</p>
     </div>
   );
 }

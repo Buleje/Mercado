@@ -60,7 +60,7 @@ export default function OnboardingWizard({ onNavigate, onDismiss }: OnboardingWi
       title: "Agrega tu primer producto",
       description: "Sube tus productos con foto, precio y stock",
       icon: Package,
-      color: "text-violet-600 bg-violet-50 dark:bg-violet-950/30",
+      color: "text-[var(--text-secondary)] bg-[var(--surface-sunken)]",
       tab: "productos",
       completed: completedIds.has("products"),
     },
@@ -69,7 +69,7 @@ export default function OnboardingWizard({ onNavigate, onDismiss }: OnboardingWi
       title: "Personaliza tu tienda",
       description: "Logo, colores y datos de contacto",
       icon: Palette,
-      color: "text-teal-600 bg-teal-50 dark:bg-teal-950/30",
+      color: "text-emerald-600 bg-emerald-50 dark:bg-emerald-950/30",
       tab: "store-customizer",
       completed: completedIds.has("store"),
     },
@@ -79,7 +79,7 @@ export default function OnboardingWizard({ onNavigate, onDismiss }: OnboardingWi
       description: "Usa el punto de venta para registrar una venta",
       icon: ShoppingCart,
       color: "text-emerald-600 bg-emerald-50 dark:bg-emerald-950/30",
-      tab: "ventas-caja",
+      tab: "pedidos",
       completed: completedIds.has("sale"),
     },
     {
@@ -87,7 +87,7 @@ export default function OnboardingWizard({ onNavigate, onDismiss }: OnboardingWi
       title: "Registra un cliente",
       description: "Agrega tu primer cliente para fidelizarlo",
       icon: Users,
-      color: "text-pink-600 bg-pink-50 dark:bg-pink-950/30",
+      color: "text-[var(--text-secondary)] bg-[var(--surface-sunken)]",
       tab: "clientes",
       completed: completedIds.has("customers"),
     },
@@ -115,7 +115,7 @@ export default function OnboardingWizard({ onNavigate, onDismiss }: OnboardingWi
   };
 
   return (
-    <div className="mb-6 rounded-2xl border border-teal-200 dark:border-teal-900/50 bg-gradient-to-r from-teal-50 to-emerald-50 dark:from-teal-950/20 dark:to-emerald-950/20 p-5 relative overflow-hidden">
+    <div className="mb-6 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-sunken)] p-5 relative overflow-hidden">
       {/* Dismiss button */}
       <button
         onClick={handleDismiss}
@@ -126,7 +126,7 @@ export default function OnboardingWizard({ onNavigate, onDismiss }: OnboardingWi
 
       {/* Header */}
       <div className="flex items-center gap-3 mb-4">
-        <div className="h-10 w-10 rounded-xl bg-teal-600 flex items-center justify-center">
+        <div className="h-10 w-10 rounded-xl bg-emerald-600 flex items-center justify-center">
           <Rocket className="h-5 w-5 text-white" />
         </div>
         <div>
@@ -136,7 +136,7 @@ export default function OnboardingWizard({ onNavigate, onDismiss }: OnboardingWi
         {/* Progress bar */}
         <div className="ml-auto w-24 h-2 rounded-full bg-gray-200 dark:bg-gray-700 overflow-hidden">
           <div
-            className="h-full bg-teal-500 rounded-full transition-all duration-500"
+            className="h-full bg-emerald-500 rounded-full transition-all duration-[var(--dur-slow)]"
             style={{ width: `${progress}%` }}
           />
         </div>
@@ -157,7 +157,7 @@ export default function OnboardingWizard({ onNavigate, onDismiss }: OnboardingWi
                 "flex items-start gap-3 p-3 rounded-xl text-left transition-all",
                 step.completed
                   ? "bg-white/50 dark:bg-white/5 opacity-60"
-                  : "bg-white dark:bg-card hover:shadow-md border border-gray-100 dark:border-card-border"
+                  : "bg-white dark:bg-card hover:shadow-sm border border-[var(--rule-soft)] dark:border-card-border"
               )}
             >
               <div className={cn("h-9 w-9 rounded-lg flex items-center justify-center shrink-0", step.color)}>
@@ -171,7 +171,7 @@ export default function OnboardingWizard({ onNavigate, onDismiss }: OnboardingWi
                 <p className={cn("text-sm font-semibold", step.completed && "line-through text-muted")}>
                   {step.title}
                 </p>
-                <p className="text-[11px] text-muted mt-0.5">{step.description}</p>
+                <p className="text-[length:var(--ts-xs)] text-muted mt-0.5">{step.description}</p>
               </div>
               {!step.completed && <ChevronRight className="h-4 w-4 text-gray-400 shrink-0 mt-1" />}
             </button>

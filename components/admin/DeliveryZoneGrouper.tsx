@@ -85,7 +85,7 @@ export default function DeliveryZoneGrouper() {
   }
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
           <h2 className="text-base font-extrabold text-gray-900 dark:text-foreground flex items-center gap-2">
@@ -110,7 +110,7 @@ export default function DeliveryZoneGrouper() {
           {zones.map(group => {
             const isExpanded = expandedZone === group.zone;
             return (
-              <div key={group.zone} className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl overflow-hidden">
+              <div key={group.zone} className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl overflow-hidden">
                 <button
                   onClick={() => setExpandedZone(isExpanded ? null : group.zone)}
                   className="w-full p-3.5 flex items-center justify-between text-left"
@@ -130,15 +130,15 @@ export default function DeliveryZoneGrouper() {
                 </button>
 
                 {isExpanded && (
-                  <div className="border-t border-gray-100 dark:border-card-border divide-y divide-gray-50 dark:divide-card-border">
+                  <div className="border-t border-[var(--rule-soft)] dark:border-card-border divide-y divide-gray-50 dark:divide-card-border">
                     {group.orders.map((order, i) => (
                       <div key={order.id} className="px-3.5 py-2.5 flex items-center gap-3">
-                        <span className="h-6 w-6 rounded-full bg-gray-100 dark:bg-accent flex items-center justify-center text-[10px] font-bold text-gray-500 shrink-0">
+                        <span className="h-6 w-6 rounded-full bg-gray-100 dark:bg-accent flex items-center justify-center text-[length:var(--ts-2xs)] font-bold text-gray-500 shrink-0">
                           {i + 1}
                         </span>
                         <div className="flex-1 min-w-0">
                           <p className="text-xs font-bold text-gray-900 dark:text-foreground truncate">{order.customerName}</p>
-                          <p className="text-[10px] text-gray-400 dark:text-muted truncate">
+                          <p className="text-[length:var(--ts-2xs)] text-gray-400 dark:text-muted truncate">
                             {order.customerLocation || order.customerReference || "Sin direccion"}
                           </p>
                         </div>

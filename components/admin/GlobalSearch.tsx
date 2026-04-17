@@ -426,8 +426,8 @@ interface Props {
 
 const GROUP_META: Record<keyof GroupedResults, { label: string; icon: React.ElementType; color: string }> = {
   modulos:   { label: "Módulos",         icon: LayoutDashboard, color: "text-primary" },
-  productos: { label: "Productos",       icon: Package,         color: "text-blue-500" },
-  clientes:  { label: "Clientes",        icon: Users,           color: "text-violet-500" },
+  productos: { label: "Productos",       icon: Package,         color: "text-emerald-500" },
+  clientes:  { label: "Clientes",        icon: Users,           color: "text-[var(--text-secondary)]" },
   pedidos:   { label: "Pedidos",         icon: ShoppingCart,    color: "text-amber-500" },
   acciones:  { label: "Acciones rápidas",icon: Zap,             color: "text-emerald-500" },
 };
@@ -438,8 +438,8 @@ const GROUP_ORDER: (keyof GroupedResults)[] = ["modulos", "productos", "clientes
 
 const QUICK_ACCESS = [
   { label: "Nuevo pedido",    tab: "pedidos",              icon: ShoppingCart,   color: "text-amber-500 bg-amber-50 dark:bg-amber-900/20" },
-  { label: "Mi stock",        tab: "inventario-almacenes", icon: Boxes,          color: "text-blue-500 bg-blue-50 dark:bg-blue-900/20" },
-  { label: "Mis clientes",    tab: "crm-clientes",         icon: Users,          color: "text-violet-500 bg-violet-50 dark:bg-violet-900/20" },
+  { label: "Mi stock",        tab: "inventario-almacenes", icon: Boxes,          color: "text-emerald-500 bg-emerald-50 dark:bg-emerald-900/20" },
+  { label: "Mis clientes",    tab: "crm-clientes",         icon: Users,          color: "text-[var(--text-secondary)] bg-[var(--surface-sunken)]" },
   { label: "Caja",            tab: "pos-caja",             icon: Monitor,        color: "text-emerald-500 bg-emerald-50 dark:bg-emerald-900/20" },
   { label: "Reportes",        tab: "reportes-documentos",  icon: FileText,       color: "text-gray-500 bg-gray-50 dark:bg-surface" },
   { label: "Promociones",     tab: "precios-promos",       icon: TrendingUp,     color: "text-orange-500 bg-orange-50 dark:bg-orange-900/20" },
@@ -566,11 +566,11 @@ export default function GlobalSearch({ open, onClose, onOpen, onNavigate }: Prop
       onClick={onClose}
     >
       <div
-        className="bg-white dark:bg-card rounded-2xl shadow-2xl w-full max-w-2xl mx-4 overflow-hidden border border-gray-200 dark:border-card-border"
+        className="bg-white dark:bg-card rounded-xl w-full max-w-2xl mx-4 overflow-hidden border border-[var(--rule-base)] dark:border-card-border"
         onClick={e => e.stopPropagation()}
       >
         {/* ── Input de búsqueda ── */}
-        <div className="flex items-center gap-3 px-4 py-3.5 border-b border-gray-100 dark:border-card-border">
+        <div className="flex items-center gap-3 px-4 py-3.5 border-b border-[var(--rule-soft)] dark:border-card-border">
           {loading
             ? <Loader2 className="h-5 w-5 text-gray-400 shrink-0 animate-spin" />
             : <Search className="h-5 w-5 text-gray-400 dark:text-muted shrink-0" />
@@ -592,7 +592,7 @@ export default function GlobalSearch({ open, onClose, onOpen, onNavigate }: Prop
                 <X className="h-4 w-4 text-gray-400" />
               </button>
             )}
-            <kbd className="hidden sm:inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-mono text-gray-400 bg-gray-100 dark:bg-surface border border-gray-200 dark:border-card-border">
+            <kbd className="hidden sm:inline-flex items-center px-1.5 py-0.5 rounded text-[length:var(--ts-2xs)] font-mono text-gray-400 bg-gray-100 dark:bg-surface border border-[var(--rule-base)] dark:border-card-border">
               Esc
             </kbd>
           </div>
@@ -619,9 +619,9 @@ export default function GlobalSearch({ open, onClose, onOpen, onNavigate }: Prop
               return (
                 <div key={groupKey}>
                   {/* Cabecera de grupo */}
-                  <div className="flex items-center gap-2 px-4 py-2 bg-gray-50 dark:bg-surface border-b border-gray-100 dark:border-card-border">
+                  <div className="flex items-center gap-2 px-4 py-2 bg-gray-50 dark:bg-surface border-b border-[var(--rule-soft)] dark:border-card-border">
                     <GroupIcon className={cn("h-3.5 w-3.5", meta.color)} />
-                    <span className="text-[10px] font-bold uppercase tracking-wider text-gray-500 dark:text-muted">
+                    <span className="text-[length:var(--ts-2xs)] font-bold text-gray-500 dark:text-muted">
                       {meta.label}
                     </span>
                   </div>
@@ -667,7 +667,7 @@ export default function GlobalSearch({ open, onClose, onOpen, onNavigate }: Prop
                         <div className="flex items-center gap-2 shrink-0">
                           {r.badge && (
                             <span
-                              className="px-2 py-0.5 rounded-full text-[10px] font-bold text-white"
+                              className="px-2 py-0.5 rounded-full text-[length:var(--ts-2xs)] font-bold text-white"
                               style={{ background: r.badgeColor ?? "#6b7280" }}
                             >
                               {r.badge}
@@ -689,7 +689,7 @@ export default function GlobalSearch({ open, onClose, onOpen, onNavigate }: Prop
         {/* ── Acceso rápido (estado vacío) ── */}
         {!isSearching && (
           <div className="px-4 py-3">
-            <p className="text-[10px] font-bold text-gray-400 dark:text-muted uppercase tracking-wide mb-2">
+            <p className="text-[length:var(--ts-2xs)] font-bold text-gray-400 dark:text-muted mb-2">
               Acceso rápido
             </p>
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
@@ -699,7 +699,7 @@ export default function GlobalSearch({ open, onClose, onOpen, onNavigate }: Prop
                   <button
                     key={item.tab}
                     onClick={() => { onNavigate(item.tab); onClose(); }}
-                    className="flex items-center gap-2.5 p-2.5 rounded-xl border border-gray-100 dark:border-card-border hover:border-gray-200 dark:hover:border-card-border/80 hover:bg-gray-50 dark:hover:bg-surface transition-colors text-left"
+                    className="flex items-center gap-2.5 p-2.5 rounded-lg border border-[var(--rule-soft)] dark:border-card-border hover:border-gray-200 dark:hover:border-card-border/80 hover:bg-gray-50 dark:hover:bg-surface transition-colors text-left"
                   >
                     <div className={cn("w-7 h-7 rounded-lg flex items-center justify-center shrink-0", item.color)}>
                       <Icon className="h-3.5 w-3.5" />
@@ -715,25 +715,25 @@ export default function GlobalSearch({ open, onClose, onOpen, onNavigate }: Prop
         )}
 
         {/* ── Footer ── */}
-        <div className="px-4 py-2 bg-gray-50 dark:bg-surface border-t border-gray-100 dark:border-card-border flex items-center justify-between">
-          <div className="flex items-center gap-3 text-[10px] text-gray-400 dark:text-muted">
+        <div className="px-4 py-2 bg-gray-50 dark:bg-surface border-t border-[var(--rule-soft)] dark:border-card-border flex items-center justify-between">
+          <div className="flex items-center gap-3 text-[length:var(--ts-2xs)] text-gray-400 dark:text-muted">
             <span className="flex items-center gap-1">
-              <kbd className="bg-white dark:bg-card border border-gray-200 dark:border-card-border px-1 rounded font-mono">↑↓</kbd>
+              <kbd className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border px-1 rounded font-mono">↑↓</kbd>
               navegar
             </span>
             <span className="flex items-center gap-1">
-              <kbd className="bg-white dark:bg-card border border-gray-200 dark:border-card-border px-1 rounded font-mono">Enter</kbd>
+              <kbd className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border px-1 rounded font-mono">Enter</kbd>
               ir
             </span>
             <span className="flex items-center gap-1">
-              <kbd className="bg-white dark:bg-card border border-gray-200 dark:border-card-border px-1 rounded font-mono">Esc</kbd>
+              <kbd className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border px-1 rounded font-mono">Esc</kbd>
               cerrar
             </span>
           </div>
-          <span className="flex items-center gap-1 text-[10px] text-gray-400 dark:text-muted">
-            <kbd className="bg-white dark:bg-card border border-gray-200 dark:border-card-border px-1 rounded font-mono">Ctrl</kbd>
+          <span className="flex items-center gap-1 text-[length:var(--ts-2xs)] text-gray-400 dark:text-muted">
+            <kbd className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border px-1 rounded font-mono">Ctrl</kbd>
             <span>+</span>
-            <kbd className="bg-white dark:bg-card border border-gray-200 dark:border-card-border px-1 rounded font-mono">K</kbd>
+            <kbd className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border px-1 rounded font-mono">K</kbd>
             <span className="ml-0.5">abrir/cerrar</span>
           </span>
         </div>

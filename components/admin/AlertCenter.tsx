@@ -19,8 +19,8 @@ const TYPE_META = {
   pedido:  { icon: ShoppingCart, color: "text-amber-500",  bg: "bg-amber-50 dark:bg-amber-950/30"  },
   stock:   { icon: AlertTriangle,color: "text-red-500",    bg: "bg-red-50 dark:bg-red-950/30"      },
   venta:   { icon: TrendingUp,   color: "text-emerald-500",bg: "bg-emerald-50 dark:bg-emerald-950/30"},
-  tarea:   { icon: Package,      color: "text-blue-500",   bg: "bg-blue-50 dark:bg-blue-950/30"    },
-  sistema: { icon: Bell,         color: "text-violet-500", bg: "bg-violet-50 dark:bg-violet-950/30"},
+  tarea:   { icon: Package,      color: "text-emerald-500",   bg: "bg-emerald-50 dark:bg-emerald-950/30"    },
+  sistema: { icon: Bell,         color: "text-[var(--text-secondary)]", bg: "bg-[var(--surface-sunken)]"},
   tiempo:  { icon: Clock,        color: "text-orange-500", bg: "bg-orange-50 dark:bg-orange-950/30"},
 };
 
@@ -70,7 +70,7 @@ export default function AlertCenter({ pendingOrders, lowStock, todayRevenue, ove
         className={cn(
           "relative flex items-center justify-center h-8 w-8 rounded-lg transition-colors",
           urgent > 0
-            ? "text-red-500 hover:bg-red-50 dark:hover:bg-red-950/30 animate-pulse"
+            ? "text-red-500 hover:bg-red-50 dark:hover:bg-red-950/30"
             : unread > 0
             ? "text-amber-500 hover:bg-amber-50 dark:hover:bg-amber-950/30"
             : "text-gray-400 dark:text-muted hover:bg-gray-100 dark:hover:bg-accent"
@@ -79,7 +79,7 @@ export default function AlertCenter({ pendingOrders, lowStock, todayRevenue, ove
       >
         <Bell className="h-4 w-4" />
         {unread > 0 && (
-          <span className="absolute -top-0.5 -right-0.5 min-w-[14px] h-[14px] rounded-full flex items-center justify-center text-[9px] font-extrabold text-white px-0.5"
+          <span className="absolute -top-0.5 -right-0.5 min-w-[14px] h-[14px] rounded-full flex items-center justify-center text-[length:var(--ts-2xs)] font-extrabold text-white px-0.5"
             style={{ background: urgent > 0 ? "#ef4444" : "#f59e0b" }}>
             {unread}
           </span>
@@ -89,17 +89,17 @@ export default function AlertCenter({ pendingOrders, lowStock, todayRevenue, ove
       {open && (
         <>
           <div className="fixed inset-0 z-40" onClick={() => setOpen(false)} />
-          <div className="absolute right-0 top-full mt-2 w-80 bg-white dark:bg-card rounded-2xl shadow-2xl border border-gray-200 dark:border-card-border z-50 overflow-hidden">
+          <div className="absolute right-0 top-full mt-2 w-80 bg-white dark:bg-card rounded-xl border border-[var(--rule-base)] dark:border-card-border z-50 overflow-hidden">
             {/* Header */}
-            <div className="flex items-center justify-between px-2 sm:px-4 py-2 sm:py-3 border-b border-gray-100 dark:border-card-border">
+            <div className="flex items-center justify-between px-2 sm:px-4 py-2 sm:py-3 border-b border-[var(--rule-soft)] dark:border-card-border">
               <div className="flex flex-wrap items-center gap-2">
                 <Bell className="h-4 w-4 text-primary" />
                 <span className="text-sm font-extrabold text-gray-900 dark:text-foreground">Alertas</span>
-                {unread > 0 && <span className="px-1.5 py-0.5 rounded-full text-[10px] font-extrabold bg-primary text-white">{unread}</span>}
+                {unread > 0 && <span className="px-1.5 py-0.5 rounded-full text-[length:var(--ts-2xs)] font-extrabold bg-primary text-white">{unread}</span>}
               </div>
               <div className="flex flex-wrap items-center gap-2">
                 {unread > 0 && (
-                  <button onClick={markAllRead} className="text-[10px] font-semibold text-primary hover:underline">
+                  <button onClick={markAllRead} className="text-[length:var(--ts-2xs)] font-semibold text-primary hover:underline">
                     Marcar todo leído
                   </button>
                 )}
@@ -135,9 +135,9 @@ export default function AlertCenter({ pendingOrders, lowStock, todayRevenue, ove
                       <div className="flex-1 min-w-0">
                         <div className="flex flex-wrap items-center gap-2">
                           <p className={cn("text-xs font-bold text-gray-900 dark:text-foreground leading-tight", !alert.read && "font-extrabold")}>{alert.title}</p>
-                          {alert.urgent && <span className="px-1 py-0.5 rounded text-[9px] font-extrabold bg-red-500 text-white shrink-0">URGENTE</span>}
+                          {alert.urgent && <span className="px-1 py-0.5 rounded text-[length:var(--ts-2xs)] font-extrabold bg-red-500 text-white shrink-0">URGENTE</span>}
                         </div>
-                        <p className="text-[11px] text-gray-500 dark:text-muted mt-0.5 line-clamp-2">{alert.body}</p>
+                        <p className="text-[length:var(--ts-xs)] text-gray-500 dark:text-muted mt-0.5 line-clamp-2">{alert.body}</p>
                       </div>
                       {alert.tab && <ChevronRight className="h-3.5 w-3.5 text-gray-300 dark:text-muted mt-1 shrink-0" />}
                     </button>
@@ -147,7 +147,7 @@ export default function AlertCenter({ pendingOrders, lowStock, todayRevenue, ove
             </div>
 
             {/* Footer */}
-            <div className="px-2 sm:px-4 py-1.5 sm:py-2.5 bg-gray-50 dark:bg-surface border-t border-gray-100 dark:border-card-border">
+            <div className="px-2 sm:px-4 py-1.5 sm:py-2.5 bg-gray-50 dark:bg-surface border-t border-[var(--rule-soft)] dark:border-card-border">
               <button
                 onClick={() => { onNavigate("actividad"); setOpen(false); }}
                 className="text-xs font-semibold text-primary hover:underline flex items-center gap-1"

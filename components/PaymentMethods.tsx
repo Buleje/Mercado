@@ -29,7 +29,7 @@ const METHODS = [
     name: "Tarjeta",
     desc: "Visa / Mastercard",
     icon: CreditCard,
-    iconBg: "bg-blue-500",
+    iconBg: "bg-emerald-500",
     accentGradient: "linear-gradient(to bottom, rgba(59,130,246,0.12), rgba(59,130,246,0.03))",
   },
 ];

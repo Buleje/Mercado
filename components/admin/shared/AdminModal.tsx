@@ -42,7 +42,7 @@ export default function AdminModal({ open, onClose, title, variant = "default", 
   if (!open) return null;
 
   const variantClasses = {
-    default: "max-w-lg w-full mx-4 rounded-2xl",
+    default: "max-w-lg w-full mx-4 rounded-xl",
     fullscreen: "w-full h-full",
     side: "ml-auto h-full w-full max-w-md rounded-l-2xl",
   };
@@ -62,14 +62,14 @@ export default function AdminModal({ open, onClose, title, variant = "default", 
     >
       <div
         className={cn(
-          "bg-white dark:bg-gray-900 shadow-2xl overflow-hidden flex flex-col",
+          "bg-white dark:bg-gray-900 overflow-hidden flex flex-col",
           variantClasses[variant],
           className,
         )}
       >
         {/* Header */}
         {(title || !hideCloseButton) && (
-          <div className="flex items-center justify-between p-4 border-b border-gray-100 dark:border-gray-800 shrink-0">
+          <div className="flex items-center justify-between p-4 border-b border-[var(--rule-base)] shrink-0">
             {title && <h2 className="text-sm font-bold text-gray-900 dark:text-white">{title}</h2>}
             {!hideCloseButton && (
               <button

@@ -50,8 +50,8 @@ const ALL_PROMOS: Promo[] = [
     subtitle: "Leche, yogurt y quesos siempre frescos",
     cta: "Ver Lácteos",
     category: "lacteos",
-    gradient: "linear-gradient(to right, #00B4A6, #33C4B8)",
-    accent: "bg-blue-600",
+    gradient: "linear-gradient(to right, #2563EB, #3B82F6)",
+    accent: "bg-emerald-600",
   },
   {
     emoji: "🏪",
@@ -69,17 +69,19 @@ const ALL_PROMOS: Promo[] = [
     cta: "Ver Bebidas",
     category: "bebidas",
     gradient: "linear-gradient(to right, #3b82f6, #6366f1)",
-    accent: "bg-blue-600",
+    accent: "bg-emerald-600",
   },
 ];
 
 const INTERVAL = 5000;
 
-export default function SeasonalPromo() {
+export default function SeasonalPromo({ serverProducts, showEmpty = false }: { serverProducts?: import("@/data/products").Product[]; showEmpty?: boolean }) {
   const ref = useRef<HTMLElement>(null);
   const [idx, setIdx] = useState(0);
   const [paused, setPaused] = useState(false);
-  const { products, isLoading } = useStoreProducts();
+  const hook = useStoreProducts();
+  const products = serverProducts && serverProducts.length > 0 ? serverProducts : hook.products;
+  const isLoading = serverProducts ? false : hook.isLoading;
 
   // Only show promos for categories that have at least 1 product
   const PROMOS = useMemo(() => {
@@ -99,8 +101,8 @@ export default function SeasonalPromo() {
     return () => clearInterval(t);
   }, [paused, next]);
 
-  // Don't render if loading or no matching promos for actual products
-  if (isLoading || PROMOS.length === 0) return <SectionPlaceholder title="Promo de Temporada" hint="Se activan automaticamente segun la epoca del ano" cols={6} />;
+  if (isLoading) return <SectionPlaceholder title="Promo de Temporada" hint="Cargando..." cols={6} />;
+  if (PROMOS.length === 0) return showEmpty ? <SectionPlaceholder title="Promo de Temporada" hint="Las promos se activan segun tus categorias de productos" cols={6} /> : null;
 
   // Clamp idx to valid range
   const safeIdx = idx % PROMOS.length;

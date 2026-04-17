@@ -103,15 +103,15 @@ export default function ConversionMetricsTab() {
           label: "Pedidos semana",
           value: String(stats.weeklyOrders),
           icon: ShoppingCart,
-          color: "text-blue-400",
-          bg: "bg-blue-500/10",
+          color: "text-emerald-400",
+          bg: "bg-emerald-500/10",
         },
         {
           label: "Clientes totales",
           value: String(stats.totalCustomers),
           icon: Users,
-          color: "text-purple-400",
-          bg: "bg-purple-500/10",
+          color: "text-[var(--text-tertiary)]",
+          bg: "bg-[var(--text-primary)]/10",
         },
         {
           label: "Pedidos pendientes",
@@ -136,7 +136,7 @@ export default function ConversionMetricsTab() {
       <div className="flex items-center justify-between">
         <div>
           <h2 className="text-base sm:text-xl font-bold text-white flex flex-wrap items-center gap-2">
-            <BarChart3 className="w-5 h-5 text-blue-400" />
+            <BarChart3 className="w-5 h-5 text-emerald-400" />
             Métricas de Conversión
           </h2>
           {lastRefresh && (
@@ -285,7 +285,7 @@ export default function ConversionMetricsTab() {
           {/* Customer Segments */}
           <div className="bg-white/5 border border-white/10 rounded-xl p-4">
             <h3 className="text-sm font-semibold text-white mb-3 flex flex-wrap items-center gap-2">
-              <Users className="w-4 h-4 text-purple-400" />
+              <Users className="w-4 h-4 text-[var(--text-tertiary)]" />
               Segmentos de Clientes
             </h3>
             {segments.length === 0 ? (

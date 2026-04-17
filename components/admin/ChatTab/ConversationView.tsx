@@ -68,7 +68,7 @@ function MessageBubble({ message }: { message: ChatMessageView }) {
   if (isSystem) {
     return (
       <div className="flex justify-center">
-        <div className="inline-flex items-center gap-1.5 rounded-full bg-slate-100 px-3 py-1 text-[11px] text-slate-600 dark:bg-slate-800 dark:text-slate-400">
+        <div className="inline-flex items-center gap-1.5 rounded-full bg-slate-100 px-3 py-1 text-[length:var(--ts-xs)] text-slate-600 dark:bg-slate-800 dark:text-slate-400">
           <Settings2 className="h-3 w-3" />
           <span>{message.body}</span>
           <span className="text-slate-400">· {time}</span>
@@ -96,14 +96,14 @@ function MessageBubble({ message }: { message: ChatMessageView }) {
       <div className={cn("max-w-[70%]", isSeller ? "items-end" : "items-start")}>
         <div
           className={cn(
-            "rounded-2xl px-4 py-2 text-sm leading-relaxed",
+            "rounded-xl px-4 py-2 text-sm leading-relaxed",
             isSeller
               ? "rounded-br-sm bg-[#00B4A6] text-white"
               : "rounded-bl-sm bg-slate-100 text-slate-900 dark:bg-slate-800 dark:text-slate-100",
           )}
         >
           {!isSeller && (
-            <div className="mb-0.5 text-[11px] font-semibold text-slate-500 dark:text-slate-400">
+            <div className="mb-0.5 text-[length:var(--ts-xs)] font-semibold text-slate-500 dark:text-slate-400">
               {message.senderName}
             </div>
           )}
@@ -111,7 +111,7 @@ function MessageBubble({ message }: { message: ChatMessageView }) {
         </div>
         <div
           className={cn(
-            "mt-1 flex items-center gap-1 text-[10px] text-slate-400",
+            "mt-1 flex items-center gap-1 text-[length:var(--ts-2xs)] text-slate-400",
             isSeller ? "justify-end" : "justify-start",
           )}
         >

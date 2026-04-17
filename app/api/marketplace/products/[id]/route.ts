@@ -72,6 +72,7 @@ export async function GET(
                 slug: true,
                 logo: true,
                 description: true,
+                zone: true,
               },
             },
           },
@@ -115,6 +116,7 @@ export async function GET(
           slug: store.slug,
           logo: store.logo,
           description: store.description,
+          zone: store.zone,
         },
       },
     });

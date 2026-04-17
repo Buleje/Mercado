@@ -28,7 +28,7 @@ interface CLVCustomer {
 const TIER_STYLE: Record<CLVTier, { bg: string; text: string; border: string; label: string }> = {
   alto:  { bg: "bg-green-100 dark:bg-green-900/30",  text: "text-green-800 dark:text-green-300",  border: "border-green-300 dark:border-green-700",  label: "Alto valor" },
   medio: { bg: "bg-amber-100 dark:bg-amber-900/30",  text: "text-amber-800 dark:text-amber-300",  border: "border-amber-300 dark:border-amber-700",  label: "Valor medio" },
-  bajo:  { bg: "bg-gray-100 dark:bg-gray-700/50",    text: "text-gray-700 dark:text-gray-300",    border: "border-gray-300 dark:border-gray-600",    label: "Bajo valor" },
+  bajo:  { bg: "bg-gray-100 dark:bg-gray-700/50",    text: "text-gray-700 dark:text-gray-300",    border: "border-[var(--rule-base)] dark:border-gray-600",    label: "Bajo valor" },
 };
 
 const HISTOGRAM_BUCKETS = [
@@ -139,11 +139,11 @@ export default function CustomerLifetimeValue({ customers, sales }: CustomerLife
       {/* KPIs */}
       <div className="grid grid-cols-2 gap-2">
         <div className="rounded-lg bg-[#00B4A6]/10 dark:bg-[#00B4A6]/20 border border-[#00B4A6]/30 p-2 text-center">
-          <p className="text-[10px] text-gray-500 dark:text-gray-400">CLV promedio</p>
+          <p className="text-[length:var(--ts-2xs)] text-gray-500 dark:text-gray-400">CLV promedio</p>
           <p className="text-base font-bold text-[#00B4A6] dark:text-[#2dd4bf]">{fmt(avgCLV)}</p>
         </div>
-        <div className="rounded-lg bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 p-2 text-center">
-          <p className="text-[10px] text-gray-500 dark:text-gray-400">Clientes con datos</p>
+        <div className="rounded-lg bg-gray-50 dark:bg-gray-800 border border-[var(--rule-base)] p-2 text-center">
+          <p className="text-[length:var(--ts-2xs)] text-gray-500 dark:text-gray-400">Clientes con datos</p>
           <p className="text-base font-bold text-gray-800 dark:text-foreground">{clvList.length}</p>
         </div>
       </div>
@@ -156,7 +156,7 @@ export default function CustomerLifetimeValue({ customers, sales }: CustomerLife
             "flex-1 px-2 py-1 rounded-lg text-xs font-medium border transition-colors",
             filterTier === "todos"
               ? "bg-gray-800 dark:bg-gray-200 text-white dark:text-gray-800 border-gray-800 dark:border-gray-200"
-              : "text-gray-600 dark:text-gray-400 border-gray-200 dark:border-gray-700"
+              : "text-gray-600 dark:text-gray-400 border-[var(--rule-base)]"
           )}
         >
           Todos ({clvList.length})
@@ -190,9 +190,9 @@ export default function CustomerLifetimeValue({ customers, sales }: CustomerLife
               className="flex-1 flex flex-col items-center gap-0.5"
               title={`${bucket.label}: ${bucket.count} clientes`}
             >
-              <span className="text-[9px] text-gray-500 dark:text-gray-400">{bucket.count}</span>
+              <span className="text-[length:var(--ts-2xs)] text-gray-500 dark:text-gray-400">{bucket.count}</span>
               <div
-                className="w-full rounded-t-sm transition-all duration-500"
+                className="w-full rounded-t-sm transition-all duration-[var(--dur-slow)]"
                 style={{
                   height: `${(bucket.count / maxHistCount) * 100}%`,
                   minHeight: bucket.count > 0 ? "2px" : "0px",
@@ -205,7 +205,7 @@ export default function CustomerLifetimeValue({ customers, sales }: CustomerLife
         </div>
         <div className="flex gap-1 mt-0.5">
           {histogram.map((bucket) => (
-            <div key={bucket.label} className="flex-1 text-center text-[8px] text-gray-400 dark:text-gray-500 leading-none">
+            <div key={bucket.label} className="flex-1 text-center text-[length:var(--ts-2xs)] text-gray-400 dark:text-gray-500 leading-none">
               {bucket.label}
             </div>
           ))}
@@ -217,10 +217,10 @@ export default function CustomerLifetimeValue({ customers, sales }: CustomerLife
         <p className="text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">
           Top {Math.min(20, visible.length)} clientes por CLV
         </p>
-        <div className="overflow-auto max-h-48 rounded-lg border border-gray-200 dark:border-gray-700">
+        <div className="overflow-auto max-h-48 rounded-lg border border-[var(--rule-base)]">
           <table className="w-full text-xs">
             <thead>
-              <tr className="bg-gray-50 dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700">
+              <tr className="bg-gray-50 dark:bg-gray-800 border-b border-[var(--rule-base)]">
                 <th className="text-left px-2 py-1.5 font-semibold text-gray-600 dark:text-gray-300">#</th>
                 <th className="text-left px-2 py-1.5 font-semibold text-gray-600 dark:text-gray-300">Cliente</th>
                 <th className="text-center px-2 py-1.5 font-semibold text-gray-600 dark:text-gray-300">Tier</th>
@@ -242,15 +242,15 @@ export default function CustomerLifetimeValue({ customers, sales }: CustomerLife
                 return (
                   <tr
                     key={c.phone}
-                    className="border-b border-gray-100 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800/50"
+                    className="border-b border-[var(--rule-base)] hover:bg-gray-50 dark:hover:bg-gray-800/50"
                   >
                     <td className="px-2 py-1.5 text-gray-400 dark:text-gray-500">{i + 1}</td>
                     <td className="px-2 py-1.5">
                       <p className="font-medium text-gray-800 dark:text-foreground truncate max-w-[90px]">{c.name}</p>
-                      <p className="text-[10px] text-gray-400 dark:text-gray-500">{c.phone}</p>
+                      <p className="text-[length:var(--ts-2xs)] text-gray-400 dark:text-gray-500">{c.phone}</p>
                     </td>
                     <td className="px-2 py-1.5 text-center">
-                      <span className={cn("px-1.5 py-0.5 rounded-full text-[9px] font-semibold border", style.bg, style.text, style.border)}>
+                      <span className={cn("px-1.5 py-0.5 rounded-full text-[length:var(--ts-2xs)] font-semibold border", style.bg, style.text, style.border)}>
                         {style.label}
                       </span>
                     </td>

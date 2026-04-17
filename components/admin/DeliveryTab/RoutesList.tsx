@@ -90,7 +90,7 @@ export function RoutesList({
                     )}
                     aria-hidden
                   />
-                  <span className="text-xs font-semibold uppercase tracking-wide text-slate-600 dark:text-slate-300">
+                  <span className="text-xs font-semibold text-slate-600 dark:text-slate-300">
                     {ROUTE_STATUS_LABELS[route.status]}
                   </span>
                 </div>
@@ -117,7 +117,7 @@ export function RoutesList({
                   </span>
                 )}
                 {route.vehicleType !== "moto" && (
-                  <span className="text-[10px] uppercase">{route.vehicleType}</span>
+                  <span className="text-[length:var(--ts-2xs)] uppercase">{route.vehicleType}</span>
                 )}
               </div>
 

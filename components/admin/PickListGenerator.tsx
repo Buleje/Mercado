@@ -134,7 +134,7 @@ export default function PickListGenerator() {
           <button
             onClick={fetchOrders}
             disabled={loading}
-            className="flex items-center gap-2 rounded-lg border border-gray-200 px-3 py-2 text-sm text-gray-600 transition hover:bg-gray-50 disabled:opacity-50 dark:border-gray-700 dark:text-gray-300 dark:hover:bg-gray-800"
+            className="flex items-center gap-2 rounded-lg border border-[var(--rule-base)] px-3 py-2 text-sm text-gray-600 transition hover:bg-gray-50 disabled:opacity-50 dark:border-[var(--rule-base)] dark:text-gray-300 dark:hover:bg-gray-800"
           >
             <RefreshCw className={cn("h-4 w-4", loading && "animate-spin")} />
             Actualizar
@@ -153,7 +153,7 @@ export default function PickListGenerator() {
 
       {/* Stats */}
       <div className="grid grid-cols-3 gap-3 print:hidden">
-        <div className="rounded-xl border border-gray-200 bg-white p-4 dark:border-gray-700 dark:bg-gray-900">
+        <div className="rounded-xl border border-[var(--rule-base)] bg-white p-4 dark:border-[var(--rule-base)] dark:bg-gray-900">
           <p className="text-2xl font-bold text-[#00B4A6]">
             {loading ? "—" : orders.length}
           </p>
@@ -161,13 +161,13 @@ export default function PickListGenerator() {
             Pedidos confirmados
           </p>
         </div>
-        <div className="rounded-xl border border-gray-200 bg-white p-4 dark:border-gray-700 dark:bg-gray-900">
+        <div className="rounded-xl border border-[var(--rule-base)] bg-white p-4 dark:border-[var(--rule-base)] dark:bg-gray-900">
           <p className="text-2xl font-bold text-[#00B4A6]">{totalCount}</p>
           <p className="text-xs text-gray-500 dark:text-gray-400">
             Productos a recoger
           </p>
         </div>
-        <div className="rounded-xl border border-gray-200 bg-white p-4 dark:border-gray-700 dark:bg-gray-900">
+        <div className="rounded-xl border border-[var(--rule-base)] bg-white p-4 dark:border-[var(--rule-base)] dark:bg-gray-900">
           <p className="text-2xl font-bold text-emerald-600">
             {checkedCount}/{totalCount}
           </p>
@@ -185,7 +185,7 @@ export default function PickListGenerator() {
           <p className="text-sm text-red-600 dark:text-red-400">{error}</p>
         </div>
       ) : !generated ? (
-        <div className="flex flex-col items-center gap-4 rounded-xl border border-gray-200 bg-white p-8 text-center dark:border-gray-700 dark:bg-gray-900">
+        <div className="flex flex-col items-center gap-4 rounded-xl border border-[var(--rule-base)] bg-white p-8 text-center dark:border-[var(--rule-base)] dark:bg-gray-900">
           <Package className="h-12 w-12 text-gray-300 dark:text-gray-700" />
           <div>
             <p className="font-medium text-gray-700 dark:text-gray-300">
@@ -206,7 +206,7 @@ export default function PickListGenerator() {
       ) : (
         <>
           {/* Progress bar */}
-          <div className="rounded-xl border border-gray-200 bg-white p-4 dark:border-gray-700 dark:bg-gray-900 print:hidden">
+          <div className="rounded-xl border border-[var(--rule-base)] bg-white p-4 dark:border-[var(--rule-base)] dark:bg-gray-900 print:hidden">
             <div className="mb-2 flex items-center justify-between text-sm">
               <span className="font-medium text-gray-700 dark:text-gray-300">
                 Progreso de recogida
@@ -223,7 +223,7 @@ export default function PickListGenerator() {
             <div className="h-2 w-full overflow-hidden rounded-full bg-gray-100 dark:bg-gray-800">
               <div
                 className={cn(
-                  "h-full transition-all duration-300",
+                  "h-full transition-all duration-[var(--dur-base)]",
                   allDone ? "bg-emerald-500" : "bg-[#00B4A6]"
                 )}
                 style={{
@@ -239,9 +239,9 @@ export default function PickListGenerator() {
           </div>
 
           {/* Pick list */}
-          <div className="rounded-xl border border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-900">
+          <div className="rounded-xl border border-[var(--rule-base)] bg-white dark:border-[var(--rule-base)] dark:bg-gray-900">
             {/* Print header */}
-            <div className="hidden border-b border-gray-100 p-4 print:block">
+            <div className="hidden border-b border-[var(--rule-soft)] p-4 print:block">
               <p className="text-lg font-bold">Buleje — Pick List</p>
               <p className="text-sm text-gray-500">
                 {new Date().toLocaleString("es-PE")} · {orders.length} pedidos

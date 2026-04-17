@@ -6,8 +6,8 @@ import { cn, exportToCSV } from "@/lib/utils";
 import type { SecurityLogEntry } from "@/app/api/security-logs/route";
 
 const CATEGORY_CONFIG: Record<string, { label: string; icon: React.ElementType; color: string }> = {
-  auth:     { label: "Autenticación", icon: LogIn,    color: "bg-blue-100 text-blue-600 dark:bg-blue-900/30 dark:text-blue-400" },
-  data:     { label: "Datos",         icon: Eye,      color: "bg-violet-100 text-violet-600 dark:bg-violet-900/30 dark:text-violet-400" },
+  auth:     { label: "Autenticación", icon: LogIn,    color: "bg-emerald-100 text-emerald-600 dark:bg-emerald-900/30 dark:text-emerald-400" },
+  data:     { label: "Datos",         icon: Eye,      color: "bg-[var(--surface-sunken)] text-[var(--text-primary)]" },
   config:   { label: "Configuración", icon: Settings, color: "bg-amber-100 text-amber-600 dark:bg-amber-900/30 dark:text-amber-400" },
   security: { label: "Seguridad",     icon: Shield,   color: "bg-red-100 text-red-600 dark:bg-red-900/30 dark:text-red-400" },
 };
@@ -107,12 +107,12 @@ export default function SecurityLogsTab() {
       {/* KPIs */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
         {[
-          { label: "Eventos hoy",           value: todayCount,    color: "text-blue-500" },
+          { label: "Eventos hoy",           value: todayCount,    color: "text-emerald-500" },
           { label: "Alertas críticas",       value: criticalCount, color: criticalCount > 0 ? "text-red-500" : "text-gray-400" },
           { label: "Intentos fallidos auth", value: failedAuth,   color: failedAuth > 0 ? "text-amber-500" : "text-gray-400" },
-          { label: "Cambios de config",      value: roleChanges,  color: "text-violet-500" },
+          { label: "Cambios de config",      value: roleChanges,  color: "text-[var(--text-secondary)]" },
         ].map(k => (
-          <div key={k.label} className="bg-white dark:bg-card rounded-xl border border-gray-200 dark:border-card-border p-4">
+          <div key={k.label} className="bg-white dark:bg-card rounded-xl border border-[var(--rule-base)] dark:border-card-border p-4">
             <p className="text-xs font-semibold text-gray-500 dark:text-muted">{k.label}</p>
             {loading
               ? <div className="h-7 w-12 bg-gray-100 dark:bg-surface rounded animate-pulse mt-1" />
@@ -122,50 +122,50 @@ export default function SecurityLogsTab() {
       </div>
 
       {/* Filtros */}
-      <div className="bg-white dark:bg-card rounded-2xl border border-gray-200 dark:border-card-border p-3 sm:p-4 space-y-3">
+      <div className="bg-white dark:bg-card rounded-xl border border-[var(--rule-base)] dark:border-card-border p-3 sm:p-4 space-y-3">
         {/* Búsqueda + fechas */}
         <div className="flex flex-col sm:flex-row gap-2">
           <div className="relative flex-1">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
             <input value={search} onChange={e => setSearch(e.target.value)}
-              className="w-full pl-9 pr-3 py-2 rounded-xl border border-gray-200 dark:border-card-border bg-white dark:bg-surface text-sm"
+              className="w-full pl-9 pr-3 py-2 rounded-xl border border-[var(--rule-base)] dark:border-card-border bg-white dark:bg-surface text-sm"
               placeholder="Buscar acción, usuario, detalle…" />
           </div>
           <div className="flex items-center gap-2">
             <input type="date" value={fromDate} onChange={e => setFromDate(e.target.value)}
-              className="px-3 py-2 rounded-xl border border-gray-200 dark:border-card-border bg-white dark:bg-surface text-xs" />
+              className="px-3 py-2 rounded-xl border border-[var(--rule-base)] dark:border-card-border bg-white dark:bg-surface text-xs" />
             <span className="text-xs text-gray-400">—</span>
             <input type="date" value={toDate} onChange={e => setToDate(e.target.value)}
-              className="px-3 py-2 rounded-xl border border-gray-200 dark:border-card-border bg-white dark:bg-surface text-xs" />
+              className="px-3 py-2 rounded-xl border border-[var(--rule-base)] dark:border-card-border bg-white dark:bg-surface text-xs" />
           </div>
         </div>
         {/* Chips */}
         <div className="flex flex-wrap gap-3">
           <div className="flex items-center gap-1.5 flex-wrap">
-            <span className="text-[10px] text-gray-400">Categoría:</span>
+            <span className="text-[length:var(--ts-2xs)] text-gray-400">Categoría:</span>
             {["all", "auth", "data", "config", "security"].map(c => (
               <button key={c} onClick={() => setFilterCategory(c)}
-                className={cn("px-2.5 py-1 rounded-lg text-[10px] font-bold transition-colors",
+                className={cn("px-2.5 py-1 rounded-lg text-[length:var(--ts-2xs)] font-bold transition-colors",
                   filterCategory === c ? "bg-primary text-white" : "bg-gray-100 dark:bg-surface text-gray-600 dark:text-muted")}>
                 {c === "all" ? "Todas" : CATEGORY_CONFIG[c].label}
               </button>
             ))}
           </div>
           <div className="flex items-center gap-1.5 flex-wrap">
-            <span className="text-[10px] text-gray-400">Severidad:</span>
+            <span className="text-[length:var(--ts-2xs)] text-gray-400">Severidad:</span>
             {["all", "info", "warning", "critical"].map(s => (
               <button key={s} onClick={() => setFilterSeverity(s)}
-                className={cn("px-2.5 py-1 rounded-lg text-[10px] font-bold transition-colors",
+                className={cn("px-2.5 py-1 rounded-lg text-[length:var(--ts-2xs)] font-bold transition-colors",
                   filterSeverity === s ? "bg-primary text-white" : "bg-gray-100 dark:bg-surface text-gray-600 dark:text-muted")}>
                 {s === "all" ? "Todas" : s.charAt(0).toUpperCase() + s.slice(1)}
               </button>
             ))}
           </div>
           <div className="flex items-center gap-1.5 flex-wrap">
-            <span className="text-[10px] text-gray-400">Resultado:</span>
+            <span className="text-[length:var(--ts-2xs)] text-gray-400">Resultado:</span>
             {["all", "success", "failed"].map(s => (
               <button key={s} onClick={() => setFilterSuccess(s)}
-                className={cn("px-2.5 py-1 rounded-lg text-[10px] font-bold transition-colors",
+                className={cn("px-2.5 py-1 rounded-lg text-[length:var(--ts-2xs)] font-bold transition-colors",
                   filterSuccess === s ? "bg-primary text-white" : "bg-gray-100 dark:bg-surface text-gray-600 dark:text-muted")}>
                 {s === "all" ? "Todos" : s === "success" ? "Exitosos" : "Fallidos"}
               </button>
@@ -178,7 +178,7 @@ export default function SecurityLogsTab() {
       {loading ? (
         <div className="space-y-2">
           {Array.from({ length: 5 }).map((_, i) => (
-            <div key={i} className="h-20 bg-white dark:bg-card rounded-xl border border-gray-200 dark:border-card-border animate-pulse" />
+            <div key={i} className="h-20 bg-white dark:bg-card rounded-xl border border-[var(--rule-base)] dark:border-card-border animate-pulse" />
           ))}
         </div>
       ) : filtered.length === 0 ? (
@@ -193,7 +193,7 @@ export default function SecurityLogsTab() {
             const Cat = CATEGORY_CONFIG[l.category] ?? CATEGORY_CONFIG.auth;
             const CatIcon = Cat.icon;
             return (
-              <div key={l.id} className={cn("bg-white dark:bg-card rounded-xl border p-4", l.severity === "critical" ? "border-red-200 dark:border-red-900/30" : l.severity === "warning" ? "border-amber-100 dark:border-amber-900/20" : "border-gray-200 dark:border-card-border")}>
+              <div key={l.id} className={cn("bg-white dark:bg-card rounded-xl border p-4", l.severity === "critical" ? "border-red-200 dark:border-red-900/30" : l.severity === "warning" ? "border-amber-100 dark:border-amber-900/20" : "border-[var(--rule-base)] dark:border-card-border")}>
                 <div className="flex flex-wrap items-start gap-3">
                   <div className={cn("h-8 w-8 rounded-lg flex items-center justify-center shrink-0", Cat.color)}>
                     <CatIcon className="h-4 w-4" />
@@ -201,15 +201,15 @@ export default function SecurityLogsTab() {
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 flex-wrap mb-0.5">
                       <span className="font-bold text-sm text-gray-900 dark:text-foreground">{l.action}</span>
-                      <span className={cn("text-[10px] font-bold px-1.5 py-0.5 rounded-full", SEVERITY_COLORS[l.severity])}>{l.severity}</span>
-                      <span className={cn("text-[10px] font-bold px-1.5 py-0.5 rounded-full flex items-center gap-0.5",
+                      <span className={cn("text-[length:var(--ts-2xs)] font-bold px-1.5 py-0.5 rounded-full", SEVERITY_COLORS[l.severity])}>{l.severity}</span>
+                      <span className={cn("text-[length:var(--ts-2xs)] font-bold px-1.5 py-0.5 rounded-full flex items-center gap-0.5",
                         l.success ? "bg-emerald-100 text-emerald-600 dark:bg-emerald-900/30 dark:text-emerald-400" : "bg-red-100 text-red-600 dark:bg-red-900/30 dark:text-red-400")}>
                         {l.success ? <CheckCircle className="h-2.5 w-2.5" /> : <XCircle className="h-2.5 w-2.5" />}
                         {l.success ? "Éxito" : "Fallo"}
                       </span>
                     </div>
                     <p className="text-xs text-gray-500 dark:text-muted mb-1">{l.details}</p>
-                    <div className="flex items-center gap-3 text-[10px] text-gray-400 flex-wrap">
+                    <div className="flex items-center gap-3 text-[length:var(--ts-2xs)] text-gray-400 flex-wrap">
                       <span className="flex items-center gap-0.5"><User className="h-2.5 w-2.5" />{l.actor}</span>
                       {l.ip !== "—" && <span>IP: {l.ip}</span>}
                       <span>{fmtDate(l.timestamp)}</span>

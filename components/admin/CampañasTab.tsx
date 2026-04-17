@@ -88,9 +88,9 @@ const STATUS_LABEL: Record<CampaignStatus, string> = {
 };
 const STATUS_COLOR: Record<CampaignStatus, string> = {
   borrador: "bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-400",
-  programada: "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400",
+  programada: "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400",
   activa: "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400",
-  completada: "bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400",
+  completada: "bg-[var(--surface-sunken)] text-[var(--text-primary)]",
   cancelada: "bg-red-100 text-red-600 dark:bg-red-900/30 dark:text-red-400",
 };
 const SEGMENT_LABEL: Record<AudienceSegment, string> = {
@@ -102,7 +102,7 @@ const CHANNEL_LABEL: Record<CampaignChannel, string> = {
 const CHANNEL_COLOR: Record<CampaignChannel, string> = {
   whatsapp: "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400",
   inapp: "bg-sky-100 text-sky-700 dark:bg-sky-900/30 dark:text-sky-400",
-  ambos: "bg-violet-100 text-violet-700 dark:bg-violet-900/30 dark:text-violet-400",
+  ambos: "bg-[var(--surface-sunken)] text-[var(--text-primary)]",
 };
 
 // ─── Modal ────────────────────────────────────────────────────────────────────
@@ -161,8 +161,8 @@ function CreateModal({ onClose, onSave }: ModalProps) {
 
   return (
     <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4">
-      <div className="bg-white dark:bg-card rounded-2xl shadow-xl w-full max-w-lg max-h-[90vh] overflow-y-auto">
-        <div className="p-6 border-b border-gray-100 dark:border-card-border flex items-center justify-between">
+      <div className="bg-white dark:bg-card rounded-xl w-full max-w-lg max-h-[90vh] overflow-y-auto">
+        <div className="p-6 border-b border-[var(--rule-soft)] dark:border-card-border flex items-center justify-between">
           <h3 className="font-extrabold text-gray-900 dark:text-foreground text-lg">Nueva Campaña</h3>
           <button onClick={onClose} className="text-gray-400 hover:text-gray-600 dark:hover:text-foreground"><XCircle className="h-5 w-5" /></button>
         </div>
@@ -170,7 +170,7 @@ function CreateModal({ onClose, onSave }: ModalProps) {
           {/* Name */}
           <div>
             <label className="block text-sm font-bold text-gray-700 dark:text-foreground mb-1">Nombre de la campaña</label>
-            <input value={name} onChange={e => setName(e.target.value)} placeholder="ej: Promo de verano" className="w-full border border-gray-300 dark:border-card-border rounded-xl px-3 py-2 text-sm bg-white dark:bg-surface text-gray-900 dark:text-foreground" />
+            <input value={name} onChange={e => setName(e.target.value)} placeholder="ej: Promo de verano" className="w-full border border-[var(--rule-base)] dark:border-card-border rounded-lg px-3 py-2 text-sm bg-white dark:bg-surface text-gray-900 dark:text-foreground" />
           </div>
           {/* Message + Template picker */}
           <div>
@@ -182,9 +182,9 @@ function CreateModal({ onClose, onSave }: ModalProps) {
                     <BookTemplate className="h-3.5 w-3.5" /> Usar plantilla <ChevronDown className="h-3 w-3" />
                   </button>
                   {showTemplates && (
-                    <div className="absolute right-0 top-7 z-10 bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl shadow-lg w-64 max-h-48 overflow-y-auto">
+                    <div className="absolute right-0 top-7 z-10 bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl w-64 max-h-48 overflow-y-auto">
                       {templates.map(t => (
-                        <button key={t.id} onClick={() => applyTemplate(t)} className="w-full text-left px-3 py-2 hover:bg-gray-50 dark:hover:bg-accent text-xs border-b border-gray-100 dark:border-card-border last:border-0">
+                        <button key={t.id} onClick={() => applyTemplate(t)} className="w-full text-left px-3 py-2 hover:bg-gray-50 dark:hover:bg-accent text-xs border-b border-[var(--rule-soft)] dark:border-card-border last:border-0">
                           <p className="font-bold text-gray-800 dark:text-foreground truncate">{t.name}</p>
                           <p className="text-gray-500 dark:text-muted truncate mt-0.5">{t.body.slice(0, 60)}…</p>
                         </button>
@@ -194,13 +194,13 @@ function CreateModal({ onClose, onSave }: ModalProps) {
                 </div>
               )}
             </div>
-            <textarea value={message} onChange={e => setMessage(e.target.value)} rows={4} placeholder="Escribe el mensaje que recibirán los clientes..." className="w-full border border-gray-300 dark:border-card-border rounded-xl px-3 py-2 text-sm bg-white dark:bg-surface text-gray-900 dark:text-foreground resize-none" />
+            <textarea value={message} onChange={e => setMessage(e.target.value)} rows={4} placeholder="Escribe el mensaje que recibirán los clientes..." className="w-full border border-[var(--rule-base)] dark:border-card-border rounded-lg px-3 py-2 text-sm bg-white dark:bg-surface text-gray-900 dark:text-foreground resize-none" />
             <p className="text-xs text-gray-400 mt-1">{message.length}/1000 caracteres</p>
           </div>
           {/* Segment + live audience count */}
           <div>
             <label className="block text-sm font-bold text-gray-700 dark:text-foreground mb-1">Segmento de audiencia</label>
-            <select value={segment} onChange={e => setSegment(e.target.value as AudienceSegment)} className="w-full border border-gray-300 dark:border-card-border rounded-xl px-3 py-2 text-sm bg-white dark:bg-surface text-gray-900 dark:text-foreground">
+            <select value={segment} onChange={e => setSegment(e.target.value as AudienceSegment)} className="w-full border border-[var(--rule-base)] dark:border-card-border rounded-lg px-3 py-2 text-sm bg-white dark:bg-surface text-gray-900 dark:text-foreground">
               {(Object.entries(SEGMENT_LABEL) as [AudienceSegment, string][]).map(([v, l]) => (
                 <option key={v} value={v}>{l}</option>
               ))}
@@ -221,7 +221,7 @@ function CreateModal({ onClose, onSave }: ModalProps) {
             <label className="block text-sm font-bold text-gray-700 dark:text-foreground mb-1">Canal de envío</label>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
               {(["whatsapp", "inapp", "ambos"] as CampaignChannel[]).map(c => (
-                <button key={c} onClick={() => setChannel(c)} className={cn("px-3 py-2 rounded-xl text-xs font-bold border-2 transition-all", channel === c ? "border-primary bg-primary/10 text-primary" : "border-gray-200 dark:border-card-border text-gray-500 dark:text-muted")}>
+                <button key={c} onClick={() => setChannel(c)} className={cn("px-3 py-2 rounded-lg text-xs font-bold border-2 transition-all", channel === c ? "border-primary bg-primary/10 text-primary" : "border-[var(--rule-base)] dark:border-card-border text-gray-500 dark:text-muted")}>
                   {CHANNEL_LABEL[c]}
                 </button>
               ))}
@@ -237,13 +237,13 @@ function CreateModal({ onClose, onSave }: ModalProps) {
           {schedule && (
             <div>
               <label className="block text-sm font-bold text-gray-700 dark:text-foreground mb-1">Fecha y hora de envío</label>
-              <input type="datetime-local" value={scheduledAt} onChange={e => setScheduledAt(e.target.value)} className="w-full border border-gray-300 dark:border-card-border rounded-xl px-3 py-2 text-sm bg-white dark:bg-surface text-gray-900 dark:text-foreground" />
+              <input type="datetime-local" value={scheduledAt} onChange={e => setScheduledAt(e.target.value)} className="w-full border border-[var(--rule-base)] dark:border-card-border rounded-lg px-3 py-2 text-sm bg-white dark:bg-surface text-gray-900 dark:text-foreground" />
             </div>
           )}
         </div>
-        <div className="p-6 border-t border-gray-100 dark:border-card-border flex flex-wrap gap-3">
-          <button onClick={onClose} className="flex-1 py-2.5 border border-gray-300 dark:border-card-border rounded-xl text-sm font-bold text-gray-700 dark:text-foreground hover:bg-gray-50 dark:hover:bg-accent">Cancelar</button>
-          <button onClick={handleSave} disabled={!name.trim() || !message.trim()} className="flex-1 py-2.5 bg-primary text-white rounded-xl text-sm font-bold hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed flex flex-wrap items-center justify-center gap-2">
+        <div className="p-6 border-t border-[var(--rule-soft)] dark:border-card-border flex flex-wrap gap-3">
+          <button onClick={onClose} className="flex-1 py-2.5 border border-[var(--rule-base)] dark:border-card-border rounded-lg text-sm font-bold text-gray-700 dark:text-foreground hover:bg-gray-50 dark:hover:bg-accent">Cancelar</button>
+          <button onClick={handleSave} disabled={!name.trim() || !message.trim()} className="flex-1 py-2.5 bg-primary text-white rounded-lg text-sm font-bold hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed flex flex-wrap items-center justify-center gap-2">
             <Plus className="h-4 w-4" /> Crear campaña
           </button>
         </div>
@@ -450,7 +450,7 @@ export default function CampañasTab() {
     <div className="space-y-3 sm:space-y-6">
       {/* Toast */}
       {toast && (
-        <div className="fixed top-4 right-4 z-50 bg-emerald-600 text-white px-2 sm:px-4 py-1.5 sm:py-2.5 rounded-xl shadow-lg text-sm font-bold flex flex-wrap items-center gap-2">
+        <div className="fixed top-4 right-4 z-50 bg-emerald-600 text-white px-2 sm:px-4 py-1.5 sm:py-2.5 rounded-lg text-sm font-bold flex flex-wrap items-center gap-2">
           <CheckCircle2 className="h-4 w-4" /> {toast}
         </div>
       )}
@@ -464,8 +464,8 @@ export default function CampañasTab() {
           <p className="text-sm text-gray-500 dark:text-muted mt-0.5">WhatsApp, notificaciones y mensajes masivos segmentados</p>
         </div>
         <div className="flex gap-2 flex-wrap">
-          <button onClick={handleExport} className="px-2 sm:px-4 py-1.5 sm:py-2 border border-gray-300 dark:border-card-border rounded-xl text-sm font-bold text-gray-700 dark:text-foreground hover:bg-gray-50 dark:hover:bg-accent">Exportar</button>
-          <button onClick={() => setShowModal(true)} className="px-2 sm:px-4 py-1.5 sm:py-2 bg-primary text-white rounded-xl text-sm font-bold hover:bg-primary/90 flex flex-wrap items-center gap-2">
+          <button onClick={handleExport} className="px-2 sm:px-4 py-1.5 sm:py-2 border border-[var(--rule-base)] dark:border-card-border rounded-lg text-sm font-bold text-gray-700 dark:text-foreground hover:bg-gray-50 dark:hover:bg-accent">Exportar</button>
+          <button onClick={() => setShowModal(true)} className="px-2 sm:px-4 py-1.5 sm:py-2 bg-primary text-white rounded-lg text-sm font-bold hover:bg-primary/90 flex flex-wrap items-center gap-2">
             <Plus className="h-4 w-4" /> Nueva campaña
           </button>
         </div>
@@ -480,7 +480,7 @@ export default function CampañasTab() {
           { label: "Conversiones", value: kpis.conversions, icon: Users },
           { label: "Ingresos generados", value: fmt(kpis.revenue), icon: BarChart3 },
         ].map(k => (
-          <div key={k.label} className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl p-4">
+          <div key={k.label} className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl p-4">
             <div className="flex flex-wrap items-center gap-2 mb-1">
               <k.icon className="h-4 w-4 text-primary" />
               <p className="text-xs text-gray-500 dark:text-muted font-bold">{k.label}</p>
@@ -493,7 +493,7 @@ export default function CampañasTab() {
       {/* Filters */}
       <div className="flex gap-2 flex-wrap">
         {(["todas", "borrador", "programada", "activa", "completada", "cancelada"] as const).map(s => (
-          <button key={s} onClick={() => setStatusFilter(s)} className={cn("px-3 py-1.5 rounded-xl text-xs font-bold border transition-all", statusFilter === s ? "border-primary bg-primary/10 text-primary" : "border-gray-200 dark:border-card-border text-gray-500 dark:text-muted hover:border-gray-400")}>
+          <button key={s} onClick={() => setStatusFilter(s)} className={cn("px-3 py-1.5 rounded-lg text-xs font-bold border transition-all", statusFilter === s ? "border-primary bg-primary/10 text-primary" : "border-[var(--rule-base)] dark:border-card-border text-gray-500 dark:text-muted hover:border-gray-400")}>
             {s === "todas" ? "Todas" : STATUS_LABEL[s as CampaignStatus]}
           </button>
         ))}
@@ -504,7 +504,7 @@ export default function CampañasTab() {
         {loading && (
           <div className="space-y-3">
             {[1, 2, 3].map(i => (
-              <div key={i} className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl p-4 animate-pulse">
+              <div key={i} className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl p-4 animate-pulse">
                 <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-2/5 mb-2" />
                 <div className="h-3 bg-gray-100 dark:bg-gray-800 rounded w-3/5" />
               </div>
@@ -518,7 +518,7 @@ export default function CampañasTab() {
           </div>
         )}
         {!loading && filtered.map(c => (
-          <div key={c.id} className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl p-4 hover:shadow-sm transition-shadow">
+          <div key={c.id} className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl p-4 hover:shadow-sm transition-shadow">
             <div className="flex flex-col sm:flex-row gap-3 items-start sm:items-center justify-between">
               <div className="flex-1 min-w-0">
                 <div className="flex flex-wrap items-center gap-2 mb-1">
@@ -535,17 +535,17 @@ export default function CampañasTab() {
                     {c.revenue > 0 && <span className="text-emerald-600 dark:text-emerald-400 font-bold">{fmt(c.revenue)}</span>}
                   </>}
                   {c.scheduledAt && c.status === "programada" && (
-                    <span className="flex items-center gap-1"><Clock className="h-3 w-3 text-blue-500" />Prog. {fmtDate(c.scheduledAt)}</span>
+                    <span className="flex items-center gap-1"><Clock className="h-3 w-3 text-emerald-500" />Prog. {fmtDate(c.scheduledAt)}</span>
                   )}
                   <span>{fmtDate(c.createdAt)}</span>
                 </div>
               </div>
               <div className="flex flex-wrap items-center gap-2 shrink-0">
-                <button onClick={() => setDetail(c)} className="px-3 py-1.5 border border-gray-200 dark:border-card-border rounded-xl text-xs font-bold text-gray-600 dark:text-foreground hover:bg-gray-50 dark:hover:bg-accent flex items-center gap-1">
+                <button onClick={() => setDetail(c)} className="px-3 py-1.5 border border-[var(--rule-base)] dark:border-card-border rounded-lg text-xs font-bold text-gray-600 dark:text-foreground hover:bg-gray-50 dark:hover:bg-accent flex items-center gap-1">
                   <Eye className="h-3.5 w-3.5" /> Ver
                 </button>
                 {(c.status === "borrador" || c.status === "programada") && (
-                  <button onClick={() => handleSend(c.id)} disabled={sending === c.id} className="px-3 py-1.5 bg-emerald-600 text-white rounded-xl text-xs font-bold hover:bg-emerald-700 flex items-center gap-1 disabled:opacity-60">
+                  <button onClick={() => handleSend(c.id)} disabled={sending === c.id} className="px-3 py-1.5 bg-emerald-600 text-white rounded-lg text-xs font-bold hover:bg-emerald-700 flex items-center gap-1 disabled:opacity-60">
                     {sending === c.id ? <RefreshCw className="h-3.5 w-3.5 animate-spin" /> : <Send className="h-3.5 w-3.5" />}
                     Enviar
                   </button>
@@ -562,8 +562,8 @@ export default function CampañasTab() {
       {/* Detail modal */}
       {detail && (
         <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4">
-          <div className="bg-white dark:bg-card rounded-2xl shadow-xl w-full max-w-md">
-            <div className="p-6 border-b border-gray-100 dark:border-card-border flex items-center justify-between">
+          <div className="bg-white dark:bg-card rounded-xl w-full max-w-md">
+            <div className="p-6 border-b border-[var(--rule-soft)] dark:border-card-border flex items-center justify-between">
               <h3 className="font-extrabold text-gray-900 dark:text-foreground">{detail.name}</h3>
               <button onClick={() => setDetail(null)}><XCircle className="h-5 w-5 text-gray-400" /></button>
             </div>
@@ -593,11 +593,11 @@ export default function CampañasTab() {
               {/* Metric bars — shown only for completed/active campaigns with data */}
               {detail.totalAudience > 0 && (
                 <div className="bg-gray-50 dark:bg-surface rounded-xl p-4 space-y-3">
-                  <p className="text-xs font-bold text-gray-500 dark:text-muted uppercase tracking-wide">Embudo de campaña</p>
+                  <p className="text-xs font-bold text-gray-500 dark:text-muted">Embudo de campaña</p>
                   {[
                     { label: "Entregados", value: detail.delivered, base: detail.totalAudience, color: "bg-primary" },
                     { label: "Abiertos", value: detail.opened, base: detail.totalAudience, color: "bg-emerald-500" },
-                    { label: "Conversiones", value: detail.conversions, base: detail.totalAudience, color: "bg-violet-500" },
+                    { label: "Conversiones", value: detail.conversions, base: detail.totalAudience, color: "bg-[var(--text-primary)]" },
                   ].map(bar => {
                     const safePct = detail.totalAudience > 0 ? Math.round(bar.value / detail.totalAudience * 100) : 0;
                     return (
@@ -616,13 +616,13 @@ export default function CampañasTab() {
               )}
               {detail.scheduledAt && <p className="text-xs text-gray-500 dark:text-muted"><Clock className="h-3 w-3 inline mr-1" />Programado: {fmtDate(detail.scheduledAt)}</p>}
             </div>
-            <div className="p-6 border-t border-gray-100 dark:border-card-border flex gap-3 flex-wrap">
-              <button onClick={() => handleDelete(detail.id)} className="px-2 sm:px-4 py-1.5 sm:py-2 border border-red-200 dark:border-red-900/30 text-red-600 dark:text-red-400 rounded-xl text-sm font-bold hover:bg-red-50 dark:hover:bg-red-900/10">Eliminar</button>
-              <button onClick={() => exportCampaignPDF(detail)} className="px-2 sm:px-4 py-1.5 sm:py-2 border border-gray-300 dark:border-card-border rounded-xl text-sm font-bold text-gray-700 dark:text-foreground hover:bg-gray-50 dark:hover:bg-accent flex flex-wrap items-center gap-2">
+            <div className="p-6 border-t border-[var(--rule-soft)] dark:border-card-border flex gap-3 flex-wrap">
+              <button onClick={() => handleDelete(detail.id)} className="px-2 sm:px-4 py-1.5 sm:py-2 border border-red-200 dark:border-red-900/30 text-red-600 dark:text-red-400 rounded-lg text-sm font-bold hover:bg-red-50 dark:hover:bg-red-900/10">Eliminar</button>
+              <button onClick={() => exportCampaignPDF(detail)} className="px-2 sm:px-4 py-1.5 sm:py-2 border border-[var(--rule-base)] dark:border-card-border rounded-lg text-sm font-bold text-gray-700 dark:text-foreground hover:bg-gray-50 dark:hover:bg-accent flex flex-wrap items-center gap-2">
                 <FileDown className="h-4 w-4" /> PDF
               </button>
               {(detail.status === "borrador" || detail.status === "programada") && (
-                <button onClick={() => { handleSend(detail.id); setDetail(null); }} className="flex-1 py-2 bg-primary text-white rounded-xl text-sm font-bold hover:bg-primary/90 flex flex-wrap items-center justify-center gap-2">
+                <button onClick={() => { handleSend(detail.id); setDetail(null); }} className="flex-1 py-2 bg-primary text-white rounded-lg text-sm font-bold hover:bg-primary/90 flex flex-wrap items-center justify-center gap-2">
                   <Send className="h-4 w-4" /> Enviar ahora
                 </button>
               )}

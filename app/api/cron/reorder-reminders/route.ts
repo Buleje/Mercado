@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { timingSafeCompare } from "@/lib/timing-safe";
+import { withCronAuth } from "@/lib/cron-auth";
 import { withCronRetry } from "@/lib/cron-retry";
 import { prisma } from "@/lib/prisma";
 import { enqueueNotification } from "@/lib/queue";
@@ -23,14 +23,7 @@ import { logActivity } from "@/lib/activity-logger";
  * Sugerencia vercel.json: "0 10 * * *" (10:00 AM diario)
  * Autorización: Bearer <CRON_SECRET>
  */
-export async function GET(req: NextRequest) {
-  const secret = process.env.CRON_SECRET;
-  const auth = req.headers.get("authorization") ?? "";
-
-  if (!secret || !timingSafeCompare(auth, `Bearer ${secret}`)) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
-
+export const GET = withCronAuth("reorder-reminders", async (req) => {
   try {
     const result = await withCronRetry("reorder-reminders", async () => {
       const cutoff = new Date(Date.now() - 90 * 24 * 60 * 60 * 1000); // 90 days ago
@@ -171,7 +164,7 @@ export async function GET(req: NextRequest) {
                 url: "/tienda",
               }),
             )
-            .catch(() => {});
+            .catch((err) => logger.error("[cron/reorder-reminders] push send failed", { error: String(err), phone }));
 
           // WhatsApp personalizado
           const whatsappMsg = [
@@ -190,7 +183,7 @@ export async function GET(req: NextRequest) {
             recipient: phone,
             message: whatsappMsg,
             tenantId: tenant.id,
-          }).catch(() => {});
+          }).catch((err) => logger.error("[cron/reorder-reminders] WhatsApp enqueue failed", { error: String(err), phone, tenantId: tenant.id }));
 
           remindersSent++;
 
@@ -220,4 +213,4 @@ export async function GET(req: NextRequest) {
     logger.error("[cron/reorder-reminders] Error:", { error: message });
     return NextResponse.json({ ok: false, error: message }, { status: 500 });
   }
-}
+});

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useRef, useCallback, useEffect } from "react";
+import Image from "next/image";
 import { Camera, RotateCcw, Check, Upload, X, AlertCircle } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -130,15 +131,15 @@ export default function ProductPhotoCapture({ onCapture, onClose, className }: P
   return (
     <div
       className={cn(
-        "flex flex-col gap-4 rounded-xl border border-gray-200 bg-white p-4",
-        "dark:border-gray-700 dark:bg-gray-900",
+        "flex flex-col gap-4 rounded-xl border border-[var(--rule-base)] bg-white p-4",
+        "dark:border-[var(--rule-base)] dark:bg-gray-900",
         className
       )}
     >
       {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <Camera className="h-5 w-5 text-[#00B4A6]" />
+          <Camera className="h-5 w-5 text-primary" />
           <span className="text-sm font-semibold text-gray-800 dark:text-gray-100">
             Foto del producto
           </span>
@@ -190,10 +191,13 @@ export default function ProductPhotoCapture({ onCapture, onClose, className }: P
           className="relative overflow-hidden rounded-lg bg-gray-100 dark:bg-gray-800"
           style={{ aspectRatio: "16/9" }}
         >
-          <img
+          <Image
             src={preview}
             alt="Foto capturada"
-            className="h-full w-full object-cover"
+            fill
+            sizes="(max-width: 768px) 100vw, 400px"
+            className="object-cover"
+            unoptimized
           />
         </div>
       )}
@@ -201,7 +205,7 @@ export default function ProductPhotoCapture({ onCapture, onClose, className }: P
       {/* Idle placeholder */}
       {state === "idle" && !error && (
         <div
-          className="flex flex-col items-center justify-center gap-3 rounded-lg border-2 border-dashed border-gray-200 bg-gray-50 dark:border-gray-700 dark:bg-gray-800/50"
+          className="flex flex-col items-center justify-center gap-3 rounded-lg border-2 border-dashed border-[var(--rule-base)] bg-gray-50 dark:border-[var(--rule-base)] dark:bg-gray-800/50"
           style={{ aspectRatio: "16/9" }}
         >
           <Camera className="h-10 w-10 text-gray-300 dark:text-gray-600" />
@@ -221,7 +225,7 @@ export default function ProductPhotoCapture({ onCapture, onClose, className }: P
             {cameraSupported && (
               <button
                 onClick={startCamera}
-                className="flex flex-1 items-center justify-center gap-2 rounded-lg bg-[#00B4A6] px-4 py-2 text-sm font-medium text-white transition hover:bg-[#245a40]"
+                className="flex flex-1 items-center justify-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-white transition hover:bg-[#245a40]"
               >
                 <Camera className="h-4 w-4" />
                 Abrir cámara
@@ -230,7 +234,7 @@ export default function ProductPhotoCapture({ onCapture, onClose, className }: P
             <button
               onClick={() => fileInputRef.current?.click()}
               className={cn(
-                "flex items-center justify-center gap-2 rounded-lg border border-gray-200 px-4 py-2 text-sm font-medium",
+                "flex items-center justify-center gap-2 rounded-lg border border-[var(--rule-base)] px-4 py-2 text-sm font-medium",
                 "text-gray-700 transition hover:bg-gray-50 dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-800",
                 !cameraSupported && "flex-1"
               )}
@@ -242,7 +246,7 @@ export default function ProductPhotoCapture({ onCapture, onClose, className }: P
         ) : state === "streaming" ? (
           <button
             onClick={capturePhoto}
-            className="flex flex-1 items-center justify-center gap-2 rounded-lg bg-[#00B4A6] px-4 py-2 text-sm font-medium text-white transition hover:bg-[#245a40]"
+            className="flex flex-1 items-center justify-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-white transition hover:bg-[#245a40]"
           >
             <Camera className="h-4 w-4" />
             Tomar foto
@@ -251,14 +255,14 @@ export default function ProductPhotoCapture({ onCapture, onClose, className }: P
           <>
             <button
               onClick={usePhoto}
-              className="flex flex-1 items-center justify-center gap-2 rounded-lg bg-[#00B4A6] px-4 py-2 text-sm font-medium text-white transition hover:bg-[#245a40]"
+              className="flex flex-1 items-center justify-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-white transition hover:bg-[#245a40]"
             >
               <Check className="h-4 w-4" />
               Usar foto
             </button>
             <button
               onClick={retake}
-              className="flex items-center justify-center gap-2 rounded-lg border border-gray-200 px-4 py-2 text-sm font-medium text-gray-700 transition hover:bg-gray-50 dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-800"
+              className="flex items-center justify-center gap-2 rounded-lg border border-[var(--rule-base)] px-4 py-2 text-sm font-medium text-gray-700 transition hover:bg-gray-50 dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-800"
             >
               <RotateCcw className="h-4 w-4" />
               Retomar

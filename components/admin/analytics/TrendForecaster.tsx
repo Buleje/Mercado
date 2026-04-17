@@ -133,8 +133,8 @@ export default function TrendForecaster({ sales }: TrendForecasterProps) {
     <div className="flex flex-col gap-3 text-sm">
       {/* KPI row */}
       <div className="flex gap-2">
-        <div className="flex-1 rounded-lg bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 p-2 text-center">
-          <p className="text-[10px] text-gray-500 dark:text-gray-400">Tendencia</p>
+        <div className="flex-1 rounded-lg bg-gray-50 dark:bg-gray-800 border border-[var(--rule-base)] p-2 text-center">
+          <p className="text-[length:var(--ts-2xs)] text-gray-500 dark:text-gray-400">Tendencia</p>
           <p
             className={cn(
               "text-sm font-bold",
@@ -145,7 +145,7 @@ export default function TrendForecaster({ sales }: TrendForecasterProps) {
           </p>
         </div>
         <div className="flex-1 rounded-lg bg-[#00B4A6]/10 dark:bg-[#00B4A6]/20 border border-[#00B4A6]/30 p-2 text-center">
-          <p className="text-[10px] text-gray-500 dark:text-gray-400">Proyeccion proxima semana</p>
+          <p className="text-[length:var(--ts-2xs)] text-gray-500 dark:text-gray-400">Proyeccion proxima semana</p>
           <p className="text-xs font-bold text-[#00B4A6] dark:text-[#2dd4bf]">
             {fmt(forecastRange.min)} — {fmt(forecastRange.max)}
           </p>
@@ -153,7 +153,7 @@ export default function TrendForecaster({ sales }: TrendForecasterProps) {
       </div>
 
       {/* Legend */}
-      <div className="flex items-center gap-4 text-[10px] text-gray-500 dark:text-gray-400">
+      <div className="flex items-center gap-4 text-[length:var(--ts-2xs)] text-gray-500 dark:text-gray-400">
         <div className="flex items-center gap-1">
           <span className="w-3 h-3 rounded-sm" style={{ backgroundColor: "#f97316" }} />
           Ventas reales
@@ -171,7 +171,7 @@ export default function TrendForecaster({ sales }: TrendForecasterProps) {
       {/* Chart */}
       <div className="relative">
         {/* Y-axis labels */}
-        <div className="absolute left-0 top-0 h-[100px] flex flex-col justify-between text-[9px] text-gray-400 dark:text-gray-500">
+        <div className="absolute left-0 top-0 h-[100px] flex flex-col justify-between text-[length:var(--ts-2xs)] text-gray-400 dark:text-gray-500">
           <span>{fmt(maxVal)}</span>
           <span>{fmt(maxVal / 2)}</span>
           <span>S/0</span>
@@ -190,7 +190,7 @@ export default function TrendForecaster({ sales }: TrendForecasterProps) {
                 <div className="w-full flex flex-col justify-end" style={{ height: "220px" }}>
                   <div
                     className={cn(
-                      "w-full rounded-t-sm transition-all duration-300",
+                      "w-full rounded-t-sm transition-all duration-[var(--dur-base)]",
                       pt.isForecast ? "opacity-40 border-t border-[#00B4A6]" : "opacity-90"
                     )}
                     style={{
@@ -227,7 +227,7 @@ export default function TrendForecaster({ sales }: TrendForecasterProps) {
               {(i === 0 || i === 14 || i === points.length - 1 || i % 7 === 0) && (
                 <span
                   className={cn(
-                    "text-[8px] leading-none",
+                    "text-[length:var(--ts-2xs)] leading-none",
                     pt.isForecast
                       ? "text-[#00B4A6] dark:text-[#2dd4bf] font-medium"
                       : "text-gray-400 dark:text-gray-500"
@@ -250,8 +250,8 @@ export default function TrendForecaster({ sales }: TrendForecasterProps) {
         <div className="grid grid-cols-7 gap-0.5">
           {points.filter((p) => p.isForecast).map((pt) => (
             <div key={pt.date} className="text-center">
-              <p className="text-[9px] text-gray-400 dark:text-gray-500">{pt.label.slice(0, 5)}</p>
-              <p className="text-[10px] font-medium text-[#00B4A6] dark:text-[#2dd4bf]">{fmt(pt.actual)}</p>
+              <p className="text-[length:var(--ts-2xs)] text-gray-400 dark:text-gray-500">{pt.label.slice(0, 5)}</p>
+              <p className="text-[length:var(--ts-2xs)] font-medium text-[#00B4A6] dark:text-[#2dd4bf]">{fmt(pt.actual)}</p>
             </div>
           ))}
         </div>

@@ -30,7 +30,7 @@ const EMPTY: Customization = {
   heroImageUrl: "",
   heroCtaLabel: "",
   heroCtaUrl: "",
-  primaryColor: "#00B4A6",
+  primaryColor: "#2563EB",
   accentColor: "#f4a261",
   aboutTitle: "",
   aboutBody: "",
@@ -163,7 +163,7 @@ export default function AppearanceTab() {
         <button
           onClick={() => update("published", !data.published)}
           className={`relative inline-flex h-7 w-12 items-center rounded-full transition-colors ${
-            data.published ? "bg-teal-600" : "bg-gray-300"
+            data.published ? "bg-emerald-600" : "bg-gray-300"
           }`}
         >
           <span
@@ -354,7 +354,7 @@ export default function AppearanceTab() {
       </Card>
 
       {/* Save bar */}
-      <div className="sticky bottom-4 flex items-center justify-end gap-3 p-4 rounded-xl bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 shadow-lg">
+      <div className="sticky bottom-4 flex items-center justify-end gap-3 p-4 rounded-xl bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800">
         {error && <span className="text-sm text-red-600">{error}</span>}
         {saved && (
           <span className="text-sm text-green-600 font-semibold">
@@ -364,7 +364,7 @@ export default function AppearanceTab() {
         <button
           onClick={save}
           disabled={saving}
-          className="inline-flex items-center gap-2 px-6 py-2.5 rounded-xl bg-teal-600 hover:bg-teal-700 disabled:opacity-50 text-white font-semibold text-sm transition-colors"
+          className="inline-flex items-center gap-2 px-6 py-2.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 text-white font-semibold text-sm transition-colors"
         >
           {saving ? (
             <Loader2 className="w-4 h-4 animate-spin" />

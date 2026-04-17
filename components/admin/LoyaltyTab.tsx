@@ -217,7 +217,7 @@ export default function LoyaltyTab() {
       {/* Search */}
       <div className="h-10 w-full max-w-sm bg-gray-200 dark:bg-surface rounded-xl" />
       {/* Customer rows */}
-      <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl p-4 space-y-3">
+      <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl p-4 space-y-3">
         {[1, 2, 3, 4, 5, 6].map(i => (
           <div key={i} className="flex flex-wrap items-center gap-3">
             <div className="h-10 w-10 bg-gray-200 dark:bg-surface rounded-xl shrink-0" />
@@ -243,7 +243,7 @@ export default function LoyaltyTab() {
             <select
               value={expirationPolicy}
               onChange={e => setExpirationPolicy(e.target.value === 'never' ? 'never' : Number(e.target.value) as 3 | 6 | 12)}
-              className="px-3 py-1.5 border border-gray-200 dark:border-card-border rounded-lg bg-white dark:bg-surface text-xs font-medium"
+              className="px-3 py-1.5 border border-[var(--rule-base)] dark:border-card-border rounded-lg bg-white dark:bg-surface text-xs font-medium"
             >
               <option value="3">3 meses</option>
               <option value="6">6 meses</option>
@@ -253,7 +253,7 @@ export default function LoyaltyTab() {
           </div>
           <div className="relative">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
-            <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Buscar cliente..." className="pl-9 pr-4 py-2 border border-gray-200 dark:border-card-border rounded-xl bg-white dark:bg-surface text-sm w-56" />
+            <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Buscar cliente..." className="pl-9 pr-4 py-2 border border-[var(--rule-base)] dark:border-card-border rounded-lg bg-white dark:bg-surface text-sm w-56" />
           </div>
         </div>
       </div>
@@ -266,7 +266,7 @@ export default function LoyaltyTab() {
           { label: "Gasto Promedio", value: `S/${avgSpent.toFixed(0)}` },
           { label: "Diamante", value: customers.filter(c => c.loyaltyTier === "diamante").length },
         ].map(s => (
-          <div key={s.label} className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl p-4 text-center">
+          <div key={s.label} className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl p-4 text-center">
             <p className="text-xl font-extrabold text-gray-900 dark:text-foreground">{s.value}</p>
             <p className="text-xs text-gray-500 dark:text-muted">{s.label}</p>
           </div>
@@ -278,8 +278,8 @@ export default function LoyaltyTab() {
         <div className="lg:col-span-2 space-y-2 max-h-125 overflow-y-auto">
           {filtered.length === 0 && <p className="text-center text-gray-400 py-8">No se encontraron clientes</p>}
           {filtered.map(c => (
-            <button key={c.phone ?? c.id} onClick={() => c.phone && loadLoyalty(c.phone)} disabled={!c.phone} className={cn("w-full text-left flex items-center gap-3 p-3 rounded-xl border transition", selected?.phone === c.phone ? "border-primary bg-primary/5" : "border-gray-200 dark:border-card-border bg-white dark:bg-card hover:bg-gray-50 dark:hover:bg-surface")}>
-              <div className={cn("px-2 py-0.5 rounded-full text-[10px] font-extrabold uppercase shrink-0", TIER_COLORS[c.loyaltyTier] ?? "bg-gray-200 text-gray-600")}>{c.loyaltyTier}</div>
+            <button key={c.phone ?? c.id} onClick={() => c.phone && loadLoyalty(c.phone)} disabled={!c.phone} className={cn("w-full text-left flex items-center gap-3 p-3 rounded-lg border transition", selected?.phone === c.phone ? "border-primary bg-primary/5" : "border-[var(--rule-base)] dark:border-card-border bg-white dark:bg-card hover:bg-gray-50 dark:hover:bg-surface")}>
+              <div className={cn("px-2 py-0.5 rounded-full text-[length:var(--ts-2xs)] font-extrabold uppercase shrink-0", TIER_COLORS[c.loyaltyTier] ?? "bg-gray-200 text-gray-600")}>{c.loyaltyTier}</div>
               <div className="flex-1 min-w-0">
                 <p className="font-bold text-sm text-gray-900 dark:text-foreground truncate">{c.name}</p>
                 <p className="text-xs text-gray-400">{c.phone}</p>
@@ -294,7 +294,7 @@ export default function LoyaltyTab() {
             <button
               onClick={loadMore}
               disabled={loadingMore}
-              className="w-full py-2 text-xs font-semibold text-primary border border-primary/30 rounded-xl hover:bg-primary/5 transition disabled:opacity-50"
+              className="w-full py-2 text-xs font-semibold text-primary border border-primary/30 rounded-lg hover:bg-primary/5 transition disabled:opacity-50"
             >
               {loadingMore ? "Cargando…" : "Cargar más clientes"}
             </button>
@@ -302,15 +302,15 @@ export default function LoyaltyTab() {
         </div>
 
         {/* Detail Panel */}
-        <div className="space-y-4">
+        <div className="space-y-6">
           {!selected ? (
-            <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl p-8 text-center">
+            <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl p-8 text-center">
               <Award className="h-12 w-12 text-gray-300 mx-auto mb-3" />
               <p className="text-sm text-gray-400">Selecciona un cliente para ver detalles</p>
             </div>
           ) : (
             <>
-              <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl p-3 sm:p-6 text-center">
+              <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl p-3 sm:p-6 text-center">
                 <div className={cn("inline-block px-4 py-1 rounded-full text-sm font-extrabold uppercase mb-3", TIER_COLORS[selected.loyaltyTier] ?? "bg-gray-200 text-gray-600")}>{selected.loyaltyTier}</div>
                 <p className="font-extrabold text-lg text-gray-900 dark:text-foreground">{selected.name}</p>
                 <p className="text-sm text-gray-400">{selected.phone}</p>
@@ -327,12 +327,12 @@ export default function LoyaltyTab() {
               </div>
 
               {/* Redeem */}
-              <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl p-4 space-y-3">
+              <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl p-4 space-y-3">
                 <h4 className="font-bold text-sm flex flex-wrap items-center gap-2"><Gift className="h-4 w-4 text-primary" />Canjear Puntos</h4>
                 <p className="text-xs text-gray-400">1 punto = S/0.10 de descuento</p>
                 <div className="flex flex-wrap gap-2">
-                  <input type="number" value={redeemPts} onChange={e => setRedeemPts(e.target.value)} placeholder="Puntos a canjear" className="flex-1 px-3 py-2 border border-gray-200 dark:border-card-border rounded-xl bg-white dark:bg-surface text-sm" />
-                  <button onClick={redeem} disabled={!redeemPts || Number(redeemPts) <= 0 || Number(redeemPts) > selected.loyaltyPoints} className="px-2 sm:px-4 py-1.5 sm:py-2 bg-primary text-white rounded-xl text-sm font-bold hover:bg-primary/90 transition disabled:opacity-50">
+                  <input type="number" value={redeemPts} onChange={e => setRedeemPts(e.target.value)} placeholder="Puntos a canjear" className="flex-1 px-3 py-2 border border-[var(--rule-base)] dark:border-card-border rounded-lg bg-white dark:bg-surface text-sm" />
+                  <button onClick={redeem} disabled={!redeemPts || Number(redeemPts) <= 0 || Number(redeemPts) > selected.loyaltyPoints} className="px-2 sm:px-4 py-1.5 sm:py-2 bg-primary text-white rounded-lg text-sm font-bold hover:bg-primary/90 transition disabled:opacity-50">
                     Canjear
                   </button>
                 </div>
@@ -342,14 +342,14 @@ export default function LoyaltyTab() {
               </div>
 
               {/* Private Notes */}
-              <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl p-4 space-y-3">
+              <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl p-4 space-y-3">
                 <h4 className="font-bold text-sm flex flex-wrap items-center gap-2"><NotebookPen className="h-4 w-4 text-primary" />Notas Privadas</h4>
                 <textarea
                   value={privateNotes}
                   onChange={e => setPrivateNotes(e.target.value)}
                   rows={3}
                   placeholder="Notas internas sobre este cliente (no visibles para el cliente)…"
-                  className="w-full px-3 py-2 border border-gray-200 dark:border-card-border rounded-xl bg-white dark:bg-surface text-sm resize-none"
+                  className="w-full px-3 py-2 border border-[var(--rule-base)] dark:border-card-border rounded-xl bg-white dark:bg-surface text-sm resize-none"
                 />
                 <button
                   onClick={savePrivateNotes}
@@ -362,7 +362,7 @@ export default function LoyaltyTab() {
               </div>
 
               {/* Credit Balance */}
-              <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl p-4 space-y-3">
+              <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl p-4 space-y-3">
                 <h4 className="font-bold text-sm flex flex-wrap items-center gap-2"><DollarSign className="h-4 w-4 text-primary" />Saldo a Favor</h4>
                 <p className="text-xl sm:text-2xl font-extrabold text-emerald-600">S/{(selected.creditBalance ?? 0).toFixed(2)}</p>
                 <div className="flex flex-wrap gap-2">
@@ -372,12 +372,12 @@ export default function LoyaltyTab() {
                     placeholder="+ agregar  /  - deducir"
                     value={creditInput}
                     onChange={e => setCreditInput(e.target.value)}
-                    className="flex-1 px-3 py-2 border border-gray-200 dark:border-card-border rounded-xl bg-white dark:bg-surface text-sm"
+                    className="flex-1 px-3 py-2 border border-[var(--rule-base)] dark:border-card-border rounded-xl bg-white dark:bg-surface text-sm"
                   />
                   <button
                     onClick={updateCredit}
                     disabled={!creditInput || creditSaving}
-                    className="px-2 sm:px-4 py-1.5 sm:py-2 bg-primary text-white rounded-xl text-sm font-bold hover:bg-primary/90 transition disabled:opacity-50"
+                    className="px-2 sm:px-4 py-1.5 sm:py-2 bg-primary text-white rounded-lg text-sm font-bold hover:bg-primary/90 transition disabled:opacity-50"
                   >
                     {creditSaving ? <Loader2 className="h-4 w-4 animate-spin" /> : "Aplicar"}
                   </button>
@@ -391,7 +391,7 @@ export default function LoyaltyTab() {
                 if (!expiration) return null;
                 const { expirationDate, daysRemaining, percentRemaining } = expiration;
                 return (
-                  <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl p-4 space-y-3">
+                  <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl p-4 space-y-3">
                     <h4 className="font-bold text-sm flex flex-wrap items-center gap-2">
                       <Clock className="h-4 w-4 text-primary" />
                       Vencimiento de Puntos
@@ -424,7 +424,7 @@ export default function LoyaltyTab() {
               })()}
 
               {/* Notification Panel */}
-              <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl p-4 space-y-3">
+              <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl p-4 space-y-3">
                 <div className="flex items-center justify-between">
                   <h4 className="font-bold text-sm flex flex-wrap items-center gap-2">
                     <Bell className="h-4 w-4 text-primary" />
@@ -467,7 +467,7 @@ export default function LoyaltyTab() {
               </div>
 
               {/* Referral Program */}
-              <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl p-4 space-y-3">
+              <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl p-4 space-y-3">
                 <h4 className="font-bold text-sm flex flex-wrap items-center gap-2">
                   <Users2 className="h-4 w-4 text-primary" />
                   Programa de Referidos
@@ -546,7 +546,7 @@ export default function LoyaltyTab() {
 
               {/* Tiers */}
               {tiers.length > 0 && (
-                <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl p-4 space-y-2">
+                <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl p-4 space-y-2">
                   <h4 className="font-bold text-sm">Niveles</h4>
                   {tiers.map(t => (
                     <div key={t.name} className={cn("flex items-center justify-between text-xs px-3 py-2 rounded-lg", selected.loyaltyTier === t.name ? "bg-primary/10 border border-primary" : "bg-gray-50 dark:bg-surface")}>

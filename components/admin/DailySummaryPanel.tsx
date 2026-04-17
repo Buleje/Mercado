@@ -59,7 +59,7 @@ export default function DailySummaryPanel() {
 
   if (loading) {
     return (
-      <div className="space-y-4">
+      <div className="space-y-6">
         <div className="h-8 w-48 bg-gray-200 dark:bg-gray-800 rounded-lg animate-pulse" />
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
           {Array.from({ length: 4 }).map((_, i) => (
@@ -87,7 +87,7 @@ export default function DailySummaryPanel() {
   const currentHour = new Date().getHours();
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-6">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2 flex-wrap">
@@ -125,15 +125,15 @@ export default function DailySummaryPanel() {
           icon={ShoppingCart}
           label="Pedidos"
           value={String(data.totalOrders)}
-          color="text-blue-500"
-          bg="bg-blue-50 dark:bg-blue-500/10"
+          color="text-emerald-500"
+          bg="bg-emerald-50 dark:bg-emerald-500/10"
         />
         <KpiCard
           icon={TrendingUp}
           label="Ticket promedio"
           value={`S/${data.averageTicket.toFixed(2)}`}
-          color="text-purple-500"
-          bg="bg-purple-50 dark:bg-purple-500/10"
+          color="text-[var(--text-secondary)]"
+          bg="bg-[var(--surface-sunken)] dark:bg-[var(--text-primary)]/10"
         />
         <KpiCard
           icon={Wallet}
@@ -173,12 +173,12 @@ export default function DailySummaryPanel() {
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
         {/* Hourly Sales Chart */}
         {hours.length > 0 && (
-          <div className="sm:col-span-2 rounded-xl border border-gray-100 dark:border-gray-800 bg-gray-50/50 dark:bg-gray-900/30 p-3">
+          <div className="sm:col-span-2 rounded-xl border border-[var(--rule-base)] bg-gray-50/50 dark:bg-gray-900/30 p-3">
             <div className="flex items-center gap-1.5 mb-2.5">
               <TrendingUp className="h-4 w-4 text-[#00B4A6]" />
               <span className="text-xs font-bold text-gray-700 dark:text-gray-300">Ventas por hora</span>
               {lwOrders > 0 && (
-                <span className={`text-[10px] ml-auto font-medium ${
+                <span className={`text-[length:var(--ts-2xs)] ml-auto font-medium ${
                   weekOrdersDelta >= 0 ? "text-emerald-500" : "text-red-500"
                 }`}>
                   {weekOrdersDelta >= 0 ? "↑" : "↓"}{Math.abs(weekOrdersDelta).toFixed(0)}% pedidos vs semana pasada
@@ -197,7 +197,7 @@ export default function DailySummaryPanel() {
                     title={`${h}:00 — S/${val.toFixed(2)}`}
                   >
                     <div
-                      className={`w-full rounded-t-sm transition-all duration-300 ${
+                      className={`w-full rounded-t-sm transition-all duration-[var(--dur-base)] ${
                         isCurrent
                           ? "bg-[#00B4A6]"
                           : hasSales
@@ -211,16 +211,16 @@ export default function DailySummaryPanel() {
               })}
             </div>
             <div className="flex justify-between mt-1">
-              <span className="text-[9px] text-gray-400">6AM</span>
-              <span className="text-[9px] text-gray-400">12PM</span>
-              <span className="text-[9px] text-gray-400">6PM</span>
-              <span className="text-[9px] text-gray-400">11PM</span>
+              <span className="text-[length:var(--ts-2xs)] text-gray-400">6AM</span>
+              <span className="text-[length:var(--ts-2xs)] text-gray-400">12PM</span>
+              <span className="text-[length:var(--ts-2xs)] text-gray-400">6PM</span>
+              <span className="text-[length:var(--ts-2xs)] text-gray-400">11PM</span>
             </div>
           </div>
         )}
 
         {/* Top Products */}
-        <div className="rounded-xl border border-gray-100 dark:border-gray-800 bg-gray-50/50 dark:bg-gray-900/30 p-3">
+        <div className="rounded-xl border border-[var(--rule-base)] bg-gray-50/50 dark:bg-gray-900/30 p-3">
           <div className="flex items-center gap-1.5 mb-2.5">
             <Package className="h-4 w-4 text-[#00B4A6]" />
             <span className="text-xs font-bold text-gray-700 dark:text-gray-300">Top productos</span>
@@ -248,9 +248,9 @@ export default function DailySummaryPanel() {
         </div>
 
         {/* Payment Methods */}
-        <div className="rounded-xl border border-gray-100 dark:border-gray-800 bg-gray-50/50 dark:bg-gray-900/30 p-3">
+        <div className="rounded-xl border border-[var(--rule-base)] bg-gray-50/50 dark:bg-gray-900/30 p-3">
           <div className="flex items-center gap-1.5 mb-2.5">
-            <CreditCard className="h-4 w-4 text-purple-500" />
+            <CreditCard className="h-4 w-4 text-[var(--text-secondary)]" />
             <span className="text-xs font-bold text-gray-700 dark:text-gray-300">Métodos de pago</span>
           </div>
           {paymentEntries.length === 0 ? (
@@ -273,7 +273,7 @@ export default function DailySummaryPanel() {
                     </div>
                     <div className="h-1.5 rounded-full bg-gray-200 dark:bg-gray-700 overflow-hidden">
                       <div
-                        className="h-full rounded-full bg-[#00B4A6] transition-all duration-500"
+                        className="h-full rounded-full bg-[#00B4A6] transition-all duration-[var(--dur-slow)]"
                         style={{ width: `${pct}%` }}
                       />
                     </div>
@@ -328,7 +328,7 @@ function AlertCard({
       className={`rounded-xl p-3 border ${
         alert
           ? "border-red-200 dark:border-red-800/40 bg-red-50/50 dark:bg-red-500/5"
-          : "border-gray-100 dark:border-gray-800 bg-gray-50/50 dark:bg-gray-900/30"
+          : "border-[var(--rule-base)] bg-gray-50/50 dark:bg-gray-900/30"
       }`}
     >
       <Icon className={`h-4 w-4 ${color} mb-1`} />

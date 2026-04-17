@@ -155,21 +155,21 @@ export default function DemandPredictionTab() {
       <div className="flex items-center justify-between flex-wrap gap-3">
         <h2 className="text-xl font-extrabold text-gray-900 dark:text-foreground flex flex-wrap items-center gap-2"><Brain className="h-6 w-6 text-primary" />Predicción de Demanda (IA)</h2>
         <div className="flex flex-wrap items-center gap-2">
-          <select value={period} onChange={e => setPeriod(e.target.value)} className="px-3 py-2 border border-gray-200 dark:border-card-border rounded-xl bg-white dark:bg-surface text-sm">
+          <select value={period} onChange={e => setPeriod(e.target.value)} className="px-3 py-2 border border-[var(--rule-base)] dark:border-card-border rounded-lg bg-white dark:bg-surface text-sm">
             <option value="7">Próximos 7 días</option>
             <option value="14">Próximos 14 días</option>
             <option value="30">Próximos 30 días</option>
           </select>
-          <button onClick={analyze} disabled={loading} className="flex flex-wrap items-center gap-2 bg-primary text-white px-2 sm:px-4 py-1.5 sm:py-2 rounded-xl text-sm font-bold hover:bg-primary/90 transition disabled:opacity-50">
+          <button onClick={analyze} disabled={loading} className="flex flex-wrap items-center gap-2 bg-primary text-white px-2 sm:px-4 py-1.5 sm:py-2 rounded-lg text-sm font-bold hover:bg-primary/90 transition disabled:opacity-50">
             {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Brain className="h-4 w-4" />}Analizar
           </button>
         </div>
       </div>
 
-      {error && <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-2xl p-4 text-sm text-red-600">{error}</div>}
+      {error && <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-xl p-4 text-sm text-red-600">{error}</div>}
 
       {/* Stock Alerts Section */}
-      <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl p-3 sm:p-6">
+      <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl p-3 sm:p-6">
         <div className="flex items-center justify-between mb-4">
           <h3 className="font-extrabold text-lg text-gray-900 dark:text-foreground flex flex-wrap items-center gap-2">
             <Package className="h-5 w-5 text-orange-500" />
@@ -179,7 +179,7 @@ export default function DemandPredictionTab() {
             <button
               onClick={generateBulkPurchaseOrders}
               disabled={generatingBulk}
-              className="flex flex-wrap items-center gap-2 bg-orange-500 text-white px-2 sm:px-4 py-1.5 sm:py-2 rounded-xl text-sm font-bold hover:bg-orange-600 transition disabled:opacity-50"
+              className="flex flex-wrap items-center gap-2 bg-orange-500 text-white px-2 sm:px-4 py-1.5 sm:py-2 rounded-lg text-sm font-bold hover:bg-orange-600 transition disabled:opacity-50"
             >
               {generatingBulk ? (
                 <Loader2 className="h-4 w-4 animate-spin" />
@@ -265,7 +265,7 @@ export default function DemandPredictionTab() {
       </div>
 
       {/* AI Prediction Section */}
-      <div className="bg-linear-to-r from-primary/5 to-primary/10 dark:from-primary/10 dark:to-primary/20 border border-primary/20 rounded-2xl p-3 sm:p-6">
+      <div className="bg-[var(--surface-sunken)] border border-[var(--rule-base)] rounded-xl p-3 sm:p-6">
         <h3 className="font-extrabold text-lg text-gray-900 dark:text-foreground flex flex-wrap items-center gap-2 mb-4">
           <Brain className="h-5 w-5 text-primary" />
           Predicción con Inteligencia Artificial
@@ -285,12 +285,12 @@ export default function DemandPredictionTab() {
 
       {prediction && (
         <div className="space-y-3 sm:space-y-6">
-          <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl p-3 sm:p-6">
+          <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl p-3 sm:p-6">
             <p className="text-sm text-gray-700 dark:text-foreground leading-relaxed">{prediction.summary}</p>
           </div>
 
           {prediction.prediction?.length > 0 && (
-            <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl p-3 sm:p-6">
+            <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl p-3 sm:p-6">
               <h3 className="font-extrabold text-sm text-gray-900 dark:text-foreground flex flex-wrap items-center gap-2 mb-4"><TrendingUp className="h-4 w-4 text-primary" />Demanda Estimada</h3>
               <div className="space-y-2">
                 {prediction.prediction.map((p, i) => (
@@ -305,7 +305,7 @@ export default function DemandPredictionTab() {
           )}
 
           {prediction.peakDays?.length > 0 && (
-            <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl p-3 sm:p-6">
+            <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl p-3 sm:p-6">
               <h3 className="font-extrabold text-sm text-gray-900 dark:text-foreground flex flex-wrap items-center gap-2 mb-3"><Calendar className="h-4 w-4 text-primary" />Días Pico</h3>
               <div className="flex flex-wrap gap-2">
                 {prediction.peakDays.map((d, i) => (
@@ -316,7 +316,7 @@ export default function DemandPredictionTab() {
           )}
 
           {prediction.purchaseSuggestions?.length > 0 && (
-            <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl p-3 sm:p-6">
+            <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl p-3 sm:p-6">
               <h3 className="font-extrabold text-sm text-gray-900 dark:text-foreground flex flex-wrap items-center gap-2 mb-3"><ShoppingCart className="h-4 w-4 text-primary" />Sugerencias de Compra</h3>
               <ul className="space-y-1">
                 {prediction.purchaseSuggestions.map((s, i) => (

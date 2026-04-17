@@ -34,6 +34,7 @@ vi.mock("@/lib/activity-logger", () => ({
 // ── Mock: whatsapp — silencioso ───────────────────────────────────────────────
 vi.mock("@/lib/whatsapp", () => ({
   sendWhatsAppText: vi.fn(async () => {}),
+  sendWhatsAppQueued: vi.fn(async () => ({ queued: true })),
 }));
 
 // ── Mock: api-error ───────────────────────────────────────────────────────────

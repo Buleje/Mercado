@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
+import { Package } from "lucide-react";
 
 // ── Mejora 13: Vista simplificada para el repartidor ────────────────────────
 
@@ -188,9 +189,11 @@ export default function DeliveryPage() {
       <div className="p-4 space-y-3 max-w-lg mx-auto">
         {orders.length === 0 ? (
           <div className="text-center py-16">
-            <span className="text-4xl block mb-3">📦</span>
-            <p className="text-base font-bold text-gray-600 dark:text-gray-300">No hay entregas pendientes</p>
-            <p className="text-sm text-gray-400 dark:text-gray-500 mt-1">Se actualizara automaticamente cada 30 segundos</p>
+            <div className="inline-flex h-12 w-12 items-center justify-center rounded-xl border border-gray-200 dark:border-gray-800 bg-gray-50 dark:bg-gray-950 text-gray-400 dark:text-gray-600 mb-4">
+              <Package className="h-5 w-5" strokeWidth={1.5} />
+            </div>
+            <p className="text-base font-extrabold tracking-tight text-gray-800 dark:text-gray-200">No hay entregas pendientes</p>
+            <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">Se actualiza automáticamente cada 30 segundos</p>
           </div>
         ) : (
           orders.map(order => {
@@ -226,7 +229,7 @@ export default function DeliveryPage() {
                     <span className={`text-[10px] font-extrabold px-2.5 py-1 rounded-full uppercase ${
                       order.status === "en_camino" || order.status === "delivering"
                         ? "bg-cyan-100 text-cyan-700"
-                        : "bg-blue-100 text-blue-700"
+                        : "bg-emerald-100 text-emerald-700"
                     }`}>
                       {order.status === "en_camino" || order.status === "delivering"
                         ? "En camino"
@@ -284,7 +287,7 @@ export default function DeliveryPage() {
                         : "bg-[#00B4A6] text-white hover:bg-[#009690] shadow-lg shadow-[#00B4A6]/20"
                     } disabled:opacity-60`}
                   >
-                    {isUpdating ? "Marcando..." : isSuccess ? "Entregado ✓" : "✅ Marcar Entregado"}
+                    {isUpdating ? "Marcando..." : isSuccess ? "Entregado" : "Marcar como entregado"}
                   </button>
                 </div>
               </div>

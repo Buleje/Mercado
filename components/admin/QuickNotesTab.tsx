@@ -20,14 +20,14 @@ type NoteColor = "yellow" | "green" | "blue" | "pink" | "purple" | "orange";
 const COLOR_MAP: Record<NoteColor, { bg: string; border: string; darkBg: string; darkBorder: string }> = {
   yellow: { bg: "bg-yellow-50", border: "border-yellow-200", darkBg: "dark:bg-yellow-950/20", darkBorder: "dark:border-yellow-800" },
   green:  { bg: "bg-emerald-50", border: "border-emerald-200", darkBg: "dark:bg-emerald-950/20", darkBorder: "dark:border-emerald-800" },
-  blue:   { bg: "bg-blue-50", border: "border-blue-200", darkBg: "dark:bg-blue-950/20", darkBorder: "dark:border-blue-800" },
-  pink:   { bg: "bg-pink-50", border: "border-pink-200", darkBg: "dark:bg-pink-950/20", darkBorder: "dark:border-pink-800" },
-  purple: { bg: "bg-purple-50", border: "border-purple-200", darkBg: "dark:bg-purple-950/20", darkBorder: "dark:border-purple-800" },
+  blue:   { bg: "bg-emerald-50", border: "border-emerald-200", darkBg: "dark:bg-emerald-950/20", darkBorder: "dark:border-emerald-800" },
+  pink:   { bg: "bg-[var(--surface-sunken)]", border: "border-pink-200", darkBg: "dark:bg-pink-950/20", darkBorder: "dark:border-pink-800" },
+  purple: { bg: "bg-[var(--surface-sunken)]", border: "border-purple-200", darkBg: "dark:bg-purple-950/20", darkBorder: "dark:border-purple-800" },
   orange: { bg: "bg-orange-50", border: "border-orange-200", darkBg: "dark:bg-orange-950/20", darkBorder: "dark:border-orange-800" },
 };
 
 const COLOR_DOTS: Record<NoteColor, string> = {
-  yellow: "bg-yellow-400", green: "bg-emerald-400", blue: "bg-blue-400",
+  yellow: "bg-yellow-400", green: "bg-emerald-400", blue: "bg-emerald-400",
   pink: "bg-pink-400", purple: "bg-purple-400", orange: "bg-orange-400",
 };
 
@@ -144,9 +144,9 @@ export default function QuickNotesTab() {
         <div className="flex flex-wrap items-center gap-2">
           <div className="relative">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
-            <input type="text" value={search} onChange={e => setSearch(e.target.value)} placeholder="Buscar notas..." className="pl-9 pr-4 py-2.5 rounded-xl border-2 border-gray-200 dark:border-card-border bg-white dark:bg-surface text-gray-900 dark:text-foreground text-sm outline-none focus:border-primary w-48" />
+            <input type="text" value={search} onChange={e => setSearch(e.target.value)} placeholder="Buscar notas..." className="pl-9 pr-4 py-2.5 rounded-lg border-2 border-[var(--rule-base)] dark:border-card-border bg-white dark:bg-surface text-gray-900 dark:text-foreground text-sm outline-none focus:border-primary w-48" />
           </div>
-          <button onClick={() => setShowNew(true)} className="flex flex-wrap items-center gap-2 px-2 sm:px-4 py-1.5 sm:py-2.5 rounded-xl bg-primary text-white text-sm font-bold hover:bg-primary/90 transition-colors shadow-md shadow-primary/20">
+          <button onClick={() => setShowNew(true)} className="flex flex-wrap items-center gap-2 px-2 sm:px-4 py-1.5 sm:py-2.5 rounded-lg bg-primary text-white text-sm font-bold hover:bg-primary/90 transition-colors">
             <Plus className="h-4 w-4" /> Nueva nota
           </button>
         </div>
@@ -162,7 +162,7 @@ export default function QuickNotesTab() {
       {loading ? (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2 sm:gap-4">
           {[...Array(3)].map((_, i) => (
-            <div key={i} className="bg-white dark:bg-card rounded-2xl border border-gray-200 dark:border-card-border p-4 animate-pulse">
+            <div key={i} className="bg-white dark:bg-card rounded-xl border border-[var(--rule-base)] dark:border-card-border p-4 animate-pulse">
               <div className="h-4 bg-gray-200 dark:bg-surface rounded-full w-3/4 mb-3" />
               <div className="space-y-2 mb-4">
                 <div className="h-3 bg-gray-100 dark:bg-surface/60 rounded-full w-full" />
@@ -178,7 +178,7 @@ export default function QuickNotesTab() {
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2 sm:gap-4">
             {/* New note card */}
             {showNew && (
-              <div className="bg-white dark:bg-card rounded-2xl border-2 border-primary/50 p-4 shadow-lg">
+              <div className="bg-white dark:bg-card rounded-xl border-2 border-primary/50 p-4">
                 <input type="text" value={newTitle} onChange={e => setNewTitle(e.target.value)} placeholder="Título de la nota..." className="w-full text-sm font-bold text-gray-900 dark:text-foreground bg-transparent outline-none mb-2 placeholder:text-gray-400" autoFocus />
                 <textarea value={newContent} onChange={e => setNewContent(e.target.value)} placeholder="Contenido..." rows={3} className="w-full text-sm text-gray-700 dark:text-foreground bg-transparent outline-none resize-none mb-3 placeholder:text-gray-400" />
                 <div className="flex items-center justify-between">
@@ -200,7 +200,7 @@ export default function QuickNotesTab() {
               const colors = COLOR_MAP[note.color];
               const isEditing = editingId === note.id;
               return (
-                <div key={note.id} className={cn("rounded-2xl border p-4 transition-shadow hover:shadow-md", colors.bg, colors.border, colors.darkBg, colors.darkBorder)}>
+                <div key={note.id} className={cn("rounded-xl border p-4 transition-shadow hover:shadow-sm", colors.bg, colors.border, colors.darkBg, colors.darkBorder)}>
                   {isEditing ? (
                     <>
                       <input type="text" value={editTitle} onChange={e => setEditTitle(e.target.value)} className="w-full text-sm font-bold text-gray-900 dark:text-foreground bg-transparent outline-none mb-2" />

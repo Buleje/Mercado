@@ -112,7 +112,7 @@ function topProducts(orders: Order[], sales: Sale[], limit = 5): { name: string;
 
 function paymentBreakdown(orders: Order[], sales: Sale[]) {
   const map = new Map<string, number>();
-  const colorMap: Record<string, string> = { efectivo: "bg-gray-400 dark:bg-gray-500", yape: "bg-purple-500", plin: "bg-emerald-500", tarjeta: "bg-blue-500" };
+  const colorMap: Record<string, string> = { efectivo: "bg-gray-400 dark:bg-gray-500", yape: "bg-[var(--text-primary)]", plin: "bg-emerald-500", tarjeta: "bg-emerald-500" };
   for (const o of orders) { if (o.status === "cancelado") continue; const m = (o.paymentMethod ?? "efectivo").toLowerCase(); map.set(m, (map.get(m) ?? 0) + (o.total ?? 0)); }
   for (const s of sales) { const m = (s.payment ?? "efectivo").toLowerCase(); map.set(m, (map.get(m) ?? 0) + (s.total ?? 0)); }
   const total = Array.from(map.values()).reduce((a, b) => a + b, 0);
@@ -154,8 +154,8 @@ function recentActivity(orders: Order[], sales: Sale[], limit = 5) {
 }
 
 // ── Skeletons ────────────────────────────────────────────────────────────────
-function KPISkeleton() { return (<div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-3">{Array.from({ length: 6 }).map((_, i) => (<div key={i} className="bg-white dark:bg-card rounded-2xl border border-gray-200 dark:border-card-border p-4 animate-pulse"><div className="h-3 w-16 bg-gray-200 dark:bg-gray-700 rounded mb-3" /><div className="h-7 w-20 bg-gray-200 dark:bg-gray-700 rounded mb-2" /><div className="h-3 w-12 bg-gray-100 dark:bg-gray-800 rounded" /></div>))}</div>); }
-function ChartSkeleton() { return (<div className="bg-white dark:bg-card rounded-2xl border border-gray-200 dark:border-card-border p-5 animate-pulse"><div className="h-4 w-40 bg-gray-200 dark:bg-gray-700 rounded mb-4" /><div className="flex items-end gap-2 h-32">{[65, 45, 80, 55, 90, 40, 70].map((h, i) => (<div key={i} className="flex-1 bg-gray-100 dark:bg-gray-800 rounded-t-md" style={{ height: `${h}%` }} />))}</div></div>); }
+function KPISkeleton() { return (<div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-3">{Array.from({ length: 6 }).map((_, i) => (<div key={i} className="bg-white dark:bg-card rounded-xl border border-[var(--rule-base)] dark:border-card-border p-4 animate-pulse"><div className="h-3 w-16 bg-gray-200 dark:bg-gray-700 rounded mb-3" /><div className="h-7 w-20 bg-gray-200 dark:bg-gray-700 rounded mb-2" /><div className="h-3 w-12 bg-gray-100 dark:bg-gray-800 rounded" /></div>))}</div>); }
+function ChartSkeleton() { return (<div className="bg-white dark:bg-card rounded-xl border border-[var(--rule-base)] dark:border-card-border p-5 animate-pulse"><div className="h-4 w-40 bg-gray-200 dark:bg-gray-700 rounded mb-4" /><div className="flex items-end gap-2 h-32">{[65, 45, 80, 55, 90, 40, 70].map((h, i) => (<div key={i} className="flex-1 bg-gray-100 dark:bg-gray-800 rounded-t-md" style={{ height: `${h}%` }} />))}</div></div>); }
 
 // ── Main Component ───────────────────────────────────────────────────────────
 
@@ -330,10 +330,10 @@ export default function DashboardIATab({ tenantId: _tenantId }: Props) {
 
   if (error) {
     return (
-      <div className="bg-red-50 dark:bg-red-950/20 rounded-2xl border border-red-200 dark:border-red-800/30 p-6 text-center">
+      <div className="bg-red-50 dark:bg-red-950/20 rounded-xl border border-red-200 dark:border-red-800/30 p-6 text-center">
         <AlertTriangle className="w-8 h-8 text-red-500 mx-auto mb-2" />
         <p className="text-sm font-semibold text-red-700 dark:text-red-300 mb-3">{error}</p>
-        <button onClick={() => void fetchData()} className="px-4 py-2 rounded-xl bg-red-600 hover:bg-red-700 text-white text-sm font-bold transition-colors">
+        <button onClick={() => void fetchData()} className="px-4 py-2 rounded-lg bg-red-600 hover:bg-red-700 text-white text-sm font-bold transition-colors">
           Reintentar
         </button>
       </div>
@@ -398,8 +398,8 @@ export default function DashboardIATab({ tenantId: _tenantId }: Props) {
     });
   }
 
-  const actionBorderColor = { red: "border-l-red-500", orange: "border-l-orange-500", blue: "border-l-blue-500" };
-  const actionDotColor = { red: "bg-red-500", orange: "bg-orange-500", blue: "bg-blue-500" };
+  const actionBorderColor = { red: "border-l-red-500", orange: "border-l-orange-500", blue: "border-l-emerald-500" };
+  const actionDotColor = { red: "bg-red-500", orange: "bg-orange-500", blue: "bg-emerald-500" };
 
   return (
     <div className="space-y-5">
@@ -426,7 +426,7 @@ export default function DashboardIATab({ tenantId: _tenantId }: Props) {
                 className={cn(
                   "px-2.5 py-1 text-xs font-semibold rounded-md transition-colors",
                   period === key
-                    ? "bg-white dark:bg-card text-gray-900 dark:text-foreground shadow-sm"
+                    ? "bg-white dark:bg-card text-gray-900 dark:text-foreground "
                     : "text-gray-500 dark:text-muted hover:text-gray-700 dark:hover:text-foreground",
                 )}
               >
@@ -451,7 +451,7 @@ export default function DashboardIATab({ tenantId: _tenantId }: Props) {
         const goalColor = goalPct >= 100 ? "bg-emerald-500" : goalPct >= 50 ? "bg-orange-400" : "bg-red-500";
         const goalTextColor = goalPct >= 100 ? "text-emerald-600 dark:text-emerald-400" : goalPct >= 50 ? "text-orange-600 dark:text-orange-400" : "text-red-600 dark:text-red-400";
         return (
-          <div className="bg-white dark:bg-card rounded-2xl border border-gray-200 dark:border-card-border p-4">
+          <div className="bg-white dark:bg-card rounded-xl border border-[var(--rule-base)] dark:border-card-border p-4">
             <div className="flex items-center justify-between mb-2">
               <span className={cn("text-sm font-bold", goalTextColor)}>
                 Meta del dia: {formatCurrency(kpis.todayRevForGoal)} de {formatCurrency(dailyGoal)} ({goalPct}%)
@@ -469,7 +469,7 @@ export default function DashboardIATab({ tenantId: _tenantId }: Props) {
                         setEditingGoal(false);
                       }
                     }}
-                    className="w-20 px-2 py-1 text-xs rounded-lg border border-gray-300 dark:border-card-border bg-gray-50 dark:bg-surface text-gray-900 dark:text-foreground"
+                    className="w-20 px-2 py-1 text-xs rounded-lg border border-[var(--rule-base)] dark:border-card-border bg-gray-50 dark:bg-surface text-gray-900 dark:text-foreground"
                     autoFocus
                   />
                   <button
@@ -485,7 +485,7 @@ export default function DashboardIATab({ tenantId: _tenantId }: Props) {
               )}
             </div>
             <div className="h-3 bg-gray-100 dark:bg-surface rounded-full overflow-hidden">
-              <div className={cn("h-full rounded-full transition-all duration-500", goalColor)} style={{ width: `${goalPct}%` }} />
+              <div className={cn("h-full rounded-full transition-all duration-[var(--dur-slow)]", goalColor)} style={{ width: `${goalPct}%` }} />
             </div>
           </div>
         );
@@ -515,21 +515,21 @@ export default function DashboardIATab({ tenantId: _tenantId }: Props) {
       {chartData.hourly.length > 0 && (() => {
         const hourlyMax = Math.max(...chartData.hourly.map((h) => h.total), 1);
         return (
-          <div className="bg-white dark:bg-card rounded-2xl border border-gray-200 dark:border-card-border p-4">
-            <h3 className="text-xs font-bold text-gray-500 dark:text-muted uppercase tracking-wide mb-3">Horario de ventas</h3>
+          <div className="bg-white dark:bg-card rounded-xl border border-[var(--rule-base)] dark:border-card-border p-4">
+            <h3 className="text-xs font-bold text-gray-500 dark:text-muted mb-3">Horario de ventas</h3>
             <div className="space-y-1.5" style={{ maxHeight: "100px", overflowY: "auto" }}>
               {chartData.hourly.map((h) => (
                 <div key={h.hour} className="flex items-center gap-2">
-                  <span className="text-[10px] font-semibold text-gray-500 dark:text-muted w-10 text-right shrink-0">
+                  <span className="text-[length:var(--ts-2xs)] font-semibold text-gray-500 dark:text-muted w-10 text-right shrink-0">
                     {h.hour.toString().padStart(2, "0")}:00
                   </span>
                   <div className="flex-1 h-3 bg-gray-100 dark:bg-surface rounded-full overflow-hidden">
                     <div
-                      className="h-full bg-[#00B4A6] dark:bg-emerald-600 rounded-full transition-all duration-300"
+                      className="h-full bg-[#00B4A6] dark:bg-emerald-600 rounded-full transition-all duration-[var(--dur-base)]"
                       style={{ width: `${(h.total / hourlyMax) * 100}%` }}
                     />
                   </div>
-                  <span className="text-[10px] font-bold text-gray-500 dark:text-muted w-14 text-right shrink-0">
+                  <span className="text-[length:var(--ts-2xs)] font-bold text-gray-500 dark:text-muted w-14 text-right shrink-0">
                     {formatCompact(h.total)}
                   </span>
                 </div>
@@ -542,8 +542,8 @@ export default function DashboardIATab({ tenantId: _tenantId }: Props) {
       {/* ── Charts row ─────────────────────────────────────────────────────── */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         {/* Weekly sales bar chart */}
-        <div className="bg-white dark:bg-card rounded-2xl border border-gray-200 dark:border-card-border p-5">
-          <h3 className="text-xs font-bold text-gray-500 dark:text-muted uppercase tracking-wide mb-4">
+        <div className="bg-white dark:bg-card rounded-xl border border-[var(--rule-base)] dark:border-card-border p-5">
+          <h3 className="text-xs font-bold text-gray-500 dark:text-muted mb-4">
             Ventas ultimos 7 dias
           </h3>
           <div className="flex items-end gap-2 h-36">
@@ -551,16 +551,16 @@ export default function DashboardIATab({ tenantId: _tenantId }: Props) {
               const pct = weeklyMax > 0 ? (day.value / weeklyMax) * 100 : 0;
               return (
                 <div key={i} className="flex-1 flex flex-col items-center gap-1">
-                  <span className="text-[10px] font-semibold text-gray-500 dark:text-muted">
+                  <span className="text-[length:var(--ts-2xs)] font-semibold text-gray-500 dark:text-muted">
                     {day.value > 0 ? formatCompact(day.value) : ""}
                   </span>
                   <div className="w-full relative group" style={{ height: "100px" }}>
                     <div
-                      className="absolute bottom-0 left-1 right-1 rounded-t-md bg-[#00B4A6] dark:bg-emerald-600 transition-all duration-500"
+                      className="absolute bottom-0 left-1 right-1 rounded-t-md bg-[#00B4A6] dark:bg-emerald-600 transition-all duration-[var(--dur-slow)]"
                       style={{ height: `${Math.max(pct, 2)}%` }}
                     />
                   </div>
-                  <span className="text-[10px] font-bold text-gray-400 dark:text-muted">{day.label}</span>
+                  <span className="text-[length:var(--ts-2xs)] font-bold text-gray-400 dark:text-muted">{day.label}</span>
                 </div>
               );
             })}
@@ -568,8 +568,8 @@ export default function DashboardIATab({ tenantId: _tenantId }: Props) {
         </div>
 
         {/* Top 5 products */}
-        <div className="bg-white dark:bg-card rounded-2xl border border-gray-200 dark:border-card-border p-5">
-          <h3 className="text-xs font-bold text-gray-500 dark:text-muted uppercase tracking-wide mb-4">
+        <div className="bg-white dark:bg-card rounded-xl border border-[var(--rule-base)] dark:border-card-border p-5">
+          <h3 className="text-xs font-bold text-gray-500 dark:text-muted mb-4">
             Top 5 productos
           </h3>
           {chartData.topProds.length === 0 ? (
@@ -586,12 +586,12 @@ export default function DashboardIATab({ tenantId: _tenantId }: Props) {
                         <span className="text-sm font-semibold text-gray-800 dark:text-foreground truncate">{p.name}</span>
                         <div className="flex items-center gap-2 ml-2 shrink-0">
                           <span className="text-xs font-bold text-gray-600 dark:text-muted">{formatCurrency(p.revenue)}</span>
-                          <span className="text-[10px] font-semibold text-emerald-600 dark:text-emerald-400">+{formatCurrency(p.profit)} ganancia</span>
+                          <span className="text-[length:var(--ts-2xs)] font-semibold text-emerald-600 dark:text-emerald-400">+{formatCurrency(p.profit)} ganancia</span>
                         </div>
                       </div>
                       <div className="h-2 bg-gray-100 dark:bg-surface rounded-full overflow-hidden">
                         <div
-                          className="h-full bg-[#f97316] rounded-full transition-all duration-500"
+                          className="h-full bg-[#f97316] rounded-full transition-all duration-[var(--dur-slow)]"
                           style={{ width: `${barPct}%` }}
                         />
                       </div>
@@ -607,8 +607,8 @@ export default function DashboardIATab({ tenantId: _tenantId }: Props) {
       {/* ── Payment + Actions row ──────────────────────────────────────────── */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         {/* Payment breakdown */}
-        <div className="bg-white dark:bg-card rounded-2xl border border-gray-200 dark:border-card-border p-5">
-          <h3 className="text-xs font-bold text-gray-500 dark:text-muted uppercase tracking-wide mb-4">
+        <div className="bg-white dark:bg-card rounded-xl border border-[var(--rule-base)] dark:border-card-border p-5">
+          <h3 className="text-xs font-bold text-gray-500 dark:text-muted mb-4">
             Pagos por metodo
           </h3>
           {chartData.payments.length === 0 ? (
@@ -622,7 +622,7 @@ export default function DashboardIATab({ tenantId: _tenantId }: Props) {
                     <span className="text-xs font-bold text-gray-500 dark:text-muted">{pm.pct}%</span>
                   </div>
                   <div className="h-2.5 bg-gray-100 dark:bg-surface rounded-full overflow-hidden">
-                    <div className={cn("h-full rounded-full transition-all duration-500", pm.color)} style={{ width: `${pm.pct}%` }} />
+                    <div className={cn("h-full rounded-full transition-all duration-[var(--dur-slow)]", pm.color)} style={{ width: `${pm.pct}%` }} />
                   </div>
                 </div>
               ))}
@@ -631,8 +631,8 @@ export default function DashboardIATab({ tenantId: _tenantId }: Props) {
         </div>
 
         {/* Urgent actions */}
-        <div className="bg-white dark:bg-card rounded-2xl border border-gray-200 dark:border-card-border p-5">
-          <h3 className="text-xs font-bold text-gray-500 dark:text-muted uppercase tracking-wide mb-4">
+        <div className="bg-white dark:bg-card rounded-xl border border-[var(--rule-base)] dark:border-card-border p-5">
+          <h3 className="text-xs font-bold text-gray-500 dark:text-muted mb-4">
             Acciones urgentes
           </h3>
           {urgentActions.length === 0 ? (
@@ -652,7 +652,7 @@ export default function DashboardIATab({ tenantId: _tenantId }: Props) {
                     key={a.id}
                     onClick={() => navigateTo(a.href)}
                     className={cn(
-                      "w-full flex items-center gap-3 p-3 rounded-xl border-l-4 bg-gray-50 dark:bg-surface hover:bg-gray-100 dark:hover:bg-card transition-colors text-left",
+                      "w-full flex items-center gap-3 p-3 rounded-lg border-l-4 bg-gray-50 dark:bg-surface hover:bg-gray-100 dark:hover:bg-card transition-colors text-left",
                       actionBorderColor[a.color],
                     )}
                   >
@@ -673,8 +673,8 @@ export default function DashboardIATab({ tenantId: _tenantId }: Props) {
 
       {/* ── Recent Activity ──────────────────────────────────────────────── */}
       {chartData.recent.length > 0 && (
-        <div className="bg-white dark:bg-card rounded-2xl border border-gray-200 dark:border-card-border p-5">
-          <h3 className="text-xs font-bold text-gray-500 dark:text-muted uppercase tracking-wide mb-4">
+        <div className="bg-white dark:bg-card rounded-xl border border-[var(--rule-base)] dark:border-card-border p-5">
+          <h3 className="text-xs font-bold text-gray-500 dark:text-muted mb-4">
             Actividad reciente
           </h3>
           <div className="space-y-2">
@@ -682,15 +682,15 @@ export default function DashboardIATab({ tenantId: _tenantId }: Props) {
               const methodIcons: Record<string, string> = { efectivo: "E", yape: "Y", plin: "P", tarjeta: "T" };
               return (
                 <div key={item.id} className="flex items-center gap-3 p-2.5 rounded-xl bg-gray-50 dark:bg-surface">
-                  <span className="w-6 h-6 shrink-0 flex items-center justify-center rounded-full bg-gray-200 dark:bg-accent text-[10px] font-bold text-gray-600 dark:text-muted">{methodIcons[item.method] ?? "?"}</span>
+                  <span className="w-6 h-6 shrink-0 flex items-center justify-center rounded-full bg-gray-200 dark:bg-accent text-[length:var(--ts-2xs)] font-bold text-gray-600 dark:text-muted">{methodIcons[item.method] ?? "?"}</span>
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center justify-between">
                       <span className="text-sm font-semibold text-gray-800 dark:text-foreground truncate">{item.customer}</span>
                       <span className="text-sm font-bold text-gray-700 dark:text-foreground ml-2 shrink-0">{formatCurrency(item.amount)}</span>
                     </div>
                     <div className="flex items-center justify-between mt-0.5">
-                      <span className="text-[10px] text-gray-400 dark:text-muted">{item.time}</span>
-                      <span className="text-[10px] text-gray-400 dark:text-muted capitalize">{item.method}</span>
+                      <span className="text-[length:var(--ts-2xs)] text-gray-400 dark:text-muted">{item.time}</span>
+                      <span className="text-[length:var(--ts-2xs)] text-gray-400 dark:text-muted capitalize">{item.method}</span>
                     </div>
                   </div>
                 </div>
@@ -701,8 +701,8 @@ export default function DashboardIATab({ tenantId: _tenantId }: Props) {
       )}
 
       {/* ── WhatsApp Daily Report ─────────────────────────────────────────── */}
-      <div className="bg-white dark:bg-card rounded-2xl border border-gray-200 dark:border-card-border p-4 sm:p-5">
-        <h3 className="text-xs font-bold text-gray-500 dark:text-muted uppercase tracking-wide mb-4">
+      <div className="bg-white dark:bg-card rounded-xl border border-[var(--rule-base)] dark:border-card-border p-4 sm:p-5">
+        <h3 className="text-xs font-bold text-gray-500 dark:text-muted mb-4">
           Reporte diario por WhatsApp
         </h3>
         <DailyReportWhatsApp />
@@ -710,7 +710,7 @@ export default function DashboardIATab({ tenantId: _tenantId }: Props) {
 
       {/* ── Predicción IA ─────────────────────────────────────────────────── */}
       <div className="space-y-1">
-        <h2 className="text-xs font-bold text-gray-400 dark:text-muted uppercase tracking-wider px-1">
+        <h2 className="text-xs font-bold text-gray-400 dark:text-muted px-1">
           Inteligencia artificial local
         </h2>
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
@@ -720,7 +720,7 @@ export default function DashboardIATab({ tenantId: _tenantId }: Props) {
       </div>
 
       {/* ── AI Quick Chat ──────────────────────────────────────────────────── */}
-      <div className="bg-white dark:bg-card rounded-2xl border border-gray-200 dark:border-card-border p-4 sm:p-5">
+      <div className="bg-white dark:bg-card rounded-xl border border-[var(--rule-base)] dark:border-card-border p-4 sm:p-5">
         {chatAnswer && (
           <div className="mb-3 bg-gray-50 dark:bg-surface rounded-xl p-3 text-sm text-gray-700 dark:text-foreground whitespace-pre-line">
             {chatAnswer}
@@ -733,13 +733,13 @@ export default function DashboardIATab({ tenantId: _tenantId }: Props) {
             onChange={(e) => setQuestion(e.target.value)}
             onKeyDown={(e) => { if (e.key === "Enter") void handleAsk(); }}
             placeholder="Preguntame sobre tu negocio..."
-            className="flex-1 bg-gray-50 dark:bg-surface border border-gray-200 dark:border-card-border rounded-xl px-4 py-2.5 text-sm text-gray-900 dark:text-foreground placeholder:text-gray-400 dark:placeholder:text-muted focus:outline-none focus:ring-2 focus:ring-[#00B4A6]/30 focus:border-[#00B4A6] transition-colors"
+            className="flex-1 bg-gray-50 dark:bg-surface border border-[var(--rule-base)] dark:border-card-border rounded-lg px-4 py-2.5 text-sm text-gray-900 dark:text-foreground placeholder:text-gray-400 dark:placeholder:text-muted focus:outline-none focus:ring-2 focus:ring-[#00B4A6]/30 focus:border-[#00B4A6] transition-colors"
             disabled={chatLoading}
           />
           <button
             onClick={() => void handleAsk()}
             disabled={chatLoading || !question.trim()}
-            className="shrink-0 flex items-center justify-center w-10 h-10 rounded-xl bg-[#00B4A6] hover:bg-[#009690] disabled:opacity-50 text-white transition-colors"
+            className="shrink-0 flex items-center justify-center w-10 h-10 rounded-lg bg-[#00B4A6] hover:bg-[#009690] disabled:opacity-50 text-white transition-colors"
           >
             {chatLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
           </button>
@@ -772,7 +772,7 @@ function KPICard({
     ? "border-red-300 dark:border-red-800/40"
     : alert === "yellow"
       ? "border-yellow-300 dark:border-yellow-800/40"
-      : "border-gray-200 dark:border-card-border";
+      : "border-[var(--rule-base)] dark:border-card-border";
 
   const alertValue = alert === "red"
     ? "text-red-600 dark:text-red-400"
@@ -799,9 +799,9 @@ function KPICard({
   };
 
   return (
-    <div className={cn("bg-white dark:bg-card rounded-2xl border p-4 transition-colors", alertBorder)} title={tooltip}>
+    <div className={cn("bg-white dark:bg-card rounded-xl border p-4 transition-colors", alertBorder)} title={tooltip}>
       <div className="flex items-center justify-between mb-2">
-        <span className="text-[11px] font-bold text-gray-500 dark:text-muted uppercase tracking-wide leading-tight">{label}</span>
+        <span className="text-[length:var(--ts-xs)] font-bold text-gray-500 dark:text-muted leading-tight">{label}</span>
         <Icon className="w-4 h-4 text-[#00B4A6] dark:text-emerald-400 shrink-0" />
       </div>
       <p className={cn("text-xl font-extrabold", alertValue)}>{value}</p>

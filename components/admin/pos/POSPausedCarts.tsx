@@ -139,7 +139,7 @@ export default function POSPausedCarts({
                     if (e.key === "Escape") setShowNameInput(false);
                   }}
                   placeholder="Nombre (opc.)"
-                  className="w-24 px-2 py-1 text-xs border border-gray-200 dark:border-card-border rounded-lg outline-none focus:border-primary text-gray-900 dark:text-foreground"
+                  className="w-24 px-2 py-1 text-xs border border-[var(--rule-base)] dark:border-card-border rounded-lg outline-none focus:border-primary text-gray-900 dark:text-foreground"
                   autoFocus
                 />
                 <button
@@ -193,17 +193,17 @@ export default function POSPausedCarts({
 
       {/* Paused carts list */}
       {showList && paused.length > 0 && (
-        <div className="mt-2 space-y-1.5 bg-gray-50 dark:bg-surface rounded-xl p-2 border border-gray-100 dark:border-card-border">
+        <div className="mt-2 space-y-1.5 bg-gray-50 dark:bg-surface rounded-xl p-2 border border-[var(--rule-soft)] dark:border-card-border">
           {paused.map((cart) => (
             <div
               key={cart.id}
-              className="flex items-center gap-2 p-2 bg-white dark:bg-card rounded-lg border border-gray-100 dark:border-card-border hover:border-primary/30 transition-colors"
+              className="flex items-center gap-2 p-2 bg-white dark:bg-card rounded-lg border border-[var(--rule-soft)] dark:border-card-border hover:border-primary/30 transition-colors"
             >
               <div className="flex-1 min-w-0">
                 <p className="text-xs font-semibold text-gray-900 dark:text-foreground truncate">
                   {cart.nombre}
                 </p>
-                <p className="text-[10px] text-gray-400 dark:text-muted">
+                <p className="text-[length:var(--ts-2xs)] text-gray-400 dark:text-muted">
                   {fmt(cart.total)} &middot; {cart.items.length}{" "}
                   {cart.items.length === 1 ? "item" : "items"} &middot;{" "}
                   {timeAgo(cart.timestamp)}
@@ -211,7 +211,7 @@ export default function POSPausedCarts({
               </div>
               <button
                 onClick={() => handleResume(cart)}
-                className="flex items-center gap-1 text-[11px] font-bold text-primary hover:underline shrink-0"
+                className="flex items-center gap-1 text-[length:var(--ts-xs)] font-bold text-primary hover:underline shrink-0"
               >
                 <Play className="h-3 w-3" /> Retomar
               </button>

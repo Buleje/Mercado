@@ -31,13 +31,13 @@ export default function CashRegisterChart({
   tendencia,
 }: CashRegisterChartProps) {
   return (
-    <div className="bg-white dark:bg-card rounded-xl border border-gray-100 dark:border-card-border p-3">
+    <div className="bg-white dark:bg-card rounded-xl border border-[var(--rule-soft)] dark:border-card-border p-3">
       <div className="flex items-center justify-between mb-2">
-        <p className="text-[10px] font-bold text-gray-400 dark:text-muted uppercase tracking-wide">
+        <p className="text-[length:var(--ts-2xs)] font-bold text-gray-400 dark:text-muted">
           Tendencia de diferencias (ultimos {diffsCount} cierres)
         </p>
         {tendencia && (
-          <span className={cn("text-[10px] font-bold px-2 py-0.5 rounded-full", tendencia.color)}>
+          <span className={cn("text-[length:var(--ts-2xs)] font-bold px-2 py-0.5 rounded-full", tendencia.color)}>
             {tendencia.label === "Mejorando"
               ? "Mejorando ↓"
               : tendencia.label === "Empeorando"
@@ -79,7 +79,7 @@ export default function CashRegisterChart({
           />
         </AreaChart>
       </ResponsiveContainer>
-      <div className="flex justify-between mt-1 text-[9px] text-gray-400">
+      <div className="flex justify-between mt-1 text-[length:var(--ts-2xs)] text-gray-400">
         <span>Antiguo</span>
         <span>Reciente</span>
       </div>

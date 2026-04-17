@@ -3,6 +3,7 @@ import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { logger } from "@/lib/logger";
 import { handleIncomingMessage } from "@/lib/whatsapp/concierge/concierge-router";
+import { emitMeteringEvent } from "@/lib/billing/wire-up/metering-bus";
 
 // ─── Zod schemas ──────────────────────────────────────────────────────────────
 
@@ -94,6 +95,7 @@ async function sendWhatsAppReply(
   token: string,
   to: string,
   body: string,
+  tenantId?: string,
 ): Promise<void> {
   const res = await fetch(
     `https://graph.facebook.com/v19.0/${phoneNumberId}/messages`,
@@ -117,6 +119,23 @@ async function sendWhatsAppReply(
       status: res.status,
       phoneNumberId,
     });
+    return;
+  }
+
+  // ADR-047 billing wire-up: meter successful outbound WhatsApp message
+  if (tenantId) {
+    try {
+      const msgId = `wa:${tenantId}:${to.replace(/\D/g, "")}:${Date.now()}`;
+      emitMeteringEvent({
+        source: "whatsapp.message.sent",
+        tenantId,
+        amount: 1,
+        idempotencyKey: msgId,
+        metadata: { phoneNumberId, chars: body.length },
+      });
+    } catch {
+      // Metering nunca bloquea la conversacion
+    }
   }
 }
 
@@ -270,18 +289,26 @@ async function processPayload(rawBody: string): Promise<void> {
             trimmed,
           );
 
-          await sendWhatsAppReply(
+          // Fire-and-forget: don't block webhook on WhatsApp API latency
+          sendWhatsAppReply(
             phoneNumberId,
             effectiveToken,
             phone,
             response.reply,
-          );
-
-          logger.info("[whatsapp/concierge] reply sent", {
-            tenantId: effectiveTenantId,
-            phone,
-            state: response.state,
-            escalated: response.escalated,
+            effectiveTenantId,
+          ).then(() => {
+            logger.info("[whatsapp/concierge] reply sent", {
+              tenantId: effectiveTenantId,
+              phone,
+              state: response.state,
+              escalated: response.escalated,
+            });
+          }).catch((replyErr) => {
+            logger.warn("[whatsapp/concierge] reply failed", {
+              tenantId: effectiveTenantId,
+              phone,
+              error: replyErr instanceof Error ? replyErr.message : String(replyErr),
+            });
           });
         } catch (err) {
           logger.error("[whatsapp/concierge] engine error", {
@@ -290,13 +317,14 @@ async function processPayload(rawBody: string): Promise<void> {
             error: err instanceof Error ? err.message : String(err),
           });
 
-          // Best-effort error reply to customer
-          await sendWhatsAppReply(
+          // Best-effort error reply to customer (no metering — system-generated)
+          sendWhatsAppReply(
             phoneNumberId,
             effectiveToken,
             phone,
             "Lo siento, ocurrió un error. Escribe *hola* para volver al menú.",
-          ).catch(() => {});
+            effectiveTenantId,
+          ).catch((replyErr) => logger.error("[whatsapp/concierge] error reply send failed", { error: String(replyErr), phone }));
         }
       }
     }

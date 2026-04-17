@@ -44,7 +44,7 @@ export function BarChart({
               </div>
               <div className="h-2 bg-gray-100 dark:bg-accent rounded-full overflow-hidden">
                 <div
-                  className="h-full rounded-full transition-all duration-500"
+                  className="h-full rounded-full transition-all duration-[var(--dur-slow)]"
                   style={{ width: `${pct}%`, backgroundColor: item.color ?? "#00B4A6" }}
                 />
               </div>
@@ -62,13 +62,13 @@ export function BarChart({
         return (
           <div key={i} className="flex-1 flex flex-col items-center gap-0.5" title={`${item.label}: ${formatValue(item.value)}`}>
             {showValues && pct > 15 && (
-              <span className="text-[8px] font-bold text-gray-500 dark:text-muted">{formatValue(item.value)}</span>
+              <span className="text-[length:var(--ts-2xs)] font-bold text-gray-500 dark:text-muted">{formatValue(item.value)}</span>
             )}
             <div
-              className="w-full rounded-t transition-all duration-500 min-h-[2px]"
+              className="w-full rounded-t transition-all duration-[var(--dur-slow)] min-h-[2px]"
               style={{ height: `${pct}%`, backgroundColor: item.color ?? "#00B4A6" }}
             />
-            <span className="text-[8px] text-gray-400 dark:text-muted truncate max-w-full">{item.label}</span>
+            <span className="text-[length:var(--ts-2xs)] text-gray-400 dark:text-muted truncate max-w-full">{item.label}</span>
           </div>
         );
       })}
@@ -128,7 +128,7 @@ export function DonutChart({
       {(centerLabel || centerValue) && (
         <div className="absolute inset-0 flex flex-col items-center justify-center">
           {centerValue && <span className="text-lg font-extrabold text-gray-900 dark:text-foreground">{centerValue}</span>}
-          {centerLabel && <span className="text-[10px] text-gray-500 dark:text-muted">{centerLabel}</span>}
+          {centerLabel && <span className="text-[length:var(--ts-2xs)] text-gray-500 dark:text-muted">{centerLabel}</span>}
         </div>
       )}
     </div>
@@ -155,7 +155,7 @@ export function GaugeChart({ value, size = 120, label, color, className }: Gauge
       <div className="relative" style={{ width: size, height: size / 2 }}>
         {/* Background arc */}
         <div
-          className="absolute inset-0 rounded-t-full border-[12px] border-b-0 border-gray-200 dark:border-accent"
+          className="absolute inset-0 rounded-t-full border-[12px] border-b-0 border-[var(--rule-base)] dark:border-accent"
           style={{ width: size, height: size / 2 }}
         />
         {/* Value arc */}
@@ -173,7 +173,7 @@ export function GaugeChart({ value, size = 120, label, color, className }: Gauge
           <span className="text-xl font-extrabold" style={{ color: autoColor }}>{clampedValue}</span>
         </div>
       </div>
-      {label && <span className="text-[10px] text-gray-500 dark:text-muted font-medium">{label}</span>}
+      {label && <span className="text-[length:var(--ts-2xs)] text-gray-500 dark:text-muted font-medium">{label}</span>}
     </div>
   );
 }
@@ -273,12 +273,12 @@ export function WaterfallChart({ data, height = 200, className, formatValue = (v
                 }}
               />
               <span
-                className="absolute text-[8px] font-bold"
+                className="absolute text-[length:var(--ts-2xs)] font-bold"
                 style={{ top: `${top - 14}px`, color }}
               >
                 {formatValue(item.value)}
               </span>
-              <span className="absolute bottom-0 text-[7px] text-gray-400 dark:text-muted truncate max-w-full text-center">
+              <span className="absolute bottom-0 text-[length:var(--ts-2xs)] text-gray-400 dark:text-muted truncate max-w-full text-center">
                 {item.label}
               </span>
             </div>

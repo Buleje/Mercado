@@ -16,7 +16,7 @@ const MILESTONES = [
     title: "Más de 500 familias",
     desc: "Nos convertimos en la bodega de confianza del barrio con productos frescos cada día.",
     icon: Users,
-    color: "bg-blue-500",
+    color: "bg-emerald-500",
   },
   {
     year: "2021",

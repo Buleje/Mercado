@@ -107,7 +107,7 @@ function TrendBadge({ change, higherIsBetter }: { change: number; higherIsBetter
 
   if (isNeutral) {
     return (
-      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400">
+      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[length:var(--ts-2xs)] font-bold bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400">
         <Minus className="h-2.5 w-2.5" /> {change >= 0 ? "+" : ""}{change.toFixed(1)}%
       </span>
     );
@@ -115,7 +115,7 @@ function TrendBadge({ change, higherIsBetter }: { change: number; higherIsBetter
 
   return (
     <span className={cn(
-      "inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold",
+      "inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[length:var(--ts-2xs)] font-bold",
       isGood
         ? "bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400"
         : "bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400",
@@ -197,11 +197,11 @@ export default function ComparativeReportsTab() {
   }
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-6">
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center gap-3 justify-between">
         <div className="flex items-center gap-3">
-          <div className="h-10 w-10 rounded-xl bg-[#00B4A6] text-white flex items-center justify-center shadow-sm shrink-0">
+          <div className="h-10 w-10 rounded-lg bg-[#00B4A6] text-white flex items-center justify-center  shrink-0">
             <BarChart3 className="h-5 w-5" />
           </div>
           <div>
@@ -219,7 +219,7 @@ export default function ComparativeReportsTab() {
                 className={cn(
                   "px-3 py-1.5 rounded-lg text-xs font-bold transition-all",
                   comparison === opt
-                    ? "bg-white dark:bg-card text-[#00B4A6] shadow-sm"
+                    ? "bg-white dark:bg-card text-[#00B4A6] "
                     : "text-gray-500 dark:text-muted hover:text-gray-700 dark:hover:text-foreground",
                 )}
               >
@@ -229,7 +229,7 @@ export default function ComparativeReportsTab() {
           </div>
           <button
             onClick={fetchData}
-            className="p-2 rounded-xl hover:bg-gray-100 dark:hover:bg-white/5 transition-colors min-h-[40px] min-w-[40px] flex items-center justify-center"
+            className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-white/5 transition-colors min-h-[40px] min-w-[40px] flex items-center justify-center"
             title="Actualizar"
           >
             <RefreshCw className="h-4 w-4 text-gray-400" />
@@ -240,16 +240,16 @@ export default function ComparativeReportsTab() {
       {dataA && dataB && (
         <>
           {/* Table */}
-          <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl overflow-hidden">
+          <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl overflow-hidden">
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
                 <thead>
-                  <tr className="bg-gray-50 dark:bg-white/5 border-b border-gray-100 dark:border-card-border">
-                    <th className="px-4 py-3 text-left text-[11px] font-bold uppercase text-gray-400">Métrica</th>
-                    <th className="px-4 py-3 text-right text-[11px] font-bold uppercase text-primary">{periods.labelA}</th>
-                    <th className="px-4 py-3 text-right text-[11px] font-bold uppercase text-gray-400">{periods.labelB}</th>
-                    <th className="px-4 py-3 text-right text-[11px] font-bold uppercase text-gray-400">Cambio</th>
-                    <th className="px-4 py-3 text-center text-[11px] font-bold uppercase text-gray-400">Tendencia</th>
+                  <tr className="bg-gray-50 dark:bg-white/5 border-b border-[var(--rule-soft)] dark:border-card-border">
+                    <th className="px-4 py-3 text-left text-[length:var(--ts-xs)] font-bold uppercase text-gray-400">Métrica</th>
+                    <th className="px-4 py-3 text-right text-[length:var(--ts-xs)] font-bold uppercase text-primary">{periods.labelA}</th>
+                    <th className="px-4 py-3 text-right text-[length:var(--ts-xs)] font-bold uppercase text-gray-400">{periods.labelB}</th>
+                    <th className="px-4 py-3 text-right text-[length:var(--ts-xs)] font-bold uppercase text-gray-400">Cambio</th>
+                    <th className="px-4 py-3 text-center text-[length:var(--ts-xs)] font-bold uppercase text-gray-400">Tendencia</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-100 dark:divide-card-border">
@@ -288,7 +288,7 @@ export default function ComparativeReportsTab() {
           </div>
 
           {/* Chart */}
-          <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl p-4">
+          <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl p-4">
             <p className="text-sm font-bold text-gray-700 dark:text-gray-300 mb-4">Top 5 métricas — comparación</p>
             <div className="h-64">
               <ResponsiveContainer width="100%" height="100%">

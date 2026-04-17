@@ -1,7 +1,7 @@
 "use client";
 
 import type { VendorLowStockProduct } from "./vendor-dashboard.types";
-import { AlertTriangle } from "lucide-react";
+import { AlertTriangle, Package } from "lucide-react";
 import Image from "next/image";
 
 type Props = {
@@ -18,13 +18,13 @@ function urgencyColor(stock: number | undefined): string {
 export function VendorLowStockList({ products }: Props) {
   if (products.length === 0) {
     return (
-      <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl p-6 shadow-sm">
+      <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl p-6 ">
         <h3 className="font-bold text-gray-900 dark:text-foreground mb-4 flex items-center gap-2">
           <AlertTriangle className="h-5 w-5 text-yellow-500" />
           Stock bajo
         </h3>
         <div className="text-center py-8">
-          <span className="text-3xl">📦</span>
+          <div className="h-10 w-10 rounded-xl bg-amber-50 flex items-center justify-center"><Package className="h-5 w-5 text-amber-500" /></div>
           <p className="mt-2 text-sm font-medium text-gray-600 dark:text-muted">
             Todo tu stock está en buen nivel.
           </p>
@@ -34,7 +34,7 @@ export function VendorLowStockList({ products }: Props) {
   }
 
   return (
-    <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl p-6 shadow-sm">
+    <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl p-6 ">
       <h3 className="font-bold text-gray-900 dark:text-foreground mb-4 flex items-center gap-2">
         <AlertTriangle className="h-5 w-5 text-yellow-500" />
         Stock bajo

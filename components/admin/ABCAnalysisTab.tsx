@@ -3,12 +3,14 @@
 import { useState, useEffect } from "react";
 import { Loader2, BarChart2, Search } from "lucide-react";
 import { cn } from "@/lib/utils";
+import StatusBadge from "@/components/admin/shared/StatusBadge";
+import type { BadgeVariant } from "@/components/admin/shared/StatusBadge";
 import type { ABCProduct } from "@/app/api/analytics/abc/route";
 
-const CLASS_STYLES: Record<"A" | "B" | "C", { badge: string; row: string; label: string; border: string }> = {
-  A: { badge: "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400", row: "bg-emerald-50/30 dark:bg-emerald-900/10", label: "A — Critico", border: "border-l-4 border-l-green-500" },
-  B: { badge: "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400",   row: "bg-amber-50/20 dark:bg-amber-900/10",   label: "B — Importante", border: "border-l-4 border-l-amber-500" },
-  C: { badge: "bg-red-100 text-red-600 dark:bg-red-900/30 dark:text-red-400",      row: "",                 label: "C — Bajo impacto", border: "border-l-4 border-l-red-500" },
+const CLASS_STYLES: Record<"A" | "B" | "C", { badge: string; row: string; label: string; border: string; variant: BadgeVariant }> = {
+  A: { badge: "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400", row: "bg-emerald-50/30 dark:bg-emerald-900/10", label: "A — Critico", border: "border-l-4 border-l-green-500", variant: "success" },
+  B: { badge: "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400",   row: "bg-amber-50/20 dark:bg-amber-900/10",   label: "B — Importante", border: "border-l-4 border-l-amber-500", variant: "warning" },
+  C: { badge: "bg-red-100 text-red-600 dark:bg-red-900/30 dark:text-red-400",      row: "",                 label: "C — Bajo impacto", border: "border-l-4 border-l-red-500", variant: "error" },
 };
 
 function fmt(n: number) { return `S/${n.toFixed(2)}`; }
@@ -50,7 +52,7 @@ export default function ABCAnalysisTab() {
         </div>
         <div className="relative">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
-          <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Buscar producto..." className="pl-9 pr-4 py-2 border border-gray-200 dark:border-card-border rounded-xl bg-white dark:bg-surface text-sm w-56" />
+          <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Buscar producto..." className="pl-9 pr-4 py-2 border border-[var(--rule-base)] dark:border-card-border rounded-lg bg-white dark:bg-surface text-sm w-56" />
         </div>
       </div>
 
@@ -61,14 +63,14 @@ export default function ABCAnalysisTab() {
             key={cls}
             onClick={() => setFilter(f => f === cls ? "all" : cls)}
             className={cn(
-              "text-left p-4 rounded-2xl border-2 transition-all hover:shadow-md",
+              "text-left p-4 rounded-xl border-2 transition-all hover:shadow-sm",
               CLASS_STYLES[cls].border,
-              filter === cls ? "border-primary shadow-md ring-2 ring-primary/20" : "border-gray-200 dark:border-card-border",
+              filter === cls ? "border-primary ring-2 ring-primary/20" : "border-[var(--rule-base)] dark:border-card-border",
               CLASS_STYLES[cls].row
             )}
           >
             <div className="flex items-center justify-between mb-2">
-              <span className={cn("px-2.5 py-0.5 rounded-full text-xs font-bold", CLASS_STYLES[cls].badge)}>Clase {cls}</span>
+              <StatusBadge variant={CLASS_STYLES[cls].variant} label={`Clase ${cls}`} />
               <span className="text-sm font-extrabold text-gray-900 dark:text-foreground">{counts[cls]} productos</span>
             </div>
             <p className="text-xl font-mono font-extrabold text-gray-900 dark:text-foreground">{fmt(revenue[cls])}</p>
@@ -79,24 +81,24 @@ export default function ABCAnalysisTab() {
 
       {/* Table */}
       {data.length === 0 ? (
-        <div className="bg-white dark:bg-card border-2 border-dashed border-gray-200 dark:border-card-border rounded-2xl p-10 text-center text-gray-400 dark:text-muted">
+        <div className="bg-white dark:bg-card border-2 border-dashed border-[var(--rule-base)] dark:border-card-border rounded-xl p-10 text-center text-gray-400 dark:text-muted">
           <BarChart2 className="h-10 w-10 mx-auto mb-3" />
           <p className="font-semibold">Sin datos de ventas para analizar</p>
           <p className="text-xs mt-1">Registra ventas o pedidos para ver el análisis ABC</p>
         </div>
       ) : (
-        <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl overflow-hidden shadow-sm">
+        <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl overflow-hidden ">
           <div className="overflow-x-auto">
             <table className="w-full min-w-[600px] text-sm">
               <thead>
-                <tr className="border-b border-gray-100 dark:border-card-border text-left">
-                  <th className="px-2 sm:px-4 py-2 sm:py-3 w-8 text-xs font-bold text-gray-500 dark:text-muted uppercase tracking-wide">#</th>
-                  <th className="px-2 sm:px-4 py-2 sm:py-3 text-xs font-bold text-gray-500 dark:text-muted uppercase tracking-wide">Producto</th>
-                  <th className="px-2 sm:px-4 py-2 sm:py-3 text-xs font-bold text-gray-500 dark:text-muted uppercase tracking-wide hidden sm:table-cell">Categoría</th>
-                  <th className="px-2 sm:px-4 py-2 sm:py-3 text-xs font-bold text-gray-500 dark:text-muted uppercase tracking-wide text-right">Ingresos</th>
-                  <th className="px-2 sm:px-4 py-2 sm:py-3 text-xs font-bold text-gray-500 dark:text-muted uppercase tracking-wide text-right hidden md:table-cell">Unidades</th>
-                  <th className="px-2 sm:px-4 py-2 sm:py-3 text-xs font-bold text-gray-500 dark:text-muted uppercase tracking-wide text-right hidden md:table-cell">Acum. %</th>
-                  <th className="px-2 sm:px-4 py-2 sm:py-3 text-xs font-bold text-gray-500 dark:text-muted uppercase tracking-wide text-center">Clase</th>
+                <tr className="border-b border-[var(--rule-soft)] dark:border-card-border text-left">
+                  <th className="px-2 sm:px-4 py-2 sm:py-3 w-8 text-xs font-bold text-gray-500 dark:text-muted">#</th>
+                  <th className="px-2 sm:px-4 py-2 sm:py-3 text-xs font-bold text-gray-500 dark:text-muted">Producto</th>
+                  <th className="px-2 sm:px-4 py-2 sm:py-3 text-xs font-bold text-gray-500 dark:text-muted hidden sm:table-cell">Categoría</th>
+                  <th className="px-2 sm:px-4 py-2 sm:py-3 text-xs font-bold text-gray-500 dark:text-muted text-right">Ingresos</th>
+                  <th className="px-2 sm:px-4 py-2 sm:py-3 text-xs font-bold text-gray-500 dark:text-muted text-right hidden md:table-cell">Unidades</th>
+                  <th className="px-2 sm:px-4 py-2 sm:py-3 text-xs font-bold text-gray-500 dark:text-muted text-right hidden md:table-cell">Acum. %</th>
+                  <th className="px-2 sm:px-4 py-2 sm:py-3 text-xs font-bold text-gray-500 dark:text-muted text-center">Clase</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-50">
@@ -109,9 +111,7 @@ export default function ABCAnalysisTab() {
                     <td className="px-2 sm:px-4 py-1.5 sm:py-2.5 text-right text-gray-600 dark:text-muted hidden md:table-cell">{p.units}</td>
                     <td className="px-2 sm:px-4 py-1.5 sm:py-2.5 text-right text-gray-500 dark:text-muted hidden md:table-cell">{p.cumulativePct}%</td>
                     <td className="px-2 sm:px-4 py-1.5 sm:py-2.5 text-center">
-                      <span className={cn("inline-flex px-2 py-0.5 rounded-full text-xs font-bold", CLASS_STYLES[p.class].badge)}>
-                        {p.class}
-                      </span>
+                      <StatusBadge variant={CLASS_STYLES[p.class].variant} label={p.class} />
                     </td>
                   </tr>
                 ))}

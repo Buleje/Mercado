@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Image from "next/image";
 import { Loader2, Search, Star, Eye, EyeOff, Trash2, Plus } from "lucide-react";
 
 type Override = {
@@ -101,7 +102,7 @@ export default function ProductsTab() {
     .slice(0, 50);
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-6">
       {/* Toolbar */}
       <div className="flex items-center gap-3 flex-wrap">
         <div className="relative flex-1 min-w-[200px]">
@@ -119,7 +120,7 @@ export default function ProductsTab() {
             if (catalog.length === 0) await loadCatalog();
             setShowPicker((v) => !v);
           }}
-          className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-teal-600 hover:bg-teal-700 text-white font-semibold text-sm"
+          className="inline-flex items-center gap-2 px-4 py-2.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white font-semibold text-sm"
         >
           <Plus className="w-4 h-4" />
           Agregar producto
@@ -128,7 +129,7 @@ export default function ProductsTab() {
 
       {/* Picker modal inline */}
       {showPicker && (
-        <section className="p-4 rounded-xl border-2 border-teal-500 bg-teal-50 dark:bg-teal-900/10 space-y-2 max-h-96 overflow-y-auto">
+        <section className="p-4 rounded-xl border-2 border-emerald-500 bg-emerald-50 dark:bg-emerald-900/10 space-y-2 max-h-96 overflow-y-auto">
           <h4 className="font-bold text-sm mb-2">Selecciona un producto del inventario</h4>
           {catalogFiltered.length === 0 ? (
             <p className="text-sm text-gray-500">Sin resultados</p>
@@ -142,8 +143,8 @@ export default function ProductsTab() {
                 }}
                 className="flex items-center gap-3 w-full p-2 rounded-lg hover:bg-white dark:hover:bg-gray-800 text-left"
               >
-                <div className="w-10 h-10 rounded bg-gray-200 overflow-hidden flex-shrink-0">
-                  {p.image && <img src={p.image} alt="" className="w-full h-full object-cover" />}
+                <div className="relative w-10 h-10 rounded bg-gray-200 overflow-hidden flex-shrink-0">
+                  {p.image && <Image src={p.image} alt="" fill sizes="40px" className="object-cover" />}
                 </div>
                 <div className="min-w-0 flex-1">
                   <p className="font-semibold text-sm truncate">{p.name}</p>
@@ -151,7 +152,7 @@ export default function ProductsTab() {
                     S/{p.price.toFixed(2)} · {p.category}
                   </p>
                 </div>
-                <Plus className="w-4 h-4 text-teal-600" />
+                <Plus className="w-4 h-4 text-emerald-600" />
               </button>
             ))
           )}
@@ -206,12 +207,14 @@ function OverrideRow({
 
   return (
     <div className="p-4 rounded-xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 flex items-center gap-4 flex-wrap">
-      <div className="w-14 h-14 rounded-lg bg-gray-100 overflow-hidden flex-shrink-0">
+      <div className="relative w-14 h-14 rounded-lg bg-gray-100 overflow-hidden flex-shrink-0">
         {override.productImage && (
-          <img
+          <Image
             src={override.productImage}
             alt=""
-            className="w-full h-full object-cover"
+            fill
+            sizes="56px"
+            className="object-cover"
           />
         )}
       </div>

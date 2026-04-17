@@ -166,7 +166,7 @@ type Props = {
 function Section({ title, defaultOpen, children }: { title: string; defaultOpen?: boolean; children: React.ReactNode }) {
   const [open, setOpen] = useState(defaultOpen ?? false);
   return (
-    <div className="border border-gray-200 dark:border-card-border rounded-xl overflow-hidden">
+    <div className="border border-[var(--rule-base)] dark:border-card-border rounded-xl overflow-hidden">
       <button
         type="button"
         onClick={() => setOpen(!open)}
@@ -349,15 +349,15 @@ export default function ClienteFormModal({ isOpen, onClose, onSaved, customer, i
 
   // ── Input helpers ───────────────────────────────────────────────────────
 
-  const inputCls = "w-full px-3 py-2 rounded-lg border border-gray-200 dark:border-card-border text-gray-900 dark:text-foreground bg-white dark:bg-surface focus:border-primary outline-none text-sm placeholder:text-gray-400";
+  const inputCls = "w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-card-border text-gray-900 dark:text-foreground bg-white dark:bg-surface focus:border-primary outline-none text-sm placeholder:text-gray-400";
   const labelCls = "block text-xs font-semibold text-gray-500 dark:text-muted mb-1";
   const selectCls = cn(inputCls, "appearance-none");
 
   return (
     <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/50" onClick={e => e.target === e.currentTarget && onClose()}>
-      <div className="bg-white dark:bg-card w-full sm:max-w-2xl sm:rounded-2xl rounded-t-2xl shadow-2xl overflow-y-auto max-h-[92dvh]">
+      <div className="bg-white dark:bg-card w-full sm:max-w-2xl sm:rounded-xl rounded-t-2xl overflow-y-auto max-h-[92dvh]">
         {/* Header */}
-        <div className="flex items-center justify-between px-5 py-4 border-b border-gray-200 dark:border-card-border sticky top-0 bg-white dark:bg-card z-10">
+        <div className="flex items-center justify-between px-5 py-4 border-b border-[var(--rule-base)] dark:border-card-border sticky top-0 bg-white dark:bg-card z-10">
           <h3 className="font-extrabold text-gray-900 dark:text-foreground">
             {isEdit ? 'Editar cliente' : 'Nuevo cliente'}
           </h3>
@@ -411,7 +411,7 @@ export default function ClienteFormModal({ isOpen, onClose, onSaved, customer, i
                         "flex-1 py-2 rounded-lg text-sm font-bold border transition-colors",
                         form.tipoPersona === t
                           ? "bg-[#00B4A6] text-white border-[#00B4A6]"
-                          : "border-gray-200 dark:border-card-border text-gray-600 dark:text-muted hover:bg-gray-50 dark:hover:bg-surface"
+                          : "border-[var(--rule-base)] dark:border-card-border text-gray-600 dark:text-muted hover:bg-gray-50 dark:hover:bg-surface"
                       )}
                     >
                       {t === 'natural' ? 'Natural' : 'Juridica'}
@@ -451,7 +451,7 @@ export default function ClienteFormModal({ isOpen, onClose, onSaved, customer, i
                         onClick={() => buscarDni(form.documento)}
                         disabled={dniLoading}
                         title="Buscar nombre en RENIEC"
-                        className="px-2 py-1.5 rounded-lg border border-gray-200 dark:border-card-border bg-white dark:bg-surface hover:bg-gray-50 dark:hover:bg-accent transition-colors shrink-0 disabled:opacity-50"
+                        className="px-2 py-1.5 rounded-lg border border-[var(--rule-base)] dark:border-card-border bg-white dark:bg-surface hover:bg-gray-50 dark:hover:bg-accent transition-colors shrink-0 disabled:opacity-50"
                       >
                         {dniLoading ? (
                           <Loader2 className="h-3.5 w-3.5 animate-spin text-gray-500 dark:text-muted" />
@@ -511,7 +511,7 @@ export default function ClienteFormModal({ isOpen, onClose, onSaved, customer, i
                           "flex-1 py-2 rounded-lg text-sm font-bold border transition-colors",
                           form.tipoPersona === t
                             ? "bg-[#00B4A6] text-white border-[#00B4A6]"
-                            : "border-gray-200 dark:border-card-border text-gray-600 dark:text-muted hover:bg-gray-50 dark:hover:bg-surface"
+                            : "border-[var(--rule-base)] dark:border-card-border text-gray-600 dark:text-muted hover:bg-gray-50 dark:hover:bg-surface"
                         )}
                       >
                         {t === 'natural' ? 'Natural' : 'Juridica'}
@@ -544,7 +544,7 @@ export default function ClienteFormModal({ isOpen, onClose, onSaved, customer, i
                           onClick={() => buscarDni(form.documento)}
                           disabled={dniLoading}
                           title="Buscar nombre en RENIEC"
-                          className="px-2 py-1.5 rounded-lg border border-gray-200 dark:border-card-border bg-white dark:bg-surface hover:bg-gray-50 dark:hover:bg-accent transition-colors shrink-0 disabled:opacity-50"
+                          className="px-2 py-1.5 rounded-lg border border-[var(--rule-base)] dark:border-card-border bg-white dark:bg-surface hover:bg-gray-50 dark:hover:bg-accent transition-colors shrink-0 disabled:opacity-50"
                         >
                           {dniLoading ? (
                             <Loader2 className="h-3.5 w-3.5 animate-spin text-gray-500 dark:text-muted" />
@@ -811,14 +811,14 @@ export default function ClienteFormModal({ isOpen, onClose, onSaved, customer, i
             <button
               type="button"
               onClick={onClose}
-              className="flex-1 py-2.5 rounded-xl border border-gray-200 dark:border-card-border text-sm font-semibold text-gray-600 dark:text-muted hover:bg-gray-50 dark:hover:bg-surface transition-colors"
+              className="flex-1 py-2.5 rounded-lg border border-[var(--rule-base)] dark:border-card-border text-sm font-semibold text-gray-600 dark:text-muted hover:bg-gray-50 dark:hover:bg-surface transition-colors"
             >
               Cancelar
             </button>
             <button
               type="submit"
               disabled={saving}
-              className="flex-1 py-2.5 rounded-xl bg-[#00B4A6] text-white text-sm font-bold hover:bg-[#009690] transition-colors disabled:opacity-60 flex items-center justify-center gap-2"
+              className="flex-1 py-2.5 rounded-lg bg-[#00B4A6] text-white text-sm font-bold hover:bg-[#009690] transition-colors disabled:opacity-60 flex items-center justify-center gap-2"
             >
               {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
               {saving ? 'Guardando...' : isEdit ? 'Guardar cliente' : format === 'simple' ? 'Crear cliente' : 'Guardar cliente'}

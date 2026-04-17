@@ -96,7 +96,7 @@ export default function DemandForecast({ productId, onClose }: DemandForecastPro
   }));
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-6">
       {/* Header */}
       <div className="flex items-center justify-between">
         <h3 className="text-lg font-bold text-gray-900 dark:text-foreground">
@@ -115,7 +115,7 @@ export default function DemandForecast({ productId, onClose }: DemandForecastPro
       </div>
 
       {/* Chart */}
-      <div className="bg-white dark:bg-card rounded-xl border border-gray-200 dark:border-card-border p-4">
+      <div className="bg-white dark:bg-card rounded-xl border border-[var(--rule-base)] dark:border-card-border p-4">
         <h4 className="text-sm font-medium text-gray-700 dark:text-muted mb-3">Ventas diarias (ultimos 30 dias)</h4>
         <div className="h-48">
           <ResponsiveContainer width="100%" height="100%">
@@ -154,7 +154,7 @@ export default function DemandForecast({ productId, onClose }: DemandForecastPro
 
       {/* Metric cards */}
       <div className="grid grid-cols-2 gap-3">
-        <div className="bg-white dark:bg-card rounded-xl border border-gray-200 dark:border-card-border p-4">
+        <div className="bg-white dark:bg-card rounded-xl border border-[var(--rule-base)] dark:border-card-border p-4">
           <div className="text-xs text-gray-500 dark:text-muted mb-1">Venta promedio</div>
           <div className="flex items-baseline gap-2">
             <span className="text-xl font-bold text-gray-900 dark:text-foreground">{data.dailyAvg}</span>
@@ -165,7 +165,7 @@ export default function DemandForecast({ productId, onClose }: DemandForecastPro
           </div>
         </div>
 
-        <div className={`rounded-xl border border-gray-200 dark:border-card-border p-4 ${stockBg}`}>
+        <div className={`rounded-xl border border-[var(--rule-base)] dark:border-card-border p-4 ${stockBg}`}>
           <div className="text-xs text-gray-500 dark:text-muted mb-1">Stock alcanza para</div>
           <div className="flex items-baseline gap-2">
             <span className={`text-xl font-bold ${stockColor}`}>
@@ -178,7 +178,7 @@ export default function DemandForecast({ productId, onClose }: DemandForecastPro
           </div>
         </div>
 
-        <div className="bg-white dark:bg-card rounded-xl border border-gray-200 dark:border-card-border p-4">
+        <div className="bg-white dark:bg-card rounded-xl border border-[var(--rule-base)] dark:border-card-border p-4">
           <div className="text-xs text-gray-500 dark:text-muted mb-1">Comprar cuando llegues a</div>
           <div className="flex items-baseline gap-2">
             <span className="text-xl font-bold text-[#f97316]">{data.reorderPoint}</span>
@@ -187,7 +187,7 @@ export default function DemandForecast({ productId, onClose }: DemandForecastPro
           <div className="text-xs text-gray-500 mt-1">Buffer de 1 semana</div>
         </div>
 
-        <div className="bg-white dark:bg-card rounded-xl border border-gray-200 dark:border-card-border p-4">
+        <div className="bg-white dark:bg-card rounded-xl border border-[var(--rule-base)] dark:border-card-border p-4">
           <div className="text-xs text-gray-500 dark:text-muted mb-1">Pronostico proximos 7 dias</div>
           <div className="flex items-baseline gap-2">
             <span className="text-xl font-bold text-[#00B4A6]">~{data.forecastNext7}</span>

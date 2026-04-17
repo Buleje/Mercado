@@ -38,17 +38,17 @@ function fmtDate(iso: string) {
 
 const ACTION_META: Record<AuditAction, { label: string; icon: typeof Plus; color: string }> = {
   crear:    { label: "Crear",    icon: Plus,     color: "text-emerald-600" },
-  editar:   { label: "Editar",   icon: Pencil,   color: "text-blue-600" },
+  editar:   { label: "Editar",   icon: Pencil,   color: "text-emerald-600" },
   eliminar: { label: "Eliminar", icon: Trash2,   color: "text-red-500" },
-  login:    { label: "Login",    icon: UserCog,  color: "text-violet-600" },
+  login:    { label: "Login",    icon: UserCog,  color: "text-[var(--text-secondary)]" },
   config:   { label: "Config",   icon: Settings, color: "text-amber-600" },
   exportar: { label: "Exportar", icon: Download,  color: "text-cyan-600" },
   precio:   { label: "Precio",   icon: Pencil,   color: "text-orange-600" },
-  permiso:  { label: "Permiso",  icon: Shield,   color: "text-pink-600" },
+  permiso:  { label: "Permiso",  icon: Shield,   color: "text-[var(--text-secondary)]" },
 };
 
 const SEVERITY_META: Record<AuditSeverity, { label: string; color: string; bg: string }> = {
-  info:        { label: "Info",        color: "text-blue-600",    bg: "bg-blue-100 dark:bg-blue-900/30" },
+  info:        { label: "Info",        color: "text-emerald-600",    bg: "bg-emerald-100 dark:bg-emerald-900/30" },
   advertencia: { label: "Advertencia", color: "text-amber-600",   bg: "bg-amber-100 dark:bg-amber-900/30" },
   critica:     { label: "Crítica",     color: "text-red-600",     bg: "bg-red-100 dark:bg-red-900/30" },
 };
@@ -122,7 +122,7 @@ const auditColumns: import("@/components/ui/ResponsiveTable").Column<AuditEntry>
     render: (e: AuditEntry) => (
       <div>
         <p className="font-semibold text-gray-800 dark:text-foreground text-xs">{e.user}</p>
-        <p className="text-[10px] text-gray-400">{e.role}</p>
+        <p className="text-[length:var(--ts-2xs)] text-gray-400">{e.role}</p>
       </div>
     ),
   },
@@ -256,7 +256,7 @@ export default function AuditLogTab() {
           </h1>
           <p className="text-sm text-gray-500 dark:text-muted mt-0.5">Registro de actividad detallado con trazabilidad completa</p>
         </div>
-        <button onClick={() => exportToCSV(filtered.map(e => ({ fecha: e.timestamp, usuario: e.user, rol: e.role, accion: ACTION_META[e.action].label, modulo: e.module, descripcion: e.description, detalles: e.details, severidad: e.severity, ip: e.ip })), "auditoria")} className="flex items-center gap-1.5 px-3 py-2 rounded-xl border border-gray-200 dark:border-card-border bg-white dark:bg-surface text-sm font-semibold text-gray-700 dark:text-foreground hover:bg-gray-50 dark:hover:bg-accent transition-colors">
+        <button onClick={() => exportToCSV(filtered.map(e => ({ fecha: e.timestamp, usuario: e.user, rol: e.role, accion: ACTION_META[e.action].label, modulo: e.module, descripcion: e.description, detalles: e.details, severidad: e.severity, ip: e.ip })), "auditoria")} className="flex items-center gap-1.5 px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-card-border bg-white dark:bg-surface text-sm font-semibold text-gray-700 dark:text-foreground hover:bg-gray-50 dark:hover:bg-accent transition-colors">
           <Download className="h-4 w-4" /> Exportar
         </button>
       </div>
@@ -271,12 +271,12 @@ export default function AuditLogTab() {
       {/* KPIs */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
         {[
-          { label: "Total eventos", value: String(stats.total), color: "text-blue-600", bg: "bg-blue-50 dark:bg-blue-950/30" },
-          { label: "Hoy", value: String(stats.hoy), color: "text-violet-600", bg: "bg-violet-50 dark:bg-violet-950/30" },
+          { label: "Total eventos", value: String(stats.total), color: "text-emerald-600", bg: "bg-emerald-50 dark:bg-emerald-950/30" },
+          { label: "Hoy", value: String(stats.hoy), color: "text-[var(--text-secondary)]", bg: "bg-[var(--surface-sunken)]" },
           { label: "Advertencias", value: String(stats.advertencias), color: "text-amber-600", bg: "bg-amber-50 dark:bg-amber-950/30" },
           { label: "Críticas", value: String(stats.criticas), color: "text-red-500", bg: "bg-red-50 dark:bg-red-950/30" },
         ].map(({ label, value, color, bg }) => (
-          <div key={label} className={cn("rounded-2xl p-4", bg)}>
+          <div key={label} className={cn("rounded-xl p-4", bg)}>
             <p className="text-xs font-semibold text-gray-500 dark:text-muted mb-1">{label}</p>
             <p className={cn("text-xl font-extrabold", color)}>{value}</p>
           </div>
@@ -285,7 +285,7 @@ export default function AuditLogTab() {
 
       {/* Alert */}
       {stats.criticas > 0 && (
-        <div className="bg-red-50 dark:bg-red-950/20 border border-red-200 dark:border-red-800 rounded-2xl p-4 flex flex-wrap items-start gap-3">
+        <div className="bg-red-50 dark:bg-red-950/20 border border-red-200 dark:border-red-800 rounded-xl p-4 flex flex-wrap items-start gap-3">
           <AlertTriangle className="h-5 w-5 text-red-500 shrink-0 mt-0.5" />
           <div>
             <p className="font-bold text-red-700 dark:text-red-400 text-sm">Eventos críticos detectados</p>
@@ -298,21 +298,21 @@ export default function AuditLogTab() {
       <div className="flex flex-col sm:flex-row gap-3 flex-wrap">
         <div className="relative flex-1 max-w-sm">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
-          <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Descripción, usuario..." className="w-full pl-9 pr-3 py-2 text-sm border border-gray-200 dark:border-card-border rounded-xl bg-white dark:bg-surface text-gray-700 dark:text-foreground" />
+          <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Descripción, usuario..." className="w-full pl-9 pr-3 py-2 text-sm border border-[var(--rule-base)] dark:border-card-border rounded-lg bg-white dark:bg-surface text-gray-700 dark:text-foreground" />
         </div>
-        <select value={filterSeverity} onChange={e => setFilterSeverity(e.target.value as AuditSeverity | "todos")} className="text-sm border border-gray-200 dark:border-card-border rounded-xl px-3 py-2 bg-white dark:bg-surface text-gray-700 dark:text-foreground">
+        <select value={filterSeverity} onChange={e => setFilterSeverity(e.target.value as AuditSeverity | "todos")} className="text-sm border border-[var(--rule-base)] dark:border-card-border rounded-lg px-3 py-2 bg-white dark:bg-surface text-gray-700 dark:text-foreground">
           <option value="todos">Todas las severidades</option>
           {(Object.keys(SEVERITY_META) as AuditSeverity[]).map(s => <option key={s} value={s}>{SEVERITY_META[s].label}</option>)}
         </select>
-        <select value={filterAction} onChange={e => setFilterAction(e.target.value as AuditAction | "todos")} className="text-sm border border-gray-200 dark:border-card-border rounded-xl px-3 py-2 bg-white dark:bg-surface text-gray-700 dark:text-foreground">
+        <select value={filterAction} onChange={e => setFilterAction(e.target.value as AuditAction | "todos")} className="text-sm border border-[var(--rule-base)] dark:border-card-border rounded-lg px-3 py-2 bg-white dark:bg-surface text-gray-700 dark:text-foreground">
           <option value="todos">Todas las acciones</option>
           {(Object.keys(ACTION_META) as AuditAction[]).map(a => <option key={a} value={a}>{ACTION_META[a].label}</option>)}
         </select>
-        <select value={filterModule} onChange={e => setFilterModule(e.target.value)} className="text-sm border border-gray-200 dark:border-card-border rounded-xl px-3 py-2 bg-white dark:bg-surface text-gray-700 dark:text-foreground">
+        <select value={filterModule} onChange={e => setFilterModule(e.target.value)} className="text-sm border border-[var(--rule-base)] dark:border-card-border rounded-lg px-3 py-2 bg-white dark:bg-surface text-gray-700 dark:text-foreground">
           <option value="todos">Todos los módulos</option>
           {MODULES.map(m => <option key={m} value={m}>{m}</option>)}
         </select>
-        <select value={filterUser} onChange={e => setFilterUser(e.target.value)} className="text-sm border border-gray-200 dark:border-card-border rounded-xl px-3 py-2 bg-white dark:bg-surface text-gray-700 dark:text-foreground">
+        <select value={filterUser} onChange={e => setFilterUser(e.target.value)} className="text-sm border border-[var(--rule-base)] dark:border-card-border rounded-lg px-3 py-2 bg-white dark:bg-surface text-gray-700 dark:text-foreground">
           <option value="todos">Todos los usuarios</option>
           {users.map(u => <option key={u} value={u}>{u}</option>)}
         </select>
@@ -337,7 +337,7 @@ export default function AuditLogTab() {
           <button
             onClick={loadMore}
             disabled={loadingMore}
-            className="flex flex-wrap items-center gap-2 px-2 sm:px-4 py-1.5 sm:py-2 rounded-xl border border-gray-200 dark:border-card-border text-sm font-semibold text-gray-600 dark:text-muted hover:bg-gray-50 dark:hover:bg-surface/50 disabled:opacity-50 transition-colors"
+            className="flex flex-wrap items-center gap-2 px-2 sm:px-4 py-1.5 sm:py-2 rounded-lg border border-[var(--rule-base)] dark:border-card-border text-sm font-semibold text-gray-600 dark:text-muted hover:bg-gray-50 dark:hover:bg-surface/50 disabled:opacity-50 transition-colors"
           >
             {loadingMore && <Loader2 className="h-4 w-4 animate-spin" />}
             {loadingMore ? "Cargando…" : "Cargar más eventos"}
@@ -348,7 +348,7 @@ export default function AuditLogTab() {
       {/* Detail modal */}
       {detail && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4" onClick={() => setDetail(null)}>
-          <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl shadow-2xl p-3 sm:p-6 w-full max-w-md space-y-4" onClick={e => e.stopPropagation()}>
+          <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl p-3 sm:p-6 w-full max-w-md space-y-4" onClick={e => e.stopPropagation()}>
             <div className="flex items-center justify-between">
               <h3 className="font-extrabold text-gray-900 dark:text-foreground text-sm">Detalle del evento</h3>
               <button onClick={() => setDetail(null)}><X className="h-4 w-4 text-gray-400" /></button>

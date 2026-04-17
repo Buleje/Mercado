@@ -117,14 +117,14 @@ export async function GET(req: NextRequest) {
           recipient: phone,
           message,
           tenantId: lastOrder.tenantId,
-        }).catch(() => {});
+        }).catch((err) => logger.error("[cron/inactive-customers] WhatsApp enqueue failed", { error: String(err), phone }));
 
         // Send Push (fire-and-forget)
         sendPushToPhone(phone, {
           title: `👋 ¡Te extrañamos, ${customerName}!`,
           body: `¿Necesitas ${lastOrder.items[0]?.name ?? "algo"}? Pide ahora con delivery rápido.`,
           url: "/tienda",
-        }).catch(() => {});
+        }).catch((err) => logger.error("[cron/inactive-customers] push send failed", { error: String(err), phone }));
 
         // Log notification to prevent duplicates
         prisma.notificationLog.create({

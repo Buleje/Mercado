@@ -19,7 +19,12 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useMarketplaceCart } from "@/hooks/use-marketplace-cart";
+import { useWishlist } from "@/hooks/use-wishlist";
+import { useRecentViewed } from "@/hooks/use-recent-viewed";
+import { useFlyToCart } from "@/components/marketplace/FlyToCart";
 import SponsoredBadge from "@/components/marketplace/SponsoredBadge";
+import ShareWhatsAppButton from "@/components/marketplace/ShareWhatsAppButton";
+import { getProductCategoryIcon } from "@/components/marketplace/_category-icons";
 
 /* ── Types ─────────────────────────────────────────────────────────────────── */
 
@@ -55,16 +60,16 @@ const SORT_OPTIONS: { id: SortOption; label: string; icon: React.ReactNode }[] =
 ];
 
 const PRODUCT_CATEGORIES = [
-  { id: "todos", label: "Todo", emoji: "🔥" },
-  { id: "abarrotes", label: "Abarrotes", emoji: "🛒" },
-  { id: "bebidas", label: "Bebidas", emoji: "🥤" },
-  { id: "lácteos", label: "Lácteos", emoji: "🥛" },
-  { id: "carnes", label: "Carnes", emoji: "🥩" },
-  { id: "frutas", label: "Frutas", emoji: "🍎" },
-  { id: "verduras", label: "Verduras", emoji: "🥬" },
-  { id: "limpieza", label: "Limpieza", emoji: "🧹" },
-  { id: "snacks", label: "Snacks", emoji: "🍿" },
-  { id: "panadería", label: "Panadería", emoji: "🍞" },
+  { id: "todos", label: "Todo" },
+  { id: "abarrotes", label: "Abarrotes" },
+  { id: "bebidas", label: "Bebidas" },
+  { id: "lácteos", label: "Lácteos" },
+  { id: "carnes", label: "Carnes" },
+  { id: "frutas", label: "Frutas" },
+  { id: "verduras", label: "Verduras" },
+  { id: "limpieza", label: "Limpieza" },
+  { id: "snacks", label: "Snacks" },
+  { id: "panadería", label: "Panadería" },
 ];
 
 const fmt = (n: number) =>
@@ -82,8 +87,12 @@ function CatalogProductCard({
   const [justAdded, setJustAdded] = useState(false);
   const [imgLoaded, setImgLoaded] = useState(false);
   const [imgError, setImgError] = useState(false);
-  const [liked, setLiked] = useState(false);
+  const cardRef = useRef<HTMLElement>(null);
   const { addItem, byStore, updateQuantity, removeItem } = useMarketplaceCart();
+  const { isInWishlist, toggle: toggleWishlist } = useWishlist();
+  const { track: trackViewed } = useRecentViewed();
+  const { fly } = useFlyToCart();
+  const liked = isInWishlist(product.productId, product.storeSlug);
 
   // Cart quantity for this product
   const cartItems = byStore[product.storeId]?.items ?? [];
@@ -106,6 +115,7 @@ function CatalogProductCard({
       image: product.image,
       unit: product.unit,
     });
+    if (cardRef.current) fly(cardRef.current, product.image);
     setJustAdded(true);
     setTimeout(() => setJustAdded(false), 1200);
   };
@@ -120,6 +130,7 @@ function CatalogProductCard({
 
   return (
     <motion.article
+      ref={cardRef}
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.3, delay: Math.min(index * 0.03, 0.6) }}
@@ -130,19 +141,42 @@ function CatalogProductCard({
         isOutOfStock && "opacity-60"
       )}
     >
-      {/* Heart button */}
-      <button
-        onClick={() => setLiked(!liked)}
-        className="absolute top-2.5 right-2.5 z-10 flex h-8 w-8 items-center justify-center rounded-full bg-white/80 dark:bg-gray-900/80 backdrop-blur-sm shadow-sm border border-white/50 dark:border-gray-700/50 transition-all hover:scale-110 active:scale-95"
-        aria-label={liked ? "Quitar de favoritos" : "Agregar a favoritos"}
-      >
-        <Heart
-          className={cn(
-            "h-4 w-4 transition-colors",
-            liked ? "fill-red-500 text-red-500" : "text-gray-400 dark:text-gray-500"
-          )}
+      {/* Heart + Share buttons */}
+      <div className="absolute top-2.5 right-2.5 z-10 flex flex-col gap-1.5">
+        <button
+          onClick={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            toggleWishlist({
+              productId: product.productId,
+              storeSlug: product.storeSlug,
+              storeName: product.storeName,
+              name: product.name,
+              price: product.price,
+              image: product.image,
+            });
+          }}
+          className="flex h-8 w-8 items-center justify-center rounded-full bg-white/80 dark:bg-gray-900/80 backdrop-blur-sm shadow-sm border border-white/50 dark:border-gray-700/50 transition-all hover:scale-110 active:scale-95"
+          aria-label={liked ? "Quitar de favoritos" : "Agregar a favoritos"}
+          aria-pressed={liked}
+        >
+          <Heart
+            className={cn(
+              "h-4 w-4 transition-colors",
+              liked ? "fill-red-500 text-red-500" : "text-gray-400 dark:text-gray-500"
+            )}
+          />
+        </button>
+        <ShareWhatsAppButton
+          size="sm"
+          storeSlug={product.storeSlug}
+          storeName={product.storeName}
+          productName={product.name}
+          productId={product.productId}
+          price={product.price}
+          className="h-8 w-8"
         />
-      </button>
+      </div>
 
       {/* Badges */}
       <div className="absolute top-2.5 left-2.5 z-10 flex flex-col gap-1">
@@ -169,6 +203,14 @@ function CatalogProductCard({
       <Link
         href={`/marketplace/${product.storeSlug}`}
         onClick={() => {
+          trackViewed({
+            productId: product.productId,
+            storeSlug: product.storeSlug,
+            storeName: product.storeName,
+            name: product.name,
+            price: product.price,
+            image: product.image,
+          });
           if (product.sponsoredBoostId) {
             fetch(`/api/marketplace/sponsored/${encodeURIComponent(product.sponsoredBoostId)}/click`, {
               method: "POST",
@@ -466,13 +508,16 @@ export default function CatalogView({
             key={cat.id}
             onClick={() => setProductCategory(cat.id)}
             className={cn(
-              "inline-flex items-center gap-1 px-3 py-1.5 rounded-lg text-[11px] font-semibold whitespace-nowrap border transition-all shrink-0",
+              "inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[11px] font-semibold whitespace-nowrap border transition-all shrink-0",
               productCategory === cat.id
                 ? "bg-gray-900 dark:bg-white text-white dark:text-gray-900 border-gray-900 dark:border-white"
                 : "bg-white dark:bg-card text-gray-500 dark:text-muted border-gray-200 dark:border-card-border hover:border-gray-400"
             )}
           >
-            <span>{cat.emoji}</span>
+            {(() => {
+              const CatIcon = getProductCategoryIcon(cat.id);
+              return <CatIcon className="h-3 w-3" strokeWidth={1.75} />;
+            })()}
             {cat.label}
           </button>
         ))}

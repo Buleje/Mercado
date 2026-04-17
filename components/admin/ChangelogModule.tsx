@@ -28,11 +28,11 @@ type Release = {
 };
 
 const TYPE_META: Record<ChangeType, { label: string; color: string; bg: string }> = {
-  feat:     { label: "Feature",    color: "text-indigo-700 dark:text-indigo-300",  bg: "bg-indigo-100 dark:bg-indigo-900/30" },
+  feat:     { label: "Feature",    color: "text-[var(--text-secondary)] dark:text-[var(--text-primary)]",  bg: "bg-[var(--surface-sunken)]" },
   fix:      { label: "Fix",        color: "text-red-700 dark:text-red-300",        bg: "bg-red-100 dark:bg-red-900/30" },
   perf:     { label: "Perf",       color: "text-amber-700 dark:text-amber-300",    bg: "bg-amber-100 dark:bg-amber-900/30" },
   security: { label: "Seguridad",  color: "text-green-700 dark:text-green-300",    bg: "bg-green-100 dark:bg-green-900/30" },
-  refactor: { label: "Refactor",   color: "text-violet-700 dark:text-violet-300",  bg: "bg-violet-100 dark:bg-violet-900/30" },
+  refactor: { label: "Refactor",   color: "text-[var(--text-secondary)] dark:text-[var(--text-primary)]",  bg: "bg-[var(--surface-sunken)]" },
 };
 
 const RELEASES: Release[] = [
@@ -93,7 +93,7 @@ const RELEASES: Release[] = [
 function TypeBadge({ type }: { type: ChangeType }) {
   const meta = TYPE_META[type];
   return (
-    <span className={`inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-bold leading-none shrink-0 ${meta.bg} ${meta.color}`}>
+    <span className={`inline-flex items-center px-1.5 py-0.5 rounded text-[length:var(--ts-2xs)] font-bold leading-none shrink-0 ${meta.bg} ${meta.color}`}>
       {meta.label}
     </span>
   );
@@ -101,8 +101,8 @@ function TypeBadge({ type }: { type: ChangeType }) {
 
 export default function ChangelogModule() {
   const stats = [
-    { icon: Package, label: "Versión actual", value: "v1.0.0-beta", color: "text-indigo-500" },
-    { icon: Sparkles, label: "Features lanzadas", value: "30+", color: "text-violet-500" },
+    { icon: Package, label: "Versión actual", value: "v1.0.0-beta", color: "text-[var(--text-secondary)]" },
+    { icon: Sparkles, label: "Features lanzadas", value: "30+", color: "text-[var(--text-secondary)]" },
     { icon: Zap, label: "Optimizaciones perf.", value: "4", color: "text-amber-500" },
     { icon: ShieldCheck, label: "Mejoras de seguridad", value: "3", color: "text-emerald-500" },
   ];
@@ -122,7 +122,7 @@ export default function ChangelogModule() {
           href="/about"
           target="_blank"
           rel="noopener noreferrer"
-          className="inline-flex items-center gap-1.5 rounded-xl px-2 sm:px-4 py-1.5 sm:py-2 text-sm font-semibold bg-primary/8 text-primary hover:bg-primary/15 transition-colors border border-primary/20"
+          className="inline-flex items-center gap-1.5 rounded-lg px-2 sm:px-4 py-1.5 sm:py-2 text-sm font-semibold bg-primary/8 text-primary hover:bg-primary/15 transition-colors border border-primary/20"
         >
           <ExternalLink className="h-3.5 w-3.5" />
           Ver página /about
@@ -134,11 +134,11 @@ export default function ChangelogModule() {
         {stats.map((s) => (
           <div
             key={s.label}
-            className="rounded-2xl bg-white dark:bg-card border border-gray-200 dark:border-card-border p-4 flex flex-wrap items-center gap-3"
+            className="rounded-xl bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border p-4 flex flex-wrap items-center gap-3"
           >
             <s.icon className={`h-5 w-5 shrink-0 ${s.color}`} />
             <div>
-              <p className="text-[11px] text-muted leading-none mb-0.5">{s.label}</p>
+              <p className="text-[length:var(--ts-xs)] text-muted leading-none mb-0.5">{s.label}</p>
               <p className="text-lg font-extrabold text-foreground leading-tight">{s.value}</p>
             </div>
           </div>
@@ -150,39 +150,39 @@ export default function ChangelogModule() {
         {RELEASES.map((release) => (
           <div
             key={release.version}
-            className={`rounded-2xl border ${
+            className={`rounded-xl border ${
               release.status === "current"
                 ? "border-indigo-300 dark:border-indigo-700 bg-indigo-50/60 dark:bg-indigo-950/20"
-                : "border-gray-200 dark:border-card-border bg-white dark:bg-card"
+                : "border-[var(--rule-base)] dark:border-card-border bg-white dark:bg-card"
             } overflow-hidden`}
           >
             {/* Release header */}
             <div className={`flex items-center justify-between px-5 py-4 ${
               release.status === "current"
-                ? "border-b border-indigo-200 dark:border-indigo-800"
-                : "border-b border-gray-100 dark:border-card-border"
+                ? "border-b border-[var(--rule-base)]"
+                : "border-b border-[var(--rule-soft)] dark:border-card-border"
             }`}>
               <div className="flex flex-wrap items-center gap-3">
                 {release.status === "current" ? (
-                  <Rocket className="h-5 w-5 text-indigo-500" />
+                  <Rocket className="h-5 w-5 text-[var(--text-secondary)]" />
                 ) : (
                   <Wrench className="h-5 w-5 text-gray-400" />
                 )}
                 <div>
                   <div className="flex flex-wrap items-center gap-2">
                     <span className={`text-base font-extrabold ${
-                      release.status === "current" ? "text-indigo-700 dark:text-indigo-300" : "text-foreground"
+                      release.status === "current" ? "text-[var(--text-secondary)] dark:text-[var(--text-primary)]" : "text-foreground"
                     }`}>
                       {release.version}
                     </span>
                     {release.status === "current" && (
-                      <span className="flex items-center gap-1 rounded-full px-2 py-0.5 bg-indigo-600 text-white text-[10px] font-bold">
+                      <span className="flex items-center gap-1 rounded-full px-2 py-0.5 bg-indigo-600 text-white text-[length:var(--ts-2xs)] font-bold">
                         <span className="h-1 w-1 rounded-full bg-white animate-pulse" />
                         Actual
                       </span>
                     )}
                     {release.status === "planned" && (
-                      <span className="rounded-full px-2 py-0.5 bg-gray-200 dark:bg-surface text-gray-500 dark:text-muted text-[10px] font-bold">
+                      <span className="rounded-full px-2 py-0.5 bg-gray-200 dark:bg-surface text-gray-500 dark:text-muted text-[length:var(--ts-2xs)] font-bold">
                         Planificado
                       </span>
                     )}
@@ -199,7 +199,7 @@ export default function ChangelogModule() {
                 {release.changes.map((change, i) => (
                   <li key={i} className="flex flex-wrap items-start gap-2.5">
                     <CheckCircle2 className={`h-3.5 w-3.5 mt-0.5 shrink-0 ${
-                      release.status === "current" ? "text-indigo-400" : "text-gray-300 dark:text-gray-600"
+                      release.status === "current" ? "text-[var(--text-tertiary)]" : "text-gray-300 dark:text-gray-600"
                     }`} />
                     <TypeBadge type={change.type} />
                     <span className="text-sm text-foreground/80 leading-relaxed">{change.text}</span>

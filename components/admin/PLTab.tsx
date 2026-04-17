@@ -194,21 +194,21 @@ export default function PLTab() {
           <select
             value={month}
             onChange={e => setMonth(Number(e.target.value))}
-            className="text-sm border border-gray-200 dark:border-card-border rounded-xl px-3 py-2 bg-white dark:bg-surface text-gray-700 dark:text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30"
+            className="text-sm border border-[var(--rule-base)] dark:border-card-border rounded-lg px-3 py-2 bg-white dark:bg-surface text-gray-700 dark:text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30"
           >
             {MONTHS.map((m, i) => <option key={i} value={i}>{m}</option>)}
           </select>
           <select
             value={year}
             onChange={e => setYear(Number(e.target.value))}
-            className="text-sm border border-gray-200 dark:border-card-border rounded-xl px-3 py-2 bg-white dark:bg-surface text-gray-700 dark:text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30"
+            className="text-sm border border-[var(--rule-base)] dark:border-card-border rounded-lg px-3 py-2 bg-white dark:bg-surface text-gray-700 dark:text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30"
           >
             {[now.getFullYear() - 1, now.getFullYear(), now.getFullYear() + 1].map(y => <option key={y} value={y}>{y}</option>)}
           </select>
-          <button onClick={() => setTick(t => t + 1)} className="p-2 rounded-xl border border-gray-200 dark:border-card-border bg-white dark:bg-surface hover:bg-gray-50 dark:hover:bg-accent transition-colors">
+          <button onClick={() => setTick(t => t + 1)} className="p-2 rounded-lg border border-[var(--rule-base)] dark:border-card-border bg-white dark:bg-surface hover:bg-gray-50 dark:hover:bg-accent transition-colors">
             <RefreshCw className="h-4 w-4 text-gray-500 dark:text-muted" />
           </button>
-          <button onClick={handleExport} className="flex items-center gap-1.5 px-3 py-2 rounded-xl border border-gray-200 dark:border-card-border bg-white dark:bg-surface text-sm font-semibold text-gray-700 dark:text-foreground hover:bg-gray-50 dark:hover:bg-accent transition-colors">
+          <button onClick={handleExport} className="flex items-center gap-1.5 px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-card-border bg-white dark:bg-surface text-sm font-semibold text-gray-700 dark:text-foreground hover:bg-gray-50 dark:hover:bg-accent transition-colors">
             <Download className="h-4 w-4" /> Descargar
           </button>
         </div>
@@ -223,12 +223,12 @@ export default function PLTab() {
           {/* KPI Cards */}
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-4">
             {[
-              { label: "Ingresos Brutos", value: summary.revenue, delta: revDelta, icon: TrendingUp, color: "text-blue-600", bg: "bg-blue-50 dark:bg-blue-950/30" },
-              { label: "Utilidad Bruta", value: summary.grossProfit, sub: `Margen ${summary.grossMargin.toFixed(1)}%`, icon: BarChart2, color: "text-violet-600", bg: "bg-violet-50 dark:bg-violet-950/30" },
+              { label: "Ingresos Brutos", value: summary.revenue, delta: revDelta, icon: TrendingUp, color: "text-emerald-600", bg: "bg-emerald-50 dark:bg-emerald-950/30" },
+              { label: "Utilidad Bruta", value: summary.grossProfit, sub: `Margen ${summary.grossMargin.toFixed(1)}%`, icon: BarChart2, color: "text-[var(--text-secondary)]", bg: "bg-[var(--surface-sunken)]" },
               { label: "Gastos Operativos", value: summary.totalExpenses, icon: TrendingDown, color: "text-amber-600", bg: "bg-amber-50 dark:bg-amber-950/30" },
               { label: "Utilidad Neta", value: summary.netProfit, delta: profitDelta, sub: `Margen ${summary.netMargin.toFixed(1)}%`, icon: DollarSign, color: summary.netProfit >= 0 ? "text-emerald-600" : "text-red-600", bg: summary.netProfit >= 0 ? "bg-emerald-50 dark:bg-emerald-950/30" : "bg-red-50 dark:bg-red-950/30" },
             ].map(({ label, value, delta, sub, icon: Icon, color, bg }) => (
-              <div key={label} className={cn("rounded-2xl p-4", bg, "border border-transparent")}>
+              <div key={label} className={cn("rounded-xl p-4", bg, "border border-transparent")}>
                 <div className={cn("w-9 h-9 rounded-xl flex items-center justify-center mb-3", bg)}>
                   <Icon className={cn("h-5 w-5", color)} />
                 </div>
@@ -245,8 +245,8 @@ export default function PLTab() {
           </div>
 
           {/* P&L Statement Table */}
-          <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl overflow-hidden">
-            <div className="px-3 sm:px-6 py-4 border-b border-gray-100 dark:border-card-border flex items-center justify-between">
+          <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl overflow-hidden">
+            <div className="px-3 sm:px-6 py-4 border-b border-[var(--rule-soft)] dark:border-card-border flex items-center justify-between">
               <h2 className="font-bold text-gray-900 dark:text-foreground text-sm">
                 Ganancias y Pérdidas — {summary.period}
               </h2>
@@ -281,7 +281,7 @@ export default function PLTab() {
                     {Object.entries(summary.expenses).length === 0 ? (
                       <p className="px-10 py-3 text-xs text-gray-400 dark:text-muted italic">Sin gastos registrados en este período</p>
                     ) : Object.entries(summary.expenses).map(([cat, val]) => (
-                      <div key={cat} className="flex items-center justify-between px-10 py-2.5 text-sm border-b border-gray-100 dark:border-card-border last:border-0">
+                      <div key={cat} className="flex items-center justify-between px-10 py-2.5 text-sm border-b border-[var(--rule-soft)] dark:border-card-border last:border-0">
                         <span className="text-gray-500 dark:text-muted capitalize">{cat}</span>
                         <span className="font-semibold text-gray-700 dark:text-foreground">{fmt(val)}</span>
                       </div>
@@ -295,7 +295,7 @@ export default function PLTab() {
           </div>
 
           {/* Trend Chart (last 6 months) */}
-          <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl p-3 sm:p-6">
+          <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl p-3 sm:p-6">
             <h2 className="font-bold text-gray-900 dark:text-foreground text-sm mb-4 flex flex-wrap items-center gap-2">
               <BarChart2 className="h-4 w-4 text-primary" />
               Tendencia últimos 6 meses
@@ -306,7 +306,7 @@ export default function PLTab() {
                   <div className="w-full flex flex-col gap-0.5 justify-end" style={{ height: "120px" }}>
                     {/* Revenue bar */}
                     <div
-                      className="w-full rounded-t-md bg-blue-400/60 dark:bg-blue-500/40 transition-all"
+                      className="w-full rounded-t-md bg-emerald-400/60 dark:bg-emerald-500/40 transition-all"
                       style={{ height: `${(m.revenue / maxRevenue) * 100}px` }}
                       title={`Ingresos: ${fmt(m.revenue)}`}
                     />
@@ -317,18 +317,18 @@ export default function PLTab() {
                       title={`Utilidad neta: ${fmt(m.netProfit)}`}
                     />
                   </div>
-                  <span className="text-[10px] text-gray-400 dark:text-muted truncate w-full text-center">{m.label}</span>
+                  <span className="text-[length:var(--ts-2xs)] text-gray-400 dark:text-muted truncate w-full text-center">{m.label}</span>
                 </div>
               ))}
             </div>
             <div className="flex flex-wrap items-center gap-2 sm:gap-4 mt-3">
-              <span className="flex items-center gap-1.5 text-xs text-gray-500 dark:text-muted"><span className="w-3 h-3 rounded bg-blue-400/60" /> Ingresos</span>
+              <span className="flex items-center gap-1.5 text-xs text-gray-500 dark:text-muted"><span className="w-3 h-3 rounded bg-emerald-400/60" /> Ingresos</span>
               <span className="flex items-center gap-1.5 text-xs text-gray-500 dark:text-muted"><span className="w-3 h-3 rounded bg-emerald-500" /> Utilidad neta</span>
             </div>
           </div>
         </>
       ) : (
-        <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl p-10 text-center text-gray-400 dark:text-muted">
+        <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl p-10 text-center text-gray-400 dark:text-muted">
           Sin datos para el período seleccionado.
         </div>
       )}
@@ -351,7 +351,7 @@ function PLRow({
   large?: boolean;
 }) {
   const valueColor =
-    highlight === "blue" ? "text-blue-600 dark:text-blue-400" :
+    highlight === "blue" ? "text-emerald-600 dark:text-emerald-400" :
     highlight === "green" ? "text-emerald-600 dark:text-emerald-400" :
     highlight === "red" ? "text-red-500 dark:text-red-400" :
     value < 0 ? "text-red-500 dark:text-red-400" : "text-gray-800 dark:text-foreground";

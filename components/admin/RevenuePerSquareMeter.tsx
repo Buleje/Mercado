@@ -79,21 +79,21 @@ function AreaForm({ initial, onSave, onCancel }: AreaFormProps) {
   const valid = name.trim().length > 0 && sqm > 0 && cats.length > 0;
 
   return (
-    <div className="p-4 rounded-2xl border-2 border-[#00B4A6]/30 bg-[#00B4A6]/5 dark:bg-[#00B4A6]/10 space-y-3">
+    <div className="p-4 rounded-xl border-2 border-primary/30 bg-primary/5 space-y-3">
       <div className="grid grid-cols-2 gap-3">
         <div className="col-span-2">
-          <label className="block text-xs font-semibold text-gray-600 dark:text-gray-400 mb-1">
+          <label className="block text-xs font-semibold text-gray-600 mb-1">
             Nombre del area
           </label>
           <input
             value={name}
             onChange={(e) => setName(e.target.value)}
             placeholder="Ej: Pasillo A - Abarrotes"
-            className="w-full rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 px-3 py-2 text-sm text-gray-900 dark:text-white outline-none focus:border-[#00B4A6]"
+            className="w-full rounded-lg border border-[var(--rule-base)] bg-white px-3 py-2 text-sm text-gray-900 outline-none focus:border-primary"
           />
         </div>
         <div>
-          <label className="block text-xs font-semibold text-gray-600 dark:text-gray-400 mb-1">
+          <label className="block text-xs font-semibold text-gray-600 mb-1">
             Metros cuadrados (m2)
           </label>
           <input
@@ -102,11 +102,11 @@ function AreaForm({ initial, onSave, onCancel }: AreaFormProps) {
             step={0.5}
             value={sqm}
             onChange={(e) => setSqm(Number(e.target.value))}
-            className="w-full rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 px-3 py-2 text-sm text-gray-900 dark:text-white outline-none focus:border-[#00B4A6]"
+            className="w-full rounded-lg border border-[var(--rule-base)] bg-white px-3 py-2 text-sm text-gray-900 outline-none focus:border-primary"
           />
         </div>
         <div>
-          <label className="block text-xs font-semibold text-gray-600 dark:text-gray-400 mb-1">
+          <label className="block text-xs font-semibold text-gray-600 mb-1">
             Ventas mensuales (S/)
           </label>
           <input
@@ -114,11 +114,11 @@ function AreaForm({ initial, onSave, onCancel }: AreaFormProps) {
             min={0}
             value={revenue}
             onChange={(e) => setRevenue(Number(e.target.value))}
-            className="w-full rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 px-3 py-2 text-sm text-gray-900 dark:text-white outline-none focus:border-[#00B4A6]"
+            className="w-full rounded-lg border border-[var(--rule-base)] bg-white px-3 py-2 text-sm text-gray-900 outline-none focus:border-primary"
           />
         </div>
         <div className="col-span-2">
-          <label className="block text-xs font-semibold text-gray-600 dark:text-gray-400 mb-1.5">
+          <label className="block text-xs font-semibold text-gray-600 mb-1.5">
             Categorias en esta area
           </label>
           <div className="flex flex-wrap gap-1.5">
@@ -129,8 +129,8 @@ function AreaForm({ initial, onSave, onCancel }: AreaFormProps) {
                 className={cn(
                   "px-2.5 py-1 rounded-full text-xs font-medium border transition-colors",
                   cats.includes(cat)
-                    ? "bg-[#00B4A6] text-white border-[#00B4A6]"
-                    : "border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-400"
+                    ? "bg-primary text-white border-primary"
+                    : "border-[var(--rule-base)] text-gray-600"
                 )}
               >
                 {cat}
@@ -143,14 +143,14 @@ function AreaForm({ initial, onSave, onCancel }: AreaFormProps) {
         <button
           onClick={() => valid && onSave({ name: name.trim(), sqm, revenue, categories: cats })}
           disabled={!valid}
-          className="flex-1 py-2.5 rounded-xl bg-[#00B4A6] text-white text-sm font-semibold flex items-center justify-center gap-2 disabled:opacity-50"
+          className="flex-1 py-2.5 rounded-lg bg-primary text-white text-sm font-semibold flex items-center justify-center gap-2 disabled:opacity-50"
         >
           <Save className="w-4 h-4" />
           Guardar area
         </button>
         <button
           onClick={onCancel}
-          className="px-4 py-2.5 rounded-xl border border-gray-200 dark:border-gray-700"
+          className="px-4 py-2.5 rounded-xl border border-[var(--rule-base)]"
         >
           <X className="w-4 h-4 text-gray-500" />
         </button>
@@ -206,18 +206,18 @@ export default function RevenuePerSquareMeter() {
   const bottomArea = ranked[ranked.length - 1];
 
   return (
-    <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-700 overflow-hidden shadow-sm">
+    <div className="bg-white rounded-xl border border-[var(--rule-base)] overflow-hidden ">
       {/* Header */}
-      <div className="p-5 border-b border-gray-100 dark:border-gray-800 flex items-center justify-between">
+      <div className="p-5 border-b border-[var(--rule-soft)] flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <div className="p-2 rounded-xl bg-[#00B4A6]/10">
-            <LayoutGrid className="w-5 h-5 text-[#00B4A6]" />
+          <div className="p-2 rounded-xl bg-primary/10">
+            <LayoutGrid className="w-5 h-5 text-primary" />
           </div>
           <div>
-            <h2 className="font-bold text-gray-900 dark:text-white">
+            <h2 className="font-bold text-gray-900">
               Rentabilidad por m2
             </h2>
-            <p className="text-xs text-gray-500 dark:text-gray-400">
+            <p className="text-xs text-gray-500">
               {areas.length} area{areas.length !== 1 ? "s" : ""} configurada{areas.length !== 1 ? "s" : ""}
             </p>
           </div>
@@ -225,7 +225,7 @@ export default function RevenuePerSquareMeter() {
         {!showForm && !editingId && (
           <button
             onClick={() => setShowForm(true)}
-            className="flex items-center gap-2 px-3 py-2 rounded-xl bg-[#00B4A6] text-white text-sm font-semibold"
+            className="flex items-center gap-2 px-3 py-2 rounded-lg bg-primary text-white text-sm font-semibold"
           >
             <Plus className="w-4 h-4" />
             Nueva area
@@ -240,14 +240,14 @@ export default function RevenuePerSquareMeter() {
 
         {/* Recommendation */}
         {ranked.length >= 2 && !showForm && (
-          <div className="p-3 rounded-xl bg-[#00B4A6]/5 border border-[#00B4A6]/20">
+          <div className="p-3 rounded-xl bg-primary/5 border border-primary/20">
             <div className="flex items-center gap-2 mb-1">
-              <TrendingUp className="w-4 h-4 text-[#00B4A6]" />
-              <p className="text-xs font-bold text-[#00B4A6] dark:text-[#2dd4bf]">
+              <TrendingUp className="w-4 h-4 text-primary" />
+              <p className="text-xs font-bold text-primary">
                 Recomendacion
               </p>
             </div>
-            <p className="text-xs text-gray-700 dark:text-gray-300">
+            <p className="text-xs text-gray-700">
               Amplia el espacio de{" "}
               <span className="font-semibold">{topArea?.name}</span> ({fmt(topArea?.revenuePerSqm ?? 0)}/m2).
               Reduce el area de{" "}
@@ -270,29 +270,29 @@ export default function RevenuePerSquareMeter() {
               <div
                 key={area.id}
                 className={cn(
-                  "p-4 rounded-2xl border",
+                  "p-4 rounded-xl border",
                   index === 0
-                    ? "border-[#00B4A6]/30 bg-[#00B4A6]/5 dark:bg-[#00B4A6]/10"
-                    : "border-gray-100 dark:border-gray-800 bg-gray-50 dark:bg-gray-800/50"
+                    ? "border-primary/30 bg-primary/5"
+                    : "border-[var(--rule-soft)] bg-gray-50"
                 )}
               >
                 <div className="flex items-start justify-between gap-3">
                   <div className="flex items-start gap-3 min-w-0">
                     <div
                       className={cn(
-                        "flex-shrink-0 w-7 h-7 rounded-full flex items-center justify-center text-xs font-black",
+                        "flex-shrink-0 w-7 h-7 rounded-full flex items-center justify-center text-xs font-extrabold",
                         index === 0
-                          ? "bg-[#00B4A6] text-white"
-                          : "bg-gray-200 dark:bg-gray-700 text-gray-600 dark:text-gray-400"
+                          ? "bg-primary text-white"
+                          : "bg-gray-200 text-gray-600"
                       )}
                     >
                       {index === 0 ? <Star className="w-3.5 h-3.5" /> : index + 1}
                     </div>
                     <div className="min-w-0">
-                      <p className="font-semibold text-gray-900 dark:text-white text-sm truncate">
+                      <p className="font-semibold text-gray-900 text-sm truncate">
                         {area.name}
                       </p>
-                      <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
+                      <p className="text-xs text-gray-500 mt-0.5">
                         {area.sqm} m2 — {area.categories.join(", ")}
                       </p>
                     </div>
@@ -300,14 +300,14 @@ export default function RevenuePerSquareMeter() {
                   <div className="flex items-center gap-1 flex-shrink-0">
                     <button
                       onClick={() => setEditingId(area.id)}
-                      className="p-1.5 rounded-xl hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
+                      className="p-1.5 rounded-lg hover:bg-gray-200 transition-colors"
                       aria-label="Editar"
                     >
                       <Edit3 className="w-3.5 h-3.5 text-gray-500" />
                     </button>
                     <button
                       onClick={() => deleteArea(area.id)}
-                      className="p-1.5 rounded-xl hover:bg-red-50 dark:hover:bg-red-950/30 transition-colors"
+                      className="p-1.5 rounded-lg hover:bg-red-50 transition-colors"
                       aria-label="Eliminar"
                     >
                       <Trash2 className="w-3.5 h-3.5 text-red-400" />
@@ -317,7 +317,7 @@ export default function RevenuePerSquareMeter() {
                 <div className="mt-3 flex items-center gap-4">
                   <div>
                     <p className="text-xs text-gray-400">Ventas/mes</p>
-                    <p className="text-sm font-bold text-gray-900 dark:text-white">
+                    <p className="text-sm font-bold text-gray-900">
                       {fmt(area.revenue)}
                     </p>
                   </div>
@@ -325,10 +325,10 @@ export default function RevenuePerSquareMeter() {
                     <p className="text-xs text-gray-400">Por m2</p>
                     <p
                       className={cn(
-                        "text-sm font-black",
+                        "text-sm font-extrabold",
                         index === 0
-                          ? "text-[#00B4A6] dark:text-[#2dd4bf]"
-                          : "text-gray-900 dark:text-white"
+                          ? "text-primary"
+                          : "text-gray-900"
                       )}
                     >
                       {fmt(area.revenuePerSqm)}/m2
@@ -336,11 +336,11 @@ export default function RevenuePerSquareMeter() {
                   </div>
                   {/* Bar */}
                   <div className="flex-1">
-                    <div className="h-2 rounded-full bg-gray-100 dark:bg-gray-700 overflow-hidden">
+                    <div className="h-2 rounded-full bg-gray-100 overflow-hidden">
                       <div
                         className={cn(
                           "h-full rounded-full",
-                          index === 0 ? "bg-[#00B4A6]" : "bg-gray-400 dark:bg-gray-500"
+                          index === 0 ? "bg-primary" : "bg-gray-400"
                         )}
                         style={{
                           width: topArea

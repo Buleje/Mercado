@@ -129,7 +129,7 @@ export async function GET(req: NextRequest) {
           to: tenant.ownerEmail!,
           subject: `📊 Reporte semanal — ${tenant.name}`,
           html,
-        }).catch(() => {});
+        }).catch((err) => logger.error("[cron/weekly-email-report] email enqueue failed", { error: String(err), tenantId: tenant.id }));
 
         emailsSent++;
 
@@ -188,7 +188,7 @@ function buildWeeklyReportHtml(data: {
 <body style="margin:0;padding:0;background:#f9fafb;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif">
   <div style="max-width:600px;margin:0 auto;padding:20px">
     <!-- Header -->
-    <div style="background:linear-gradient(135deg,#00B4A6,#0d9488);border-radius:16px 16px 0 0;padding:32px 24px;text-align:center">
+    <div style="background:linear-gradient(135deg,#2563EB,#0d9488);border-radius:16px 16px 0 0;padding:32px 24px;text-align:center">
       <h1 style="color:white;margin:0;font-size:24px">📊 Reporte Semanal</h1>
       <p style="color:rgba(255,255,255,0.85);margin:8px 0 0;font-size:14px">${data.tenantName} — ${data.weekLabel}</p>
     </div>

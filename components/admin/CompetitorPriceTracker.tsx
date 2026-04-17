@@ -167,10 +167,10 @@ export default function CompetitorPriceTracker() {
   }, [data]);
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-6">
       {/* Header */}
       <div className="flex items-center gap-3">
-        <div className="h-10 w-10 rounded-xl bg-[#00B4A6] text-white flex items-center justify-center shadow-sm">
+        <div className="h-10 w-10 rounded-lg bg-[#00B4A6] text-white flex items-center justify-center ">
           <BarChart3 className="h-5 w-5" />
         </div>
         <div>
@@ -228,8 +228,8 @@ export default function CompetitorPriceTracker() {
 
         if (suggestions.length === 0) return null;
         return (
-          <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl p-4">
-            <p className="text-xs font-bold text-gray-900 dark:text-white uppercase tracking-wider mb-3 flex items-center gap-1.5">
+          <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl p-4">
+            <p className="text-xs font-bold text-gray-900 dark:text-white mb-3 flex items-center gap-1.5">
               <TrendingUp className="h-3.5 w-3.5 text-[#00B4A6]" />
               Sugerencia de Precio Inteligente
             </p>
@@ -240,29 +240,29 @@ export default function CompetitorPriceTracker() {
                   <div key={s.productId} className="flex items-center gap-3 p-2 rounded-lg bg-gray-50 dark:bg-surface/50">
                     <div className="flex-1 min-w-0">
                       <p className="text-xs font-semibold text-gray-800 dark:text-white truncate">{s.productName}</p>
-                      <p className="text-[10px] text-gray-500">
+                      <p className="text-[length:var(--ts-2xs)] text-gray-500">
                         Mi precio: S/{s.myPrice.toFixed(2)} · Promedio: S/{s.avg.toFixed(2)}
                       </p>
                     </div>
                     {s.status === "caro" && (
                       <div className="text-right shrink-0">
-                        <p className="text-[10px] font-bold text-amber-600">S/{Math.abs(s.diff).toFixed(2)} mas caro</p>
-                        <p className="text-[9px] text-gray-400">Sugerido: S/{s.sugerido.toFixed(2)}</p>
+                        <p className="text-[length:var(--ts-2xs)] font-bold text-amber-600">S/{Math.abs(s.diff).toFixed(2)} mas caro</p>
+                        <p className="text-[length:var(--ts-2xs)] text-gray-400">Sugerido: S/{s.sugerido.toFixed(2)}</p>
                       </div>
                     )}
                     {s.status === "barato" && (
                       <div className="text-right shrink-0">
-                        <p className="text-[10px] font-bold text-emerald-600">S/{Math.abs(s.diff).toFixed(2)} mas barato</p>
-                        {s.gananciaExtra > 0 && <p className="text-[9px] text-emerald-500">Puedes subir a S/{s.sugerido.toFixed(2)} (+S/{s.gananciaExtra.toFixed(0)}/mes)</p>}
+                        <p className="text-[length:var(--ts-2xs)] font-bold text-emerald-600">S/{Math.abs(s.diff).toFixed(2)} mas barato</p>
+                        {s.gananciaExtra > 0 && <p className="text-[length:var(--ts-2xs)] text-emerald-500">Puedes subir a S/{s.sugerido.toFixed(2)} (+S/{s.gananciaExtra.toFixed(0)}/mes)</p>}
                       </div>
                     )}
                     {s.status === "alineado" && (
-                      <span className="text-[10px] text-gray-400 shrink-0">Alineado</span>
+                      <span className="text-[length:var(--ts-2xs)] text-gray-400 shrink-0">Alineado</span>
                     )}
                     {s.status !== "alineado" && (
                       <button
                         onClick={() => updateMyPrice(s.productId, s.sugerido)}
-                        className="shrink-0 px-2 py-1 rounded-lg bg-[#00B4A6] text-white text-[10px] font-bold hover:bg-[#245a41] transition-colors"
+                        className="shrink-0 px-2 py-1 rounded-lg bg-[#00B4A6] text-white text-[length:var(--ts-2xs)] font-bold hover:bg-[#245a41] transition-colors"
                       >
                         Ajustar
                       </button>
@@ -272,7 +272,7 @@ export default function CompetitorPriceTracker() {
               })}
             </div>
             {(caros.length > 0 || baratos.length > 0) && (
-              <div className="mt-3 pt-2 border-t border-gray-100 dark:border-card-border flex gap-3 text-[10px]">
+              <div className="mt-3 pt-2 border-t border-[var(--rule-soft)] dark:border-card-border flex gap-3 text-[length:var(--ts-2xs)]">
                 {caros.length > 0 && <span className="text-amber-600 font-bold">{caros.length} productos mas caros que la competencia</span>}
                 {baratos.length > 0 && <span className="text-emerald-600 font-bold">{baratos.length} con margen para subir</span>}
               </div>
@@ -282,8 +282,8 @@ export default function CompetitorPriceTracker() {
       })()}
 
       {/* Add competitor */}
-      <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl p-3">
-        <p className="text-xs font-bold text-gray-500 dark:text-gray-400 mb-2 uppercase tracking-wider">Agregar competidor</p>
+      <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl p-3">
+        <p className="text-xs font-bold text-gray-500 dark:text-gray-400 mb-2">Agregar competidor</p>
         <div className="flex gap-2">
           <input
             type="text"
@@ -291,12 +291,12 @@ export default function CompetitorPriceTracker() {
             onChange={e => setNewCompetitor(e.target.value)}
             onKeyDown={e => e.key === "Enter" && addCompetitor()}
             placeholder='Ej: "Bodega Pérez", "Market Plaza"'
-            className="flex-1 px-3 py-2 rounded-xl border border-gray-200 dark:border-card-border bg-white dark:bg-card text-sm text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-[#00B4A6]/40"
+            className="flex-1 px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-card-border bg-white dark:bg-card text-sm text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-[#00B4A6]/40"
           />
           <button
             onClick={addCompetitor}
             disabled={!newCompetitor.trim()}
-            className="px-3 py-2 rounded-xl bg-[#00B4A6] text-white text-xs font-bold hover:bg-[#245a41] transition-colors disabled:opacity-50"
+            className="px-3 py-2 rounded-lg bg-[#00B4A6] text-white text-xs font-bold hover:bg-[#245a41] transition-colors disabled:opacity-50"
           >
             <Plus className="h-4 w-4" />
           </button>
@@ -316,15 +316,15 @@ export default function CompetitorPriceTracker() {
       </div>
 
       {/* Add product */}
-      <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl p-3">
-        <p className="text-xs font-bold text-gray-500 dark:text-gray-400 mb-2 uppercase tracking-wider">Agregar producto a comparar</p>
+      <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl p-3">
+        <p className="text-xs font-bold text-gray-500 dark:text-gray-400 mb-2">Agregar producto a comparar</p>
         <div className="flex gap-2">
           <input
             type="text"
             value={newProduct}
             onChange={e => setNewProduct(e.target.value)}
             placeholder="Nombre del producto"
-            className="flex-1 px-3 py-2 rounded-xl border border-gray-200 dark:border-card-border bg-white dark:bg-card text-sm text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-[#00B4A6]/40"
+            className="flex-1 px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-card-border bg-white dark:bg-card text-sm text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-[#00B4A6]/40"
           />
           <input
             type="number"
@@ -332,12 +332,12 @@ export default function CompetitorPriceTracker() {
             onChange={e => setNewMyPrice(e.target.value)}
             placeholder="Mi precio"
             step="0.10"
-            className="w-24 px-3 py-2 rounded-xl border border-gray-200 dark:border-card-border bg-white dark:bg-card text-sm text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-[#00B4A6]/40"
+            className="w-24 px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-card-border bg-white dark:bg-card text-sm text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-[#00B4A6]/40"
           />
           <button
             onClick={addProduct}
             disabled={!newProduct.trim()}
-            className="px-3 py-2 rounded-xl bg-[#00B4A6] text-white text-xs font-bold hover:bg-[#245a41] transition-colors disabled:opacity-50"
+            className="px-3 py-2 rounded-lg bg-[#00B4A6] text-white text-xs font-bold hover:bg-[#245a41] transition-colors disabled:opacity-50"
           >
             <Plus className="h-4 w-4" />
           </button>
@@ -353,23 +353,23 @@ export default function CompetitorPriceTracker() {
             value={search}
             onChange={e => setSearch(e.target.value)}
             placeholder="Buscar producto..."
-            className="w-full pl-9 pr-3 py-2 rounded-xl border border-gray-200 dark:border-card-border bg-white dark:bg-card text-sm text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-[#00B4A6]/40"
+            className="w-full pl-9 pr-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-card-border bg-white dark:bg-card text-sm text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-[#00B4A6]/40"
           />
         </div>
       )}
 
       {/* Price comparison table */}
       {filtered.length > 0 && data.competitors.length > 0 && (
-        <div className="overflow-x-auto rounded-xl border border-gray-200 dark:border-card-border">
+        <div className="overflow-x-auto rounded-xl border border-[var(--rule-base)] dark:border-card-border">
           <table className="w-full text-sm">
             <thead>
               <tr className="bg-gray-50 dark:bg-surface">
-                <th className="text-left px-3 py-2.5 text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Producto</th>
-                <th className="text-right px-3 py-2.5 text-xs font-bold text-[#00B4A6] uppercase tracking-wider">Mi precio</th>
+                <th className="text-left px-3 py-2.5 text-xs font-bold text-gray-500 dark:text-gray-400">Producto</th>
+                <th className="text-right px-3 py-2.5 text-xs font-bold text-[#00B4A6]">Mi precio</th>
                 {data.competitors.map(c => (
-                  <th key={c.id} className="text-right px-3 py-2.5 text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider">{c.name}</th>
+                  <th key={c.id} className="text-right px-3 py-2.5 text-xs font-bold text-gray-500 dark:text-gray-400">{c.name}</th>
                 ))}
-                <th className="text-center px-3 py-2.5 text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider w-10"></th>
+                <th className="text-center px-3 py-2.5 text-xs font-bold text-gray-500 dark:text-gray-400 w-10"></th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-100 dark:divide-gray-800">
@@ -413,7 +413,7 @@ export default function CompetitorPriceTracker() {
                             onBlur={() => updatePrice(product.productId, comp.id, editValue ? parseFloat(editValue) : null)}
                             onKeyDown={e => { if (e.key === "Enter") updatePrice(product.productId, comp.id, editValue ? parseFloat(editValue) : null); }}
                             step="0.10"
-                            className="w-20 px-2 py-1 rounded-lg border border-gray-300 text-xs text-right bg-white dark:bg-card focus:outline-none text-gray-900 dark:text-white"
+                            className="w-20 px-2 py-1 rounded-lg border border-[var(--rule-base)] text-xs text-right bg-white dark:bg-card focus:outline-none text-gray-900 dark:text-white"
                           />
                         ) : (
                           <button
@@ -425,7 +425,7 @@ export default function CompetitorPriceTracker() {
                                 S/{compPrice.toFixed(2)}
                                 {diff && (
                                   <span className={cn(
-                                    "text-[10px] font-bold",
+                                    "text-[length:var(--ts-2xs)] font-bold",
                                     diff.cheaper ? "text-emerald-500" : "text-red-500"
                                   )}>
                                     {diff.cheaper ? <TrendingUp className="inline h-3 w-3" /> : <TrendingDown className="inline h-3 w-3" />}

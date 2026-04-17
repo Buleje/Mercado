@@ -68,7 +68,7 @@ export default function POSMetricsStrip() {
   // Loading skeletons
   if (loading) {
     return (
-      <div className="h-9 bg-slate-50 dark:bg-slate-800/50 border-b border-gray-100 dark:border-card-border flex items-center gap-4 px-4">
+      <div className="h-9 bg-slate-50 dark:bg-slate-800/50 border-b border-[var(--rule-soft)] dark:border-card-border flex items-center gap-4 px-4">
         {[1, 2, 3, 4].map((i) => (
           <div
             key={i}
@@ -82,7 +82,7 @@ export default function POSMetricsStrip() {
   // Fetch error — show "Verificando..." instead of misleading "Sin turno activo"
   if (fetchError && !data) {
     return (
-      <div className="h-9 bg-gray-50 dark:bg-slate-800/50 border-b border-gray-100 dark:border-card-border flex items-center justify-center gap-2 px-4">
+      <div className="h-9 bg-gray-50 dark:bg-slate-800/50 border-b border-[var(--rule-soft)] dark:border-card-border flex items-center justify-center gap-2 px-4">
         <Clock className="h-3.5 w-3.5 text-gray-400 animate-pulse" />
         <span className="text-xs font-semibold text-gray-400 dark:text-muted">
           Verificando turno...
@@ -120,7 +120,7 @@ export default function POSMetricsStrip() {
       icon: Clock,
       label: "Turno",
       value: formatMinutes(data.turnoMinutos ?? 0),
-      color: "text-blue-600 dark:text-blue-400",
+      color: "text-emerald-600 dark:text-emerald-400",
     },
     {
       icon: DollarSign,
@@ -132,7 +132,7 @@ export default function POSMetricsStrip() {
       icon: Receipt,
       label: "Transacciones",
       value: String(data.cantidadVentas ?? 0),
-      color: "text-purple-600 dark:text-purple-400",
+      color: "text-[var(--text-secondary)] dark:text-[var(--text-primary)]",
     },
     {
       icon: TrendingUp,
@@ -143,14 +143,14 @@ export default function POSMetricsStrip() {
   ];
 
   return (
-    <div className="h-9 bg-slate-50 dark:bg-slate-800/50 border-b border-gray-100 dark:border-card-border flex items-center gap-3 sm:gap-5 px-4 overflow-x-auto scrollbar-hide">
+    <div className="h-9 bg-slate-50 dark:bg-slate-800/50 border-b border-[var(--rule-soft)] dark:border-card-border flex items-center gap-3 sm:gap-5 px-4 overflow-x-auto scrollbar-hide">
       {items.map((item) => (
         <div key={item.label} className="flex items-center gap-1.5 shrink-0">
           <item.icon className={cn("h-3.5 w-3.5", item.color)} />
-          <span className="text-[11px] text-gray-500 dark:text-muted hidden sm:inline">
+          <span className="text-[length:var(--ts-xs)] text-gray-500 dark:text-muted hidden sm:inline">
             {item.label}:
           </span>
-          <span className={cn("text-[11px] font-bold", item.color)}>
+          <span className={cn("text-[length:var(--ts-xs)] font-bold", item.color)}>
             {item.value}
           </span>
         </div>

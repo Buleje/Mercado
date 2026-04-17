@@ -157,7 +157,7 @@ export default function ReviewModal() {
         >
           <div className="pointer-events-auto w-full max-w-md bg-white dark:bg-background rounded-2xl shadow-2xl overflow-hidden max-h-[90vh] flex flex-col">
             {/* Header */}
-            <div className="px-6 py-4 flex items-center justify-between shrink-0" style={{ background: "linear-gradient(90deg, #009690, #00B4A6, #009690)" }}>
+            <div className="px-6 py-4 flex items-center justify-between shrink-0" style={{ background: "linear-gradient(90deg, var(--color-primary-dark), var(--color-primary), var(--color-primary-dark))" }}>
               <div className="flex items-center gap-3">
                 <div className="flex h-9 w-9 items-center justify-center rounded-full bg-white/15">
                   <span className="text-xl">⭐</span>
@@ -350,9 +350,12 @@ export default function ReviewModal() {
                       </label>
                       {photoBase64 && (
                         <div className="relative group">
-                          <img
+                          <Image
                             src={photoBase64}
                             alt="Preview"
+                            width={64}
+                            height={64}
+                            unoptimized
                             className="h-16 w-16 rounded-xl object-cover border-2 border-primary/20 cursor-pointer"
                             onClick={() => setPhotoPreviewFull(true)}
                           />

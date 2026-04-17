@@ -2,7 +2,6 @@ import type { Metadata } from "next";
 import { Suspense } from "react";
 import dynamic from "next/dynamic";
 import Link from "next/link";
-import Image from "next/image";
 import { cacheLife, cacheTag } from "next/cache";
 import {
   GeolocationPrompt,
@@ -11,6 +10,11 @@ import {
   AnimatedSearchBar,
   ReviewsCarousel,
 } from "@/components/landing/LandingClientSections";
+import HeroParallax from "@/components/landing/HeroParallax";
+import FeaturedStoresCarousel from "@/components/landing/FeaturedStoresCarousel";
+import ScrollyHowItWorks from "@/components/landing/ScrollyHowItWorks";
+import { Button, Card, SectionHeader, Kicker } from "@/components/ui-system";
+import { Store, Bike } from "lucide-react";
 
 export const metadata: Metadata = {
   title: "Buleje — Pide lo que quieras, te lo llevamos | Bodegas, Mercado y Mas",
@@ -163,137 +167,39 @@ function BulejeJsonLd() {
   );
 }
 
-// ── Hero — Rappi-style consumer discovery ──
+// ── Hero — Parallax multicapa con stats animados ──
 async function HeroSection() {
   const stats = await getMarketplaceStats();
-
   return (
-    <section className="relative overflow-hidden bg-linear-to-br from-teal-600 via-teal-700 to-emerald-800">
-      {/* Decorative circles */}
-      <div className="pointer-events-none absolute inset-0">
-        <div className="absolute -top-20 -right-20 h-80 w-80 rounded-full bg-white/5 blur-2xl" />
-        <div className="absolute -bottom-32 -left-16 h-96 w-96 rounded-full bg-emerald-400/10 blur-3xl" />
-      </div>
-
-      <div className="relative z-10 mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 pt-12 pb-16 sm:pt-16 sm:pb-20 lg:pt-20 lg:pb-24">
-        <div className="text-center max-w-3xl mx-auto">
-          <h1 className="text-4xl sm:text-5xl lg:text-6xl font-extrabold text-white leading-tight">
-            Pide lo que{" "}
-            <span className="text-yellow-300">quieras</span>,{" "}
-            te lo llevamos
-          </h1>
-          <p className="mt-4 text-lg sm:text-xl text-white/80 max-w-2xl mx-auto">
-            Bodegas, minimarkets, licorerías, farmacias y más — todo desde tu celular con delivery rápido.
-          </p>
-
-          {/* Animated search bar */}
-          <AnimatedSearchBar />
-
-          {/* Mini stats */}
-          <div className="mt-8 flex flex-wrap justify-center gap-6 text-white/80 text-sm">
-            <span className="flex items-center gap-1.5">
-              <span className="font-bold text-white">{stats.storeCount || "10+"}
-              </span> tiendas
-            </span>
-            <span className="flex items-center gap-1.5">
-              <span className="font-bold text-white">{stats.productCount || "500+"}
-              </span> productos
-            </span>
-            <span className="flex items-center gap-1.5">
-              ⭐ <span className="font-bold text-white">{stats.avgRating}</span> valoración
-            </span>
-          </div>
-
-          {/* Geolocation prompt */}
-          <div className="mt-2 flex justify-center">
-            <GeolocationPrompt />
-          </div>
-        </div>
-      </div>
-    </section>
+    <HeroParallax
+      storeCount={stats.storeCount}
+      productCount={stats.productCount}
+      avgRating={stats.avgRating}
+    />
   );
 }
 
-// ── Categories grid — big colorful cards (Rappi / PedidosYa style) ──
+// ── Categories grid — minimal editorial con lucide icons ──
 const CATEGORIES = [
-  { emoji: "🏪", label: "Bodegas", slug: "bodegas", color: "from-teal-600 to-teal-700", desc: "Abarrotes, bebidas y más" },
-  { emoji: "🍔", label: "Restaurantes", slug: "restaurantes", color: "from-amber-500 to-amber-600", desc: "Comida lista para ti" },
-  { emoji: "🍺", label: "Licorería", slug: "licoreria", color: "from-teal-700 to-emerald-800", desc: "Cervezas, vinos y licores" },
-  { emoji: "💊", label: "Farmacia", slug: "farmacia", color: "from-teal-500 to-teal-600", desc: "Medicinas y cuidado personal" },
-  { emoji: "🥦", label: "Frutas y Verduras", slug: "frutas-verduras", color: "from-emerald-500 to-emerald-600", desc: "Frescos del mercado" },
-  { emoji: "🍞", label: "Panadería", slug: "panaderia", color: "from-amber-400 to-amber-500", desc: "Pan caliente y pasteles" },
-  { emoji: "🧹", label: "Limpieza", slug: "limpieza", color: "from-teal-400 to-teal-500", desc: "Productos para tu hogar" },
-  { emoji: "🐾", label: "Mascotas", slug: "mascotas", color: "from-emerald-600 to-emerald-700", desc: "Alimento y accesorios" },
-  { emoji: "🥩", label: "Carnicería", slug: "carniceria", color: "from-amber-600 to-amber-700", desc: "Carnes frescas del día" },
-  { emoji: "🧊", label: "Congelados", slug: "congelados", color: "from-teal-400 to-teal-600", desc: "Helados y comida congelada" },
-  { emoji: "🍿", label: "Snacks", slug: "snacks", color: "from-amber-500 to-amber-700", desc: "Galletas, dulces y más" },
-  { emoji: "🧴", label: "Cuidado Personal", slug: "higiene", color: "from-emerald-500 to-teal-600", desc: "Jabones, shampoo, crema" },
+  { label: "Bodegas", slug: "bodegas", desc: "Abarrotes, bebidas y más" },
+  { label: "Restaurantes", slug: "restaurantes", desc: "Comida lista para ti" },
+  { label: "Licorería", slug: "licoreria", desc: "Cervezas, vinos y licores" },
+  { label: "Farmacia", slug: "farmacia", desc: "Medicinas y cuidado personal" },
+  { label: "Frutas y Verduras", slug: "frutas-verduras", desc: "Frescos del mercado" },
+  { label: "Panadería", slug: "panaderia", desc: "Pan caliente y pasteles" },
+  { label: "Limpieza", slug: "limpieza", desc: "Productos para tu hogar" },
+  { label: "Mascotas", slug: "mascotas", desc: "Alimento y accesorios" },
+  { label: "Carnicería", slug: "carniceria", desc: "Carnes frescas del día" },
+  { label: "Congelados", slug: "congelados", desc: "Helados y comida congelada" },
+  { label: "Snacks", slug: "snacks", desc: "Galletas, dulces y más" },
+  { label: "Cuidado Personal", slug: "higiene", desc: "Jabones, shampoo, crema" },
 ];
 
 function CategoriesGrid() {
   return <CategoriesGridClient categories={CATEGORIES} />;
 }
 
-// ── How it works — consumer-focused ──
-function HowItWorks() {
-  const steps = [
-    {
-      num: "1",
-      emoji: "🔍",
-      title: "Busca y elige",
-      desc: "Encuentra lo que necesitas por categoría o busca directamente. Miles de productos disponibles.",
-    },
-    {
-      num: "2",
-      emoji: "🛒",
-      title: "Agrega al carrito",
-      desc: "Elige productos de cualquier tienda. El carrito se organiza solo.",
-    },
-    {
-      num: "3",
-      emoji: "💳",
-      title: "Paga fácil",
-      desc: "Yape, Plin o efectivo contra entrega. Sin tarjetas, sin complicaciones.",
-    },
-    {
-      num: "4",
-      emoji: "🚚",
-      title: "Recibe en tu puerta",
-      desc: "Delivery rápido directo a tu casa. Cada tienda prepara y envía tu pedido.",
-    },
-  ];
-
-  return (
-    <section className="py-12 sm:py-16 bg-gray-50 dark:bg-gray-900/50">
-      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-        <div className="text-center mb-10">
-          <h2 className="text-2xl sm:text-3xl font-extrabold text-gray-900 dark:text-white">
-            Así de fácil funciona
-          </h2>
-        </div>
-        <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-6">
-          {steps.map((s) => (
-            <div
-              key={s.num}
-              className="bg-white dark:bg-gray-800 rounded-2xl p-6 border border-gray-100 dark:border-gray-700 text-center"
-            >
-              <span className="text-4xl block mb-3">{s.emoji}</span>
-              <div className="inline-flex items-center justify-center h-8 w-8 rounded-full bg-teal-100 dark:bg-teal-900/40 text-teal-700 dark:text-teal-300 font-bold text-sm mb-2">
-                {s.num}
-              </div>
-              <h3 className="text-lg font-bold text-gray-900 dark:text-white">
-                {s.title}
-              </h3>
-              <p className="text-sm text-gray-500 dark:text-gray-400 mt-2">
-                {s.desc}
-              </p>
-            </div>
-          ))}
-        </div>
-      </div>
-    </section>
-  );
-}
+// HowItWorks fue reemplazado por <ScrollyHowItWorks /> del design system.
 
 // ── Featured Stores section (real DB data) ──
 async function FeaturedStoresSection() {
@@ -303,96 +209,27 @@ async function FeaturedStoresSection() {
   return (
     <section className="py-12 sm:py-16 bg-gray-50 dark:bg-gray-900/50">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-        <div className="flex items-center justify-between mb-8">
-          <div>
-            <h2 className="text-2xl sm:text-3xl font-extrabold text-gray-900 dark:text-white">
-              ⭐ Tiendas destacadas
-            </h2>
-            <p className="mt-1 text-gray-500 dark:text-gray-400 text-sm">
-              Las mejor valoradas por nuestros clientes
-            </p>
-          </div>
-          <Link
-            href="/marketplace"
-            className="text-teal-600 dark:text-teal-400 font-semibold text-sm hover:underline hidden sm:block"
-          >
-            Ver todas →
-          </Link>
-        </div>
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4">
-          {stores.map((store) => (
+        <SectionHeader
+          eyebrow="Con mejor reputación"
+          title="Tiendas destacadas"
+          description="Las mejor valoradas por nuestros clientes esta semana."
+          size="md"
+          ruled
+          className="mb-6"
+          action={
             <Link
-              key={store.id}
-              href={`/marketplace/${store.slug}`}
-              className="group bg-white dark:bg-gray-800 rounded-2xl border border-gray-100 dark:border-gray-700 p-4 text-center hover:shadow-lg hover:-translate-y-1 transition-all"
+              href="/marketplace"
+              className="text-xs font-bold text-gray-900 dark:text-white link-underline hidden sm:inline-flex"
             >
-              <div className="relative w-16 h-16 mx-auto mb-3 rounded-xl overflow-hidden bg-gray-100 dark:bg-gray-700">
-                {store.logo ? (
-                  <Image
-                    src={store.logo}
-                    alt={store.name}
-                    fill
-                    className="object-cover"
-                    sizes="64px"
-                  />
-                ) : (
-                  <div className="w-full h-full flex items-center justify-center text-2xl">
-                    🏪
-                  </div>
-                )}
-              </div>
-              <h3 className="text-sm font-bold text-gray-900 dark:text-white truncate">
-                {store.name}
-              </h3>
-              {store.rating > 0 && (
-                <div className="flex items-center justify-center gap-1 mt-1">
-                  <span className="text-yellow-400 text-xs">★</span>
-                  <span className="text-xs font-semibold text-gray-600 dark:text-gray-300">
-                    {store.rating.toFixed(1)}
-                  </span>
-                  <span className="text-xs text-gray-400">
-                    ({store.reviewCount})
-                  </span>
-                </div>
-              )}
-              {store.zone && (
-                <p className="text-xs text-gray-400 mt-1 capitalize truncate">
-                  📍 {store.zone}
-                </p>
-              )}
-              {/* Product previews */}
-              {store.products && store.products.length > 0 && (
-                <div className="flex items-center justify-center gap-1 mt-2">
-                  {store.products.map((sp, i) => (
-                    <div
-                      key={i}
-                      className="h-7 w-7 rounded-full bg-gray-100 dark:bg-gray-700 overflow-hidden shrink-0 border-2 border-white dark:border-gray-800"
-                      style={{ marginLeft: i > 0 ? "-6px" : "0" }}
-                      title={sp.product.name}
-                    >
-                      {sp.product.image ? (
-                        <Image
-                          src={sp.product.image}
-                          alt={sp.product.name}
-                          width={28}
-                          height={28}
-                          className="h-7 w-7 object-cover"
-                        />
-                      ) : (
-                        <div className="w-full h-full flex items-center justify-center text-xs">📦</div>
-                      )}
-                    </div>
-                  ))}
-                  <span className="text-[10px] text-gray-400 ml-1 font-semibold">+</span>
-                </div>
-              )}
+              Ver todas →
             </Link>
-          ))}
-        </div>
-        <div className="text-center mt-6 sm:hidden">
+          }
+        />
+        <FeaturedStoresCarousel stores={stores} />
+        <div className="mt-6 sm:hidden text-center">
           <Link
             href="/marketplace"
-            className="text-teal-600 dark:text-teal-400 font-semibold text-sm hover:underline"
+            className="text-xs font-bold text-gray-900 dark:text-white link-underline"
           >
             Ver todas las tiendas →
           </Link>
@@ -422,95 +259,93 @@ async function ReviewsSection() {
 
 // ── Business + Driver CTA banners ──
 function PromoBanners() {
+  const banners = [
+    {
+      kicker: "Para dueños",
+      icon: Store,
+      title: "¿Tenés un negocio?",
+      desc: "Registrá tu bodega, minimarket o tienda y empezá a vender online gratis. Miles de clientes te esperan.",
+      primary: { label: "Registrar mi negocio", href: "/marketplace/apply" },
+      secondary: { label: "Ver planes", href: "/negocios" },
+    },
+    {
+      kicker: "Para repartidores",
+      icon: Bike,
+      title: "¿Querés repartir?",
+      desc: "Uníte como repartidor y generá ingresos extra entregando pedidos en tu zona. Vos elegís tu horario.",
+      primary: { label: "Quiero ser repartidor", href: "/marketplace/repartidor" },
+    },
+  ];
+
   return (
-    <section className="py-12 sm:py-16 bg-white dark:bg-gray-950">
+    <section className="py-16 sm:py-20 bg-white dark:bg-gray-950">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-        <div className="grid sm:grid-cols-2 gap-6">
-          {/* For businesses */}
-          <div className="relative overflow-hidden rounded-2xl bg-linear-to-br from-teal-600 to-emerald-700 p-8 sm:p-10 text-white">
-            <div className="pointer-events-none absolute -top-8 -right-8 h-40 w-40 rounded-full bg-white/10 blur-2xl" />
-            <div className="relative z-10">
-              <span className="text-4xl block mb-4">🏪</span>
-              <h3 className="text-2xl font-extrabold mb-2">
-                ¿Tienes un negocio?
-              </h3>
-              <p className="text-white/80 mb-6 max-w-sm">
-                Registra tu bodega, minimarket o tienda y empieza a vender online gratis. Miles de clientes te esperan.
-              </p>
-              <div className="flex flex-wrap gap-3">
-                <Link
-                  href="/marketplace/apply"
-                  className="inline-flex items-center gap-2 bg-white text-teal-700 font-bold px-6 py-3 rounded-xl hover:bg-white/90 transition-colors"
-                >
-                  Registrar mi negocio
-                </Link>
-                <Link
-                  href="/negocios"
-                  className="inline-flex items-center gap-2 bg-white/15 text-white font-semibold px-6 py-3 rounded-xl border border-white/20 hover:bg-white/25 transition-colors"
-                >
-                  Ver planes
-                </Link>
-              </div>
-            </div>
-          </div>
-          {/* For drivers */}
-          <div className="relative overflow-hidden rounded-2xl bg-linear-to-br from-orange-500 to-amber-600 p-8 sm:p-10 text-white">
-            <div className="pointer-events-none absolute -bottom-8 -left-8 h-40 w-40 rounded-full bg-white/10 blur-2xl" />
-            <div className="relative z-10">
-              <span className="text-4xl block mb-4">🛵</span>
-              <h3 className="text-2xl font-extrabold mb-2">
-                ¿Quieres repartir?
-              </h3>
-              <p className="text-white/80 mb-6 max-w-sm">
-                Únete como repartidor y genera ingresos extra entregando pedidos en tu zona. Tú eliges tu horario.
-              </p>
-              <Link
-                href="/marketplace/repartidor"
-                className="inline-flex items-center gap-2 bg-white text-orange-600 font-bold px-6 py-3 rounded-xl hover:bg-white/90 transition-colors"
-              >
-                Quiero ser repartidor
-              </Link>
-            </div>
-          </div>
+        <div className="grid sm:grid-cols-2 gap-5">
+          {banners.map((b, i) => {
+            const Icon = b.icon;
+            return (
+              <Card key={i} variant="base" padding="lg" className="justify-between">
+                <div>
+                  <div className="flex items-center gap-3 mb-6">
+                    <div className="h-10 w-10 rounded-lg flex items-center justify-center bg-gray-50 dark:bg-gray-950 border border-gray-200 dark:border-gray-800 text-gray-700 dark:text-gray-200">
+                      <Icon className="h-4 w-4" strokeWidth={1.5} />
+                    </div>
+                    <Kicker>{b.kicker}</Kicker>
+                  </div>
+                  <h3 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-gray-900 dark:text-white">
+                    {b.title}
+                  </h3>
+                  <p className="mt-3 text-sm text-gray-500 dark:text-gray-400 max-w-md leading-relaxed">
+                    {b.desc}
+                  </p>
+                </div>
+                <div className="mt-8 flex flex-wrap gap-3">
+                  <Button asChild variant="primary" size="md">
+                    <Link href={b.primary.href}>{b.primary.label}</Link>
+                  </Button>
+                  {b.secondary && (
+                    <Button asChild variant="secondary" size="md">
+                      <Link href={b.secondary.href}>{b.secondary.label}</Link>
+                    </Button>
+                  )}
+                </div>
+              </Card>
+            );
+          })}
         </div>
       </div>
     </section>
   );
 }
 
-// ── Popular payment methods ──
+// ── Popular payment methods — editorial wordmark list ──
 function PaymentMethods() {
+  const methods = [
+    { name: "Yape", desc: "Transferencia al instante" },
+    { name: "Plin", desc: "Desde tu app del banco" },
+    { name: "Efectivo", desc: "Contra entrega" },
+    { name: "Tarjeta", desc: "Débito y crédito" },
+  ];
   return (
-    <section className="py-10 sm:py-14 bg-gray-50 dark:bg-gray-900/50">
-      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 text-center">
-        <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-6">
-          Paga como prefieras
-        </h3>
-        <div className="flex flex-wrap justify-center gap-6 sm:gap-10">
-          <div className="flex flex-col items-center gap-2">
-            <div className="h-14 w-14 rounded-2xl bg-teal-100 dark:bg-teal-900/30 flex items-center justify-center text-2xl">
-              💜
+    <section className="py-16 sm:py-20 bg-gray-50 dark:bg-gray-900/50 border-y border-gray-200 dark:border-gray-800">
+      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+        <div className="flex items-center gap-6 justify-between flex-wrap mb-8">
+          <Kicker>Formas de pago aceptadas</Kicker>
+          <span className="text-[10px] font-bold text-gray-400 tabular-nums uppercase tracking-wider">
+            4 OPCIONES
+          </span>
+        </div>
+        <div className="grid grid-cols-2 md:grid-cols-4 divide-x divide-y sm:divide-y-0 divide-gray-200 dark:divide-gray-800 border border-gray-200 dark:border-gray-800 rounded-2xl bg-white dark:bg-gray-900 overflow-hidden">
+          {methods.map((m) => (
+            <div key={m.name} className="px-6 py-6 sm:py-8">
+              <p className="text-2xl sm:text-3xl font-extrabold tracking-tight text-gray-900 dark:text-white">
+                {m.name}
+              </p>
+              <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                {m.desc}
+              </p>
             </div>
-            <span className="text-sm font-semibold text-gray-700 dark:text-gray-300">Yape</span>
-          </div>
-          <div className="flex flex-col items-center gap-2">
-            <div className="h-14 w-14 rounded-2xl bg-emerald-100 dark:bg-emerald-900/30 flex items-center justify-center text-2xl">
-              💚
-            </div>
-            <span className="text-sm font-semibold text-gray-700 dark:text-gray-300">Plin</span>
-          </div>
-          <div className="flex flex-col items-center gap-2">
-            <div className="h-14 w-14 rounded-2xl bg-amber-100 dark:bg-amber-900/30 flex items-center justify-center text-2xl">
-              💵
-            </div>
-            <span className="text-sm font-semibold text-gray-700 dark:text-gray-300">Efectivo</span>
-          </div>
-          <div className="flex flex-col items-center gap-2">
-            <div className="h-14 w-14 rounded-2xl bg-teal-50 dark:bg-teal-900/30 flex items-center justify-center text-2xl">
-              💳
-            </div>
-            <span className="text-sm font-semibold text-gray-700 dark:text-gray-300">Tarjeta</span>
-          </div>
+          ))}
         </div>
       </div>
     </section>
@@ -520,27 +355,27 @@ function PaymentMethods() {
 // ── Final CTA ──
 function FinalCTA() {
   return (
-    <section className="py-14 sm:py-20 bg-linear-to-br from-teal-700 to-emerald-800 text-white">
+    <section className="py-14 sm:py-20 bg-gray-50 dark:bg-gray-900/50">
       <div className="max-w-4xl mx-auto px-4 text-center">
-        <h2 className="text-3xl sm:text-4xl font-extrabold">
+        <h2 className="text-fs-h1 font-extrabold tracking-[-0.02em] text-gray-900 dark:text-white">
           Todo lo que necesitas,{" "}
-          <span className="text-yellow-300">en un solo lugar</span>
+          <span className="text-gray-500 dark:text-gray-400">en un solo lugar</span>
         </h2>
-        <p className="mt-4 text-lg text-white/70 max-w-xl mx-auto">
-          Únete a miles de personas que ya compran en Buleje. Delivery rápido, pagos fáciles y las mejores tiendas de tu zona.
+        <p className="mt-4 text-base sm:text-lg text-gray-500 dark:text-gray-400 max-w-xl mx-auto leading-relaxed">
+          Pedí a bodegas cerca tuyo. Delivery en 25 min. Pagás con Yape o efectivo al recibir.
         </p>
-        <div className="mt-8 flex flex-wrap justify-center gap-4">
+        <div className="mt-8 flex flex-wrap justify-center gap-3">
           <Link
             href="/marketplace"
-            className="inline-flex items-center gap-2 bg-white text-teal-700 font-bold px-8 py-4 rounded-xl hover:bg-white/90 transition-colors shadow-lg text-lg"
+            className="inline-flex items-center gap-2 bg-gray-900 dark:bg-white text-white dark:text-gray-900 font-bold px-6 py-3 rounded-full text-sm hover:opacity-90 transition-opacity"
           >
-            🛒 Explorar Marketplace
+            Explorar Marketplace
           </Link>
           <Link
             href="/negocios"
-            className="inline-flex items-center gap-2 bg-white/15 hover:bg-white/25 text-white font-semibold px-8 py-4 rounded-xl border border-white/25 transition-colors text-lg"
+            className="inline-flex items-center gap-2 bg-transparent text-gray-900 dark:text-white font-bold px-6 py-3 rounded-full text-sm border border-gray-300 dark:border-gray-700 hover:border-gray-900 dark:hover:border-gray-400 transition-colors"
           >
-            🏪 Soy un negocio
+            Abrí tu tienda →
           </Link>
         </div>
       </div>
@@ -562,7 +397,7 @@ export default async function Home() {
       <Suspense fallback={<SectionSkeleton />}>
         <FeaturedStoresSection />
       </Suspense>
-      <HowItWorks />
+      <ScrollyHowItWorks />
       <Suspense fallback={<SectionSkeleton />}>
         <ReviewsSection />
       </Suspense>
@@ -576,11 +411,11 @@ export default async function Home() {
 
 function HeroSkeleton() {
   return (
-    <div className="bg-linear-to-br from-teal-600 to-emerald-800 py-20 sm:py-28">
-      <div className="mx-auto max-w-7xl px-4 text-center">
-        <div className="h-12 w-80 bg-white/20 rounded-xl mx-auto mb-4 animate-pulse" />
-        <div className="h-6 w-96 bg-white/10 rounded-lg mx-auto mb-8 animate-pulse" />
-        <div className="h-14 max-w-xl mx-auto bg-white/20 rounded-2xl animate-pulse" />
+    <div className="py-16 sm:py-20 bg-white dark:bg-gray-950">
+      <div className="mx-auto max-w-5xl px-4 text-center">
+        <div className="h-12 w-80 bg-gray-200 dark:bg-gray-800 rounded-xl mx-auto mb-4 animate-pulse" />
+        <div className="h-6 w-96 bg-gray-100 dark:bg-gray-800 rounded-lg mx-auto mb-8 animate-pulse" />
+        <div className="h-14 max-w-xl mx-auto bg-gray-200 dark:bg-gray-800 rounded-2xl animate-pulse" />
       </div>
     </div>
   );

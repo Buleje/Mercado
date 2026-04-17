@@ -59,7 +59,7 @@ export default function SalesForecastTab() {
               </button>
             ))}
           </div>
-          <button onClick={() => exportToCSV(filteredForecast.map(p => ({ Fecha: p.date, Prediccion: p.predicted, Min: p.lower, Max: p.upper })), "forecast")} className="flex flex-wrap items-center gap-2 px-2 sm:px-4 py-1.5 sm:py-2.5 rounded-xl bg-primary text-white text-sm font-bold hover:bg-primary/90 transition-colors">
+          <button onClick={() => exportToCSV(filteredForecast.map(p => ({ Fecha: p.date, Prediccion: p.predicted, Min: p.lower, Max: p.upper })), "forecast")} className="flex flex-wrap items-center gap-2 px-2 sm:px-4 py-1.5 sm:py-2.5 rounded-lg bg-primary text-white text-sm font-bold hover:bg-primary/90 transition-colors">
             <Download className="h-4 w-4" /> Exportar
           </button>
         </div>
@@ -77,13 +77,13 @@ export default function SalesForecastTab() {
       {/* KPIs */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-4">
         {[
-          { label: "Venta Proyectada", value: fmt(totalPredicted), sub: `${period === "7d" ? "7" : period === "30d" ? "30" : "90"} días`, color: "text-blue-600 dark:text-blue-400" },
+          { label: "Venta Proyectada", value: fmt(totalPredicted), sub: `${period === "7d" ? "7" : period === "30d" ? "30" : "90"} días`, color: "text-emerald-600 dark:text-emerald-400" },
           { label: "Promedio Diario", value: fmt(avgDaily), sub: "por día estimado", color: "text-emerald-600 dark:text-emerald-400" },
           { label: "Crecimiento", value: `${Number(growthPct) > 0 ? "+" : ""}${growthPct}%`, sub: "vs periodo anterior", color: Number(growthPct) >= 0 ? "text-emerald-600 dark:text-emerald-400" : "text-red-600 dark:text-red-400" },
-          { label: "Rango Confianza", value: `${fmt(totalLower)} — ${fmt(totalUpper)}`, sub: "intervalo 95%", color: "text-purple-600 dark:text-purple-400" },
+          { label: "Rango Confianza", value: `${fmt(totalLower)} — ${fmt(totalUpper)}`, sub: "intervalo 95%", color: "text-[var(--text-secondary)] dark:text-[var(--text-primary)]" },
         ].map(kpi => (
-          <div key={kpi.label} className="bg-white dark:bg-card rounded-2xl border border-gray-200 dark:border-card-border p-3 sm:p-5">
-            <p className="text-xs font-semibold text-gray-500 dark:text-muted uppercase tracking-wider">{kpi.label}</p>
+          <div key={kpi.label} className="bg-white dark:bg-card rounded-xl border border-[var(--rule-base)] dark:border-card-border p-3 sm:p-5">
+            <p className="text-xs font-semibold text-gray-500 dark:text-muted">{kpi.label}</p>
             <p className={cn("text-lg font-extrabold mt-1", kpi.color)}>{kpi.value}</p>
             <p className="text-xs text-gray-400 dark:text-muted mt-1">{kpi.sub}</p>
           </div>
@@ -93,7 +93,7 @@ export default function SalesForecastTab() {
       {view === "general" ? (
         <>
           {/* Chart visualization */}
-          <div className="bg-white dark:bg-card rounded-2xl border border-gray-200 dark:border-card-border p-3 sm:p-6">
+          <div className="bg-white dark:bg-card rounded-xl border border-[var(--rule-base)] dark:border-card-border p-3 sm:p-6">
             <h3 className="font-bold text-gray-900 dark:text-foreground mb-4 flex flex-wrap items-center gap-2">
               <BarChart3 className="h-5 w-5 text-primary" /> Gráfico de Proyección
             </h3>
@@ -107,7 +107,7 @@ export default function SalesForecastTab() {
                     <div
                       className={cn(
                         "w-full rounded-t transition-all",
-                        isToday ? "bg-yellow-400" : isActual ? "bg-blue-400 dark:bg-blue-500" : "bg-emerald-400 dark:bg-emerald-500 opacity-70"
+                        isToday ? "bg-yellow-400" : isActual ? "bg-emerald-400 dark:bg-emerald-500" : "bg-emerald-400 dark:bg-emerald-500 opacity-70"
                       )}
                       style={{ height: `${h}%` }}
                     />
@@ -121,15 +121,15 @@ export default function SalesForecastTab() {
               <span>Proyección →</span>
             </div>
             <div className="flex flex-wrap items-center gap-2 sm:gap-4 mt-3 text-xs">
-              <span className="flex items-center gap-1"><span className="w-3 h-3 rounded bg-blue-400" /> Ventas reales</span>
+              <span className="flex items-center gap-1"><span className="w-3 h-3 rounded bg-emerald-400" /> Ventas reales</span>
               <span className="flex items-center gap-1"><span className="w-3 h-3 rounded bg-emerald-400 opacity-70" /> Proyección</span>
               <span className="flex items-center gap-1"><span className="w-3 h-3 rounded bg-yellow-400" /> Hoy</span>
             </div>
           </div>
 
           {/* Daily forecast table */}
-          <div className="bg-white dark:bg-card rounded-2xl border border-gray-200 dark:border-card-border overflow-hidden">
-            <div className="px-3 sm:px-6 py-4 border-b border-gray-100 dark:border-card-border">
+          <div className="bg-white dark:bg-card rounded-xl border border-[var(--rule-base)] dark:border-card-border overflow-hidden">
+            <div className="px-3 sm:px-6 py-4 border-b border-[var(--rule-soft)] dark:border-card-border">
               <h3 className="font-bold text-gray-900 dark:text-foreground">Detalle Diario</h3>
             </div>
             <div className="overflow-x-auto max-h-96">
@@ -166,7 +166,7 @@ export default function SalesForecastTab() {
         <>
           {/* Alerts */}
           {alertProducts.length > 0 && (
-            <div className="bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-800 rounded-2xl p-4">
+            <div className="bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-800 rounded-xl p-4">
               <div className="flex flex-wrap items-center gap-2 mb-2">
                 <AlertTriangle className="h-5 w-5 text-amber-500" />
                 <h3 className="font-bold text-amber-800 dark:text-amber-300">{alertProducts.length} productos con riesgo de quiebre</h3>
@@ -176,8 +176,8 @@ export default function SalesForecastTab() {
           )}
 
           {/* Product forecast table */}
-          <div className="bg-white dark:bg-card rounded-2xl border border-gray-200 dark:border-card-border overflow-hidden">
-            <div className="px-3 sm:px-6 py-4 border-b border-gray-100 dark:border-card-border">
+          <div className="bg-white dark:bg-card rounded-xl border border-[var(--rule-base)] dark:border-card-border overflow-hidden">
+            <div className="px-3 sm:px-6 py-4 border-b border-[var(--rule-soft)] dark:border-card-border">
               <h3 className="font-bold text-gray-900 dark:text-foreground">Pronóstico por Producto</h3>
             </div>
             <div className="overflow-x-auto">
@@ -198,8 +198,8 @@ export default function SalesForecastTab() {
                     <tr key={i} className={cn("border-t border-gray-50 dark:border-card-border", p.daysLeft < 14 && "bg-amber-50/50 dark:bg-amber-950/10")}>
                       <td className="px-3 sm:px-6 py-3 font-semibold text-gray-900 dark:text-foreground">{p.name}</td>
                       <td className="px-3 sm:px-6 py-3 text-right text-gray-700 dark:text-foreground">{p.current} ud</td>
-                      <td className="px-3 sm:px-6 py-3 text-right font-bold text-blue-600 dark:text-blue-400">{p.predicted7d} ud</td>
-                      <td className="px-3 sm:px-6 py-3 text-right font-bold text-purple-600 dark:text-purple-400">{p.predicted30d} ud</td>
+                      <td className="px-3 sm:px-6 py-3 text-right font-bold text-emerald-600 dark:text-emerald-400">{p.predicted7d} ud</td>
+                      <td className="px-3 sm:px-6 py-3 text-right font-bold text-[var(--text-secondary)] dark:text-[var(--text-primary)]">{p.predicted30d} ud</td>
                       <td className="px-3 sm:px-6 py-3 text-center">
                         <span className={cn("inline-flex items-center gap-1 text-xs font-bold px-2 py-1 rounded-full", p.trend >= 0 ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400" : "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400")}>
                           {p.trend >= 0 ? <ArrowUp className="h-3 w-3" /> : <ArrowDown className="h-3 w-3" />}

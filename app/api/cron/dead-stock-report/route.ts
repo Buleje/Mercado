@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { timingSafeCompare } from "@/lib/timing-safe";
+import { withCronAuth } from "@/lib/cron-auth";
 import { withCronRetry } from "@/lib/cron-retry";
 import { prisma } from "@/lib/prisma";
 import { enqueueNotification } from "@/lib/queue";
@@ -18,14 +18,7 @@ import { logActivity } from "@/lib/activity-logger";
  * Sugerencia vercel.json: "0 9 * * 1" (lunes 9:00 AM)
  * Autorización: Bearer <CRON_SECRET>
  */
-export async function GET(req: NextRequest) {
-  const secret = process.env.CRON_SECRET;
-  const auth = req.headers.get("authorization") ?? "";
-
-  if (!secret || !timingSafeCompare(auth, `Bearer ${secret}`)) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
-
+export const GET = withCronAuth("dead-stock-report", async (req) => {
   try {
     const result = await withCronRetry("dead-stock-report", async () => {
       const now = new Date();
@@ -116,13 +109,13 @@ export async function GET(req: NextRequest) {
 
       const totalCapitalAtado = deadStock.reduce((s, p) => s + p.capitalAtado, 0);
 
-      // Record notification
-      await NotificationLogsDB.add({
+      // Record notification (fire-and-forget)
+      NotificationLogsDB.add({
         type: "dead_stock_weekly",
         recipient: "admin",
         message: `${deadStock.length} productos sin ventas en 7 días. Capital atado: S/ ${totalCapitalAtado.toFixed(2)}`,
         status: "pending",
-      }, tenantId);
+      }, tenantId).catch(() => {});
 
       // Build WhatsApp message
       const whatsappMsg = [
@@ -159,12 +152,12 @@ export async function GET(req: NextRequest) {
               recipient: ownerPhone,
               message: whatsappMsg,
               tenantId,
-            }).catch(() => {});
+            }).catch((err) => logger.error("[cron/dead-stock-report] WhatsApp enqueue failed", { error: String(err), tenantId }));
             sendPushToPhone(ownerPhone, {
               title: `📦 ${deadStock.length} productos sin ventas esta semana`,
               body: `Capital atado: S/ ${totalCapitalAtado.toFixed(2)} — revisa cuáles poner en oferta`,
               url: "/admin?module=inventario&tab=stock",
-            }).catch(() => {});
+            }).catch((err) => logger.error("[cron/dead-stock-report] push send failed", { error: String(err), tenantId }));
           }
         } catch { /* silencioso */ }
       })();
@@ -200,4 +193,4 @@ export async function GET(req: NextRequest) {
     logger.error("[cron/dead-stock-report] Fatal error", { error: message });
     return NextResponse.json({ ok: false, error: message }, { status: 500 });
   }
-}
+});

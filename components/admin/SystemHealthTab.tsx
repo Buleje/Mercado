@@ -28,11 +28,11 @@ function fmtDate(iso: string) {
 function HealthSkeleton() {
   return (
     <div className="space-y-4 animate-pulse">
-      <div className="h-20 bg-gray-100 dark:bg-surface rounded-2xl" />
+      <div className="h-20 bg-gray-100 dark:bg-surface rounded-xl" />
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
         {[1, 2, 3].map(i => <div key={i} className="h-32 bg-gray-100 dark:bg-surface rounded-xl" />)}
       </div>
-      <div className="h-28 bg-gray-100 dark:bg-surface rounded-2xl" />
+      <div className="h-28 bg-gray-100 dark:bg-surface rounded-xl" />
     </div>
   );
 }
@@ -67,7 +67,7 @@ export default function SystemHealthTab() {
   if (loading) return <HealthSkeleton />;
 
   if (error) return (
-    <div className="rounded-2xl bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-900/40 p-3 sm:p-6 text-center">
+    <div className="rounded-xl bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-900/40 p-3 sm:p-6 text-center">
       <XCircle className="h-8 w-8 text-red-500 mx-auto mb-2" />
       <p className="font-bold text-red-700 dark:text-red-400">Error al cargar health check</p>
       <p className="text-xs text-red-500 mt-1">{error}</p>
@@ -113,7 +113,7 @@ export default function SystemHealthTab() {
       </div>
 
       {/* Overall status banner */}
-      <div className={cn("rounded-2xl p-3 sm:p-5 flex items-center gap-2 sm:gap-4", STATUS_CONFIG[overallStatus].bg)}>
+      <div className={cn("rounded-xl p-3 sm:p-5 flex items-center gap-2 sm:gap-4", STATUS_CONFIG[overallStatus].bg)}>
         <OverallIcon className={cn("h-10 w-10 shrink-0", STATUS_CONFIG[overallStatus].color)} />
         <div>
           <h3 className={cn("text-lg font-extrabold", STATUS_CONFIG[overallStatus].color)}>
@@ -141,13 +141,13 @@ export default function SystemHealthTab() {
           const SIcon = SC.icon;
           const ServiceIcon = SERVICE_ICONS[s.id] ?? Activity;
           return (
-            <div key={s.id} className="bg-white dark:bg-card rounded-xl border border-gray-200 dark:border-card-border p-4">
+            <div key={s.id} className="bg-white dark:bg-card rounded-xl border border-[var(--rule-base)] dark:border-card-border p-4">
               <div className="flex items-center justify-between mb-2">
                 <div className="flex flex-wrap items-center gap-2">
                   <ServiceIcon className="h-4 w-4 text-gray-400" />
                   <h4 className="font-bold text-sm text-gray-900 dark:text-foreground">{s.name}</h4>
                 </div>
-                <span className={cn("flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full", SC.bg, SC.color)}>
+                <span className={cn("flex items-center gap-1 text-[length:var(--ts-2xs)] font-bold px-2 py-0.5 rounded-full", SC.bg, SC.color)}>
                   <SIcon className="h-3 w-3" />{SC.label}
                 </span>
               </div>
@@ -155,18 +155,18 @@ export default function SystemHealthTab() {
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2 text-center">
                 <div>
                   <p className="text-xs font-extrabold text-gray-900 dark:text-foreground">{s.uptime}</p>
-                  <p className="text-[9px] text-gray-400">Uptime</p>
+                  <p className="text-[length:var(--ts-2xs)] text-gray-400">Uptime</p>
                 </div>
                 <div>
                   <p className={cn(
                     "text-xs font-extrabold",
                     s.responseTime < 200 ? "text-emerald-500" : s.responseTime < 500 ? "text-amber-500" : "text-red-500"
                   )}>{s.responseTime}ms</p>
-                  <p className="text-[9px] text-gray-400">Latencia</p>
+                  <p className="text-[length:var(--ts-2xs)] text-gray-400">Latencia</p>
                 </div>
                 <div>
-                  <p className="text-[9px] text-gray-400">{fmtDate(s.lastCheck)}</p>
-                  <p className="text-[9px] text-gray-400">Verificado</p>
+                  <p className="text-[length:var(--ts-2xs)] text-gray-400">{fmtDate(s.lastCheck)}</p>
+                  <p className="text-[length:var(--ts-2xs)] text-gray-400">Verificado</p>
                 </div>
               </div>
             </div>
@@ -176,7 +176,7 @@ export default function SystemHealthTab() {
 
       {/* Metrics */}
       {metrics.length > 0 && (
-        <div className="bg-white dark:bg-card rounded-2xl border border-gray-200 dark:border-card-border p-3 sm:p-5">
+        <div className="bg-white dark:bg-card rounded-xl border border-[var(--rule-base)] dark:border-card-border p-3 sm:p-5">
           <h3 className="font-bold text-sm text-gray-900 dark:text-foreground mb-4 flex flex-wrap items-center gap-2">
             <Cpu className="h-4 w-4 text-primary" /> Métricas clave
           </h3>
@@ -204,7 +204,7 @@ export default function SystemHealthTab() {
       )}
 
       {/* Incidents */}
-      <div className="bg-white dark:bg-card rounded-2xl border border-gray-200 dark:border-card-border p-3 sm:p-5">
+      <div className="bg-white dark:bg-card rounded-xl border border-[var(--rule-base)] dark:border-card-border p-3 sm:p-5">
         <h3 className="font-bold text-sm text-gray-900 dark:text-foreground mb-3 flex flex-wrap items-center gap-2">
           <AlertTriangle className="h-4 w-4 text-amber-500" /> Incidentes
         </h3>
@@ -216,17 +216,17 @@ export default function SystemHealthTab() {
         ) : (
           <div className="space-y-2">
             {incidents.map(inc => (
-              <div key={inc.id} className="flex flex-wrap items-center gap-3 py-2 border-b border-gray-100 dark:border-card-border last:border-0">
+              <div key={inc.id} className="flex flex-wrap items-center gap-3 py-2 border-b border-[var(--rule-soft)] dark:border-card-border last:border-0">
                 <div className={cn(
                   "h-2.5 w-2.5 rounded-full shrink-0",
-                  inc.severity === "critical" ? "bg-red-500" : inc.severity === "warning" ? "bg-amber-500" : "bg-blue-500"
+                  inc.severity === "critical" ? "bg-red-500" : inc.severity === "warning" ? "bg-amber-500" : "bg-emerald-500"
                 )} />
                 <div className="flex-1 min-w-0">
                   <p className="text-sm font-semibold text-gray-900 dark:text-foreground">{inc.title}</p>
-                  <p className="text-[10px] text-gray-400">{fmtDate(inc.createdAt)}</p>
+                  <p className="text-[length:var(--ts-2xs)] text-gray-400">{fmtDate(inc.createdAt)}</p>
                 </div>
                 <span className={cn(
-                  "text-[10px] font-bold px-2 py-0.5 rounded-full",
+                  "text-[length:var(--ts-2xs)] font-bold px-2 py-0.5 rounded-full",
                   inc.status === "resolved"
                     ? "bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400"
                     : "bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400"

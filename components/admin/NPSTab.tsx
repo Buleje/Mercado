@@ -138,7 +138,7 @@ export default function NPSTab() {
       </div>
 
       {/* Gauge + KPIs principales */}
-      <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl p-4 sm:p-6">
+      <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl p-4 sm:p-6">
         <div className="flex flex-col sm:flex-row items-center gap-6">
           {/* Gauge grande */}
           <div className="flex flex-col items-center shrink-0">
@@ -154,13 +154,13 @@ export default function NPSTab() {
               <>
                 <div className="flex h-5 rounded-full overflow-hidden mb-2">
                   <div className="bg-emerald-500 transition-all flex items-center justify-center" style={{ width: `${(promoters / filtered.length) * 100}%` }}>
-                    {(promoters / filtered.length) > 0.1 && <span className="text-white text-[9px] font-extrabold">{((promoters / filtered.length) * 100).toFixed(0)}%</span>}
+                    {(promoters / filtered.length) > 0.1 && <span className="text-white text-[length:var(--ts-2xs)] font-extrabold">{((promoters / filtered.length) * 100).toFixed(0)}%</span>}
                   </div>
                   <div className="bg-amber-400 transition-all flex items-center justify-center" style={{ width: `${(passives / filtered.length) * 100}%` }}>
-                    {(passives / filtered.length) > 0.1 && <span className="text-white text-[9px] font-extrabold">{((passives / filtered.length) * 100).toFixed(0)}%</span>}
+                    {(passives / filtered.length) > 0.1 && <span className="text-white text-[length:var(--ts-2xs)] font-extrabold">{((passives / filtered.length) * 100).toFixed(0)}%</span>}
                   </div>
                   <div className="bg-red-500 transition-all flex items-center justify-center" style={{ width: `${(detractors / filtered.length) * 100}%` }}>
-                    {(detractors / filtered.length) > 0.1 && <span className="text-white text-[9px] font-extrabold">{((detractors / filtered.length) * 100).toFixed(0)}%</span>}
+                    {(detractors / filtered.length) > 0.1 && <span className="text-white text-[length:var(--ts-2xs)] font-extrabold">{((detractors / filtered.length) * 100).toFixed(0)}%</span>}
                   </div>
                 </div>
                 <div className="grid grid-cols-3 gap-2">
@@ -172,7 +172,7 @@ export default function NPSTab() {
                     <div key={k.label} className={cn("rounded-xl p-2 text-center", k.bg)}>
                       <k.icon className={cn("h-4 w-4 mx-auto mb-1", k.color)} />
                       <p className={cn("text-lg font-extrabold", k.color)}>{k.value}</p>
-                      <p className="text-[10px] text-gray-500 dark:text-muted">{k.label} {k.desc}</p>
+                      <p className="text-[length:var(--ts-2xs)] text-gray-500 dark:text-muted">{k.label} {k.desc}</p>
                     </div>
                   ))}
                 </div>
@@ -183,10 +183,10 @@ export default function NPSTab() {
           </div>
 
           {/* Score promedio */}
-          <div className="flex flex-col items-center shrink-0 bg-gray-50 dark:bg-surface rounded-2xl p-4 min-w-[80px]">
+          <div className="flex flex-col items-center shrink-0 bg-gray-50 dark:bg-surface rounded-xl p-4 min-w-[80px]">
             <p className="text-xs font-bold text-gray-500 dark:text-muted">Promedio</p>
-            <p className="text-3xl font-extrabold text-blue-500">{avgScore}</p>
-            <p className="text-[10px] text-gray-400">/10</p>
+            <p className="text-3xl font-extrabold text-emerald-500">{avgScore}</p>
+            <p className="text-[length:var(--ts-2xs)] text-gray-400">/10</p>
           </div>
         </div>
       </div>
@@ -220,7 +220,7 @@ export default function NPSTab() {
               <span className="text-sm">Cargando reseñas...</span>
             </div>
           ) : filtered.length === 0 ? (
-            <div className="text-center py-10 bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl">
+            <div className="text-center py-10 bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl">
               <Star className="h-10 w-10 text-gray-200 dark:text-surface mx-auto mb-2" />
               <p className="text-sm font-semibold text-gray-400">Sin reseñas para este filtro</p>
             </div>
@@ -234,8 +234,8 @@ export default function NPSTab() {
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2 mb-0.5 flex-wrap">
                     <span className="font-bold text-sm text-gray-900 dark:text-foreground">{s.customer}</span>
-                    <span className="text-[10px] bg-gray-100 dark:bg-surface px-1.5 py-0.5 rounded text-gray-500 dark:text-muted">{s.channel}</span>
-                    <span className="text-[10px] text-gray-400">{fmtDate(s.date)}</span>
+                    <span className="text-[length:var(--ts-2xs)] bg-gray-100 dark:bg-surface px-1.5 py-0.5 rounded text-gray-500 dark:text-muted">{s.channel}</span>
+                    <span className="text-[length:var(--ts-2xs)] text-gray-400">{fmtDate(s.date)}</span>
                   </div>
                   {s.comment && (
                     <p className="text-xs text-gray-600 dark:text-muted flex items-start gap-1">
@@ -252,7 +252,7 @@ export default function NPSTab() {
 
       {/* Vista tendencia */}
       {view === "trend" && (
-        <div className="bg-white dark:bg-card rounded-2xl border border-gray-200 dark:border-card-border p-4 sm:p-5">
+        <div className="bg-white dark:bg-card rounded-xl border border-[var(--rule-base)] dark:border-card-border p-4 sm:p-5">
           <h3 className="font-bold text-sm text-gray-900 dark:text-foreground mb-4 flex items-center gap-2">
             <TrendingUp className="h-4 w-4 text-primary" /> Evolución NPS mensual
           </h3>
@@ -267,7 +267,7 @@ export default function NPSTab() {
               <p className="text-sm">Sin datos históricos suficientes</p>
             </div>
           ) : (
-            <div className="space-y-4">
+            <div className="space-y-6">
               {/* Mini barras de NPS por mes */}
               <div className="flex items-end gap-2 h-24">
                 {trends.map(t => {
@@ -275,9 +275,9 @@ export default function NPSTab() {
                   const isPositive = t.nps >= 0;
                   return (
                     <div key={t.month} className="flex flex-col items-center gap-1 flex-1 min-w-0" title={`${t.month}: NPS ${t.nps}`}>
-                      <span className={cn("text-[9px] font-extrabold", isPositive ? "text-emerald-600" : "text-red-500")}>{t.nps > 0 ? `+${t.nps}` : t.nps}</span>
+                      <span className={cn("text-[length:var(--ts-2xs)] font-extrabold", isPositive ? "text-emerald-600" : "text-red-500")}>{t.nps > 0 ? `+${t.nps}` : t.nps}</span>
                       <div className={cn("w-full rounded-t-lg transition-all", isPositive ? "bg-emerald-400" : "bg-red-400")} style={{ height: `${heightPct}%` }} />
-                      <span className="text-[9px] text-gray-400 truncate w-full text-center">{t.month}</span>
+                      <span className="text-[length:var(--ts-2xs)] text-gray-400 truncate w-full text-center">{t.month}</span>
                     </div>
                   );
                 })}

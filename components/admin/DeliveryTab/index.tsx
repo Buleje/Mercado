@@ -6,7 +6,8 @@ import { Truck, Activity, AlertCircle } from "lucide-react";
 import { RoutesList } from "./RoutesList";
 import { StopsTimeline } from "./StopsTimeline";
 import { useDeliveryRoutes, useRouteStops, useLiveTrackingFeed } from "./hooks";
-import { TRACKING_STATUS_EMOJI, TRACKING_STATUS_LABELS } from "./types";
+import { TRACKING_STATUS_LABELS } from "./types";
+import { TRACKING_STATUS_ICON } from "./status-icons";
 
 // LiveMap carga Leaflet dinámicamente para NO meterlo en el bundle principal
 const LiveMap = dynamic(
@@ -154,19 +155,22 @@ export default function DeliveryTab() {
             role="list"
             aria-label="Últimos eventos de tracking"
           >
-            {trackingState.events.slice(0, 10).map((event) => (
-              <li
-                key={event.id}
-                className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-xs text-slate-700 dark:border-slate-700 dark:bg-slate-800/60 dark:text-slate-300"
-              >
-                <span aria-hidden>{TRACKING_STATUS_EMOJI[event.status]}</span>
-                <span className="font-semibold">{TRACKING_STATUS_LABELS[event.status]}</span>
-                <span>{event.customerName ?? event.orderId}</span>
-                {event.etaMinutes != null && (
-                  <span className="text-slate-500">· ETA {event.etaMinutes} min</span>
-                )}
-              </li>
-            ))}
+            {trackingState.events.slice(0, 10).map((event) => {
+              const StatusIcon = TRACKING_STATUS_ICON[event.status];
+              return (
+                <li
+                  key={event.id}
+                  className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-xs text-slate-700 dark:border-slate-700 dark:bg-slate-800/60 dark:text-slate-300"
+                >
+                  <StatusIcon className="h-3 w-3" strokeWidth={1.75} aria-hidden />
+                  <span className="font-semibold">{TRACKING_STATUS_LABELS[event.status]}</span>
+                  <span>{event.customerName ?? event.orderId}</span>
+                  {event.etaMinutes != null && (
+                    <span className="text-slate-500">· ETA {event.etaMinutes} min</span>
+                  )}
+                </li>
+              );
+            })}
           </ul>
         )}
       </section>

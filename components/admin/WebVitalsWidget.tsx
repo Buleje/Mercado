@@ -70,13 +70,13 @@ function CircularGauge({
           <span className="text-sm font-bold text-gray-900 dark:text-zinc-100 tabular-nums">
             {value > 0 ? (value < 1 ? value.toFixed(3) : value < 100 ? value.toFixed(0) : value.toFixed(0)) : "-"}
           </span>
-          <span className="text-[8px] text-gray-400 uppercase">{unit}</span>
+          <span className="text-[length:var(--ts-2xs)] text-gray-400 uppercase">{unit}</span>
         </div>
       </div>
-      <span className="text-[10px] font-semibold text-gray-600 dark:text-zinc-400 uppercase tracking-wide">
+      <span className="text-[length:var(--ts-2xs)] font-semibold text-gray-600 dark:text-zinc-400">
         {label}
       </span>
-      <span className={cn("text-[9px] font-bold px-1.5 py-0.5 rounded-full", grade.color, grade.color.replace("text-", "bg-").replace("-600", "-50"), "dark:" + grade.color.replace("text-", "bg-").replace("-600", "-900/20"))}>
+      <span className={cn("text-[length:var(--ts-2xs)] font-bold px-1.5 py-0.5 rounded-full", grade.color, grade.color.replace("text-", "bg-").replace("-600", "-50"), "dark:" + grade.color.replace("text-", "bg-").replace("-600", "-900/20"))}>
         {grade.label}
       </span>
     </div>
@@ -133,7 +133,7 @@ export default function WebVitalsWidget() {
   }, []);
 
   return (
-    <div className="rounded-xl border border-gray-100 dark:border-zinc-700 bg-white dark:bg-zinc-800 p-4">
+    <div className="rounded-xl border border-[var(--rule-soft)] dark:border-zinc-700 bg-white dark:bg-zinc-800 p-4">
       <div className="flex items-center gap-2 mb-4">
         <Activity className="w-4 h-4 text-primary" />
         <span className="text-sm font-semibold text-gray-700 dark:text-zinc-300">
@@ -162,7 +162,7 @@ export default function WebVitalsWidget() {
         />
       </div>
 
-      <p className="text-[10px] text-gray-400 dark:text-zinc-500 text-center mt-3">
+      <p className="text-[length:var(--ts-2xs)] text-gray-400 dark:text-zinc-500 text-center mt-3">
         Datos de tu navegador actual
       </p>
     </div>

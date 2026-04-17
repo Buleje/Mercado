@@ -157,12 +157,12 @@ export async function GET(req: NextRequest) {
           recipient: phone,
           message,
           tenantId,
-        }).catch(() => {});
+        }).catch((err) => logger.error("[cron/category-margins-report] WhatsApp enqueue failed", { error: String(err), tenantId }));
         sendPushToPhone(phone, {
           title: "📊 Márgenes semanales",
           body: `Ganancia: S/ ${totalProfit.toFixed(2)} (${overallMargin.toFixed(1)}%). Mejor: ${best?.name ?? "—"}`,
           url: "/admin?module=ventas",
-        }).catch(() => {});
+        }).catch((err) => logger.error("[cron/category-margins-report] push send failed", { error: String(err), tenantId }));
       }
 
       logActivity(

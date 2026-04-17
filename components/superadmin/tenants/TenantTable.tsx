@@ -124,7 +124,7 @@ export function TenantTable({
                       <div className="text-[10px] text-orange-500 mt-1">Cancela pronto</div>
                     )}
                     {tenant.trialEndsAt && new Date(tenant.trialEndsAt) > new Date() && (
-                      <div className="text-[10px] text-blue-500 mt-1">
+                      <div className="text-[10px] text-emerald-500 mt-1">
                         Trial hasta {fmtDate(tenant.trialEndsAt)}
                       </div>
                     )}
@@ -196,7 +196,7 @@ export function TenantTable({
                         type="button"
                         onClick={() => onInvite(tenant.slug, tenant.name)}
                         title="Invitar usuario"
-                        className="p-1.5 rounded-lg text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-950/30 transition-colors"
+                        className="p-1.5 rounded-lg text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-950/30 transition-colors"
                       >
                         <Users className="w-4 h-4" />
                       </button>

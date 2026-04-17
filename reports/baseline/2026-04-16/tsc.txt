@@ -1,0 +1,83 @@
+__tests__/api-campaigns-create.test.ts(82,33): error TS2554: Expected 1 arguments, but got 2.
+__tests__/api-campaigns-create.test.ts(97,33): error TS2554: Expected 1 arguments, but got 2.
+__tests__/api-campaigns-create.test.ts(111,33): error TS2554: Expected 1 arguments, but got 2.
+__tests__/api-campaigns-create.test.ts(126,33): error TS2554: Expected 1 arguments, but got 2.
+__tests__/api-campaigns-create.test.ts(141,33): error TS2554: Expected 1 arguments, but got 2.
+__tests__/api-campaigns-create.test.ts(154,33): error TS2554: Expected 1 arguments, but got 2.
+__tests__/api-campaigns-create.test.ts(167,33): error TS2554: Expected 1 arguments, but got 2.
+__tests__/api-campaigns-create.test.ts(181,33): error TS2554: Expected 1 arguments, but got 2.
+__tests__/api-campaigns-create.test.ts(195,33): error TS2554: Expected 1 arguments, but got 2.
+__tests__/api-campaigns-create.test.ts(209,33): error TS2554: Expected 1 arguments, but got 2.
+__tests__/api-campaigns-create.test.ts(239,33): error TS2554: Expected 1 arguments, but got 2.
+__tests__/api-campaigns-create.test.ts(281,33): error TS2554: Expected 1 arguments, but got 2.
+__tests__/api-campaigns-create.test.ts(312,33): error TS2554: Expected 1 arguments, but got 2.
+__tests__/api-campaigns-create.test.ts(353,21): error TS2554: Expected 1 arguments, but got 2.
+__tests__/api-campaigns-create.test.ts(388,33): error TS2554: Expected 1 arguments, but got 2.
+__tests__/api-fiados-cobrar.test.ts(80,33): error TS2554: Expected 1 arguments, but got 2.
+__tests__/api-fiados-cobrar.test.ts(98,33): error TS2554: Expected 1 arguments, but got 2.
+__tests__/api-fiados-cobrar.test.ts(111,33): error TS2554: Expected 1 arguments, but got 2.
+__tests__/api-fiados-cobrar.test.ts(126,33): error TS2554: Expected 1 arguments, but got 2.
+__tests__/api-fiados-cobrar.test.ts(141,33): error TS2554: Expected 1 arguments, but got 2.
+__tests__/api-fiados-cobrar.test.ts(157,33): error TS2554: Expected 1 arguments, but got 2.
+__tests__/api-fiados-cobrar.test.ts(177,33): error TS2554: Expected 1 arguments, but got 2.
+__tests__/api-fiados-cobrar.test.ts(201,33): error TS2554: Expected 1 arguments, but got 2.
+__tests__/api-fiados-cobrar.test.ts(229,33): error TS2554: Expected 1 arguments, but got 2.
+__tests__/api-fiados-cobrar.test.ts(249,21): error TS2554: Expected 1 arguments, but got 2.
+__tests__/api-treasury-transferencias.test.ts(88,33): error TS2554: Expected 1 arguments, but got 2.
+__tests__/api-treasury-transferencias.test.ts(102,33): error TS2554: Expected 1 arguments, but got 2.
+__tests__/api-treasury-transferencias.test.ts(118,33): error TS2554: Expected 1 arguments, but got 2.
+__tests__/api-treasury-transferencias.test.ts(134,33): error TS2554: Expected 1 arguments, but got 2.
+__tests__/api-treasury-transferencias.test.ts(150,33): error TS2554: Expected 1 arguments, but got 2.
+__tests__/api-treasury-transferencias.test.ts(166,33): error TS2554: Expected 1 arguments, but got 2.
+__tests__/api-treasury-transferencias.test.ts(183,33): error TS2554: Expected 1 arguments, but got 2.
+__tests__/api-treasury-transferencias.test.ts(211,33): error TS2554: Expected 1 arguments, but got 2.
+__tests__/api-treasury-transferencias.test.ts(249,33): error TS2554: Expected 1 arguments, but got 2.
+__tests__/api-treasury-transferencias.test.ts(264,33): error TS2554: Expected 1 arguments, but got 2.
+__tests__/api-treasury-transferencias.test.ts(293,21): error TS2554: Expected 1 arguments, but got 2.
+__tests__/api-treasury-transferencias.test.ts(316,32): error TS2554: Expected 1 arguments, but got 2.
+__tests__/api-treasury-transferencias.test.ts(330,32): error TS2554: Expected 1 arguments, but got 2.
+__tests__/api-treasury-transferencias.test.ts(345,20): error TS2554: Expected 1 arguments, but got 2.
+__tests__/api-treasury-transferencias.test.ts(357,32): error TS2554: Expected 1 arguments, but got 2.
+__tests__/marketplace-cross-store-combos.test.ts(6,3): error TS2353: Object literal may only specify known properties, and 'category' does not exist in type 'CartItem'.
+__tests__/marketplace-cross-store-combos.test.ts(64,11): error TS2353: Object literal may only specify known properties, and 'category' does not exist in type 'CartItem'.
+app/api/marketplace/search/suggestions/route.ts(37,27): error TS2339: Property 'getMarketplaceAutocomplete' does not exist on type '{ record(tenantId: string, query: string, resultCount: number, clickedProductId?: number | undefined): Promise<void>; getTopSuggestions(tenantId: string, prefix: string, limit?: number): Promise<...>; getDidYouMean(tenantId: string, query: string, limit?: number): Promise<...>; getProductFuzzyMatches(tenantId: strin...'.
+app/api/marketplace/search/suggestions/route.ts(41,16): error TS18046: 'suggestions' is of type 'unknown'.
+app/api/marketplace/search/suggestions/route.ts(41,36): error TS7006: Parameter 's' implicitly has an 'any' type.
+app/api/marketplace/search/suggestions/route.ts(42,15): error TS18046: 'suggestions' is of type 'unknown'.
+app/api/marketplace/search/suggestions/route.ts(42,35): error TS7006: Parameter 's' implicitly has an 'any' type.
+app/api/marketplace/search/suggestions/route.ts(43,17): error TS18046: 'suggestions' is of type 'unknown'.
+app/api/marketplace/search/suggestions/route.ts(43,37): error TS7006: Parameter 's' implicitly has an 'any' type.
+app/api/marketplace/search/suggestions/route.ts(44,19): error TS18046: 'suggestions' is of type 'unknown'.
+app/api/marketplace/search/suggestions/route.ts(44,39): error TS7006: Parameter 's' implicitly has an 'any' type.
+app/api/marketplace/search/suggestions/route.ts(51,14): error TS18046: 'suggestions' is of type 'unknown'.
+app/api/marketplace/search/suggestions/route.ts(53,13): error TS18046: 'suggestions' is of type 'unknown'.
+app/api/marketplace/search/suggestions/route.ts(54,18): error TS7006: Parameter 's' implicitly has an 'any' type.
+app/api/marketplace/search/suggestions/route.ts(55,15): error TS7006: Parameter 's' implicitly has an 'any' type.
+app/t/[slug]/_components/TenantSectionsWrapper.tsx(7,15): error TS2614: Module '"@/components/TiendaSections"' has no exported member 'SectionContentMap'. Did you mean to use 'import SectionContentMap from "@/components/TiendaSections"' instead?
+app/t/[slug]/_components/TenantSectionsWrapper.tsx(35,13): error TS2322: Type '{ serverProducts: Product[]; visibleSections: Set<string>; sectionOrder: string[]; sectionContent: SectionContentMap; showEmptyPlaceholders: boolean; }' is not assignable to type 'IntrinsicAttributes & TiendaSectionsProps'.
+  Property 'sectionContent' does not exist on type 'IntrinsicAttributes & TiendaSectionsProps'.
+components/marketplace/MarketplaceCrossStoreCombos.tsx(30,15): error TS2339: Property 'storeZone' does not exist on type 'CartItem'.
+components/marketplace/MarketplaceCrossStoreCombos.tsx(31,22): error TS2339: Property 'storeZone' does not exist on type 'CartItem'.
+components/marketplace/MarketplaceCrossStoreCombos.tsx(40,57): error TS2339: Property 'storeZone' does not exist on type 'CartItem'.
+components/marketplace/MarketplaceCrossStoreCombos.tsx(97,18): error TS2339: Property 'category' does not exist on type 'CartItem'.
+components/marketplace/MarketplaceCrossStoreCombos.tsx(98,18): error TS2339: Property 'storeZone' does not exist on type 'CartItem'.
+components/marketplace/MarketplaceCrossStoreCombos.tsx(105,49): error TS2339: Property 'category' does not exist on type 'CartItem'.
+components/marketplace/StoreDetail.tsx(135,7): error TS2353: Object literal may only specify known properties, and 'category' does not exist in type 'Omit<CartItem, "quantity"> & { quantity?: number | undefined; }'.
+lib/marketplace/cross-store-combos.ts(80,37): error TS2339: Property 'storeZone' does not exist on type 'CartItem'.
+lib/marketplace/cross-store-combos.ts(87,58): error TS2339: Property 'storeZone' does not exist on type 'CartItem'.
+lib/marketplace/cross-store-combos.ts(97,41): error TS2339: Property 'category' does not exist on type 'CartItem'.
+lib/marketplace/cross-store-combos.ts(137,41): error TS2339: Property 'category' does not exist on type 'CartItem'.
+tools/mcp-bodega/src/index.ts(15,27): error TS2307: Cannot find module '@modelcontextprotocol/sdk/server/mcp.js' or its corresponding type declarations.
+tools/mcp-bodega/src/index.ts(16,38): error TS2307: Cannot find module '@modelcontextprotocol/sdk/server/stdio.js' or its corresponding type declarations.
+tools/mcp-bodega/src/index.ts(131,12): error TS7031: Binding element 'tenant_id' implicitly has an 'any' type.
+tools/mcp-bodega/src/index.ts(142,12): error TS7031: Binding element 'tenant_id' implicitly has an 'any' type.
+tools/mcp-bodega/src/index.ts(142,23): error TS7031: Binding element 'fecha' implicitly has an 'any' type.
+tools/mcp-bodega/src/index.ts(150,12): error TS7031: Binding element 'tenant_id' implicitly has an 'any' type.
+tools/mcp-bodega/src/index.ts(161,18): error TS2554: Expected 2-3 arguments, but got 1.
+tools/mcp-bodega/src/index.ts(163,12): error TS7031: Binding element 'tenant_id' implicitly has an 'any' type.
+tools/mcp-bodega/src/index.ts(163,23): error TS7031: Binding element 'cliente_id' implicitly has an 'any' type.
+tools/mcp-bodega/src/index.ts(163,35): error TS7031: Binding element 'template' implicitly has an 'any' type.
+tools/mcp-bodega/src/index.ts(163,45): error TS7031: Binding element 'variables' implicitly has an 'any' type.
+tools/mcp-bodega/src/index.ts(184,12): error TS7031: Binding element 'tenant_id' implicitly has an 'any' type.
+tools/mcp-bodega/src/index.ts(184,23): error TS7031: Binding element 'items' implicitly has an 'any' type.
+tools/mcp-bodega/src/index.ts(184,30): error TS7031: Binding element 'cliente' implicitly has an 'any' type.

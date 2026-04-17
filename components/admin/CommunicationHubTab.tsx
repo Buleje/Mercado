@@ -12,8 +12,8 @@ type Message = {
 
 const CHANNEL_CONFIG: Record<string, { label: string; icon: React.ElementType; color: string }> = {
   whatsapp: { label: "WhatsApp", icon: MessageSquare, color: "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400" },
-  sms: { label: "SMS", icon: Phone, color: "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400" },
-  email: { label: "Email", icon: Mail, color: "bg-violet-100 text-violet-700 dark:bg-violet-900/30 dark:text-violet-400" },
+  sms: { label: "SMS", icon: Phone, color: "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400" },
+  email: { label: "Email", icon: Mail, color: "bg-[var(--surface-sunken)] text-[var(--text-primary)]" },
   llamada: { label: "Llamada", icon: Phone, color: "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400" },
 };
 
@@ -58,13 +58,13 @@ export default function CommunicationHubTab() {
 
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
         {[
-          { label: "Mensajes hoy", value: todayCount, color: "text-blue-500" },
+          { label: "Mensajes hoy", value: todayCount, color: "text-emerald-500" },
           { label: "Pendientes", value: pendingCount, color: "text-red-500" },
           { label: "Entrantes", value: inbound, color: "text-emerald-500" },
-          { label: "Salientes", value: outbound, color: "text-violet-500" },
+          { label: "Salientes", value: outbound, color: "text-[var(--text-secondary)]" },
         ].map(k => (
-          <div key={k.label} className="bg-white dark:bg-card rounded-xl border border-gray-200 dark:border-card-border p-3 text-center">
-            <p className="text-[10px] font-semibold text-gray-500 dark:text-muted">{k.label}</p>
+          <div key={k.label} className="bg-white dark:bg-card rounded-xl border border-[var(--rule-base)] dark:border-card-border p-3 text-center">
+            <p className="text-[length:var(--ts-2xs)] font-semibold text-gray-500 dark:text-muted">{k.label}</p>
             <p className={cn("text-xl font-extrabold", k.color)}>{k.value}</p>
           </div>
         ))}
@@ -73,7 +73,7 @@ export default function CommunicationHubTab() {
       <div className="flex flex-col sm:flex-row gap-2">
         <div className="relative flex-1">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
-          <input value={search} onChange={e => setSearch(e.target.value)} className="w-full pl-9 pr-3 py-2 rounded-xl border border-gray-200 dark:border-card-border bg-white dark:bg-surface text-sm" placeholder="Buscar por cliente o contenido…" />
+          <input value={search} onChange={e => setSearch(e.target.value)} className="w-full pl-9 pr-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-card-border bg-white dark:bg-surface text-sm" placeholder="Buscar por cliente o contenido…" />
         </div>
         <div className="flex items-center gap-1.5">
           {["all", "whatsapp", "sms", "email", "llamada"].map(c => (
@@ -94,7 +94,7 @@ export default function CommunicationHubTab() {
           const Ch = CHANNEL_CONFIG[m.channel];
           const Icon = Ch.icon;
           return (
-            <div key={m.id} className={cn("bg-white dark:bg-card rounded-xl border p-4", m.status === "pendiente" ? "border-amber-200 dark:border-amber-900/30 bg-amber-50/30 dark:bg-amber-950/5" : "border-gray-200 dark:border-card-border")}>
+            <div key={m.id} className={cn("bg-white dark:bg-card rounded-xl border p-4", m.status === "pendiente" ? "border-amber-200 dark:border-amber-900/30 bg-amber-50/30 dark:bg-amber-950/5" : "border-[var(--rule-base)] dark:border-card-border")}>
               <div className="flex flex-wrap items-start gap-3">
                 <div className={cn("h-8 w-8 rounded-lg flex items-center justify-center shrink-0", Ch.color)}>
                   <Icon className="h-4 w-4" />
@@ -102,17 +102,17 @@ export default function CommunicationHubTab() {
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2 mb-0.5 flex-wrap">
                     <span className="font-bold text-sm text-gray-900 dark:text-foreground">{m.customer}</span>
-                    <span className={cn("text-[10px] font-bold px-1.5 py-0.5 rounded", m.direction === "in" ? "bg-blue-100 text-blue-600 dark:bg-blue-900/30 dark:text-blue-400" : "bg-gray-100 text-gray-500 dark:bg-surface dark:text-muted")}>{m.direction === "in" ? "← Entrante" : "→ Saliente"}</span>
-                    <span className="text-[10px] text-gray-400 bg-gray-50 dark:bg-surface px-1.5 py-0.5 rounded">{m.category}</span>
-                    {m.status === "pendiente" && <span className="text-[10px] font-bold bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400 px-1.5 py-0.5 rounded-full flex items-center gap-0.5"><AlertTriangle className="h-2.5 w-2.5" /> Pendiente</span>}
-                    <span className="text-[10px] text-gray-400 ml-auto flex items-center gap-0.5"><Clock className="h-2.5 w-2.5" />{fmtDate(m.timestamp)}</span>
+                    <span className={cn("text-[length:var(--ts-2xs)] font-bold px-1.5 py-0.5 rounded", m.direction === "in" ? "bg-emerald-100 text-emerald-600 dark:bg-emerald-900/30 dark:text-emerald-400" : "bg-gray-100 text-gray-500 dark:bg-surface dark:text-muted")}>{m.direction === "in" ? "← Entrante" : "→ Saliente"}</span>
+                    <span className="text-[length:var(--ts-2xs)] text-gray-400 bg-gray-50 dark:bg-surface px-1.5 py-0.5 rounded">{m.category}</span>
+                    {m.status === "pendiente" && <span className="text-[length:var(--ts-2xs)] font-bold bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400 px-1.5 py-0.5 rounded-full flex items-center gap-0.5"><AlertTriangle className="h-2.5 w-2.5" /> Pendiente</span>}
+                    <span className="text-[length:var(--ts-2xs)] text-gray-400 ml-auto flex items-center gap-0.5"><Clock className="h-2.5 w-2.5" />{fmtDate(m.timestamp)}</span>
                   </div>
                   <p className="text-xs text-gray-600 dark:text-muted">{m.content}</p>
-                  {m.agent && <p className="text-[10px] text-gray-400 mt-1">Agente: {m.agent}</p>}
+                  {m.agent && <p className="text-[length:var(--ts-2xs)] text-gray-400 mt-1">Agente: {m.agent}</p>}
 
                   {replyTo === m.id && (
                     <div className="mt-2 flex flex-wrap gap-2">
-                      <input value={replyText} onChange={e => setReplyText(e.target.value)} className="flex-1 px-3 py-1.5 rounded-lg border border-gray-200 dark:border-card-border bg-white dark:bg-surface text-xs" placeholder="Escribe tu respuesta…" />
+                      <input value={replyText} onChange={e => setReplyText(e.target.value)} className="flex-1 px-3 py-1.5 rounded-lg border border-[var(--rule-base)] dark:border-card-border bg-white dark:bg-surface text-xs" placeholder="Escribe tu respuesta…" />
                       <button onClick={() => { setReplyTo(null); setReplyText(""); }} className="px-3 py-1.5 rounded-lg text-xs font-bold bg-primary text-white hover:bg-primary/90"><Send className="h-3 w-3" /></button>
                     </div>
                   )}

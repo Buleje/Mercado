@@ -48,14 +48,14 @@ const SLOT_CONFIG: Record<SlotKey, { label: string; range: string; icon: typeof 
     label: "Noche",
     range: "18:00 – 21:00",
     icon: Moon,
-    color: "text-violet-600 bg-violet-50 dark:bg-violet-900/20",
-    border: "border-violet-200 dark:border-violet-800",
+    color: "text-[var(--text-secondary)] bg-[var(--surface-sunken)]",
+    border: "border-[var(--rule-base)]",
   },
 };
 
 const STATUS_SLOT_CONFIG: Record<string, { label: string; dot: string }> = {
   pendiente:  { label: "Pendiente",   dot: "bg-amber-400" },
-  "en-camino":{ label: "En camino",   dot: "bg-blue-500" },
+  "en-camino":{ label: "En camino",   dot: "bg-emerald-500" },
   entregado:  { label: "Entregado",   dot: "bg-emerald-500" },
   fallido:    { label: "Fallido",     dot: "bg-red-500" },
 };
@@ -149,7 +149,7 @@ export default function DeliveryCalendarTab() {
       <div className="flex items-center gap-2">
         <button
           onClick={() => setWeekOffset(w => w - 1)}
-          className="p-2 rounded-xl border border-gray-200 dark:border-card-border hover:bg-gray-50 dark:hover:bg-surface transition"
+          className="p-2 rounded-lg border border-[var(--rule-base)] dark:border-card-border hover:bg-gray-50 dark:hover:bg-surface transition"
         >
           <ChevronLeft className="h-4 w-4 text-gray-500" />
         </button>
@@ -166,17 +166,17 @@ export default function DeliveryCalendarTab() {
                 className={cn(
                   "flex flex-col items-center min-w-[52px] px-2 py-2 rounded-xl text-xs font-bold transition flex-1",
                   isSelected
-                    ? "bg-primary text-white shadow-md"
+                    ? "bg-primary text-white"
                     : isToday
                     ? "bg-primary/10 text-primary border border-primary/30"
-                    : "bg-white dark:bg-card border border-gray-200 dark:border-card-border text-gray-600 dark:text-muted hover:bg-gray-50 dark:hover:bg-surface"
+                    : "bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border text-gray-600 dark:text-muted hover:bg-gray-50 dark:hover:bg-surface"
                 )}
               >
-                <span className="capitalize text-[10px] font-semibold">{day}</span>
+                <span className="capitalize text-[length:var(--ts-2xs)] font-semibold">{day}</span>
                 <span className="text-lg font-extrabold leading-tight">{num}</span>
-                <span className="text-[10px] capitalize opacity-70">{month}</span>
+                <span className="text-[length:var(--ts-2xs)] capitalize opacity-70">{month}</span>
                 {count > 0 && (
-                  <span className={cn("mt-1 px-1.5 py-0.5 rounded-full text-[9px] font-extrabold", isSelected ? "bg-white/20" : "bg-primary/10 text-primary")}>
+                  <span className={cn("mt-1 px-1.5 py-0.5 rounded-full text-[length:var(--ts-2xs)] font-extrabold", isSelected ? "bg-white/20" : "bg-primary/10 text-primary")}>
                     {count}
                   </span>
                 )}
@@ -186,7 +186,7 @@ export default function DeliveryCalendarTab() {
         </div>
         <button
           onClick={() => setWeekOffset(w => w + 1)}
-          className="p-2 rounded-xl border border-gray-200 dark:border-card-border hover:bg-gray-50 dark:hover:bg-surface transition"
+          className="p-2 rounded-lg border border-[var(--rule-base)] dark:border-card-border hover:bg-gray-50 dark:hover:bg-surface transition"
         >
           <ChevronRight className="h-4 w-4 text-gray-500" />
         </button>
@@ -197,10 +197,10 @@ export default function DeliveryCalendarTab() {
         {[
           { label: "Total",       value: dayKpis.total,      color: "text-gray-700 dark:text-foreground" },
           { label: "Entregados",  value: dayKpis.entregados, color: "text-emerald-600" },
-          { label: "En camino",   value: dayKpis.enCamino,   color: "text-blue-500" },
+          { label: "En camino",   value: dayKpis.enCamino,   color: "text-emerald-500" },
           { label: "Fallidos",    value: dayKpis.fallidos,   color: "text-red-500" },
         ].map(k => (
-          <div key={k.label} className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl p-3 text-center">
+          <div key={k.label} className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl p-3 text-center">
             <p className="text-xs text-gray-500 dark:text-muted">{k.label}</p>
             <p className={cn("text-xl font-extrabold", k.color)}>{k.value}</p>
           </div>
@@ -218,13 +218,13 @@ export default function DeliveryCalendarTab() {
             const Icon = cfg.icon;
             const slotOrders = daySlots.filter(s => s.slot === key);
             return (
-              <div key={key} className={cn("bg-white dark:bg-card border rounded-2xl overflow-hidden", cfg.border)}>
+              <div key={key} className={cn("bg-white dark:bg-card border rounded-xl overflow-hidden", cfg.border)}>
                 {/* Slot header */}
                 <div className={cn("flex items-center gap-2 px-4 py-3", cfg.color)}>
                   <Icon className="h-4 w-4 shrink-0" />
                   <div className="flex-1">
                     <span className="font-extrabold text-sm">{cfg.label}</span>
-                    <span className="text-[10px] ml-1.5 opacity-70">{cfg.range}</span>
+                    <span className="text-[length:var(--ts-2xs)] ml-1.5 opacity-70">{cfg.range}</span>
                   </div>
                   <span className="text-xs font-bold bg-white/60 dark:bg-black/20 px-2 py-0.5 rounded-full">
                     {slotOrders.length} pedidos
@@ -250,7 +250,7 @@ export default function DeliveryCalendarTab() {
                             <span className="font-bold text-gray-800 dark:text-foreground">
                               #{s.orderId.slice(-6)}
                             </span>
-                            <span className="text-[10px] text-gray-400 bg-white dark:bg-card px-1.5 py-0.5 rounded-full">
+                            <span className="text-[length:var(--ts-2xs)] text-gray-400 bg-white dark:bg-card px-1.5 py-0.5 rounded-full">
                               {stCfg.label}
                             </span>
                           </div>
@@ -285,7 +285,7 @@ export default function DeliveryCalendarTab() {
                 <div className="px-3 pb-3">
                   <button
                     onClick={() => setAssigningSlot(key)}
-                    className="w-full py-2 rounded-xl text-xs font-bold text-primary border border-dashed border-primary/30 hover:bg-primary/5 transition flex items-center justify-center gap-1"
+                    className="w-full py-2 rounded-lg text-xs font-bold text-primary border border-dashed border-primary/30 hover:bg-primary/5 transition flex items-center justify-center gap-1"
                   >
                     <Clock className="h-3 w-3" />
                     Asignar pedido
@@ -304,7 +304,7 @@ export default function DeliveryCalendarTab() {
           onClick={() => setAssigningSlot(null)}
         >
           <div
-            className="bg-white dark:bg-card rounded-2xl p-4 sm:p-6 w-full max-w-md space-y-4 border border-gray-200 dark:border-card-border shadow-2xl"
+            className="bg-white dark:bg-card rounded-xl p-4 sm:p-6 w-full max-w-md space-y-4 border border-[var(--rule-base)] dark:border-card-border"
             onClick={e => e.stopPropagation()}
           >
             <div className="flex items-center justify-between">
@@ -326,7 +326,7 @@ export default function DeliveryCalendarTab() {
                   <button
                     key={o.id}
                     onClick={() => assignSlot(o.id)}
-                    className="w-full text-left p-3 border border-gray-200 dark:border-card-border rounded-xl hover:border-primary/40 hover:bg-primary/5 transition text-sm group"
+                    className="w-full text-left p-3 border border-[var(--rule-base)] dark:border-card-border rounded-lg hover:border-primary/40 hover:bg-primary/5 transition text-sm group"
                   >
                     <div className="flex items-center justify-between">
                       <span className="font-bold text-gray-800 dark:text-foreground">#{o.id.slice(-6)}</span>

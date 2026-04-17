@@ -17,7 +17,7 @@
  *  1. Query string `?tab=...`
  *  2. Hash `#...`
  *  3. localStorage `admin_active_tab`
- *  4. Default `"asistente-ia"`
+ *  4. Default `"vendor-dashboard"`
  *
  * En todos los casos pasa por `TAB_MIGRATION` (legacy → nuevo id) y por
  * `VALID_TABS` (whitelist de tabs visibles desde sidebar).
@@ -32,15 +32,17 @@
 import { useCallback, useState } from "react";
 import { TAB_MIGRATION } from "../_lib/tab-migration";
 import { VALID_TABS, type Tab } from "../_lib/tabs.types";
+import { useTabFrequency } from "./useTabFrequency";
 
 export interface UseAdminTabsResult {
   tab: Tab;
   setTab: (id: Tab) => void;
   navigateTab: (id: Tab) => void;
+  topTabs: (n: number) => string[];
 }
 
 function resolveInitialTab(): Tab {
-  if (typeof window === "undefined") return "asistente-ia";
+  if (typeof window === "undefined") return "vendor-dashboard";
 
   // 1. Query param ?tab=...
   const urlTab = new URLSearchParams(window.location.search).get("tab");
@@ -70,11 +72,12 @@ function resolveInitialTab(): Tab {
     // localStorage no disponible (modo privado, SSR, etc.)
   }
 
-  return "asistente-ia";
+  return "vendor-dashboard";
 }
 
 export function useAdminTabs(addRecent: (id: Tab) => void): UseAdminTabsResult {
   const [tab, setTab] = useState<Tab>(resolveInitialTab);
+  const { trackTab, getTopTabs } = useTabFrequency();
 
   const navigateTab = useCallback(
     (id: Tab) => {
@@ -94,9 +97,10 @@ export function useAdminTabs(addRecent: (id: Tab) => void): UseAdminTabsResult {
         // window.history no disponible — ignorar
       }
       addRecent(id);
+      trackTab(id);
     },
-    [addRecent],
+    [addRecent, trackTab],
   );
 
-  return { tab, setTab, navigateTab };
+  return { tab, setTab, navigateTab, topTabs: getTopTabs };
 }

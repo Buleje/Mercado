@@ -37,7 +37,7 @@ export default function NewsletterWhatsApp() {
 
   const BENEFITS = [
     { icon: Gift, text: "Ofertas exclusivas cada semana", accent: "bg-amber-500/10 text-amber-600" },
-    { icon: Zap, text: "Aviso de productos nuevos al instante", accent: "bg-blue-500/10 text-blue-600" },
+    { icon: Zap, text: "Aviso de productos nuevos al instante", accent: "bg-emerald-500/10 text-emerald-600" },
     { icon: Shield, text: "Cupones solo por WhatsApp", accent: "bg-emerald-500/10 text-emerald-600" },
   ];
 

@@ -3,7 +3,8 @@ import { z } from "zod";
 import { requireAdmin } from "@/lib/require-admin";
 import { logActivity } from "@/lib/activity-logger";
 import { prisma } from "@/lib/prisma";
-import { sendWhatsAppText } from "@/lib/whatsapp";
+import { sendWhatsAppQueued } from "@/lib/whatsapp";
+import { logger } from "@/lib/logger";
 
 const VALID_TRANSITIONS: Record<string, string[]> = {
   assigned: ["picked_up"],
@@ -103,7 +104,7 @@ export async function POST(req: NextRequest) {
       `Delivery asignado a orden ${orderId} — partner ${assignment.partner.name}`,
       assignment.id,
       auth.username
-    ).catch(() => {});
+    ).catch((err) => logger.error("[delivery/assignments] operation failed", { error: String(err), tenantId: auth.tenantId }));
 
     // Fire-and-forget: notificar al repartidor via WhatsApp/email
     const baseUrl = process.env.NEXT_PUBLIC_BASE_URL ?? `http://localhost:3000`;
@@ -119,7 +120,7 @@ export async function POST(req: NextRequest) {
         orderId,
         message: `Nuevo pedido asignado!\nCliente: ${assignment.order.customerName}\nDireccion: ${assignment.order.customerLocation || "Sin direccion"}\nTotal: S/ ${assignment.order.total.toFixed(2)}\nRecoge en: Bodega`,
       }),
-    }).catch(() => {});
+    }).catch((err) => logger.error("[delivery/assignments] operation failed", { error: String(err), tenantId: auth.tenantId }));
 
     return NextResponse.json(assignment, { status: 201 });
   } catch {
@@ -174,7 +175,7 @@ export async function PATCH(req: NextRequest) {
       `Estado actualizado: ${current.status} → ${status}`,
       id,
       auth.username
-    ).catch(() => {});
+    ).catch((err) => logger.error("[delivery/assignments] operation failed", { error: String(err) }));
 
     // Fire-and-forget: WhatsApp tracking update to customer
     if (updated.order?.customerPhone) {
@@ -187,7 +188,7 @@ export async function PATCH(req: NextRequest) {
       };
       const msg = trackingMessages[status];
       if (msg) {
-        sendWhatsAppText(updated.order.customerPhone, msg).catch(() => {});
+        await sendWhatsAppQueued(updated.order.customerPhone, msg, { tenantId: auth.tenantId, context: `delivery/assignments:${status}` }).catch((err) => logger.error("[delivery/assignments] WhatsApp enqueue fallback failed", { error: String(err), tenantId: auth.tenantId }));
       }
     }
 

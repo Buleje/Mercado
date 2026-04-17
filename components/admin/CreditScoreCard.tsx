@@ -173,7 +173,7 @@ function GaugeCircle({ score, color }: { score: number; color: "green" | "yellow
           style={{ transition: "stroke-dasharray 0.8s ease" }}
         />
       </svg>
-      <div className={cn("text-4xl font-black -mt-4", textColor)}>{score}</div>
+      <div className={cn("text-4xl font-extrabold -mt-4", textColor)}>{score}</div>
       <div className="text-xs text-gray-400 dark:text-muted -mt-1">de 100</div>
     </div>
   );
@@ -243,9 +243,9 @@ export default function CreditScoreCard({ customerPhone, className }: CreditScor
   };
 
   return (
-    <div className={cn("rounded-2xl border border-gray-200 dark:border-card-border bg-white dark:bg-card overflow-hidden", className)}>
+    <div className={cn("rounded-xl border border-[var(--rule-base)] dark:border-card-border bg-white dark:bg-card overflow-hidden", className)}>
       {/* Header */}
-      <div className="flex items-center gap-2 px-4 py-3 border-b border-gray-100 dark:border-card-border bg-gray-50 dark:bg-gray-900/50">
+      <div className="flex items-center gap-2 px-4 py-3 border-b border-[var(--rule-soft)] dark:border-card-border bg-gray-50 dark:bg-gray-900/50">
         <CreditCard className="h-4 w-4 text-primary" />
         <span className="text-sm font-semibold text-gray-900 dark:text-foreground">Score de confianza para fiado</span>
       </div>
@@ -304,7 +304,7 @@ export default function CreditScoreCard({ customerPhone, className }: CreditScor
 
             {/* Breakdown */}
             <div className="space-y-2">
-              <p className="text-xs font-semibold text-gray-500 dark:text-muted uppercase tracking-wide">Detalle del score</p>
+              <p className="text-xs font-semibold text-gray-500 dark:text-muted">Detalle del score</p>
               {[
                 { label: "Paga puntualmente", value: result.breakdown.paysOnTime, icon: Clock },
                 { label: "Antiguedad (>6 meses)", value: result.breakdown.seniority, icon: TrendingUp },

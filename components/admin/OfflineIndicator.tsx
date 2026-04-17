@@ -56,7 +56,7 @@ export default function OfflineIndicator() {
             ${bannerState === "offline"
               ? "bg-amber-400 dark:bg-amber-500 text-amber-900 dark:text-amber-950"
               : bannerState === "syncing"
-              ? "bg-blue-500 dark:bg-blue-600 text-white"
+              ? "bg-emerald-500 dark:bg-emerald-600 text-white"
               : "bg-emerald-500 dark:bg-emerald-600 text-white"
             }
           `}

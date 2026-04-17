@@ -19,7 +19,7 @@ const TYPE_META: Record<SuggestionType, { icon: React.ElementType; color: string
   alerta:      { icon: AlertTriangle, color: "text-red-500",    bg: "bg-red-50 dark:bg-red-950/30",     border: "border-red-200 dark:border-red-900/40",   label: "Alerta" },
   oportunidad: { icon: TrendingUp,    color: "text-emerald-600",bg: "bg-emerald-50 dark:bg-emerald-950/30",border:"border-emerald-200 dark:border-emerald-900/40",label:"Oportunidad"},
   optimizacion:{ icon: Lightbulb,     color: "text-amber-500",  bg: "bg-amber-50 dark:bg-amber-950/20",  border: "border-amber-200 dark:border-amber-900/30",label: "Mejora" },
-  accion:      { icon: ShoppingCart,  color: "text-blue-500",   bg: "bg-blue-50 dark:bg-blue-950/30",    border: "border-blue-200 dark:border-blue-900/40", label: "Acción" },
+  accion:      { icon: ShoppingCart,  color: "text-emerald-500",   bg: "bg-emerald-50 dark:bg-emerald-950/30",    border: "border-emerald-200 dark:border-emerald-900/40", label: "Acción" },
 };
 
 interface Props {
@@ -53,7 +53,7 @@ export default function SmartSuggestionsPanel({ context = "general", compact = f
   if (visible.length === 0 && !loading) return null;
 
   return (
-    <div className={cn("rounded-2xl border overflow-hidden", compact ? "border-amber-200 dark:border-amber-900/40 bg-amber-50/50 dark:bg-amber-950/10" : "border-gray-200 dark:border-card-border bg-white dark:bg-card")}>
+    <div className={cn("rounded-xl border overflow-hidden", compact ? "border-amber-200 dark:border-amber-900/40 bg-amber-50/50 dark:bg-amber-950/10" : "border-[var(--rule-base)] dark:border-card-border bg-white dark:bg-card")}>
       <button
         className="w-full flex items-center justify-between px-2 sm:px-4 py-2 sm:py-3 hover:bg-black/[0.02] transition-colors"
         onClick={() => setExpanded(e => !e)}
@@ -64,14 +64,14 @@ export default function SmartSuggestionsPanel({ context = "general", compact = f
             Sugerencias inteligentes
           </span>
           {visible.length > 0 && (
-            <span className="px-1.5 py-0.5 rounded-full text-[10px] font-extrabold bg-amber-500 text-white">{visible.length}</span>
+            <span className="px-1.5 py-0.5 rounded-full text-[length:var(--ts-2xs)] font-extrabold bg-amber-500 text-white">{visible.length}</span>
           )}
         </div>
         <ChevronRight className={cn("h-4 w-4 text-gray-400 transition-transform", expanded && "rotate-90")} />
       </button>
 
       {expanded && (
-        <div className="px-4 pb-4 space-y-2.5 border-t border-gray-100 dark:border-card-border pt-3">
+        <div className="px-4 pb-4 space-y-2.5 border-t border-[var(--rule-soft)] dark:border-card-border pt-3">
           {loading ? (
             <div className="flex flex-wrap items-center gap-2 text-xs text-gray-400 dark:text-muted py-2">
               <RefreshCw className="h-3.5 w-3.5 animate-spin" /> Analizando datos del negocio…

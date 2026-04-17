@@ -197,10 +197,10 @@ export function TouchGesturesDemo() {
   });
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-6">
       <div
         ref={ref}
-        className="rounded-xl border-2 border-dashed border-[#00B4A6]/40 bg-[#00B4A6]/5 dark:bg-[#00B4A6]/10 p-8 flex flex-col items-center justify-center min-h-44 select-none cursor-pointer touch-none"
+        className="rounded-lg border-2 border-dashed border-[#00B4A6]/40 bg-[#00B4A6]/5 dark:bg-[#00B4A6]/10 p-8 flex flex-col items-center justify-center min-h-44 select-none cursor-pointer touch-none"
       >
         <p className="text-sm font-medium text-gray-600 dark:text-gray-400 text-center">
           Area de prueba — toca aqui desde un movil o tablet
@@ -215,7 +215,7 @@ export function TouchGesturesDemo() {
         )}
       </div>
 
-      <div className="rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 p-4">
+      <div className="rounded-xl border border-[var(--rule-base)] bg-white dark:bg-gray-800 p-4">
         <p className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">
           Props del hook useTouchGestures
         </p>
@@ -233,7 +233,7 @@ export function TouchGesturesDemo() {
           ].map(([prop, type, desc]) => (
             <div
               key={prop}
-              className="grid grid-cols-[auto_1fr_2fr] gap-3 items-center py-1 border-b border-gray-50 dark:border-gray-700/50 last:border-0"
+              className="grid grid-cols-[auto_1fr_2fr] gap-3 items-center py-1 border-b border-gray-50 dark:border-[var(--rule-base)] last:border-0"
             >
               <span className="text-[#00B4A6] dark:text-[#2dd4bf] font-semibold">{prop}</span>
               <span className="text-gray-500 dark:text-gray-400">{type}</span>

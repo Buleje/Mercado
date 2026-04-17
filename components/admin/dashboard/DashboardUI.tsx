@@ -30,7 +30,6 @@ export function Sparkline({ data, color }: { data: number[]; color: string }) {
   // Infer color value from Tailwind class
   const colorMap: Record<string, string> = {
     "emerald-500": "#10b981",
-    "blue-500": "#3b82f6",
     "violet-500": "#8b5cf6",
     "indigo-500": "#00B4A6",
     "cyan-500": "#06b6d4",
@@ -91,10 +90,10 @@ export function useCountUp(target: string, duration = 600) {
 export function Kpi({ label, value, icon: Icon, accent, delta, sparklineData }: { label: string; value: string; icon: React.ComponentType<{className?:string}>; accent: string; delta?: number | null; sparklineData?: number[] }) {
   const animatedValue = useCountUp(value);
   return (
-    <div className="bg-white dark:bg-card rounded-xl border border-gray-100 dark:border-card-border px-2 sm:px-4 py-2 sm:py-3.5 hover:border-gray-200 dark:hover:border-gray-600 transition-all relative overflow-hidden">
+    <div className="bg-white dark:bg-card rounded-xl border border-[var(--rule-soft)] dark:border-card-border px-2 sm:px-4 py-2 sm:py-3.5 hover:border-gray-200 dark:hover:border-gray-600 transition-all relative overflow-hidden">
       {/* Visual gradient indicator on top edge for significant changes */}
       {delta != null && Math.abs(delta) >= 10 && (
-        <div className={cn("absolute top-0 left-0 right-0 h-1", delta >= 0 ? "bg-linear-to-r from-emerald-400 to-green-500" : "bg-linear-to-r from-red-400 to-red-500")} />
+        <div className={cn("absolute top-0 left-0 right-0 h-1", delta >= 0 ? "bg-[var(--data-success)]" : "bg-[var(--data-error)]")} />
       )}
       <p className="text-xs font-medium text-gray-400 dark:text-muted mb-2.5 truncate">{label}</p>
       <div className="flex items-end justify-between gap-2">
@@ -121,7 +120,7 @@ export function Kpi({ label, value, icon: Icon, accent, delta, sparklineData }: 
 
 export function Card({ title, icon: Icon, children, action }: { title: string; icon: React.ComponentType<{className?:string}>; children: React.ReactNode; action?: React.ReactNode }) {
   return (
-    <div className="bg-white dark:bg-card rounded-xl border border-gray-100 dark:border-card-border p-4">
+    <div className="bg-white dark:bg-card rounded-xl border border-[var(--rule-soft)] dark:border-card-border p-4">
       <div className="flex items-center justify-between mb-4">
         <h3 className="flex items-center gap-1.5 text-xs font-semibold tracking-wider text-gray-400 dark:text-muted" style={{letterSpacing:"0.06em"}}>
           <Icon className="h-3 w-3 text-gray-300 dark:text-muted" />{title.toUpperCase()}
@@ -136,8 +135,8 @@ export function Card({ title, icon: Icon, children, action }: { title: string; i
 export function DBadge({ children, color }: { children: React.ReactNode; color: "green"|"red"|"amber"|"blue"|"purple"|"gray" }) {
   const m: Record<string,string> = {
     green:"bg-emerald-50 text-emerald-600", red:"bg-red-50 text-red-600",
-    amber:"bg-amber-50 text-amber-600", blue:"bg-blue-50 text-blue-600",
-    purple:"bg-purple-50 text-purple-600", gray:"bg-gray-100 text-gray-500",
+    amber:"bg-amber-50 text-amber-600", blue:"bg-emerald-50 text-emerald-600",
+    purple:"bg-[var(--surface-sunken)] text-[var(--text-secondary)]", gray:"bg-gray-100 text-gray-500",
   };
   return <span className={cn("inline-flex px-1.5 py-0.5 rounded text-xs font-semibold",m[color])}>{children}</span>;
 }
@@ -167,7 +166,7 @@ export function ElapsedTimer({ createdAt }: { createdAt: string }) {
   const m = mins % 60;
   const color = mins > 60 ? "text-red-500" : mins > 30 ? "text-amber-500" : "text-emerald-500";
   return (
-    <div className={cn("text-[10px] font-bold mt-0.5", color)}>
+    <div className={cn("text-[length:var(--ts-2xs)] font-bold mt-0.5", color)}>
       ⏱ {h > 0 ? `${h}h ${m}m` : `${m}m`}
     </div>
   );

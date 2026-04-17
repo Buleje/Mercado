@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { requireAdmin } from "@/lib/require-admin";
 import { queue } from "@/lib/queue";
 import { z } from "zod";
+import { logger } from "@/lib/logger";
 
 const BodySchema = z.object({
   vendorPhone: z.string().min(1),
@@ -26,7 +27,8 @@ export async function POST(req: NextRequest) {
   const auth = await requireAdmin(req, ["admin"]);
   if (auth instanceof NextResponse) return auth;
 
-  const body = await req.json();
+  const body = await req.json().catch((err) => { logger.error("[marketplace/notify-vendor] parse JSON body failed", { error: String(err) }); return null; });
+  if (!body) return NextResponse.json({ error: "Invalid JSON" }, { status: 400 });
   const parsed = BodySchema.safeParse(body);
   if (!parsed.success) {
     return NextResponse.json({ error: "Datos inválidos", issues: parsed.error.issues }, { status: 400 });
@@ -41,7 +43,7 @@ export async function POST(req: NextRequest) {
       phone: vendorPhone,
       message,
     })
-    .catch(() => {});
+    .catch((err) => logger.error("[marketplace/notify-vendor] operation failed", { error: String(err), tenantId: auth.tenantId }));
 
   return NextResponse.json({ ok: true }, { status: 202 });
 }

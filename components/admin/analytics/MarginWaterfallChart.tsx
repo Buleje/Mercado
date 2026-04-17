@@ -56,7 +56,7 @@ function WaterfallTooltip({ active, payload }: { active?: boolean; payload?: Arr
   if (!active || !payload?.[0]) return null;
   const d = payload[0].payload;
   return (
-    <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg border border-gray-100 dark:border-gray-700 px-4 py-3 min-w-[160px]">
+    <div className="bg-white dark:bg-gray-800 rounded-xl border border-[var(--rule-base)] px-4 py-3 min-w-[160px]">
       <p className="text-xs font-semibold text-gray-900 dark:text-white mb-1.5">{d.name}</p>
       <p className="text-xs text-gray-500 flex justify-between gap-4">
         <span>Monto</span>
@@ -156,7 +156,7 @@ export default function MarginWaterfallChart() {
   // ── Loading ──
   if (loading) {
     return (
-      <div className="rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 p-4">
+      <div className="rounded-xl border border-[var(--rule-base)] bg-white dark:bg-gray-900 p-4">
         <div className="h-5 w-48 bg-gray-200 dark:bg-gray-700 rounded mb-4 animate-pulse" />
         <div className="flex flex-col lg:flex-row gap-6">
           <div className="flex-1 h-64 bg-gray-100 dark:bg-gray-800 rounded-lg animate-pulse" />
@@ -189,14 +189,14 @@ export default function MarginWaterfallChart() {
   // ── Empty ──
   if (!data || !data.products.length) {
     return (
-      <div className="rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 p-6 flex items-center justify-center h-64">
+      <div className="rounded-xl border border-[var(--rule-base)] bg-white dark:bg-gray-900 p-6 flex items-center justify-center h-64">
         <p className="text-sm text-gray-500 dark:text-gray-400">No hay datos suficientes de margenes</p>
       </div>
     );
   }
 
   return (
-    <div className="rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 p-4">
+    <div className="rounded-xl border border-[var(--rule-base)] bg-white dark:bg-gray-900 p-4">
       <h3 className="text-sm font-semibold text-gray-900 dark:text-white mb-4">
         Cascada de Margenes
       </h3>

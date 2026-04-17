@@ -63,7 +63,7 @@ function MiniChart({ points }: { points: PricePoint[] }) {
               style={{ height: `${Math.max(heightPct, 8)}%` }}
             />
             {/* Tooltip */}
-            <div className="absolute bottom-full mb-1 left-1/2 -translate-x-1/2 bg-gray-800 dark:bg-gray-900 text-white text-[10px] px-1.5 py-0.5 rounded whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-10">
+            <div className="absolute bottom-full mb-1 left-1/2 -translate-x-1/2 bg-gray-800 dark:bg-gray-900 text-white text-[length:var(--ts-2xs)] px-1.5 py-0.5 rounded whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-10">
               {fmt(p.price)}
             </div>
           </div>
@@ -106,7 +106,7 @@ export default function ProductPriceHistory({ productId }: ProductPriceHistoryPr
   if (loading) {
     return (
       <div className="flex items-center gap-2 text-xs text-gray-400 dark:text-gray-600 py-2">
-        <div className="w-3 h-3 border-2 border-gray-300 dark:border-gray-600 border-t-[#00B4A6] rounded-full animate-spin" />
+        <div className="w-3 h-3 border-2 border-[var(--rule-base)] dark:border-gray-600 border-t-[#00B4A6] rounded-full animate-spin" />
         Cargando historial...
       </div>
     );
@@ -160,7 +160,7 @@ export default function ProductPriceHistory({ productId }: ProductPriceHistoryPr
 
       {/* Axis labels */}
       {history.length >= 2 && (
-        <div className="flex justify-between text-[10px] text-gray-300 dark:text-gray-600">
+        <div className="flex justify-between text-[length:var(--ts-2xs)] text-gray-300 dark:text-gray-600">
           <span>{dayLabel(history[0].date)}</span>
           <span>{dayLabel(history[history.length - 1].date)}</span>
         </div>

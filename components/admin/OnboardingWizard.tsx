@@ -39,9 +39,9 @@ const STEPS: WizardStep[] = [
     Icon: Store,
     href: "/admin#config",
     hrefLabel: "Ir a Configuración",
-    color: "text-teal-600 dark:text-teal-400",
-    bgLight: "bg-teal-50",
-    bgDark: "dark:bg-teal-900/20",
+    color: "text-emerald-600 dark:text-emerald-400",
+    bgLight: "bg-emerald-50",
+    bgDark: "dark:bg-emerald-900/20",
   },
   {
     id: "productsDone",
@@ -50,9 +50,9 @@ const STEPS: WizardStep[] = [
     Icon: Package,
     href: "/admin#productos",
     hrefLabel: "Ir a Productos",
-    color: "text-blue-600 dark:text-blue-400",
-    bgLight: "bg-blue-50",
-    bgDark: "dark:bg-blue-900/20",
+    color: "text-emerald-600 dark:text-emerald-400",
+    bgLight: "bg-emerald-50",
+    bgDark: "dark:bg-emerald-900/20",
   },
   {
     id: "paymentDone",
@@ -72,8 +72,8 @@ const STEPS: WizardStep[] = [
     Icon: Users,
     href: "/admin#clientes",
     hrefLabel: "Ir a Clientes",
-    color: "text-purple-600 dark:text-purple-400",
-    bgLight: "bg-purple-50",
+    color: "text-[var(--text-secondary)] dark:text-[var(--text-primary)]",
+    bgLight: "bg-[var(--surface-sunken)]",
     bgDark: "dark:bg-purple-900/20",
   },
   {
@@ -81,7 +81,7 @@ const STEPS: WizardStep[] = [
     title: "Haz tu primera venta",
     description: "Registra una venta desde el punto de venta o desde pedidos.",
     Icon: ShoppingCart,
-    href: "/admin#ventas-caja",
+    href: "/admin#pedidos",
     hrefLabel: "Ir al POS",
     color: "text-orange-600 dark:text-orange-400",
     bgLight: "bg-orange-50",
@@ -92,7 +92,7 @@ const STEPS: WizardStep[] = [
 // ── Confetti CSS ──────────────────────────────────────────────────────────────
 
 function ConfettiOverlay() {
-  const colors = ["#00B4A6", "#f97316", "#2dd4bf", "#f4d03f", "#e76f51", "#00B4A6"];
+  const colors = ["#2563EB", "#f97316", "#2dd4bf", "#f4d03f", "#e76f51", "#2563EB"];
   return (
     <div className="pointer-events-none absolute inset-0 overflow-hidden rounded-3xl">
       {Array.from({ length: 30 }).map((_, i) => {
@@ -130,11 +130,11 @@ function ProgressBar({ completed, total }: { completed: number; total: number })
     <div className="space-y-1.5">
       <div className="flex items-center justify-between text-xs text-gray-500 dark:text-gray-400">
         <span>{completed} de {total} completados</span>
-        <span className="font-semibold text-[#00B4A6]">{pct}%</span>
+        <span className="font-semibold text-[#2563EB]">{pct}%</span>
       </div>
       <div className="h-2 bg-gray-100 dark:bg-gray-800 rounded-full overflow-hidden">
         <div
-          className="h-full bg-gradient-to-r from-[#00B4A6] to-teal-400 rounded-full transition-all duration-700 ease-out"
+          className="h-full bg-[var(--text-primary)] rounded-full transition-all duration-[var(--dur-slower)] ease-out"
           style={{ width: `${pct}%` }}
         />
       </div>
@@ -160,10 +160,10 @@ function StepRow({
   return (
     <div
       className={cn(
-        "flex items-center gap-3 p-3 rounded-2xl border transition-all duration-200",
+        "flex items-center gap-3 p-3 rounded-xl border transition-all duration-[var(--dur-base)]",
         done
-          ? "bg-teal-50 dark:bg-teal-900/15 border-teal-100 dark:border-teal-800/40"
-          : "bg-white dark:bg-gray-800/60 border-gray-100 dark:border-gray-700/60 hover:border-teal-200 dark:hover:border-teal-700"
+          ? "bg-emerald-50 dark:bg-emerald-900/15 border-emerald-100 dark:border-emerald-800/40"
+          : "bg-white dark:bg-gray-800/60 border-[var(--rule-base)] hover:border-emerald-200 dark:hover:border-emerald-700"
       )}
     >
       {/* Step number / check */}
@@ -171,7 +171,7 @@ function StepRow({
         className={cn(
           "flex-shrink-0 w-9 h-9 rounded-xl flex items-center justify-center font-bold text-sm transition-colors",
           done
-            ? "bg-teal-500 text-white"
+            ? "bg-emerald-500 text-white"
             : cn(step.bgLight, step.bgDark, step.color)
         )}
       >
@@ -189,14 +189,14 @@ function StepRow({
             className={cn(
               "text-sm font-semibold",
               done
-                ? "text-teal-700 dark:text-teal-400 line-through opacity-70"
+                ? "text-emerald-700 dark:text-emerald-400 line-through opacity-70"
                 : "text-gray-900 dark:text-gray-100"
             )}
           >
             {index + 1}. {step.title}
           </p>
           {done && (
-            <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-teal-100 dark:bg-teal-900/40 text-teal-700 dark:text-teal-400 flex-shrink-0">
+            <span className="text-[length:var(--ts-2xs)] font-bold px-1.5 py-0.5 rounded-full bg-emerald-100 dark:bg-emerald-900/40 text-emerald-700 dark:text-emerald-400 flex-shrink-0">
               Completado
             </span>
           )}
@@ -211,7 +211,7 @@ function StepRow({
         <button
           type="button"
           onClick={() => onNavigate(step.href)}
-          className="flex-shrink-0 flex items-center gap-1 text-xs font-semibold text-[#00B4A6] dark:text-teal-400 hover:text-teal-800 dark:hover:text-teal-300 transition-colors min-h-[44px] px-2"
+          className="flex-shrink-0 flex items-center gap-1 text-xs font-semibold text-[#2563EB] dark:text-emerald-400 hover:text-emerald-800 dark:hover:text-emerald-300 transition-colors min-h-[44px] px-2"
         >
           <span className="hidden sm:inline whitespace-nowrap">Ir</span>
           <ChevronRight className="h-4 w-4" />
@@ -316,16 +316,16 @@ export default function OnboardingWizard({ tenantSlug, onClose }: OnboardingWiza
     >
       {/* Panel */}
       <div
-        className="relative w-full max-w-lg bg-white dark:bg-gray-900 rounded-3xl shadow-2xl border border-gray-100 dark:border-gray-700 overflow-hidden"
+        className="relative w-full max-w-lg bg-white dark:bg-gray-900 rounded-3xl border border-[var(--rule-base)] overflow-hidden"
         onClick={(e) => e.stopPropagation()}
       >
         {allDone && <ConfettiOverlay />}
 
         {/* Header */}
-        <div className="relative px-6 pt-6 pb-4 bg-gradient-to-br from-teal-50 to-white dark:from-teal-900/20 dark:to-gray-900 border-b border-gray-100 dark:border-gray-800">
+        <div className="relative px-6 pt-6 pb-4 bg-[var(--surface-sunken)] border-b border-[var(--rule-base)]">
           <div className="flex items-start gap-3">
-            <div className="flex-shrink-0 w-10 h-10 rounded-2xl bg-[#00B4A6] flex items-center justify-center shadow-md">
-              <Sparkles className="h-5 w-5 text-white" />
+            <div className="flex-shrink-0 w-10 h-10 rounded-xl bg-[var(--text-primary)] flex items-center justify-center">
+              <Sparkles className="h-5 w-5 text-[var(--surface-canvas)]" />
             </div>
             <div className="flex-1">
               <h2 className="text-base font-bold text-gray-900 dark:text-white leading-tight">
@@ -342,7 +342,7 @@ export default function OnboardingWizard({ tenantSlug, onClose }: OnboardingWiza
               type="button"
               onClick={handleClose}
               title="Saltar por ahora"
-              className="flex-shrink-0 flex items-center justify-center w-8 h-8 rounded-xl text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+              className="flex-shrink-0 flex items-center justify-center w-8 h-8 rounded-lg text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
             >
               <X className="h-4 w-4" />
             </button>
@@ -359,7 +359,7 @@ export default function OnboardingWizard({ tenantSlug, onClose }: OnboardingWiza
           {loading ? (
             // Skeleton
             Array.from({ length: 5 }).map((_, i) => (
-              <div key={i} className="h-16 rounded-2xl bg-gray-100 dark:bg-gray-800 animate-pulse" />
+              <div key={i} className="h-16 rounded-xl bg-gray-100 dark:bg-gray-800 animate-pulse" />
             ))
           ) : (
             STEPS.map((step, i) => (
@@ -375,12 +375,12 @@ export default function OnboardingWizard({ tenantSlug, onClose }: OnboardingWiza
         </div>
 
         {/* Footer */}
-        <div className="px-5 py-4 border-t border-gray-100 dark:border-gray-800 bg-gray-50 dark:bg-gray-800/40 flex items-center gap-3">
+        <div className="px-5 py-4 border-t border-[var(--rule-base)] bg-gray-50 dark:bg-gray-800/40 flex items-center gap-3">
           {allDone ? (
             <button
               type="button"
               onClick={handleClose}
-              className="flex-1 flex items-center justify-center gap-2 h-11 rounded-2xl bg-[#00B4A6] hover:bg-[#009690] text-white text-sm font-bold transition-colors shadow-md"
+              className="flex-1 flex items-center justify-center gap-2 h-11 rounded-xl bg-[#2563EB] hover:bg-[#1D4ED8] text-white text-sm font-bold transition-colors"
             >
               <Sparkles className="h-4 w-4" />
               ¡Empezar a vender!
@@ -401,7 +401,7 @@ export default function OnboardingWizard({ tenantSlug, onClose }: OnboardingWiza
                   const first = STEPS.find((s) => !status[s.id]);
                   if (first) handleNavigate(first.href);
                 }}
-                className="flex-1 flex items-center justify-center gap-2 h-11 rounded-2xl bg-[#00B4A6] hover:bg-[#009690] text-white text-sm font-bold transition-colors shadow-md"
+                className="flex-1 flex items-center justify-center gap-2 h-11 rounded-xl bg-[#2563EB] hover:bg-[#1D4ED8] text-white text-sm font-bold transition-colors"
               >
                 Continuar configurando
                 <ArrowRight className="h-4 w-4" />

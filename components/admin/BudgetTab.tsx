@@ -120,10 +120,10 @@ export default function BudgetTab() {
           <p className="text-sm text-gray-500 dark:text-muted mt-0.5">Control presupuestario por departamento, categoría y período</p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
-          <button onClick={() => exportToCSV(processed.map(l => ({ departamento: l.department, categoria: l.category, periodo: l.period, planificado: l.planned, ejecutado: l.executed, comprometido: l.committed, disponible: l.available, pct_ejecucion: l.executionPct.toFixed(1), estado: l.computedStatus })), "presupuestos")} className="flex items-center gap-1.5 px-3 py-2 rounded-xl border border-gray-200 dark:border-card-border bg-white dark:bg-surface text-sm font-semibold text-gray-700 dark:text-foreground hover:bg-gray-50 dark:hover:bg-accent transition-colors">
+          <button onClick={() => exportToCSV(processed.map(l => ({ departamento: l.department, categoria: l.category, periodo: l.period, planificado: l.planned, ejecutado: l.executed, comprometido: l.committed, disponible: l.available, pct_ejecucion: l.executionPct.toFixed(1), estado: l.computedStatus })), "presupuestos")} className="flex items-center gap-1.5 px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-card-border bg-white dark:bg-surface text-sm font-semibold text-gray-700 dark:text-foreground hover:bg-gray-50 dark:hover:bg-accent transition-colors">
             <Download className="h-4 w-4" /> Exportar
           </button>
-          <button onClick={() => setShowForm(v => !v)} className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-primary text-white text-sm font-semibold hover:bg-primary/90 transition-colors">
+          <button onClick={() => setShowForm(v => !v)} className="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-primary text-white text-sm font-semibold hover:bg-primary/90 transition-colors">
             <Plus className="h-4 w-4" /> Nueva partida
           </button>
         </div>
@@ -133,12 +133,12 @@ export default function BudgetTab() {
       <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
         {[
           { label: "Total planificado", value: fmt(stats.totalPlanned), color: "text-gray-700 dark:text-foreground", bg: "bg-gray-50 dark:bg-surface/50" },
-          { label: "Ejecutado", value: fmt(stats.totalExecuted), color: "text-blue-600", bg: "bg-blue-50 dark:bg-blue-950/30" },
+          { label: "Ejecutado", value: fmt(stats.totalExecuted), color: "text-emerald-600", bg: "bg-emerald-50 dark:bg-emerald-950/30" },
           { label: "Comprometido", value: fmt(stats.totalCommitted), color: "text-amber-600", bg: "bg-amber-50 dark:bg-amber-950/30" },
           { label: "Disponible", value: fmt(stats.available), color: stats.available >= 0 ? "text-emerald-600" : "text-red-500", bg: stats.available >= 0 ? "bg-emerald-50 dark:bg-emerald-950/30" : "bg-red-50 dark:bg-red-950/30" },
-          { label: "% Ejecución", value: fmtPct(stats.executionPct), color: "text-violet-600", bg: "bg-violet-50 dark:bg-violet-950/30" },
+          { label: "% Ejecución", value: fmtPct(stats.executionPct), color: "text-[var(--text-secondary)]", bg: "bg-[var(--surface-sunken)]" },
         ].map(({ label, value, color, bg }) => (
-          <div key={label} className={cn("rounded-2xl p-4", bg)}>
+          <div key={label} className={cn("rounded-xl p-4", bg)}>
             <p className="text-xs font-semibold text-gray-500 dark:text-muted mb-1">{label}</p>
             <p className={cn("text-xl font-extrabold", color)}>{value}</p>
           </div>
@@ -147,7 +147,7 @@ export default function BudgetTab() {
 
       {/* Alerts */}
       {(stats.excedido > 0 || stats.enRiesgo > 0) && (
-        <div className="bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-800 rounded-2xl p-4 flex flex-wrap items-start gap-3">
+        <div className="bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-800 rounded-xl p-4 flex flex-wrap items-start gap-3">
           <AlertTriangle className="h-5 w-5 text-amber-500 shrink-0 mt-0.5" />
           <div>
             <p className="font-bold text-amber-700 dark:text-amber-400 text-sm">Partidas presupuestarias con alerta</p>
@@ -161,7 +161,7 @@ export default function BudgetTab() {
 
       {/* Form */}
       {showForm && (
-        <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl p-3 sm:p-5 space-y-4">
+        <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl p-3 sm:p-5 space-y-4">
           <div className="flex items-center justify-between">
             <h3 className="font-bold text-gray-900 dark:text-foreground text-sm flex flex-wrap items-center gap-2"><Plus className="h-4 w-4 text-primary" /> Nueva partida presupuestaria</h3>
             <button onClick={() => setShowForm(false)}><X className="h-4 w-4 text-gray-400" /></button>
@@ -169,28 +169,28 @@ export default function BudgetTab() {
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
             <div>
               <label className="text-xs font-semibold text-gray-500 dark:text-muted block mb-1">Departamento</label>
-              <select value={form.department} onChange={e => setForm(p => ({ ...p, department: e.target.value }))} className="w-full text-sm border border-gray-200 dark:border-card-border rounded-lg px-3 py-2 bg-white dark:bg-surface text-gray-700 dark:text-foreground">{DEPARTMENTS.map(d => <option key={d}>{d}</option>)}</select>
+              <select value={form.department} onChange={e => setForm(p => ({ ...p, department: e.target.value }))} className="w-full text-sm border border-[var(--rule-base)] dark:border-card-border rounded-lg px-3 py-2 bg-white dark:bg-surface text-gray-700 dark:text-foreground">{DEPARTMENTS.map(d => <option key={d}>{d}</option>)}</select>
             </div>
             <div>
               <label className="text-xs font-semibold text-gray-500 dark:text-muted block mb-1">Categoría</label>
-              <select value={form.category} onChange={e => setForm(p => ({ ...p, category: e.target.value }))} className="w-full text-sm border border-gray-200 dark:border-card-border rounded-lg px-3 py-2 bg-white dark:bg-surface text-gray-700 dark:text-foreground">{CATEGORIES.map(c => <option key={c}>{c}</option>)}</select>
+              <select value={form.category} onChange={e => setForm(p => ({ ...p, category: e.target.value }))} className="w-full text-sm border border-[var(--rule-base)] dark:border-card-border rounded-lg px-3 py-2 bg-white dark:bg-surface text-gray-700 dark:text-foreground">{CATEGORIES.map(c => <option key={c}>{c}</option>)}</select>
             </div>
             <div>
               <label className="text-xs font-semibold text-gray-500 dark:text-muted block mb-1">Período</label>
-              <input type="month" value={form.period} onChange={e => setForm(p => ({ ...p, period: e.target.value }))} className="w-full text-sm border border-gray-200 dark:border-card-border rounded-lg px-3 py-2 bg-white dark:bg-surface text-gray-700 dark:text-foreground" />
+              <input type="month" value={form.period} onChange={e => setForm(p => ({ ...p, period: e.target.value }))} className="w-full text-sm border border-[var(--rule-base)] dark:border-card-border rounded-lg px-3 py-2 bg-white dark:bg-surface text-gray-700 dark:text-foreground" />
             </div>
             <div>
               <label className="text-xs font-semibold text-gray-500 dark:text-muted block mb-1">Monto planificado (S/)</label>
-              <input type="number" value={form.planned || ""} onChange={e => setForm(p => ({ ...p, planned: parseFloat(e.target.value) || 0 }))} min="0" step="100" className="w-full text-sm border border-gray-200 dark:border-card-border rounded-lg px-3 py-2 bg-white dark:bg-surface text-gray-700 dark:text-foreground" />
+              <input type="number" value={form.planned || ""} onChange={e => setForm(p => ({ ...p, planned: parseFloat(e.target.value) || 0 }))} min="0" step="100" className="w-full text-sm border border-[var(--rule-base)] dark:border-card-border rounded-lg px-3 py-2 bg-white dark:bg-surface text-gray-700 dark:text-foreground" />
             </div>
             <div className="col-span-2">
               <label className="text-xs font-semibold text-gray-500 dark:text-muted block mb-1">Notas</label>
-              <input type="text" value={form.notes} onChange={e => setForm(p => ({ ...p, notes: e.target.value }))} placeholder="Observaciones opcionales..." className="w-full text-sm border border-gray-200 dark:border-card-border rounded-lg px-3 py-2 bg-white dark:bg-surface text-gray-700 dark:text-foreground" />
+              <input type="text" value={form.notes} onChange={e => setForm(p => ({ ...p, notes: e.target.value }))} placeholder="Observaciones opcionales..." className="w-full text-sm border border-[var(--rule-base)] dark:border-card-border rounded-lg px-3 py-2 bg-white dark:bg-surface text-gray-700 dark:text-foreground" />
             </div>
           </div>
           <div className="flex flex-wrap gap-2 justify-end">
-            <button onClick={() => setShowForm(false)} className="px-2 sm:px-4 py-1.5 sm:py-2 text-sm rounded-xl border border-gray-200 dark:border-card-border text-gray-600 dark:text-muted">Cancelar</button>
-            <button onClick={handleAdd} className="px-2 sm:px-4 py-1.5 sm:py-2 text-sm rounded-xl bg-primary text-white font-semibold hover:bg-primary/90">Registrar partida</button>
+            <button onClick={() => setShowForm(false)} className="px-2 sm:px-4 py-1.5 sm:py-2 text-sm rounded-lg border border-[var(--rule-base)] dark:border-card-border text-gray-600 dark:text-muted">Cancelar</button>
+            <button onClick={handleAdd} className="px-2 sm:px-4 py-1.5 sm:py-2 text-sm rounded-lg bg-primary text-white font-semibold hover:bg-primary/90">Registrar partida</button>
           </div>
         </div>
       )}
@@ -199,27 +199,27 @@ export default function BudgetTab() {
       <div className="flex flex-col sm:flex-row gap-3">
         <div className="relative flex-1 max-w-sm">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
-          <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Buscar departamento, categoría..." className="w-full pl-9 pr-3 py-2 text-sm border border-gray-200 dark:border-card-border rounded-xl bg-white dark:bg-surface text-gray-700 dark:text-foreground" />
+          <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Buscar departamento, categoría..." className="w-full pl-9 pr-3 py-2 text-sm border border-[var(--rule-base)] dark:border-card-border rounded-lg bg-white dark:bg-surface text-gray-700 dark:text-foreground" />
         </div>
-        <select value={filterDept} onChange={e => setFilterDept(e.target.value)} className="text-sm border border-gray-200 dark:border-card-border rounded-xl px-3 py-2 bg-white dark:bg-surface text-gray-700 dark:text-foreground">
+        <select value={filterDept} onChange={e => setFilterDept(e.target.value)} className="text-sm border border-[var(--rule-base)] dark:border-card-border rounded-lg px-3 py-2 bg-white dark:bg-surface text-gray-700 dark:text-foreground">
           <option value="todos">Todos los departamentos</option>
           {DEPARTMENTS.map(d => <option key={d} value={d}>{d}</option>)}
         </select>
-        <select value={filterPeriod} onChange={e => setFilterPeriod(e.target.value)} className="text-sm border border-gray-200 dark:border-card-border rounded-xl px-3 py-2 bg-white dark:bg-surface text-gray-700 dark:text-foreground">
+        <select value={filterPeriod} onChange={e => setFilterPeriod(e.target.value)} className="text-sm border border-[var(--rule-base)] dark:border-card-border rounded-lg px-3 py-2 bg-white dark:bg-surface text-gray-700 dark:text-foreground">
           <option value="todos">Todos los períodos</option>
           {periods.map(p => <option key={p} value={p}>{monthLabel(p)} {p.slice(0, 4)}</option>)}
         </select>
-        <select value={filterStatus} onChange={e => setFilterStatus(e.target.value as BudgetStatus | "todos")} className="text-sm border border-gray-200 dark:border-card-border rounded-xl px-3 py-2 bg-white dark:bg-surface text-gray-700 dark:text-foreground">
+        <select value={filterStatus} onChange={e => setFilterStatus(e.target.value as BudgetStatus | "todos")} className="text-sm border border-[var(--rule-base)] dark:border-card-border rounded-lg px-3 py-2 bg-white dark:bg-surface text-gray-700 dark:text-foreground">
           <option value="todos">Todos los estados</option>
           {(Object.keys(STATUS_META) as BudgetStatus[]).map(s => <option key={s} value={s}>{STATUS_META[s].label}</option>)}
         </select>
       </div>
 
       {/* Table */}
-      <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl overflow-hidden">
+      <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full min-w-[600px] text-sm">
-            <thead className="bg-gray-50 dark:bg-surface/50 border-b border-gray-200 dark:border-card-border">
+            <thead className="bg-gray-50 dark:bg-surface/50 border-b border-[var(--rule-base)] dark:border-card-border">
               <tr>
                 <th className="px-2 sm:px-4 py-2 sm:py-3 text-left text-xs font-bold text-gray-500 dark:text-muted uppercase">Estado</th>
                 <th className="px-2 sm:px-4 py-2 sm:py-3 text-left text-xs font-bold text-gray-500 dark:text-muted uppercase">Departamento</th>
@@ -247,7 +247,7 @@ export default function BudgetTab() {
                     <td className="px-2 sm:px-4 py-2 sm:py-3 text-xs text-gray-600 dark:text-muted">{l.category}</td>
                     <td className="px-2 sm:px-4 py-2 sm:py-3 text-center text-xs font-mono text-gray-500">{monthLabel(l.period)} {l.period.slice(0, 4)}</td>
                     <td className="px-2 sm:px-4 py-2 sm:py-3 text-right font-semibold text-gray-700 dark:text-foreground">{fmt(l.planned)}</td>
-                    <td className="px-2 sm:px-4 py-2 sm:py-3 text-right font-semibold text-blue-600">{fmt(l.executed)}</td>
+                    <td className="px-2 sm:px-4 py-2 sm:py-3 text-right font-semibold text-emerald-600">{fmt(l.executed)}</td>
                     <td className="px-2 sm:px-4 py-2 sm:py-3 text-right text-xs text-amber-600">{l.committed > 0 ? fmt(l.committed) : "—"}</td>
                     <td className={cn("px-2 sm:px-4 py-2 sm:py-3 text-right font-bold", l.available >= 0 ? "text-emerald-600" : "text-red-500")}>{fmt(l.available)}</td>
                     <td className="px-2 sm:px-4 py-2 sm:py-3 text-center">
@@ -259,7 +259,7 @@ export default function BudgetTab() {
                       </div>
                     </td>
                     <td className="px-2 sm:px-4 py-2 sm:py-3">
-                      <button onClick={() => setDetail(l)} className="p-1.5 rounded-lg text-gray-400 hover:text-blue-500 hover:bg-blue-50 dark:hover:bg-blue-950/20">
+                      <button onClick={() => setDetail(l)} className="p-1.5 rounded-lg text-gray-400 hover:text-emerald-500 hover:bg-emerald-50 dark:hover:bg-emerald-950/20">
                         <Eye className="h-3.5 w-3.5" />
                       </button>
                     </td>
@@ -268,11 +268,11 @@ export default function BudgetTab() {
               })}
             </tbody>
             {processed.length > 0 && (
-              <tfoot className="bg-gray-50 dark:bg-surface/50 border-t border-gray-200 dark:border-card-border">
+              <tfoot className="bg-gray-50 dark:bg-surface/50 border-t border-[var(--rule-base)] dark:border-card-border">
                 <tr>
                   <td colSpan={4} className="px-2 sm:px-4 py-2 sm:py-3 text-xs font-extrabold text-gray-600 dark:text-muted uppercase">Totales</td>
                   <td className="px-2 sm:px-4 py-2 sm:py-3 text-right font-extrabold text-gray-800 dark:text-foreground">{fmt(stats.totalPlanned)}</td>
-                  <td className="px-2 sm:px-4 py-2 sm:py-3 text-right font-extrabold text-blue-600">{fmt(stats.totalExecuted)}</td>
+                  <td className="px-2 sm:px-4 py-2 sm:py-3 text-right font-extrabold text-emerald-600">{fmt(stats.totalExecuted)}</td>
                   <td className="px-2 sm:px-4 py-2 sm:py-3 text-right font-extrabold text-amber-600">{fmt(stats.totalCommitted)}</td>
                   <td className={cn("px-2 sm:px-4 py-2 sm:py-3 text-right font-extrabold", stats.available >= 0 ? "text-emerald-600" : "text-red-500")}>{fmt(stats.available)}</td>
                   <td className="px-2 sm:px-4 py-2 sm:py-3 text-center text-xs font-extrabold text-gray-600">{fmtPct(stats.executionPct)}</td>
@@ -285,7 +285,7 @@ export default function BudgetTab() {
       </div>
 
       {/* Department summary by bar chart */}
-      <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl p-3 sm:p-5">
+      <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl p-3 sm:p-5">
         <h3 className="font-bold text-gray-900 dark:text-foreground text-sm mb-4">Ejecución por departamento</h3>
         <div className="space-y-3">
           {DEPARTMENTS.map(dept => {
@@ -299,7 +299,7 @@ export default function BudgetTab() {
                 <span className="text-xs font-semibold text-gray-600 dark:text-muted w-28 shrink-0">{dept}</span>
                 <div className="flex-1 h-5 bg-gray-100 dark:bg-surface rounded-full overflow-hidden relative">
                   <div className={cn("h-full rounded-full transition-all", pct > 100 ? "bg-red-400" : pct > 85 ? "bg-amber-400" : "bg-emerald-400")} style={{ width: `${Math.min(pct, 100)}%` }} />
-                  <span className="absolute inset-0 flex items-center justify-center text-[10px] font-bold text-gray-700 dark:text-foreground">{fmtPct(pct)}</span>
+                  <span className="absolute inset-0 flex items-center justify-center text-[length:var(--ts-2xs)] font-bold text-gray-700 dark:text-foreground">{fmtPct(pct)}</span>
                 </div>
                 <span className="text-xs font-semibold text-gray-500 w-28 text-right">{fmt(executed)} / {fmt(planned)}</span>
               </div>
@@ -311,7 +311,7 @@ export default function BudgetTab() {
       {/* Detail modal */}
       {detail && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4" onClick={() => setDetail(null)}>
-          <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl shadow-2xl p-3 sm:p-6 w-full max-w-sm space-y-4" onClick={e => e.stopPropagation()}>
+          <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl p-3 sm:p-6 w-full max-w-sm space-y-4" onClick={e => e.stopPropagation()}>
             <div className="flex items-center justify-between">
               <h3 className="font-extrabold text-gray-900 dark:text-foreground text-sm">Detalle de partida</h3>
               <button onClick={() => setDetail(null)}><X className="h-4 w-4 text-gray-400" /></button>

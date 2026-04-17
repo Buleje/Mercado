@@ -20,6 +20,20 @@ const { mockFindMany, mockCreate, mockFindFirst, mockUpdate, mockDelete } = vi.h
   mockUpdate: vi.fn(),
   mockDelete: vi.fn(),
 }));
+vi.mock("@/lib/tenant", () => ({
+  prismaForTenant: () => ({
+    messageTemplate: {
+      findMany: mockFindMany,
+      create: mockCreate,
+      findFirst: mockFindFirst,
+      update: mockUpdate,
+      delete: mockDelete,
+    },
+  }),
+}));
+
+// Route uses prisma direct from @/lib/prisma (CLAUDE.md Rule 1 violation,
+// tracked as tech debt). Mock so tests don't hit a real DB.
 vi.mock("@/lib/prisma", () => ({
   prisma: {
     messageTemplate: {
@@ -30,6 +44,10 @@ vi.mock("@/lib/prisma", () => ({
       delete: mockDelete,
     },
   },
+}));
+
+vi.mock("@/lib/rate-limit", () => ({
+  applyRateLimit: vi.fn(() => null),
 }));
 
 import { GET, POST, PATCH, DELETE } from "@/app/api/message-templates/route";

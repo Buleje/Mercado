@@ -133,7 +133,7 @@ export function TenantCard({
             { val: fmtMoney(revenue), lbl: "Ventas mes", icon: DollarSign, color: "text-green-600", bg: "bg-green-50 dark:bg-green-950/30" },
             { val: fmtMoney(expenses), lbl: "Gastos mes", icon: ArrowDownRight, color: "text-red-500", bg: "bg-red-50 dark:bg-red-950/30" },
             { val: fmtMoney(profit), lbl: "Ganancia", icon: TrendingUp, color: profit >= 0 ? "text-teal-600" : "text-red-500", bg: profit >= 0 ? "bg-teal-50 dark:bg-teal-950/30" : "bg-red-50 dark:bg-red-950/30" },
-            { val: String(t.monthOrders ?? 0), lbl: "Pedidos mes", icon: ShoppingCart, color: "text-blue-600", bg: "bg-blue-50 dark:bg-blue-950/30" },
+            { val: String(t.monthOrders ?? 0), lbl: "Pedidos mes", icon: ShoppingCart, color: "text-emerald-600", bg: "bg-emerald-50 dark:bg-emerald-950/30" },
           ].map(({ val, lbl, icon: Icon, color, bg }) => (
             <div key={lbl} className={`${bg} rounded-xl p-2 text-center`}>
               <Icon className={`w-3 h-3 mx-auto mb-0.5 ${color}`} />
@@ -266,7 +266,7 @@ export function TenantCard({
           <button
             type="button"
             onClick={() => onLoginAs(t)}
-            className="flex-1 flex items-center justify-center gap-1.5 py-1.5 rounded-lg text-xs font-semibold border border-blue-200 dark:border-blue-800 text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-950 transition-colors"
+            className="flex-1 flex items-center justify-center gap-1.5 py-1.5 rounded-lg text-xs font-semibold border border-emerald-200 dark:border-emerald-800 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-950 transition-colors"
           >
             <LogIn className="w-3.5 h-3.5" /> Iniciar sesión
           </button>

@@ -1,0 +1,47 @@
+@media print {
+  /* Ocultar sidebar, header, FAB, toast */
+  [data-sidebar],
+  nav,
+  .quick-action-fab,
+  [role="alert"],
+  footer {
+    display: none !important;
+  }
+
+  /* Contenido principal ocupa 100% */
+  main {
+    margin: 0 !important;
+    padding: 0 !important;
+    width: 100% !important;
+  }
+
+  /* Sin backgrounds decorativos */
+  .bg-gradient-to-r,
+  .bg-gradient-to-b {
+    background: white !important;
+  }
+
+  /* Tablas con bordes visibles */
+  table,
+  th,
+  td {
+    border: 1px solid #e5e7eb !important;
+  }
+
+  /* Evitar cortes de pagina dentro de cards */
+  .admin-card,
+  [data-card] {
+    break-inside: avoid;
+  }
+
+  /* Texto negro solido */
+  * {
+    color: #111 !important;
+  }
+
+  /* Status badges legibles en B/N */
+  [data-badge] {
+    border: 1px solid #666 !important;
+    background: transparent !important;
+  }
+}

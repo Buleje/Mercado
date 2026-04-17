@@ -84,7 +84,7 @@ export default function ReturnsTab() {
     <div className="space-y-3 sm:space-y-6">
       <div className="flex items-center justify-between">
         <h2 className="text-xl font-extrabold text-gray-900 dark:text-foreground flex flex-wrap items-center gap-2"><RotateCcw className="h-6 w-6 text-primary" />Devoluciones</h2>
-        <button onClick={openForm} className="flex flex-wrap items-center gap-2 bg-primary text-white px-2 sm:px-4 py-1.5 sm:py-2 rounded-xl text-sm font-bold hover:bg-primary/90 transition"><Plus className="h-4 w-4" />Nueva Devolución</button>
+        <button onClick={openForm} className="flex flex-wrap items-center gap-2 bg-primary text-white px-2 sm:px-4 py-1.5 sm:py-2 rounded-lg text-sm font-bold hover:bg-primary/90 transition"><Plus className="h-4 w-4" />Nueva Devolución</button>
       </div>
 
       {creditSuccess && (
@@ -94,14 +94,14 @@ export default function ReturnsTab() {
       )}
 
       {showForm && (
-        <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl p-3 sm:p-6 space-y-4">
+        <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl p-3 sm:p-6 space-y-4">
           {!selectedSale ? (
             <div className="space-y-3">
               <p className="text-sm font-bold text-gray-600 dark:text-muted">Seleccionar venta a devolver:</p>
               {sales.length === 0 && <p className="text-sm text-gray-400">No hay ventas recientes</p>}
               <div className="max-h-60 overflow-y-auto space-y-2">
                 {sales.map(s => (
-                  <button key={s.id} onClick={() => selectSale(s)} className="w-full text-left p-3 border border-gray-200 dark:border-card-border rounded-xl hover:bg-gray-50 dark:hover:bg-surface transition">
+                  <button key={s.id} onClick={() => selectSale(s)} className="w-full text-left p-3 border border-[var(--rule-base)] dark:border-card-border rounded-lg hover:bg-gray-50 dark:hover:bg-surface transition">
                     <div className="flex justify-between text-sm">
                       <span className="font-bold">Venta #{String(s.id).slice(-6)}</span>
                       <span className="text-emerald-600 font-bold">S/{s.total.toFixed(2)}</span>
@@ -113,7 +113,7 @@ export default function ReturnsTab() {
               <button onClick={() => { setSelectedSale({ id: "", items: [], total: 0, createdAt: "" }); setReturnItems([{ productId: 0, productName: "", quantity: 1, price: 0, unit: "und" }]); }} className="text-sm text-primary font-bold hover:underline">Devolución sin venta asociada →</button>
             </div>
           ) : (
-            <div className="space-y-4">
+            <div className="space-y-6">
               {selectedSale.id && <p className="text-sm font-bold text-gray-600 dark:text-muted">Venta #{String(selectedSale.id).slice(-6)} — Selecciona cantidades a devolver:</p>}
               <div className="space-y-2">
                 {returnItems.map((item, idx) => (
@@ -121,13 +121,13 @@ export default function ReturnsTab() {
                     <Package className="h-4 w-4 text-gray-400 shrink-0" />
                     <span className="flex-1 truncate">{item.productName || `Producto #${idx + 1}`}</span>
                     <span className="text-gray-400">S/{item.price}</span>
-                    <input type="number" min={0} value={item.quantity} onChange={e => { const v = [...returnItems]; v[idx] = { ...v[idx], quantity: Number(e.target.value) }; setReturnItems(v); }} className="w-16 px-2 py-1 border border-gray-200 dark:border-card-border rounded-lg bg-white dark:bg-surface text-center text-sm" />
+                    <input type="number" min={0} value={item.quantity} onChange={e => { const v = [...returnItems]; v[idx] = { ...v[idx], quantity: Number(e.target.value) }; setReturnItems(v); }} className="w-16 px-2 py-1 border border-[var(--rule-base)] dark:border-card-border rounded-lg bg-white dark:bg-surface text-center text-sm" />
                   </div>
                 ))}
               </div>
               <div>
                 <label className="text-xs font-bold text-gray-500 dark:text-muted">Motivo *</label>
-                <textarea value={reason} onChange={e => setReason(e.target.value)} rows={2} placeholder="Producto dañado, vencido, etc." className="w-full mt-1 px-3 py-2 border border-gray-200 dark:border-card-border rounded-xl bg-white dark:bg-surface text-sm" />
+                <textarea value={reason} onChange={e => setReason(e.target.value)} rows={2} placeholder="Producto dañado, vencido, etc." className="w-full mt-1 px-3 py-2 border border-[var(--rule-base)] dark:border-card-border rounded-lg bg-white dark:bg-surface text-sm" />
               </div>
 
               {/* Photo evidence */}
@@ -136,12 +136,12 @@ export default function ReturnsTab() {
                   <Camera className="h-3.5 w-3.5" /> Foto del producto (opcional)
                 </label>
                 <input ref={photoInputRef} type="file" accept="image/*" capture="environment" onChange={handlePhotoChange} className="hidden" />
-                <button type="button" onClick={() => photoInputRef.current?.click()} className="mt-1 flex flex-wrap items-center gap-2 px-3 py-2 border border-dashed border-gray-300 dark:border-card-border rounded-xl text-sm text-gray-500 dark:text-muted hover:border-primary hover:text-primary transition w-full justify-center">
+                <button type="button" onClick={() => photoInputRef.current?.click()} className="mt-1 flex flex-wrap items-center gap-2 px-3 py-2 border border-dashed border-[var(--rule-base)] dark:border-card-border rounded-lg text-sm text-gray-500 dark:text-muted hover:border-primary hover:text-primary transition w-full justify-center">
                   <ImageIcon className="h-4 w-4" />{photoDataUrl ? "Cambiar foto" : "Seleccionar / tomar foto"}
                 </button>
                 {photoDataUrl && (
                   <div className="mt-2 relative inline-block">
-                    <Image src={photoDataUrl} alt="Evidencia" width={96} height={96} className="object-cover rounded-xl border border-gray-200 dark:border-card-border" unoptimized />
+                    <Image src={photoDataUrl} alt="Evidencia" width={96} height={96} className="object-cover rounded-xl border border-[var(--rule-base)] dark:border-card-border" unoptimized />
                     <button type="button" onClick={() => setPhotoDataUrl(null)} className="absolute -top-1.5 -right-1.5 bg-red-500 text-white rounded-full p-0.5"><X className="h-3 w-3" /></button>
                   </div>
                 )}
@@ -152,7 +152,7 @@ export default function ReturnsTab() {
                 <label className="text-xs font-bold text-gray-500 dark:text-muted flex items-center gap-1">
                   <CreditCard className="h-3.5 w-3.5" /> Crédito al cliente (opcional)
                 </label>
-                <input value={customerPhone} onChange={e => setCustomerPhone(e.target.value)} placeholder="Teléfono del cliente" className="w-full px-3 py-2 border border-gray-200 dark:border-card-border rounded-xl bg-white dark:bg-surface text-sm" />
+                <input value={customerPhone} onChange={e => setCustomerPhone(e.target.value)} placeholder="Teléfono del cliente" className="w-full px-3 py-2 border border-[var(--rule-base)] dark:border-card-border rounded-lg bg-white dark:bg-surface text-sm" />
                 {customerPhone.trim() && (
                   <label className="flex flex-wrap items-center gap-2 text-sm text-gray-600 dark:text-muted cursor-pointer">
                     <input type="checkbox" checked={applyCredit} onChange={e => setApplyCredit(e.target.checked)} className="rounded" />
@@ -162,8 +162,8 @@ export default function ReturnsTab() {
               </div>
 
               <div className="flex flex-wrap gap-2">
-                <button onClick={handleCreate} disabled={submitting || !reason.trim() || !returnItems.some(i => i.quantity > 0)} className="flex flex-wrap items-center gap-2 bg-primary text-white px-2 sm:px-4 py-1.5 sm:py-2 rounded-xl text-sm font-bold hover:bg-primary/90 transition disabled:opacity-50"><Check className="h-4 w-4" />{submitting ? <Loader2 className="h-4 w-4 animate-spin" /> : "Procesar"}</button>
-                <button onClick={() => { setShowForm(false); setSelectedSale(null); }} className="flex flex-wrap items-center gap-2 bg-gray-100 dark:bg-surface text-gray-600 dark:text-muted px-2 sm:px-4 py-1.5 sm:py-2 rounded-xl text-sm font-bold"><X className="h-4 w-4" />Cancelar</button>
+                <button onClick={handleCreate} disabled={submitting || !reason.trim() || !returnItems.some(i => i.quantity > 0)} className="flex flex-wrap items-center gap-2 bg-primary text-white px-2 sm:px-4 py-1.5 sm:py-2 rounded-lg text-sm font-bold hover:bg-primary/90 transition disabled:opacity-50"><Check className="h-4 w-4" />{submitting ? <Loader2 className="h-4 w-4 animate-spin" /> : "Procesar"}</button>
+                <button onClick={() => { setShowForm(false); setSelectedSale(null); }} className="flex flex-wrap items-center gap-2 bg-gray-100 dark:bg-surface text-gray-600 dark:text-muted px-2 sm:px-4 py-1.5 sm:py-2 rounded-lg text-sm font-bold"><X className="h-4 w-4" />Cancelar</button>
               </div>
             </div>
           )}
@@ -173,13 +173,13 @@ export default function ReturnsTab() {
       <div className="space-y-3">
         {returns.length === 0 && <p className="text-center text-gray-400 dark:text-muted py-8">No hay devoluciones registradas</p>}
         {returns.map(r => (
-          <div key={r.id} className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl p-4">
+          <div key={r.id} className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl p-4">
             <div className="flex flex-wrap justify-between items-start gap-3">
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2 flex-wrap">
                   <p className="font-bold text-sm text-gray-900 dark:text-foreground">Dev #{r.id.slice(-6)}</p>
                   {r.creditApplied && (
-                    <span className="inline-flex items-center gap-1 text-[10px] font-bold text-emerald-600 bg-emerald-50 dark:bg-emerald-950/30 px-2 py-0.5 rounded-full border border-emerald-200 dark:border-emerald-800">
+                    <span className="inline-flex items-center gap-1 text-[length:var(--ts-2xs)] font-bold text-emerald-600 bg-emerald-50 dark:bg-emerald-950/30 px-2 py-0.5 rounded-full border border-emerald-200 dark:border-emerald-800">
                       <CreditCard className="h-3 w-3" /> Crédito aplicado
                     </span>
                   )}
@@ -189,7 +189,7 @@ export default function ReturnsTab() {
                 {r.customerPhone && <p className="text-xs text-gray-400">Cliente: {r.customerPhone}</p>}
               </div>
               {r.photoUrl && (
-                <Image src={r.photoUrl} alt="Evidencia" width={64} height={64} className="object-cover rounded-xl border border-gray-200 dark:border-card-border shrink-0 cursor-pointer" onClick={() => window.open(r.photoUrl)} />
+                <Image src={r.photoUrl} alt="Evidencia" width={64} height={64} className="object-cover rounded-lg border border-[var(--rule-base)] dark:border-card-border shrink-0 cursor-pointer" onClick={() => window.open(r.photoUrl)} />
               )}
               <div className="text-right shrink-0">
                 <p className="font-extrabold text-red-600">-S/{r.total.toFixed(2)}</p>

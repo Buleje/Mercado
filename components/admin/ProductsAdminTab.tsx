@@ -51,7 +51,7 @@ const UNIT_OPTS = ["kg", "unidad", "bolsa", "botella", "lata", "frasco", "caja",
 function Toast({ msg, type }: { msg: string; type: "success" | "error" }) {
   return (
     <div className={cn(
-      "fixed bottom-6 right-6 z-9999 flex items-center gap-2 px-2 sm:px-4 py-2 sm:py-3 rounded-xl shadow-lg text-sm font-semibold animate-[scaleIn_0.2s_ease-out]",
+      "fixed bottom-6 right-6 z-9999 flex items-center gap-2 px-2 sm:px-4 py-2 sm:py-3 rounded-xl text-sm font-semibold",
       type === "success" ? "bg-emerald-600 text-white" : "bg-red-600 text-white"
     )}>
       {type === "success" ? <CheckCircle className="h-4 w-4" /> : <XCircle className="h-4 w-4" />}
@@ -221,11 +221,11 @@ function ProductFormModal({
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm" onClick={onClose}>
       <div
-        className="bg-white dark:bg-card rounded-2xl shadow-2xl w-full max-w-xl max-h-[90vh] overflow-y-auto border border-gray-200 dark:border-card-border animate-[scaleIn_0.2s_ease-out]"
+        className="bg-white dark:bg-card rounded-xl w-full max-w-xl max-h-[90vh] overflow-y-auto border border-[var(--rule-base)] dark:border-card-border"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
-        <div className="sticky top-0 bg-white dark:bg-card z-10 flex items-center justify-between px-3 sm:px-6 py-4 border-b border-gray-100 dark:border-card-border">
+        <div className="sticky top-0 bg-white dark:bg-card z-10 flex items-center justify-between px-3 sm:px-6 py-4 border-b border-[var(--rule-soft)] dark:border-card-border">
           <h2 className="text-lg font-extrabold text-foreground">
             {form.id ? "Editar producto" : "Nuevo producto"}
           </h2>
@@ -241,7 +241,7 @@ function ProductFormModal({
           {/* National database search — only for new products */}
           {!form.id && (
             <div className="relative">
-              <label className="text-xs font-bold text-gray-600 dark:text-muted uppercase tracking-wider flex items-center gap-1.5">
+              <label className="text-xs font-bold text-gray-600 dark:text-muted flex items-center gap-1.5">
                 <Globe className="h-3 w-3" />
                 Buscar en base nacional
               </label>
@@ -256,7 +256,7 @@ function ProductFormModal({
                   onFocus={() => nationalResults.length > 0 && setShowNationalDropdown(true)}
                   onBlur={() => setTimeout(() => setShowNationalDropdown(false), 200)}
                   placeholder="Ej: arroz, leche gloria, galletas..."
-                  className="w-full pl-9 pr-8 py-2.5 rounded-xl border border-primary/30 bg-primary/5 dark:bg-primary/10 text-sm text-foreground placeholder:text-muted focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary"
+                  className="w-full pl-9 pr-8 py-2.5 rounded-lg border border-primary/30 bg-primary/5 dark:bg-primary/10 text-sm text-foreground placeholder:text-muted focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary"
                 />
                 {nationalLoading && (
                   <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 animate-spin text-primary" />
@@ -272,7 +272,7 @@ function ProductFormModal({
                 )}
               </div>
               {showNationalDropdown && nationalResults.length > 0 && (
-                <div className="absolute z-50 left-0 right-0 mt-1 max-h-64 overflow-y-auto bg-white dark:bg-card rounded-xl border border-gray-200 dark:border-card-border shadow-xl">
+                <div className="absolute z-50 left-0 right-0 mt-1 max-h-64 overflow-y-auto bg-white dark:bg-card rounded-xl border border-[var(--rule-base)] dark:border-card-border">
                   {nationalResults.map((r, i) => (
                     <button
                       key={`${r.barcode}-${i}`}
@@ -299,7 +299,7 @@ function ProductFormModal({
                 </div>
               )}
               {showNationalDropdown && nationalResults.length === 0 && !nationalLoading && nationalQuery.length >= 2 && (
-                <div className="absolute z-50 left-0 right-0 mt-1 bg-white dark:bg-card rounded-xl border border-gray-200 dark:border-card-border shadow-xl p-4 text-center text-sm text-muted">
+                <div className="absolute z-50 left-0 right-0 mt-1 bg-white dark:bg-card rounded-xl border border-[var(--rule-base)] dark:border-card-border p-4 text-center text-sm text-muted">
                   No se encontraron productos para &ldquo;{nationalQuery}&rdquo;
                 </div>
               )}
@@ -308,7 +308,7 @@ function ProductFormModal({
 
           {/* Image — upload + preview */}
           <div>
-            <label className="text-xs font-bold text-gray-600 dark:text-muted uppercase tracking-wider">Imagen del producto</label>
+            <label className="text-xs font-bold text-gray-600 dark:text-muted">Imagen del producto</label>
             <input
               ref={fileInputRef}
               type="file"
@@ -317,14 +317,14 @@ function ProductFormModal({
               onChange={(e) => { const f = e.target.files?.[0]; if (f) handleImageUpload(f); e.target.value = ""; }}
             />
             <div
-              className="mt-1 relative aspect-video w-full rounded-xl overflow-hidden bg-gray-50 dark:bg-surface border border-dashed border-gray-300 dark:border-card-border cursor-pointer group"
+              className="mt-1 relative aspect-video w-full rounded-lg overflow-hidden bg-gray-50 dark:bg-surface border border-dashed border-[var(--rule-base)] dark:border-card-border cursor-pointer group"
               onClick={() => !uploading && fileInputRef.current?.click()}
             >
               {form.image && !imgError ? (
                 <>
                   <Image src={form.image} alt="Preview" fill className="object-cover" onError={() => setImgError(true)} unoptimized />
                   <div className="absolute inset-0 bg-black/0 group-hover:bg-black/40 transition-all flex items-center justify-center opacity-0 group-hover:opacity-100">
-                    <div className="flex items-center gap-2 px-4 py-2 rounded-xl bg-white/90 text-gray-700 text-sm font-semibold shadow-lg">
+                    <div className="flex items-center gap-2 px-4 py-2 rounded-xl bg-white/90 text-gray-700 text-sm font-semibold">
                       <Camera className="h-4 w-4" />
                       Cambiar imagen
                     </div>
@@ -343,19 +343,19 @@ function ProductFormModal({
               )}
             </div>
             <div className="mt-2 flex items-center gap-2">
-              <span className="text-[10px] text-muted shrink-0">o pega URL:</span>
+              <span className="text-[length:var(--ts-2xs)] text-muted shrink-0">o pega URL:</span>
               <input
                 value={form.image ?? ""}
                 onChange={(e) => set("image", e.target.value)}
                 placeholder="https://..."
-                className="flex-1 px-2.5 py-1.5 rounded-lg border border-gray-200 dark:border-card-border bg-white dark:bg-surface text-xs text-foreground focus:outline-none focus:ring-1 focus:ring-primary/30"
+                className="flex-1 px-2.5 py-1.5 rounded-lg border border-[var(--rule-base)] dark:border-card-border bg-white dark:bg-surface text-xs text-foreground focus:outline-none focus:ring-1 focus:ring-primary/30"
               />
             </div>
           </div>
 
           {/* Name */}
           <div>
-            <label className="text-xs font-bold text-gray-600 dark:text-muted uppercase tracking-wider">Nombre *</label>
+            <label className="text-xs font-bold text-gray-600 dark:text-muted">Nombre *</label>
             <input
               ref={nameRef}
               value={form.name}
@@ -366,10 +366,10 @@ function ProductFormModal({
               onBlur={(e) => checkNameDuplicate(e.target.value)}
               placeholder="Ej: Arroz Extra 5kg"
               className={cn(
-                "mt-1 w-full px-3 py-2.5 rounded-xl border bg-white dark:bg-surface text-sm text-foreground focus:outline-none focus:ring-2 focus:border-primary",
+                "mt-1 w-full px-3 py-2.5 rounded-lg border bg-white dark:bg-surface text-sm text-foreground focus:outline-none focus:ring-2 focus:border-primary",
                 nameDuplicate
                   ? "border-amber-400 dark:border-amber-500 focus:ring-amber-300"
-                  : "border-gray-200 dark:border-card-border focus:ring-primary/30"
+                  : "border-[var(--rule-base)] dark:border-card-border focus:ring-primary/30"
               )}
             />
             {nameChecking && (
@@ -386,11 +386,11 @@ function ProductFormModal({
           {/* Category + Unit */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
-              <label className="text-xs font-bold text-gray-600 dark:text-muted uppercase tracking-wider">Categoría *</label>
+              <label className="text-xs font-bold text-gray-600 dark:text-muted">Categoría *</label>
               <select
                 value={form.category}
                 onChange={(e) => set("category", e.target.value)}
-                className="mt-1 w-full px-3 py-2.5 rounded-xl border border-gray-200 dark:border-card-border bg-white dark:bg-surface text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary"
+                className="mt-1 w-full px-3 py-2.5 rounded-lg border border-[var(--rule-base)] dark:border-card-border bg-white dark:bg-surface text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary"
               >
                 {CATEGORY_OPTS.map((c) => (
                   <option key={c.id} value={c.id}>{c.emoji} {c.label}</option>
@@ -398,11 +398,11 @@ function ProductFormModal({
               </select>
             </div>
             <div>
-              <label className="text-xs font-bold text-gray-600 dark:text-muted uppercase tracking-wider">Unidad *</label>
+              <label className="text-xs font-bold text-gray-600 dark:text-muted">Unidad *</label>
               <select
                 value={form.unit}
                 onChange={(e) => set("unit", e.target.value)}
-                className="mt-1 w-full px-3 py-2.5 rounded-xl border border-gray-200 dark:border-card-border bg-white dark:bg-surface text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary"
+                className="mt-1 w-full px-3 py-2.5 rounded-lg border border-[var(--rule-base)] dark:border-card-border bg-white dark:bg-surface text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary"
               >
                 {UNIT_OPTS.map((u) => <option key={u} value={u}>{u}</option>)}
               </select>
@@ -412,7 +412,7 @@ function ProductFormModal({
           {/* Price + Cost + Stock */}
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
             <div>
-              <label className="text-xs font-bold text-gray-600 dark:text-muted uppercase tracking-wider">Precio S/ *</label>
+              <label className="text-xs font-bold text-gray-600 dark:text-muted">Precio S/ *</label>
               <input
                 type="number"
                 min={0}
@@ -420,11 +420,11 @@ function ProductFormModal({
                 value={form.price === 0 ? "" : form.price}
                 onChange={(e) => set("price", parseFloat(e.target.value) || 0)}
                 placeholder="0.00"
-                className="mt-1 w-full px-3 py-2.5 rounded-xl border border-gray-200 dark:border-card-border bg-white dark:bg-surface text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary"
+                className="mt-1 w-full px-3 py-2.5 rounded-lg border border-[var(--rule-base)] dark:border-card-border bg-white dark:bg-surface text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary"
               />
             </div>
             <div>
-              <label className="text-xs font-bold text-gray-600 dark:text-muted uppercase tracking-wider">Costo S/</label>
+              <label className="text-xs font-bold text-gray-600 dark:text-muted">Costo S/</label>
               <input
                 type="number"
                 min={0}
@@ -432,39 +432,39 @@ function ProductFormModal({
                 value={form.costPrice ?? ""}
                 onChange={(e) => set("costPrice", e.target.value === "" ? undefined : parseFloat(e.target.value) || 0)}
                 placeholder="0.00"
-                className="mt-1 w-full px-3 py-2.5 rounded-xl border border-gray-200 dark:border-card-border bg-white dark:bg-surface text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary"
+                className="mt-1 w-full px-3 py-2.5 rounded-lg border border-[var(--rule-base)] dark:border-card-border bg-white dark:bg-surface text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary"
               />
               {form.costPrice != null && form.price > 0 && (
-                <p className="text-[10px] text-emerald-600 mt-0.5">Margen: {((1 - form.costPrice / form.price) * 100).toFixed(0)}%</p>
+                <p className="text-[length:var(--ts-2xs)] text-emerald-600 mt-0.5">Margen: {((1 - form.costPrice / form.price) * 100).toFixed(0)}%</p>
               )}
             </div>
             <div>
-              <label className="text-xs font-bold text-gray-600 dark:text-muted uppercase tracking-wider">Stock</label>
+              <label className="text-xs font-bold text-gray-600 dark:text-muted">Stock</label>
               <input
                 type="number"
                 min={0}
                 value={form.stock ?? ""}
                 onChange={(e) => set("stock", e.target.value === "" ? undefined : parseInt(e.target.value) || 0)}
                 placeholder="—"
-                className="mt-1 w-full px-3 py-2.5 rounded-xl border border-gray-200 dark:border-card-border bg-white dark:bg-surface text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary"
+                className="mt-1 w-full px-3 py-2.5 rounded-lg border border-[var(--rule-base)] dark:border-card-border bg-white dark:bg-surface text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary"
               />
             </div>
             <div>
-              <label className="text-xs font-bold text-gray-600 dark:text-muted uppercase tracking-wider">Stock mín.</label>
+              <label className="text-xs font-bold text-gray-600 dark:text-muted">Stock mín.</label>
               <input
                 type="number"
                 min={0}
                 value={form.stockMin ?? ""}
                 onChange={(e) => set("stockMin", e.target.value === "" ? undefined : parseInt(e.target.value) || 0)}
                 placeholder="5"
-                className="mt-1 w-full px-3 py-2.5 rounded-xl border border-gray-200 dark:border-card-border bg-white dark:bg-surface text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary"
+                className="mt-1 w-full px-3 py-2.5 rounded-lg border border-[var(--rule-base)] dark:border-card-border bg-white dark:bg-surface text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary"
               />
             </div>
           </div>
 
           {/* Tags personalizados */}
           <div>
-            <label className="text-xs font-bold text-gray-600 dark:text-muted uppercase tracking-wider flex items-center gap-1.5">
+            <label className="text-xs font-bold text-gray-600 dark:text-muted flex items-center gap-1.5">
               <Tag className="h-3 w-3" />
               Etiquetas
             </label>
@@ -491,7 +491,7 @@ function ProductFormModal({
                   placeholder="Agregar etiqueta…"
                   maxLength={30}
                   list="tag-suggestions"
-                  className="w-full px-3 py-2 rounded-xl border border-gray-200 dark:border-card-border bg-white dark:bg-surface text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary"
+                  className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-card-border bg-white dark:bg-surface text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary"
                 />
                 {availableTags.length > 0 && (
                   <datalist id="tag-suggestions">
@@ -522,7 +522,7 @@ function ProductFormModal({
                 type="button"
                 onClick={() => addTag(tagInput, tagColor)}
                 disabled={!tagInput.trim()}
-                className="p-2 rounded-xl bg-primary/10 text-primary hover:bg-primary/20 disabled:opacity-40 transition-colors min-h-[36px] min-w-[36px] flex items-center justify-center"
+                className="p-2 rounded-lg bg-primary/10 text-primary hover:bg-primary/20 disabled:opacity-40 transition-colors min-h-[36px] min-w-[36px] flex items-center justify-center"
               >
                 <Plus className="h-3.5 w-3.5" />
               </button>
@@ -538,7 +538,7 @@ function ProductFormModal({
                       key={t.name}
                       type="button"
                       onClick={() => addTag(t.name, t.color)}
-                      className="px-2 py-0.5 rounded-full text-[10px] font-medium border border-dashed border-gray-300 dark:border-gray-600 text-gray-500 hover:border-primary/50 hover:text-primary transition-colors"
+                      className="px-2 py-0.5 rounded-full text-[length:var(--ts-2xs)] font-medium border border-dashed border-[var(--rule-base)] dark:border-gray-600 text-gray-500 hover:border-primary/50 hover:text-primary transition-colors"
                     >
                       + {t.name}
                     </button>
@@ -550,13 +550,13 @@ function ProductFormModal({
 
           {/* Description */}
           <div>
-            <label className="text-xs font-bold text-gray-600 dark:text-muted uppercase tracking-wider">Descripción</label>
+            <label className="text-xs font-bold text-gray-600 dark:text-muted">Descripción</label>
             <textarea
               value={form.description ?? ""}
               onChange={(e) => set("description", e.target.value)}
               rows={2}
               placeholder="Descripción breve del producto…"
-              className="mt-1 w-full px-3 py-2.5 rounded-xl border border-gray-200 dark:border-card-border bg-white dark:bg-surface text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary resize-none"
+              className="mt-1 w-full px-3 py-2.5 rounded-lg border border-[var(--rule-base)] dark:border-card-border bg-white dark:bg-surface text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary resize-none"
             />
           </div>
 
@@ -567,12 +567,12 @@ function ProductFormModal({
               type="button"
               onClick={() => set("active", !form.active)}
               className={cn(
-                "relative h-6 w-11 rounded-full transition-colors duration-200",
+                "relative h-6 w-11 rounded-full transition-colors duration-[var(--dur-base)]",
                 form.active ? "bg-emerald-500" : "bg-gray-300 dark:bg-gray-600"
               )}
             >
               <span className={cn(
-                "absolute top-1 h-4 w-4 rounded-full bg-white shadow transition-transform duration-200",
+                "absolute top-1 h-4 w-4 rounded-full bg-white shadow transition-transform duration-[var(--dur-base)]",
                 form.active ? "translate-x-6" : "translate-x-1"
               )} />
             </button>
@@ -580,17 +580,17 @@ function ProductFormModal({
         </div>
 
         {/* Footer */}
-        <div className="sticky bottom-0 bg-white dark:bg-card px-3 sm:px-6 py-4 border-t border-gray-100 dark:border-card-border flex flex-wrap items-center justify-end gap-2">
+        <div className="sticky bottom-0 bg-white dark:bg-card px-3 sm:px-6 py-4 border-t border-[var(--rule-soft)] dark:border-card-border flex flex-wrap items-center justify-end gap-2">
           <button
             onClick={onClose}
-            className="px-2 sm:px-4 py-1.5 sm:py-2 rounded-xl text-sm font-semibold text-gray-600 dark:text-muted hover:bg-gray-100 dark:hover:bg-surface transition-colors"
+            className="px-2 sm:px-4 py-1.5 sm:py-2 rounded-lg text-sm font-semibold text-gray-600 dark:text-muted hover:bg-gray-100 dark:hover:bg-surface transition-colors"
           >
             Cancelar
           </button>
           <button
             onClick={() => valid && onSave(form)}
             disabled={!valid || saving}
-            className="flex flex-wrap items-center gap-2 px-5 py-2 rounded-xl bg-primary text-white text-sm font-bold shadow-sm hover:bg-primary-dark active:scale-95 transition-all disabled:opacity-50"
+            className="flex flex-wrap items-center gap-2 px-5 py-2 rounded-lg bg-primary text-white text-sm font-bold  hover:bg-primary-dark active:scale-95 transition-all disabled:opacity-50"
           >
             {saving ? <RefreshCw className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
             {saving ? "Guardando…" : form.id ? "Guardar cambios" : "Crear producto"}
@@ -767,7 +767,7 @@ export default function ProductsAdminTab() {
         <div className="flex flex-wrap items-center gap-2">
           <button
             onClick={fetchProducts}
-            className="h-9 w-9 rounded-xl border border-gray-200 dark:border-card-border flex items-center justify-center text-gray-400 hover:text-primary hover:border-primary/50 transition-colors"
+            className="h-9 w-9 rounded-xl border border-[var(--rule-base)] dark:border-card-border flex items-center justify-center text-gray-400 hover:text-primary hover:border-primary/50 transition-colors"
             title="Recargar"
           >
             <RefreshCw className="h-4 w-4" />
@@ -777,7 +777,7 @@ export default function ProductsAdminTab() {
               <button
                 key={mode}
                 onClick={() => { setViewMode(mode); localStorage.setItem("admin-products-view", mode); }}
-                className={cn("p-2 rounded-lg transition-all", viewMode === mode ? "bg-white dark:bg-card text-primary shadow-sm" : "text-gray-400 hover:text-gray-600")}
+                className={cn("p-2 rounded-lg transition-all", viewMode === mode ? "bg-white dark:bg-card text-primary " : "text-gray-400 hover:text-gray-600")}
               >
                 {mode === "list" ? <List className="h-4 w-4" /> : <LayoutGrid className="h-4 w-4" />}
               </button>
@@ -785,7 +785,7 @@ export default function ProductsAdminTab() {
           </div>
           <button
             onClick={handleExportCSV}
-            className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-gray-100 dark:bg-accent text-gray-600 dark:text-muted text-sm font-semibold hover:bg-gray-200 transition-colors"
+            className="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-gray-100 dark:bg-accent text-gray-600 dark:text-muted text-sm font-semibold hover:bg-gray-200 transition-colors"
             title="Exportar productos a CSV"
           >
             <Download className="h-4 w-4" /> CSV
@@ -800,21 +800,21 @@ export default function ProductsAdminTab() {
           <button
             onClick={() => csvInputRef.current?.click()}
             disabled={csvImporting}
-            className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-gray-100 dark:bg-accent text-gray-600 dark:text-muted text-sm font-semibold hover:bg-gray-200 transition-colors disabled:opacity-50"
+            className="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-gray-100 dark:bg-accent text-gray-600 dark:text-muted text-sm font-semibold hover:bg-gray-200 transition-colors disabled:opacity-50"
             title="Importar productos desde CSV"
           >
             <Upload className="h-4 w-4" /> {csvImporting ? "Importando…" : "Importar"}
           </button>
           <button
             onClick={() => setShowExcelImporter(true)}
-            className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-emerald-50 dark:bg-emerald-900/20 text-emerald-700 dark:text-emerald-400 text-sm font-semibold hover:bg-emerald-100 dark:hover:bg-emerald-900/40 border border-emerald-200 dark:border-emerald-800 transition-colors"
+            className="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-emerald-50 dark:bg-emerald-900/20 text-emerald-700 dark:text-emerald-400 text-sm font-semibold hover:bg-emerald-100 dark:hover:bg-emerald-900/40 border border-emerald-200 dark:border-emerald-800 transition-colors"
             title="Importar productos desde Excel (.xlsx)"
           >
             <Upload className="h-4 w-4" /> Excel
           </button>
           <button
             onClick={() => setModal("create")}
-            className="flex flex-wrap items-center gap-2 px-2 sm:px-4 py-1.5 sm:py-2 rounded-xl bg-primary text-white text-sm font-bold shadow-sm hover:bg-primary-dark active:scale-95 transition-all"
+            className="flex flex-wrap items-center gap-2 px-2 sm:px-4 py-1.5 sm:py-2 rounded-lg bg-primary text-white text-sm font-bold  hover:bg-primary-dark active:scale-95 transition-all"
           >
             <Plus className="h-4 w-4" /> Nuevo
           </button>
@@ -829,7 +829,7 @@ export default function ProductsAdminTab() {
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder="Buscar por nombre…"
-            className="w-full pl-9 pr-3 py-2.5 rounded-xl border border-gray-200 dark:border-card-border bg-white dark:bg-surface text-sm text-foreground placeholder:text-muted focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary"
+            className="w-full pl-9 pr-3 py-2.5 rounded-lg border border-[var(--rule-base)] dark:border-card-border bg-white dark:bg-surface text-sm text-foreground placeholder:text-muted focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary"
           />
           {search && (
             <button onClick={() => setSearch("")} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600">
@@ -842,7 +842,7 @@ export default function ProductsAdminTab() {
           <select
             value={catFilter}
             onChange={(e) => setCatFilter(e.target.value)}
-            className="px-3 py-2.5 rounded-xl border border-gray-200 dark:border-card-border bg-white dark:bg-surface text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary"
+            className="px-3 py-2.5 rounded-lg border border-[var(--rule-base)] dark:border-card-border bg-white dark:bg-surface text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary"
           >
             <option value="todos">Todas las categorías</option>
             {CATEGORY_OPTS.map((c) => <option key={c.id} value={c.id}>{c.emoji} {c.label}</option>)}
@@ -865,9 +865,9 @@ export default function ProductsAdminTab() {
 
       {/* List view */}
       {viewMode === "list" && filtered.length > 0 && (
-        <div className="rounded-xl border border-gray-200 dark:border-card-border overflow-hidden">
+        <div className="rounded-xl border border-[var(--rule-base)] dark:border-card-border overflow-hidden">
           {/* Table header */}
-          <div className="grid grid-cols-[auto_1fr_auto_auto_auto_auto] gap-3 items-center bg-gray-50 dark:bg-surface px-2 sm:px-4 py-1.5 sm:py-2.5 text-xs font-bold uppercase tracking-wider text-muted">
+          <div className="grid grid-cols-[auto_1fr_auto_auto_auto_auto] gap-3 items-center bg-gray-50 dark:bg-surface px-2 sm:px-4 py-1.5 sm:py-2.5 text-xs font-bold text-muted">
             <span className="w-10">Img</span>
             <button onClick={() => toggleSort("name")} className="flex items-center gap-1 hover:text-foreground">Producto <SortIcon col="name" /></button>
             <span className="w-24 text-center">Categoría</span>
@@ -901,17 +901,17 @@ export default function ProductsAdminTab() {
                   <div className="min-w-0">
                     <p className={cn("text-sm font-semibold text-foreground truncate", p.active === false && "line-through")}>{p.name}</p>
                     <div className="flex items-center gap-1.5">
-                      <span className="text-[10px] text-muted">{p.unit}</span>
+                      <span className="text-[length:var(--ts-2xs)] text-muted">{p.unit}</span>
                       {p.badge && (
-                        <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-full bg-primary/10 text-primary">{p.badge}</span>
+                        <span className="text-[length:var(--ts-2xs)] font-bold px-1.5 py-0.5 rounded-full bg-primary/10 text-primary">{p.badge}</span>
                       )}
                       {p.description && (
-                        <span className="text-[10px] text-muted truncate max-w-40 hidden sm:inline">{p.description}</span>
+                        <span className="text-[length:var(--ts-2xs)] text-muted truncate max-w-40 hidden sm:inline">{p.description}</span>
                       )}
                     </div>
                   </div>
                   {/* Category */}
-                  <span className="text-[11px] text-muted w-24 text-center truncate">{cat?.emoji} {cat?.label}</span>
+                  <span className="text-[length:var(--ts-xs)] text-muted w-24 text-center truncate">{cat?.emoji} {cat?.label}</span>
                   {/* Price */}
                   <span className="text-sm font-extrabold text-primary w-16 text-right">S/{p.price.toFixed(2)}</span>
                   {/* Stock */}
@@ -967,7 +967,7 @@ export default function ProductsAdminTab() {
               <div
                 key={p.id}
                 className={cn(
-                  "bg-white dark:bg-card rounded-xl border border-gray-200 dark:border-card-border overflow-hidden group",
+                  "bg-white dark:bg-card rounded-xl border border-[var(--rule-base)] dark:border-card-border overflow-hidden group",
                   p.active === false && "opacity-50"
                 )}
               >
@@ -979,25 +979,25 @@ export default function ProductsAdminTab() {
                   )}
                   {/* Overlay actions */}
                   <div className="absolute inset-0 bg-black/0 group-hover:bg-black/40 transition-all flex items-center justify-center gap-2 opacity-0 group-hover:opacity-100">
-                    <button onClick={() => setModal({ product: p })} className="h-8 w-8 rounded-full bg-white text-primary flex items-center justify-center shadow-md hover:scale-110 transition-transform">
+                    <button onClick={() => setModal({ product: p })} className="h-8 w-8 rounded-full bg-white text-primary flex items-center justify-center hover:scale-110 transition-transform">
                       <Pencil className="h-3.5 w-3.5" />
                     </button>
-                    <button onClick={() => handleToggleActive(p)} className="h-8 w-8 rounded-full bg-white text-gray-600 flex items-center justify-center shadow-md hover:scale-110 transition-transform">
+                    <button onClick={() => handleToggleActive(p)} className="h-8 w-8 rounded-full bg-white text-gray-600 flex items-center justify-center hover:scale-110 transition-transform">
                       {p.active === false ? <Eye className="h-3.5 w-3.5" /> : <EyeOff className="h-3.5 w-3.5" />}
                     </button>
-                    <button onClick={() => setDeleteTarget(p)} className="h-8 w-8 rounded-full bg-white text-red-500 flex items-center justify-center shadow-md hover:scale-110 transition-transform">
+                    <button onClick={() => setDeleteTarget(p)} className="h-8 w-8 rounded-full bg-white text-red-500 flex items-center justify-center hover:scale-110 transition-transform">
                       <Trash2 className="h-3.5 w-3.5" />
                     </button>
                   </div>
-                  {isOut && <span className="absolute top-1.5 right-1.5 text-[8px] font-bold px-1.5 py-0.5 rounded-full bg-red-500 text-white">Agotado</span>}
-                  {p.active === false && <span className="absolute top-1.5 left-1.5 text-[8px] font-bold px-1.5 py-0.5 rounded-full bg-gray-500 text-white">Oculto</span>}
-                  {p.badge && p.active !== false && <span className="absolute top-1.5 left-1.5 text-[8px] font-bold px-1.5 py-0.5 rounded-full bg-primary text-white">{p.badge}</span>}
+                  {isOut && <span className="absolute top-1.5 right-1.5 text-[length:var(--ts-2xs)] font-bold px-1.5 py-0.5 rounded-full bg-red-500 text-white">Agotado</span>}
+                  {p.active === false && <span className="absolute top-1.5 left-1.5 text-[length:var(--ts-2xs)] font-bold px-1.5 py-0.5 rounded-full bg-gray-500 text-white">Oculto</span>}
+                  {p.badge && p.active !== false && <span className="absolute top-1.5 left-1.5 text-[length:var(--ts-2xs)] font-bold px-1.5 py-0.5 rounded-full bg-primary text-white">{p.badge}</span>}
                 </div>
                 <div className="p-2.5">
                   <p className="text-xs font-semibold text-foreground truncate">{p.name}</p>
                   <div className="flex items-center justify-between mt-1">
                     <span className="text-xs font-extrabold text-primary">S/{p.price.toFixed(2)}</span>
-                    <span className="text-[10px] text-muted">{cat?.emoji} {p.stock !== undefined ? `${p.stock} uds.` : ""}</span>
+                    <span className="text-[length:var(--ts-2xs)] text-muted">{cat?.emoji} {p.stock !== undefined ? `${p.stock} uds.` : ""}</span>
                   </div>
                 </div>
               </div>
@@ -1033,7 +1033,7 @@ export default function ProductsAdminTab() {
           onClick={() => setShowExcelImporter(false)}
         >
           <div
-            className="bg-white dark:bg-card rounded-2xl shadow-2xl w-full max-w-3xl max-h-[90vh] overflow-y-auto border border-gray-200 dark:border-card-border animate-[scaleIn_0.2s_ease-out] p-6"
+            className="bg-white dark:bg-card rounded-xl w-full max-w-3xl max-h-[90vh] overflow-y-auto border border-[var(--rule-base)] dark:border-card-border p-6"
             onClick={(e) => e.stopPropagation()}
           >
             <div className="flex items-center justify-between mb-4">

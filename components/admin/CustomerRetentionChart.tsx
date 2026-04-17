@@ -168,7 +168,7 @@ export default function CustomerRetentionChart() {
 
   if (cohorts.length === 0) {
     return (
-      <div className="rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 p-8 text-center text-gray-500">
+      <div className="rounded-xl border border-[var(--rule-base)] bg-white dark:bg-gray-900 p-8 text-center text-gray-500">
         No hay suficientes datos para calcular cohortes de retencion.
       </div>
     );
@@ -212,7 +212,7 @@ export default function CustomerRetentionChart() {
       )}
 
       {/* Cohort table */}
-      <div className="overflow-x-auto rounded-xl border border-gray-200 dark:border-gray-700">
+      <div className="overflow-x-auto rounded-xl border border-[var(--rule-base)]">
         <table className="min-w-full text-sm">
           <thead className="bg-gray-50 dark:bg-gray-800">
             <tr>

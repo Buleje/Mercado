@@ -4,10 +4,11 @@ import { MarketplaceOrdersDB } from "@/lib/db/marketplace.db";
 import { requireAdmin } from "@/lib/require-admin";
 import { prisma } from "@/lib/prisma";
 import { toErrorPayload, newTraceId } from "@/lib/api-error";
-import { sendWhatsAppNotification, sendWhatsAppText } from "@/lib/whatsapp";
+import { sendWhatsAppNotificationWithRetry, sendWhatsAppQueued } from "@/lib/whatsapp";
 import { sendPushToPhone } from "@/lib/push-sender";
 import { createNotification } from "@/lib/create-notification";
 import { applyRateLimit } from "@/lib/rate-limit";
+import { logger } from "@/lib/logger";
 
 // ── GET /api/marketplace/orders — órdenes del marketplace para el admin ─────
 export async function GET(req: NextRequest) {
@@ -128,14 +129,14 @@ export async function POST(req: NextRequest) {
       items,
     });
 
-    // Fire-and-forget: notify customer via WhatsApp
-    sendWhatsAppNotification({
+    // Fire-and-forget: notify customer via WhatsApp (with retries)
+    sendWhatsAppNotificationWithRetry({
       id:            order.id,
       customerName:  order.customerName,
       customerPhone: order.customerPhone,
       total:         order.total,
       status:        "pendiente",
-    }).catch(() => {});
+    }).catch((err) => logger.error("[marketplace/orders] operation failed", { error: String(err) }));
 
     // Fire-and-forget: notify store owner via push + in-app notification
     (async () => {
@@ -156,7 +157,7 @@ export async function POST(req: NextRequest) {
           actionUrl: `/admin?module=marketplace&tab=ordenes`,
           actionLabel: "Ver pedido",
           entityId: order.id,
-        }).catch(() => {});
+        }).catch((err) => logger.error("[marketplace/orders] create notification failed", { error: String(err), tenantId: store.tenantId }));
 
         // Push notification to store owner's phone
         // ownerPhone pertenece al modelo Tenant, no a Settings
@@ -170,12 +171,12 @@ export async function POST(req: NextRequest) {
             title: `Nuevo pedido — ${store.name}`,
             body: `${customerName} pidió ${items.length} producto(s) por S/${order.total.toFixed(2)}`,
             url: `/admin?module=marketplace&tab=ordenes`,
-          }).catch(() => {});
+          }).catch((err) => logger.error("[marketplace/orders] push notification failed", { error: String(err), tenantId: store.tenantId }));
 
-          // WhatsApp notification to vendor
+          // WhatsApp notification to vendor (with retries)
           const itemList = items.slice(0, 5).map((i: { name: string; quantity: number }) => `  • ${i.quantity}x ${i.name}`).join("\n");
           const moreItems = items.length > 5 ? `\n  + ${items.length - 5} más...` : "";
-          sendWhatsAppText(
+          sendWhatsAppQueued(
             ownerPhone,
             `*Nuevo pedido en ${store.name}*\n\n` +
             `Cliente: ${customerName}\n` +
@@ -183,7 +184,8 @@ export async function POST(req: NextRequest) {
             `Direccion: ${customerAddress || "No especificada"}\n\n` +
             `Productos:\n${itemList}${moreItems}\n\n` +
             `Total: S/ ${order.total.toFixed(2)}\n\n` +
-            `Entra a tu panel para confirmar el pedido`
+            `Entra a tu panel para confirmar el pedido`,
+            { tenantId: store.tenantId, context: "marketplace-order-vendor-notify" },
           ).catch(() => {});
         }
       } catch { /* silencioso */ }
@@ -249,14 +251,15 @@ export async function POST(req: NextRequest) {
                 expiresAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), // 30 days
               },
             });
-            // Send welcome coupon via WhatsApp
-            sendWhatsAppText(
+            // Send welcome coupon via WhatsApp (with retries)
+            sendWhatsAppQueued(
               customerPhone,
               `🎉 ¡Gracias por tu primera compra en *${store.name}*!\n\n` +
               `Te regalamos un cupón de *10% de descuento* para tu próxima compra:\n\n` +
               `🏷️ Código: *${welcomeCode}*\n` +
               `📅 Válido por 30 días\n\n` +
-              `¡Úsalo en tu próximo pedido! 🛒`
+              `¡Úsalo en tu próximo pedido! 🛒`,
+              { tenantId: store.tenantId, context: "marketplace-welcome-coupon" },
             ).catch(() => {});
           }
         }

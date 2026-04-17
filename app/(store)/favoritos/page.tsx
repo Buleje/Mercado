@@ -9,6 +9,7 @@ import { useCart } from "@/contexts/cart-context";
 import { useToast } from "@/contexts/toast-context";
 import { cn } from "@/lib/utils";
 import { products } from "@/data/products";
+import { CanastaVacia, IllustrationCard } from "@/components/ui-system/illustrations";
 
 /**
  * #17 Wishlist — pagina de favoritos del cliente.
@@ -54,24 +55,23 @@ export default function FavoritosPage() {
       </div>
 
       <div className="max-w-4xl mx-auto px-4 sm:px-6 py-8">
-        {/* Estado vacío */}
+        {/* Estado vacío — ADR-065 Ola F · IllustrationCard con CanastaVacia */}
         {count === 0 && (
-          <div className="flex flex-col items-center justify-center py-20 gap-4 text-center">
-            <div className="h-20 w-20 rounded-full bg-primary/10 flex items-center justify-center">
-              <Heart className="h-10 w-10 text-primary/40" />
-            </div>
-            <p className="text-lg font-bold text-foreground">Todavia no tienes favoritos</p>
-            <p className="text-sm text-muted max-w-xs">
-              Toca el corazon en cualquier producto para guardarlo aqui.
-            </p>
-            <Link
-              href="/tienda"
-              className="inline-flex items-center gap-2 px-5 py-2.5 bg-primary text-white font-bold rounded-xl hover:bg-primary/90 transition-colors min-h-[44px]"
-            >
-              <ShoppingCart className="h-4 w-4" />
-              Explorar tienda
-            </Link>
-          </div>
+          <IllustrationCard
+            illustration={<CanastaVacia size={180} />}
+            kicker="Favoritos"
+            title="Guardá tus favoritos"
+            description="Tocá el corazón en cualquier producto para verlos acá cuando vuelvas."
+            primaryAction={
+              <Link
+                href="/tienda"
+                className="inline-flex items-center gap-2 rounded-full bg-[var(--text-primary)] text-[var(--surface-canvas)] px-5 py-2.5 text-sm font-bold hover:opacity-90 transition-opacity"
+              >
+                <ShoppingCart className="h-4 w-4" strokeWidth={1.75} />
+                Explorar tienda
+              </Link>
+            }
+          />
         )}
 
         {/* Grid de favoritos */}

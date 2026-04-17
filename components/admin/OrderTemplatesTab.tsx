@@ -99,7 +99,7 @@ function ItemRow({ item, index, onChange, onRemove, canRemove }: ItemRowProps) {
           maxLength={120}
           className={cn(
             "w-full px-2.5 py-1.5 rounded-lg text-sm border bg-white dark:bg-card",
-            "border-gray-200 dark:border-card-border text-gray-900 dark:text-foreground",
+            "border-[var(--rule-base)] dark:border-card-border text-gray-900 dark:text-foreground",
             "placeholder:text-gray-400 dark:placeholder:text-muted",
             "focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-colors"
           )}
@@ -117,7 +117,7 @@ function ItemRow({ item, index, onChange, onRemove, canRemove }: ItemRowProps) {
           onChange={(e) => onChange(index, "qty", e.target.value)}
           className={cn(
             "w-full px-2.5 py-1.5 rounded-lg text-sm border bg-white dark:bg-card",
-            "border-gray-200 dark:border-card-border text-gray-900 dark:text-foreground",
+            "border-[var(--rule-base)] dark:border-card-border text-gray-900 dark:text-foreground",
             "placeholder:text-gray-400 dark:placeholder:text-muted",
             "focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-colors"
           )}
@@ -135,7 +135,7 @@ function ItemRow({ item, index, onChange, onRemove, canRemove }: ItemRowProps) {
           onChange={(e) => onChange(index, "price", e.target.value)}
           className={cn(
             "w-full px-2.5 py-1.5 rounded-lg text-sm border bg-white dark:bg-card",
-            "border-gray-200 dark:border-card-border text-gray-900 dark:text-foreground",
+            "border-[var(--rule-base)] dark:border-card-border text-gray-900 dark:text-foreground",
             "placeholder:text-gray-400 dark:placeholder:text-muted",
             "focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-colors"
           )}
@@ -218,7 +218,7 @@ function TemplateForm({ initial, onSave, onCancel }: TemplateFormProps) {
   };
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-6">
       {/* Nombre de la plantilla */}
       <div>
         <label htmlFor={nameId} className="block text-xs font-semibold text-gray-600 dark:text-muted mb-1.5">
@@ -234,7 +234,7 @@ function TemplateForm({ initial, onSave, onCancel }: TemplateFormProps) {
           autoFocus
           className={cn(
             "w-full px-3 py-2 rounded-lg text-sm border bg-white dark:bg-card",
-            "border-gray-200 dark:border-card-border text-gray-900 dark:text-foreground",
+            "border-[var(--rule-base)] dark:border-card-border text-gray-900 dark:text-foreground",
             "placeholder:text-gray-400 dark:placeholder:text-muted",
             "focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-colors"
           )}
@@ -244,9 +244,9 @@ function TemplateForm({ initial, onSave, onCancel }: TemplateFormProps) {
       {/* Cabecera de tabla */}
       <div>
         <div className="grid grid-cols-[1fr_80px_90px_32px] gap-2 mb-1.5">
-          <span className="text-[10px] font-bold uppercase tracking-wider text-gray-400 dark:text-muted px-0.5">Producto</span>
-          <span className="text-[10px] font-bold uppercase tracking-wider text-gray-400 dark:text-muted px-0.5">Cant.</span>
-          <span className="text-[10px] font-bold uppercase tracking-wider text-gray-400 dark:text-muted px-0.5">Precio</span>
+          <span className="text-[length:var(--ts-2xs)] font-bold text-gray-400 dark:text-muted px-0.5">Producto</span>
+          <span className="text-[length:var(--ts-2xs)] font-bold text-gray-400 dark:text-muted px-0.5">Cant.</span>
+          <span className="text-[length:var(--ts-2xs)] font-bold text-gray-400 dark:text-muted px-0.5">Precio</span>
           <span />
         </div>
 
@@ -297,7 +297,7 @@ function TemplateForm({ initial, onSave, onCancel }: TemplateFormProps) {
         <button
           type="button"
           onClick={handleSave}
-          className="flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-semibold bg-primary text-white hover:bg-primary/90 transition-colors shadow-sm"
+          className="flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-semibold bg-primary text-white hover:bg-primary/90 transition-colors "
         >
           <Check className="h-4 w-4" />
           {initial ? "Guardar cambios" : "Crear plantilla"}
@@ -326,7 +326,7 @@ function TemplateCard({ template, onApply, onEdit, onDelete }: TemplateCardProps
   return (
     <div className={cn(
       "rounded-xl border bg-white dark:bg-card overflow-hidden transition-shadow",
-      "border-gray-200 dark:border-card-border shadow-sm hover:shadow-md"
+      "border-[var(--rule-base)] dark:border-card-border  hover:shadow-sm"
     )}>
       {/* Cabecera */}
       <div className="flex items-center gap-3 px-4 py-3">
@@ -335,7 +335,7 @@ function TemplateCard({ template, onApply, onEdit, onDelete }: TemplateCardProps
         </div>
         <div className="flex-1 min-w-0">
           <p className="text-sm font-bold text-gray-900 dark:text-foreground truncate">{template.name}</p>
-          <p className="text-[11px] text-gray-400 dark:text-muted">
+          <p className="text-[length:var(--ts-xs)] text-gray-400 dark:text-muted">
             {template.items.length} {template.items.length === 1 ? "producto" : "productos"}
             {" · "}
             {units} {units === 1 ? "unidad" : "unidades"}
@@ -346,7 +346,7 @@ function TemplateCard({ template, onApply, onEdit, onDelete }: TemplateCardProps
         <div className="flex items-center gap-1 shrink-0">
           <button
             onClick={() => onApply(template)}
-            className="px-3 py-1.5 rounded-lg text-xs font-bold bg-primary text-white hover:bg-primary/90 transition-colors shadow-sm"
+            className="px-3 py-1.5 rounded-lg text-xs font-bold bg-primary text-white hover:bg-primary/90 transition-colors "
             title="Usar esta plantilla"
           >
             Usar
@@ -366,7 +366,7 @@ function TemplateCard({ template, onApply, onEdit, onDelete }: TemplateCardProps
 
       {/* Detalle expandible */}
       {expanded && (
-        <div className="border-t border-gray-100 dark:border-card-border">
+        <div className="border-t border-[var(--rule-soft)] dark:border-card-border">
           {/* Lista de items */}
           <div className="px-4 py-3 space-y-1.5 bg-gray-50/50 dark:bg-surface/30">
             {template.items.map((item, idx) => (
@@ -381,8 +381,8 @@ function TemplateCard({ template, onApply, onEdit, onDelete }: TemplateCardProps
           </div>
 
           {/* Acciones */}
-          <div className="flex items-center justify-between px-4 py-2.5 border-t border-gray-100 dark:border-card-border">
-            <p className="text-[10px] text-gray-400 dark:text-muted">
+          <div className="flex items-center justify-between px-4 py-2.5 border-t border-[var(--rule-soft)] dark:border-card-border">
+            <p className="text-[length:var(--ts-2xs)] text-gray-400 dark:text-muted">
               Creada {new Date(template.createdAt).toLocaleDateString("es-PE", {
                 day: "2-digit", month: "short", year: "numeric",
               })}
@@ -495,7 +495,7 @@ export default function OrderTemplatesTab({ onApplyTemplate, className }: Props)
         {!formMode && templates.length < MAX_TEMPLATES && (
           <button
             onClick={() => setFormMode({ type: "create" })}
-            className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-sm font-semibold bg-primary text-white hover:bg-primary/90 transition-colors shadow-sm shrink-0"
+            className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-semibold bg-primary text-white hover:bg-primary/90 transition-colors  shrink-0"
           >
             <Plus className="h-4 w-4" />
             Nueva
@@ -506,7 +506,7 @@ export default function OrderTemplatesTab({ onApplyTemplate, className }: Props)
       {/* ── Formulario (crear / editar) ── */}
       {formMode && (
         <div className="rounded-xl border border-primary/30 bg-primary/5 dark:bg-primary/10 p-4 space-y-1">
-          <p className="text-xs font-bold uppercase tracking-wider text-primary mb-3">
+          <p className="text-xs font-bold text-primary mb-3">
             {isCreating ? "Nueva plantilla" : `Editando: ${editingTemplate?.name}`}
           </p>
           <TemplateForm
@@ -520,7 +520,7 @@ export default function OrderTemplatesTab({ onApplyTemplate, className }: Props)
       {/* ── Lista de plantillas ── */}
       {templates.length === 0 && !formMode && (
         <div className="flex flex-col items-center justify-center py-12 gap-3 text-center">
-          <div className="w-14 h-14 rounded-2xl bg-gray-100 dark:bg-surface flex items-center justify-center">
+          <div className="w-14 h-14 rounded-xl bg-gray-100 dark:bg-surface flex items-center justify-center">
             <ClipboardList className="h-7 w-7 text-gray-300 dark:text-muted" />
           </div>
           <div>
@@ -531,7 +531,7 @@ export default function OrderTemplatesTab({ onApplyTemplate, className }: Props)
           </div>
           <button
             onClick={() => setFormMode({ type: "create" })}
-            className="flex items-center gap-1.5 px-4 py-2 rounded-xl text-sm font-semibold bg-primary text-white hover:bg-primary/90 transition-colors shadow-sm"
+            className="flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-semibold bg-primary text-white hover:bg-primary/90 transition-colors "
           >
             <Plus className="h-4 w-4" />
             Crear primera plantilla

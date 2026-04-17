@@ -14,8 +14,10 @@ import {
   Calendar, Timer, Layers, Mail, Key, Wifi, WifiOff,
   BarChart3, Crown, ChevronRight, ChevronDown, Save,
   Plus, Trash2, Copy, Send, Activity,
-  HardDrive, ClipboardList, Monitor
+  HardDrive, ClipboardList, Monitor, SlidersHorizontal,
 } from "lucide-react";
+import AdminModuleHeader from "@/components/admin/shared/AdminModuleHeader";
+import { IconBadge } from "@buleje/design-system";
 
 const LeafletMap = dynamic(() => import("@/components/LeafletMap"), { ssr: false });
 const StorefrontEditor = dynamic(() => import("@/components/admin/StorefrontEditor"), { ssr: false });
@@ -44,15 +46,15 @@ const SECTION_META: { id: SectionId; icon: React.ReactNode; title: string; desc:
   { id: "business", icon: <Store className="h-5 w-5" />, title: "Datos del Negocio", desc: "Nombre, RUC, contacto, redes", color: "text-orange-500 bg-orange-50 dark:bg-orange-950/30" },
   { id: "security", icon: <Lock className="h-5 w-5" />, title: "Usuarios y Seguridad", desc: "Contraseña, sesiones, acceso", color: "text-red-500 bg-red-50 dark:bg-red-950/30" },
   { id: "system", icon: <Settings className="h-5 w-5" />, title: "Configuración del Sistema", desc: "Formato, moneda, impuestos", color: "text-slate-500 bg-slate-50 dark:bg-slate-950/30" },
-  { id: "sales", icon: <FileText className="h-5 w-5" />, title: "Ventas y Comprobantes", desc: "Series, SUNAT, descuentos", color: "text-blue-500 bg-blue-50 dark:bg-blue-950/30" },
+  { id: "sales", icon: <FileText className="h-5 w-5" />, title: "Ventas y Comprobantes", desc: "Series, SUNAT, descuentos", color: "text-emerald-500 bg-emerald-50 dark:bg-emerald-950/30" },
   { id: "inventory", icon: <Package className="h-5 w-5" />, title: "Inventario", desc: "Stock, alertas, unidades", color: "text-emerald-500 bg-emerald-50 dark:bg-emerald-950/30" },
   { id: "cash", icon: <DollarSign className="h-5 w-5" />, title: "Caja y Pagos", desc: "Apertura, métodos, devoluciones", color: "text-green-500 bg-green-50 dark:bg-green-950/30" },
   { id: "delivery", icon: <Truck className="h-5 w-5" />, title: "Delivery y Envíos", desc: "Zonas, tarifas, repartidores", color: "text-cyan-500 bg-cyan-50 dark:bg-cyan-950/30" },
-  { id: "notifications", icon: <Bell className="h-5 w-5" />, title: "Notificaciones", desc: "Email, WhatsApp, push", color: "text-violet-500 bg-violet-50 dark:bg-violet-950/30" },
+  { id: "notifications", icon: <Bell className="h-5 w-5" />, title: "Notificaciones", desc: "Email, WhatsApp, push", color: "text-[var(--text-secondary)] bg-[var(--surface-sunken)]" },
   { id: "integrations", icon: <Zap className="h-5 w-5" />, title: "Integraciones", desc: "Yape, Plin, SUNAT, analytics", color: "text-amber-500 bg-amber-50 dark:bg-amber-950/30" },
-  { id: "appearance", icon: <Palette className="h-5 w-5" />, title: "Apariencia", desc: "Colores, slogan, tema", color: "text-pink-500 bg-pink-50 dark:bg-pink-950/30" },
+  { id: "appearance", icon: <Palette className="h-5 w-5" />, title: "Apariencia", desc: "Colores, slogan, tema", color: "text-[var(--text-secondary)] bg-[var(--surface-sunken)]" },
   { id: "storefront", icon: <Monitor className="h-5 w-5" />, title: "Mi Tienda Web", desc: "Secciones visibles y orden del home", color: "text-primary bg-primary/10 dark:bg-primary/20" },
-  { id: "audit", icon: <Activity className="h-5 w-5" />, title: "Auditoría y Control", desc: "Logs, retención, alertas", color: "text-indigo-500 bg-indigo-50 dark:bg-indigo-950/30" },
+  { id: "audit", icon: <Activity className="h-5 w-5" />, title: "Auditoría y Control", desc: "Logs, retención, alertas", color: "text-[var(--text-secondary)] bg-[var(--surface-sunken)]" },
   { id: "backup", icon: <HardDrive className="h-5 w-5" />, title: "Respaldo y Mantenimiento", desc: "Backups, estado, limpieza", color: "text-teal-500 bg-teal-50 dark:bg-teal-950/30" },
   { id: "modules", icon: <Layers className="h-5 w-5" />, title: "Gestión de Módulos", desc: "Activa, oculta o reorganiza módulos", color: "text-cyan-500 bg-cyan-50 dark:bg-cyan-950/30" },
   { id: "shortcuts", icon: <Zap className="h-5 w-5" />, title: "Accesos Directos", desc: "Atajos personalizados en la barra lateral", color: "text-yellow-500 bg-yellow-50 dark:bg-yellow-950/30" },
@@ -63,7 +65,7 @@ const SECTION_META: { id: SectionId; icon: React.ReactNode; title: string; desc:
 
 function FieldLabel({ icon, children }: { icon?: React.ReactNode; children: React.ReactNode }) {
   return (
-    <label className="flex items-center gap-1.5 text-[10px] font-bold text-gray-500 dark:text-muted uppercase tracking-wider mb-1.5">
+    <label className="flex items-center gap-1.5 text-[length:var(--ts-2xs)] font-bold text-gray-500 dark:text-muted mb-1.5">
       {icon}{children}
     </label>
   );
@@ -80,7 +82,7 @@ function TextInput({ value, onChange, placeholder, mono, type = "text", disabled
       placeholder={placeholder}
       disabled={disabled}
       className={cn(
-        "w-full px-3 py-2.5 rounded-xl border border-gray-200 dark:border-card-border",
+        "w-full px-3 py-2.5 rounded-xl border border-[var(--rule-base)] dark:border-card-border",
         "bg-white dark:bg-surface text-gray-900 dark:text-foreground text-sm",
         "outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-colors",
         "disabled:opacity-50 disabled:cursor-not-allowed",
@@ -100,7 +102,7 @@ function NumberInput({ value, onChange, min, max, step, suffix }: {
         value={value}
         onChange={e => onChange(Number(e.target.value))}
         min={min} max={max} step={step}
-        className="flex-1 px-3 py-2.5 rounded-xl border border-gray-200 dark:border-card-border bg-white dark:bg-surface text-gray-900 dark:text-foreground text-sm outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-colors font-mono"
+        className="flex-1 px-3 py-2.5 rounded-lg border border-[var(--rule-base)] dark:border-card-border bg-white dark:bg-surface text-gray-900 dark:text-foreground text-sm outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-colors font-mono"
       />
       {suffix && <span className="text-xs text-gray-500 dark:text-muted font-medium shrink-0">{suffix}</span>}
     </div>
@@ -114,7 +116,7 @@ function SelectInput({ value, onChange, options }: {
     <select
       value={value}
       onChange={e => onChange(e.target.value)}
-      className="w-full px-3 py-2.5 rounded-xl border border-gray-200 dark:border-card-border bg-white dark:bg-surface text-gray-900 dark:text-foreground text-sm outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary cursor-pointer transition-colors"
+      className="w-full px-3 py-2.5 rounded-lg border border-[var(--rule-base)] dark:border-card-border bg-white dark:bg-surface text-gray-900 dark:text-foreground text-sm outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary cursor-pointer transition-colors"
     >
       {options.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
     </select>
@@ -125,7 +127,7 @@ function Toggle({ enabled, onChange, label, desc, danger }: {
   enabled: boolean; onChange: (v: boolean) => void; label: string; desc?: string; danger?: boolean;
 }) {
   return (
-    <div className="flex items-center justify-between gap-3 p-3 rounded-xl bg-gray-50 dark:bg-surface border border-gray-100 dark:border-card-border">
+    <div className="flex items-center justify-between gap-3 p-3 rounded-xl bg-gray-50 dark:bg-surface border border-[var(--rule-soft)] dark:border-card-border">
       <div className="flex-1 min-w-0">
         <p className="text-sm font-semibold text-gray-900 dark:text-foreground">{label}</p>
         {desc && <p className="text-xs text-gray-500 dark:text-muted mt-0.5">{desc}</p>}
@@ -146,8 +148,8 @@ function Toggle({ enabled, onChange, label, desc, danger }: {
 
 function SectionCard({ title, desc, children }: { title: string; desc?: string; children: React.ReactNode }) {
   return (
-    <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl overflow-hidden">
-      <div className="px-5 py-4 border-b border-gray-100 dark:border-card-border">
+    <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl overflow-hidden">
+      <div className="px-5 py-4 border-b border-[var(--rule-soft)] dark:border-card-border">
         <h4 className="font-bold text-sm text-gray-900 dark:text-foreground">{title}</h4>
         {desc && <p className="text-xs text-gray-500 dark:text-muted mt-0.5">{desc}</p>}
       </div>
@@ -181,7 +183,7 @@ function StatusDot({ ok, label }: { ok: boolean; label: string }) {
     <div className="flex items-center gap-2">
       <div className={cn("w-2.5 h-2.5 rounded-full", ok ? "bg-emerald-500" : "bg-red-400")} />
       <span className="text-xs text-gray-700 dark:text-foreground font-medium">{label}</span>
-      <span className={cn("text-[10px] font-bold uppercase", ok ? "text-emerald-600" : "text-red-500")}>{ok ? "Conectado" : "No configurado"}</span>
+      <span className={cn("text-[length:var(--ts-2xs)] font-bold uppercase", ok ? "text-emerald-600" : "text-red-500")}>{ok ? "Conectado" : "No configurado"}</span>
     </div>
   );
 }
@@ -210,20 +212,20 @@ function OverviewCard({ section, completionPct, onClick }: {
       whileHover={{ scale: 1.02, y: -2 }}
       whileTap={{ scale: 0.98 }}
       onClick={onClick}
-      className="relative flex flex-col items-start gap-3 p-4 rounded-2xl border-2 border-gray-100 dark:border-card-border text-left transition-all bg-white dark:bg-card hover:shadow-lg hover:border-gray-200 dark:hover:border-gray-600"
+      className="relative flex flex-col items-start gap-3 p-4 rounded-xl border-2 border-[var(--rule-soft)] dark:border-card-border text-left transition-all bg-white dark:bg-card hover:shadow-lg hover:border-gray-200 dark:hover:border-gray-600"
     >
       <div className={cn("w-10 h-10 rounded-xl flex items-center justify-center", section.color)}>
         {section.icon}
       </div>
       <div>
         <p className="text-sm font-bold text-gray-900 dark:text-foreground">{section.title}</p>
-        <p className="text-[11px] text-gray-400 dark:text-muted mt-0.5 line-clamp-1">{section.desc}</p>
+        <p className="text-[length:var(--ts-xs)] text-gray-400 dark:text-muted mt-0.5 line-clamp-1">{section.desc}</p>
       </div>
       <div className="w-full flex items-center gap-2 mt-auto">
         <div className="flex-1 h-1.5 bg-gray-100 dark:bg-surface rounded-full overflow-hidden">
           <div className={cn("h-full rounded-full transition-all", completionPct === 100 ? "bg-emerald-500" : "bg-primary/60")} style={{ width: `${completionPct}%` }} />
         </div>
-        <span className={cn("text-[9px] font-bold shrink-0", completionPct === 100 ? "text-emerald-500" : "text-gray-400")}>{completionPct}%</span>
+        <span className={cn("text-[length:var(--ts-2xs)] font-bold shrink-0", completionPct === 100 ? "text-emerald-500" : "text-gray-400")}>{completionPct}%</span>
       </div>
       {completionPct === 100 && (
         <div className="absolute top-2.5 right-2.5">
@@ -593,7 +595,7 @@ export default function SettingsModule({ storeMode, onModeChange }: { storeMode:
   if (loading) return (
     <div className="space-y-4 animate-pulse">
       {[1, 2, 3, 4].map(i => (
-        <div key={i} className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl p-6">
+        <div key={i} className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl p-6">
           <div className="flex items-center gap-4"><div className="h-12 w-12 bg-gray-200 dark:bg-surface rounded-xl" /><div className="flex-1 space-y-2"><div className="h-5 bg-gray-200 dark:bg-surface rounded w-1/3" /><div className="h-3 bg-gray-200 dark:bg-surface rounded w-2/3" /></div></div>
         </div>
       ))}
@@ -605,12 +607,12 @@ export default function SettingsModule({ storeMode, onModeChange }: { storeMode:
   // ══════════════════════════════════════════════════════════════════════════════
 
   const renderModules = () => (
-    <div className="space-y-4">
+    <div className="space-y-6">
       <SectionCard title="Módulos activos" desc="Controla qué módulos ves en tu panel">
         <p className="text-sm text-gray-600 dark:text-muted">Activa, oculta o limpia datos de ejemplo por módulo. Los cambios se aplican inmediatamente.</p>
         <button
           onClick={() => window.dispatchEvent(new CustomEvent("open-module-manager"))}
-          className="w-full flex items-center justify-center gap-2 px-5 py-3 rounded-xl bg-primary text-white font-bold text-sm hover:bg-primary/90 transition-colors mt-2"
+          className="w-full flex items-center justify-center gap-2 px-5 py-3 rounded-lg bg-primary text-white font-bold text-sm hover:bg-primary/90 transition-colors mt-2"
         >
           <Layers className="h-4 w-4" /> Abrir gestión de módulos
         </button>
@@ -655,25 +657,25 @@ export default function SettingsModule({ storeMode, onModeChange }: { storeMode:
     };
 
     return (
-      <div className="space-y-4">
+      <div className="space-y-6">
         <SectionCard title="Mis accesos directos" desc="Aparecen como favoritos en tu barra lateral (máx. 6)">
           {customShortcuts.length === 0 && (
             <p className="text-sm text-gray-400 dark:text-muted text-center py-4">No tienes accesos directos aún. Agrega uno para navegar más rápido.</p>
           )}
           <div className="space-y-3">
             {customShortcuts.map(sc => (
-              <div key={sc.id} className="flex items-center gap-3 p-3 bg-gray-50 dark:bg-surface rounded-xl border border-gray-100 dark:border-card-border">
+              <div key={sc.id} className="flex items-center gap-3 p-3 bg-gray-50 dark:bg-surface rounded-xl border border-[var(--rule-soft)] dark:border-card-border">
                 <Zap className="h-4 w-4 text-yellow-500 shrink-0" />
                 <input
                   value={sc.label}
                   onChange={e => updateShortcut(sc.id, "label", e.target.value)}
-                  className="flex-1 px-2 py-1.5 text-sm rounded-lg border border-gray-200 dark:border-card-border bg-white dark:bg-card text-gray-900 dark:text-foreground"
+                  className="flex-1 px-2 py-1.5 text-sm rounded-lg border border-[var(--rule-base)] dark:border-card-border bg-white dark:bg-card text-gray-900 dark:text-foreground"
                   placeholder="Nombre del acceso"
                 />
                 <select
                   value={sc.tabId}
                   onChange={e => updateShortcut(sc.id, "tabId", e.target.value)}
-                  className="px-2 py-1.5 text-sm rounded-lg border border-gray-200 dark:border-card-border bg-white dark:bg-card text-gray-900 dark:text-foreground"
+                  className="px-2 py-1.5 text-sm rounded-lg border border-[var(--rule-base)] dark:border-card-border bg-white dark:bg-card text-gray-900 dark:text-foreground"
                 >
                   {availableTabs.map(t => <option key={t.value} value={t.value}>{t.label}</option>)}
                 </select>
@@ -684,7 +686,7 @@ export default function SettingsModule({ storeMode, onModeChange }: { storeMode:
             ))}
           </div>
           {customShortcuts.length < 6 && (
-            <button onClick={addShortcut} className="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl border-2 border-dashed border-gray-200 dark:border-card-border text-sm font-semibold text-gray-500 hover:text-primary hover:border-primary transition-colors mt-2">
+            <button onClick={addShortcut} className="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg border-2 border-dashed border-[var(--rule-base)] dark:border-card-border text-sm font-semibold text-gray-500 hover:text-primary hover:border-primary transition-colors mt-2">
               <Plus className="h-4 w-4" /> Agregar acceso directo
             </button>
           )}
@@ -697,14 +699,14 @@ export default function SettingsModule({ storeMode, onModeChange }: { storeMode:
   };
 
   const renderBusiness = () => (
-    <div className="space-y-4">
+    <div className="space-y-6">
       {/* Store mode selector */}
       <SectionCard title="Modo de tienda" desc="Cómo reciben pedidos tus clientes">
         <div className="grid grid-cols-2 gap-3">
           {(["whatsapp", "checkout"] as const).map(m => (
             <button key={m} onClick={() => setMode(m)} className={cn(
               "flex flex-col items-center gap-2 py-5 px-3 rounded-xl border-2 transition-all",
-              mode === m ? (m === "whatsapp" ? "border-emerald-400 bg-emerald-50 dark:bg-emerald-950/20" : "border-primary bg-primary/5") : "border-gray-200 dark:border-card-border hover:border-gray-300"
+              mode === m ? (m === "whatsapp" ? "border-emerald-400 bg-emerald-50 dark:bg-emerald-950/20" : "border-primary bg-primary/5") : "border-[var(--rule-base)] dark:border-card-border hover:border-gray-300"
             )}>
               {m === "whatsapp" ? <MessageCircle className={cn("h-8 w-8", mode === m ? "text-emerald-600" : "text-gray-300")} /> : <ShoppingCart className={cn("h-8 w-8", mode === m ? "text-primary" : "text-gray-300")} />}
               <span className={cn("font-bold text-sm", mode === m ? (m === "whatsapp" ? "text-emerald-700" : "text-primary") : "text-gray-400")}>{m === "whatsapp" ? "WhatsApp" : "Checkout"}</span>
@@ -738,7 +740,7 @@ export default function SettingsModule({ storeMode, onModeChange }: { storeMode:
             <FieldLabel icon={<MapPin className="h-3.5 w-3.5" />}>Dirección</FieldLabel>
             <div className="flex gap-2">
               <div className="flex-1"><TextInput value={businessAddress} onChange={setBusinessAddress} /></div>
-              <button onClick={() => setShowMapPicker(true)} className="px-3 py-2 rounded-xl text-xs font-bold text-blue-600 bg-blue-50 hover:bg-blue-100 border border-blue-200 transition-colors shrink-0">
+              <button onClick={() => setShowMapPicker(true)} className="px-3 py-2 rounded-lg text-xs font-bold text-emerald-600 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 transition-colors shrink-0">
                 <MapPin className="h-4 w-4" />
               </button>
               <button
@@ -755,33 +757,33 @@ export default function SettingsModule({ storeMode, onModeChange }: { storeMode:
                     { enableHighAccuracy: true }
                   );
                 }}
-                className="px-3 py-2 rounded-xl text-xs font-bold text-emerald-600 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 transition-colors shrink-0 flex items-center gap-1.5"
+                className="px-3 py-2 rounded-lg text-xs font-bold text-emerald-600 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 transition-colors shrink-0 flex items-center gap-1.5"
               >
                 <MapPin className="h-4 w-4" /> Mi ubicación
               </button>
             </div>
-            {businessLat && businessLon && <p className="text-[10px] text-gray-400 font-mono mt-1">GPS: {businessLat.toFixed(5)}, {businessLon.toFixed(5)}</p>}
+            {businessLat && businessLon && <p className="text-[length:var(--ts-2xs)] text-gray-400 font-mono mt-1">GPS: {businessLat.toFixed(5)}, {businessLon.toFixed(5)}</p>}
           </div>
           <div><FieldLabel icon={<Truck className="h-3.5 w-3.5" />}>Zona de delivery</FieldLabel><TextInput value={deliveryZone} onChange={setDeliveryZone} /></div>
           <div><FieldLabel icon={<Clock className="h-3.5 w-3.5" />}>Horario</FieldLabel><TextInput value={hours} onChange={setHours} placeholder="Lun - Sáb: 7am - 9pm" /></div>
         </div>
         <div><FieldLabel icon={<AlignLeft className="h-3.5 w-3.5" />}>Descripción</FieldLabel>
-          <textarea value={description} onChange={e => setDescription(e.target.value)} rows={2} className="w-full px-3 py-2.5 rounded-xl border border-gray-200 dark:border-card-border bg-white dark:bg-surface text-gray-900 dark:text-foreground text-sm outline-none focus:ring-2 focus:ring-primary/20 resize-none" />
+          <textarea value={description} onChange={e => setDescription(e.target.value)} rows={2} className="w-full px-3 py-2.5 rounded-lg border border-[var(--rule-base)] dark:border-card-border bg-white dark:bg-surface text-gray-900 dark:text-foreground text-sm outline-none focus:ring-2 focus:ring-primary/20 resize-none" />
         </div>
       </SectionCard>
 
       {/* Logo */}
       <SectionCard title="Logo del negocio">
         <div className="flex flex-col gap-2">
-          <button type="button" onClick={() => logoImgRef.current?.click()} className="inline-flex items-center justify-center gap-2 w-full py-3 rounded-xl border-2 border-dashed border-gray-300 hover:border-primary text-sm font-semibold text-gray-500 hover:text-primary bg-gray-50 dark:bg-surface transition-colors">
+          <button type="button" onClick={() => logoImgRef.current?.click()} className="inline-flex items-center justify-center gap-2 w-full py-3 rounded-lg border-2 border-dashed border-[var(--rule-base)] hover:border-primary text-sm font-semibold text-gray-500 hover:text-primary bg-gray-50 dark:bg-surface transition-colors">
             <Upload className="h-4 w-4" /> Subir imagen
           </button>
           <input ref={logoImgRef} type="file" accept="image/*" className="hidden" onChange={handleFileUpload(setLogoUrl)} />
           <TextInput value={logoUrl.startsWith("data:") ? "" : logoUrl} onChange={setLogoUrl} placeholder="https://… o /logo.png" />
         </div>
         {logoUrl && (
-          <div className="flex items-center gap-3 p-3 bg-gray-50 dark:bg-surface rounded-xl border border-gray-100 dark:border-card-border">
-            <Image src={logoUrl} alt="Logo" width={56} height={56} className="object-contain rounded-xl bg-white border border-gray-100" unoptimized onError={e => { (e.currentTarget as HTMLImageElement).style.display = "none"; }} />
+          <div className="flex items-center gap-3 p-3 bg-gray-50 dark:bg-surface rounded-xl border border-[var(--rule-soft)] dark:border-card-border">
+            <Image src={logoUrl} alt="Logo" width={56} height={56} className="object-contain rounded-xl bg-white border border-[var(--rule-soft)]" unoptimized onError={e => { (e.currentTarget as HTMLImageElement).style.display = "none"; }} />
             <span className="text-xs text-gray-500 flex-1">Vista previa</span>
             <button onClick={() => setLogoUrl("")} className="text-xs text-red-400 hover:text-red-600">Quitar</button>
           </div>
@@ -825,15 +827,15 @@ export default function SettingsModule({ storeMode, onModeChange }: { storeMode:
   );
 
   const renderSecurity = () => (
-    <div className="space-y-4">
+    <div className="space-y-6">
       {/* Current credentials display */}
       <SectionCard title="Credenciales de acceso" desc="Usuario y contraseña para iniciar sesión en el panel">
         <div className="space-y-3">
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            <div className="p-3 rounded-xl bg-gray-50 dark:bg-surface border border-gray-100 dark:border-card-border">
+            <div className="p-3 rounded-xl bg-gray-50 dark:bg-surface border border-[var(--rule-soft)] dark:border-card-border">
               <div className="flex items-center gap-2 mb-1.5">
                 <User className="h-3.5 w-3.5 text-gray-400" />
-                <span className="text-[10px] font-bold uppercase tracking-wider text-gray-400">Usuario</span>
+                <span className="text-[length:var(--ts-2xs)] font-bold text-gray-400">Usuario</span>
               </div>
               <div className="flex items-center justify-between">
                 <span className="text-sm font-bold text-gray-900 dark:text-white font-mono">admin</span>
@@ -842,10 +844,10 @@ export default function SettingsModule({ storeMode, onModeChange }: { storeMode:
                 </button>
               </div>
             </div>
-            <div className="p-3 rounded-xl bg-gray-50 dark:bg-surface border border-gray-100 dark:border-card-border">
+            <div className="p-3 rounded-xl bg-gray-50 dark:bg-surface border border-[var(--rule-soft)] dark:border-card-border">
               <div className="flex items-center gap-2 mb-1.5">
                 <Key className="h-3.5 w-3.5 text-gray-400" />
-                <span className="text-[10px] font-bold uppercase tracking-wider text-gray-400">Contraseña</span>
+                <span className="text-[length:var(--ts-2xs)] font-bold text-gray-400">Contraseña</span>
               </div>
               <div className="flex items-center justify-between">
                 <span className="text-sm font-bold text-gray-900 dark:text-white font-mono">{showCredPw ? storedAdminPw : "••••••••"}</span>
@@ -872,7 +874,7 @@ export default function SettingsModule({ storeMode, onModeChange }: { storeMode:
                 alert("Credenciales copiadas al portapapeles");
               }
             }}
-            className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl border border-primary/30 text-primary text-sm font-semibold hover:bg-primary/5 transition-colors"
+            className="w-full flex items-center justify-center gap-2 py-2.5 rounded-lg border border-primary/30 text-primary text-sm font-semibold hover:bg-primary/5 transition-colors"
           >
             <Send className="h-4 w-4" /> Compartir credenciales
           </button>
@@ -907,14 +909,14 @@ export default function SettingsModule({ storeMode, onModeChange }: { storeMode:
               <div className="flex gap-1">
                 {[1, 2, 3, 4].map(i => {
                   const strength = (newPw.length >= 4 ? 1 : 0) + (newPw.length >= 8 ? 1 : 0) + (/[A-Z]/.test(newPw) ? 1 : 0) + (/[0-9]/.test(newPw) ? 1 : 0);
-                  return <div key={i} className={cn("h-1.5 flex-1 rounded-full", i <= strength ? (strength <= 1 ? "bg-red-400" : strength <= 2 ? "bg-amber-400" : strength <= 3 ? "bg-blue-400" : "bg-emerald-400") : "bg-gray-200 dark:bg-surface")} />;
+                  return <div key={i} className={cn("h-1.5 flex-1 rounded-full", i <= strength ? (strength <= 1 ? "bg-red-400" : strength <= 2 ? "bg-amber-400" : strength <= 3 ? "bg-emerald-400" : "bg-emerald-400") : "bg-gray-200 dark:bg-surface")} />;
                 })}
               </div>
-              <p className="text-[10px] text-gray-400">{newPw.length < 4 ? "Muy corta" : newPw.length < 8 ? "Aceptable" : "Fuerte"}</p>
+              <p className="text-[length:var(--ts-2xs)] text-gray-400">{newPw.length < 4 ? "Muy corta" : newPw.length < 8 ? "Aceptable" : "Fuerte"}</p>
             </div>
           )}
           {pwChangeError && <p className="text-xs text-red-500 font-semibold">{pwChangeError}</p>}
-          <button type="submit" disabled={saving} className="px-5 py-2.5 rounded-xl bg-primary text-white text-sm font-bold hover:bg-primary/90 disabled:opacity-50 flex items-center gap-2">
+          <button type="submit" disabled={saving} className="px-5 py-2.5 rounded-lg bg-primary text-white text-sm font-bold hover:bg-primary/90 disabled:opacity-50 flex items-center gap-2">
             <Lock className="h-4 w-4" /> Cambiar contraseña
           </button>
         </form>
@@ -958,7 +960,7 @@ export default function SettingsModule({ storeMode, onModeChange }: { storeMode:
       <SectionCard title="Navegación del sitio" desc="Orden y visibilidad del menú">
         <div className="space-y-2">
           {navLinks.map((link, idx) => (
-            <div key={link.id} className="flex items-center gap-3 p-3 bg-gray-50 dark:bg-surface rounded-xl border border-gray-100 dark:border-card-border">
+            <div key={link.id} className="flex items-center gap-3 p-3 bg-gray-50 dark:bg-surface rounded-xl border border-[var(--rule-soft)] dark:border-card-border">
               <div className="flex flex-col gap-0.5">
                 <button disabled={idx === 0} onClick={() => { const n = [...navLinks]; [n[idx], n[idx - 1]] = [n[idx - 1], n[idx]]; setNavLinks(n); }} className="p-0.5 rounded text-gray-400 hover:text-gray-800 disabled:opacity-25"><ArrowUp className="h-3.5 w-3.5" /></button>
                 <button disabled={idx === navLinks.length - 1} onClick={() => { const n = [...navLinks]; [n[idx], n[idx + 1]] = [n[idx + 1], n[idx]]; setNavLinks(n); }} className="p-0.5 rounded text-gray-400 hover:text-gray-800 disabled:opacity-25"><ArrowDown className="h-3.5 w-3.5" /></button>
@@ -977,7 +979,7 @@ export default function SettingsModule({ storeMode, onModeChange }: { storeMode:
   );
 
   const renderSystem = () => (
-    <div className="space-y-4">
+    <div className="space-y-6">
       <SectionCard title="Formato y regional" desc="Cómo se muestran fechas, horas y números">
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div>
@@ -1003,7 +1005,7 @@ export default function SettingsModule({ storeMode, onModeChange }: { storeMode:
           <div>
             <FieldLabel icon={<Percent className="h-3.5 w-3.5" />}>Tasa de IGV</FieldLabel>
             <NumberInput value={taxRate} onChange={setTaxRate} min={0} max={100} step={0.1} suffix="%" />
-            <p className="text-[10px] text-gray-400 mt-1">Hoy es 18% en Perú. Se usa para calcular totales en comprobantes.</p>
+            <p className="text-[length:var(--ts-2xs)] text-gray-400 mt-1">Hoy es 18% en Perú. Se usa para calcular totales en comprobantes.</p>
           </div>
         </div>
       </SectionCard>
@@ -1013,7 +1015,7 @@ export default function SettingsModule({ storeMode, onModeChange }: { storeMode:
   );
 
   const renderSales = () => (
-    <div className="space-y-4">
+    <div className="space-y-6">
       <SectionCard title="Datos del emisor SUNAT" desc="Aparecen en facturas y boletas">
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div><FieldLabel icon={<Hash className="h-3.5 w-3.5" />}>RUC del emisor</FieldLabel><TextInput value={sunatRuc} onChange={setSunatRuc} placeholder="20123456789" mono /></div>
@@ -1029,8 +1031,8 @@ export default function SettingsModule({ storeMode, onModeChange }: { storeMode:
               <FieldLabel>{key === "factura" ? "Factura" : key === "boleta" ? "Boleta" : key === "ncFactura" ? "NC Factura" : "NC Boleta"}</FieldLabel>
               <TextInput value={val} onChange={v => setInvoiceSeries(p => ({ ...p, [key]: v }))} mono />
               <div className="mt-1">
-                <span className="text-[10px] text-gray-400">Inicio: </span>
-                <input type="number" min={1} value={invoiceStart[val] || 1} onChange={e => setInvoiceStart(p => ({ ...p, [val]: Number(e.target.value) }))} className="w-20 px-2 py-1 text-xs font-mono rounded-lg border border-gray-200 dark:border-card-border bg-white dark:bg-surface outline-none" />
+                <span className="text-[length:var(--ts-2xs)] text-gray-400">Inicio: </span>
+                <input type="number" min={1} value={invoiceStart[val] || 1} onChange={e => setInvoiceStart(p => ({ ...p, [val]: Number(e.target.value) }))} className="w-20 px-2 py-1 text-xs font-mono rounded-lg border border-[var(--rule-base)] dark:border-card-border bg-white dark:bg-surface outline-none" />
               </div>
             </div>
           ))}
@@ -1045,7 +1047,7 @@ export default function SettingsModule({ storeMode, onModeChange }: { storeMode:
               <button key={t} onClick={() => {
                 const types = enabledDocTypes.split(",").filter(Boolean);
                 setEnabledDocTypes(active ? types.filter(x => x !== t).join(",") : [...types, t].join(","));
-              }} className={cn("px-4 py-2 rounded-xl text-sm font-semibold border-2 transition-all", active ? "border-primary bg-primary/10 text-primary" : "border-gray-200 dark:border-card-border text-gray-400 hover:border-gray-300")}>
+              }} className={cn("px-4 py-2 rounded-xl text-sm font-semibold border-2 transition-all", active ? "border-primary bg-primary/10 text-primary" : "border-[var(--rule-base)] dark:border-card-border text-gray-400 hover:border-gray-300")}>
                 {active ? <Check className="h-3.5 w-3.5 inline mr-1.5" /> : null}
                 {t === "nota_venta" ? "Nota de venta" : t.charAt(0).toUpperCase() + t.slice(1)}
               </button>
@@ -1072,7 +1074,7 @@ export default function SettingsModule({ storeMode, onModeChange }: { storeMode:
 
       <SectionCard title="Pie de comprobante">
         <FieldLabel>Texto legal / agradecimiento</FieldLabel>
-        <textarea value={invoiceFooterText} onChange={e => setInvoiceFooterText(e.target.value)} rows={2} placeholder="Gracias por su compra. Conserve este comprobante." className="w-full px-3 py-2.5 rounded-xl border border-gray-200 dark:border-card-border bg-white dark:bg-surface text-sm outline-none focus:ring-2 focus:ring-primary/20 resize-none" />
+        <textarea value={invoiceFooterText} onChange={e => setInvoiceFooterText(e.target.value)} rows={2} placeholder="Gracias por su compra. Conserve este comprobante." className="w-full px-3 py-2.5 rounded-lg border border-[var(--rule-base)] dark:border-card-border bg-white dark:bg-surface text-sm outline-none focus:ring-2 focus:ring-primary/20 resize-none" />
       </SectionCard>
 
       <SaveButton saving={saving} saved={savedSection === "sales"} onClick={() => patch({
@@ -1083,7 +1085,7 @@ export default function SettingsModule({ storeMode, onModeChange }: { storeMode:
   );
 
   const renderInventory = () => (
-    <div className="space-y-4">
+    <div className="space-y-6">
       <SectionCard title="Configuración general" desc="Unidades, stock mínimo y alertas">
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div>
@@ -1110,7 +1112,7 @@ export default function SettingsModule({ storeMode, onModeChange }: { storeMode:
               <button key={ch.id} onClick={() => {
                 const chs = stockAlertChannels.split(",").filter(Boolean);
                 setStockAlertChannels(active ? chs.filter(x => x !== ch.id).join(",") : [...chs, ch.id].join(","));
-              }} className={cn("flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold border-2 transition-all", active ? "border-primary bg-primary/10 text-primary" : "border-gray-200 text-gray-400 hover:border-gray-300")}>
+              }} className={cn("flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold border-2 transition-all", active ? "border-primary bg-primary/10 text-primary" : "border-[var(--rule-base)] text-gray-400 hover:border-gray-300")}>
                 {ch.icon} {ch.label}
               </button>
             );
@@ -1152,7 +1154,7 @@ export default function SettingsModule({ storeMode, onModeChange }: { storeMode:
   );
 
   const renderCash = () => (
-    <div className="space-y-4">
+    <div className="space-y-6">
       <SectionCard title="Apertura / cierre de caja">
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div><FieldLabel icon={<DollarSign className="h-3.5 w-3.5" />}>Monto base de apertura</FieldLabel><NumberInput value={cashOpeningAmount} onChange={setCashOpeningAmount} min={0} suffix="soles" /></div>
@@ -1173,23 +1175,23 @@ export default function SettingsModule({ storeMode, onModeChange }: { storeMode:
               </div>
               <div>
                 <FieldLabel>QR de Yape</FieldLabel>
-                <button onClick={() => yapeImgRef.current?.click()} className="w-full py-3 rounded-xl border-2 border-dashed border-purple-300 hover:border-purple-500 text-sm font-semibold text-purple-600 bg-purple-50 transition-colors"><Upload className="h-4 w-4 inline mr-1.5" />Subir QR</button>
+                <button onClick={() => yapeImgRef.current?.click()} className="w-full py-3 rounded-lg border-2 border-dashed border-purple-300 hover:border-purple-500 text-sm font-semibold text-[var(--text-secondary)] bg-[var(--surface-sunken)] transition-colors"><Upload className="h-4 w-4 inline mr-1.5" />Subir QR</button>
                 <input ref={yapeImgRef} type="file" accept="image/*" capture="environment" className="hidden" onChange={handleFileUpload(setYapeImage)} />
-                {yapeImage && <div className="mt-2 flex items-center gap-3 p-2 bg-purple-50 rounded-xl"><Image src={yapeImage} alt="QR" width={64} height={64} className="rounded-lg object-contain border" unoptimized /><button onClick={() => setYapeImage("")} className="text-xs text-red-400 hover:text-red-600">Quitar</button></div>}
+                {yapeImage && <div className="mt-2 flex items-center gap-3 p-2 bg-[var(--surface-sunken)] rounded-lg"><Image src={yapeImage} alt="QR" width={64} height={64} className="rounded-lg object-contain border" unoptimized /><button onClick={() => setYapeImage("")} className="text-xs text-red-400 hover:text-red-600">Quitar</button></div>}
               </div>
             </div>
           )}
           <Toggle enabled={plinEnabled} onChange={setPlinEnabled} label="Plin" desc="Pago con Plin" />
           {plinEnabled && (
-            <div className="pl-4 border-l-2 border-blue-200 space-y-3">
+            <div className="pl-4 border-l-2 border-emerald-200 space-y-3">
               <div className="grid grid-cols-2 gap-3">
                 <div><FieldLabel>Titular</FieldLabel><TextInput value={plinName} onChange={setPlinName} /></div>
                 <div><FieldLabel>Número</FieldLabel><TextInput value={plinPhone} onChange={setPlinPhone} mono /></div>
               </div>
               <div>
-                <button onClick={() => plinImgRef.current?.click()} className="w-full py-3 rounded-xl border-2 border-dashed border-blue-300 hover:border-blue-500 text-sm font-semibold text-blue-600 bg-blue-50 transition-colors"><Upload className="h-4 w-4 inline mr-1.5" />Subir QR Plin</button>
+                <button onClick={() => plinImgRef.current?.click()} className="w-full py-3 rounded-lg border-2 border-dashed border-emerald-300 hover:border-emerald-500 text-sm font-semibold text-emerald-600 bg-emerald-50 transition-colors"><Upload className="h-4 w-4 inline mr-1.5" />Subir QR Plin</button>
                 <input ref={plinImgRef} type="file" accept="image/*" className="hidden" onChange={handleFileUpload(setPlinImage)} />
-                {plinImage && <div className="mt-2 flex items-center gap-3 p-2 bg-blue-50 rounded-xl"><Image src={plinImage} alt="QR" width={64} height={64} className="rounded-lg object-contain border" unoptimized /><button onClick={() => setPlinImage("")} className="text-xs text-red-400">Quitar</button></div>}
+                {plinImage && <div className="mt-2 flex items-center gap-3 p-2 bg-emerald-50 rounded-lg"><Image src={plinImage} alt="QR" width={64} height={64} className="rounded-lg object-contain border" unoptimized /><button onClick={() => setPlinImage("")} className="text-xs text-red-400">Quitar</button></div>}
               </div>
             </div>
           )}
@@ -1223,20 +1225,20 @@ export default function SettingsModule({ storeMode, onModeChange }: { storeMode:
   );
 
   const renderDelivery = () => (
-    <div className="space-y-4">
+    <div className="space-y-6">
       <SectionCard title="Zonas de delivery" desc="Define zonas con tarifas y tiempos diferentes">
         <div className="space-y-2">
           {deliveryZones.map((zone, idx) => (
-            <div key={idx} className="flex items-center gap-2 p-3 bg-gray-50 dark:bg-surface rounded-xl border border-gray-100 dark:border-card-border">
+            <div key={idx} className="flex items-center gap-2 p-3 bg-gray-50 dark:bg-surface rounded-xl border border-[var(--rule-soft)] dark:border-card-border">
               <div className="flex-1 grid grid-cols-3 gap-2">
-                <input value={zone.name} onChange={e => setDeliveryZones(p => p.map((z, i) => i === idx ? { ...z, name: e.target.value } : z))} placeholder="Nombre" className="px-2 py-1.5 rounded-lg border border-gray-200 dark:border-card-border text-sm bg-white dark:bg-card outline-none" />
+                <input value={zone.name} onChange={e => setDeliveryZones(p => p.map((z, i) => i === idx ? { ...z, name: e.target.value } : z))} placeholder="Nombre" className="px-2 py-1.5 rounded-lg border border-[var(--rule-base)] dark:border-card-border text-sm bg-white dark:bg-card outline-none" />
                 <div className="flex items-center gap-1">
-                  <input type="number" value={zone.fee} onChange={e => setDeliveryZones(p => p.map((z, i) => i === idx ? { ...z, fee: Number(e.target.value) } : z))} min={0} className="w-full px-2 py-1.5 rounded-lg border border-gray-200 text-sm font-mono bg-white outline-none" />
-                  <span className="text-[10px] text-gray-400 shrink-0">S/</span>
+                  <input type="number" value={zone.fee} onChange={e => setDeliveryZones(p => p.map((z, i) => i === idx ? { ...z, fee: Number(e.target.value) } : z))} min={0} className="w-full px-2 py-1.5 rounded-lg border border-[var(--rule-base)] text-sm font-mono bg-white outline-none" />
+                  <span className="text-[length:var(--ts-2xs)] text-gray-400 shrink-0">S/</span>
                 </div>
                 <div className="flex items-center gap-1">
-                  <input type="number" value={zone.estimatedMin} onChange={e => setDeliveryZones(p => p.map((z, i) => i === idx ? { ...z, estimatedMin: Number(e.target.value) } : z))} min={0} className="w-full px-2 py-1.5 rounded-lg border border-gray-200 text-sm font-mono bg-white outline-none" />
-                  <span className="text-[10px] text-gray-400 shrink-0">min</span>
+                  <input type="number" value={zone.estimatedMin} onChange={e => setDeliveryZones(p => p.map((z, i) => i === idx ? { ...z, estimatedMin: Number(e.target.value) } : z))} min={0} className="w-full px-2 py-1.5 rounded-lg border border-[var(--rule-base)] text-sm font-mono bg-white outline-none" />
+                  <span className="text-[length:var(--ts-2xs)] text-gray-400 shrink-0">min</span>
                 </div>
               </div>
               <button onClick={() => setDeliveryZones(p => p.filter((_, i) => i !== idx))} className="p-1.5 rounded-lg text-red-400 hover:text-red-600"><Trash2 className="h-4 w-4" /></button>
@@ -1264,11 +1266,11 @@ export default function SettingsModule({ storeMode, onModeChange }: { storeMode:
       <SectionCard title="Repartidores" desc="Equipo de delivery">
         <div className="space-y-2">
           {riders.map((rider, idx) => (
-            <div key={idx} className="flex items-center gap-2 p-2 bg-gray-50 dark:bg-surface rounded-xl border border-gray-100 dark:border-card-border">
+            <div key={idx} className="flex items-center gap-2 p-2 bg-gray-50 dark:bg-surface rounded-xl border border-[var(--rule-soft)] dark:border-card-border">
               <div className="flex-1 grid grid-cols-3 gap-2">
-                <input value={rider.name} onChange={e => setRiders(p => p.map((r, i) => i === idx ? { ...r, name: e.target.value } : r))} placeholder="Nombre" className="px-2 py-1.5 rounded-lg border border-gray-200 text-sm bg-white outline-none" />
-                <input value={rider.phone} onChange={e => setRiders(p => p.map((r, i) => i === idx ? { ...r, phone: e.target.value } : r))} placeholder="Teléfono" className="px-2 py-1.5 rounded-lg border border-gray-200 text-sm font-mono bg-white outline-none" />
-                <input value={rider.zone} onChange={e => setRiders(p => p.map((r, i) => i === idx ? { ...r, zone: e.target.value } : r))} placeholder="Zona" className="px-2 py-1.5 rounded-lg border border-gray-200 text-sm bg-white outline-none" />
+                <input value={rider.name} onChange={e => setRiders(p => p.map((r, i) => i === idx ? { ...r, name: e.target.value } : r))} placeholder="Nombre" className="px-2 py-1.5 rounded-lg border border-[var(--rule-base)] text-sm bg-white outline-none" />
+                <input value={rider.phone} onChange={e => setRiders(p => p.map((r, i) => i === idx ? { ...r, phone: e.target.value } : r))} placeholder="Teléfono" className="px-2 py-1.5 rounded-lg border border-[var(--rule-base)] text-sm font-mono bg-white outline-none" />
+                <input value={rider.zone} onChange={e => setRiders(p => p.map((r, i) => i === idx ? { ...r, zone: e.target.value } : r))} placeholder="Zona" className="px-2 py-1.5 rounded-lg border border-[var(--rule-base)] text-sm bg-white outline-none" />
               </div>
               <button onClick={() => setRiders(p => p.filter((_, i) => i !== idx))} className="p-1.5 text-red-400 hover:text-red-600"><Trash2 className="h-4 w-4" /></button>
             </div>
@@ -1284,7 +1286,7 @@ export default function SettingsModule({ storeMode, onModeChange }: { storeMode:
   );
 
   const renderNotifications = () => (
-    <div className="space-y-4">
+    <div className="space-y-6">
       <SectionCard title="Configuración SMTP (Email)" desc="Servidor para enviar correos automáticos">
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div><FieldLabel icon={<Mail className="h-3.5 w-3.5" />}>Servidor SMTP</FieldLabel><TextInput value={smtpHost} onChange={setSmtpHost} placeholder="smtp.gmail.com" /></div>
@@ -1327,7 +1329,7 @@ export default function SettingsModule({ storeMode, onModeChange }: { storeMode:
   );
 
   const renderIntegrations = () => (
-    <div className="space-y-4">
+    <div className="space-y-6">
       {/* Status dashboard */}
       <SectionCard title="Estado de integraciones" desc="Vista rápida de qué está conectado">
         <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
@@ -1340,7 +1342,7 @@ export default function SettingsModule({ storeMode, onModeChange }: { storeMode:
             { label: "SUNAT", ok: sunatProvider !== "none" && !!sunatApiKey },
             { label: "Google Analytics", ok: !!googleAnalyticsId },
           ].map(s => (
-            <div key={s.label} className={cn("flex items-center gap-2 p-3 rounded-xl border", s.ok ? "bg-emerald-50 dark:bg-emerald-950/20 border-emerald-200 dark:border-emerald-800" : "bg-gray-50 dark:bg-surface border-gray-200 dark:border-card-border")}>
+            <div key={s.label} className={cn("flex items-center gap-2 p-3 rounded-xl border", s.ok ? "bg-emerald-50 dark:bg-emerald-950/20 border-emerald-200 dark:border-emerald-800" : "bg-gray-50 dark:bg-surface border-[var(--rule-base)] dark:border-card-border")}>
               {s.ok ? <Wifi className="h-4 w-4 text-emerald-500" /> : <WifiOff className="h-4 w-4 text-gray-300" />}
               <span className={cn("text-xs font-semibold", s.ok ? "text-emerald-700 dark:text-emerald-400" : "text-gray-400")}>{s.label}</span>
             </div>
@@ -1392,30 +1394,30 @@ export default function SettingsModule({ storeMode, onModeChange }: { storeMode:
   );
 
   const renderAppearance = () => (
-    <div className="space-y-4">
+    <div className="space-y-6">
       <SectionCard title="Colores de marca" desc="Personaliza los colores de tu tienda">
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div>
             <FieldLabel>Color primario</FieldLabel>
             <div className="flex items-center gap-2">
-              <input type="color" value={primaryColor} onChange={e => setPrimaryColor(e.target.value)} className="w-10 h-10 rounded-lg border border-gray-200 cursor-pointer" />
+              <input type="color" value={primaryColor} onChange={e => setPrimaryColor(e.target.value)} className="w-10 h-10 rounded-lg border border-[var(--rule-base)] cursor-pointer" />
               <TextInput value={primaryColor} onChange={setPrimaryColor} mono />
             </div>
           </div>
           <div>
             <FieldLabel>Color secundario</FieldLabel>
             <div className="flex items-center gap-2">
-              <input type="color" value={secondaryColor} onChange={e => setSecondaryColor(e.target.value)} className="w-10 h-10 rounded-lg border border-gray-200 cursor-pointer" />
+              <input type="color" value={secondaryColor} onChange={e => setSecondaryColor(e.target.value)} className="w-10 h-10 rounded-lg border border-[var(--rule-base)] cursor-pointer" />
               <TextInput value={secondaryColor} onChange={setSecondaryColor} mono />
             </div>
           </div>
           <div className="sm:col-span-2"><FieldLabel>Slogan</FieldLabel><TextInput value={slogan} onChange={setSlogan} placeholder="Productos frescos, precios justos" /></div>
         </div>
         {/* Live preview */}
-        <div className="mt-4 p-4 rounded-xl border border-gray-200 dark:border-card-border" style={{ background: `linear-gradient(135deg, ${primaryColor}15, ${secondaryColor}15)` }}>
-          <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-2">Vista previa</p>
+        <div className="mt-4 p-4 rounded-xl border border-[var(--rule-base)] dark:border-card-border" style={{ background: `linear-gradient(135deg, ${primaryColor}15, ${secondaryColor}15)` }}>
+          <p className="text-[length:var(--ts-2xs)] font-bold text-gray-400 mb-2">Vista previa</p>
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl flex items-center justify-center text-white font-bold text-sm" style={{ backgroundColor: primaryColor }}>Buleje</div>
+            <div className="w-10 h-10 rounded-lg flex items-center justify-center text-white font-bold text-sm" style={{ backgroundColor: primaryColor }}>Buleje</div>
             <div><p className="text-sm font-extrabold" style={{ color: primaryColor }}>{businessName}</p><p className="text-xs" style={{ color: secondaryColor }}>{slogan}</p></div>
           </div>
           <div className="mt-3 flex gap-2">
@@ -1437,12 +1439,12 @@ export default function SettingsModule({ storeMode, onModeChange }: { storeMode:
               "p-4 rounded-xl border-2 text-left transition-all",
               (typeof window !== "undefined" && localStorage.getItem("buleje-vocabulary-mode") !== "technical")
                 ? "border-primary bg-primary/5"
-                : "border-gray-200 dark:border-card-border hover:border-gray-300"
+                : "border-[var(--rule-base)] dark:border-card-border hover:border-gray-300"
             )}
           >
             <p className="font-bold text-sm">Sencillo</p>
             <p className="text-xs text-gray-500 mt-1">Palabras simples y claras. Ideal para dueños de bodega.</p>
-            <p className="text-[10px] text-gray-400 mt-2 italic">Ejemplo: &ldquo;Ganancia&rdquo; en vez de &ldquo;Margen bruto&rdquo;</p>
+            <p className="text-[length:var(--ts-2xs)] text-gray-400 mt-2 italic">Ejemplo: &ldquo;Ganancia&rdquo; en vez de &ldquo;Margen bruto&rdquo;</p>
           </button>
           <button
             type="button"
@@ -1454,12 +1456,12 @@ export default function SettingsModule({ storeMode, onModeChange }: { storeMode:
               "p-4 rounded-xl border-2 text-left transition-all",
               (typeof window !== "undefined" && localStorage.getItem("buleje-vocabulary-mode") === "technical")
                 ? "border-primary bg-primary/5"
-                : "border-gray-200 dark:border-card-border hover:border-gray-300"
+                : "border-[var(--rule-base)] dark:border-card-border hover:border-gray-300"
             )}
           >
             <p className="font-bold text-sm">Profesional</p>
             <p className="text-xs text-gray-500 mt-1">Terminología técnica. Ideal para contadores y profesionales.</p>
-            <p className="text-[10px] text-gray-400 mt-2 italic">Ejemplo: &ldquo;Margen bruto&rdquo;, &ldquo;FEFO&rdquo;, &ldquo;SKU&rdquo;, &ldquo;ROI&rdquo;</p>
+            <p className="text-[length:var(--ts-2xs)] text-gray-400 mt-2 italic">Ejemplo: &ldquo;Margen bruto&rdquo;, &ldquo;FEFO&rdquo;, &ldquo;SKU&rdquo;, &ldquo;ROI&rdquo;</p>
           </button>
         </div>
       </SectionCard>
@@ -1469,7 +1471,7 @@ export default function SettingsModule({ storeMode, onModeChange }: { storeMode:
   );
 
   const renderAudit = () => (
-    <div className="space-y-4">
+    <div className="space-y-6">
       <SectionCard title="Retención de logs" desc="Cuánto tiempo se guardan los registros de actividad">
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div>
@@ -1488,7 +1490,7 @@ export default function SettingsModule({ storeMode, onModeChange }: { storeMode:
                   <button key={a.id} onClick={() => {
                     const acts = logActions.split(",").filter(Boolean);
                     setLogActions(active ? acts.filter(x => x !== a.id).join(",") : [...acts, a.id].join(","));
-                  }} className={cn("px-3 py-1.5 rounded-lg text-xs font-semibold border transition-all", active ? "border-primary bg-primary/10 text-primary" : "border-gray-200 text-gray-400")}>
+                  }} className={cn("px-3 py-1.5 rounded-lg text-xs font-semibold border transition-all", active ? "border-primary bg-primary/10 text-primary" : "border-[var(--rule-base)] text-gray-400")}>
                     {a.label}
                   </button>
                 );
@@ -1503,7 +1505,7 @@ export default function SettingsModule({ storeMode, onModeChange }: { storeMode:
   );
 
   const renderBackup = () => (
-    <div className="space-y-4">
+    <div className="space-y-6">
       <SectionCard title="Respaldo de datos" desc="Protege tu información con backups regulares">
         {/* Last backup indicator */}
         {(() => {
@@ -1527,10 +1529,10 @@ export default function SettingsModule({ storeMode, onModeChange }: { storeMode:
             document.body.appendChild(link); link.click(); document.body.removeChild(link);
             if (typeof window !== "undefined") localStorage.setItem("buleje-last-backup", new Date().toISOString());
             setLastBackupAt(new Date().toISOString());
-          }} className="flex items-center justify-center gap-2 px-4 py-3 rounded-xl border-2 border-teal-200 bg-white hover:bg-teal-50 text-sm font-semibold text-teal-700">
+          }} className="flex items-center justify-center gap-2 px-4 py-3 rounded-lg border-2 border-teal-200 bg-white hover:bg-teal-50 text-sm font-semibold text-teal-700">
             <Download className="h-4 w-4" /> Generar respaldo
           </button>
-          <button onClick={() => setShowRestoreModal(true)} className="flex items-center justify-center gap-2 px-4 py-3 rounded-xl border-2 border-cyan-200 bg-white hover:bg-cyan-50 text-sm font-semibold text-cyan-700">
+          <button onClick={() => setShowRestoreModal(true)} className="flex items-center justify-center gap-2 px-4 py-3 rounded-lg border-2 border-cyan-200 bg-white hover:bg-cyan-50 text-sm font-semibold text-cyan-700">
             <Upload className="h-4 w-4" /> Restaurar desde respaldo
           </button>
         </div>
@@ -1545,8 +1547,8 @@ export default function SettingsModule({ storeMode, onModeChange }: { storeMode:
       {/* Restore modal */}
       {showRestoreModal && (
         <div className="fixed inset-0 z-50 bg-black/60 flex items-center justify-center p-4" onClick={() => !restoring && setShowRestoreModal(false)}>
-          <div className="bg-white dark:bg-card rounded-2xl shadow-2xl w-full max-w-lg" onClick={e => e.stopPropagation()}>
-            <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100 dark:border-card-border">
+          <div className="bg-white dark:bg-card rounded-xl w-full max-w-lg" onClick={e => e.stopPropagation()}>
+            <div className="flex items-center justify-between px-6 py-4 border-b border-[var(--rule-soft)] dark:border-card-border">
               <h3 className="font-extrabold text-gray-900 dark:text-foreground">Restaurar Base de Datos</h3>
               {!restoring && <button onClick={() => setShowRestoreModal(false)} className="p-1.5 rounded-lg text-gray-400 hover:bg-gray-100"><X className="h-5 w-5" /></button>}
             </div>
@@ -1566,14 +1568,14 @@ export default function SettingsModule({ storeMode, onModeChange }: { storeMode:
                       setRestoreFile(file); setRestorePreview({ date: data.exportDate || "?", products: data.products?.length || 0, orders: data.orders?.length || 0, customers: data.customers?.length || 0, size: (file.size / 1024).toFixed(2) + " KB" });
                     } catch { setRestoreError("JSON inválido"); }
                   }} />
-                  <button onClick={() => fileInputRef.current?.click()} className="w-full py-8 rounded-xl border-2 border-dashed border-cyan-300 bg-cyan-50 text-cyan-600 hover:border-cyan-500 hover:bg-cyan-100 transition-colors">
+                  <button onClick={() => fileInputRef.current?.click()} className="w-full py-8 rounded-lg border-2 border-dashed border-cyan-300 bg-cyan-50 text-cyan-600 hover:border-cyan-500 hover:bg-cyan-100 transition-colors">
                     <Upload className="h-8 w-8 mx-auto mb-2" /><p className="text-sm font-semibold">Seleccionar archivo .json</p>
                   </button>
                   {restoreError && <p className="text-xs text-red-600 font-semibold bg-red-50 p-3 rounded-xl">{restoreError}</p>}
                 </>
               )}
               {restoreFile && !restoreSuccess && restorePreview && (
-                <div className="bg-gray-50 rounded-xl p-4 border border-gray-200">
+                <div className="bg-gray-50 rounded-xl p-4 border border-[var(--rule-base)]">
                   <p className="text-xs font-bold mb-2">Vista previa</p>
                   <div className="grid grid-cols-2 gap-2 text-xs">
                     <div><span className="text-gray-500 block">Productos:</span><span className="font-semibold">{restorePreview.products}</span></div>
@@ -1587,15 +1589,15 @@ export default function SettingsModule({ storeMode, onModeChange }: { storeMode:
                 <div className="text-center py-6"><CheckCircle className="h-12 w-12 text-emerald-500 mx-auto mb-2" /><p className="text-lg font-bold">¡Restauración exitosa!</p><p className="text-sm text-gray-500">Recargando...</p></div>
               )}
             </div>
-            <div className="flex justify-end gap-3 px-6 py-4 border-t border-gray-100">
+            <div className="flex justify-end gap-3 px-6 py-4 border-t border-[var(--rule-soft)]">
               {!restoreSuccess && (<>
-                <button onClick={() => { setShowRestoreModal(false); setRestoreFile(null); setRestorePreview(null); setRestoreError(null); }} disabled={restoring} className="px-4 py-2.5 rounded-xl text-sm font-semibold text-gray-600 hover:bg-gray-100">Cancelar</button>
+                <button onClick={() => { setShowRestoreModal(false); setRestoreFile(null); setRestorePreview(null); setRestoreError(null); }} disabled={restoring} className="px-4 py-2.5 rounded-lg text-sm font-semibold text-gray-600 hover:bg-gray-100">Cancelar</button>
                 {restoreFile && <button onClick={async () => {
                   if (!restoreFile) return; setRestoring(true); setRestoreError(null);
                   try { const text = await restoreFile.text(); const res = await fetch("/api/restore", { method: "POST", headers: { "Content-Type": "application/json" }, body: text });
                     if (!res.ok) throw new Error(await res.text()); setRestoreSuccess(true); setTimeout(() => window.location.reload(), 2000);
                   } catch (err: unknown) { setRestoreError(err instanceof Error ? err.message : "Error"); setRestoring(false); }
-                }} disabled={restoring} className="px-5 py-2.5 rounded-xl text-sm font-bold text-white bg-red-600 hover:bg-red-700 disabled:opacity-50 flex items-center gap-2">
+                }} disabled={restoring} className="px-5 py-2.5 rounded-lg text-sm font-bold text-white bg-red-600 hover:bg-red-700 disabled:opacity-50 flex items-center gap-2">
                   {restoring ? <><Loader2 className="h-4 w-4 animate-spin" /> Restaurando...</> : <><AlertTriangle className="h-4 w-4" /> Confirmar</>}
                 </button>}
               </>)}
@@ -1607,10 +1609,10 @@ export default function SettingsModule({ storeMode, onModeChange }: { storeMode:
   );
 
   const renderSubscription = () => (
-    <div className="space-y-4">
+    <div className="space-y-6">
       <SectionCard title="Plan actual">
-        <div className="flex items-center gap-4 p-4 rounded-xl bg-linear-to-r from-primary/10 to-secondary/10 border border-primary/20">
-          <div className="w-14 h-14 rounded-2xl bg-primary flex items-center justify-center"><Crown className="h-7 w-7 text-white" /></div>
+        <div className="flex items-center gap-4 p-4 rounded-xl bg-[var(--surface-sunken)] border border-[var(--rule-base)]">
+          <IconBadge size="xl" shape="square" asDiv><Crown className="h-7 w-7" /></IconBadge>
           <div className="flex-1">
             <p className="text-lg font-extrabold text-gray-900 dark:text-foreground capitalize">{planName === "free" ? "Plan Gratuito" : `Plan ${planName}`}</p>
             {planExpiresAt && <p className="text-xs text-gray-500">Vence: {new Date(planExpiresAt).toLocaleDateString("es-PE", { day: "2-digit", month: "short", year: "numeric" })}</p>}
@@ -1631,7 +1633,7 @@ export default function SettingsModule({ storeMode, onModeChange }: { storeMode:
           {["inventario", "ventas", "caja", "facturacion", "delivery", "ia", "reportes", "crm"].map(m => {
             const active = enabledModules.includes(m);
             return (
-              <div key={m} className={cn("flex items-center gap-2 p-3 rounded-xl border", active ? "bg-emerald-50 border-emerald-200" : "bg-gray-50 border-gray-200 opacity-50")}>
+              <div key={m} className={cn("flex items-center gap-2 p-3 rounded-xl border", active ? "bg-emerald-50 border-emerald-200" : "bg-gray-50 border-[var(--rule-base)] opacity-50")}>
                 {active ? <CheckCircle className="h-4 w-4 text-emerald-500" /> : <Lock className="h-4 w-4 text-gray-300" />}
                 <span className={cn("text-xs font-semibold capitalize", active ? "text-emerald-700" : "text-gray-400")}>{m}</span>
               </div>
@@ -1671,49 +1673,39 @@ export default function SettingsModule({ storeMode, onModeChange }: { storeMode:
 
   return (
     <div className="space-y-5">
-      {/* ── Professional Header ── */}
-      <div className="relative overflow-hidden rounded-2xl bg-linear-to-br from-primary/10 via-white to-secondary/5 dark:from-primary/20 dark:via-card dark:to-secondary/10 border border-primary/10 dark:border-primary/20 px-5 py-5">
-        <div className="relative z-10 flex flex-col sm:flex-row sm:items-center gap-4">
-          <div className="flex items-center gap-3 flex-1 min-w-0">
-            <div className="w-12 h-12 rounded-2xl bg-primary flex items-center justify-center shadow-lg shadow-primary/20 shrink-0">
-              <Settings className="h-6 w-6 text-white" />
-            </div>
-            <div>
-              <h2 className="text-xl font-extrabold text-gray-900 dark:text-foreground flex items-center gap-2">
-                Configuración
-                <span className={cn(
-                  "text-xs font-bold px-2 py-0.5 rounded-full",
-                  overallCompletion === 100
-                    ? "bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400"
-                    : "bg-primary/10 text-primary"
-                )}>
-                  {overallCompletion}% completo
-                </span>
-              </h2>
-              <p className="text-sm text-gray-500 dark:text-muted">Personaliza tu tienda, pagos, inventario y más</p>
-            </div>
-          </div>
-          {/* Search bar */}
-          <div className="relative w-full sm:w-72">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
-            <input
-              type="text"
-              value={searchQuery}
-              onChange={e => { setSearchQuery(e.target.value); if (e.target.value) setShowOverview(true); }}
-              placeholder="Buscar configuración..."
-              className="w-full pl-9 pr-4 py-2.5 rounded-xl border border-gray-200 dark:border-card-border bg-white dark:bg-surface text-sm text-gray-900 dark:text-foreground placeholder:text-gray-400 outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-colors"
-            />
-            {searchQuery && (
-              <button onClick={() => setSearchQuery("")} className="absolute right-3 top-1/2 -translate-y-1/2 p-0.5 rounded text-gray-400 hover:text-gray-600">
-                <X className="h-3.5 w-3.5" />
-              </button>
-            )}
-          </div>
+      <AdminModuleHeader
+        title="Configuración"
+        description="Personaliza tu tienda, pagos, inventario y más"
+        icon={SlidersHorizontal}
+        bgTint="bg-slate-50 dark:bg-slate-900/20"
+        iconColorClass="text-slate-600 dark:text-slate-400"
+      >
+        {/* Completion badge */}
+        <span className={cn(
+          "text-xs font-bold px-2 py-0.5 rounded-full",
+          overallCompletion === 100
+            ? "bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400"
+            : "bg-primary/10 text-primary"
+        )}>
+          {overallCompletion}% completo
+        </span>
+        {/* Search bar */}
+        <div className="relative w-full sm:w-72">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+          <input
+            type="text"
+            value={searchQuery}
+            onChange={e => { setSearchQuery(e.target.value); if (e.target.value) setShowOverview(true); }}
+            placeholder="Buscar configuración..."
+            className="w-full pl-9 pr-4 py-2.5 rounded-lg border border-[var(--rule-base)] dark:border-card-border bg-white dark:bg-surface text-sm text-gray-900 dark:text-foreground placeholder:text-gray-400 outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-colors"
+          />
+          {searchQuery && (
+            <button onClick={() => setSearchQuery("")} className="absolute right-3 top-1/2 -translate-y-1/2 p-0.5 rounded text-gray-400 hover:text-gray-600">
+              <X className="h-3.5 w-3.5" />
+            </button>
+          )}
         </div>
-        {/* Subtle decorative circles */}
-        <div className="absolute top-0 right-0 w-40 h-40 bg-primary/5 rounded-full -mr-10 -mt-10 blur-2xl" />
-        <div className="absolute bottom-0 left-1/2 w-32 h-32 bg-secondary/5 rounded-full -mb-10 blur-2xl" />
-      </div>
+      </AdminModuleHeader>
 
       {/* ── Breadcrumb ── */}
       {!showOverview && (
@@ -1740,16 +1732,16 @@ export default function SettingsModule({ storeMode, onModeChange }: { storeMode:
           >
             {/* Quick stats bar */}
             <div className="grid grid-cols-3 gap-3 mb-5">
-              <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl p-3 text-center">
-                <p className="text-[10px] uppercase font-bold text-gray-400">Secciones</p>
+              <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl p-3 text-center">
+                <p className="text-[length:var(--ts-2xs)] uppercase font-bold text-gray-400">Secciones</p>
                 <p className="text-2xl font-extrabold text-gray-900 dark:text-white">{SECTION_META.length}</p>
               </div>
-              <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl p-3 text-center">
-                <p className="text-[10px] uppercase font-bold text-gray-400">Completas</p>
+              <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl p-3 text-center">
+                <p className="text-[length:var(--ts-2xs)] uppercase font-bold text-gray-400">Completas</p>
                 <p className="text-2xl font-extrabold text-emerald-600">{Object.values(sectionCompletion).filter(v => v === 100).length}</p>
               </div>
-              <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl p-3 text-center">
-                <p className="text-[10px] uppercase font-bold text-gray-400">Pendientes</p>
+              <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl p-3 text-center">
+                <p className="text-[length:var(--ts-2xs)] uppercase font-bold text-gray-400">Pendientes</p>
                 <p className="text-2xl font-extrabold text-amber-600">{Object.values(sectionCompletion).filter(v => v < 100).length}</p>
               </div>
             </div>
@@ -1799,7 +1791,7 @@ export default function SettingsModule({ storeMode, onModeChange }: { storeMode:
                 {/* Back to overview */}
                 <button
                   onClick={() => setShowOverview(true)}
-                  className="w-full flex items-center gap-2 px-3 py-2 rounded-xl text-xs font-semibold text-primary hover:bg-primary/5 mb-2 transition-colors"
+                  className="w-full flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-semibold text-primary hover:bg-primary/5 mb-2 transition-colors"
                 >
                   <ChevronDown className="h-3.5 w-3.5 rotate-90" /> Ver todas las secciones
                 </button>
@@ -1813,7 +1805,7 @@ export default function SettingsModule({ storeMode, onModeChange }: { storeMode:
                       className={cn(
                         "w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-left transition-all group",
                         activeSection === s.id
-                          ? "bg-primary/10 text-primary font-bold shadow-sm"
+                          ? "bg-primary/10 text-primary font-bold "
                           : "text-gray-600 dark:text-muted hover:bg-gray-50 dark:hover:bg-accent"
                       )}
                     >
@@ -1829,7 +1821,7 @@ export default function SettingsModule({ storeMode, onModeChange }: { storeMode:
                               style={{ width: `${pct}%` }}
                             />
                           </div>
-                          <span className="text-[9px] font-bold text-gray-400 shrink-0">{pct}%</span>
+                          <span className="text-[length:var(--ts-2xs)] font-bold text-gray-400 shrink-0">{pct}%</span>
                         </div>
                       </div>
                       {activeSection === s.id && <ChevronRight className="h-4 w-4 text-primary shrink-0" />}
@@ -1850,7 +1842,7 @@ export default function SettingsModule({ storeMode, onModeChange }: { storeMode:
                     <p className="text-xs text-gray-500 dark:text-muted">{SECTION_META.find(s => s.id === activeSection)?.desc}</p>
                   </div>
                   {/* Mobile nav toggle */}
-                  <button onClick={() => setShowMobileNav(!showMobileNav)} className="sm:hidden p-2 rounded-xl bg-gray-100 dark:bg-accent">
+                  <button onClick={() => setShowMobileNav(!showMobileNav)} className="sm:hidden p-2 rounded-lg bg-gray-100 dark:bg-accent">
                     <Settings className="h-5 w-5 text-gray-600" />
                   </button>
                 </div>
@@ -1879,22 +1871,22 @@ export default function SettingsModule({ storeMode, onModeChange }: { storeMode:
           <m.div
             initial={{ opacity: 0, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}
-            className="bg-white dark:bg-card rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] flex flex-col"
+            className="bg-white dark:bg-card rounded-xl w-full max-w-2xl max-h-[90vh] flex flex-col"
             onClick={e => e.stopPropagation()}
           >
-            <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100 dark:border-card-border">
+            <div className="flex items-center justify-between px-5 py-4 border-b border-[var(--rule-soft)] dark:border-card-border">
               <h3 className="font-extrabold text-gray-900 dark:text-foreground">Ubicación del negocio</h3>
               <button onClick={() => setShowMapPicker(false)} className="p-1.5 rounded-lg text-gray-400 hover:bg-gray-100"><X className="h-5 w-5" /></button>
             </div>
             <div className="p-4 flex flex-col gap-3">
-              <button onClick={() => { if (!navigator.geolocation) return; navigator.geolocation.getCurrentPosition(pos => { setPickerLat(pos.coords.latitude); setPickerLon(pos.coords.longitude); setBusinessLat(pos.coords.latitude); setBusinessLon(pos.coords.longitude); }); }} className="self-start inline-flex items-center gap-2 px-3 py-2 rounded-xl text-sm font-semibold text-blue-700 bg-blue-50 hover:bg-blue-100 border border-blue-200">
+              <button onClick={() => { if (!navigator.geolocation) return; navigator.geolocation.getCurrentPosition(pos => { setPickerLat(pos.coords.latitude); setPickerLon(pos.coords.longitude); setBusinessLat(pos.coords.latitude); setBusinessLon(pos.coords.longitude); }); }} className="self-start inline-flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-semibold text-emerald-700 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200">
                 <MapPin className="h-4 w-4" /> Usar ubicación actual
               </button>
               <LeafletMap lat={pickerLat} lon={pickerLon} zoom={15} height={340} onPick={(lat: number, lon: number, address: string) => { setPickerLat(lat); setPickerLon(lon); setBusinessLat(lat); setBusinessLon(lon); setBusinessAddress(address); }} />
             </div>
-            <div className="flex justify-end gap-3 px-5 py-4 border-t border-gray-100">
-              <button onClick={() => setShowMapPicker(false)} className="px-4 py-2.5 rounded-xl text-sm font-semibold text-gray-600 hover:bg-gray-100">Cancelar</button>
-              <button onClick={() => setShowMapPicker(false)} className="px-4 py-2.5 rounded-xl text-sm font-bold text-white bg-primary hover:bg-primary/90">Confirmar</button>
+            <div className="flex justify-end gap-3 px-5 py-4 border-t border-[var(--rule-soft)]">
+              <button onClick={() => setShowMapPicker(false)} className="px-4 py-2.5 rounded-lg text-sm font-semibold text-gray-600 hover:bg-gray-100">Cancelar</button>
+              <button onClick={() => setShowMapPicker(false)} className="px-4 py-2.5 rounded-lg text-sm font-bold text-white bg-primary hover:bg-primary/90">Confirmar</button>
             </div>
           </m.div>
         </div>

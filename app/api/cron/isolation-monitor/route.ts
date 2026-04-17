@@ -3,6 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { enqueueNotification } from "@/lib/queue";
 import { sendPushToPhone } from "@/lib/push-sender";
 import { timingSafeCompare } from "@/lib/timing-safe";
+import { logger } from "@/lib/logger";
 
 /**
  * Cron: Multi-tenant isolation monitor
@@ -201,12 +202,12 @@ export async function GET(req: NextRequest) {
         recipient: adminPhone,
         message,
         tenantId: "main",
-      }).catch(() => {});
+      }).catch((err) => logger.error("[cron/isolation-monitor] WhatsApp enqueue failed", { error: String(err) }));
       sendPushToPhone(adminPhone, {
         title: "Alerta de Aislamiento",
         body: `${failures.length} problema(s) detectado(s) en el aislamiento multi-tenant`,
         url: "/superadmin/dashboard",
-      }).catch(() => {});
+      }).catch((err) => logger.error("[cron/isolation-monitor] push send failed", { error: String(err) }));
     }
   }
 

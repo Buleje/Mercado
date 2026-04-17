@@ -19,10 +19,7 @@ import type { ComponentProps, TouchEventHandler } from "react";
 // This avoids pulling the full framer-motion bundle into the initial admin chunk.
 import { m, AnimatePresence } from "@/components/admin/providers";
 import { cn } from "@/lib/utils";
-import AdminBreadcrumb from "@/components/admin/shared/AdminBreadcrumb";
 import type { Tab } from "../_lib/tabs.types";
-import { TAB_CATEGORIES } from "../_lib/tab-categories";
-import { ALL_TABS } from "../_lib/tab-data";
 import { TabRouter } from "./TabRouter";
 
 type TabRouterProps = ComponentProps<typeof TabRouter>;
@@ -49,27 +46,11 @@ export function AdminMainContent({
   swipeHandlers,
   tabRouter,
 }: AdminMainContentProps) {
-  const cat = TAB_CATEGORIES.find((c) => c.tabs.includes(tab));
-  const tabMeta = ALL_TABS.find((t) => t.id === tab);
-  const breadcrumbItems: { label: string; onClick?: () => void }[] = [];
-
-  // Level 1: category name (clickable if multi-tab)
-  if (cat) {
-    breadcrumbItems.push({
-      label: cat.label,
-      ...(cat.tabs.length > 1 ? { onClick: () => navigateTab(cat.tabs[0]) } : {}),
-    });
-  }
-
-  // Level 2: specific tab name (only if different from category)
-  if (cat && cat.tabs.length > 1 && tabMeta) {
-    breadcrumbItems.push({
-      label: tabMeta.label,
-    });
-  }
-
   return (
     <main
+      id="main-content"
+      role="tabpanel"
+      aria-label="Contenido del modulo activo"
       className={cn(
         "flex-1 mx-auto w-full pb-24 sm:pb-8",
         presentationMode ? "max-w-full px-4 py-4" : "max-w-7xl",
@@ -81,8 +62,6 @@ export function AdminMainContent({
       )}
       {...swipeHandlers}
     >
-      <AdminBreadcrumb items={breadcrumbItems} />
-
       <AnimatePresence mode="wait">
         <m.div
           key={tab}

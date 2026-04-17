@@ -14,6 +14,7 @@ import {
 } from "@/components/LoadingSkeleton";
 import { zones } from "@/data/zones";
 import { categories } from "@/data/products";
+import TiendaSections from "@/components/TiendaSections";
 
 export const metadata: Metadata = {
   title: "Catalogo de Productos — Buleje ERP",
@@ -39,17 +40,7 @@ export const metadata: Metadata = {
   },
 };
 
-// ── Above-the-fold (SSR + eager hydration) ──
-const DailySpecial      = dynamic(() => import("@/components/DailySpecial"));
-const CountdownBanner   = dynamic(() => import("@/components/CountdownBanner"));
-const FlashDeals        = dynamic(() => import("@/components/FlashDeals"));
-const SeasonalPromo     = dynamic(() => import("@/components/SeasonalPromo"));
-
-// ── Main catalog & sections ──
-const PopularProducts   = dynamic(() => import("@/components/PopularProducts"));
-const FeaturedCarousel  = dynamic(() => import("@/components/FeaturedCarousel"));
-const CombosSection     = dynamic(() => import("@/components/CombosSection"));
-const LastUnitsSection  = dynamic(() => import("@/components/LastUnitsSection"));
+// ── Main catalog (still loaded individually — always visible) ──
 const ProductCatalog    = dynamic(() => import("@/components/ProductCatalog"));
 const Footer            = dynamic(() => import("@/components/Footer"));
 
@@ -143,11 +134,12 @@ export default async function TiendaPage() {
 
   // Server-side product prefetch — #42: uses cached function for 5min revalidation
   let initialProducts: Array<Record<string, unknown>> = [];
+  let tenantSlug = "main";
   try {
     const { headers } = await import("next/headers");
     const hdrs = await headers();
-    const tenantId = hdrs.get("x-tenant-id") ?? "main";
-    initialProducts = await getCachedProducts(tenantId) as unknown as Array<Record<string, unknown>>;
+    tenantSlug = hdrs.get("x-tenant-id") ?? "main";
+    initialProducts = await getCachedProducts(tenantSlug) as unknown as Array<Record<string, unknown>>;
   } catch {
     // Fallback to empty — client will retry via useCachedData
   }
@@ -198,58 +190,41 @@ export default async function TiendaPage() {
       {/* Spacer to push content below fixed header (h-11 announcement + h-16/h-20 header) */}
       <div className="h-[6.75rem] sm:h-[7.75rem]" />
       <main id="main-content">
-        {order.map((key) => {
-          if (!show(key)) return null;
-          switch (key) {
-            case "daily_special":
-              return (
-                <Suspense key={key} fallback={null}>
-                  <DailySpecial />
-                </Suspense>
-              );
-            case "seasonal_promo":
-              return (
-                <Suspense key={key} fallback={null}>
-                  <SeasonalPromo />
-                </Suspense>
-              );
-            case "countdown":
-              return <CountdownBanner key={key} />;
-            case "flash_deals":
-              return (
-                <Suspense key={key} fallback={null}>
-                  <FlashDeals />
-                </Suspense>
-              );
-            case "popular_products":
-              return (
-                <Suspense key={key} fallback={null}>
-                  <PopularProducts />
-                </Suspense>
-              );
-            case "featured_carousel":
-              return (
-                <Suspense key={key} fallback={null}>
-                  <FeaturedCarousel />
-                </Suspense>
-              );
-            case "combos":
-              return (
-                <Suspense key={key} fallback={null}>
-                  <CombosSection />
-                </Suspense>
-              );
-            case "last_units":
-              return (
-                <Suspense key={key} fallback={null}>
-                  <LastUnitsSection />
-                </Suspense>
-              );
-            // recipes, favorites, recently_viewed → handled by TiendaClientShell
-            default:
-              return null;
-          }
-        })}
+        {/* Default hero — editorial dark · PAS+FAB copy */}
+        <section className="relative overflow-hidden py-16 sm:py-20 border-b border-gray-200 dark:border-gray-800" style={{ background: "#060a0d" }}>
+          <div className="pointer-events-none absolute inset-0">
+            <div className="absolute -top-24 -right-24 h-80 w-80 rounded-full bg-white/5 blur-[100px]" />
+          </div>
+          <div className="relative z-10 mx-auto max-w-5xl px-4 sm:px-6 text-center">
+            <span className="inline-flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-[0.25em] text-white/55 mb-5">
+              Tienda online
+            </span>
+            <h1 className="text-3xl sm:text-4xl lg:text-5xl font-extrabold text-white leading-[1.02] tracking-[-0.025em]">
+              Tu despensa completa{" "}
+              <span className="text-white/45">en 25 minutos</span>
+            </h1>
+            <p className="mt-5 text-sm sm:text-base text-white/65 max-w-xl mx-auto leading-relaxed">
+              Abarrotes, frescos, bebidas y limpieza. Delivery a tu puerta.
+              Pagás con Yape o efectivo al recibir.
+            </p>
+            <div className="flex flex-wrap items-center justify-center gap-x-6 gap-y-2 mt-6 text-[10px] font-bold uppercase tracking-[0.2em] text-white/45 tabular-nums">
+              <span>{initialProducts.length > 0 ? `${initialProducts.length} productos` : "Catálogo completo"}</span>
+              <span className="h-1 w-1 rounded-full bg-white/30" />
+              <span>Delivery 25 min</span>
+              <span className="h-1 w-1 rounded-full bg-white/30" />
+              <span>Yape · Plin · Efectivo</span>
+              <span className="h-1 w-1 rounded-full bg-white/30" />
+              <span>Sin monto mínimo</span>
+            </div>
+          </div>
+        </section>
+
+        {/* All dynamic sections — single component handles loading + distribution */}
+        <TiendaSections
+          serverProducts={initialProducts as any}
+          visibleSections={visible}
+          sectionOrder={order}
+        />
 
         {/* Always visible — main product catalog */}
         <Suspense fallback={<CatalogLoadingSkeleton />}>

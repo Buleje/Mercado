@@ -114,22 +114,22 @@ export default function TreasuryTab() {
           <p className="text-sm text-gray-500 dark:text-muted mt-0.5">Gestión de cuentas bancarias, saldos y movimientos</p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
-          <button onClick={() => setHideBalances(v => !v)} className="p-2 rounded-xl border border-gray-200 dark:border-card-border bg-white dark:bg-surface hover:bg-gray-50 dark:hover:bg-accent transition-colors" title={hideBalances ? "Mostrar saldos" : "Ocultar saldos"}>
+          <button onClick={() => setHideBalances(v => !v)} className="p-2 rounded-lg border border-[var(--rule-base)] dark:border-card-border bg-white dark:bg-surface hover:bg-gray-50 dark:hover:bg-accent transition-colors" title={hideBalances ? "Mostrar saldos" : "Ocultar saldos"}>
             {hideBalances ? <EyeOff className="h-4 w-4 text-gray-500 dark:text-muted" /> : <Eye className="h-4 w-4 text-gray-500 dark:text-muted" />}
           </button>
-          <button onClick={handleExport} className="flex items-center gap-1.5 px-3 py-2 rounded-xl border border-gray-200 dark:border-card-border bg-white dark:bg-surface text-sm font-semibold text-gray-700 dark:text-foreground hover:bg-gray-50 dark:hover:bg-accent transition-colors">
+          <button onClick={handleExport} className="flex items-center gap-1.5 px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-card-border bg-white dark:bg-surface text-sm font-semibold text-gray-700 dark:text-foreground hover:bg-gray-50 dark:hover:bg-accent transition-colors">
             <Download className="h-4 w-4" /> Exportar
           </button>
-          <button onClick={() => setShowNewAccount(v => !v)} className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-primary text-white text-sm font-semibold hover:bg-primary/90 transition-colors">
+          <button onClick={() => setShowNewAccount(v => !v)} className="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-primary text-white text-sm font-semibold hover:bg-primary/90 transition-colors">
             <Plus className="h-4 w-4" /> Cuenta
           </button>
         </div>
       </div>
 
       {/* Total saldo consolidado */}
-      <div className="bg-gradient-to-br from-primary/10 to-primary/5 dark:from-primary/20 dark:to-primary/5 border border-primary/20 rounded-2xl p-3 sm:p-6">
-        <p className="text-sm font-semibold text-primary/70 mb-1">Saldo consolidado total</p>
-        <p className="text-2xl sm:text-4xl font-extrabold text-primary">
+      <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-xl p-3 sm:p-6">
+        <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)] mb-2">Saldo consolidado total</p>
+        <p className="text-2xl sm:text-4xl font-extrabold tabular-nums tracking-[var(--ls-tight)] text-[var(--text-primary)]">
           {hideBalances ? "S/ ••••••" : fmt(totalBalance)}
         </p>
         <p className="text-xs text-primary/60 mt-1">{accounts.length} cuentas activas · {unreconciled} movimiento{unreconciled !== 1 ? "s" : ""} sin conciliar</p>
@@ -141,7 +141,7 @@ export default function TreasuryTab() {
           <button
             key={acc.id}
             onClick={() => setSelectedAcc(selectedAcc === acc.id ? null : acc.id)}
-            className={cn("text-left rounded-2xl border p-4 transition-all hover:shadow-md", selectedAcc === acc.id ? "border-primary shadow-sm ring-1 ring-primary/30" : "border-gray-200 dark:border-card-border bg-white dark:bg-card")}
+            className={cn("text-left rounded-xl border p-4 transition-all hover:shadow-sm", selectedAcc === acc.id ? "border-primary  ring-1 ring-primary/30" : "border-[var(--rule-base)] dark:border-card-border bg-white dark:bg-card")}
           >
             <div className="flex items-center justify-between mb-3">
               <div className="flex flex-wrap items-center gap-2">
@@ -164,7 +164,7 @@ export default function TreasuryTab() {
         {/* Add account card */}
         <button
           onClick={() => setShowNewAccount(v => !v)}
-          className="rounded-2xl border-2 border-dashed border-gray-200 dark:border-card-border p-4 hover:border-primary/40 hover:bg-gray-50 dark:hover:bg-accent/30 transition-all flex flex-col items-center justify-center gap-2 text-gray-400 dark:text-muted min-h-[100px]"
+          className="rounded-xl border-2 border-dashed border-[var(--rule-base)] dark:border-card-border p-4 hover:border-primary/40 hover:bg-gray-50 dark:hover:bg-accent/30 transition-all flex flex-col items-center justify-center gap-2 text-gray-400 dark:text-muted min-h-[100px]"
         >
           <Plus className="h-6 w-6" />
           <span className="text-sm font-semibold">Agregar cuenta</span>
@@ -173,7 +173,7 @@ export default function TreasuryTab() {
 
       {/* New account form */}
       {showNewAccount && (
-        <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl p-3 sm:p-5 space-y-4">
+        <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl p-3 sm:p-5 space-y-4">
           <div className="flex items-center justify-between">
             <h3 className="font-bold text-gray-900 dark:text-foreground text-sm">Nueva cuenta bancaria</h3>
             <button onClick={() => setShowNewAccount(false)}><X className="h-4 w-4 text-gray-400" /></button>
@@ -181,21 +181,21 @@ export default function TreasuryTab() {
           <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
             <div>
               <label className="text-xs font-semibold text-gray-500 dark:text-muted block mb-1">Nombre</label>
-              <input type="text" value={accForm.name} onChange={e => setAccForm(p => ({ ...p, name: e.target.value }))} placeholder="BCP Cuenta Corriente" className="w-full text-sm border border-gray-200 dark:border-card-border rounded-lg px-3 py-2 bg-white dark:bg-surface text-gray-700 dark:text-foreground" />
+              <input type="text" value={accForm.name} onChange={e => setAccForm(p => ({ ...p, name: e.target.value }))} placeholder="BCP Cuenta Corriente" className="w-full text-sm border border-[var(--rule-base)] dark:border-card-border rounded-lg px-3 py-2 bg-white dark:bg-surface text-gray-700 dark:text-foreground" />
             </div>
             <div>
               <label className="text-xs font-semibold text-gray-500 dark:text-muted block mb-1">Banco</label>
-              <select value={accForm.bank} onChange={e => setAccForm(p => ({ ...p, bank: e.target.value }))} className="w-full text-sm border border-gray-200 dark:border-card-border rounded-lg px-3 py-2 bg-white dark:bg-surface text-gray-700 dark:text-foreground">
+              <select value={accForm.bank} onChange={e => setAccForm(p => ({ ...p, bank: e.target.value }))} className="w-full text-sm border border-[var(--rule-base)] dark:border-card-border rounded-lg px-3 py-2 bg-white dark:bg-surface text-gray-700 dark:text-foreground">
                 {BANKS.map(b => <option key={b} value={b}>{b}</option>)}
               </select>
             </div>
             <div>
               <label className="text-xs font-semibold text-gray-500 dark:text-muted block mb-1">Número (últimos 4)</label>
-              <input type="text" value={accForm.accountNumber} onChange={e => setAccForm(p => ({ ...p, accountNumber: e.target.value }))} placeholder="•••• 0000" className="w-full text-sm border border-gray-200 dark:border-card-border rounded-lg px-3 py-2 bg-white dark:bg-surface text-gray-700 dark:text-foreground" />
+              <input type="text" value={accForm.accountNumber} onChange={e => setAccForm(p => ({ ...p, accountNumber: e.target.value }))} placeholder="•••• 0000" className="w-full text-sm border border-[var(--rule-base)] dark:border-card-border rounded-lg px-3 py-2 bg-white dark:bg-surface text-gray-700 dark:text-foreground" />
             </div>
             <div>
               <label className="text-xs font-semibold text-gray-500 dark:text-muted block mb-1">Saldo actual (S/)</label>
-              <input type="number" value={accForm.balance} onChange={e => setAccForm(p => ({ ...p, balance: e.target.value }))} placeholder="0.00" min="0" step="0.01" className="w-full text-sm border border-gray-200 dark:border-card-border rounded-lg px-3 py-2 bg-white dark:bg-surface text-gray-700 dark:text-foreground" />
+              <input type="number" value={accForm.balance} onChange={e => setAccForm(p => ({ ...p, balance: e.target.value }))} placeholder="0.00" min="0" step="0.01" className="w-full text-sm border border-[var(--rule-base)] dark:border-card-border rounded-lg px-3 py-2 bg-white dark:bg-surface text-gray-700 dark:text-foreground" />
             </div>
             <div>
               <label className="text-xs font-semibold text-gray-500 dark:text-muted block mb-1">Color</label>
@@ -207,15 +207,15 @@ export default function TreasuryTab() {
             </div>
           </div>
           <div className="flex flex-wrap gap-2 justify-end">
-            <button onClick={() => setShowNewAccount(false)} className="px-2 sm:px-4 py-1.5 sm:py-2 text-sm rounded-xl border border-gray-200 dark:border-card-border text-gray-600 dark:text-muted">Cancelar</button>
-            <button onClick={handleCreateAccount} className="px-2 sm:px-4 py-1.5 sm:py-2 text-sm rounded-xl bg-primary text-white font-semibold hover:bg-primary/90">Agregar</button>
+            <button onClick={() => setShowNewAccount(false)} className="px-2 sm:px-4 py-1.5 sm:py-2 text-sm rounded-lg border border-[var(--rule-base)] dark:border-card-border text-gray-600 dark:text-muted">Cancelar</button>
+            <button onClick={handleCreateAccount} className="px-2 sm:px-4 py-1.5 sm:py-2 text-sm rounded-lg bg-primary text-white font-semibold hover:bg-primary/90">Agregar</button>
           </div>
         </div>
       )}
 
       {/* Transactions section */}
-      <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl overflow-y-hidden overflow-x-auto">
-        <div className="px-3 sm:px-6 py-4 border-b border-gray-100 dark:border-card-border flex flex-wrap items-center justify-between gap-3">
+      <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl overflow-y-hidden overflow-x-auto">
+        <div className="px-3 sm:px-6 py-4 border-b border-[var(--rule-soft)] dark:border-card-border flex flex-wrap items-center justify-between gap-3">
           <div className="flex flex-wrap items-center gap-3">
             <h2 className="font-bold text-gray-900 dark:text-foreground text-sm">
               Movimientos {selectedAcc ? `— ${accounts.find(a => a.id === selectedAcc)?.name}` : "— Todas las cuentas"}
@@ -237,32 +237,32 @@ export default function TreasuryTab() {
 
         {/* New transaction inline form */}
         {showNewTxn && (
-          <div className="px-3 sm:px-6 py-4 bg-gray-50 dark:bg-surface/40 border-b border-gray-100 dark:border-card-border">
+          <div className="px-3 sm:px-6 py-4 bg-gray-50 dark:bg-surface/40 border-b border-[var(--rule-soft)] dark:border-card-border">
             <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
               <div>
                 <label className="text-xs font-semibold text-gray-500 dark:text-muted block mb-1">Cuenta</label>
-                <select value={txnForm.accountId} onChange={e => setTxnForm(p => ({ ...p, accountId: e.target.value }))} className="w-full text-sm border border-gray-200 dark:border-card-border rounded-lg px-3 py-2 bg-white dark:bg-surface text-gray-700 dark:text-foreground">
+                <select value={txnForm.accountId} onChange={e => setTxnForm(p => ({ ...p, accountId: e.target.value }))} className="w-full text-sm border border-[var(--rule-base)] dark:border-card-border rounded-lg px-3 py-2 bg-white dark:bg-surface text-gray-700 dark:text-foreground">
                   {accounts.map(a => <option key={a.id} value={a.id}>{a.name}</option>)}
                 </select>
               </div>
               <div>
                 <label className="text-xs font-semibold text-gray-500 dark:text-muted block mb-1">Tipo</label>
-                <select value={txnForm.type} onChange={e => setTxnForm(p => ({ ...p, type: e.target.value }))} className="w-full text-sm border border-gray-200 dark:border-card-border rounded-lg px-3 py-2 bg-white dark:bg-surface text-gray-700 dark:text-foreground">
+                <select value={txnForm.type} onChange={e => setTxnForm(p => ({ ...p, type: e.target.value }))} className="w-full text-sm border border-[var(--rule-base)] dark:border-card-border rounded-lg px-3 py-2 bg-white dark:bg-surface text-gray-700 dark:text-foreground">
                   <option value="credito">Crédito (+)</option>
                   <option value="debito">Débito (−)</option>
                 </select>
               </div>
               <div>
                 <label className="text-xs font-semibold text-gray-500 dark:text-muted block mb-1">Descripción</label>
-                <input type="text" value={txnForm.description} onChange={e => setTxnForm(p => ({ ...p, description: e.target.value }))} placeholder="Concepto..." className="w-full text-sm border border-gray-200 dark:border-card-border rounded-lg px-3 py-2 bg-white dark:bg-surface text-gray-700 dark:text-foreground" />
+                <input type="text" value={txnForm.description} onChange={e => setTxnForm(p => ({ ...p, description: e.target.value }))} placeholder="Concepto..." className="w-full text-sm border border-[var(--rule-base)] dark:border-card-border rounded-lg px-3 py-2 bg-white dark:bg-surface text-gray-700 dark:text-foreground" />
               </div>
               <div>
                 <label className="text-xs font-semibold text-gray-500 dark:text-muted block mb-1">Monto</label>
-                <input type="number" value={txnForm.amount} onChange={e => setTxnForm(p => ({ ...p, amount: e.target.value }))} placeholder="0.00" min="0" step="0.01" className="w-full text-sm border border-gray-200 dark:border-card-border rounded-lg px-3 py-2 bg-white dark:bg-surface text-gray-700 dark:text-foreground" />
+                <input type="number" value={txnForm.amount} onChange={e => setTxnForm(p => ({ ...p, amount: e.target.value }))} placeholder="0.00" min="0" step="0.01" className="w-full text-sm border border-[var(--rule-base)] dark:border-card-border rounded-lg px-3 py-2 bg-white dark:bg-surface text-gray-700 dark:text-foreground" />
               </div>
               <div className="flex flex-wrap items-end gap-2">
                 <button onClick={handleCreateTxn} className="flex-1 py-2 rounded-lg bg-primary text-white text-sm font-semibold hover:bg-primary/90">Registrar</button>
-                <button onClick={() => setShowNewTxn(false)} className="p-2 rounded-lg border border-gray-200 dark:border-card-border text-gray-400 hover:bg-gray-100 dark:hover:bg-accent"><X className="h-4 w-4" /></button>
+                <button onClick={() => setShowNewTxn(false)} className="p-2 rounded-lg border border-[var(--rule-base)] dark:border-card-border text-gray-400 hover:bg-gray-100 dark:hover:bg-accent"><X className="h-4 w-4" /></button>
               </div>
             </div>
           </div>
@@ -270,7 +270,7 @@ export default function TreasuryTab() {
 
         <div className="overflow-x-auto -mx-2 px-2">
         <table className="w-full min-w-[600px] text-sm">
-          <thead className="bg-gray-50 dark:bg-surface border-b border-gray-100 dark:border-card-border">
+          <thead className="bg-gray-50 dark:bg-surface border-b border-[var(--rule-soft)] dark:border-card-border">
             <tr>
               <th className="text-left px-3 sm:px-6 py-3 font-bold text-gray-500 dark:text-muted text-xs uppercase">Fecha</th>
               <th className="text-left px-2 sm:px-4 py-2 sm:py-3 font-bold text-gray-500 dark:text-muted text-xs uppercase">Descripción</th>
@@ -299,7 +299,7 @@ export default function TreasuryTab() {
                   <button onClick={() => toggleReconcile(t.id)} title={t.reconciled ? "Conciliado" : "Marcar como conciliado"}>
                     {t.reconciled
                       ? <CheckCircle className="h-4 w-4 text-emerald-500 mx-auto" />
-                      : <div className="h-4 w-4 rounded-full border-2 border-gray-300 dark:border-muted mx-auto hover:border-primary transition-colors" />}
+                      : <div className="h-4 w-4 rounded-full border-2 border-[var(--rule-base)] dark:border-muted mx-auto hover:border-primary transition-colors" />}
                   </button>
                 </td>
               </tr>

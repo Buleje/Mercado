@@ -220,8 +220,8 @@ export default function InvoiceEmitter({
 
   if (emitido) {
     return (
-      <div className="space-y-4">
-        <div className="bg-emerald-50 dark:bg-emerald-950/20 border border-emerald-200 dark:border-emerald-900/40 rounded-2xl p-4 sm:p-6 text-center space-y-3">
+      <div className="space-y-6">
+        <div className="bg-emerald-50 dark:bg-emerald-950/20 border border-emerald-200 dark:border-emerald-900/40 rounded-xl p-4 sm:p-6 text-center space-y-3">
           <CheckCircle2 className="h-12 w-12 text-emerald-500 mx-auto" />
           <h2 className="text-xl font-extrabold text-emerald-700 dark:text-emerald-400">
             Comprobante emitido
@@ -234,7 +234,7 @@ export default function InvoiceEmitter({
           </p>
         </div>
 
-        <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl p-4 sm:p-6 space-y-3">
+        <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl p-4 sm:p-6 space-y-3">
           <div className="grid grid-cols-2 gap-3 text-sm">
             <div>
               <p className="text-xs text-gray-400 dark:text-muted">Cliente</p>
@@ -265,14 +265,14 @@ export default function InvoiceEmitter({
               href={emitido.pdfUrl}
               target="_blank"
               rel="noopener noreferrer"
-              className="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl bg-emerald-600 text-white text-sm font-semibold hover:bg-emerald-700 transition-colors"
+              className="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-lg bg-emerald-600 text-white text-sm font-semibold hover:bg-emerald-700 transition-colors"
             >
               <Printer className="h-4 w-4" /> Imprimir / Descargar PDF
             </a>
           )}
           <button
             onClick={handleNuevo}
-            className="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl bg-primary text-white text-sm font-semibold hover:bg-primary/90 transition-colors"
+            className="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-lg bg-primary text-white text-sm font-semibold hover:bg-primary/90 transition-colors"
           >
             <Plus className="h-4 w-4" /> Nuevo comprobante
           </button>
@@ -284,7 +284,7 @@ export default function InvoiceEmitter({
   // ── Formulario de emisión ───────────────────────────────────────────────────
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-6">
       {/* Header */}
       <div>
         <h2 className="text-lg sm:text-xl font-extrabold text-gray-900 dark:text-foreground flex items-center gap-2">
@@ -309,7 +309,7 @@ export default function InvoiceEmitter({
             className={cn(
               "px-4 py-2 text-sm font-bold rounded-lg transition-all",
               tipo === t
-                ? "bg-primary text-white shadow-sm"
+                ? "bg-primary text-white "
                 : "text-gray-500 dark:text-muted hover:text-gray-700 dark:hover:text-foreground",
             )}
           >
@@ -319,8 +319,8 @@ export default function InvoiceEmitter({
       </div>
 
       {/* Datos del cliente */}
-      <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl p-3 sm:p-5 space-y-3">
-        <p className="text-xs font-bold text-gray-500 dark:text-muted uppercase tracking-wide">
+      <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl p-3 sm:p-5 space-y-3">
+        <p className="text-xs font-bold text-gray-500 dark:text-muted">
           Datos del cliente
         </p>
 
@@ -339,12 +339,12 @@ export default function InvoiceEmitter({
               }}
               placeholder={docPlaceholder}
               maxLength={docMaxLength}
-              className="flex-1 min-w-0 text-sm border border-gray-200 dark:border-card-border rounded-xl px-3 py-2 bg-white dark:bg-surface text-gray-700 dark:text-foreground font-mono"
+              className="flex-1 min-w-0 text-sm border border-[var(--rule-base)] dark:border-card-border rounded-xl px-3 py-2 bg-white dark:bg-surface text-gray-700 dark:text-foreground font-mono"
             />
             <button
               onClick={buscarDocumento}
               disabled={buscando || docNumero.length !== docMaxLength}
-              className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-primary text-white text-sm font-semibold hover:bg-primary/90 transition-colors disabled:opacity-40 shrink-0"
+              className="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-primary text-white text-sm font-semibold hover:bg-primary/90 transition-colors disabled:opacity-40 shrink-0"
             >
               {buscando ? (
                 <Loader2 className="h-4 w-4 animate-spin" />
@@ -370,7 +370,7 @@ export default function InvoiceEmitter({
             value={clienteNombre}
             onChange={e => setClienteNombre(e.target.value)}
             placeholder={tipo === "boleta" ? "Juan Perez" : "Empresa S.A.C."}
-            className="w-full text-sm border border-gray-200 dark:border-card-border rounded-xl px-3 py-2 bg-white dark:bg-surface text-gray-700 dark:text-foreground"
+            className="w-full text-sm border border-[var(--rule-base)] dark:border-card-border rounded-xl px-3 py-2 bg-white dark:bg-surface text-gray-700 dark:text-foreground"
           />
         </div>
 
@@ -383,15 +383,15 @@ export default function InvoiceEmitter({
             value={clienteDireccion}
             onChange={e => setClienteDireccion(e.target.value)}
             placeholder="Av. Centenario 123, Pucallpa"
-            className="w-full text-sm border border-gray-200 dark:border-card-border rounded-xl px-3 py-2 bg-white dark:bg-surface text-gray-700 dark:text-foreground"
+            className="w-full text-sm border border-[var(--rule-base)] dark:border-card-border rounded-xl px-3 py-2 bg-white dark:bg-surface text-gray-700 dark:text-foreground"
           />
         </div>
       </div>
 
       {/* Items del comprobante */}
-      <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl p-3 sm:p-5 space-y-3">
+      <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl p-3 sm:p-5 space-y-3">
         <div className="flex items-center justify-between">
-          <p className="text-xs font-bold text-gray-500 dark:text-muted uppercase tracking-wide">
+          <p className="text-xs font-bold text-gray-500 dark:text-muted">
             Productos / Servicios
           </p>
           <button
@@ -423,7 +423,7 @@ export default function InvoiceEmitter({
                   value={item.producto}
                   onChange={e => updateItem(idx, "producto", e.target.value)}
                   placeholder="Descripcion del producto"
-                  className="w-full text-sm border border-gray-200 dark:border-card-border rounded-lg px-3 py-2 bg-white dark:bg-surface text-gray-700 dark:text-foreground"
+                  className="w-full text-sm border border-[var(--rule-base)] dark:border-card-border rounded-lg px-3 py-2 bg-white dark:bg-surface text-gray-700 dark:text-foreground"
                 />
               </div>
               <div className="col-span-1 sm:col-span-2">
@@ -433,7 +433,7 @@ export default function InvoiceEmitter({
                   onChange={e => updateItem(idx, "cantidad", Math.max(0, parseFloat(e.target.value) || 0))}
                   min="0"
                   step="1"
-                  className="w-full text-sm border border-gray-200 dark:border-card-border rounded-lg px-3 py-2 bg-white dark:bg-surface text-gray-700 dark:text-foreground"
+                  className="w-full text-sm border border-[var(--rule-base)] dark:border-card-border rounded-lg px-3 py-2 bg-white dark:bg-surface text-gray-700 dark:text-foreground"
                 />
               </div>
               <div className="col-span-1 sm:col-span-2">
@@ -443,7 +443,7 @@ export default function InvoiceEmitter({
                   onChange={e => updateItem(idx, "precioUnitario", Math.max(0, parseFloat(e.target.value) || 0))}
                   min="0"
                   step="0.01"
-                  className="w-full text-sm border border-gray-200 dark:border-card-border rounded-lg px-3 py-2 bg-white dark:bg-surface text-gray-700 dark:text-foreground"
+                  className="w-full text-sm border border-[var(--rule-base)] dark:border-card-border rounded-lg px-3 py-2 bg-white dark:bg-surface text-gray-700 dark:text-foreground"
                 />
               </div>
               <div className="hidden sm:block sm:col-span-1 text-xs text-amber-600 font-semibold py-2">
@@ -479,7 +479,7 @@ export default function InvoiceEmitter({
         })}
 
         {/* Totales */}
-        <div className="border-t border-gray-100 dark:border-card-border pt-3 flex justify-end">
+        <div className="border-t border-[var(--rule-soft)] dark:border-card-border pt-3 flex justify-end">
           <div className="space-y-1 text-right text-sm">
             <p className="text-gray-500 dark:text-muted">
               Gravado: <span className="font-semibold text-gray-700 dark:text-foreground">{fmt(gravado)}</span>
@@ -506,21 +506,21 @@ export default function InvoiceEmitter({
       <div className="flex gap-2 flex-wrap">
         <button
           onClick={handleNuevo}
-          className="px-4 py-2.5 rounded-xl border border-gray-200 dark:border-card-border text-sm font-semibold text-gray-600 dark:text-muted hover:bg-gray-50 dark:hover:bg-accent transition-colors"
+          className="px-4 py-2.5 rounded-lg border border-[var(--rule-base)] dark:border-card-border text-sm font-semibold text-gray-600 dark:text-muted hover:bg-gray-50 dark:hover:bg-accent transition-colors"
         >
           Cancelar
         </button>
         <button
           onClick={() => setShowPreview(true)}
           disabled={items.every(i => !i.producto.trim())}
-          className="flex items-center gap-1.5 px-4 py-2.5 rounded-xl border border-gray-200 dark:border-card-border text-sm font-semibold text-gray-700 dark:text-foreground hover:bg-gray-50 dark:hover:bg-accent transition-colors disabled:opacity-40"
+          className="flex items-center gap-1.5 px-4 py-2.5 rounded-lg border border-[var(--rule-base)] dark:border-card-border text-sm font-semibold text-gray-700 dark:text-foreground hover:bg-gray-50 dark:hover:bg-accent transition-colors disabled:opacity-40"
         >
           <Eye className="h-4 w-4" /> Vista previa
         </button>
         <button
           onClick={handleEmitir}
           disabled={emitiendo || !clienteNombre.trim() || items.every(i => !i.producto.trim())}
-          className="flex items-center gap-1.5 px-4 py-2.5 rounded-xl bg-[#00B4A6] text-white text-sm font-bold hover:bg-[#00B4A6]/90 transition-colors disabled:opacity-50"
+          className="flex items-center gap-1.5 px-4 py-2.5 rounded-lg bg-[#00B4A6] text-white text-sm font-bold hover:bg-[#00B4A6]/90 transition-colors disabled:opacity-50"
         >
           {emitiendo ? (
             <><Loader2 className="h-4 w-4 animate-spin" /> Emitiendo...</>
@@ -534,7 +534,7 @@ export default function InvoiceEmitter({
       {showPreview && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4" onClick={() => setShowPreview(false)}>
           <div
-            className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl shadow-2xl p-4 sm:p-6 w-full max-w-lg space-y-4 max-h-[80vh] overflow-y-auto"
+            className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl p-4 sm:p-6 w-full max-w-lg space-y-4 max-h-[80vh] overflow-y-auto"
             onClick={e => e.stopPropagation()}
           >
             <div className="flex items-center justify-between">
@@ -546,7 +546,7 @@ export default function InvoiceEmitter({
               </button>
             </div>
 
-            <div className="text-center border-b border-gray-200 dark:border-card-border pb-3">
+            <div className="text-center border-b border-[var(--rule-base)] dark:border-card-border pb-3">
               <p className="font-extrabold text-lg text-gray-900 dark:text-foreground">Buleje</p>
               <p className="text-xs text-gray-500">Pucallpa, Ucayali, Peru</p>
               <p className="text-xs font-bold text-gray-600 dark:text-muted mt-2">
@@ -564,7 +564,7 @@ export default function InvoiceEmitter({
 
             <table className="w-full text-sm">
               <thead>
-                <tr className="border-b border-gray-200 dark:border-card-border text-xs text-gray-400 uppercase">
+                <tr className="border-b border-[var(--rule-base)] dark:border-card-border text-xs text-gray-400 uppercase">
                   <th className="text-left py-1">Producto</th>
                   <th className="text-right py-1">Cant.</th>
                   <th className="text-right py-1">P.Unit</th>
@@ -573,7 +573,7 @@ export default function InvoiceEmitter({
               </thead>
               <tbody>
                 {items.filter(i => i.producto.trim()).map((item, idx) => (
-                  <tr key={idx} className="border-b border-gray-100 dark:border-card-border">
+                  <tr key={idx} className="border-b border-[var(--rule-soft)] dark:border-card-border">
                     <td className="py-1.5 text-gray-800 dark:text-foreground">{item.producto}</td>
                     <td className="py-1.5 text-right text-gray-600">{item.cantidad}</td>
                     <td className="py-1.5 text-right text-gray-600">{fmt(item.precioUnitario)}</td>
@@ -583,7 +583,7 @@ export default function InvoiceEmitter({
               </tbody>
             </table>
 
-            <div className="border-t border-gray-200 dark:border-card-border pt-2 space-y-1 text-sm text-right">
+            <div className="border-t border-[var(--rule-base)] dark:border-card-border pt-2 space-y-1 text-sm text-right">
               <p className="text-gray-500">Gravado: <span className="font-semibold">{fmt(gravado)}</span></p>
               <p className="text-amber-600">IGV (18%): <span className="font-semibold">{fmt(igv)}</span></p>
               <p className="font-extrabold text-gray-900 dark:text-foreground text-base">Total: {fmt(total)}</p>
@@ -591,7 +591,7 @@ export default function InvoiceEmitter({
 
             <button
               onClick={() => setShowPreview(false)}
-              className="w-full py-2 rounded-xl border border-gray-200 dark:border-card-border text-sm font-semibold text-gray-600 dark:text-muted hover:bg-gray-50 dark:hover:bg-accent transition-colors"
+              className="w-full py-2 rounded-lg border border-[var(--rule-base)] dark:border-card-border text-sm font-semibold text-gray-600 dark:text-muted hover:bg-gray-50 dark:hover:bg-accent transition-colors"
             >
               Cerrar
             </button>

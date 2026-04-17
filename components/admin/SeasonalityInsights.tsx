@@ -101,7 +101,7 @@ function SalesBar({
   return (
     <div className="group relative flex flex-1 flex-col items-center gap-1">
       {/* Tooltip */}
-      <div className="absolute -top-14 left-1/2 z-10 hidden -translate-x-1/2 whitespace-nowrap rounded-lg border border-gray-200 bg-white px-2 py-1.5 text-center shadow-lg group-hover:block dark:border-gray-600 dark:bg-gray-800">
+      <div className="absolute -top-14 left-1/2 z-10 hidden -translate-x-1/2 whitespace-nowrap rounded-lg border border-[var(--rule-base)] bg-white px-2 py-1.5 text-center group-hover:block dark:border-gray-600 dark:bg-gray-800">
         <p className="text-xs font-semibold text-gray-800 dark:text-gray-100">
           {month.label}
         </p>
@@ -128,7 +128,7 @@ function SalesBar({
           style={{ height: `${Math.max(pct, 2)}%` }}
         />
       </div>
-      <span className="text-center text-[9px] text-gray-500 dark:text-gray-400">
+      <span className="text-center text-[length:var(--ts-2xs)] text-gray-500 dark:text-gray-400">
         {month.shortLabel}
       </span>
     </div>
@@ -258,7 +258,7 @@ export default function SeasonalityInsights() {
             <span className="text-xs text-amber-500">{error}</span>
           )}
           {loading && <RefreshCw className="h-4 w-4 animate-spin text-gray-400" />}
-          <div className="flex rounded-lg border border-gray-200 dark:border-gray-600">
+          <div className="flex rounded-lg border border-[var(--rule-base)] dark:border-gray-600">
             {(["chart", "patterns"] as const).map((v) => (
               <button
                 key={v}
@@ -279,7 +279,7 @@ export default function SeasonalityInsights() {
 
       {/* Chart view */}
       {view === "chart" && (
-        <div className="rounded-xl border border-gray-200 bg-white p-5 dark:border-gray-700 dark:bg-gray-900">
+        <div className="rounded-xl border border-[var(--rule-base)] bg-white p-5 dark:border-[var(--rule-base)] dark:bg-gray-900">
           <div className="mb-4 flex flex-wrap items-center gap-4 text-xs">
             <div className="flex items-center gap-1.5">
               <div className="h-2.5 w-2.5 rounded-sm bg-[#00B4A6]" />
@@ -316,8 +316,8 @@ export default function SeasonalityInsights() {
 
       {/* Patterns view */}
       {view === "patterns" && (
-        <div className="rounded-xl border border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-900">
-          <div className="border-b border-gray-100 px-5 py-3 dark:border-gray-700">
+        <div className="rounded-xl border border-[var(--rule-base)] bg-white dark:border-[var(--rule-base)] dark:bg-gray-900">
+          <div className="border-b border-[var(--rule-soft)] px-5 py-3 dark:border-[var(--rule-base)]">
             <p className="text-xs text-gray-500 dark:text-gray-400">
               Comparación {currentYear} vs {currentYear - 1}
             </p>

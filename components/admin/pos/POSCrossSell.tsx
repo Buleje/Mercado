@@ -82,10 +82,10 @@ export default function POSCrossSell({
   if (!suggestion || dismissed) return null;
 
   return (
-    <div className="mx-3 mb-1 flex items-center gap-2 p-2 bg-blue-50/50 dark:bg-blue-950/10 border border-blue-100 dark:border-blue-800/30 rounded-lg">
-      <Lightbulb className="h-4 w-4 text-blue-500 shrink-0" />
+    <div className="mx-3 mb-1 flex items-center gap-2 p-2 bg-emerald-50/50 dark:bg-emerald-950/10 border border-emerald-100 dark:border-emerald-800/30 rounded-lg">
+      <Lightbulb className="h-4 w-4 text-emerald-500 shrink-0" />
       <div className="flex-1 min-w-0">
-        <p className="text-[11px] text-gray-600 dark:text-muted">
+        <p className="text-[length:var(--ts-xs)] text-gray-600 dark:text-muted">
           Clientes tambien llevan{" "}
           <span className="font-bold text-gray-900 dark:text-foreground">
             {suggestion.name}
@@ -95,7 +95,7 @@ export default function POSCrossSell({
       </div>
       <button
         onClick={handleAdd}
-        className="shrink-0 flex items-center gap-0.5 text-[11px] font-bold text-primary hover:underline"
+        className="shrink-0 flex items-center gap-0.5 text-[length:var(--ts-xs)] font-bold text-primary hover:underline"
       >
         <Plus className="h-3 w-3" /> Agregar
       </button>

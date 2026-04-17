@@ -43,9 +43,9 @@ const MOTIVOS = [
 ];
 
 const ESTADO_STYLES: Record<DevolucionEstado, string> = {
-  PENDIENTE: "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400",
-  ENVIADA:   "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400",
-  RESUELTA:  "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400",
+  PENDIENTE: "bg-amber-100 text-amber-700",
+  ENVIADA:   "bg-emerald-100 text-emerald-700",
+  RESUELTA:  "bg-emerald-100 text-emerald-700",
 };
 
 const ESTADO_SIGUIENTE: Record<DevolucionEstado, DevolucionEstado | null> = {
@@ -269,7 +269,7 @@ export default function DevolucionesProveedorModule() {
   // ── Render ────────────────────────────────────────────────────────────────
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-6">
       <AdminModuleHeader
         title="Devoluciones a Proveedores"
         description="Registra y da seguimiento a devoluciones de mercadería"
@@ -281,13 +281,13 @@ export default function DevolucionesProveedorModule() {
             onClick={fetchDevoluciones}
             disabled={loading}
             aria-label="Recargar devoluciones"
-            className="h-9 w-9 flex items-center justify-center rounded-xl border border-gray-200 dark:border-gray-700 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors disabled:opacity-50"
+            className="h-9 w-9 flex items-center justify-center rounded-lg border border-[var(--rule-base)] hover:bg-gray-100 transition-colors disabled:opacity-50"
           >
             <RefreshCw className={cn("h-4 w-4 text-gray-500", loading && "animate-spin")} />
           </button>
           <button
             onClick={() => { setMostrarFormulario(true); resetFormulario(); }}
-            className="flex items-center gap-2 px-4 py-2 bg-[#00B4A6] hover:bg-[#009690] text-white rounded-xl text-sm font-medium transition-colors min-h-[44px]"
+            className="flex items-center gap-2 px-4 py-2 bg-primary hover:bg-primary-dark text-white rounded-lg text-sm font-medium transition-colors min-h-[44px]"
           >
             <Plus className="h-4 w-4" />
             Nueva devolución
@@ -304,8 +304,8 @@ export default function DevolucionesProveedorModule() {
             className={cn(
               "px-3 py-1.5 rounded-full text-xs font-medium border transition-colors min-h-[36px]",
               filtroEstado === estado
-                ? "bg-[#00B4A6] text-white border-[#00B4A6]"
-                : "bg-white dark:bg-gray-900 text-gray-600 dark:text-gray-400 border-gray-200 dark:border-card-border hover:bg-gray-50 dark:hover:bg-gray-800"
+                ? "bg-primary text-white border-primary"
+                : "bg-white text-gray-600 border-[var(--rule-base)] hover:bg-gray-50"
             )}
           >
             {estado === "" ? `Todas (${devoluciones.length})` : `${estado} (${conteos[estado as DevolucionEstado]})`}
@@ -315,12 +315,12 @@ export default function DevolucionesProveedorModule() {
 
       {/* Formulario nueva devolución */}
       {mostrarFormulario && (
-        <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl p-4 space-y-4">
+        <div className="bg-white border border-[var(--rule-base)] rounded-xl p-4 space-y-4">
           <div className="flex items-center justify-between">
-            <h3 className="font-semibold text-gray-900 dark:text-white text-sm">Nueva devolución</h3>
+            <h3 className="font-semibold text-gray-900 text-sm">Nueva devolución</h3>
             <button
               onClick={() => setMostrarFormulario(false)}
-              className="p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors min-h-[44px] min-w-[44px] flex items-center justify-center"
+              className="p-1.5 rounded-lg hover:bg-gray-100 transition-colors min-h-[44px] min-w-[44px] flex items-center justify-center"
             >
               <X className="h-4 w-4 text-gray-500" />
             </button>
@@ -329,14 +329,14 @@ export default function DevolucionesProveedorModule() {
           {/* Proveedor */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div className="space-y-1">
-              <label className="text-xs font-medium text-gray-600 dark:text-gray-400">Proveedor *</label>
+              <label className="text-xs font-medium text-gray-600">Proveedor *</label>
               {loadingProveedores ? (
-                <div className="h-10 bg-gray-100 dark:bg-gray-800 rounded-xl animate-pulse" />
+                <div className="h-10 bg-gray-100 rounded-xl animate-pulse" />
               ) : (
                 <select
                   value={proveedorId}
                   onChange={e => setProveedorId(e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-200 dark:border-card-border rounded-xl text-sm bg-white dark:bg-gray-900 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-[#f97316]/40"
+                  className="w-full px-3 py-2 border border-[var(--rule-base)] rounded-lg text-sm bg-white text-gray-900 focus:outline-none focus:ring-2 focus:ring-secondary/40"
                 >
                   <option value="">Seleccionar proveedor...</option>
                   {proveedores.map(p => (
@@ -346,11 +346,11 @@ export default function DevolucionesProveedorModule() {
               )}
             </div>
             <div className="space-y-1">
-              <label className="text-xs font-medium text-gray-600 dark:text-gray-400">Motivo *</label>
+              <label className="text-xs font-medium text-gray-600">Motivo *</label>
               <select
                 value={motivo}
                 onChange={e => setMotivo(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-200 dark:border-card-border rounded-xl text-sm bg-white dark:bg-gray-900 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-[#f97316]/40"
+                className="w-full px-3 py-2 border border-[var(--rule-base)] rounded-lg text-sm bg-white text-gray-900 focus:outline-none focus:ring-2 focus:ring-secondary/40"
               >
                 {MOTIVOS.map(m => <option key={m} value={m}>{m}</option>)}
               </select>
@@ -360,10 +360,10 @@ export default function DevolucionesProveedorModule() {
           {/* Items */}
           <div className="space-y-2">
             <div className="flex items-center justify-between">
-              <label className="text-xs font-medium text-gray-600 dark:text-gray-400">Items a devolver *</label>
+              <label className="text-xs font-medium text-gray-600">Items a devolver *</label>
               <button
                 onClick={agregarItem}
-                className="flex items-center gap-1 text-xs text-[#00B4A6] hover:text-[#009690] font-medium"
+                className="flex items-center gap-1 text-xs text-primary hover:text-primary-dark font-medium"
               >
                 <Plus className="h-3.5 w-3.5" /> Agregar
               </button>
@@ -375,19 +375,19 @@ export default function DevolucionesProveedorModule() {
                   placeholder="Nombre del producto"
                   value={item.nombre}
                   onChange={e => actualizarItem(index, "nombre", e.target.value)}
-                  className="flex-1 px-3 py-2 border border-gray-200 dark:border-card-border rounded-xl text-sm bg-white dark:bg-gray-900 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-[#f97316]/40"
+                  className="flex-1 px-3 py-2 border border-[var(--rule-base)] rounded-lg text-sm bg-white text-gray-900 focus:outline-none focus:ring-2 focus:ring-secondary/40"
                 />
                 <input
                   type="number"
                   min={1}
                   value={item.cantidad}
                   onChange={e => actualizarItem(index, "cantidad", Number(e.target.value))}
-                  className="w-16 px-2 py-2 border border-gray-200 dark:border-card-border rounded-xl text-sm bg-white dark:bg-gray-900 text-gray-900 dark:text-white text-center focus:outline-none focus:ring-2 focus:ring-[#f97316]/40"
+                  className="w-16 px-2 py-2 border border-[var(--rule-base)] rounded-lg text-sm bg-white text-gray-900 text-center focus:outline-none focus:ring-2 focus:ring-secondary/40"
                 />
                 <select
                   value={item.unidad}
                   onChange={e => actualizarItem(index, "unidad", e.target.value)}
-                  className="w-20 px-2 py-2 border border-gray-200 dark:border-card-border rounded-xl text-sm bg-white dark:bg-gray-900 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-[#f97316]/40"
+                  className="w-20 px-2 py-2 border border-[var(--rule-base)] rounded-lg text-sm bg-white text-gray-900 focus:outline-none focus:ring-2 focus:ring-secondary/40"
                 >
                   <option value="und">und</option>
                   <option value="kg">kg</option>
@@ -409,13 +409,13 @@ export default function DevolucionesProveedorModule() {
 
           {/* Notas */}
           <div className="space-y-1">
-            <label className="text-xs font-medium text-gray-600 dark:text-gray-400">Notas adicionales</label>
+            <label className="text-xs font-medium text-gray-600">Notas adicionales</label>
             <textarea
               value={notas}
               onChange={e => setNotas(e.target.value)}
               rows={2}
               placeholder="Información adicional sobre la devolución..."
-              className="w-full px-3 py-2 border border-gray-200 dark:border-card-border rounded-xl text-sm bg-white dark:bg-gray-900 text-gray-900 dark:text-white resize-none focus:outline-none focus:ring-2 focus:ring-[#f97316]/40"
+              className="w-full px-3 py-2 border border-[var(--rule-base)] rounded-lg text-sm bg-white text-gray-900 resize-none focus:outline-none focus:ring-2 focus:ring-secondary/40"
             />
           </div>
 
@@ -423,14 +423,14 @@ export default function DevolucionesProveedorModule() {
           <div className="flex justify-end gap-2 pt-1">
             <button
               onClick={() => setMostrarFormulario(false)}
-              className="px-4 py-2 text-sm text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-xl transition-colors min-h-[44px]"
+              className="px-4 py-2 text-sm text-gray-600 hover:bg-gray-100 rounded-lg transition-colors min-h-[44px]"
             >
               Cancelar
             </button>
             <button
               onClick={handleGuardar}
               disabled={guardando || !proveedorId || items.every(i => !i.nombre.trim())}
-              className="px-4 py-2 bg-[#f97316] hover:bg-[#e8924f] disabled:opacity-50 text-white rounded-xl text-sm font-medium transition-colors min-h-[44px] flex items-center gap-2"
+              className="px-4 py-2 bg-secondary hover:bg-secondary/90 disabled:opacity-50 text-white rounded-lg text-sm font-medium transition-colors min-h-[44px] flex items-center gap-2"
             >
               {guardando && <Loader2 className="h-3.5 w-3.5 animate-spin" />}
               {guardando ? "Guardando..." : "Registrar devolución"}
@@ -442,20 +442,20 @@ export default function DevolucionesProveedorModule() {
       {/* Lista de devoluciones */}
       {loading ? (
         <div className="flex items-center justify-center py-12">
-          <Loader2 className="h-6 w-6 animate-spin text-[#00B4A6]" />
+          <Loader2 className="h-6 w-6 animate-spin text-primary" />
         </div>
       ) : (
         <div className="space-y-2">
           {devolucionesFiltradas.length === 0 ? (
-            <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl p-8 text-center">
-              <RotateCcw className="h-8 w-8 mx-auto mb-2 text-gray-300 dark:text-gray-600" />
+            <div className="bg-white border border-[var(--rule-base)] rounded-xl p-8 text-center">
+              <RotateCcw className="h-8 w-8 mx-auto mb-2 text-gray-300" />
               <p className="text-sm text-gray-400">
                 {filtroEstado ? `No hay devoluciones con estado ${filtroEstado}` : "No hay devoluciones registradas"}
               </p>
               {!filtroEstado && (
                 <button
                   onClick={() => { setMostrarFormulario(true); resetFormulario(); }}
-                  className="mt-3 text-sm text-[#00B4A6] font-medium hover:underline"
+                  className="mt-3 text-sm text-primary font-medium hover:underline"
                 >
                   Registrar la primera devolución
                 </button>
@@ -465,19 +465,19 @@ export default function DevolucionesProveedorModule() {
             devolucionesFiltradas.map(dev => (
               <div
                 key={dev.id}
-                className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl overflow-hidden"
+                className="bg-white border border-[var(--rule-base)] rounded-xl overflow-hidden"
               >
                 {/* Cabecera de la tarjeta */}
                 <div className="flex items-center gap-3 p-3">
-                  <div className="h-9 w-9 rounded-xl bg-[#f97316]/10 flex items-center justify-center shrink-0">
-                    <Truck className="h-4 w-4 text-[#f97316]" />
+                  <div className="h-9 w-9 rounded-xl bg-secondary/10 flex items-center justify-center shrink-0">
+                    <Truck className="h-4 w-4 text-secondary" />
                   </div>
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 flex-wrap">
-                      <span className="text-sm font-semibold text-gray-900 dark:text-white truncate">
+                      <span className="text-sm font-semibold text-gray-900 truncate">
                         {dev.proveedorNombre}
                       </span>
-                      <span className={cn("text-[10px] font-bold px-2 py-0.5 rounded-full shrink-0", ESTADO_STYLES[dev.estado])}>
+                      <span className={cn("text-[length:var(--ts-2xs)] font-bold px-2 py-0.5 rounded-full shrink-0", ESTADO_STYLES[dev.estado])}>
                         {dev.estado}
                       </span>
                     </div>
@@ -496,7 +496,7 @@ export default function DevolucionesProveedorModule() {
                       <button
                         onClick={() => avanzarEstado(dev.id)}
                         disabled={actionId === dev.id}
-                        className="text-xs px-2.5 py-1.5 bg-[#00B4A6]/10 text-[#00B4A6] dark:bg-[#00B4A6]/20 dark:text-emerald-400 rounded-lg hover:bg-[#00B4A6]/20 transition-colors font-medium min-h-[36px] whitespace-nowrap disabled:opacity-50 flex items-center gap-1"
+                        className="text-xs px-2.5 py-1.5 bg-primary/10 text-primary rounded-lg hover:bg-primary/20 transition-colors font-medium min-h-[36px] whitespace-nowrap disabled:opacity-50 flex items-center gap-1"
                       >
                         {actionId === dev.id && <Loader2 className="h-3 w-3 animate-spin" />}
                         {ESTADO_LABEL_SIGUIENTE[dev.estado]}
@@ -504,7 +504,7 @@ export default function DevolucionesProveedorModule() {
                     )}
                     <button
                       onClick={() => setExpandedId(expandedId === dev.id ? null : dev.id)}
-                      className="p-1.5 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 transition-colors min-h-[44px] min-w-[44px] flex items-center justify-center"
+                      className="p-1.5 text-gray-400 hover:text-gray-600 transition-colors min-h-[44px] min-w-[44px] flex items-center justify-center"
                     >
                       {expandedId === dev.id ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
                     </button>
@@ -513,30 +513,30 @@ export default function DevolucionesProveedorModule() {
 
                 {/* Detalle expandido */}
                 {expandedId === dev.id && (
-                  <div className="border-t border-gray-100 dark:border-card-border px-4 py-3 space-y-3 bg-gray-50/50 dark:bg-gray-800/20">
+                  <div className="border-t border-[var(--rule-soft)] px-4 py-3 space-y-3 bg-gray-50/50">
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                       <div>
-                        <p className="text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">Motivo</p>
+                        <p className="text-xs font-medium text-gray-500 mb-1">Motivo</p>
                         <div className="flex items-start gap-1.5">
                           <AlertCircle className="h-3.5 w-3.5 text-amber-500 mt-0.5 shrink-0" />
-                          <span className="text-sm text-gray-700 dark:text-gray-300">{dev.motivo}</span>
+                          <span className="text-sm text-gray-700">{dev.motivo}</span>
                         </div>
                       </div>
                       {dev.notas && (
                         <div>
-                          <p className="text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">Notas</p>
-                          <p className="text-sm text-gray-600 dark:text-gray-400">{dev.notas}</p>
+                          <p className="text-xs font-medium text-gray-500 mb-1">Notas</p>
+                          <p className="text-sm text-gray-600">{dev.notas}</p>
                         </div>
                       )}
                     </div>
                     <div>
-                      <p className="text-xs font-medium text-gray-500 dark:text-gray-400 mb-2">Items devueltos</p>
+                      <p className="text-xs font-medium text-gray-500 mb-2">Items devueltos</p>
                       <div className="space-y-1">
                         {dev.items.map((item, i) => (
                           <div key={i} className="flex items-center gap-2 text-sm">
                             <Package className="h-3.5 w-3.5 text-gray-400 shrink-0" />
-                            <span className="flex-1 text-gray-700 dark:text-gray-300">{item.nombre}</span>
-                            <span className="font-medium text-gray-900 dark:text-white tabular-nums">
+                            <span className="flex-1 text-gray-700">{item.nombre}</span>
+                            <span className="font-medium text-gray-900 tabular-nums">
                               {item.cantidad} {item.unidad}
                             </span>
                           </div>
@@ -562,18 +562,18 @@ export default function DevolucionesProveedorModule() {
       )}
 
       {/* ── Panel de Reportes ─────────────────────────────────────────── */}
-      <div className="mt-6 border border-gray-200 dark:border-card-border rounded-2xl overflow-hidden">
+      <div className="mt-6 border border-[var(--rule-base)] rounded-xl overflow-hidden">
         <button
           type="button"
           onClick={() => setShowReportes(v => !v)}
-          className="w-full flex items-center justify-between px-4 py-3 bg-gray-50 dark:bg-gray-800/50 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+          className="w-full flex items-center justify-between px-4 py-3 bg-gray-50 hover:bg-gray-100 transition-colors"
         >
           <div className="flex items-center gap-2">
-            <BarChart2 className="h-4 w-4 text-[#00B4A6]" />
-            <span className="text-sm font-semibold text-gray-800 dark:text-gray-200">
+            <BarChart2 className="h-4 w-4 text-primary" />
+            <span className="text-sm font-semibold text-gray-800">
               Reportes de Devoluciones
             </span>
-            <span className="text-xs bg-[#00B4A6]/10 text-[#00B4A6] px-2 py-0.5 rounded-full">
+            <span className="text-xs bg-primary/10 text-primary px-2 py-0.5 rounded-full">
               {devoluciones.length} registros
             </span>
           </div>
@@ -581,7 +581,7 @@ export default function DevolucionesProveedorModule() {
             <button
               type="button"
               onClick={e => { e.stopPropagation(); exportarCSV(); }}
-              className="flex items-center gap-1 px-3 py-1.5 bg-[#00B4A6] text-white text-xs rounded-lg hover:bg-[#009690] transition-colors"
+              className="flex items-center gap-1 px-3 py-1.5 bg-primary text-white text-xs rounded-lg hover:bg-primary-dark transition-colors"
               title="Exportar CSV"
             >
               <Download className="h-3.5 w-3.5" /> CSV
@@ -595,12 +595,12 @@ export default function DevolucionesProveedorModule() {
             {/* Tarjetas resumen */}
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
               {[
-                { label: "Total", value: devoluciones.length, color: "text-gray-700 dark:text-gray-300" },
-                { label: "Pendientes", value: devoluciones.filter(d => d.estado === "PENDIENTE").length, color: "text-amber-600 dark:text-amber-400" },
-                { label: "Enviadas", value: devoluciones.filter(d => d.estado === "ENVIADA").length, color: "text-blue-600 dark:text-blue-400" },
-                { label: "Resueltas", value: devoluciones.filter(d => d.estado === "RESUELTA").length, color: "text-emerald-600 dark:text-emerald-400" },
+                { label: "Total", value: devoluciones.length, color: "text-gray-700" },
+                { label: "Pendientes", value: devoluciones.filter(d => d.estado === "PENDIENTE").length, color: "text-amber-600" },
+                { label: "Enviadas", value: devoluciones.filter(d => d.estado === "ENVIADA").length, color: "text-emerald-600" },
+                { label: "Resueltas", value: devoluciones.filter(d => d.estado === "RESUELTA").length, color: "text-emerald-600" },
               ].map(({ label, value, color }) => (
-                <div key={label} className="bg-white dark:bg-gray-900 border border-gray-100 dark:border-card-border rounded-xl p-3 text-center">
+                <div key={label} className="bg-white border border-[var(--rule-soft)] rounded-xl p-3 text-center">
                   <p className={`text-2xl font-bold ${color}`}>{value}</p>
                   <p className="text-xs text-gray-500 mt-0.5">{label}</p>
                 </div>
@@ -610,7 +610,7 @@ export default function DevolucionesProveedorModule() {
             {/* Gráfico mensual */}
             {reportesPorMes.length > 0 && (
               <div>
-                <p className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-3">
+                <p className="text-xs font-semibold text-gray-500 mb-3">
                   Devoluciones por mes
                 </p>
                 <ResponsiveContainer width="100%" height={180}>
@@ -631,7 +631,7 @@ export default function DevolucionesProveedorModule() {
             {/* Top motivos + proveedores */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
-                <p className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-2">
+                <p className="text-xs font-semibold text-gray-500 mb-2">
                   Top motivos
                 </p>
                 <div className="space-y-1.5">
@@ -641,12 +641,12 @@ export default function DevolucionesProveedorModule() {
                       <div key={motivo} className="flex items-center gap-2">
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center justify-between mb-0.5">
-                            <span className="text-xs text-gray-700 dark:text-gray-300 truncate">{motivo}</span>
-                            <span className="text-xs font-bold text-gray-900 dark:text-white ml-2">{total}</span>
+                            <span className="text-xs text-gray-700 truncate">{motivo}</span>
+                            <span className="text-xs font-bold text-gray-900 ml-2">{total}</span>
                           </div>
-                          <div className="h-1.5 bg-gray-100 dark:bg-gray-800 rounded-full overflow-hidden">
+                          <div className="h-1.5 bg-gray-100 rounded-full overflow-hidden">
                             <div
-                              className="h-full bg-[#f97316] rounded-full transition-all"
+                              className="h-full bg-secondary rounded-full transition-all"
                               style={{ width: `${(total / max) * 100}%` }}
                             />
                           </div>
@@ -657,7 +657,7 @@ export default function DevolucionesProveedorModule() {
                 </div>
               </div>
               <div>
-                <p className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-2">
+                <p className="text-xs font-semibold text-gray-500 mb-2">
                   Top proveedores
                 </p>
                 <div className="space-y-1.5">
@@ -667,12 +667,12 @@ export default function DevolucionesProveedorModule() {
                       <div key={proveedor} className="flex items-center gap-2">
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center justify-between mb-0.5">
-                            <span className="text-xs text-gray-700 dark:text-gray-300 truncate">{proveedor}</span>
-                            <span className="text-xs font-bold text-gray-900 dark:text-white ml-2">{total}</span>
+                            <span className="text-xs text-gray-700 truncate">{proveedor}</span>
+                            <span className="text-xs font-bold text-gray-900 ml-2">{total}</span>
                           </div>
-                          <div className="h-1.5 bg-gray-100 dark:bg-gray-800 rounded-full overflow-hidden">
+                          <div className="h-1.5 bg-gray-100 rounded-full overflow-hidden">
                             <div
-                              className="h-full bg-[#00B4A6] rounded-full transition-all"
+                              className="h-full bg-primary rounded-full transition-all"
                               style={{ width: `${(total / max) * 100}%` }}
                             />
                           </div>

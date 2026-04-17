@@ -57,7 +57,7 @@ type Bundle = {
 
 const STATUS_MAP: Record<Order["status"], { label: string; color: string; icon: React.ComponentType<{ className?: string }> }> = {
   pendiente:  { label: "Pendiente",  color: "bg-amber-50 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300",   icon: Clock },
-  confirmado: { label: "Confirmado", color: "bg-blue-50 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300",       icon: CheckCircle2 },
+  confirmado: { label: "Confirmado", color: "bg-emerald-50 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300",       icon: CheckCircle2 },
   en_camino:  { label: "En camino",  color: "bg-indigo-50 text-indigo-700 dark:bg-indigo-900/30 dark:text-indigo-300", icon: Truck },
   entregado:  { label: "Entregado",  color: "bg-emerald-50 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300", icon: CheckCircle2 },
   cancelado:  { label: "Cancelado",  color: "bg-red-50 text-red-700 dark:bg-red-900/30 dark:text-red-300",           icon: XCircle },
@@ -67,7 +67,7 @@ const TIER_STYLES: Record<string, { bg: string; text: string; border: string; gr
   bronce:   { bg: "bg-amber-50 dark:bg-amber-900/20",   text: "text-amber-700 dark:text-amber-300",   border: "border-amber-200 dark:border-amber-700", gradient: "from-amber-400 to-orange-500",   inlineGradient: "linear-gradient(90deg, #fbbf24, #f97316)" },
   plata:    { bg: "bg-gray-50 dark:bg-gray-800",         text: "text-gray-600 dark:text-gray-300",     border: "border-gray-200 dark:border-gray-600",   gradient: "from-gray-400 to-gray-500",     inlineGradient: "linear-gradient(90deg, #9ca3af, #6b7280)" },
   oro:      { bg: "bg-yellow-50 dark:bg-yellow-900/20",  text: "text-yellow-700 dark:text-yellow-300", border: "border-yellow-200 dark:border-yellow-700", gradient: "from-yellow-400 to-amber-500",   inlineGradient: "linear-gradient(90deg, #facc15, #f59e0b)" },
-  diamante: { bg: "bg-sky-50 dark:bg-sky-900/20",        text: "text-sky-700 dark:text-sky-300",       border: "border-sky-200 dark:border-sky-700",     gradient: "from-sky-400 to-blue-500",     inlineGradient: "linear-gradient(90deg, #38bdf8, #3b82f6)" },
+  diamante: { bg: "bg-sky-50 dark:bg-sky-900/20",        text: "text-sky-700 dark:text-sky-300",       border: "border-sky-200 dark:border-sky-700",     gradient: "from-sky-400 to-emerald-500",     inlineGradient: "linear-gradient(90deg, #38bdf8, #3b82f6)" },
 };
 
 function fmt(n: number | undefined | null) { return `S/${(n ?? 0).toFixed(2)}`; }
@@ -385,7 +385,7 @@ function QuickAction({ icon: Icon, label, href, onClick }: {
    ══════════════════════════════════════════════════════════════════ */
 
 const CREDIT_TIERS = [
-  { min: 5, label: "Cliente Diamante", stars: 5, credit: "ilimitado", bg: "from-sky-400 to-blue-600", textColor: "text-sky-700 dark:text-sky-300", borderColor: "border-sky-200 dark:border-sky-700" },
+  { min: 5, label: "Cliente Diamante", stars: 5, credit: "ilimitado", bg: "from-sky-400 to-emerald-600", textColor: "text-sky-700 dark:text-sky-300", borderColor: "border-sky-200 dark:border-sky-700" },
   { min: 4, label: "Cliente Oro", stars: 4, credit: "S/ 500", bg: "from-yellow-400 to-amber-500", textColor: "text-yellow-700 dark:text-yellow-300", borderColor: "border-yellow-200 dark:border-yellow-700" },
   { min: 3, label: "Cliente Plata", stars: 3, credit: "S/ 200", bg: "from-gray-400 to-gray-500", textColor: "text-gray-600 dark:text-gray-300", borderColor: "border-gray-200 dark:border-gray-600" },
   { min: 2, label: "Cliente Bronce", stars: 2, credit: "S/ 50", bg: "from-amber-400 to-orange-500", textColor: "text-amber-700 dark:text-amber-300", borderColor: "border-amber-200 dark:border-amber-700" },

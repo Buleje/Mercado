@@ -176,7 +176,7 @@ export default function CatalogPDFGenerator() {
       </div>
 
       {/* Controls */}
-      <div className="rounded-xl border border-gray-200 bg-white p-5 dark:border-gray-700 dark:bg-gray-900">
+      <div className="rounded-xl border border-[var(--rule-base)] bg-white p-5 dark:border-[var(--rule-base)] dark:bg-gray-900">
         <div className="grid gap-4 sm:grid-cols-2">
           <div>
             <label className="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-300">
@@ -191,7 +191,7 @@ export default function CatalogPDFGenerator() {
               <select
                 value={selectedCategory}
                 onChange={(e) => setSelectedCategory(e.target.value)}
-                className="w-full rounded-lg border border-gray-200 bg-gray-50 px-3 py-2 text-sm focus:border-[#00B4A6] focus:outline-none dark:border-gray-700 dark:bg-gray-800 dark:text-white"
+                className="w-full rounded-lg border border-[var(--rule-base)] bg-gray-50 px-3 py-2 text-sm focus:border-[#00B4A6] focus:outline-none dark:border-[var(--rule-base)] dark:bg-gray-800 dark:text-white"
               >
                 <option value="todas">Todas las categorias</option>
                 {categories.map((c) => (
@@ -206,7 +206,7 @@ export default function CatalogPDFGenerator() {
           <div className="flex items-end gap-2">
             <button
               onClick={() => setShowPreview(!showPreview)}
-              className="flex items-center gap-2 rounded-lg border border-gray-200 px-4 py-2 text-sm text-gray-600 transition hover:bg-gray-50 dark:border-gray-700 dark:text-gray-300 dark:hover:bg-gray-800"
+              className="flex items-center gap-2 rounded-lg border border-[var(--rule-base)] px-4 py-2 text-sm text-gray-600 transition hover:bg-gray-50 dark:border-[var(--rule-base)] dark:text-gray-300 dark:hover:bg-gray-800"
             >
               <Eye className="h-4 w-4" />
               {showPreview ? "Ocultar" : "Vista previa"}
@@ -232,7 +232,7 @@ export default function CatalogPDFGenerator() {
 
       {/* Preview */}
       {showPreview && (
-        <div className="rounded-xl border border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-900">
+        <div className="rounded-xl border border-[var(--rule-base)] bg-white dark:border-[var(--rule-base)] dark:bg-gray-900">
           <div className="rounded-t-xl bg-[#00B4A6] p-4 text-center text-white">
             <p className="text-lg font-bold">Buleje</p>
             <p className="text-xs opacity-80">Catalogo de Productos — Pucallpa, Peru</p>
@@ -260,7 +260,7 @@ export default function CatalogPDFGenerator() {
                   <tr
                     key={p.id}
                     className={cn(
-                      "border-b border-gray-100 dark:border-gray-800",
+                      "border-b border-[var(--rule-base)]",
                       i % 2 === 0
                         ? "bg-white dark:bg-gray-900"
                         : "bg-gray-50 dark:bg-gray-800/50"

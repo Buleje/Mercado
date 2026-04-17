@@ -148,7 +148,7 @@ function ScoreBar({ score, level }: { score: number; level: ScoreLevel }) {
     <div className="flex items-center gap-2 w-full">
       <div className="flex-1 h-2 bg-gray-100 dark:bg-gray-800 rounded-full overflow-hidden">
         <div
-          className="h-full rounded-full transition-all duration-500"
+          className="h-full rounded-full transition-all duration-[var(--dur-slow)]"
           style={{ width: `${score}%`, backgroundColor: color }}
         />
       </div>
@@ -316,7 +316,7 @@ export default function ScoringCrediticioTab() {
           value={search}
           onChange={e => setSearch(e.target.value)}
           placeholder="Buscar cliente..."
-          className="w-full pl-9 pr-4 h-10 rounded-xl text-sm border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 text-gray-800 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#00B4A6]/40 focus:border-[#00B4A6]"
+          className="w-full pl-9 pr-4 h-10 rounded-lg text-sm border border-[var(--rule-base)] bg-white dark:bg-gray-900 text-gray-800 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#00B4A6]/40 focus:border-[#00B4A6]"
         />
       </div>
 
@@ -340,16 +340,16 @@ export default function ScoringCrediticioTab() {
       ) : (
         <>
           {/* Desktop table */}
-          <div className="hidden sm:block bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 rounded-2xl overflow-hidden shadow-sm">
+          <div className="hidden sm:block bg-white dark:bg-gray-900 border border-[var(--rule-base)] rounded-xl overflow-hidden ">
             <table className="w-full text-sm">
               <thead>
-                <tr className="border-b border-gray-100 dark:border-gray-800 bg-gray-50/50 dark:bg-gray-800/30">
-                  <th className="text-left px-4 py-3 text-xs text-gray-500 dark:text-gray-400 font-medium uppercase tracking-wider">Cliente</th>
-                  <th className="text-center px-4 py-3 text-xs text-gray-500 dark:text-gray-400 font-medium uppercase tracking-wider">Nivel</th>
-                  <th className="px-4 py-3 text-xs text-gray-500 dark:text-gray-400 font-medium uppercase tracking-wider">Score</th>
-                  <th className="text-right px-4 py-3 text-xs text-gray-500 dark:text-gray-400 font-medium uppercase tracking-wider">Fiado actual</th>
-                  <th className="text-right px-4 py-3 text-xs text-gray-500 dark:text-gray-400 font-medium uppercase tracking-wider">Límite recom.</th>
-                  <th className="text-right px-4 py-3 text-xs text-gray-500 dark:text-gray-400 font-medium uppercase tracking-wider">Pago a tiempo</th>
+                <tr className="border-b border-[var(--rule-base)] bg-gray-50/50 dark:bg-gray-800/30">
+                  <th className="text-left px-4 py-3 text-xs text-gray-500 dark:text-gray-400 font-medium">Cliente</th>
+                  <th className="text-center px-4 py-3 text-xs text-gray-500 dark:text-gray-400 font-medium">Nivel</th>
+                  <th className="px-4 py-3 text-xs text-gray-500 dark:text-gray-400 font-medium">Score</th>
+                  <th className="text-right px-4 py-3 text-xs text-gray-500 dark:text-gray-400 font-medium">Fiado actual</th>
+                  <th className="text-right px-4 py-3 text-xs text-gray-500 dark:text-gray-400 font-medium">Límite recom.</th>
+                  <th className="text-right px-4 py-3 text-xs text-gray-500 dark:text-gray-400 font-medium">Pago a tiempo</th>
                 </tr>
               </thead>
               <tbody>
@@ -360,7 +360,7 @@ export default function ScoringCrediticioTab() {
                     <tr
                       key={c.customerId}
                       className={cn(
-                        "border-b border-gray-50 dark:border-gray-800/50 last:border-0 hover:bg-gray-50/50 dark:hover:bg-gray-800/20 transition-colors",
+                        "border-b border-gray-50 dark:border-[var(--rule-base)] last:border-0 hover:bg-gray-50/50 dark:hover:bg-gray-800/20 transition-colors",
                       )}
                     >
                       <td className="px-4 py-3">
@@ -421,7 +421,7 @@ export default function ScoringCrediticioTab() {
               return (
                 <div
                   key={c.customerId}
-                  className="bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 rounded-xl p-4 shadow-sm"
+                  className="bg-white dark:bg-gray-900 border border-[var(--rule-base)] rounded-xl p-4 "
                 >
                   <div className="flex items-start justify-between mb-3">
                     <div className="min-w-0">

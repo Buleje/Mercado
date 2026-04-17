@@ -180,7 +180,7 @@ export default function QuickStockCounter() {
   return (
     <div className="flex flex-col gap-6">
       {/* Scanner input */}
-      <div className="rounded-xl border border-gray-200 bg-white p-5 dark:border-gray-700 dark:bg-gray-900">
+      <div className="rounded-xl border border-[var(--rule-base)] bg-white p-5 dark:border-[var(--rule-base)] dark:bg-gray-900">
         <div className="mb-4 flex items-center gap-2">
           <Barcode className="h-5 w-5 text-[#00B4A6]" />
           <h3 className="text-sm font-semibold text-gray-800 dark:text-gray-100">
@@ -197,7 +197,7 @@ export default function QuickStockCounter() {
             placeholder="Código de barras o SKU..."
             autoFocus
             className={cn(
-              "flex-1 rounded-lg border border-gray-200 bg-gray-50 px-3 py-2 text-sm",
+              "flex-1 rounded-lg border border-[var(--rule-base)] bg-gray-50 px-3 py-2 text-sm",
               "text-gray-800 placeholder-gray-400 outline-none transition",
               "focus:border-[#00B4A6] focus:ring-2 focus:ring-[#00B4A6]/20",
               "dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100 dark:placeholder-gray-500"
@@ -269,7 +269,7 @@ export default function QuickStockCounter() {
                     if (e.key === "Enter") addToCount();
                   }}
                   className={cn(
-                    "w-20 rounded-lg border border-gray-200 bg-white px-2 py-1 text-center text-sm",
+                    "w-20 rounded-lg border border-[var(--rule-base)] bg-white px-2 py-1 text-center text-sm",
                     "text-gray-800 outline-none focus:border-[#00B4A6] focus:ring-2 focus:ring-[#00B4A6]/20",
                     "dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100"
                   )}
@@ -289,7 +289,7 @@ export default function QuickStockCounter() {
                     Number(physicalStock) === foundProduct.stock
                       ? "text-gray-500"
                       : Number(physicalStock) > foundProduct.stock
-                      ? "text-blue-600 dark:text-blue-400"
+                      ? "text-emerald-600 dark:text-emerald-400"
                       : "text-red-600 dark:text-red-400"
                   )}
                 >
@@ -315,8 +315,8 @@ export default function QuickStockCounter() {
 
       {/* Counted list */}
       {counted.length > 0 && (
-        <div className="rounded-xl border border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-900">
-          <div className="border-b border-gray-100 px-5 py-3 dark:border-gray-700">
+        <div className="rounded-xl border border-[var(--rule-base)] bg-white dark:border-[var(--rule-base)] dark:bg-gray-900">
+          <div className="border-b border-[var(--rule-soft)] px-5 py-3 dark:border-[var(--rule-base)]">
             <h3 className="text-sm font-semibold text-gray-800 dark:text-gray-100">
               Productos contados ({counted.length})
             </h3>
@@ -346,7 +346,7 @@ export default function QuickStockCounter() {
                       <span
                         className={cn(
                           "flex items-center gap-1 text-xs font-semibold",
-                          diff < 0 ? "text-red-600 dark:text-red-400" : "text-blue-600 dark:text-blue-400"
+                          diff < 0 ? "text-red-600 dark:text-red-400" : "text-emerald-600 dark:text-emerald-400"
                         )}
                       >
                         <AlertTriangle className="h-3.5 w-3.5" />
@@ -368,7 +368,7 @@ export default function QuickStockCounter() {
           </div>
 
           {/* Summary bar */}
-          <div className="border-t border-gray-100 bg-gray-50 px-5 py-4 dark:border-gray-700 dark:bg-gray-800/50">
+          <div className="border-t border-[var(--rule-soft)] bg-gray-50 px-5 py-4 dark:border-[var(--rule-base)] dark:bg-gray-800/50">
             <div className="mb-3 flex flex-wrap gap-4 text-sm">
               <div>
                 <span className="text-gray-500 dark:text-gray-400">Contados: </span>
@@ -395,7 +395,7 @@ export default function QuickStockCounter() {
                     summary.totalDiffValue < 0
                       ? "text-red-600 dark:text-red-400"
                       : summary.totalDiffValue > 0
-                      ? "text-blue-600 dark:text-blue-400"
+                      ? "text-emerald-600 dark:text-emerald-400"
                       : "text-gray-800 dark:text-gray-100"
                   )}
                 >

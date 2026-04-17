@@ -95,7 +95,7 @@ export default function BankReconciliationTab() {
           </h1>
           <p className="text-sm text-gray-500 dark:text-muted mt-0.5">Cruce de movimientos bancarios vs registros del sistema</p>
         </div>
-        <button onClick={() => exportToCSV(processed.map(m => ({ fecha: m.date, descripcion: m.description, referencia: m.reference, tipo: m.type, monto: m.amount, cuenta: accountName(m.bankAccount), estado: m.status, ref_sistema: m.systemRef, notas: m.notes })), "conciliacion-bancaria")} className="flex items-center gap-1.5 px-3 py-2 rounded-xl border border-gray-200 dark:border-card-border bg-white dark:bg-surface text-sm font-semibold text-gray-700 dark:text-foreground hover:bg-gray-50 dark:hover:bg-accent transition-colors">
+        <button onClick={() => exportToCSV(processed.map(m => ({ fecha: m.date, descripcion: m.description, referencia: m.reference, tipo: m.type, monto: m.amount, cuenta: accountName(m.bankAccount), estado: m.status, ref_sistema: m.systemRef, notas: m.notes })), "conciliacion-bancaria")} className="flex items-center gap-1.5 px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-card-border bg-white dark:bg-surface text-sm font-semibold text-gray-700 dark:text-foreground hover:bg-gray-50 dark:hover:bg-accent transition-colors">
           <Download className="h-4 w-4" /> Exportar
         </button>
       </div>
@@ -106,11 +106,11 @@ export default function BankReconciliationTab() {
           { label: "Conciliados", value: String(stats.conciliados), color: "text-emerald-600", bg: "bg-emerald-50 dark:bg-emerald-950/30" },
           { label: "Pendientes", value: String(stats.pendientes), color: "text-amber-600", bg: "bg-amber-50 dark:bg-amber-950/30" },
           { label: "Discrepancias", value: String(stats.discrepancias), color: "text-red-500", bg: "bg-red-50 dark:bg-red-950/30" },
-          { label: "Total ingresos", value: fmt(stats.ingresos), color: "text-blue-600", bg: "bg-blue-50 dark:bg-blue-950/30" },
+          { label: "Total ingresos", value: fmt(stats.ingresos), color: "text-emerald-600", bg: "bg-emerald-50 dark:bg-emerald-950/30" },
           { label: "Total egresos", value: fmt(stats.egresos), color: "text-orange-600", bg: "bg-orange-50 dark:bg-orange-950/30" },
-          { label: "% Conciliado", value: `${stats.pctConciliado.toFixed(0)}%`, color: "text-violet-600", bg: "bg-violet-50 dark:bg-violet-950/30" },
+          { label: "% Conciliado", value: `${stats.pctConciliado.toFixed(0)}%`, color: "text-[var(--text-secondary)]", bg: "bg-[var(--surface-sunken)]" },
         ].map(({ label, value, color, bg }) => (
-          <div key={label} className={cn("rounded-2xl p-4", bg)}>
+          <div key={label} className={cn("rounded-xl p-4", bg)}>
             <p className="text-xs font-semibold text-gray-500 dark:text-muted mb-1">{label}</p>
             <p className={cn("text-xl font-extrabold", color)}>{value}</p>
           </div>
@@ -119,7 +119,7 @@ export default function BankReconciliationTab() {
 
       {/* Alerts */}
       {(stats.pendientes > 0 || stats.discrepancias > 0) && (
-        <div className="bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-800 rounded-2xl p-4 flex flex-wrap items-start gap-3">
+        <div className="bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-800 rounded-xl p-4 flex flex-wrap items-start gap-3">
           <AlertTriangle className="h-5 w-5 text-amber-500 shrink-0 mt-0.5" />
           <div>
             <p className="font-bold text-amber-700 dark:text-amber-400 text-sm">Movimientos sin conciliar</p>
@@ -135,17 +135,17 @@ export default function BankReconciliationTab() {
       <div className="flex flex-col sm:flex-row gap-3">
         <div className="relative flex-1 max-w-sm">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
-          <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Descripción, referencia..." className="w-full pl-9 pr-3 py-2 text-sm border border-gray-200 dark:border-card-border rounded-xl bg-white dark:bg-surface text-gray-700 dark:text-foreground" />
+          <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Descripción, referencia..." className="w-full pl-9 pr-3 py-2 text-sm border border-[var(--rule-base)] dark:border-card-border rounded-lg bg-white dark:bg-surface text-gray-700 dark:text-foreground" />
         </div>
-        <select value={filterStatus} onChange={e => setFilterStatus(e.target.value as ReconciliationStatus | "todos")} className="text-sm border border-gray-200 dark:border-card-border rounded-xl px-3 py-2 bg-white dark:bg-surface text-gray-700 dark:text-foreground">
+        <select value={filterStatus} onChange={e => setFilterStatus(e.target.value as ReconciliationStatus | "todos")} className="text-sm border border-[var(--rule-base)] dark:border-card-border rounded-lg px-3 py-2 bg-white dark:bg-surface text-gray-700 dark:text-foreground">
           <option value="todos">Todos los estados</option>
           {(Object.keys(STATUS_META) as ReconciliationStatus[]).map(s => <option key={s} value={s}>{STATUS_META[s].label}</option>)}
         </select>
-        <select value={filterAccount} onChange={e => setFilterAccount(e.target.value)} className="text-sm border border-gray-200 dark:border-card-border rounded-xl px-3 py-2 bg-white dark:bg-surface text-gray-700 dark:text-foreground">
+        <select value={filterAccount} onChange={e => setFilterAccount(e.target.value)} className="text-sm border border-[var(--rule-base)] dark:border-card-border rounded-lg px-3 py-2 bg-white dark:bg-surface text-gray-700 dark:text-foreground">
           <option value="todos">Todas las cuentas</option>
           {BANK_ACCOUNTS.map(a => <option key={a.id} value={a.id}>{a.name} {a.number}</option>)}
         </select>
-        <select value={filterType} onChange={e => setFilterType(e.target.value as "todos" | "ingreso" | "egreso")} className="text-sm border border-gray-200 dark:border-card-border rounded-xl px-3 py-2 bg-white dark:bg-surface text-gray-700 dark:text-foreground">
+        <select value={filterType} onChange={e => setFilterType(e.target.value as "todos" | "ingreso" | "egreso")} className="text-sm border border-[var(--rule-base)] dark:border-card-border rounded-lg px-3 py-2 bg-white dark:bg-surface text-gray-700 dark:text-foreground">
           <option value="todos">Todos los tipos</option>
           <option value="ingreso">Ingresos</option>
           <option value="egreso">Egresos</option>
@@ -153,10 +153,10 @@ export default function BankReconciliationTab() {
       </div>
 
       {/* Table */}
-      <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl overflow-hidden">
+      <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full min-w-[600px] text-sm">
-            <thead className="bg-gray-50 dark:bg-surface/50 border-b border-gray-200 dark:border-card-border">
+            <thead className="bg-gray-50 dark:bg-surface/50 border-b border-[var(--rule-base)] dark:border-card-border">
               <tr>
                 <th className="px-2 sm:px-4 py-2 sm:py-3 text-left text-xs font-bold text-gray-500 dark:text-muted uppercase">Estado</th>
                 <th className="px-2 sm:px-4 py-2 sm:py-3 text-left text-xs font-bold text-gray-500 dark:text-muted uppercase">Fecha</th>
@@ -195,7 +195,7 @@ export default function BankReconciliationTab() {
                             <Link2 className="h-3.5 w-3.5" />
                           </button>
                         )}
-                        <button onClick={() => setDetail(m)} className="p-1.5 rounded-lg text-gray-400 hover:text-blue-500 hover:bg-blue-50 dark:hover:bg-blue-950/20">
+                        <button onClick={() => setDetail(m)} className="p-1.5 rounded-lg text-gray-400 hover:text-emerald-500 hover:bg-emerald-50 dark:hover:bg-emerald-950/20">
                           <Eye className="h-3.5 w-3.5" />
                         </button>
                       </div>
@@ -211,7 +211,7 @@ export default function BankReconciliationTab() {
       {/* Detail modal */}
       {detail && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4" onClick={() => setDetail(null)}>
-          <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl shadow-2xl p-3 sm:p-6 w-full max-w-sm space-y-4" onClick={e => e.stopPropagation()}>
+          <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl p-3 sm:p-6 w-full max-w-sm space-y-4" onClick={e => e.stopPropagation()}>
             <div className="flex items-center justify-between">
               <h3 className="font-extrabold text-gray-900 dark:text-foreground text-sm">Detalle del movimiento</h3>
               <button onClick={() => setDetail(null)}><X className="h-4 w-4 text-gray-400" /></button>

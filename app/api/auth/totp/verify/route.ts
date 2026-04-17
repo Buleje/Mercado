@@ -83,7 +83,7 @@ export async function POST(req: NextRequest) {
         auth.username,
         undefined,
         auth.tenantId,
-      ).catch(() => {});
+      ).catch((err) => logger.error("[totp/verify] logActivity (verify_failed) failed", { error: String(err) }));
       return NextResponse.json({ error: "invalid_token" }, { status: 400 });
     }
 
@@ -110,7 +110,7 @@ export async function POST(req: NextRequest) {
       auth.username,
       undefined,
       auth.tenantId,
-    ).catch(() => {});
+    ).catch((err) => logger.error("[totp/verify] logActivity (verify_ok/activated) failed", { error: String(err) }));
 
     return NextResponse.json({ ok: true, activated: !wasAlreadyActive });
   } catch (err) {

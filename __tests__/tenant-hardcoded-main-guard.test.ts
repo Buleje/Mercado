@@ -9,13 +9,17 @@ const TARGET_DIRS = [
   path.join(ROOT, "lib", "db"),
 ];
 
+// Allowlist: hardcoded tenantId:"main" is allowed ONLY in platform-level
+// contexts (marketplace admin notifications, platform-wide crons, fallbacks).
+// Each entry documents the reason via code comments in the referenced file.
 const ALLOWED_BASELINE: Record<string, number> = {
   "app/api/admin/seed-peru-products/route.ts": 3,
   "app/api/contact/route.ts": 1,
   "app/api/cron/auto-backup/route.ts": 1,
   "app/api/cron/isolation-monitor/route.ts": 1,
   "app/api/cron/marketplace-weekly-report/route.ts": 1,
-  "app/api/marketplace/drivers/apply/route.ts": 1,
+  "app/api/daily-digest/route.ts": 1,                  // WhatsApp fallback when no tenant resolved
+  "app/api/marketplace/drivers/apply/route.ts": 2,     // Platform admin notifications (DB write + WhatsApp admin)
   "app/api/price-comparison/route.ts": 1,
   "lib/db/inventory.db.ts": 1,
 };

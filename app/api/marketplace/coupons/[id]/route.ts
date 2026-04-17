@@ -4,6 +4,7 @@ import { prisma } from "@/lib/prisma";
 import { toErrorPayload, newTraceId } from "@/lib/api-error";
 import { z } from "zod";
 import { logActivity } from "@/lib/activity-logger";
+import { logger } from "@/lib/logger";
 
 const PatchSchema = z.object({
   active: z.boolean().optional(),
@@ -24,7 +25,8 @@ export async function PATCH(req: NextRequest, ctx: RouteContext) {
     if (auth instanceof NextResponse) return auth;
 
     const { id } = await ctx.params;
-    const body = await req.json();
+    const body = await req.json().catch((err) => { logger.error("[marketplace/coupons/[id]] parse JSON body failed", { error: String(err) }); return null; });
+    if (!body) return NextResponse.json({ error: "Invalid JSON" }, { status: 400 });
     const parsed = PatchSchema.safeParse(body);
     if (!parsed.success) {
       return NextResponse.json({ issues: parsed.error.issues }, { status: 400 });
@@ -48,7 +50,7 @@ export async function PATCH(req: NextRequest, ctx: RouteContext) {
       `Cupón ${coupon.code} ${updated.active ? "activado" : "desactivado"}`,
       id,
       auth.username,
-    ).catch(() => {});
+    ).catch((err) => logger.error("[marketplace/coupons/[id]] operation failed", { error: String(err), tenantId: auth.tenantId }));
 
     return NextResponse.json({ data: updated });
   } catch (err) {
@@ -84,7 +86,7 @@ export async function DELETE(req: NextRequest, ctx: RouteContext) {
       `Cupón ${coupon.code} eliminado`,
       id,
       auth.username,
-    ).catch(() => {});
+    ).catch((err) => logger.error("[marketplace/coupons/[id]] operation failed", { error: String(err), tenantId: auth.tenantId }));
 
     return NextResponse.json({ ok: true });
   } catch (err) {

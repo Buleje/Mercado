@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import { X, ShoppingCart } from "lucide-react";
 import type { StoreTheme } from "@/contexts/settings-context";
 
@@ -24,12 +25,14 @@ export function CheckoutModalHeader({
   return (
     <div className="flex items-center justify-between px-6 py-5 shrink-0 bg-linear-to-r from-primary to-primary-dark">
       <div className="flex items-center gap-4">
-        <div className="h-12 w-12 rounded-2xl bg-white/20 backdrop-blur flex items-center justify-center shadow-lg overflow-hidden">
+        <div className="relative h-12 w-12 rounded-2xl bg-white/20 backdrop-blur flex items-center justify-center shadow-lg overflow-hidden">
           {storeTheme?.logo ? (
-            <img
+            <Image
               src={storeTheme.logo}
               alt=""
-              className="h-full w-full object-cover"
+              fill
+              sizes="48px"
+              className="object-cover"
             />
           ) : (
             <ShoppingCart className="h-6 w-6 text-white" />

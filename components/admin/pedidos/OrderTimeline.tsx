@@ -97,7 +97,7 @@ export default function OrderTimeline({
                         ? "border-emerald-500 bg-emerald-500 text-white"
                         : isCurrent
                           ? "border-[#f97316] bg-[#f97316]/10 text-[#f97316]"
-                          : "border-gray-200 dark:border-gray-600 bg-gray-50 dark:bg-gray-800 text-gray-300 dark:text-gray-600"
+                          : "border-[var(--rule-base)] dark:border-gray-600 bg-gray-50 dark:bg-gray-800 text-gray-300 dark:text-gray-600"
                   )}
                 >
                   {isCancelled ? (
@@ -118,7 +118,7 @@ export default function OrderTimeline({
 
                 {/* Label */}
                 <p className={cn(
-                  "text-[10px] font-bold mt-1 text-center",
+                  "text-[length:var(--ts-2xs)] font-bold mt-1 text-center",
                   isCancelled
                     ? "text-red-400"
                     : isCompleted
@@ -132,7 +132,7 @@ export default function OrderTimeline({
 
                 {/* Timestamp */}
                 {timestamp && (
-                  <p className="text-[9px] text-gray-400 dark:text-gray-500 mt-0.5">
+                  <p className="text-[length:var(--ts-2xs)] text-gray-400 dark:text-gray-500 mt-0.5">
                     {fmtDate(timestamp)} {fmtTime(timestamp)}
                   </p>
                 )}
@@ -174,7 +174,7 @@ export default function OrderTimeline({
           <button
             onClick={() => onChangeStatus(nextAction)}
             disabled={updating}
-            className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl bg-[#00B4A6] text-white text-xs font-bold hover:bg-[#009690] disabled:opacity-50 transition-colors"
+            className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg bg-[#00B4A6] text-white text-xs font-bold hover:bg-[#009690] disabled:opacity-50 transition-colors"
           >
             {updating ? (
               <div className="h-3 w-3 border-2 border-white border-t-transparent rounded-full animate-spin" />
@@ -186,7 +186,7 @@ export default function OrderTimeline({
           <button
             onClick={() => onChangeStatus("cancelado")}
             disabled={updating}
-            className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-red-50 dark:bg-red-950/20 text-red-600 text-xs font-bold hover:bg-red-100 disabled:opacity-50 transition-colors"
+            className="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-red-50 dark:bg-red-950/20 text-red-600 text-xs font-bold hover:bg-red-100 disabled:opacity-50 transition-colors"
           >
             <X className="h-3.5 w-3.5" /> Cancelar
           </button>

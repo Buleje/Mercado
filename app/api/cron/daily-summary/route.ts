@@ -10,6 +10,7 @@ import { sendPushToPhone } from "@/lib/push-sender";
 import { enqueueNotification } from "@/lib/queue";
 import { prisma } from "@/lib/prisma";
 import { generateDailyInsights } from "@/lib/ai/daily-insights";
+import { reportAICall } from "@/lib/billing/wire-up/ai-metering-middleware";
 
 /**
  * GET /api/cron/daily-summary
@@ -163,7 +164,24 @@ export async function GET(req: NextRequest) {
             fechaTexto,
           },
           ayer: summaryAyer,
-        }).catch(() => null);
+        }).catch((err: unknown) => {
+          logger.warn("[cron/daily-summary] generateDailyInsights failed", {
+            tenantId,
+            error: err instanceof Error ? err.message : String(err),
+          });
+          return null;
+        });
+
+        // ADR-047 billing wire-up: meter AI insight call when LLM succeeded.
+        // Idempotency: tenant + yyyy-mm-dd → 1 event per day per tenant
+        if (aiInsights) {
+          try {
+            const dayKey = startOfDay.toISOString().slice(0, 10);
+            reportAICall(tenantId, "ai.insight.call", `insight:${tenantId}:${dayKey}`);
+          } catch {
+            // Metering never blocks the cron
+          }
+        }
 
         // Auto-save DailySummary record. Schema has @@index([tenantId, fecha])
         // but no @@unique on the pair, so upsert isn't available — fall back
@@ -251,19 +269,19 @@ export async function GET(req: NextRequest) {
             });
             const ownerPhone = tenantWithPhone?.ownerPhone || (tenant.slug === "main" ? process.env.NOTIFY_PHONE : null);
             if (ownerPhone) {
-              enqueueNotification({ type: "whatsapp", recipient: ownerPhone, message: whatsappText, tenantId: tenant.id, metadata: { purpose: "daily-summary" } }).catch(() => {});
+              enqueueNotification({ type: "whatsapp", recipient: ownerPhone, message: whatsappText, tenantId: tenant.id, metadata: { purpose: "daily-summary" } }).catch((err) => logger.error("[cron/daily-summary] WhatsApp enqueue failed", { error: String(err), tenantId: tenant.id }));
               sendPushToPhone(ownerPhone, {
                 title: `📊 Resumen del día — ${tenant.name}`,
                 body: `S/ ${totalVentas.toFixed(2)} en ventas · ${totalPedidos} pedidos · ${productosStockBajo.length} alertas`,
                 url: "/admin?module=panel-principal",
-              }).catch(() => {});
+              }).catch((err) => logger.error("[cron/daily-summary] push send failed", { error: String(err), tenantId: tenant.id }));
             }
           } catch { /* silencioso */ }
         })();
 
         summaries.push({ tenant: tenant.name, totalVentas, totalPedidos });
 
-        enqueueActivityLog({ action: "daily-summary", resource: "Report", userId: "cron", tenantId: tenant.id, details: { description: `[${tenant.name}] Resumen: S/ ${totalVentas.toFixed(2)} en ventas, ${totalPedidos} pedidos` }, timestamp: new Date().toISOString() }).catch(() => {});
+        enqueueActivityLog({ action: "daily-summary", resource: "Report", userId: "cron", tenantId: tenant.id, details: { description: `[${tenant.name}] Resumen: S/ ${totalVentas.toFixed(2)} en ventas, ${totalPedidos} pedidos` }, timestamp: new Date().toISOString() }).catch((err: unknown) => logger.warn("[cron/daily-summary] enqueueActivityLog failed", { error: String(err), tenantId }));
       }
 
       logger.info("[cron/daily-summary] Completado", { tenants: summaries.length });

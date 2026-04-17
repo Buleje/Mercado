@@ -55,7 +55,7 @@ export default function SidebarReorderPanel({ categories, onSave }: SidebarReord
   };
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
           <h3 className="text-sm font-bold text-gray-900 dark:text-foreground">Ordenar categorías de la barra lateral</h3>
@@ -64,7 +64,7 @@ export default function SidebarReorderPanel({ categories, onSave }: SidebarReord
         <div className="flex gap-2">
           <button
             onClick={handleReset}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold text-gray-500 dark:text-muted hover:bg-gray-100 dark:hover:bg-accent transition-colors border border-gray-200 dark:border-card-border"
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold text-gray-500 dark:text-muted hover:bg-gray-100 dark:hover:bg-accent transition-colors border border-[var(--rule-base)] dark:border-card-border"
           >
             <RotateCcw className="h-3.5 w-3.5" /> Restablecer
           </button>
@@ -92,8 +92,8 @@ export default function SidebarReorderPanel({ categories, onSave }: SidebarReord
             onDragOver={(e) => handleDragOver(e, idx)}
             onDragEnd={handleDragEnd}
             className={cn(
-              "flex items-center gap-2 px-3 py-2.5 rounded-lg bg-white dark:bg-card border border-gray-200 dark:border-card-border transition-all cursor-grab active:cursor-grabbing",
-              dragIdx === idx && "opacity-50 scale-[0.98] shadow-lg ring-2 ring-primary/30"
+              "flex items-center gap-2 px-3 py-2.5 rounded-lg bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border transition-all cursor-grab active:cursor-grabbing",
+              dragIdx === idx && "opacity-50 scale-[0.98] ring-2 ring-primary/30"
             )}
           >
             <GripVertical className="h-4 w-4 text-gray-300 dark:text-muted shrink-0" />

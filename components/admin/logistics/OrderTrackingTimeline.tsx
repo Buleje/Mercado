@@ -169,7 +169,7 @@ export default function OrderTrackingTimeline({
                 "relative z-10 flex h-8 w-8 shrink-0 items-center justify-center rounded-full border-2",
                 step.done
                   ? "border-primary bg-primary text-white"
-                  : "border-gray-200 dark:border-gray-700 bg-white dark:bg-card text-gray-400",
+                  : "border-[var(--rule-base)] bg-white dark:bg-card text-gray-400",
               )}
               animate={step.current ? { boxShadow: ["0 0 0 0px rgba(45,106,79,0.4)", "0 0 0 6px rgba(45,106,79,0)", "0 0 0 0px rgba(45,106,79,0)"] } : {}}
               transition={step.current ? { repeat: Infinity, duration: 2 } : {}}
@@ -187,25 +187,25 @@ export default function OrderTrackingTimeline({
                 )}>
                   {step.label}
                   {step.current && (
-                    <span className="ml-1.5 text-[9px] font-bold bg-primary/10 text-primary px-1.5 py-0.5 rounded-full">
+                    <span className="ml-1.5 text-[length:var(--ts-2xs)] font-bold bg-primary/10 text-primary px-1.5 py-0.5 rounded-full">
                       Actual
                     </span>
                   )}
                 </p>
                 {step.timestamp && (
-                  <span className="text-[10px] text-gray-400">{fmtDateTime(step.timestamp)}</span>
+                  <span className="text-[length:var(--ts-2xs)] text-gray-400">{fmtDateTime(step.timestamp)}</span>
                 )}
               </div>
               {!compact && (
                 <p className={cn(
-                  "text-[11px] mt-0.5",
+                  "text-[length:var(--ts-xs)] mt-0.5",
                   step.done ? "text-gray-500 dark:text-muted" : "text-gray-300 dark:text-gray-600"
                 )}>
                   {step.description}
                 </p>
               )}
               {step.note && (
-                <p className="text-[11px] text-amber-600 dark:text-amber-400 mt-0.5 italic">
+                <p className="text-[length:var(--ts-xs)] text-amber-600 dark:text-amber-400 mt-0.5 italic">
                   &ldquo;{step.note}&rdquo;
                 </p>
               )}
@@ -228,16 +228,16 @@ export default function OrderTrackingTimeline({
               <div className="flex flex-wrap items-baseline gap-2">
                 <p className="text-xs font-bold text-red-600 dark:text-red-400">Cancelado</p>
                 {cancelEntry && (
-                  <span className="text-[10px] text-gray-400">{fmtDateTime(cancelEntry.createdAt)}</span>
+                  <span className="text-[length:var(--ts-2xs)] text-gray-400">{fmtDateTime(cancelEntry.createdAt)}</span>
                 )}
               </div>
               {!compact && (
-                <p className="text-[11px] text-gray-500 dark:text-muted mt-0.5">
+                <p className="text-[length:var(--ts-xs)] text-gray-500 dark:text-muted mt-0.5">
                   El pedido fue cancelado
                 </p>
               )}
               {cancelEntry?.note && (
-                <p className="text-[11px] text-red-500 dark:text-red-400 mt-0.5 italic">
+                <p className="text-[length:var(--ts-xs)] text-red-500 dark:text-red-400 mt-0.5 italic">
                   Motivo: &ldquo;{cancelEntry.note}&rdquo;
                 </p>
               )}

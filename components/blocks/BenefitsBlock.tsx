@@ -17,13 +17,13 @@ export const BenefitsBlockSchema = z.object({
     icon: z.string().default("Truck"),
     title: z.string(),
     description: z.string(),
-    iconBg: z.string().default("bg-blue-500"),
+    iconBg: z.string().default("bg-emerald-500"),
   })).default([
     {
       icon: "Truck",
       title: "Delivery Rápido",
       description: "Entrega a domicilio en toda tu zona.",
-      iconBg: "bg-blue-500",
+      iconBg: "bg-emerald-500",
     },
     {
       icon: "BadgePercent",
@@ -35,7 +35,7 @@ export const BenefitsBlockSchema = z.object({
       icon: "ShieldCheck",
       title: "Calidad Garantizada",
       description: "Productos seleccionados y verificados para tu familia.",
-      iconBg: "bg-blue-500",
+      iconBg: "bg-emerald-500",
     },
     {
       icon: "Leaf",

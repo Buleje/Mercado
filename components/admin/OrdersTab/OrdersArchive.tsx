@@ -40,11 +40,11 @@ export function OrdersArchive({
       onClick={onClose}
     >
       <div
-        className="bg-white dark:bg-card rounded-2xl shadow-2xl w-full max-w-3xl max-h-[90vh] flex flex-col"
+        className="bg-white dark:bg-card rounded-xl w-full max-w-3xl max-h-[90vh] flex flex-col"
         onClick={e => e.stopPropagation()}
       >
         {/* Header */}
-        <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100 dark:border-card-border shrink-0">
+        <div className="flex items-center justify-between px-5 py-4 border-b border-[var(--rule-soft)] dark:border-card-border shrink-0">
           <h3 className="font-extrabold text-gray-900 dark:text-foreground text-lg">Cancelados y Entregados</h3>
           <button
             onClick={onClose}
@@ -55,7 +55,7 @@ export function OrdersArchive({
         </div>
 
         {/* Filters */}
-        <div className="px-5 py-3 border-b border-gray-100 dark:border-card-border shrink-0 flex flex-col sm:flex-row gap-2">
+        <div className="px-5 py-3 border-b border-[var(--rule-soft)] dark:border-card-border shrink-0 flex flex-col sm:flex-row gap-2">
           <div className="relative flex-1">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400 dark:text-muted pointer-events-none" />
             <input
@@ -63,7 +63,7 @@ export function OrdersArchive({
               placeholder="Buscar cliente o teléfono…"
               value={archiveSearch}
               onChange={e => setArchiveSearch(e.target.value)}
-              className="w-full pl-9 pr-3 py-2 text-sm rounded-lg border border-gray-200 dark:border-card-border outline-none focus:border-primary"
+              className="w-full pl-9 pr-3 py-2 text-sm rounded-lg border border-[var(--rule-base)] dark:border-card-border outline-none focus:border-primary"
             />
           </div>
           <input
@@ -71,14 +71,14 @@ export function OrdersArchive({
             value={archiveDateFrom}
             onChange={e => setArchiveDateFrom(e.target.value)}
             title="Desde"
-            className="text-sm rounded-lg border border-gray-200 dark:border-card-border px-3 py-2 outline-none focus:border-primary text-gray-600 dark:text-muted"
+            className="text-sm rounded-lg border border-[var(--rule-base)] dark:border-card-border px-3 py-2 outline-none focus:border-primary text-gray-600 dark:text-muted"
           />
           <input
             type="date"
             value={archiveDateTo}
             onChange={e => setArchiveDateTo(e.target.value)}
             title="Hasta"
-            className="text-sm rounded-lg border border-gray-200 dark:border-card-border px-3 py-2 outline-none focus:border-primary text-gray-600 dark:text-muted"
+            className="text-sm rounded-lg border border-[var(--rule-base)] dark:border-card-border px-3 py-2 outline-none focus:border-primary text-gray-600 dark:text-muted"
           />
         </div>
 
@@ -90,9 +90,9 @@ export function OrdersArchive({
           ) : (
             <>
               {/* Desktop table */}
-              <div className="hidden sm:block rounded-xl border border-gray-200 dark:border-card-border overflow-hidden">
+              <div className="hidden sm:block rounded-xl border border-[var(--rule-base)] dark:border-card-border overflow-hidden">
                 <table className="w-full text-sm">
-                  <thead className="bg-gray-50 dark:bg-surface border-b border-gray-200 dark:border-card-border">
+                  <thead className="bg-gray-50 dark:bg-surface border-b border-[var(--rule-base)] dark:border-card-border">
                     <tr>
                       <th className="text-left px-4 py-2.5 font-semibold text-gray-600 dark:text-muted">Cliente</th>
                       <th className="text-left px-4 py-2.5 font-semibold text-gray-600 dark:text-muted">Estado</th>
@@ -127,7 +127,7 @@ export function OrdersArchive({
                               href={googleMapsUrl(o.customer.location)}
                               target="_blank"
                               rel="noopener noreferrer"
-                              className="p-1.5 rounded-lg text-gray-400 dark:text-muted hover:text-blue-500 hover:bg-blue-50 transition-colors"
+                              className="p-1.5 rounded-lg text-gray-400 dark:text-muted hover:text-emerald-500 hover:bg-emerald-50 transition-colors"
                               title="Ver en Maps"
                             >
                               <MapPin className="h-4 w-4" />
@@ -152,7 +152,7 @@ export function OrdersArchive({
                 {filteredArchive.map(o => (
                   <div
                     key={o.id}
-                    className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl p-4 shadow-sm cursor-pointer hover:bg-gray-50 dark:hover:bg-surface transition-colors"
+                    className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl p-4  cursor-pointer hover:bg-gray-50 dark:hover:bg-surface transition-colors"
                     onClick={() => { onSelectOrder(o); onClose(); }}
                   >
                     <div className="flex justify-between items-start gap-3">
@@ -171,12 +171,12 @@ export function OrdersArchive({
                         <p className="text-sm font-bold text-primary mt-1">S/{o.total.toFixed(2)}</p>
                       </div>
                     </div>
-                    <div className="flex gap-2 mt-3 pt-3 border-t border-gray-100 dark:border-card-border" onClick={e => e.stopPropagation()}>
+                    <div className="flex gap-2 mt-3 pt-3 border-t border-[var(--rule-soft)] dark:border-card-border" onClick={e => e.stopPropagation()}>
                       <a
                         href={googleMapsUrl(o.customer.location)}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="flex-1 flex items-center justify-center gap-1.5 py-2 rounded-lg text-xs font-semibold text-blue-600 bg-blue-50 hover:bg-blue-100 transition-colors"
+                        className="flex-1 flex items-center justify-center gap-1.5 py-2 rounded-lg text-xs font-semibold text-emerald-600 bg-emerald-50 hover:bg-emerald-100 transition-colors"
                       >
                         <MapPin className="h-4 w-4" /> Maps
                       </a>

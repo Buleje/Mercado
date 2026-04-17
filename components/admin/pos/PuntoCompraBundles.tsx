@@ -83,7 +83,7 @@ export default function PuntoCompraBundles({ onAddBundle }: Props) {
       <div className="text-center py-8 text-gray-400">
         <Boxes className="h-8 w-8 mx-auto mb-2 opacity-30" />
         <p className="text-xs">No hay paquetes activos</p>
-        <p className="text-[10px] mt-1 text-gray-300 dark:text-gray-600">
+        <p className="text-[length:var(--ts-2xs)] mt-1 text-gray-300 dark:text-gray-600">
           Crea paquetes desde el modulo de Bundles
         </p>
       </div>
@@ -94,7 +94,7 @@ export default function PuntoCompraBundles({ onAddBundle }: Props) {
     <div className="space-y-2 p-1 max-h-72 overflow-y-auto">
       <div className="flex items-center gap-1.5 mb-2">
         <Boxes className="h-3 w-3 text-[#f97316]" />
-        <span className="text-[10px] font-semibold text-gray-400 uppercase tracking-wider">
+        <span className="text-[length:var(--ts-2xs)] font-semibold text-gray-400">
           {bundles.length} paquete{bundles.length !== 1 ? "s" : ""} disponible{bundles.length !== 1 ? "s" : ""}
         </span>
       </div>
@@ -110,7 +110,7 @@ export default function PuntoCompraBundles({ onAddBundle }: Props) {
         return (
           <div
             key={bundle.id}
-            className="p-3 rounded-xl border border-gray-200 dark:border-card-border bg-gray-50 dark:bg-white/5 space-y-2"
+            className="p-3 rounded-xl border border-[var(--rule-base)] dark:border-card-border bg-gray-50 dark:bg-white/5 space-y-2"
           >
             {/* Header */}
             <div className="flex items-start justify-between gap-2">
@@ -119,7 +119,7 @@ export default function PuntoCompraBundles({ onAddBundle }: Props) {
                   {bundle.name}
                 </p>
                 {bundle.description && (
-                  <p className="text-[10px] text-gray-400 truncate">
+                  <p className="text-[length:var(--ts-2xs)] text-gray-400 truncate">
                     {bundle.description}
                   </p>
                 )}
@@ -129,7 +129,7 @@ export default function PuntoCompraBundles({ onAddBundle }: Props) {
                   S/{bundle.price.toFixed(2)}
                 </p>
                 {savings > 0 && (
-                  <p className="text-[9px] text-green-600 dark:text-green-400 font-medium">
+                  <p className="text-[length:var(--ts-2xs)] text-green-600 dark:text-green-400 font-medium">
                     Ahorra {savingsPct}%
                   </p>
                 )}
@@ -141,7 +141,7 @@ export default function PuntoCompraBundles({ onAddBundle }: Props) {
               {bundle.items.map((item, idx) => (
                 <span
                   key={idx}
-                  className="inline-flex items-center gap-0.5 text-[10px] bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-md px-1.5 py-0.5 text-gray-600 dark:text-gray-400"
+                  className="inline-flex items-center gap-0.5 text-[length:var(--ts-2xs)] bg-white dark:bg-gray-800 border border-[var(--rule-base)] rounded-md px-1.5 py-0.5 text-gray-600 dark:text-gray-400"
                 >
                   <Package className="h-2.5 w-2.5 shrink-0 opacity-50" />
                   {item.name ?? `#${item.productId}`}

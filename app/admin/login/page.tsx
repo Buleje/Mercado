@@ -435,7 +435,7 @@ export default function AdminLoginPage() {
               {/* Logo */}
               <div className="flex items-center gap-3 mb-10">
                 <div
-                  className="flex items-center justify-center w-12 h-12 rounded-2xl"
+                  className="flex items-center justify-center w-12 h-12 rounded-xl"
                   style={{ background: "rgba(255,255,255,0.2)" }}
                 >
                   <Store className="w-6 h-6 text-white" />
@@ -560,7 +560,7 @@ export default function AdminLoginPage() {
             </div>
 
             {/* Formulario */}
-            <form onSubmit={handleSubmit} className="space-y-4">
+            <form onSubmit={handleSubmit} className="space-y-6">
               {/* Input usuario */}
               <div className="relative">
                 <User
@@ -694,7 +694,7 @@ export default function AdminLoginPage() {
               <button
                 type="submit"
                 disabled={loading}
-                className="w-full flex items-center justify-center gap-2 rounded-xl font-bold text-sm text-white transition-all duration-200 disabled:opacity-60 disabled:cursor-not-allowed hover:brightness-110 active:scale-[0.98] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-teal-500"
+                className="w-full flex items-center justify-center gap-2 rounded-lg font-bold text-sm text-white transition-all duration-200 disabled:opacity-60 disabled:cursor-not-allowed hover:brightness-110 active:scale-[0.98] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-teal-500"
                 style={{
                   minHeight: "48px",
                   background: "linear-gradient(135deg,#00B4A6 0%,#2dd4bf 100%)",
@@ -757,7 +757,7 @@ export default function AdminLoginPage() {
               type="button"
               onClick={handleBypass}
               disabled={bypassLoading}
-              className="w-full flex items-center justify-center gap-2 rounded-xl font-semibold text-sm transition-all duration-200 disabled:opacity-60 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-teal-500 hover:bg-gray-100 dark:hover:bg-gray-800 active:scale-[0.98]"
+              className="w-full flex items-center justify-center gap-2 rounded-lg font-semibold text-sm transition-all duration-200 disabled:opacity-60 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-teal-500 hover:bg-gray-100 dark:hover:bg-gray-800 active:scale-[0.98]"
               style={{
                 minHeight: "48px",
                 background: "transparent",

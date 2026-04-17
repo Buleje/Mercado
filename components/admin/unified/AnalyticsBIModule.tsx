@@ -12,13 +12,9 @@ import { cn } from "@/lib/utils";
 import type { Sale, Customer } from "@/types/erp";
 import AdminModuleHeader from "@/components/admin/shared/AdminModuleHeader";
 import AdminTabBar from "@/components/admin/shared/AdminTabBar";
+import ChartManager, { type ChartDefinition } from "@/components/admin/shared/ChartManager";
 
-// ── Spinner ──────────────────────────────────────────────────────────────────
-const S = () => (
-  <div className="flex items-center justify-center py-12">
-    <div className="h-8 w-8 border-4 border-primary border-t-transparent rounded-full animate-spin" />
-  </div>
-);
+import { TabLoadingSkeleton as S } from "@/components/ui/skeletons";
 
 // ── Existing components (dynamic imports) ────────────────────────────────────
 const ABCAnalysisTab = dynamic(() => import("@/components/admin/ABCAnalysisTab"), { loading: S });
@@ -33,7 +29,7 @@ const SalesTrendChart = lazy(() => import("@/components/admin/analytics/SalesTre
 const VentasHeatmap = lazy(() => import("@/components/admin/analytics/VentasHeatmap"));
 const MarginWaterfallChart = lazy(() => import("@/components/admin/analytics/MarginWaterfallChart"));
 const FiadoAnalyticsPanel = lazy(() => import("@/components/admin/analytics/FiadoAnalyticsPanel"));
-const AIFiadoDashboard = lazy(() => import("@/components/admin/ai-center/AIFiadoDashboard"));
+const FiadosSection = lazy(() => import("@/components/admin/ai-center/sections/FiadosSection"));
 const AnomalyDetector = lazy(() => import("@/components/admin/analytics/AnomalyDetector"));
 const RFMSegmentationPanel = lazy(() => import("@/components/admin/analytics/RFMSegmentationPanel"));
 
@@ -79,7 +75,7 @@ function AnalyticsCard({ title, subtitle, icon: Icon, children, className }: {
 }) {
   return (
     <div className={cn(
-      "bg-white rounded-2xl border border-gray-200 p-6 shadow-sm transition-shadow hover:shadow-md",
+      "bg-white rounded-xl border border-[var(--rule-base)] p-6  transition-shadow hover:shadow-sm",
       className,
     )}>
       <div className="mb-5">
@@ -161,9 +157,9 @@ function InlineKPIStrip() {
 
   const items = [
     { label: "Ventas hoy", value: `S/ ${kpis.ventasHoy.toFixed(0)}`, color: "text-emerald-600" },
-    { label: "Ticket prom", value: `S/ ${kpis.ticketPromedio.toFixed(0)}`, color: "text-blue-600" },
+    { label: "Ticket prom", value: `S/ ${kpis.ticketPromedio.toFixed(0)}`, color: "text-emerald-600" },
     { label: "Margen", value: `${kpis.margen.toFixed(1)}%`, color: kpis.margen >= 20 ? "text-emerald-600" : "text-amber-600" },
-    { label: "Clientes hoy", value: String(kpis.clientesHoy), color: "text-purple-600" },
+    { label: "Clientes hoy", value: String(kpis.clientesHoy), color: "text-[var(--text-secondary)]" },
     { label: "Fiado pend.", value: `S/ ${kpis.fiadoPendiente.toFixed(0)}`, color: kpis.fiadoPendiente > 0 ? "text-red-500" : "text-gray-500" },
     { label: "Rotación", value: `${kpis.rotacion.toFixed(1)}x`, color: "text-cyan-600" },
   ];
@@ -173,9 +169,9 @@ function InlineKPIStrip() {
       {items.map((item) => (
         <div
           key={item.label}
-          className="rounded-xl border border-gray-200 bg-white px-3 py-2.5 shadow-sm text-center"
+          className="rounded-xl border border-[var(--rule-base)] bg-white px-3 py-2.5  text-center"
         >
-          <p className="text-[10px] font-bold uppercase tracking-wider text-gray-400 mb-0.5">{item.label}</p>
+          <p className="text-[length:var(--ts-2xs)] font-bold text-gray-400 mb-0.5">{item.label}</p>
           <p className={cn("text-lg font-extrabold tabular-nums", item.color)} style={{ fontVariantNumeric: "tabular-nums" }}>{item.value}</p>
         </div>
       ))}
@@ -195,23 +191,23 @@ function SectionKPIStrip({ section }: { section: "ventas" | "productos" | "clien
       if (section === "ventas") {
           setItems([
             { label: "Ventas hoy", value: `S/ ${(Number(d.ingresosHoy ?? d.ventasHoy ?? 0) || 0).toFixed(0)}`, color: "text-emerald-600" },
-            { label: "Ticket prom", value: `S/ ${(Number(d.ticketPromedio ?? d.avgTicket ?? 0) || 0).toFixed(0)}`, color: "text-blue-600" },
-            { label: "Operaciones", value: String(Number(d.ordersToday ?? d.totalVentas ?? 0) || 0), color: "text-purple-600" },
+            { label: "Ticket prom", value: `S/ ${(Number(d.ticketPromedio ?? d.avgTicket ?? 0) || 0).toFixed(0)}`, color: "text-emerald-600" },
+            { label: "Operaciones", value: String(Number(d.ordersToday ?? d.totalVentas ?? 0) || 0), color: "text-[var(--text-secondary)]" },
             { label: "Pico (hora)", value: d.peakHour ? `${d.peakHour}h` : "--", color: "text-amber-600" },
           ]);
         } else if (section === "productos") {
           setItems([
             { label: "SKUs activos", value: String(Number(d.skuCount ?? d.totalProducts ?? 0) || 0), color: "text-emerald-600" },
-            { label: "Margen prom", value: `${(Number(d.margenOperativo ?? d.marginPct ?? 0) || 0).toFixed(1)}%`, color: "text-blue-600" },
+            { label: "Margen prom", value: `${(Number(d.margenOperativo ?? d.marginPct ?? 0) || 0).toFixed(1)}%`, color: "text-emerald-600" },
             { label: "Stock bajo", value: String(Number(d.lowStockCount ?? d.stockBajo ?? 0) || 0), color: "text-red-500" },
             { label: "Rotación", value: `${(Number(d.rotacionInventario ?? d.inventoryTurnover ?? 0) || 0).toFixed(1)}x`, color: "text-cyan-600" },
           ]);
         } else if (section === "clientes") {
           setItems([
             { label: "Total clientes", value: String(Number(d.totalClientes ?? d.totalCustomers ?? 0) || 0), color: "text-emerald-600" },
-            { label: "Nuevos (mes)", value: String(Number(d.newCustomersMonth ?? d.clientesNuevos ?? 0) || 0), color: "text-blue-600" },
+            { label: "Nuevos (mes)", value: String(Number(d.newCustomersMonth ?? d.clientesNuevos ?? 0) || 0), color: "text-emerald-600" },
             { label: "Fiado pend.", value: `S/ ${(Number(d.fiadoPendiente ?? d.fiadoTotal ?? 0) || 0).toFixed(0)}`, color: "text-red-500" },
-            { label: "Retención", value: `${(Number(d.retentionRate ?? d.retencion ?? 0) || 0).toFixed(0)}%`, color: "text-purple-600" },
+            { label: "Retención", value: `${(Number(d.retentionRate ?? d.retencion ?? 0) || 0).toFixed(0)}%`, color: "text-[var(--text-secondary)]" },
           ]);
         }
       })();
@@ -230,8 +226,8 @@ function SectionKPIStrip({ section }: { section: "ventas" | "productos" | "clien
   return (
     <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 mb-4">
       {items.map((item) => (
-        <div key={item.label} className="rounded-xl border border-gray-200 bg-white px-3 py-2 shadow-sm text-center">
-          <p className="text-[10px] font-bold uppercase tracking-wider text-gray-400 mb-0.5">{item.label}</p>
+        <div key={item.label} className="rounded-xl border border-[var(--rule-base)] bg-white px-3 py-2  text-center">
+          <p className="text-[length:var(--ts-2xs)] font-bold text-gray-400 mb-0.5">{item.label}</p>
           <p className={cn("text-base font-extrabold tabular-nums", item.color)} style={{ fontVariantNumeric: "tabular-nums" }}>{item.value}</p>
         </div>
       ))}
@@ -250,7 +246,7 @@ function TabbedCard({ title, subtitle, icon, tabs, className }: {
   const [activeTab, setActiveTab] = useState(tabs[0]?.id ?? "");
   return (
     <div className={cn(
-      "bg-white rounded-2xl border border-gray-200 p-6 shadow-sm transition-shadow hover:shadow-md",
+      "bg-white rounded-xl border border-[var(--rule-base)] p-6  transition-shadow hover:shadow-sm",
       className,
     )}>
       <div className="mb-4">
@@ -265,7 +261,7 @@ function TabbedCard({ title, subtitle, icon, tabs, className }: {
             {subtitle && <p className="text-sm text-gray-500 mt-0.5">{subtitle}</p>}
           </div>
         </div>
-        <div className="flex gap-1 border-b border-gray-200">
+        <div className="flex gap-1 border-b border-[var(--rule-base)]">
           {tabs.map((t) => (
             <button
               key={t.id}
@@ -338,7 +334,7 @@ function Top10Clientes({ refreshKey }: { refreshKey: number }) {
       ) : (
         <table className="w-full text-sm">
           <thead>
-            <tr className="border-b border-gray-200 text-left">
+            <tr className="border-b border-[var(--rule-base)] text-left">
               <th className="px-3 py-3 font-semibold text-gray-500 text-xs">#</th>
               <th className="px-3 py-3 font-semibold text-gray-500 text-xs">Cliente</th>
               <th className="px-3 py-3 font-semibold text-gray-500 text-xs text-right">Gasto total</th>
@@ -349,7 +345,7 @@ function Top10Clientes({ refreshKey }: { refreshKey: number }) {
           </thead>
           <tbody>
             {customers.map((c, i) => (
-              <tr key={c.id} className="border-b border-gray-100 hover:bg-gray-50 cursor-pointer transition-colors">
+              <tr key={c.id} className="border-b border-[var(--rule-soft)] hover:bg-gray-50 cursor-pointer transition-colors">
                 <td className="px-3 py-3 text-center">
                   {i < 3 ? <span className="text-lg">{medals[i]}</span> : <span className="text-xs font-bold text-gray-400">{i + 1}</span>}
                 </td>
@@ -448,10 +444,10 @@ function StarProductCard({ refreshKey }: { refreshKey: number }) {
   }
 
   return (
-    <div className="rounded-xl bg-linear-to-br from-secondary/5 to-secondary/10 p-4 border border-secondary/20">
+    <div className="rounded-xl bg-[var(--surface-sunken)] p-4 border border-[var(--rule-base)]">
       <div className="flex items-start gap-3">
         {star.imageUrl && (
-          <div className="relative w-16 h-16 rounded-xl overflow-hidden bg-white shrink-0 border border-gray-200">
+          <div className="relative w-16 h-16 rounded-xl overflow-hidden bg-white shrink-0 border border-[var(--rule-base)]">
             <Image src={star.imageUrl} alt={star.name} fill className="object-cover" sizes="64px" />
           </div>
         )}
@@ -570,230 +566,209 @@ export default function AnalyticsBIModule() {
       // ────────────────────────────────────────────────────────────────────────
       // SECCION 1: RESUMEN
       // ────────────────────────────────────────────────────────────────────────
-      case "resumen":
-        return (
-          <div className="flex flex-col gap-6 max-w-7xl mx-auto" key={`resumen-${refreshKey}`}>
-            {/* KPIs compactos — embebidos en la sección, no como barra separada */}
-            <InlineKPIStrip />
-            {/* Tendencia de ventas — el gráfico principal a pantalla completa */}
-            <AnalyticsCard
-              title="Tendencia de Ventas"
-              subtitle="Ventas diarias con media movil y proyeccion"
-              icon={TrendingUp}
-            >
-              <div className="min-h-80">
-                <Suspense fallback={<S />}>
-                  <SalesTrendChart />
-                </Suspense>
-              </div>
-            </AnalyticsCard>
-            {/* Alertas + Estrella + Top Clientes — unificados en 2 columnas */}
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-              <TabbedCard
-                title="Alertas y Destacados"
-                subtitle="Lo más importante de un vistazo"
-                icon={AlertTriangle}
+      case "resumen": {
+        const resumenCharts: ChartDefinition[] = [
+          {
+            id: "kpis-strip",
+            label: "KPIs Resumen",
+            description: "Indicadores clave compactos",
+            component: <InlineKPIStrip />,
+          },
+          {
+            id: "sales-trend",
+            label: "Tendencia de Ventas",
+            description: "Ventas diarias con media movil y proyeccion",
+            component: (
+              <AnalyticsCard title="Tendencia de Ventas" subtitle="Ventas diarias con media movil y proyeccion" icon={TrendingUp}>
+                <div className="min-h-80">
+                  <Suspense fallback={<S />}><SalesTrendChart /></Suspense>
+                </div>
+              </AnalyticsCard>
+            ),
+          },
+          {
+            id: "alerts-highlights",
+            label: "Alertas y Destacados",
+            description: "Anomalias y producto estrella",
+            component: (
+              <TabbedCard title="Alertas y Destacados" subtitle="Lo más importante de un vistazo" icon={AlertTriangle}
                 tabs={[
-                  {
-                    id: "alertas",
-                    label: "Alertas",
-                    content: <AnomalyDetectorWrapper refreshKey={refreshKey} />,
-                  },
-                  {
-                    id: "estrella",
-                    label: "Producto Estrella",
-                    content: <StarProductCard refreshKey={refreshKey} />,
-                  },
+                  { id: "alertas", label: "Alertas", content: <AnomalyDetectorWrapper refreshKey={refreshKey} /> },
+                  { id: "estrella", label: "Producto Estrella", content: <StarProductCard refreshKey={refreshKey} /> },
                 ]}
               />
-              <AnalyticsCard
-                title="Top 10 Clientes"
-                subtitle="Ranking por gasto total acumulado"
-                icon={Trophy}
-              >
+            ),
+          },
+          {
+            id: "top-clients",
+            label: "Top 10 Clientes",
+            description: "Ranking por gasto total acumulado",
+            component: (
+              <AnalyticsCard title="Top 10 Clientes" subtitle="Ranking por gasto total acumulado" icon={Trophy}>
                 <Top10Clientes refreshKey={refreshKey} />
               </AnalyticsCard>
-            </div>
+            ),
+          },
+        ];
+        return (
+          <div className="max-w-7xl mx-auto" key={`resumen-${refreshKey}`}>
+            <ChartManager moduleId="analytics-resumen" charts={resumenCharts} />
           </div>
         );
+      }
 
       // ────────────────────────────────────────────────────────────────────────
       // SECCION 2: VENTAS
       // ────────────────────────────────────────────────────────────────────────
-      case "ventas":
+      case "ventas": {
+        const ventasCharts: ChartDefinition[] = [
+          {
+            id: "ventas-kpis",
+            label: "KPIs de Ventas",
+            description: "Métricas clave de ventas",
+            component: <SectionKPIStrip section="ventas" />,
+          },
+          {
+            id: "ventas-trend",
+            label: "Tendencia de Ventas",
+            description: "Ventas diarias con media movil y prediccion",
+            component: (
+              <AnalyticsCard title="Tendencia de Ventas" subtitle="Ventas diarias con media movil y prediccion" icon={TrendingUp}>
+                <div className="min-h-80">
+                  <Suspense fallback={<S />}><SalesTrendChart /></Suspense>
+                </div>
+              </AnalyticsCard>
+            ),
+          },
+          {
+            id: "ventas-patterns",
+            label: "Patrones de Venta",
+            description: "Mapa de calor y distribucion horaria",
+            component: (
+              <TabbedCard title="Patrones de Venta" subtitle="¿Cuándo compran tus clientes? Mapa de calor y distribución horaria" icon={Clock}
+                tabs={[
+                  { id: "heatmap", label: "Mapa de Calor", content: <div className="min-h-70"><Suspense fallback={<S />}><VentasHeatmap /></Suspense></div> },
+                  { id: "horario", label: "Por Hora", content: <div className="min-h-70"><PeakHoursTab period={period} /></div> },
+                ]}
+              />
+            ),
+          },
+        ];
         return (
-          <div className="flex flex-col gap-4 max-w-7xl mx-auto" key={`ventas-${refreshKey}`}>
-            <SectionKPIStrip section="ventas" />
-            {/* Sales Trend — chart principal */}
-            <AnalyticsCard
-              title="Tendencia de Ventas"
-              subtitle="Ventas diarias con media movil y prediccion"
-              icon={TrendingUp}
-            >
-              <div className="min-h-80">
-                <Suspense fallback={<S />}>
-                  <SalesTrendChart />
-                </Suspense>
-              </div>
-            </AnalyticsCard>
-            {/* Patrones de Venta — Heatmap + PeakHours unificados */}
-            <TabbedCard
-              title="Patrones de Venta"
-              subtitle="¿Cuándo compran tus clientes? Mapa de calor y distribución horaria"
-              icon={Clock}
-              tabs={[
-                {
-                  id: "heatmap",
-                  label: "Mapa de Calor",
-                  content: (
-                    <div className="min-h-70">
-                      <Suspense fallback={<S />}>
-                        <VentasHeatmap />
-                      </Suspense>
-                    </div>
-                  ),
-                },
-                {
-                  id: "horario",
-                  label: "Por Hora",
-                  content: (
-                    <div className="min-h-70">
-                      <PeakHoursTab period={period} />
-                    </div>
-                  ),
-                },
-              ]}
-            />
+          <div className="max-w-7xl mx-auto" key={`ventas-${refreshKey}`}>
+            <ChartManager moduleId="analytics-ventas" charts={ventasCharts} />
           </div>
         );
+      }
 
       // ────────────────────────────────────────────────────────────────────────
       // SECCION 3: PRODUCTOS
       // ────────────────────────────────────────────────────────────────────────
-      case "productos":
+      case "productos": {
+        const productosCharts: ChartDefinition[] = [
+          {
+            id: "productos-kpis",
+            label: "KPIs de Productos",
+            description: "Métricas clave de productos",
+            component: <SectionKPIStrip section="productos" />,
+          },
+          {
+            id: "product-classification",
+            label: "Clasificación de Productos",
+            description: "ABC y Matriz BCG",
+            component: (
+              <TabbedCard title="Clasificación de Productos" subtitle="ABC: cuáles generan más ingresos · BCG: en qué etapa de vida están" icon={Package}
+                tabs={[
+                  { id: "abc", label: "ABC (80/20)", content: <div className="min-h-87.5"><ABCAnalysisTab /></div> },
+                  { id: "bcg", label: "Matriz BCG", content: <div className="min-h-87.5"><BCGMatrixTab /></div> },
+                ]}
+              />
+            ),
+          },
+          {
+            id: "profitability",
+            label: "Rentabilidad y Comportamiento",
+            description: "Margenes por producto y cesta de compra",
+            component: (
+              <TabbedCard title="Rentabilidad y Comportamiento" subtitle="Márgenes por producto · Qué se compra junto" icon={DollarSign}
+                tabs={[
+                  { id: "margenes", label: "Márgenes", content: <div className="min-h-75"><Suspense fallback={<S />}><MarginWaterfallChart /></Suspense></div> },
+                  { id: "cesta", label: "Cesta de Compra", content: <BasketAnalysisTab /> },
+                ]}
+              />
+            ),
+          },
+        ];
         return (
-          <div className="flex flex-col gap-4 max-w-7xl mx-auto" key={`productos-${refreshKey}`}>
-            <SectionKPIStrip section="productos" />
-            {/* Clasificación de Productos — ABC + BCG unificados */}
-            <TabbedCard
-              title="Clasificación de Productos"
-              subtitle="ABC: cuáles generan más ingresos · BCG: en qué etapa de vida están"
-              icon={Package}
-              tabs={[
-                {
-                  id: "abc",
-                  label: "ABC (80/20)",
-                  content: (
-                    <div className="min-h-87.5">
-                      <ABCAnalysisTab />
-                    </div>
-                  ),
-                },
-                {
-                  id: "bcg",
-                  label: "Matriz BCG",
-                  content: (
-                    <div className="min-h-87.5">
-                      <BCGMatrixTab />
-                    </div>
-                  ),
-                },
-              ]}
-            />
-            {/* Rentabilidad — Márgenes + Cesta de compra unificados */}
-            <TabbedCard
-              title="Rentabilidad y Comportamiento"
-              subtitle="Márgenes por producto · Qué se compra junto"
-              icon={DollarSign}
-              tabs={[
-                {
-                  id: "margenes",
-                  label: "Márgenes",
-                  content: (
-                    <div className="min-h-75">
-                      <Suspense fallback={<S />}>
-                        <MarginWaterfallChart />
-                      </Suspense>
-                    </div>
-                  ),
-                },
-                {
-                  id: "cesta",
-                  label: "Cesta de Compra",
-                  content: <BasketAnalysisTab />,
-                },
-              ]}
-            />
+          <div className="max-w-7xl mx-auto" key={`productos-${refreshKey}`}>
+            <ChartManager moduleId="analytics-productos" charts={productosCharts} />
           </div>
         );
+      }
 
       // ────────────────────────────────────────────────────────────────────────
       // SECCION 4: CLIENTES
       // ────────────────────────────────────────────────────────────────────────
-      case "clientes":
+      case "clientes": {
+        const clientesCharts: ChartDefinition[] = [
+          {
+            id: "clientes-kpis",
+            label: "KPIs de Clientes",
+            description: "Métricas clave de clientes",
+            component: <SectionKPIStrip section="clientes" />,
+          },
+          {
+            id: "client-intelligence",
+            label: "Inteligencia de Clientes",
+            description: "Segmentacion RFM y ranking de mejores clientes",
+            component: (
+              <TabbedCard title="Inteligencia de Clientes" subtitle="Segmentación por comportamiento de compra · Ranking de los mejores" icon={Users}
+                tabs={[
+                  { id: "rfm", label: "Segmentación RFM", content: <RFMWrapper refreshKey={refreshKey} /> },
+                  { id: "top10", label: "Top 10 Ranking", content: <Top10Clientes refreshKey={refreshKey} /> },
+                ]}
+              />
+            ),
+          },
+          {
+            id: "fiados-analytics",
+            label: "Fiados — Deuda y Cobranza",
+            description: "Resumen de deudas y analisis de riesgo IA",
+            component: (
+              <TabbedCard title="Fiados — Deuda y Cobranza" subtitle="Cuánto te deben, quién paga y quién no · Análisis de riesgo IA" icon={CreditCard}
+                tabs={[
+                  { id: "resumen-fiados", label: "Resumen", content: <div className="min-h-75"><Suspense fallback={<S />}><FiadoAnalyticsPanel /></Suspense></div> },
+                  { id: "ia-fiados", label: "Riesgo IA", content: <div className="min-h-75"><Suspense fallback={<S />}><FiadosSection /></Suspense></div> },
+                ]}
+              />
+            ),
+          },
+        ];
         return (
-          <div className="flex flex-col gap-4 max-w-7xl mx-auto" key={`clientes-${refreshKey}`}>
-            <SectionKPIStrip section="clientes" />
-            {/* Inteligencia de Clientes — RFM + Top10 unificados */}
-            <TabbedCard
-              title="Inteligencia de Clientes"
-              subtitle="Segmentación por comportamiento de compra · Ranking de los mejores"
-              icon={Users}
-              tabs={[
-                {
-                  id: "rfm",
-                  label: "Segmentación RFM",
-                  content: <RFMWrapper refreshKey={refreshKey} />,
-                },
-                {
-                  id: "top10",
-                  label: "Top 10 Ranking",
-                  content: <Top10Clientes refreshKey={refreshKey} />,
-                },
-              ]}
-            />
-            {/* Fiados — Datos + IA unificados */}
-            <TabbedCard
-              title="Fiados — Deuda y Cobranza"
-              subtitle="Cuánto te deben, quién paga y quién no · Análisis de riesgo IA"
-              icon={CreditCard}
-              tabs={[
-                {
-                  id: "resumen-fiados",
-                  label: "Resumen",
-                  content: (
-                    <div className="min-h-75">
-                      <Suspense fallback={<S />}>
-                        <FiadoAnalyticsPanel />
-                      </Suspense>
-                    </div>
-                  ),
-                },
-                {
-                  id: "ia-fiados",
-                  label: "Riesgo IA",
-                  content: (
-                    <div className="min-h-75">
-                      <Suspense fallback={<S />}>
-                        <AIFiadoDashboard />
-                      </Suspense>
-                    </div>
-                  ),
-                },
-              ]}
-            />
+          <div className="max-w-7xl mx-auto" key={`clientes-${refreshKey}`}>
+            <ChartManager moduleId="analytics-clientes" charts={clientesCharts} />
           </div>
         );
+      }
 
       // ────────────────────────────────────────────────────────────────────────
       // SECCION 5: PREDICCIONES
       // ────────────────────────────────────────────────────────────────────────
-      case "predicciones":
+      case "predicciones": {
+        const predCharts: ChartDefinition[] = [
+          {
+            id: "predictive",
+            label: "Análisis Predictivo",
+            description: "Proyecciones y predicciones de ventas",
+            component: <PredictiveAnalyticsTab />,
+          },
+        ];
         return (
-          <div className="flex flex-col gap-4 max-w-5xl mx-auto" key={`pred-${refreshKey}`}>
-            <PredictiveAnalyticsTab />
+          <div className="max-w-5xl mx-auto" key={`pred-${refreshKey}`}>
+            <ChartManager moduleId="analytics-predicciones" charts={predCharts} />
           </div>
         );
+      }
 
       default:
         return null;

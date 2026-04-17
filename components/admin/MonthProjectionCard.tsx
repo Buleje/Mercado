@@ -129,7 +129,7 @@ export default function MonthProjectionCard() {
   // ── Render ──────────────────────────────────────────────────────────────────
 
   return (
-    <div className="rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 shadow-sm overflow-hidden">
+    <div className="rounded-xl border border-[var(--rule-base)] bg-white dark:bg-gray-900  overflow-hidden">
       {/* Header */}
       <div className="bg-[#00B4A6] px-5 py-4 flex items-center justify-between">
         <div className="flex items-center gap-2">
@@ -181,18 +181,18 @@ export default function MonthProjectionCard() {
             {/* Datos del mes */}
             <div className="grid grid-cols-2 gap-2">
               <div className="rounded-lg bg-gray-50 dark:bg-gray-800 p-3">
-                <p className="text-[10px] text-gray-400 mb-0.5">Acumulado</p>
+                <p className="text-[length:var(--ts-2xs)] text-gray-400 mb-0.5">Acumulado</p>
                 <p className="text-sm font-semibold text-gray-800 dark:text-gray-200">{fmt(currentStats.total)}</p>
               </div>
               <div className="rounded-lg bg-gray-50 dark:bg-gray-800 p-3">
-                <p className="text-[10px] text-gray-400 mb-0.5">Prom. diario</p>
+                <p className="text-[length:var(--ts-2xs)] text-gray-400 mb-0.5">Prom. diario</p>
                 <p className="text-sm font-semibold text-gray-800 dark:text-gray-200">{fmt(dailyAvg)}</p>
               </div>
             </div>
 
             {/* Mini grafico — ultimos 7 dias */}
             <div>
-              <p className="text-[10px] font-medium text-gray-500 dark:text-gray-400 mb-2">
+              <p className="text-[length:var(--ts-2xs)] font-medium text-gray-500 dark:text-gray-400 mb-2">
                 Ultimos 7 dias (ventas reales)
               </p>
               <div className="flex items-end gap-1 h-14">
@@ -212,7 +212,7 @@ export default function MonthProjectionCard() {
                         title={`Dia ${d.label}: ${fmt(d.total)}`}
                       />
                       <span className={cn(
-                        "text-[9px]",
+                        "text-[length:var(--ts-2xs)]",
                         isToday ? "text-[#f97316] font-semibold" : "text-gray-400"
                       )}>
                         {d.label}
@@ -221,7 +221,7 @@ export default function MonthProjectionCard() {
                   );
                 })}
               </div>
-              <p className="text-[9px] text-gray-400 mt-1 text-right">
+              <p className="text-[length:var(--ts-2xs)] text-gray-400 mt-1 text-right">
                 naranja = hoy
               </p>
             </div>

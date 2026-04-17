@@ -361,7 +361,7 @@ function ProductCardComponent({ product, onQuickView }: ProductCardProps) {
       <div className="p-2.5 sm:p-3 flex flex-col gap-1.5 flex-1 min-h-[9.5rem] sm:min-h-[10.5rem]">
         {/* Z1: Recently viewed badge */}
         {recentlyViewed && !isOutOfStock && (
-          <span className="text-[9px] font-semibold text-blue-500 dark:text-blue-400 flex items-center gap-1 -mt-0.5 mb--0.5">
+          <span className="text-[9px] font-semibold text-emerald-500 dark:text-emerald-400 flex items-center gap-1 -mt-0.5 mb--0.5">
             👁 Lo viste hoy
           </span>
         )}

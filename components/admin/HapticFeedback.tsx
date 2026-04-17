@@ -204,7 +204,7 @@ export default function HapticFeedback() {
           "rounded-xl border p-5 flex items-center justify-between gap-4 transition-all",
           haptic.enabled
             ? "border-[#00B4A6]/40 bg-[#00B4A6]/5 dark:bg-[#00B4A6]/10"
-            : "border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800"
+            : "border-[var(--rule-base)] bg-white dark:bg-gray-800"
         )}
       >
         <div className="flex items-center gap-3">
@@ -229,7 +229,7 @@ export default function HapticFeedback() {
         <button
           onClick={() => haptic.toggle()}
           className={cn(
-            "relative w-12 h-6 rounded-full transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-[#00B4A6] focus:ring-offset-2",
+            "relative w-12 h-6 rounded-full transition-colors duration-[var(--dur-base)] focus:outline-none focus:ring-2 focus:ring-[#00B4A6] focus:ring-offset-2",
             haptic.enabled
               ? "bg-[#00B4A6] dark:bg-[#2dd4bf]"
               : "bg-gray-200 dark:bg-gray-700"
@@ -238,7 +238,7 @@ export default function HapticFeedback() {
         >
           <span
             className={cn(
-              "absolute top-0.5 left-0.5 w-5 h-5 rounded-full bg-white shadow transition-transform duration-200",
+              "absolute top-0.5 left-0.5 w-5 h-5 rounded-full bg-white shadow transition-transform duration-[var(--dur-base)]",
               haptic.enabled && "translate-x-6"
             )}
           />
@@ -246,8 +246,8 @@ export default function HapticFeedback() {
       </div>
 
       {/* Patrones de prueba */}
-      <div className="rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 overflow-hidden">
-        <div className="px-4 py-3 border-b border-gray-100 dark:border-gray-700 flex items-center gap-2">
+      <div className="rounded-xl border border-[var(--rule-base)] bg-white dark:bg-gray-800 overflow-hidden">
+        <div className="px-4 py-3 border-b border-[var(--rule-base)] flex items-center gap-2">
           <Settings className="w-4 h-4 text-gray-400" />
           <p className="text-sm font-medium text-gray-700 dark:text-gray-300">
             Probar patrones de vibracion
@@ -264,7 +264,7 @@ export default function HapticFeedback() {
                 "rounded-xl border p-3 text-left transition-all",
                 lastTest === label
                   ? "border-[#00B4A6] bg-[#00B4A6]/10 scale-95"
-                  : "border-gray-200 dark:border-gray-700 hover:border-[#00B4A6]/40 hover:bg-gray-50 dark:hover:bg-gray-750",
+                  : "border-[var(--rule-base)] hover:border-[#00B4A6]/40 hover:bg-gray-50 dark:hover:bg-gray-750",
                 (!haptic.enabled || !haptic.isSupported) &&
                   "opacity-50 cursor-not-allowed"
               )}
@@ -284,7 +284,7 @@ export default function HapticFeedback() {
       </div>
 
       {/* Referencia de uso */}
-      <div className="rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/60 p-4 space-y-3">
+      <div className="rounded-xl border border-[var(--rule-base)] bg-gray-50 dark:bg-gray-800/60 p-4 space-y-3">
         <p className="text-sm font-medium text-gray-700 dark:text-gray-300">
           Como usar en otros componentes
         </p>

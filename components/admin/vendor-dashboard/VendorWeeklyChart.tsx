@@ -35,7 +35,7 @@ function CustomTooltip({
 }) {
   if (!active || !payload?.length) return null;
   return (
-    <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl px-3 py-2 shadow-lg text-xs">
+    <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl px-3 py-2 text-xs">
       <p className="font-semibold text-gray-700 dark:text-foreground">{label}</p>
       <p className="text-[#00B4A6] font-bold">{formatSolesTooltip(payload[0].value)}</p>
     </div>
@@ -57,7 +57,7 @@ export function VendorWeeklyChart({ data }: Props) {
   const weekTotal = data.reduce((s, d) => s + d.total, 0);
 
   return (
-    <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl p-6 shadow-sm">
+    <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl p-6 ">
       <div className="flex items-center justify-between mb-1">
         <h3 className="font-bold text-gray-900 dark:text-foreground flex items-center gap-2">
           <TrendingUp className="h-5 w-5 text-[#00B4A6]" />

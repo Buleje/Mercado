@@ -14,6 +14,8 @@ import {
   Heart,
   Users,
   ShoppingCart,
+  ArrowUpRight,
+  type LucideIcon,
 } from "lucide-react";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
@@ -32,39 +34,38 @@ export const metadata: Metadata = {
   },
 };
 
-const porQueElegirnos = [
+const porQueElegirnos: { Icon: LucideIcon; title: string; desc: string }[] = [
   {
-    icon: CheckCircle2,
+    Icon: CheckCircle2,
     title: "Productos frescos",
     desc: "Recibimos mercadería fresca todos los días para que siempre encuentres lo mejor.",
-    color: "text-emerald-600 dark:text-emerald-400",
-    bg: "bg-emerald-50 dark:bg-emerald-900/20",
   },
   {
-    icon: Truck,
+    Icon: Truck,
     title: "Delivery rápido",
     desc: "Entregamos en menos de 30 minutos en toda nuestra zona de cobertura.",
-    color: "text-blue-600 dark:text-blue-400",
-    bg: "bg-blue-50 dark:bg-blue-900/20",
   },
   {
-    icon: DollarSign,
+    Icon: DollarSign,
     title: "Precios justos",
     desc: "Los mejores precios. Compramos directo al proveedor para darte el mejor precio.",
-    color: "text-amber-600 dark:text-amber-400",
-    bg: "bg-amber-50 dark:bg-amber-900/20",
   },
   {
-    icon: Smartphone,
+    Icon: Smartphone,
     title: "Paga como quieras",
     desc: "Acepta Yape, Plin o efectivo. Tú eliges cómo pagar, sin complicaciones.",
-    color: "text-purple-600 dark:text-purple-400",
-    bg: "bg-purple-50 dark:bg-purple-900/20",
   },
 ];
 
+function Kicker({ children }: { children: React.ReactNode }) {
+  return (
+    <span className="inline-flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-[0.25em] text-gray-400 mb-3">
+      {children}
+    </span>
+  );
+}
+
 export default async function AboutPage() {
-  // Fetch store settings directly from DB (no circular fetch)
   let settings: Record<string, string | number | null> = {};
   try {
     const { SettingsDB } = await import("@/lib/db/settings.db");
@@ -74,7 +75,7 @@ export default async function AboutPage() {
     const data = await SettingsDB.get(tenantId);
     settings = data as unknown as Record<string, string | number | null>;
   } catch {
-    // Settings unavailable — use defaults
+    /* defaults */
   }
 
   const businessName = (settings.businessName as string) || "Buleje";
@@ -98,268 +99,287 @@ export default async function AboutPage() {
   return (
     <>
       <Header />
-      <main className="pt-20 sm:pt-24 min-h-screen bg-background" id="main-content">
+      <main className="pt-20 sm:pt-24 min-h-screen bg-white dark:bg-gray-950" id="main-content">
 
-        {/* ── HERO ────────────────────────────────────────────────────── */}
+        {/* ── HERO ─ editorial dark ─ */}
         <section
-          className="relative overflow-hidden py-20 sm:py-28"
-          style={{
-            background: "linear-gradient(135deg, #007A72 0%, #00B4A6 50%, #33C4B8 100%)",
-          }}
+          className="relative overflow-hidden py-20 sm:py-28 lg:py-32"
+          style={{ background: "#060a0d" }}
         >
-          <div className="absolute inset-0 opacity-10" style={{
-            backgroundImage:
-              "radial-gradient(circle at 30% 40%, #95d5b2 0%, transparent 50%), radial-gradient(circle at 70% 60%, #f97316 0%, transparent 40%)",
-          }} />
+          <div className="pointer-events-none absolute inset-0">
+            <div className="absolute -top-24 -left-24 h-100 w-100 rounded-full bg-white/5 blur-[120px]" />
+          </div>
           <div className="relative mx-auto max-w-4xl px-4 sm:px-6 text-center">
-            <div className="inline-flex items-center gap-2 rounded-full px-4 py-2 text-sm font-bold mb-6 bg-white/15 text-white/90 border border-white/20 backdrop-blur-sm">
-              <Store className="h-4 w-4" />
+            <span className="inline-flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-[0.25em] text-white/55 mb-6">
+              <Store className="h-3 w-3" strokeWidth={1.75} aria-hidden />
               Powered by Buleje
-            </div>
-            <h1 className="text-3xl sm:text-5xl lg:text-6xl font-extrabold text-white leading-tight mb-4">
+            </span>
+            <h1 className="text-4xl sm:text-5xl lg:text-6xl font-extrabold text-white leading-[1.05] tracking-[-0.02em]">
               {businessName}
             </h1>
-            <p className="text-lg sm:text-xl text-white/80 max-w-2xl mx-auto mb-8">
-              Desde siempre sirviendo a nuestros vecinos con productos frescos,
-              precios justos y el cariño de una familia.
+            <p className="mt-5 text-base sm:text-lg text-white/60 max-w-2xl mx-auto leading-relaxed">
+              Desde siempre sirviendo a nuestros vecinos con productos frescos, precios justos y el cariño de una familia.
             </p>
-            <div className="flex flex-wrap items-center justify-center gap-3">
+            <div className="mt-8 flex flex-wrap items-center justify-center gap-3">
               <Link
                 href="/tienda"
-                className="inline-flex items-center gap-2 rounded-xl px-6 py-3 text-sm font-bold bg-white text-[#0f766e] hover:bg-white/90 transition-all shadow-lg"
+                className="inline-flex items-center gap-2 bg-white text-gray-900 font-bold px-6 py-3 rounded-full text-sm transition-colors hover:bg-gray-100"
               >
-                <ShoppingCart className="h-4 w-4" /> Ver Tienda
+                <ShoppingCart className="h-4 w-4" strokeWidth={1.75} aria-hidden />
+                Ver Tienda
               </Link>
               {whatsappLink && (
                 <a
                   href={whatsappLink}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="inline-flex items-center gap-2 rounded-xl px-6 py-3 text-sm font-bold bg-white/10 text-white border border-white/20 hover:bg-white/20 transition-all"
+                  className="inline-flex items-center gap-2 bg-transparent text-white font-bold px-6 py-3 rounded-full text-sm border border-white/20 hover:bg-white/10 transition-colors"
                 >
-                  <MessageCircle className="h-4 w-4" /> Contáctanos
+                  <MessageCircle className="h-4 w-4" strokeWidth={1.75} aria-hidden />
+                  Contáctanos
                 </a>
               )}
             </div>
           </div>
         </section>
 
-        {/* ── NUESTRA HISTORIA ────────────────────────────────────────── */}
-        <section className="py-16 sm:py-20">
+        {/* ── HISTORIA ─ */}
+        <section className="py-16 sm:py-24 border-b border-gray-200 dark:border-gray-800">
           <div className="mx-auto max-w-4xl px-4 sm:px-6">
-            <div className="text-center mb-8">
-              <div className="inline-flex items-center gap-2 mb-3">
-                <Heart className="h-5 w-5 text-[#f97316]" />
-                <h2 className="text-2xl sm:text-3xl font-extrabold text-foreground">
-                  Nuestra Historia
-                </h2>
-              </div>
+            <div className="mb-10 max-w-2xl">
+              <Kicker>
+                <Heart className="h-3 w-3" strokeWidth={1.75} aria-hidden />
+                Historia
+              </Kicker>
+              <h2 className="text-3xl sm:text-4xl lg:text-5xl font-extrabold tracking-[-0.02em] text-gray-900 dark:text-white leading-[1.05]">
+                Nuestra historia
+              </h2>
             </div>
-            <div className="bg-white dark:bg-card rounded-2xl border border-gray-200 dark:border-card-border p-6 sm:p-10 shadow-sm">
-              <p className="text-base sm:text-lg text-muted leading-relaxed text-center">
+            <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 p-8 sm:p-12">
+              <p className="text-base sm:text-lg text-gray-600 dark:text-gray-300 leading-relaxed">
                 {storyText}
               </p>
-              <div className="mt-8 flex flex-wrap items-center justify-center gap-6 text-center">
-                <div>
-                  <p className="text-2xl sm:text-3xl font-extrabold text-[#0f766e]">500+</p>
-                  <p className="text-xs text-muted font-medium mt-1">Productos</p>
-                </div>
-                <div className="h-10 w-px bg-gray-200 dark:bg-card-border hidden sm:block" />
-                <div>
-                  <p className="text-2xl sm:text-3xl font-extrabold text-[#0f766e]">100+</p>
-                  <p className="text-xs text-muted font-medium mt-1">Familias atendidas</p>
-                </div>
-                <div className="h-10 w-px bg-gray-200 dark:bg-card-border hidden sm:block" />
-                <div>
-                  <p className="text-2xl sm:text-3xl font-extrabold text-[#f97316]">30 min</p>
-                  <p className="text-xs text-muted font-medium mt-1">Delivery promedio</p>
-                </div>
+              <div className="mt-10 grid grid-cols-3 gap-0 border-t border-gray-200 dark:border-gray-800 pt-8">
+                {[
+                  { value: "500+", label: "Productos" },
+                  { value: "100+", label: "Familias atendidas" },
+                  { value: "30 min", label: "Delivery promedio" },
+                ].map((s, i) => (
+                  <div
+                    key={s.label}
+                    className={i > 0 ? "border-l border-gray-200 dark:border-gray-800 pl-4" : ""}
+                  >
+                    <p className="text-2xl sm:text-3xl font-extrabold text-gray-900 dark:text-white tabular-nums tracking-tight">
+                      {s.value}
+                    </p>
+                    <p className="mt-2 text-[10px] font-bold uppercase tracking-[0.18em] text-gray-400">
+                      {s.label}
+                    </p>
+                  </div>
+                ))}
               </div>
             </div>
           </div>
         </section>
 
-        {/* ── POR QUÉ ELEGIRNOS ──────────────────────────────────────── */}
-        <section className="py-16 sm:py-20 bg-gray-50 dark:bg-surface/30">
+        {/* ── POR QUÉ ELEGIRNOS ─ */}
+        <section className="py-16 sm:py-24 bg-gray-50 dark:bg-gray-900/40 border-b border-gray-200 dark:border-gray-800">
           <div className="mx-auto max-w-7xl px-4 sm:px-6">
-            <div className="text-center mb-10">
-              <div className="inline-flex items-center gap-2 mb-3">
-                <Users className="h-5 w-5 text-[#0f766e]" />
-                <h2 className="text-2xl sm:text-3xl font-extrabold text-foreground">
-                  Por qué elegirnos
-                </h2>
-              </div>
-              <p className="text-muted max-w-lg mx-auto">
-                Todo lo que necesitas para tu hogar, con la confianza de siempre.
+            <div className="mb-12 max-w-2xl">
+              <Kicker>
+                <Users className="h-3 w-3" strokeWidth={1.75} aria-hidden />
+                Por qué elegirnos
+              </Kicker>
+              <h2 className="text-3xl sm:text-4xl lg:text-5xl font-extrabold tracking-[-0.02em] text-gray-900 dark:text-white leading-[1.05]">
+                Tu bodega, tu confianza
+              </h2>
+              <p className="mt-3 text-gray-500 dark:text-gray-400 leading-relaxed max-w-lg">
+                Todo lo que necesitas para tu hogar, con la cercanía del barrio.
               </p>
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
-              {porQueElegirnos.map((item) => (
-                <div
-                  key={item.title}
-                  className="rounded-2xl border border-gray-200 dark:border-card-border bg-white dark:bg-card p-6 hover:shadow-md transition-shadow text-center"
-                >
-                  <div className={`inline-flex items-center justify-center w-12 h-12 rounded-xl ${item.bg} mb-4`}>
-                    <item.icon className={`h-6 w-6 ${item.color}`} />
+              {porQueElegirnos.map((item) => {
+                const IIcon = item.Icon;
+                return (
+                  <div
+                    key={item.title}
+                    className="group rounded-xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 p-6 hover:border-gray-900 dark:hover:border-gray-500 transition-colors"
+                  >
+                    <div className="h-10 w-10 rounded-lg bg-gray-50 dark:bg-gray-950 border border-gray-200 dark:border-gray-800 flex items-center justify-center text-gray-700 dark:text-gray-200 mb-5">
+                      <IIcon className="h-4 w-4" strokeWidth={1.5} aria-hidden />
+                    </div>
+                    <h3 className="text-base font-extrabold tracking-tight text-gray-900 dark:text-white">
+                      {item.title}
+                    </h3>
+                    <p className="mt-2 text-sm text-gray-500 dark:text-gray-400 leading-relaxed">
+                      {item.desc}
+                    </p>
                   </div>
-                  <h3 className="font-bold text-foreground mb-2">{item.title}</h3>
-                  <p className="text-sm text-muted leading-relaxed">{item.desc}</p>
-                </div>
-              ))}
+                );
+              })}
             </div>
           </div>
         </section>
 
-        {/* ── HORARIOS ────────────────────────────────────────────────── */}
-        <section className="py-16 sm:py-20">
-          <div className="mx-auto max-w-2xl px-4 sm:px-6">
-            <div className="text-center mb-8">
-              <div className="inline-flex items-center gap-2 mb-3">
-                <Clock className="h-5 w-5 text-[#0f766e]" />
-                <h2 className="text-2xl sm:text-3xl font-extrabold text-foreground">
-                  Horarios de atención
-                </h2>
+        {/* ── HORARIOS ─ */}
+        <section className="py-16 sm:py-24 border-b border-gray-200 dark:border-gray-800">
+          <div className="mx-auto max-w-3xl px-4 sm:px-6">
+            <div className="mb-10">
+              <Kicker>
+                <Clock className="h-3 w-3" strokeWidth={1.75} aria-hidden />
+                Horarios
+              </Kicker>
+              <h2 className="text-3xl sm:text-4xl lg:text-5xl font-extrabold tracking-[-0.02em] text-gray-900 dark:text-white leading-[1.05]">
+                Horarios de atención
+              </h2>
+            </div>
+            <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 overflow-hidden">
+              <div className="flex items-center justify-between py-5 px-6 border-b border-gray-200 dark:border-gray-800">
+                <span className="text-sm font-extrabold text-gray-900 dark:text-white tracking-tight">Lunes a Sábado</span>
+                <span className="text-sm font-bold text-gray-900 dark:text-white tabular-nums">
+                  {weekdayHours}
+                </span>
+              </div>
+              <div className="flex items-center justify-between py-5 px-6">
+                <span className="text-sm font-extrabold text-gray-900 dark:text-white tracking-tight">Domingos</span>
+                <span className="text-sm font-bold text-gray-900 dark:text-white tabular-nums">
+                  {weekendHours}
+                </span>
               </div>
             </div>
-            <div className="bg-white dark:bg-card rounded-2xl border border-gray-200 dark:border-card-border p-6 sm:p-8 shadow-sm">
-              <div className="space-y-4">
-                <div className="flex items-center justify-between py-3 border-b border-gray-100 dark:border-card-border">
-                  <span className="font-semibold text-foreground">Lunes a Sábado</span>
-                  <span className="text-sm font-bold text-[#0f766e] bg-emerald-50 dark:bg-emerald-900/20 px-3 py-1 rounded-full">
-                    {weekdayHours}
-                  </span>
-                </div>
-                <div className="flex items-center justify-between py-3">
-                  <span className="font-semibold text-foreground">Domingos</span>
-                  <span className="text-sm font-bold text-[#f97316] bg-amber-50 dark:bg-amber-900/20 px-3 py-1 rounded-full">
-                    {weekendHours}
-                  </span>
-                </div>
-              </div>
-              <p className="text-xs text-muted text-center mt-4">
-                Horarios pueden variar en feriados. Consulta por WhatsApp.
-              </p>
-            </div>
+            <p className="text-xs text-gray-400 mt-4">
+              Horarios pueden variar en feriados. Consulta por WhatsApp.
+            </p>
           </div>
         </section>
 
-        {/* ── CONTACTO ────────────────────────────────────────────────── */}
-        <section className="py-16 sm:py-20 bg-gray-50 dark:bg-surface/30">
-          <div className="mx-auto max-w-4xl px-4 sm:px-6">
-            <div className="text-center mb-10">
-              <div className="inline-flex items-center gap-2 mb-3">
-                <Phone className="h-5 w-5 text-[#0f766e]" />
-                <h2 className="text-2xl sm:text-3xl font-extrabold text-foreground">
-                  Contacto
-                </h2>
-              </div>
-              <p className="text-muted max-w-lg mx-auto">
-                Estamos para ayudarte. Escríbenos o visítanos.
+        {/* ── CONTACTO ─ */}
+        <section className="py-16 sm:py-24 bg-gray-50 dark:bg-gray-900/40 border-b border-gray-200 dark:border-gray-800">
+          <div className="mx-auto max-w-5xl px-4 sm:px-6">
+            <div className="mb-12 max-w-2xl">
+              <Kicker>
+                <Phone className="h-3 w-3" strokeWidth={1.75} aria-hidden />
+                Contacto
+              </Kicker>
+              <h2 className="text-3xl sm:text-4xl lg:text-5xl font-extrabold tracking-[-0.02em] text-gray-900 dark:text-white leading-[1.05]">
+                Estamos para ayudarte
+              </h2>
+              <p className="mt-3 text-gray-500 dark:text-gray-400 leading-relaxed max-w-lg">
+                Escríbenos o visítanos cuando quieras.
               </p>
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
-              {/* Dirección */}
               <a
                 href={mapsLink}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="rounded-2xl border border-gray-200 dark:border-card-border bg-white dark:bg-card p-6 hover:shadow-md transition-shadow text-center group"
+                className="group rounded-xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 p-6 hover:border-gray-900 dark:hover:border-gray-500 transition-colors"
               >
-                <div className="inline-flex items-center justify-center w-12 h-12 rounded-xl bg-red-50 dark:bg-red-900/20 mb-4">
-                  <MapPin className="h-6 w-6 text-red-500" />
+                <div className="flex items-start justify-between mb-5">
+                  <div className="h-10 w-10 rounded-lg bg-gray-50 dark:bg-gray-950 border border-gray-200 dark:border-gray-800 flex items-center justify-center text-gray-700 dark:text-gray-200">
+                    <MapPin className="h-4 w-4" strokeWidth={1.5} aria-hidden />
+                  </div>
+                  <ArrowUpRight className="h-4 w-4 text-gray-300 dark:text-gray-600 group-hover:text-gray-900 dark:group-hover:text-white transition-colors" strokeWidth={1.75} aria-hidden />
                 </div>
-                <h3 className="font-bold text-foreground mb-1">Dirección</h3>
-                <p className="text-sm text-muted leading-relaxed group-hover:text-primary transition-colors">
-                  {address}
-                </p>
-                <p className="text-xs text-primary font-semibold mt-2">Ver en Google Maps</p>
+                <h3 className="text-base font-extrabold tracking-tight text-gray-900 dark:text-white">Dirección</h3>
+                <p className="mt-2 text-sm text-gray-500 dark:text-gray-400 leading-relaxed">{address}</p>
+                <p className="mt-4 text-[10px] font-bold uppercase tracking-[0.2em] text-gray-400">Google Maps</p>
               </a>
 
-              {/* WhatsApp */}
               {phone && (
                 <a
                   href={whatsappLink || "#"}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="rounded-2xl border border-gray-200 dark:border-card-border bg-white dark:bg-card p-6 hover:shadow-md transition-shadow text-center group"
+                  className="group rounded-xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 p-6 hover:border-gray-900 dark:hover:border-gray-500 transition-colors"
                 >
-                  <div className="inline-flex items-center justify-center w-12 h-12 rounded-xl bg-emerald-50 dark:bg-emerald-900/20 mb-4">
-                    <MessageCircle className="h-6 w-6 text-emerald-600" />
+                  <div className="flex items-start justify-between mb-5">
+                    <div className="h-10 w-10 rounded-lg bg-gray-50 dark:bg-gray-950 border border-gray-200 dark:border-gray-800 flex items-center justify-center text-gray-700 dark:text-gray-200">
+                      <MessageCircle className="h-4 w-4" strokeWidth={1.5} aria-hidden />
+                    </div>
+                    <ArrowUpRight className="h-4 w-4 text-gray-300 dark:text-gray-600 group-hover:text-gray-900 dark:group-hover:text-white transition-colors" strokeWidth={1.75} aria-hidden />
                   </div>
-                  <h3 className="font-bold text-foreground mb-1">WhatsApp</h3>
-                  <p className="text-sm text-muted leading-relaxed">{phone}</p>
-                  <p className="text-xs text-emerald-600 font-semibold mt-2">Enviar mensaje</p>
+                  <h3 className="text-base font-extrabold tracking-tight text-gray-900 dark:text-white">WhatsApp</h3>
+                  <p className="mt-2 text-sm text-gray-500 dark:text-gray-400 leading-relaxed tabular-nums">{phone}</p>
+                  <p className="mt-4 text-[10px] font-bold uppercase tracking-[0.2em] text-gray-400">Enviar mensaje</p>
                 </a>
               )}
 
-              {/* Email */}
               {email && (
                 <a
                   href={`mailto:${email}`}
-                  className="rounded-2xl border border-gray-200 dark:border-card-border bg-white dark:bg-card p-6 hover:shadow-md transition-shadow text-center group"
+                  className="group rounded-xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 p-6 hover:border-gray-900 dark:hover:border-gray-500 transition-colors"
                 >
-                  <div className="inline-flex items-center justify-center w-12 h-12 rounded-xl bg-blue-50 dark:bg-blue-900/20 mb-4">
-                    <Mail className="h-6 w-6 text-blue-600" />
+                  <div className="flex items-start justify-between mb-5">
+                    <div className="h-10 w-10 rounded-lg bg-gray-50 dark:bg-gray-950 border border-gray-200 dark:border-gray-800 flex items-center justify-center text-gray-700 dark:text-gray-200">
+                      <Mail className="h-4 w-4" strokeWidth={1.5} aria-hidden />
+                    </div>
+                    <ArrowUpRight className="h-4 w-4 text-gray-300 dark:text-gray-600 group-hover:text-gray-900 dark:group-hover:text-white transition-colors" strokeWidth={1.75} aria-hidden />
                   </div>
-                  <h3 className="font-bold text-foreground mb-1">Email</h3>
-                  <p className="text-sm text-muted leading-relaxed">{email}</p>
-                  <p className="text-xs text-blue-600 font-semibold mt-2">Enviar correo</p>
+                  <h3 className="text-base font-extrabold tracking-tight text-gray-900 dark:text-white">Email</h3>
+                  <p className="mt-2 text-sm text-gray-500 dark:text-gray-400 leading-relaxed">{email}</p>
+                  <p className="mt-4 text-[10px] font-bold uppercase tracking-[0.2em] text-gray-400">Enviar correo</p>
                 </a>
               )}
             </div>
           </div>
         </section>
 
-        {/* ── MAPA / UBICACIÓN ────────────────────────────────────────── */}
-        <section className="py-16 sm:py-20">
-          <div className="mx-auto max-w-4xl px-4 sm:px-6">
-            <div className="text-center mb-8">
-              <div className="inline-flex items-center gap-2 mb-3">
-                <MapPin className="h-5 w-5 text-[#0f766e]" />
-                <h2 className="text-2xl sm:text-3xl font-extrabold text-foreground">
-                  Encuéntranos
-                </h2>
-              </div>
-            </div>
-            <div className="bg-white dark:bg-card rounded-2xl border border-gray-200 dark:border-card-border p-6 sm:p-8 shadow-sm text-center">
-              <p className="text-muted mb-4">
-                {address}
-              </p>
-              <a
-                href={mapsLink}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="inline-flex items-center gap-2 rounded-xl px-6 py-3 text-sm font-bold bg-[#0f766e] text-white hover:bg-[#0d5f58] transition-all shadow-md"
-              >
-                <MapPin className="h-4 w-4" /> Abrir en Google Maps
-              </a>
-            </div>
+        {/* ── UBICACIÓN ─ */}
+        <section className="py-16 sm:py-24 border-b border-gray-200 dark:border-gray-800">
+          <div className="mx-auto max-w-3xl px-4 sm:px-6 text-center">
+            <Kicker>
+              <MapPin className="h-3 w-3" strokeWidth={1.75} aria-hidden />
+              Ubicación
+            </Kicker>
+            <h2 className="text-3xl sm:text-4xl font-extrabold tracking-[-0.02em] text-gray-900 dark:text-white">
+              Encuéntranos
+            </h2>
+            <p className="mt-4 text-gray-500 dark:text-gray-400 leading-relaxed">
+              {address}
+            </p>
+            <a
+              href={mapsLink}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="mt-8 inline-flex items-center gap-2 bg-gray-900 dark:bg-white text-white dark:text-gray-900 font-bold px-6 py-3 rounded-full text-sm transition-colors hover:bg-gray-800 dark:hover:bg-gray-100"
+            >
+              <MapPin className="h-4 w-4" strokeWidth={1.75} aria-hidden />
+              Abrir en Google Maps
+            </a>
           </div>
         </section>
 
-        {/* ── CTA FINAL ───────────────────────────────────────────────── */}
-        <section className="py-12 text-white text-center" style={{ background: "linear-gradient(135deg, #0f766e 0%, #0d9488 100%)" }}>
-          <div className="mx-auto max-w-2xl px-4 sm:px-6">
-            <ShoppingCart className="h-10 w-10 mx-auto mb-3 opacity-80" />
-            <h2 className="text-2xl font-extrabold mb-2">Haz tu pedido ahora</h2>
-            <p className="text-white/70 mb-6 text-sm">
-              Más de 500 productos con delivery. Paga con Yape o efectivo.
+        {/* ── CTA FINAL ─ editorial dark ─ */}
+        <section className="py-20 sm:py-24 text-white text-center" style={{ background: "#060a0d" }}>
+          <div className="mx-auto max-w-3xl px-4 sm:px-6">
+            <Kicker>
+              <ShoppingCart className="h-3 w-3 text-white/55" strokeWidth={1.75} aria-hidden />
+              <span className="text-white/55">Haz tu pedido</span>
+            </Kicker>
+            <h2 className="text-3xl sm:text-4xl lg:text-5xl font-extrabold tracking-[-0.02em] text-white leading-[1.05]">
+              Más de 500 productos con delivery
+            </h2>
+            <p className="mt-4 text-white/60 max-w-xl mx-auto leading-relaxed">
+              Paga con Yape o efectivo. Entrega rápida a toda la zona.
             </p>
-            <div className="flex flex-wrap items-center justify-center gap-3">
+            <div className="mt-8 flex flex-wrap items-center justify-center gap-3">
               <Link
                 href="/tienda"
-                className="inline-flex items-center gap-2 rounded-xl px-6 py-3 text-sm font-bold bg-white text-[#0f766e] hover:bg-white/90 transition-all shadow-md"
+                className="inline-flex items-center gap-2 bg-white text-gray-900 font-bold px-6 py-3 rounded-full text-sm transition-colors hover:bg-gray-100"
               >
-                <ShoppingCart className="h-4 w-4" /> Explorar la tienda
+                <ShoppingCart className="h-4 w-4" strokeWidth={1.75} aria-hidden />
+                Explorar la tienda
               </Link>
               {whatsappLink && (
                 <a
                   href={whatsappLink}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="inline-flex items-center gap-2 rounded-xl px-6 py-3 text-sm font-bold bg-white/15 border border-white/25 hover:bg-white/25 transition-all"
+                  className="inline-flex items-center gap-2 bg-transparent text-white font-bold px-6 py-3 rounded-full text-sm border border-white/20 hover:bg-white/10 transition-colors"
                 >
-                  <MessageCircle className="h-4 w-4" /> Pedir por WhatsApp
+                  <MessageCircle className="h-4 w-4" strokeWidth={1.75} aria-hidden />
+                  Pedir por WhatsApp
                 </a>
               )}
             </div>

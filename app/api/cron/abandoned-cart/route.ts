@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { timingSafeCompare } from "@/lib/timing-safe";
+import { withCronAuth } from "@/lib/cron-auth";
 import { withCronRetry } from "@/lib/cron-retry";
 import { logger } from "@/lib/logger";
 import { prisma } from "@/lib/prisma";
@@ -66,14 +66,7 @@ function estimateValue(items: CartItem[]): number {
   }, 0);
 }
 
-export async function GET(req: NextRequest) {
-  const secret = process.env.CRON_SECRET;
-  const auth = req.headers.get("authorization") ?? "";
-
-  if (!secret || !timingSafeCompare(auth, `Bearer ${secret}`)) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
-
+export const GET = withCronAuth("abandoned-cart", async (req) => {
   try {
     const result = await withCronRetry("abandoned-cart", async () => {
       const cutoff = new Date(Date.now() - 2 * 60 * 60 * 1000); // 2 horas atras
@@ -157,7 +150,7 @@ export async function GET(req: NextRequest) {
           actionUrl: cart.whatsappUrl,
           actionLabel: "Contactar por WhatsApp",
           entityId: `abandoned-${cart.customerPhone}`,
-        }).catch(() => {});
+        }).catch((err) => logger.error("[cron/abandoned-cart] createNotification failed", { error: String(err), tenantId }));
 
         // Push notification al cliente para que vuelva a completar su pedido
         import("@/lib/push-sender")
@@ -168,10 +161,10 @@ export async function GET(req: NextRequest) {
               url: "/tienda?checkout=resume",
             }),
           )
-          .catch(() => {});
+          .catch((err) => logger.error("[cron/abandoned-cart] push send failed", { error: String(err), phone: cart.customerPhone }));
 
         // WhatsApp recovery message al cliente
-        enqueueNotification({ type: "whatsapp", recipient: cart.customerPhone, message: cart.whatsappText, tenantId, metadata: { purpose: "abandoned-cart-recovery" } }).catch(() => {});
+        enqueueNotification({ type: "whatsapp", recipient: cart.customerPhone, message: cart.whatsappText, tenantId, metadata: { purpose: "abandoned-cart-recovery" } }).catch((err) => logger.error("[cron/abandoned-cart] WhatsApp enqueue failed", { error: String(err), phone: cart.customerPhone }));
 
         notificationsCreated++;
       }
@@ -191,4 +184,4 @@ export async function GET(req: NextRequest) {
     logger.error(`[cron/abandoned-cart] Error: ${message}`);
     return NextResponse.json({ error: message }, { status: 500 });
   }
-}
+});

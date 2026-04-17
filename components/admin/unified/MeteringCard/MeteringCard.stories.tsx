@@ -3,12 +3,28 @@
  *
  * 3 estados: healthy (verde), warning (amarillo), critical (rojo).
  * Usa el componente cliente directamente para evitar el fetch del RSC.
+ *
+ * NOTA (Chromatic compat): METERED_EVENTS se hardcodea aqui en vez de importar
+ * `@/lib/billing/metering` porque ese modulo tiene `import "server-only"` +
+ * prisma client, que no buildea en el sandbox de Storybook. El array aqui
+ * tiene que mantenerse en sync si cambia `METERED_EVENTS` en lib/billing.
  */
 
 import type { Meta, StoryObj } from "@storybook/react";
 import { MeteringCardClient } from "./MeteringCard.client";
 import type { MeteringSnapshot } from "./types";
-import { METERED_EVENTS } from "@/lib/billing/metering";
+
+// Inline copy de METERED_EVENTS para evitar arrastrar prisma/server-only.
+const METERED_EVENTS = [
+  "order.created",
+  "ai.call",
+  "ai.recommend",
+  "ai.insight",
+  "sms.sent",
+  "whatsapp.sent",
+  "sunat.emitted",
+  "storage.blob",
+] as const;
 
 // ─── Factory ──────────────────────────────────────────────────────────────────
 
@@ -44,7 +60,7 @@ const meta: Meta<typeof MeteringCardClient> = {
     docs: {
       description: {
         component:
-          "Tarjeta de uso facturable para el dashboard de admin. Muestra métricas del plan con semáforo visual, barras de progreso y sparklines de 7 días.",
+          "Tarjeta de uso facturable para el dashboard de admin. Muestra metricas del plan con semaforo visual, barras de progreso y sparklines de 7 dias.",
       },
     },
   },
@@ -82,7 +98,7 @@ export const Saludable: Story = {
   },
   parameters: {
     docs: {
-      description: { story: "Plan Pro con uso bien por debajo del 70% en todas las métricas. Sin alertas." },
+      description: { story: "Plan Pro con uso bien por debajo del 70% en todas las metricas. Sin alertas." },
     },
   },
 };
@@ -90,14 +106,14 @@ export const Saludable: Story = {
 // ─── Historia 2: Advertencia (amarillo) ──────────────────────────────────────
 
 export const Advertencia: Story = {
-  name: "Advertencia — cerca del límite",
+  name: "Advertencia — cerca del limite",
   args: {
     snapshot: makeSnapshot({
       plan: "starter",
       usage: {
-        "order.created":  780,  // 78% de 1000
-        "ai.call":        420,  // 84% de 500
-        "ai.recommend":   1_450, // 72% de 2000
+        "order.created":  780,
+        "ai.call":        420,
+        "ai.recommend":   1_450,
         "ai.insight":     650,
         "sms.sent":       120,
         "whatsapp.sent":  3_200,
@@ -124,22 +140,22 @@ export const Advertencia: Story = {
   },
 };
 
-// ─── Historia 3: Crítico (rojo) ───────────────────────────────────────────────
+// ─── Historia 3: Critico (rojo) ───────────────────────────────────────────────
 
 export const Critico: Story = {
-  name: "Critico — límite alcanzado",
+  name: "Critico — limite alcanzado",
   args: {
     snapshot: makeSnapshot({
       plan: "free",
       usage: {
-        "order.created":  98,   // 98% de 100 → rojo
-        "ai.call":        49,   // 98% de 50  → rojo
-        "ai.recommend":   185,  // 92% de 200 → rojo
+        "order.created":  98,
+        "ai.call":        49,
+        "ai.recommend":   185,
         "ai.insight":     80,
-        "sms.sent":       48,   // 96% de 50  → rojo
-        "whatsapp.sent":  480,  // 96% de 500 → rojo
+        "sms.sent":       48,
+        "whatsapp.sent":  480,
         "sunat.emitted":  0,
-        "storage.blob":   920,  // 92% de 1000 → rojo
+        "storage.blob":   920,
       },
       quotas: {
         "order.created":  { limit: 100,   alertAt: 0.8 },
@@ -156,7 +172,7 @@ export const Critico: Story = {
   },
   parameters: {
     docs: {
-      description: { story: "Plan Gratis con múltiples métricas en rojo (>90%). Badge 'Límite alcanzado' y botón 'Mejorar plan' visibles." },
+      description: { story: "Plan Gratis con multiples metricas en rojo (>90%). Badge 'Limite alcanzado' y boton 'Mejorar plan' visibles." },
     },
   },
 };

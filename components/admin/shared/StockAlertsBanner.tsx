@@ -101,7 +101,7 @@ export function StockAlertsBanner() {
   return (
     <div
       className={cn(
-        "w-full rounded-xl border shadow-sm overflow-hidden",
+        "w-full rounded-xl border  overflow-hidden",
         hasCriticos
           ? "bg-red-50 border-red-200 dark:bg-red-950/30 dark:border-red-800"
           : "bg-amber-50 border-amber-200 dark:bg-amber-950/30 dark:border-amber-800",

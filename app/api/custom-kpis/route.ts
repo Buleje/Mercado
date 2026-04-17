@@ -34,7 +34,7 @@ const SEED_KPIS: CustomKpi[] = [
     id: "kpi-conversion", name: "Tasa de Conversión", description: "Visitantes que compran",
     formula: "ventas / visitas * 100", currentValue: 68, target: 75,
     unit: "%", trend: "up", changePercent: 4.1, period: "Esta semana",
-    category: "Ventas", color: "bg-blue-500",
+    category: "Ventas", color: "bg-emerald-500",
     history: Array.from({ length: 7 }, (_, i) => ({ date: `día ${i + 1}`, value: 62 + Math.random() * 10 })),
   },
   {

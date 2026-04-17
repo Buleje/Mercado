@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { ProductAnalyticsDB } from "@/lib/db/product-analytics.db";
 import { checkEdgeRateLimit } from "@/lib/middleware-utils";
 import { z } from "zod";
+import { logger } from "@/lib/logger";
 
 const BodySchema = z.object({
   metric: z.enum(["view", "click", "addToCart", "conversion"]),
@@ -31,7 +32,8 @@ export async function POST(
     return NextResponse.json({ error: "Demasiadas solicitudes" }, { status: 429 });
   }
 
-  const body = await req.json();
+  const body = await req.json().catch((err) => { logger.error("[marketplace/products/[id]/analytics/track] parse JSON body failed", { error: String(err) }); return null; });
+  if (!body) return NextResponse.json({ error: "Invalid JSON" }, { status: 400 });
   const parsed = BodySchema.safeParse(body);
   if (!parsed.success) {
     return NextResponse.json({ error: "Datos inválidos", issues: parsed.error.issues }, { status: 400 });
@@ -41,7 +43,7 @@ export async function POST(
   const { metric, revenue } = parsed.data;
 
   // Fire-and-forget
-  ProductAnalyticsDB.track(tenantId, productId, metric, revenue).catch(() => {});
+  ProductAnalyticsDB.track(tenantId, productId, metric, revenue).catch((err) => logger.error("[marketplace/products/[id]/analytics/track] operation failed", { error: String(err), tenantId }));
 
   return NextResponse.json({ ok: true });
 }

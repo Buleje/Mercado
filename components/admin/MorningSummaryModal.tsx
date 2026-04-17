@@ -79,9 +79,9 @@ export default function MorningSummaryModal() {
 
   return (
     <div className="fixed inset-0 z-[9000] flex items-center justify-center bg-black/50 backdrop-blur-sm">
-      <div className="relative bg-white dark:bg-card rounded-2xl shadow-2xl max-w-md w-full mx-4 overflow-hidden animate-[scaleIn_0.3s_ease-out]">
+      <div className="relative bg-white dark:bg-card rounded-xl max-w-md w-full mx-4 overflow-hidden">
         {/* Header */}
-        <div className="relative bg-gradient-to-br from-amber-400 via-orange-400 to-yellow-300 p-6 text-white">
+        <div className="relative bg-[var(--brand-ink)] p-6 text-[var(--surface-canvas)]">
           <button
             onClick={handleClose}
             className="absolute top-3 right-3 p-1.5 rounded-full bg-white/20 hover:bg-white/30 transition-colors"
@@ -91,7 +91,7 @@ export default function MorningSummaryModal() {
           <div className="flex items-center gap-3">
             <Sun className="h-10 w-10 drop-shadow-md" />
             <div>
-              <h2 className="text-xl font-black">Buenos dias!</h2>
+              <h2 className="text-xl font-extrabold">Buenos dias!</h2>
               <p className="text-white/80 text-sm font-medium">{dayName} — Resumen de ayer</p>
             </div>
           </div>
@@ -109,36 +109,36 @@ export default function MorningSummaryModal() {
                 <div className="bg-emerald-50 dark:bg-emerald-900/20 rounded-xl p-3">
                   <div className="flex items-center gap-2 mb-1">
                     <TrendingUp className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
-                    <span className="text-[10px] font-bold text-emerald-600 dark:text-emerald-400 uppercase">Ventas ayer</span>
+                    <span className="text-[length:var(--ts-2xs)] font-bold text-emerald-600 dark:text-emerald-400 uppercase">Ventas ayer</span>
                   </div>
-                  <p className="text-lg font-black text-emerald-700 dark:text-emerald-300">{formatCurrency(data.ventasAyer)}</p>
+                  <p className="text-lg font-extrabold text-emerald-700 dark:text-emerald-300">{formatCurrency(data.ventasAyer)}</p>
                 </div>
-                <div className="bg-blue-50 dark:bg-blue-900/20 rounded-xl p-3">
+                <div className="bg-emerald-50 dark:bg-emerald-900/20 rounded-xl p-3">
                   <div className="flex items-center gap-2 mb-1">
-                    <ShoppingCart className="h-4 w-4 text-blue-600 dark:text-blue-400" />
-                    <span className="text-[10px] font-bold text-blue-600 dark:text-blue-400 uppercase">Pedidos pendientes</span>
+                    <ShoppingCart className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
+                    <span className="text-[length:var(--ts-2xs)] font-bold text-emerald-600 dark:text-emerald-400 uppercase">Pedidos pendientes</span>
                   </div>
-                  <p className="text-lg font-black text-blue-700 dark:text-blue-300">{data.pedidosPendientes}</p>
+                  <p className="text-lg font-extrabold text-emerald-700 dark:text-emerald-300">{data.pedidosPendientes}</p>
                 </div>
                 <div className="bg-amber-50 dark:bg-amber-900/20 rounded-xl p-3">
                   <div className="flex items-center gap-2 mb-1">
                     <Package className="h-4 w-4 text-amber-600 dark:text-amber-400" />
-                    <span className="text-[10px] font-bold text-amber-600 dark:text-amber-400 uppercase">Stock bajo</span>
+                    <span className="text-[length:var(--ts-2xs)] font-bold text-amber-600 dark:text-amber-400 uppercase">Stock bajo</span>
                   </div>
-                  <p className="text-lg font-black text-amber-700 dark:text-amber-300">{data.stockBajo} productos</p>
+                  <p className="text-lg font-extrabold text-amber-700 dark:text-amber-300">{data.stockBajo} productos</p>
                 </div>
                 <div className="bg-red-50 dark:bg-red-900/20 rounded-xl p-3">
                   <div className="flex items-center gap-2 mb-1">
                     <AlertTriangle className="h-4 w-4 text-red-600 dark:text-red-400" />
-                    <span className="text-[10px] font-bold text-red-600 dark:text-red-400 uppercase">Fiados vencidos</span>
+                    <span className="text-[length:var(--ts-2xs)] font-bold text-red-600 dark:text-red-400 uppercase">Fiados vencidos</span>
                   </div>
-                  <p className="text-lg font-black text-red-700 dark:text-red-300">{data.fiadosVencidos}</p>
+                  <p className="text-lg font-extrabold text-red-700 dark:text-red-300">{data.fiadosVencidos}</p>
                 </div>
               </div>
 
               {/* Suggestion */}
-              <div className="bg-gray-50 dark:bg-white/5 rounded-xl p-3 border border-gray-100 dark:border-white/10">
-                <p className="text-[10px] font-bold text-gray-400 uppercase mb-1">Tarea sugerida</p>
+              <div className="bg-gray-50 dark:bg-white/5 rounded-xl p-3 border border-[var(--rule-soft)] dark:border-white/10">
+                <p className="text-[length:var(--ts-2xs)] font-bold text-gray-400 uppercase mb-1">Tarea sugerida</p>
                 <p className="text-sm font-semibold text-gray-700 dark:text-gray-300">
                   Hoy es {dayName.toLowerCase()} — {data.sugerencia.split(" — ")[1] || data.sugerencia}
                 </p>
@@ -146,7 +146,7 @@ export default function MorningSummaryModal() {
 
               <button
                 onClick={handleClose}
-                className="w-full flex items-center justify-center gap-2 bg-[#00B4A6] text-white rounded-xl px-5 py-3 font-bold shadow-md hover:bg-[#009690] transition-all"
+                className="w-full flex items-center justify-center gap-2 bg-[#00B4A6] text-white rounded-lg px-5 py-3 font-bold hover:bg-[#009690] transition-all"
               >
                 <Sun className="h-4 w-4" />
                 Comenzar el dia

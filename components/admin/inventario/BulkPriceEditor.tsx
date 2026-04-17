@@ -197,7 +197,7 @@ export default function BulkPriceEditor() {
   }
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-6">
       {/* Toast */}
       {toast && (
         <div className="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 text-green-700 dark:text-green-400 px-4 py-3 rounded-lg text-sm">
@@ -212,12 +212,12 @@ export default function BulkPriceEditor() {
           value={search}
           onChange={e => setSearch(e.target.value)}
           placeholder="Buscar producto..."
-          className="flex-1 px-3 py-2 border border-gray-300 dark:border-card-border rounded-lg bg-white dark:bg-card text-gray-900 dark:text-foreground text-sm"
+          className="flex-1 px-3 py-2 border border-[var(--rule-base)] dark:border-card-border rounded-lg bg-white dark:bg-card text-gray-900 dark:text-foreground text-sm"
         />
         <select
           value={catFilter}
           onChange={e => setCatFilter(e.target.value)}
-          className="px-3 py-2 border border-gray-300 dark:border-card-border rounded-lg bg-white dark:bg-card text-gray-900 dark:text-foreground text-sm"
+          className="px-3 py-2 border border-[var(--rule-base)] dark:border-card-border rounded-lg bg-white dark:bg-card text-gray-900 dark:text-foreground text-sm"
         >
           <option value="">Todas las categorias</option>
           {categories.map(c => <option key={c} value={c}>{c}</option>)}
@@ -225,17 +225,17 @@ export default function BulkPriceEditor() {
       </div>
 
       {/* Table */}
-      <div className="bg-white dark:bg-card rounded-xl border border-gray-200 dark:border-card-border overflow-hidden">
+      <div className="bg-white dark:bg-card rounded-xl border border-[var(--rule-base)] dark:border-card-border overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
-              <tr className="bg-gray-50 dark:bg-gray-800/50 border-b border-gray-200 dark:border-card-border">
+              <tr className="bg-gray-50 dark:bg-gray-800/50 border-b border-[var(--rule-base)] dark:border-card-border">
                 <th className="py-2 px-2 text-left">
                   <input
                     type="checkbox"
                     checked={filtered.length > 0 && filtered.every(p => p.selected)}
                     onChange={selectAllFiltered}
-                    className="w-4 h-4 rounded border-gray-300 text-[#00B4A6] focus:ring-[#00B4A6]"
+                    className="w-4 h-4 rounded border-[var(--rule-base)] text-[#00B4A6] focus:ring-[#00B4A6]"
                   />
                 </th>
                 <th className="py-2 px-2 text-left text-gray-600 dark:text-muted font-medium">Producto</th>
@@ -254,7 +254,7 @@ export default function BulkPriceEditor() {
                 return (
                   <tr
                     key={p.id}
-                    className={`border-b border-gray-100 dark:border-gray-800 transition-colors ${
+                    className={`border-b border-[var(--rule-base)] transition-colors ${
                       p.changed ? 'bg-amber-50/50 dark:bg-amber-900/10' : ''
                     }`}
                   >
@@ -263,7 +263,7 @@ export default function BulkPriceEditor() {
                         type="checkbox"
                         checked={p.selected}
                         onChange={() => toggleSelect(p.id)}
-                        className="w-4 h-4 rounded border-gray-300 text-[#00B4A6] focus:ring-[#00B4A6]"
+                        className="w-4 h-4 rounded border-[var(--rule-base)] text-[#00B4A6] focus:ring-[#00B4A6]"
                       />
                     </td>
                     <td className="py-2 px-2 text-gray-900 dark:text-foreground truncate max-w-[200px]">{p.name}</td>
@@ -284,7 +284,7 @@ export default function BulkPriceEditor() {
                         step={0.10}
                         min={0}
                         className={`w-24 px-2 py-1 border rounded text-right text-sm bg-white dark:bg-card text-gray-900 dark:text-foreground ${
-                          p.changed ? 'border-amber-400' : 'border-gray-300 dark:border-card-border'
+                          p.changed ? 'border-amber-400' : 'border-[var(--rule-base)] dark:border-card-border'
                         }`}
                       />
                     </td>
@@ -298,7 +298,7 @@ export default function BulkPriceEditor() {
           </table>
         </div>
         {filtered.length > 200 && (
-          <div className="text-center py-2 text-xs text-gray-500 dark:text-muted border-t border-gray-200 dark:border-card-border">
+          <div className="text-center py-2 text-xs text-gray-500 dark:text-muted border-t border-[var(--rule-base)] dark:border-card-border">
             Mostrando 200 de {filtered.length} productos
           </div>
         )}
@@ -306,7 +306,7 @@ export default function BulkPriceEditor() {
 
       {/* Mass actions bar */}
       {selectedCount > 0 && (
-        <div className="sticky bottom-0 bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl p-4 shadow-lg space-y-3">
+        <div className="sticky bottom-0 bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl p-4 space-y-3">
           <div className="flex items-center justify-between">
             <span className="text-sm font-medium text-gray-700 dark:text-muted">
               {selectedCount} seleccionados
@@ -328,7 +328,7 @@ export default function BulkPriceEditor() {
                   value={pctInput}
                   onChange={e => setPctInput(e.target.value)}
                   placeholder="%"
-                  className="w-20 px-2 py-1.5 border border-gray-300 dark:border-card-border rounded-lg text-sm bg-white dark:bg-card text-gray-900 dark:text-foreground"
+                  className="w-20 px-2 py-1.5 border border-[var(--rule-base)] dark:border-card-border rounded-lg text-sm bg-white dark:bg-card text-gray-900 dark:text-foreground"
                 />
                 <button
                   onClick={subirPorcentaje}
@@ -342,7 +342,7 @@ export default function BulkPriceEditor() {
               {/* Redondear */}
               <button
                 onClick={redondear}
-                className="px-3 py-1.5 border border-gray-300 dark:border-card-border text-gray-700 dark:text-muted rounded-lg text-sm font-medium hover:bg-gray-50 dark:hover:bg-card-hover transition-colors"
+                className="px-3 py-1.5 border border-[var(--rule-base)] dark:border-card-border text-gray-700 dark:text-muted rounded-lg text-sm font-medium hover:bg-gray-50 dark:hover:bg-card-hover transition-colors"
               >
                 Redondear a S/0.50
               </button>
@@ -354,7 +354,7 @@ export default function BulkPriceEditor() {
                   value={marginInput}
                   onChange={e => setMarginInput(e.target.value)}
                   placeholder="%"
-                  className="w-20 px-2 py-1.5 border border-gray-300 dark:border-card-border rounded-lg text-sm bg-white dark:bg-card text-gray-900 dark:text-foreground"
+                  className="w-20 px-2 py-1.5 border border-[var(--rule-base)] dark:border-card-border rounded-lg text-sm bg-white dark:bg-card text-gray-900 dark:text-foreground"
                 />
                 <button
                   onClick={igualarMargen}

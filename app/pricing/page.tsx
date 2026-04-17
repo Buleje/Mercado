@@ -24,7 +24,7 @@ const PLAN_ICONS: Record<PlanId, React.ReactNode> = {
 
 const PLAN_GRADIENT: Record<PlanId, string> = {
   free: "from-gray-600 to-gray-500",
-  pro: "from-blue-600 to-indigo-600",
+  pro: "from-emerald-600 to-indigo-600",
   business: "from-violet-600 to-purple-600",
   enterprise: "from-amber-500 to-orange-500",
 };

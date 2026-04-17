@@ -65,8 +65,8 @@ const PLAN_RESULTS: Record<string, PlanResult> = {
   },
   pro: {
     plan: "Pro",
-    color: "text-blue-600",
-    gradient: "from-blue-500 to-indigo-600",
+    color: "text-emerald-600",
+    gradient: "from-emerald-500 to-indigo-600",
     icon: <Star className="h-6 w-6" />,
     description: "Tu negocio esta creciendo. Con Pro tendras mas productos, reportes avanzados y dominio personalizado.",
     price: "S/ 49/mes",

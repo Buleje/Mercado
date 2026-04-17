@@ -13,6 +13,8 @@ import AnnouncementBar from "@/components/AnnouncementBar";
 import BreadcrumbSchema from "@/components/BreadcrumbSchema";
 import { ProductGridSkeleton } from "@/components/LoadingSkeleton";
 import CategoryCatalogClient from "@/components/CategoryCatalogClient";
+import { getCatalogCategoryIcon } from "@/lib/catalog/catalog-icons";
+import { Truck, CreditCard } from "lucide-react";
 
 const CartSidebar = dynamic(() => import("@/components/CartSidebar"));
 const CustomerModal = dynamic(() => import("@/components/CustomerModal"));
@@ -211,30 +213,40 @@ async function CategoryPageContent({ params }: Props) {
           </Link>
           <span className="text-gray-300">/</span>
           <span className="font-semibold text-foreground">
-            {cat.emoji} {cat.label}
+            {cat.label}
           </span>
         </div>
       </nav>
       <main id="main-content">
         {/* Category hero */}
-        <section className="relative bg-linear-to-br from-[#312e81] via-primary-dark to-[#1e1b4b] pt-32 pb-14 sm:pt-36 sm:pb-16 overflow-hidden">
-          <div className="absolute top-0 right-0 w-[40vw] h-[40vw] bg-primary/10 rounded-full blur-[120px] pointer-events-none" />
+        <section className="relative bg-gray-900 pt-32 pb-14 sm:pt-36 sm:pb-16 overflow-hidden border-b border-gray-800">
+          <div
+            aria-hidden="true"
+            className="absolute inset-0 opacity-[0.06] pointer-events-none"
+            style={{
+              backgroundImage:
+                "linear-gradient(to right, white 1px, transparent 1px), linear-gradient(to bottom, white 1px, transparent 1px)",
+              backgroundSize: "48px 48px",
+            }}
+          />
           <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-            <span className="text-5xl sm:text-6xl mb-4 block">{cat.emoji}</span>
-            <h1 className="text-3xl sm:text-4xl md:text-5xl font-black text-white leading-tight mb-4">
+            <CatIconDisplay categoryId={cat.id} />
+            <h1 className="text-3xl sm:text-4xl md:text-5xl font-extrabold tracking-[-0.02em] text-white leading-[1.05] mb-4">
               {cat.label}
             </h1>
-            <p className="text-white/50 text-base sm:text-lg max-w-xl mx-auto mb-6">
+            <p className="text-white/55 text-base sm:text-lg max-w-xl mx-auto mb-6 leading-relaxed">
               {categoryDescriptions[cat.id]?.split(".")[0] ??
                 `Todos los productos de ${cat.label}`}
               . Delivery gratis.
             </p>
-            <div className="flex flex-wrap items-center justify-center gap-3 text-sm">
-              <span className="inline-flex items-center gap-1.5 bg-white/8 border border-white/10 rounded-full px-3 py-1.5 text-white/70">
-                🚚 Delivery gratis +S/50
+            <div className="flex flex-wrap items-center justify-center gap-2 text-[11px]">
+              <span className="inline-flex items-center gap-1.5 bg-white/10 border border-white/15 rounded-full px-3 py-1 font-semibold text-white/75">
+                <Truck className="h-3 w-3" strokeWidth={1.75} />
+                Delivery gratis +S/50
               </span>
-              <span className="inline-flex items-center gap-1.5 bg-white/8 border border-white/10 rounded-full px-3 py-1.5 text-white/70">
-                💳 Yape o efectivo
+              <span className="inline-flex items-center gap-1.5 bg-white/10 border border-white/15 rounded-full px-3 py-1 font-semibold text-white/75">
+                <CreditCard className="h-3 w-3" strokeWidth={1.75} />
+                Yape o efectivo
               </span>
             </div>
           </div>
@@ -290,6 +302,15 @@ function CategoryPageSkeleton() {
           <ProductGridSkeleton />
         </div>
       </section>
+    </div>
+  );
+}
+
+function CatIconDisplay({ categoryId }: { categoryId: string }) {
+  const CatIcon = getCatalogCategoryIcon(categoryId);
+  return (
+    <div className="h-14 w-14 mx-auto mb-5 rounded-xl bg-white/10 border border-white/15 flex items-center justify-center text-white">
+      <CatIcon className="h-6 w-6" strokeWidth={1.5} />
     </div>
   );
 }

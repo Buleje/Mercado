@@ -31,9 +31,9 @@ const ENTITY_ICONS: Record<string, React.ElementType> = {
 
 const ACTION_COLORS: Record<string, string> = {
   crear: "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400",
-  editar: "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400",
+  editar: "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400",
   eliminar: "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400",
-  estado: "bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400",
+  estado: "bg-[var(--surface-sunken)] text-[var(--text-primary)]",
   otro: "bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-400",
 };
 
@@ -112,7 +112,7 @@ export default function ActivityLogTab() {
   };
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-6">
       {/* Header */}
       <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3">
         <div className="flex flex-wrap items-center gap-2">
@@ -121,20 +121,20 @@ export default function ActivityLogTab() {
           <span className="text-xs text-muted">({filtered.length})</span>
         </div>
         <div className="flex flex-wrap items-center gap-2 ml-auto">
-          <span className="text-[10px] text-muted whitespace-nowrap">Act. {lastUpdated.toLocaleTimeString("es-PE", { hour: "2-digit", minute: "2-digit" })}</span>
+          <span className="text-[length:var(--ts-2xs)] text-muted whitespace-nowrap">Act. {lastUpdated.toLocaleTimeString("es-PE", { hour: "2-digit", minute: "2-digit" })}</span>
           <button
             onClick={() => setAutoRefresh(p => !p)}
             className={cn("flex items-center gap-1 px-3 py-1.5 text-xs font-semibold border rounded-lg transition-colors",
-              autoRefresh ? "bg-emerald-50 dark:bg-emerald-900/20 border-emerald-300 dark:border-emerald-800 text-emerald-700 dark:text-emerald-400" : "bg-white dark:bg-card border-gray-200 dark:border-card-border hover:bg-gray-50 dark:hover:bg-white/5"
+              autoRefresh ? "bg-emerald-50 dark:bg-emerald-900/20 border-emerald-300 dark:border-emerald-800 text-emerald-700 dark:text-emerald-400" : "bg-white dark:bg-card border-[var(--rule-base)] dark:border-card-border hover:bg-gray-50 dark:hover:bg-white/5"
             )}
             title={autoRefresh ? "Auto-refresh activo (30s)" : "Auto-refresh desactivado"}
           >
             <RefreshCw className={cn("h-3.5 w-3.5", autoRefresh && "animate-spin")} /> {autoRefresh ? "Auto" : "Manual"}
           </button>
-          <button onClick={load} className="flex items-center gap-1 px-3 py-1.5 text-xs font-semibold bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-lg hover:bg-gray-50 dark:hover:bg-white/5 transition-colors">
+          <button onClick={load} className="flex items-center gap-1 px-3 py-1.5 text-xs font-semibold bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-lg hover:bg-gray-50 dark:hover:bg-white/5 transition-colors">
             <RefreshCw className={cn("h-3.5 w-3.5", loading && "animate-spin")} /> Actualizar
           </button>
-          <button onClick={clearLog} className="flex items-center gap-1 px-3 py-1.5 text-xs font-semibold text-red-600 bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-lg hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors">
+          <button onClick={clearLog} className="flex items-center gap-1 px-3 py-1.5 text-xs font-semibold text-red-600 bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-lg hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors">
             <Trash2 className="h-3.5 w-3.5" /> Limpiar
           </button>
         </div>
@@ -149,7 +149,7 @@ export default function ActivityLogTab() {
             value={filter}
             onChange={e => { setFilter(e.target.value); setLogPage(1); }}
             placeholder="Buscar en el log..."
-            className="w-full pl-9 pr-3 py-2 text-sm bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl focus:ring-2 focus:ring-primary/30 focus:border-primary outline-none transition-all"
+            className="w-full pl-9 pr-3 py-2 text-sm bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-lg focus:ring-2 focus:ring-primary/30 focus:border-primary outline-none transition-all"
           />
         </div>
         <div className="flex items-center gap-1">
@@ -157,7 +157,7 @@ export default function ActivityLogTab() {
           <select
             value={entityFilter}
             onChange={e => { setEntityFilter(e.target.value); setLogPage(1); }}
-            className="text-sm bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl px-3 py-2 focus:ring-2 focus:ring-primary/30 outline-none"
+            className="text-sm bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-lg px-3 py-2 focus:ring-2 focus:ring-primary/30 outline-none"
           >
             {entities.map(e => (
               <option key={e} value={e}>{e === "todos" ? "Todas las entidades" : e.charAt(0).toUpperCase() + e.slice(1)}</option>
@@ -167,7 +167,7 @@ export default function ActivityLogTab() {
       </div>
 
       {/* Log entries */}
-      <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl divide-y divide-gray-100 dark:divide-card-border overflow-hidden">
+      <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl divide-y divide-gray-100 dark:divide-card-border overflow-hidden">
         {loading && entries.length === 0 ? (
           <div className="p-8 text-center text-muted text-sm">Cargando...</div>
         ) : filtered.length === 0 ? (
@@ -184,15 +184,15 @@ export default function ActivityLogTab() {
                 </div>
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2 flex-wrap">
-                    <span className={cn("text-[10px] font-bold uppercase px-1.5 py-0.5 rounded-md", getActionColor(entry.action))}>
+                    <span className={cn("text-[length:var(--ts-2xs)] font-bold uppercase px-1.5 py-0.5 rounded-md", getActionColor(entry.action))}>
                       {entry.action}
                     </span>
                     <span className="text-xs text-muted capitalize">{entry.entity}</span>
-                    {entry.entityId && <span className="text-[10px] text-muted font-mono">#{entry.entityId.slice(0, 8)}</span>}
+                    {entry.entityId && <span className="text-[length:var(--ts-2xs)] text-muted font-mono">#{entry.entityId.slice(0, 8)}</span>}
                   </div>
                   <p className="text-sm text-foreground mt-0.5 line-clamp-2">{entry.detail}</p>
                 </div>
-                <div className="text-[10px] text-muted whitespace-nowrap shrink-0 mt-1">
+                <div className="text-[length:var(--ts-2xs)] text-muted whitespace-nowrap shrink-0 mt-1">
                   {entry.user && <span className="block text-right font-medium">{entry.user}</span>}
                   {timeAgo(entry.createdAt)}
                 </div>
@@ -206,14 +206,14 @@ export default function ActivityLogTab() {
       {!loading && filtered.length > LOG_PER_PAGE && (
         <div className="flex flex-wrap items-center justify-center gap-2 pt-1">
           <button disabled={safeLogPage <= 1} onClick={() => setLogPage(p => Math.max(1, p - 1))}
-            className="px-3 py-1.5 text-xs font-semibold rounded-lg border border-gray-200 dark:border-card-border bg-white dark:bg-card disabled:opacity-40 hover:bg-gray-50 dark:hover:bg-surface transition-colors">
+            className="px-3 py-1.5 text-xs font-semibold rounded-lg border border-[var(--rule-base)] dark:border-card-border bg-white dark:bg-card disabled:opacity-40 hover:bg-gray-50 dark:hover:bg-surface transition-colors">
             ← Anterior
           </button>
           <span className="text-xs text-gray-500 dark:text-muted">
             Página {safeLogPage} de {logTotalPages} · {filtered.length} registros
           </span>
           <button disabled={safeLogPage >= logTotalPages} onClick={() => setLogPage(p => p + 1)}
-            className="px-3 py-1.5 text-xs font-semibold rounded-lg border border-gray-200 dark:border-card-border bg-white dark:bg-card disabled:opacity-40 hover:bg-gray-50 dark:hover:bg-surface transition-colors">
+            className="px-3 py-1.5 text-xs font-semibold rounded-lg border border-[var(--rule-base)] dark:border-card-border bg-white dark:bg-card disabled:opacity-40 hover:bg-gray-50 dark:hover:bg-surface transition-colors">
             Siguiente →
           </button>
         </div>

@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
-import { timingSafeCompare } from "@/lib/timing-safe";
+import { withCronAuth } from "@/lib/cron-auth";
 import { withCronRetry } from "@/lib/cron-retry";
 import { prisma } from "@/lib/prisma";
-import { sendWhatsAppText } from "@/lib/whatsapp";
+import { sendWhatsAppQueued } from "@/lib/whatsapp";
 import { logger } from "@/lib/logger";
 
 /**
@@ -14,14 +14,7 @@ import { logger } from "@/lib/logger";
  * Sugerencia vercel.json: "0 10 1 * *" (1ero de cada mes a las 10 AM)
  * Autorización: Bearer <CRON_SECRET>
  */
-export async function GET(req: NextRequest) {
-  const secret = process.env.CRON_SECRET;
-  const auth = req.headers.get("authorization") ?? "";
-
-  if (!secret || !timingSafeCompare(auth, `Bearer ${secret}`)) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
-
+export const GET = withCronAuth("loyalty-points-reminder", async (req) => {
   try {
     const result = await withCronRetry("loyalty-points-reminder", async () => {
       // Find all active tenants
@@ -57,7 +50,7 @@ export async function GET(req: NextRequest) {
             `Puedes canjearlos la proxima vez que compres. ` +
             `No los dejes guardados, usalos!`;
 
-          sendWhatsAppText(c.phone, message).catch(() => {});
+          await sendWhatsAppQueued(c.phone, message, { tenantId: tenant.id, context: "cron/loyalty-points-reminder" }).catch((err) => logger.error("[cron/loyalty-points-reminder] WhatsApp enqueue fallback failed", { error: String(err) }));
           totalSent++;
         }
       }
@@ -76,4 +69,4 @@ export async function GET(req: NextRequest) {
       { status: 500 },
     );
   }
-}
+});

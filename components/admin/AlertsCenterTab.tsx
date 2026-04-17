@@ -12,6 +12,9 @@ import {
   ShieldAlert,
   XCircle,
   Check,
+  Bell,
+  Wallet,
+  type LucideIcon,
 } from "lucide-react";
 import { cn, formatCurrency } from "@/lib/utils";
 
@@ -36,11 +39,11 @@ interface Alert {
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
 
-const CATEGORY_LABELS: Record<AlertCategory, { label: string; emoji: string }> = {
-  pedidos: { label: "Pedidos", emoji: "\uD83D\uDCE6" },
-  inventario: { label: "Inventario", emoji: "\uD83D\uDCE6" },
-  finanzas: { label: "Finanzas", emoji: "\uD83D\uDCB0" },
-  general: { label: "General", emoji: "\uD83D\uDD14" },
+const CATEGORY_LABELS: Record<AlertCategory, { label: string; Icon: LucideIcon }> = {
+  pedidos: { label: "Pedidos", Icon: ShoppingCart },
+  inventario: { label: "Inventario", Icon: Package },
+  finanzas: { label: "Finanzas", Icon: Wallet },
+  general: { label: "General", Icon: Bell },
 };
 
 function timeAgo(ts: number): string {
@@ -127,11 +130,11 @@ const URGENCY_CONFIG: Record<
     order: 1,
   },
   info: {
-    border: "border-l-blue-500",
-    bg: "bg-blue-50 dark:bg-blue-950/20",
-    icon: "text-blue-600 dark:text-blue-400",
-    badge: "bg-blue-100 dark:bg-blue-900/40",
-    badgeText: "text-blue-700 dark:text-blue-300",
+    border: "border-l-emerald-500",
+    bg: "bg-emerald-50 dark:bg-emerald-950/20",
+    icon: "text-emerald-600 dark:text-emerald-400",
+    badge: "bg-emerald-100 dark:bg-emerald-900/40",
+    badgeText: "text-emerald-700 dark:text-emerald-300",
     order: 2,
   },
 };
@@ -150,7 +153,7 @@ function AlertSkeleton() {
       {Array.from({ length: 4 }).map((_, i) => (
         <div
           key={i}
-          className="bg-white dark:bg-card rounded-2xl border border-gray-200 dark:border-card-border p-4 animate-pulse"
+          className="bg-white dark:bg-card rounded-xl border border-[var(--rule-base)] dark:border-card-border p-4 animate-pulse"
         >
           <div className="flex items-center gap-3">
             <div className="h-10 w-10 bg-gray-200 dark:bg-gray-700 rounded-xl shrink-0" />
@@ -210,7 +213,7 @@ export default function AlertsCenterTab({ tenantId: _tenantId, onNavigate }: Pro
               "Los clientes esperan. Atiende estos pedidos inmediatamente.",
             action: "Atender",
             href: "pedidos",
-            moduleId: "ventas-caja",
+            moduleId: "pedidos",
             tabId: "pedidos",
             category: "pedidos",
             createdAt: twoHoursAgo,
@@ -226,7 +229,7 @@ export default function AlertsCenterTab({ tenantId: _tenantId, onNavigate }: Pro
             description: "Confirma o procesa estos pedidos para no perder ventas.",
             action: "Ver pedidos",
             href: "pedidos",
-            moduleId: "ventas-caja",
+            moduleId: "pedidos",
             tabId: "pedidos",
             category: "pedidos",
             createdAt: Date.now() - 30 * 60_000,
@@ -385,14 +388,14 @@ export default function AlertsCenterTab({ tenantId: _tenantId, onNavigate }: Pro
 
   if (error) {
     return (
-      <div className="bg-red-50 dark:bg-red-950/20 rounded-2xl border border-red-200 dark:border-red-800/30 p-6 text-center">
+      <div className="bg-red-50 dark:bg-red-950/20 rounded-xl border border-red-200 dark:border-red-800/30 p-6 text-center">
         <AlertTriangle className="w-8 h-8 text-red-500 mx-auto mb-2" />
         <p className="text-sm font-semibold text-red-700 dark:text-red-300 mb-3">
           {error}
         </p>
         <button
           onClick={fetchAlerts}
-          className="px-4 py-2 rounded-xl bg-red-600 hover:bg-red-700 text-white text-sm font-bold transition-colors"
+          className="px-4 py-2 rounded-lg bg-red-600 hover:bg-red-700 text-white text-sm font-bold transition-colors"
         >
           Reintentar
         </button>
@@ -427,7 +430,7 @@ export default function AlertsCenterTab({ tenantId: _tenantId, onNavigate }: Pro
         </p>
         <button
           onClick={fetchAlerts}
-          className="mt-6 inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-300 text-sm font-bold hover:bg-emerald-200 dark:hover:bg-emerald-900/50 transition-colors"
+          className="mt-6 inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-300 text-sm font-bold hover:bg-emerald-200 dark:hover:bg-emerald-900/50 transition-colors"
         >
           <RefreshCw className="w-4 h-4" />
           Actualizar ahora
@@ -462,7 +465,7 @@ export default function AlertsCenterTab({ tenantId: _tenantId, onNavigate }: Pro
   const orderedCategories = categoryOrder.filter((cat) => grouped[cat]?.length > 0);
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-6">
       {/* KPI badges */}
       <div className="flex flex-wrap gap-3 mb-1">
         {criticalCount > 0 && (
@@ -478,8 +481,8 @@ export default function AlertsCenterTab({ tenantId: _tenantId, onNavigate }: Pro
           </span>
         )}
         {infoCount > 0 && (
-          <span className="px-3 py-1.5 bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-300 rounded-full text-xs font-bold inline-flex items-center gap-1.5">
-            <span className="w-2 h-2 rounded-full bg-blue-500" />
+          <span className="px-3 py-1.5 bg-emerald-100 dark:bg-emerald-900/40 text-emerald-700 dark:text-emerald-300 rounded-full text-xs font-bold inline-flex items-center gap-1.5">
+            <span className="w-2 h-2 rounded-full bg-emerald-500" />
             {infoCount} Info
           </span>
         )}
@@ -501,8 +504,8 @@ export default function AlertsCenterTab({ tenantId: _tenantId, onNavigate }: Pro
           <div key={cat} className="space-y-2">
             {/* Category separator */}
             <div className="flex items-center gap-2 pt-2">
-              <span className="text-sm">{catConfig.emoji}</span>
-              <h4 className="text-xs font-extrabold text-gray-500 dark:text-muted uppercase tracking-wider">
+              <catConfig.Icon className="h-3.5 w-3.5 text-gray-500 dark:text-muted" strokeWidth={1.75} />
+              <h4 className="text-xs font-extrabold text-gray-500 dark:text-muted">
                 {catConfig.label}
               </h4>
               <div className="flex-1 h-px bg-gray-200 dark:bg-card-border" />
@@ -517,10 +520,10 @@ export default function AlertsCenterTab({ tenantId: _tenantId, onNavigate }: Pro
                   <div
                     key={alert.id}
                     className={cn(
-                      "flex items-center gap-3 sm:gap-4 rounded-2xl border border-l-4 p-4",
+                      "flex items-center gap-3 sm:gap-4 rounded-xl border border-l-4 p-4",
                       config.border,
                       config.bg,
-                      "border-gray-200 dark:border-card-border",
+                      "border-[var(--rule-base)] dark:border-card-border",
                     )}
                   >
                     {/* Icon */}
@@ -541,7 +544,7 @@ export default function AlertsCenterTab({ tenantId: _tenantId, onNavigate }: Pro
                         </p>
                         <span
                           className={cn(
-                            "hidden sm:inline-flex shrink-0 px-1.5 py-0.5 rounded text-[10px] font-bold uppercase tracking-wide",
+                            "hidden sm:inline-flex shrink-0 px-1.5 py-0.5 rounded text-[length:var(--ts-2xs)] font-bold",
                             config.badge,
                             config.badgeText,
                           )}
@@ -553,7 +556,7 @@ export default function AlertsCenterTab({ tenantId: _tenantId, onNavigate }: Pro
                         {alert.description}
                       </p>
                       {alert.createdAt > 0 && (
-                        <p className="text-[10px] text-gray-400 dark:text-gray-500 mt-0.5">
+                        <p className="text-[length:var(--ts-2xs)] text-gray-400 dark:text-gray-500 mt-0.5">
                           {timeAgo(alert.createdAt)}
                         </p>
                       )}
@@ -573,14 +576,14 @@ export default function AlertsCenterTab({ tenantId: _tenantId, onNavigate }: Pro
                             );
                           }
                         }}
-                        className="flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-bold bg-white dark:bg-card border border-gray-200 dark:border-card-border text-gray-700 dark:text-foreground hover:bg-gray-50 dark:hover:bg-surface transition-colors"
+                        className="flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-bold bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border text-gray-700 dark:text-foreground hover:bg-gray-50 dark:hover:bg-surface transition-colors"
                       >
                         {alert.action}
                         <ArrowRight className="w-3 h-3" />
                       </button>
                       <button
                         onClick={() => handleDismiss(alert.id)}
-                        className="flex items-center gap-1 px-3 py-1 rounded-lg text-[10px] font-medium text-gray-400 hover:text-emerald-600 hover:bg-emerald-50 dark:hover:bg-emerald-950/20 transition-colors"
+                        className="flex items-center gap-1 px-3 py-1 rounded-lg text-[length:var(--ts-2xs)] font-medium text-gray-400 hover:text-emerald-600 hover:bg-emerald-50 dark:hover:bg-emerald-950/20 transition-colors"
                         title="Marcar como resuelta"
                       >
                         <Check className="w-3 h-3" />

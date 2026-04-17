@@ -1,7 +1,7 @@
 "use client";
 
 import type { VendorOrder } from "./vendor-dashboard.types";
-import { Package, Clock } from "lucide-react";
+import { Package, Clock, CheckCircle2 } from "lucide-react";
 import Link from "next/link";
 
 type Props = {
@@ -26,22 +26,27 @@ function statusLabel(status: string): string {
 
 function statusColor(status: string): string {
   if (status === "pendiente") return "bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-300";
-  if (status === "confirmado") return "bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300";
+  if (status === "confirmado") return "bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-300";
   return "bg-gray-100 text-gray-700";
 }
 
 export function VendorPendingOrders({ orders }: Props) {
   if (orders.length === 0) {
     return (
-      <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl p-6 shadow-sm">
+      <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl p-6 ">
         <h3 className="font-bold text-gray-900 dark:text-foreground mb-4 flex items-center gap-2">
           <Package className="h-5 w-5 text-[#f97316]" />
           Pedidos sin atender
         </h3>
         <div className="text-center py-8">
-          <span className="text-3xl">✅</span>
-          <p className="mt-2 text-sm font-medium text-gray-600 dark:text-muted">
-            Estás al día. No hay pedidos sin atender.
+          <div className="inline-flex h-10 w-10 items-center justify-center rounded-xl border border-[var(--rule-base)] bg-gray-50 dark:bg-gray-950 text-emerald-600 dark:text-emerald-400 mb-2">
+            <CheckCircle2 className="h-5 w-5" strokeWidth={1.5} />
+          </div>
+          <p className="mt-2 text-sm font-semibold text-gray-700 dark:text-gray-200">
+            Estás al día
+          </p>
+          <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
+            No hay pedidos sin atender
           </p>
         </div>
       </div>
@@ -49,7 +54,7 @@ export function VendorPendingOrders({ orders }: Props) {
   }
 
   return (
-    <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl p-6 shadow-sm">
+    <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl p-6 ">
       <div className="flex items-center justify-between mb-4">
         <h3 className="font-bold text-gray-900 dark:text-foreground flex items-center gap-2">
           <Package className="h-5 w-5 text-[#f97316]" />

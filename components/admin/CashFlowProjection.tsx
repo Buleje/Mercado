@@ -151,7 +151,7 @@ export default function CashFlowProjection() {
   // ── Render ──────────────────────────────────────────────────────────────────
 
   return (
-    <div className="rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 shadow-sm overflow-hidden">
+    <div className="rounded-xl border border-[var(--rule-base)] bg-white dark:bg-gray-900  overflow-hidden">
       {/* Header */}
       <div className="bg-[#00B4A6] px-5 py-4 flex items-center justify-between">
         <div className="flex items-center gap-2">
@@ -182,7 +182,7 @@ export default function CashFlowProjection() {
         ) : error ? (
           <p className="text-sm text-red-500 dark:text-red-400 text-center py-6">{error}</p>
         ) : projData ? (
-          <div className="space-y-4">
+          <div className="space-y-6">
             {/* Alerta si proyeccion es negativa */}
             {projData.isNegative && (
               <div className="flex items-start gap-2 rounded-lg bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-700 px-3 py-2.5">
@@ -201,10 +201,10 @@ export default function CashFlowProjection() {
             {/* Items del flujo */}
             <div className="space-y-2">
               {/* Efectivo actual */}
-              <div className="flex items-center justify-between py-2 border-b border-gray-100 dark:border-gray-800">
+              <div className="flex items-center justify-between py-2 border-b border-[var(--rule-base)]">
                 <div>
                   <p className="text-sm text-gray-700 dark:text-gray-300">Efectivo en caja</p>
-                  <p className="text-[10px] text-gray-400">Saldo actual disponible</p>
+                  <p className="text-[length:var(--ts-2xs)] text-gray-400">Saldo actual disponible</p>
                 </div>
                 <span className="text-sm font-semibold text-gray-800 dark:text-gray-200">
                   {fmt(projData.cashBalance)}
@@ -212,13 +212,13 @@ export default function CashFlowProjection() {
               </div>
 
               {/* Cuentas por cobrar */}
-              <div className="flex items-center justify-between py-2 border-b border-gray-100 dark:border-gray-800">
+              <div className="flex items-center justify-between py-2 border-b border-[var(--rule-base)]">
                 <div>
                   <p className="text-sm text-gray-700 dark:text-gray-300">
                     <span className="text-emerald-600 dark:text-emerald-400 mr-1">+</span>
                     Cuentas por cobrar
                   </p>
-                  <p className="text-[10px] text-gray-400">Fiados y pedidos pendientes de cobro</p>
+                  <p className="text-[length:var(--ts-2xs)] text-gray-400">Fiados y pedidos pendientes de cobro</p>
                 </div>
                 <span className="text-sm font-semibold text-emerald-600 dark:text-emerald-400">
                   + {fmt(projData.accountsReceivable)}
@@ -232,7 +232,7 @@ export default function CashFlowProjection() {
                     <span className="text-red-500 mr-1">-</span>
                     Cuentas por pagar
                   </p>
-                  <p className="text-[10px] text-gray-400">Proveedores pendientes de pago</p>
+                  <p className="text-[length:var(--ts-2xs)] text-gray-400">Proveedores pendientes de pago</p>
                 </div>
                 <span className="text-sm font-semibold text-red-500 dark:text-red-400">
                   - {fmt(projData.accountsPayable)}
@@ -263,7 +263,7 @@ export default function CashFlowProjection() {
                   )}>
                     {projData.isNegative ? "Necesitas" : "Tendras disponible"}
                   </p>
-                  <p className="text-[10px] text-gray-500 dark:text-gray-400">en 15 dias</p>
+                  <p className="text-[length:var(--ts-2xs)] text-gray-500 dark:text-gray-400">en 15 dias</p>
                 </div>
               </div>
               <span className={cn(
@@ -279,7 +279,7 @@ export default function CashFlowProjection() {
             {/* Proximos pagos a proveedores */}
             {upcomingPayables.length > 0 && (
               <div>
-                <p className="text-[10px] font-medium text-gray-500 dark:text-gray-400 mb-2">
+                <p className="text-[length:var(--ts-2xs)] font-medium text-gray-500 dark:text-gray-400 mb-2">
                   Proximos vencimientos (15 dias)
                 </p>
                 <ul className="space-y-1.5">
@@ -294,7 +294,7 @@ export default function CashFlowProjection() {
                           <p className="text-xs text-gray-700 dark:text-gray-300 truncate">
                             {p.supplierName || "Proveedor"}
                           </p>
-                          <p className="text-[10px] text-gray-400">Vence: {dueDateLabel}</p>
+                          <p className="text-[length:var(--ts-2xs)] text-gray-400">Vence: {dueDateLabel}</p>
                         </div>
                         <span className="text-xs font-medium text-red-500 dark:text-red-400 ml-2 flex-shrink-0">
                           {fmt(pending)}

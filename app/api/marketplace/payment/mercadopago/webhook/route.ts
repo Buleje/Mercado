@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getMercadoPagoPayment, verifyMPWebhookSignature } from "@/lib/mercadopago";
 import { prisma } from "@/lib/prisma";
-import { sendWhatsAppText } from "@/lib/whatsapp";
+import { sendWhatsAppQueued } from "@/lib/whatsapp";
 import { sendPushToPhone } from "@/lib/push-sender";
 import { createNotification } from "@/lib/create-notification";
 import { logger } from "@/lib/logger";
@@ -93,15 +93,16 @@ export async function POST(req: NextRequest) {
               actionUrl: `/admin?module=marketplace&tab=ordenes`,
               actionLabel: "Ver pedido",
               entityId: orderId,
-            }).catch(() => {});
+            }).catch((err) => logger.error("[marketplace/payment/mercadopago/webhook] operation failed", { error: String(err) }));
 
             // Notify customer
             if (order.customerPhone) {
-              sendWhatsAppText(
+              sendWhatsAppQueued(
                 order.customerPhone,
                 `✅ Tu pago de S/ ${Number(order.total).toFixed(2)} fue confirmado.\n\n` +
                 `Pedido: ${orderId.slice(0, 8)}…\n` +
                 `El vendedor está preparando tu pedido. 🛒`,
+                { tenantId: order.tenantId, context: "mercadopago-payment-confirmed" },
               ).catch(() => {});
             }
 
@@ -120,7 +121,7 @@ export async function POST(req: NextRequest) {
                   title: `💳 Pago MP confirmado — ${store.name}`,
                   body: `${order.customerName} pagó S/${Number(order.total).toFixed(2)} con Mercado Pago`,
                   url: `/admin?module=marketplace&tab=ordenes`,
-                }).catch(() => {});
+                }).catch((err) => logger.error("[marketplace/payment/mercadopago/webhook] operation failed", { error: String(err) }));
               }
             }
           }

@@ -50,13 +50,13 @@ export default function AuditTrailModule() {
 
   const actionColor = (action: string) => {
     if (action === "CREATE") return "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400";
-    if (action === "UPDATE") return "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400";
+    if (action === "UPDATE") return "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400";
     if (action === "DELETE") return "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400";
     return "bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-400";
   };
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-6">
       <AdminModuleHeader
         title="Auditoría"
         description="Registro de todas las acciones del sistema"
@@ -73,13 +73,13 @@ export default function AuditTrailModule() {
             placeholder="Buscar por usuario..."
             value={search}
             onChange={e => { setSearch(e.target.value); setPage(0); }}
-            className="w-full pl-9 pr-3 py-2 border border-gray-200 dark:border-card-border rounded-xl text-sm bg-white dark:bg-gray-900 text-gray-900 dark:text-white placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#9b5de5]/30"
+            className="w-full pl-9 pr-3 py-2 border border-[var(--rule-base)] dark:border-card-border rounded-lg text-sm bg-white dark:bg-gray-900 text-gray-900 dark:text-white placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#9b5de5]/30"
           />
         </div>
         <select
           value={entityFilter}
           onChange={e => { setEntityFilter(e.target.value); setPage(0); }}
-          className="px-3 py-2 border border-gray-200 dark:border-card-border rounded-xl text-sm bg-white dark:bg-gray-900 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-[#9b5de5]/30"
+          className="px-3 py-2 border border-[var(--rule-base)] dark:border-card-border rounded-lg text-sm bg-white dark:bg-gray-900 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-[#9b5de5]/30"
         >
           <option value="">Todas las entidades</option>
           <option value="Sale">Ventas</option>
@@ -92,7 +92,7 @@ export default function AuditTrailModule() {
         </select>
         <button
           onClick={fetchLogs}
-          className="min-h-[44px] min-w-[44px] px-3 py-2 bg-gray-100 dark:bg-gray-800 rounded-xl text-sm hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors flex items-center justify-center"
+          className="min-h-[44px] min-w-[44px] px-3 py-2 bg-gray-100 dark:bg-gray-800 rounded-lg text-sm hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors flex items-center justify-center"
           title="Actualizar"
         >
           <RefreshCw className="h-4 w-4" />
@@ -100,7 +100,7 @@ export default function AuditTrailModule() {
       </div>
 
       {/* Tabla */}
-      <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl overflow-hidden">
+      <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl overflow-hidden">
         {loading ? (
           <div className="p-8 text-center">
             <div className="h-6 w-6 border-2 border-[#9b5de5] border-t-transparent rounded-full animate-spin mx-auto" />
@@ -126,7 +126,7 @@ export default function AuditTrailModule() {
                 {logs.map(log => (
                   <tr
                     key={log.id}
-                    className="border-t border-gray-100 dark:border-card-border hover:bg-gray-50 dark:hover:bg-white/5 transition-colors"
+                    className="border-t border-[var(--rule-soft)] dark:border-card-border hover:bg-gray-50 dark:hover:bg-white/5 transition-colors"
                   >
                     <td className="p-3 whitespace-nowrap">
                       <div className="flex items-center gap-1.5 text-gray-500 dark:text-gray-400">
@@ -139,7 +139,7 @@ export default function AuditTrailModule() {
                       </div>
                     </td>
                     <td className="p-3">
-                      <span className={cn("text-[10px] font-bold px-2 py-0.5 rounded-full", actionColor(log.action))}>
+                      <span className={cn("text-[length:var(--ts-2xs)] font-bold px-2 py-0.5 rounded-full", actionColor(log.action))}>
                         {log.action}
                       </span>
                     </td>
@@ -148,7 +148,7 @@ export default function AuditTrailModule() {
                         <FileText className="h-3 w-3 text-gray-400 shrink-0" />
                         <span className="text-xs font-medium text-gray-700 dark:text-gray-300">{log.entity}</span>
                         {log.entityId && (
-                          <span className="text-[10px] text-gray-400 font-mono">
+                          <span className="text-[length:var(--ts-2xs)] text-gray-400 font-mono">
                             #{log.entityId.slice(0, 8)}
                           </span>
                         )}
@@ -172,13 +172,13 @@ export default function AuditTrailModule() {
 
         {/* Paginación */}
         {totalPages > 1 && (
-          <div className="flex items-center justify-between px-4 py-3 border-t border-gray-100 dark:border-card-border bg-gray-50/50 dark:bg-gray-800/30">
+          <div className="flex items-center justify-between px-4 py-3 border-t border-[var(--rule-soft)] dark:border-card-border bg-gray-50/50 dark:bg-gray-800/30">
             <span className="text-xs text-gray-500">{total} registros</span>
             <div className="flex items-center gap-2">
               <button
                 onClick={() => setPage(p => Math.max(0, p - 1))}
                 disabled={page === 0}
-                className="p-1.5 rounded-lg bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 disabled:opacity-40 min-h-[44px] min-w-[44px] flex items-center justify-center hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+                className="p-1.5 rounded-lg bg-white dark:bg-gray-800 border border-[var(--rule-base)] disabled:opacity-40 min-h-[44px] min-w-[44px] flex items-center justify-center hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
               >
                 <ChevronLeft className="h-3.5 w-3.5" />
               </button>
@@ -186,7 +186,7 @@ export default function AuditTrailModule() {
               <button
                 onClick={() => setPage(p => Math.min(totalPages - 1, p + 1))}
                 disabled={page >= totalPages - 1}
-                className="p-1.5 rounded-lg bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 disabled:opacity-40 min-h-[44px] min-w-[44px] flex items-center justify-center hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+                className="p-1.5 rounded-lg bg-white dark:bg-gray-800 border border-[var(--rule-base)] disabled:opacity-40 min-h-[44px] min-w-[44px] flex items-center justify-center hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
               >
                 <ChevronRight className="h-3.5 w-3.5" />
               </button>

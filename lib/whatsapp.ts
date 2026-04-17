@@ -1,5 +1,7 @@
 import "server-only";
 
+import { logger } from "@/lib/logger";
+
 /**
  * WhatsApp notification templates for order status changes.
  */
@@ -181,4 +183,98 @@ export async function sendWhatsAppText(phone: string, message: string): Promise<
   }
 
   return true;
+}
+
+/**
+ * Send WhatsApp notification with automatic retries (3 attempts, exponential backoff).
+ * Fire-and-forget safe: logs failures instead of throwing.
+ */
+export async function sendWhatsAppNotificationWithRetry(
+  order: Parameters<typeof sendWhatsAppNotification>[0],
+  maxRetries = 3,
+): Promise<boolean> {
+  for (let attempt = 1; attempt <= maxRetries; attempt++) {
+    try {
+      return await sendWhatsAppNotification(order);
+    } catch (err) {
+      logger.warn("[whatsapp] Notification attempt failed", {
+        orderId: order.id,
+        attempt,
+        maxRetries,
+        error: err instanceof Error ? err.message : String(err),
+      });
+      if (attempt < maxRetries) {
+        await new Promise((r) => setTimeout(r, attempt * 2000));
+      }
+    }
+  }
+  logger.error("[whatsapp] All notification retries exhausted", { orderId: order.id });
+  return false;
+}
+
+/**
+ * Send WhatsApp text with automatic retries (3 attempts, exponential backoff).
+ * Fire-and-forget safe: logs failures instead of throwing.
+ */
+export async function sendWhatsAppTextWithRetry(
+  phone: string,
+  message: string,
+  maxRetries = 3,
+): Promise<boolean> {
+  for (let attempt = 1; attempt <= maxRetries; attempt++) {
+    try {
+      return await sendWhatsAppText(phone, message);
+    } catch (err) {
+      logger.warn("[whatsapp] Text send attempt failed", {
+        phone,
+        attempt,
+        maxRetries,
+        error: err instanceof Error ? err.message : String(err),
+      });
+      if (attempt < maxRetries) {
+        await new Promise((r) => setTimeout(r, attempt * 2000));
+      }
+    }
+  }
+  logger.error("[whatsapp] All text send retries exhausted", { phone });
+  return false;
+}
+
+/**
+ * Queue-backed WhatsApp send (preferred for fire-and-forget).
+ *
+ * - When the BullMQ queue is enabled (REDIS_URL set), enqueues a notification
+ *   job so delivery is durable + retryable + observable.
+ * - When disabled, falls back to the in-process `sendWhatsAppTextWithRetry`.
+ *
+ * Use this instead of calling `sendWhatsAppText(...).catch(() => {})` from
+ * route handlers — the queue retries transparently and notifications survive
+ * server restarts.
+ */
+export async function sendWhatsAppQueued(
+  phone: string,
+  message: string,
+  meta: { tenantId: string; context?: string; metadata?: Record<string, unknown> },
+): Promise<{ queued: boolean; jobId?: string }> {
+  try {
+    const { isQueueEnabled, enqueueNotification } = await import("@/lib/queue");
+    if (isQueueEnabled()) {
+      const jobId = await enqueueNotification({
+        type: "whatsapp",
+        recipient: phone,
+        message,
+        tenantId: meta.tenantId,
+        metadata: { context: meta.context, ...(meta.metadata ?? {}) },
+      });
+      return { queued: true, jobId: jobId ?? undefined };
+    }
+  } catch (err) {
+    logger.warn("[whatsapp] Queue enqueue failed — falling back to direct send", {
+      error: err instanceof Error ? err.message : String(err),
+      context: meta.context,
+    });
+  }
+  // Fallback — direct send with retry
+  const ok = await sendWhatsAppTextWithRetry(phone, message);
+  return { queued: false, jobId: ok ? "direct" : undefined };
 }

@@ -40,7 +40,7 @@ export default function NotificationToast({ onNavigate }: NotificationToastProps
               onNavigate?.("pedidos");
               clearUnseen();
             }}
-            className="flex items-center gap-2 px-4 py-2.5 rounded-full bg-primary text-white shadow-lg hover:bg-primary/90 transition-all animate-bounce"
+            className="flex items-center gap-2 px-4 py-2.5 rounded-full bg-primary text-white hover:bg-primary/90 transition-all animate-bounce"
           >
             <Bell className="h-4 w-4" />
             <span className="text-sm font-bold">{unseenCount} nuevo{unseenCount > 1 ? "s" : ""}</span>
@@ -55,7 +55,7 @@ export default function NotificationToast({ onNavigate }: NotificationToastProps
       {activeOrders.slice(0, 3).map((order) => (
         <div
           key={order.id}
-          className="flex items-start gap-3 p-4 rounded-2xl bg-white dark:bg-gray-900 shadow-2xl border border-gray-100 dark:border-gray-800 animate-in slide-in-from-right"
+          className="flex items-start gap-3 p-4 rounded-xl bg-white dark:bg-gray-900 border border-[var(--rule-base)] animate-in slide-in-from-right"
         >
           <div className="h-10 w-10 rounded-xl bg-emerald-50 dark:bg-emerald-950/30 flex items-center justify-center shrink-0">
             <ShoppingBag className="h-5 w-5 text-emerald-600" />
@@ -78,7 +78,7 @@ export default function NotificationToast({ onNavigate }: NotificationToastProps
       ))}
 
       {lowStockCount > 0 && (
-        <div className="flex items-center gap-3 p-3 rounded-2xl bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-800">
+        <div className="flex items-center gap-3 p-3 rounded-xl bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-800">
           <AlertTriangle className="h-4 w-4 text-amber-600 shrink-0" />
           <p className="text-xs font-semibold text-amber-700 dark:text-amber-400">
             {lowStockCount} producto{lowStockCount > 1 ? "s" : ""} con stock bajo

@@ -3,8 +3,9 @@ import { z } from "zod/v4";
 import { MarketplaceStoresDB } from "@/lib/db/marketplace.db";
 import { applyRateLimit } from "@/lib/rate-limit";
 import { logActivity } from "@/lib/activity-logger";
-import { sendWhatsAppText } from "@/lib/whatsapp";
+import { sendWhatsAppQueued } from "@/lib/whatsapp";
 import { toErrorPayload, newTraceId } from "@/lib/api-error";
+import { logger } from "@/lib/logger";
 
 const RegisterSchema = z.object({
   ownerName:    z.string().min(2, "Nombre muy corto").max(80),
@@ -89,22 +90,26 @@ export async function POST(req: NextRequest) {
         `─────`,
         `Buleje 🏪`,
       ].filter(Boolean).join("\n");
-      sendWhatsAppText(adminPhone, msg).catch(() => {});
+      await sendWhatsAppQueued(adminPhone, msg, { tenantId: store.id, context: "stores/apply:admin" }).catch((err) => logger.error("[marketplace/stores/apply] WhatsApp enqueue fallback failed", { error: String(err) }));
     }
 
     // Confirmation to store owner
-    sendWhatsAppText(ownerPhone, [
-      `🎉 *¡Recibimos tu solicitud!*`,
-      ``,
-      `Hola ${ownerName} 👋`,
-      `Tu tienda *${storeName}* está siendo revisada.`,
-      `Te avisaremos por este número cuando esté lista.`,
-      ``,
-      `Mientras, puedes ir preparando tus productos 📦`,
-      ``,
-      `─────`,
-      `Marketplace Buleje 🏪`,
-    ].join("\n")).catch(() => {});
+    await sendWhatsAppQueued(
+      ownerPhone,
+      [
+        `🎉 *¡Recibimos tu solicitud!*`,
+        ``,
+        `Hola ${ownerName} 👋`,
+        `Tu tienda *${storeName}* está siendo revisada.`,
+        `Te avisaremos por este número cuando esté lista.`,
+        ``,
+        `Mientras, puedes ir preparando tus productos 📦`,
+        ``,
+        `─────`,
+        `Marketplace Buleje 🏪`,
+      ].join("\n"),
+      { tenantId: store.id, context: "stores/apply:owner" },
+    ).catch((err) => logger.error("[marketplace/stores/apply] operation failed", { error: String(err) }));
 
     logActivity(
       "Solicitud",
@@ -112,7 +117,7 @@ export async function POST(req: NextRequest) {
       `Nueva solicitud: ${storeName} (${ownerName}, ${ownerPhone})`,
       store.id,
       "público"
-    ).catch(() => {});
+    ).catch((err) => logger.error("[marketplace/stores/apply] operation failed", { error: String(err) }));
 
     return NextResponse.json(
       {

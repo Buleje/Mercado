@@ -44,7 +44,7 @@ export function CheckoutOrderReview({
         <m.div
           initial={{ opacity: 0, y: 8 }}
           animate={{ opacity: 1, y: 0 }}
-          className="bg-linear-to-r from-primary/5 to-blue-50/50 dark:from-primary/10 dark:to-blue-900/10 border border-primary/20 rounded-2xl p-4 relative overflow-hidden"
+          className="bg-linear-to-r from-primary/5 to-emerald-50/50 dark:from-primary/10 dark:to-emerald-900/10 border border-primary/20 rounded-2xl p-4 relative overflow-hidden"
         >
           <div className="absolute top-0 right-0 w-16 h-16 bg-primary/5 rounded-full -translate-y-1/2 translate-x-1/2" />
           <div className="flex items-start gap-3 relative z-10">

@@ -15,7 +15,7 @@ const COLOR_PRESETS = [
 const SAMPLE_PRODUCTS = [
   { name: "Arroz Costeno 5kg", price: "S/ 22.50", img: "bg-amber-100" },
   { name: "Aceite Primor 1L", price: "S/ 8.90", img: "bg-yellow-100" },
-  { name: "Leche Gloria 1L", price: "S/ 5.20", img: "bg-blue-100" },
+  { name: "Leche Gloria 1L", price: "S/ 5.20", img: "bg-emerald-100" },
   { name: "Azucar Rubia 1kg", price: "S/ 4.50", img: "bg-orange-100" },
 ];
 

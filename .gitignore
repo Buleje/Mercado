@@ -53,6 +53,14 @@ skills-lock.json
 # Symlinks heredados del layout viejo (.agents/) quedan ignorados por la línea .agents/ arriba
 /.claude/skills/supabase
 /.claude/skills/supabase-postgres-best-practices
+# Per-session state and learning data (regenerated per session/machine)
+/.claude/.state/
+/.claude/learning/
+/.claude/session-state.json
+/.claude/agent-memory/
+/.claude/cache/
+/.claude/settings.local.json
+/.claude/scheduled_tasks.lock
 
 # Phase 3 runtime artifacts (never commit)
 /backups/db/*.sql
@@ -104,6 +112,12 @@ build-output.txt
 # Debug screenshots (use docs/ if a screenshot needs to live in the repo)
 /shot-*.png
 /screenshot-*.png
+# Exploration screenshots at root (Playwright artifacts during dev — never commit)
+/*.png
+# Playwright MCP working directory (exploration artifacts)
+/.playwright-mcp/
+# Superpowers brainstorm drafts (per-session, not shared)
+/.superpowers/brainstorm/
 
 build-task003.log
 

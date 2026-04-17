@@ -91,14 +91,14 @@ const EVENT_CONFIG: Record<
   },
   credit: {
     icon: CreditCard,
-    color: "text-blue-600 dark:text-blue-400",
-    bg: "bg-blue-50 dark:bg-blue-900/20",
-    dot: "bg-blue-400",
+    color: "text-emerald-600 dark:text-emerald-400",
+    bg: "bg-emerald-50 dark:bg-emerald-900/20",
+    dot: "bg-emerald-400",
   },
   points: {
     icon: Gift,
-    color: "text-purple-600 dark:text-purple-400",
-    bg: "bg-purple-50 dark:bg-purple-900/20",
+    color: "text-[var(--text-secondary)] dark:text-[var(--text-primary)]",
+    bg: "bg-[var(--surface-sunken)]",
     dot: "bg-purple-400",
   },
 };
@@ -207,7 +207,7 @@ export default function CustomerTimeline({ customerPhone, customerName }: Props)
 
       {/* Summary cards */}
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-        <div className="rounded-xl border border-gray-200 bg-white p-3 dark:border-gray-700 dark:bg-gray-900">
+        <div className="rounded-xl border border-[var(--rule-base)] bg-white p-3 dark:border-[var(--rule-base)] dark:bg-gray-900">
           <p className="text-lg font-bold text-[#00B4A6]">
             {fmt(summary.totalSpent)}
           </p>
@@ -215,13 +215,13 @@ export default function CustomerTimeline({ customerPhone, customerName }: Props)
             Total gastado
           </p>
         </div>
-        <div className="rounded-xl border border-gray-200 bg-white p-3 dark:border-gray-700 dark:bg-gray-900">
+        <div className="rounded-xl border border-[var(--rule-base)] bg-white p-3 dark:border-[var(--rule-base)] dark:bg-gray-900">
           <p className="text-lg font-bold text-[#00B4A6]">
             {summary.orderCount}
           </p>
           <p className="text-xs text-gray-500 dark:text-gray-400">Compras</p>
         </div>
-        <div className="rounded-xl border border-gray-200 bg-white p-3 dark:border-gray-700 dark:bg-gray-900">
+        <div className="rounded-xl border border-[var(--rule-base)] bg-white p-3 dark:border-[var(--rule-base)] dark:bg-gray-900">
           <p className="text-lg font-bold text-[#00B4A6]">
             {summary.firstOrderDate
               ? `${daysSince(summary.firstOrderDate)}d`
@@ -231,7 +231,7 @@ export default function CustomerTimeline({ customerPhone, customerName }: Props)
             Antiguedad
           </p>
         </div>
-        <div className="rounded-xl border border-gray-200 bg-white p-3 dark:border-gray-700 dark:bg-gray-900">
+        <div className="rounded-xl border border-[var(--rule-base)] bg-white p-3 dark:border-[var(--rule-base)] dark:bg-gray-900">
           <p
             className="truncate text-sm font-bold text-[#00B4A6]"
             title={summary.topProduct ?? "—"}
@@ -255,7 +255,7 @@ export default function CustomerTimeline({ customerPhone, customerName }: Props)
           <p className="text-sm text-red-600 dark:text-red-400">{error}</p>
         </div>
       ) : events.length === 0 ? (
-        <div className="rounded-xl border border-gray-200 bg-white p-8 text-center dark:border-gray-700 dark:bg-gray-900">
+        <div className="rounded-xl border border-[var(--rule-base)] bg-white p-8 text-center dark:border-[var(--rule-base)] dark:bg-gray-900">
           <p className="text-sm text-gray-400">
             No hay eventos registrados para este cliente.
           </p>
@@ -282,7 +282,7 @@ export default function CustomerTimeline({ customerPhone, customerName }: Props)
                   </div>
 
                   {/* Card */}
-                  <div className="rounded-xl border border-gray-200 bg-white p-4 dark:border-gray-700 dark:bg-gray-900">
+                  <div className="rounded-xl border border-[var(--rule-base)] bg-white p-4 dark:border-[var(--rule-base)] dark:bg-gray-900">
                     <div className="flex items-start justify-between gap-2">
                       <div className="min-w-0">
                         <p className="font-medium text-gray-900 dark:text-white">

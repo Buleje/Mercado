@@ -185,7 +185,7 @@ export default function EtiquetasTab() {
         <button
           onClick={handlePrint}
           disabled={selected.size === 0}
-          className="px-5 py-2.5 bg-primary text-white rounded-xl text-sm font-bold hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed flex flex-wrap items-center gap-2"
+          className="px-5 py-2.5 bg-primary text-white rounded-lg text-sm font-bold hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed flex flex-wrap items-center gap-2"
         >
           <Printer className="h-4 w-4" />
           Imprimir {selected.size > 0 ? `(${selected.size})` : "etiquetas"}
@@ -195,7 +195,7 @@ export default function EtiquetasTab() {
       <div className="grid grid-cols-1 xl:grid-cols-4 gap-6">
         {/* Left: Config panel */}
         <div className="xl:col-span-1 space-y-4">
-          <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl p-3 sm:p-5 space-y-4">
+          <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl p-3 sm:p-5 space-y-4">
             <h3 className="font-extrabold text-gray-900 dark:text-foreground flex flex-wrap items-center gap-2 text-sm">
               <Tag className="h-4 w-4 text-primary" /> Configuración
             </h3>
@@ -205,7 +205,7 @@ export default function EtiquetasTab() {
               <label className="block text-xs font-bold text-gray-700 dark:text-foreground mb-2">Tamaño de etiqueta</label>
               <div className="space-y-2">
                 {(["pequena", "mediana", "grande"] as LabelSize[]).map(s => (
-                  <button key={s} onClick={() => setConfig(c => ({ ...c, size: s }))} className={cn("w-full px-3 py-2 rounded-xl text-xs font-bold border-2 text-left transition-all", config.size === s ? "border-primary bg-primary/10 text-primary" : "border-gray-200 dark:border-card-border text-gray-500 dark:text-muted hover:border-gray-400")}>
+                  <button key={s} onClick={() => setConfig(c => ({ ...c, size: s }))} className={cn("w-full px-3 py-2 rounded-lg text-xs font-bold border-2 text-left transition-all", config.size === s ? "border-primary bg-primary/10 text-primary" : "border-[var(--rule-base)] dark:border-card-border text-gray-500 dark:text-muted hover:border-gray-400")}>
                     {SIZE_LABELS[s]}
                   </button>
                 ))}
@@ -216,9 +216,9 @@ export default function EtiquetasTab() {
             <div>
               <label className="block text-xs font-bold text-gray-700 dark:text-foreground mb-2">Copias por producto</label>
               <div className="flex flex-wrap items-center gap-3">
-                <button onClick={() => setConfig(c => ({ ...c, copies: Math.max(1, c.copies - 1) }))} className="w-8 h-8 rounded-xl border border-gray-300 dark:border-card-border text-gray-700 dark:text-foreground font-bold flex items-center justify-center hover:bg-gray-50 dark:hover:bg-accent">−</button>
+                <button onClick={() => setConfig(c => ({ ...c, copies: Math.max(1, c.copies - 1) }))} className="w-8 h-8 rounded-lg border border-[var(--rule-base)] dark:border-card-border text-gray-700 dark:text-foreground font-bold flex items-center justify-center hover:bg-gray-50 dark:hover:bg-accent">−</button>
                 <span className="font-extrabold text-gray-900 dark:text-foreground w-6 text-center">{config.copies}</span>
-                <button onClick={() => setConfig(c => ({ ...c, copies: Math.min(10, c.copies + 1) }))} className="w-8 h-8 rounded-xl border border-gray-300 dark:border-card-border text-gray-700 dark:text-foreground font-bold flex items-center justify-center hover:bg-gray-50 dark:hover:bg-accent">+</button>
+                <button onClick={() => setConfig(c => ({ ...c, copies: Math.min(10, c.copies + 1) }))} className="w-8 h-8 rounded-lg border border-[var(--rule-base)] dark:border-card-border text-gray-700 dark:text-foreground font-bold flex items-center justify-center hover:bg-gray-50 dark:hover:bg-accent">+</button>
               </div>
             </div>
 
@@ -245,7 +245,7 @@ export default function EtiquetasTab() {
 
           {/* Preview */}
           {selected.size > 0 && (
-            <div className="bg-gray-50 dark:bg-surface border border-gray-200 dark:border-card-border rounded-2xl p-4">
+            <div className="bg-gray-50 dark:bg-surface border border-[var(--rule-base)] dark:border-card-border rounded-xl p-4">
               <p className="text-xs font-bold text-gray-500 dark:text-muted mb-2">Vista previa (#1)</p>
               {(() => {
                 const p = products.find(pr => pr.id === Array.from(selected)[0]);
@@ -253,13 +253,13 @@ export default function EtiquetasTab() {
                 const sizeClass: Record<LabelSize, string> = { pequena: "w-24 h-16", mediana: "w-36 h-20", grande: "w-48 h-28" };
                 return (
                   <div className={cn("border-2 border-dashed border-gray-400 dark:border-gray-600 rounded-lg p-2 bg-white dark:bg-card flex flex-col justify-between", sizeClass[config.size])}>
-                    {config.showCategory && <span className="text-[7px] text-gray-500 uppercase">{p.category}</span>}
-                    <span className="text-[9px] font-bold text-gray-900 dark:text-foreground leading-tight">{p.name}</span>
+                    {config.showCategory && <span className="text-[length:var(--ts-2xs)] text-gray-500 uppercase">{p.category}</span>}
+                    <span className="text-[length:var(--ts-2xs)] font-bold text-gray-900 dark:text-foreground leading-tight">{p.name}</span>
                     <div className="flex items-end justify-between">
-                      <span className="text-sm font-black text-gray-900 dark:text-foreground">S/ {p.price.toFixed(2)}</span>
-                      {config.showUnit && <span className="text-[7px] text-gray-500">/{p.unit}</span>}
+                      <span className="text-sm font-extrabold text-gray-900 dark:text-foreground">S/ {p.price.toFixed(2)}</span>
+                      {config.showUnit && <span className="text-[length:var(--ts-2xs)] text-gray-500">/{p.unit}</span>}
                     </div>
-                    {config.showBarcode && p.barcode && <span className="text-[6px] font-mono text-gray-500 truncate">{p.barcode}</span>}
+                    {config.showBarcode && p.barcode && <span className="text-[length:var(--ts-2xs)] font-mono text-gray-500 truncate">{p.barcode}</span>}
                   </div>
                 );
               })()}
@@ -273,12 +273,12 @@ export default function EtiquetasTab() {
           <div className="flex flex-col sm:flex-row gap-3">
             <div className="relative flex-1">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
-              <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Buscar producto..." className="w-full pl-9 pr-4 py-2.5 border border-gray-300 dark:border-card-border rounded-xl text-sm bg-white dark:bg-surface text-gray-900 dark:text-foreground" />
+              <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Buscar producto..." className="w-full pl-9 pr-4 py-2.5 border border-[var(--rule-base)] dark:border-card-border rounded-lg text-sm bg-white dark:bg-surface text-gray-900 dark:text-foreground" />
             </div>
-            <select value={category} onChange={e => setCategory(e.target.value)} className="border border-gray-300 dark:border-card-border rounded-xl px-3 py-2.5 text-sm bg-white dark:bg-surface text-gray-900 dark:text-foreground">
+            <select value={category} onChange={e => setCategory(e.target.value)} className="border border-[var(--rule-base)] dark:border-card-border rounded-lg px-3 py-2.5 text-sm bg-white dark:bg-surface text-gray-900 dark:text-foreground">
               {CATEGORIES.map(c => <option key={c}>{c}</option>)}
             </select>
-            <div className="flex flex-wrap gap-1 border border-gray-300 dark:border-card-border rounded-xl p-1">
+            <div className="flex flex-wrap gap-1 border border-[var(--rule-base)] dark:border-card-border rounded-xl p-1">
               <button onClick={() => setViewMode("grid")} className={cn("p-1.5 rounded-lg", viewMode === "grid" ? "bg-primary text-white" : "text-gray-500 hover:text-gray-700 dark:hover:text-foreground")}><LayoutGrid className="h-4 w-4" /></button>
               <button onClick={() => setViewMode("list")} className={cn("p-1.5 rounded-lg", viewMode === "list" ? "bg-primary text-white" : "text-gray-500 hover:text-gray-700 dark:hover:text-foreground")}><List className="h-4 w-4" /></button>
             </div>
@@ -314,15 +314,15 @@ export default function EtiquetasTab() {
               {filtered.map(p => {
                 const sel = selected.has(p.id);
                 return (
-                  <button key={p.id} onClick={() => toggleSelect(p.id)} className={cn("text-left p-3 rounded-xl border-2 transition-all", sel ? "border-primary bg-primary/5 dark:bg-primary/10" : "border-gray-200 dark:border-card-border bg-white dark:bg-card hover:border-gray-400 dark:hover:border-gray-500")}>
+                  <button key={p.id} onClick={() => toggleSelect(p.id)} className={cn("text-left p-3 rounded-lg border-2 transition-all", sel ? "border-primary bg-primary/5 dark:bg-primary/10" : "border-[var(--rule-base)] dark:border-card-border bg-white dark:bg-card hover:border-gray-400 dark:hover:border-gray-500")}>
                     <div className="flex flex-wrap items-start justify-between gap-1 mb-2">
-                      <span className="text-[10px] text-gray-500 dark:text-muted uppercase font-bold">{p.category}</span>
+                      <span className="text-[length:var(--ts-2xs)] text-gray-500 dark:text-muted uppercase font-bold">{p.category}</span>
                       {sel ? <CheckSquare className="h-4 w-4 text-primary shrink-0" /> : <Square className="h-4 w-4 text-gray-300 dark:text-gray-600 shrink-0" />}
                     </div>
                     <p className="text-xs font-bold text-gray-900 dark:text-foreground leading-tight mb-1 line-clamp-2">{p.name}</p>
                     <p className="text-base font-extrabold text-primary">S/ {p.price.toFixed(2)}</p>
-                    <p className="text-[10px] text-gray-500 dark:text-muted">{p.unit} {p.stock != null ? `· Stock: ${p.stock}` : ""}</p>
-                    {p.barcode && <p className="text-[9px] font-mono text-gray-400 dark:text-gray-500 truncate mt-0.5">{p.barcode}</p>}
+                    <p className="text-[length:var(--ts-2xs)] text-gray-500 dark:text-muted">{p.unit} {p.stock != null ? `· Stock: ${p.stock}` : ""}</p>
+                    {p.barcode && <p className="text-[length:var(--ts-2xs)] font-mono text-gray-400 dark:text-gray-500 truncate mt-0.5">{p.barcode}</p>}
                   </button>
                 );
               })}
@@ -331,7 +331,7 @@ export default function EtiquetasTab() {
 
           {/* List view */}
           {!loading && viewMode === "list" && (
-            <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl overflow-hidden divide-y divide-gray-100 dark:divide-card-border">
+            <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl overflow-hidden divide-y divide-gray-100 dark:divide-card-border">
               {filtered.map(p => {
                 const sel = selected.has(p.id);
                 return (
@@ -345,7 +345,7 @@ export default function EtiquetasTab() {
                     </div>
                     <div className="text-right shrink-0">
                       <p className="font-extrabold text-primary text-sm">S/ {p.price.toFixed(2)}</p>
-                      {p.barcode && <p className="text-[10px] font-mono text-gray-400 dark:text-gray-500">{p.barcode}</p>}
+                      {p.barcode && <p className="text-[length:var(--ts-2xs)] font-mono text-gray-400 dark:text-gray-500">{p.barcode}</p>}
                     </div>
                   </div>
                 );

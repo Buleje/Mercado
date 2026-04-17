@@ -223,7 +223,7 @@ function KpiCard({
   }, [editing]);
 
   return (
-    <div className="rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 p-5 space-y-3">
+    <div className="rounded-xl border border-[var(--rule-base)] bg-white dark:bg-gray-900 p-5 space-y-3">
       {/* Header */}
       <div className="flex items-start justify-between">
         <div>
@@ -262,7 +262,7 @@ function KpiCard({
         <div className="h-2 rounded-full bg-gray-100 dark:bg-gray-800 overflow-hidden">
           <div
             className={cn(
-              "h-full rounded-full transition-all duration-700",
+              "h-full rounded-full transition-all duration-[var(--dur-slower)]",
               pct >= 100 ? "bg-[#00B4A6]" : pct >= 70 ? "bg-[#2dd4bf]" : pct >= 40 ? "bg-amber-400" : "bg-red-400"
             )}
             style={{ width: `${Math.min(pct, 100)}%` }}

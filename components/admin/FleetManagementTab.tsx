@@ -37,7 +37,7 @@ type MaintenanceLog = {
 
 const STATUS_CONFIG: Record<VehicleStatus, { label: string; color: string; dot: string }> = {
   activo:        { label: "Disponible",  color: "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400", dot: "bg-emerald-500" },
-  "en-ruta":     { label: "En ruta",     color: "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400",             dot: "bg-blue-500" },
+  "en-ruta":     { label: "En ruta",     color: "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400",             dot: "bg-emerald-500" },
   mantenimiento: { label: "En taller",   color: "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400",         dot: "bg-amber-500" },
   inactivo:      { label: "Inactivo",    color: "bg-gray-100 text-gray-600 dark:bg-surface dark:text-muted",                    dot: "bg-gray-400" },
 };
@@ -145,11 +145,11 @@ export default function FleetManagementTab() {
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
         {[
           { label: "Disponibles",       value: `${kpis.active}/${vehicles.length}`, color: "text-emerald-600", icon: Truck },
-          { label: "En ruta ahora",     value: kpis.enRuta,                          color: "text-blue-500",    icon: Route },
+          { label: "En ruta ahora",     value: kpis.enRuta,                          color: "text-emerald-500",    icon: Route },
           { label: "Entregas hoy",      value: kpis.totalDel,                        color: "text-primary",     icon: BarChart3 },
           { label: "Gasto mantenimiento", value: fmt(kpis.maintCost),                color: "text-amber-500",   icon: Wrench },
         ].map(({ label, value, color, icon: Icon }) => (
-          <div key={label} className="bg-white dark:bg-card rounded-xl border border-gray-200 dark:border-card-border p-4 flex items-start gap-3">
+          <div key={label} className="bg-white dark:bg-card rounded-xl border border-[var(--rule-base)] dark:border-card-border p-4 flex items-start gap-3">
             <div className={cn("p-2 rounded-lg bg-gray-50 dark:bg-surface", color)}>
               <Icon className="h-4 w-4" />
             </div>
@@ -176,7 +176,7 @@ export default function FleetManagementTab() {
           </div>
 
           {!loading && filtered.length === 0 && (
-            <div className="text-center py-12 bg-white dark:bg-card border border-dashed border-gray-200 dark:border-card-border rounded-2xl">
+            <div className="text-center py-12 bg-white dark:bg-card border border-dashed border-[var(--rule-base)] dark:border-card-border rounded-xl">
               <Truck className="h-10 w-10 text-gray-300 mx-auto mb-2" />
               <p className="text-sm text-gray-500 dark:text-muted">Sin vehículos en esta categoría</p>
             </div>
@@ -184,7 +184,7 @@ export default function FleetManagementTab() {
 
           <div className="space-y-3">
             {filtered.map(v => (
-              <div key={v.id} className="bg-white dark:bg-card rounded-2xl border border-gray-200 dark:border-card-border overflow-hidden">
+              <div key={v.id} className="bg-white dark:bg-card rounded-xl border border-[var(--rule-base)] dark:border-card-border overflow-hidden">
                 <button
                   onClick={() => setExpandedId(expandedId === v.id ? null : v.id)}
                   className="w-full flex items-center justify-between px-4 py-4 hover:bg-gray-50 dark:hover:bg-surface/50 transition-colors"
@@ -199,7 +199,7 @@ export default function FleetManagementTab() {
                   <div className="flex items-center gap-2 flex-wrap justify-end">
                     <div className="flex items-center gap-1.5">
                       <span className={cn("w-2 h-2 rounded-full", STATUS_CONFIG[v.status].dot)} />
-                      <span className={cn("text-[10px] font-bold px-2.5 py-1 rounded-full", STATUS_CONFIG[v.status].color)}>
+                      <span className={cn("text-[length:var(--ts-2xs)] font-bold px-2.5 py-1 rounded-full", STATUS_CONFIG[v.status].color)}>
                         {STATUS_CONFIG[v.status].label}
                       </span>
                     </div>
@@ -209,22 +209,22 @@ export default function FleetManagementTab() {
                 </button>
 
                 {expandedId === v.id && (
-                  <div className="px-4 pb-4 border-t border-gray-100 dark:border-card-border pt-4 space-y-4">
+                  <div className="px-4 pb-4 border-t border-[var(--rule-soft)] dark:border-card-border pt-4 space-y-4">
                     <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
                       <div>
-                        <p className="text-[10px] text-gray-400 dark:text-muted">Km totales</p>
+                        <p className="text-[length:var(--ts-2xs)] text-gray-400 dark:text-muted">Km totales</p>
                         <p className="text-sm font-bold text-gray-900 dark:text-foreground">{v.kmTotal.toLocaleString()} km</p>
                       </div>
                       <div>
-                        <p className="text-[10px] text-gray-400 dark:text-muted">Km este mes</p>
+                        <p className="text-[length:var(--ts-2xs)] text-gray-400 dark:text-muted">Km este mes</p>
                         <p className="text-sm font-bold text-gray-900 dark:text-foreground">{v.kmMonth.toLocaleString()} km</p>
                       </div>
                       <div>
-                        <p className="text-[10px] text-gray-400 dark:text-muted">Entregas mes</p>
+                        <p className="text-[length:var(--ts-2xs)] text-gray-400 dark:text-muted">Entregas mes</p>
                         <p className="text-sm font-bold text-gray-900 dark:text-foreground">{v.deliveriesMonth}</p>
                       </div>
                       <div>
-                        <p className="text-[10px] text-gray-400 dark:text-muted">Próx. mantenimiento</p>
+                        <p className="text-[length:var(--ts-2xs)] text-gray-400 dark:text-muted">Próx. mantenimiento</p>
                         <p className="text-sm font-bold text-gray-900 dark:text-foreground">{fmtDate(v.nextMaintenance)}</p>
                       </div>
                     </div>
@@ -263,7 +263,7 @@ export default function FleetManagementTab() {
                     <div className="flex flex-wrap gap-2 pt-1">
                       <button
                         onClick={() => setShowStatusModal(v)}
-                        className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold border border-gray-200 dark:border-card-border hover:bg-gray-50 dark:hover:bg-surface transition"
+                        className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold border border-[var(--rule-base)] dark:border-card-border hover:bg-gray-50 dark:hover:bg-surface transition"
                       >
                         <Pencil className="h-3 w-3" /> Cambiar estado
                       </button>
@@ -278,7 +278,7 @@ export default function FleetManagementTab() {
 
       {/* Maintenance view */}
       {view === "maintenance" && (
-        <div className="bg-white dark:bg-card rounded-2xl border border-gray-200 dark:border-card-border overflow-hidden">
+        <div className="bg-white dark:bg-card rounded-xl border border-[var(--rule-base)] dark:border-card-border overflow-hidden">
           <div className="overflow-x-auto">
             <table className="w-full min-w-[640px] text-sm">
               <thead>
@@ -292,7 +292,7 @@ export default function FleetManagementTab() {
               </thead>
               <tbody>
                 {maintLog.map(m => (
-                  <tr key={m.id} className="border-t border-gray-100 dark:border-card-border hover:bg-gray-50 dark:hover:bg-accent/10">
+                  <tr key={m.id} className="border-t border-[var(--rule-soft)] dark:border-card-border hover:bg-gray-50 dark:hover:bg-accent/10">
                     <td className="px-4 py-3 font-semibold text-gray-800 dark:text-foreground">{m.vehicleName}</td>
                     <td className="px-4 py-3 text-gray-600 dark:text-muted flex items-center gap-1">
                       <Wrench className="h-3.5 w-3.5 text-amber-500 shrink-0" /> {m.type}
@@ -314,7 +314,7 @@ export default function FleetManagementTab() {
       {/* Change status modal */}
       {showStatusModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4" onClick={() => setShowStatusModal(null)}>
-          <div className="bg-white dark:bg-card rounded-2xl p-4 sm:p-6 w-full max-w-sm border border-gray-200 dark:border-card-border shadow-2xl space-y-4" onClick={e => e.stopPropagation()}>
+          <div className="bg-white dark:bg-card rounded-xl p-4 sm:p-6 w-full max-w-sm border border-[var(--rule-base)] dark:border-card-border space-y-4" onClick={e => e.stopPropagation()}>
             <div className="flex items-center justify-between">
               <h3 className="font-extrabold text-gray-900 dark:text-foreground">Estado — {showStatusModal.name}</h3>
               <button onClick={() => setShowStatusModal(null)}><X className="h-4 w-4 text-gray-400" /></button>
@@ -328,7 +328,7 @@ export default function FleetManagementTab() {
                     "w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-bold border transition",
                     showStatusModal.status === s
                       ? "border-primary bg-primary/5 text-primary"
-                      : "border-gray-200 dark:border-card-border hover:border-primary/30 hover:bg-gray-50 dark:hover:bg-surface"
+                      : "border-[var(--rule-base)] dark:border-card-border hover:border-primary/30 hover:bg-gray-50 dark:hover:bg-surface"
                   )}
                 >
                   <span className={cn("w-2.5 h-2.5 rounded-full", STATUS_CONFIG[s].dot)} />
@@ -344,7 +344,7 @@ export default function FleetManagementTab() {
       {/* Register maintenance modal */}
       {showMaintModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4" onClick={() => setShowMaintModal(false)}>
-          <div className="bg-white dark:bg-card rounded-2xl p-4 sm:p-6 w-full max-w-md border border-gray-200 dark:border-card-border shadow-2xl space-y-4" onClick={e => e.stopPropagation()}>
+          <div className="bg-white dark:bg-card rounded-xl p-4 sm:p-6 w-full max-w-md border border-[var(--rule-base)] dark:border-card-border space-y-4" onClick={e => e.stopPropagation()}>
             <div className="flex items-center justify-between">
               <h3 className="font-extrabold text-gray-900 dark:text-foreground">Registrar mantenimiento</h3>
               <button onClick={() => setShowMaintModal(false)}><X className="h-4 w-4 text-gray-400" /></button>
@@ -358,7 +358,7 @@ export default function FleetManagementTab() {
                     const v = vehicles.find(x => x.id === e.target.value);
                     setMaintForm(f => ({ ...f, vehicleId: e.target.value, vehicleName: v?.name ?? "" }));
                   }}
-                  className="w-full mt-1 px-3 py-2 rounded-xl border border-gray-200 dark:border-card-border bg-white dark:bg-surface text-sm"
+                  className="w-full mt-1 px-3 py-2 rounded-xl border border-[var(--rule-base)] dark:border-card-border bg-white dark:bg-surface text-sm"
                 >
                   <option value="">Seleccionar vehículo...</option>
                   {vehicles.map(v => <option key={v.id} value={v.id}>{v.name} ({v.plate})</option>)}
@@ -367,29 +367,29 @@ export default function FleetManagementTab() {
               <div>
                 <label className="text-xs font-bold text-gray-500 dark:text-muted">Tipo de trabajo</label>
                 <input value={maintForm.type} onChange={e => setMaintForm(f => ({ ...f, type: e.target.value }))}
-                  placeholder="Ej: Cambio de aceite, frenos..." className="w-full mt-1 px-3 py-2 rounded-xl border border-gray-200 dark:border-card-border bg-white dark:bg-surface text-sm" />
+                  placeholder="Ej: Cambio de aceite, frenos..." className="w-full mt-1 px-3 py-2 rounded-xl border border-[var(--rule-base)] dark:border-card-border bg-white dark:bg-surface text-sm" />
               </div>
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <label className="text-xs font-bold text-gray-500 dark:text-muted">Fecha</label>
                   <input type="date" value={maintForm.date} onChange={e => setMaintForm(f => ({ ...f, date: e.target.value }))}
-                    className="w-full mt-1 px-3 py-2 rounded-xl border border-gray-200 dark:border-card-border bg-white dark:bg-surface text-sm" />
+                    className="w-full mt-1 px-3 py-2 rounded-xl border border-[var(--rule-base)] dark:border-card-border bg-white dark:bg-surface text-sm" />
                 </div>
                 <div>
                   <label className="text-xs font-bold text-gray-500 dark:text-muted">Costo (S/)</label>
                   <input type="number" min="0" step="0.5" value={maintForm.cost} onChange={e => setMaintForm(f => ({ ...f, cost: +e.target.value }))}
-                    className="w-full mt-1 px-3 py-2 rounded-xl border border-gray-200 dark:border-card-border bg-white dark:bg-surface text-sm" />
+                    className="w-full mt-1 px-3 py-2 rounded-xl border border-[var(--rule-base)] dark:border-card-border bg-white dark:bg-surface text-sm" />
                 </div>
               </div>
               <div>
                 <label className="text-xs font-bold text-gray-500 dark:text-muted">Notas</label>
                 <textarea value={maintForm.notes} onChange={e => setMaintForm(f => ({ ...f, notes: e.target.value }))} rows={2}
-                  className="w-full mt-1 px-3 py-2 rounded-xl border border-gray-200 dark:border-card-border bg-white dark:bg-surface text-sm resize-none" />
+                  className="w-full mt-1 px-3 py-2 rounded-xl border border-[var(--rule-base)] dark:border-card-border bg-white dark:bg-surface text-sm resize-none" />
               </div>
             </div>
             <div className="flex justify-end gap-2">
-              <button onClick={() => setShowMaintModal(false)} className="px-4 py-2 rounded-xl text-sm font-bold text-gray-500 hover:bg-gray-100 dark:hover:bg-accent">Cancelar</button>
-              <button onClick={saveMaintenance} className="px-4 py-2 rounded-xl text-sm font-bold bg-primary text-white hover:bg-primary/90 flex items-center gap-1.5">
+              <button onClick={() => setShowMaintModal(false)} className="px-4 py-2 rounded-lg text-sm font-bold text-gray-500 hover:bg-gray-100 dark:hover:bg-accent">Cancelar</button>
+              <button onClick={saveMaintenance} className="px-4 py-2 rounded-lg text-sm font-bold bg-primary text-white hover:bg-primary/90 flex items-center gap-1.5">
                 <Check className="h-4 w-4" /> Guardar
               </button>
             </div>

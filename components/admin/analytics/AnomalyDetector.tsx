@@ -57,7 +57,7 @@ function fmt(n: number) {
 }
 
 const SEVERITY_STYLE: Record<Severity, { bg: string; text: string; border: string; dot: string; label: string }> = {
-  info:     { bg: "bg-blue-50 dark:bg-blue-900/20",   text: "text-blue-700 dark:text-blue-300",   border: "border-blue-200 dark:border-blue-800",   dot: "bg-blue-500",  label: "Info" },
+  info:     { bg: "bg-emerald-50 dark:bg-emerald-900/20",   text: "text-emerald-700 dark:text-emerald-300",   border: "border-emerald-200 dark:border-emerald-800",   dot: "bg-emerald-500",  label: "Info" },
   warning:  { bg: "bg-amber-50 dark:bg-amber-900/20", text: "text-amber-700 dark:text-amber-300", border: "border-amber-200 dark:border-amber-800", dot: "bg-amber-500", label: "Aviso" },
   critical: { bg: "bg-red-50 dark:bg-red-900/20",     text: "text-red-700 dark:text-red-300",     border: "border-red-200 dark:border-red-800",     dot: "bg-red-500",   label: "Critico" },
 };
@@ -203,7 +203,7 @@ export default function AnomalyDetector({ sales, orders }: AnomalyDetectorProps)
               )}
             >
               <p className={cn("text-lg font-bold", style.text)}>{counts[sev]}</p>
-              <p className={cn("text-[10px] font-medium", style.text)}>{style.label}</p>
+              <p className={cn("text-[length:var(--ts-2xs)] font-medium", style.text)}>{style.label}</p>
             </div>
           );
         })}
@@ -219,7 +219,7 @@ export default function AnomalyDetector({ sales, orders }: AnomalyDetectorProps)
               </svg>
             </div>
             <p className="text-xs text-gray-500 dark:text-gray-400">Sin anomalias detectadas en este periodo</p>
-            <p className="text-[10px] text-gray-400 dark:text-gray-500 mt-0.5">
+            <p className="text-[length:var(--ts-2xs)] text-gray-400 dark:text-gray-500 mt-0.5">
               Necesitas al menos 10 dias de ventas para deteccion estadistica
             </p>
           </div>
@@ -240,23 +240,23 @@ export default function AnomalyDetector({ sales, orders }: AnomalyDetectorProps)
                 <div className={cn("w-2 h-2 rounded-full mt-1 shrink-0", style.dot)} />
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2 mb-0.5">
-                    <span className={cn("text-[10px] font-bold uppercase tracking-wide", style.text)}>
+                    <span className={cn("text-[length:var(--ts-2xs)] font-bold", style.text)}>
                       {style.label}
                     </span>
-                    <span className={cn("text-[10px]", style.text)}>
+                    <span className={cn("text-[length:var(--ts-2xs)]", style.text)}>
                       {anomaly.type}
                     </span>
-                    <span className="text-[10px] text-gray-400 dark:text-gray-500 ml-auto shrink-0">
+                    <span className="text-[length:var(--ts-2xs)] text-gray-400 dark:text-gray-500 ml-auto shrink-0">
                       {anomaly.when}
                     </span>
                   </div>
                   <p className={cn("text-xs font-medium leading-snug", style.text)}>
                     {anomaly.what}
                   </p>
-                  <p className="text-[10px] text-gray-500 dark:text-gray-400 mt-0.5 leading-snug">
+                  <p className="text-[length:var(--ts-2xs)] text-gray-500 dark:text-gray-400 mt-0.5 leading-snug">
                     Desviacion: {anomaly.deviation}
                   </p>
-                  <p className="text-[10px] text-gray-600 dark:text-gray-300 mt-1 leading-snug italic">
+                  <p className="text-[length:var(--ts-2xs)] text-gray-600 dark:text-gray-300 mt-1 leading-snug italic">
                     Posible causa: {anomaly.cause}
                   </p>
                 </div>
@@ -267,7 +267,7 @@ export default function AnomalyDetector({ sales, orders }: AnomalyDetectorProps)
       </div>
 
       {anomalies.length > 0 && (
-        <p className="text-[10px] text-gray-400 dark:text-gray-500 text-center">
+        <p className="text-[length:var(--ts-2xs)] text-gray-400 dark:text-gray-500 text-center">
           Umbral estadistico: media ± 2 desviaciones estandar
         </p>
       )}

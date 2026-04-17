@@ -123,7 +123,7 @@ function buildForecast(
 }
 
 const SCENARIO_META: Record<Scenario, { label: string; color: string }> = {
-  base:      { label: "Base",      color: "text-blue-600"    },
+  base:      { label: "Base",      color: "text-emerald-600"    },
   optimista: { label: "Optimista", color: "text-emerald-600" },
   pesimista: { label: "Pesimista", color: "text-red-600"     },
 };
@@ -210,7 +210,7 @@ export default function LiquidityForecastTab() {
         <p className="text-gray-500 dark:text-muted text-sm">Error cargando datos</p>
         <button
           onClick={load}
-          className="flex items-center gap-2 px-4 py-2 rounded-xl bg-primary text-white text-sm font-semibold"
+          className="flex items-center gap-2 px-4 py-2 rounded-lg bg-primary text-white text-sm font-semibold"
         >
           <RefreshCw className="h-4 w-4" /> Reintentar
         </button>
@@ -243,7 +243,7 @@ export default function LiquidityForecastTab() {
               `liquidez-${scenario}`
             )
           }
-          className="flex items-center gap-1.5 px-3 py-2 rounded-xl border border-gray-200 dark:border-card-border bg-white dark:bg-surface text-sm font-semibold text-gray-700 dark:text-foreground hover:bg-gray-50 dark:hover:bg-accent transition-colors"
+          className="flex items-center gap-1.5 px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-card-border bg-white dark:bg-surface text-sm font-semibold text-gray-700 dark:text-foreground hover:bg-gray-50 dark:hover:bg-accent transition-colors"
         >
           <Download className="h-4 w-4" /> Exportar
         </button>
@@ -252,12 +252,12 @@ export default function LiquidityForecastTab() {
       {/* KPIs */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
         {[
-          { label: "Saldo inicial", value: fmt(openingBalance), color: "text-blue-600", bg: "bg-blue-50 dark:bg-blue-950/30", icon: Wallet },
+          { label: "Saldo inicial", value: fmt(openingBalance), color: "text-emerald-600", bg: "bg-emerald-50 dark:bg-emerald-950/30", icon: Wallet },
           { label: "Mínimo proyectado", value: fmt(stats.minCum), color: stats.minCum < 0 ? "text-red-600" : "text-emerald-600", bg: stats.minCum < 0 ? "bg-red-50 dark:bg-red-950/30" : "bg-emerald-50 dark:bg-emerald-950/30", icon: ArrowDown },
           { label: "Máximo proyectado", value: fmt(stats.maxCum), color: "text-emerald-600", bg: "bg-emerald-50 dark:bg-emerald-950/30", icon: ArrowUp },
           { label: "Semanas en déficit", value: String(stats.deficitWeeks), color: stats.deficitWeeks > 0 ? "text-red-600" : "text-emerald-600", bg: stats.deficitWeeks > 0 ? "bg-red-50 dark:bg-red-950/30" : "bg-emerald-50 dark:bg-emerald-950/30", icon: AlertTriangle },
         ].map(({ label, value, color, bg, icon: Icon }) => (
-          <div key={label} className={cn("rounded-2xl p-4 flex items-start gap-3", bg)}>
+          <div key={label} className={cn("rounded-xl p-4 flex items-start gap-3", bg)}>
             <Icon className={cn("h-5 w-5 mt-0.5", color)} />
             <div>
               <p className="text-xs font-semibold text-gray-500 dark:text-muted">{label}</p>
@@ -270,7 +270,7 @@ export default function LiquidityForecastTab() {
       {/* Controles */}
       <div className="flex flex-wrap items-center gap-3">
         {/* Horizonte */}
-        <div className="flex rounded-xl border border-gray-200 dark:border-card-border overflow-hidden">
+        <div className="flex rounded-xl border border-[var(--rule-base)] dark:border-card-border overflow-hidden">
           {([30, 60, 90] as const).map((h) => (
             <button
               key={h}
@@ -288,7 +288,7 @@ export default function LiquidityForecastTab() {
         </div>
 
         {/* Escenario */}
-        <div className="flex rounded-xl border border-gray-200 dark:border-card-border bg-gray-100 dark:bg-surface p-1 gap-1">
+        <div className="flex rounded-xl border border-[var(--rule-base)] dark:border-card-border bg-gray-100 dark:bg-surface p-1 gap-1">
           {(Object.keys(SCENARIO_META) as Scenario[]).map((k) => (
             <button
               key={k}
@@ -296,7 +296,7 @@ export default function LiquidityForecastTab() {
               className={cn(
                 "px-3 py-1.5 rounded-lg text-sm font-bold transition-colors",
                 scenario === k
-                  ? "bg-white dark:bg-card text-gray-900 dark:text-foreground shadow-sm"
+                  ? "bg-white dark:bg-card text-gray-900 dark:text-foreground "
                   : "text-gray-500 dark:text-muted hover:text-gray-700"
               )}
             >
@@ -322,7 +322,7 @@ export default function LiquidityForecastTab() {
       )}
 
       {/* Gráfico de barras */}
-      <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl p-4 space-y-3">
+      <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl p-4 space-y-3">
         <h3 className="text-sm font-bold text-gray-700 dark:text-foreground">
           Ingresos vs Egresos semanales ({horizon} días)
         </h3>
@@ -371,7 +371,7 @@ export default function LiquidityForecastTab() {
       </div>
 
       {/* Tabla detallada */}
-      <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl overflow-hidden">
+      <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full min-w-[600px] text-sm">
             <thead>
@@ -388,7 +388,7 @@ export default function LiquidityForecastTab() {
                 <tr
                   key={w.weekLabel}
                   className={cn(
-                    "border-t border-gray-100 dark:border-card-border",
+                    "border-t border-[var(--rule-soft)] dark:border-card-border",
                     w.cumulative < 0 && "bg-red-50/50 dark:bg-red-950/10"
                   )}
                 >
@@ -417,7 +417,7 @@ export default function LiquidityForecastTab() {
                   <td
                     className={cn(
                       "px-4 py-3 font-extrabold",
-                      w.cumulative >= 0 ? "text-blue-600" : "text-red-600"
+                      w.cumulative >= 0 ? "text-emerald-600" : "text-red-600"
                     )}
                   >
                     {fmt(w.cumulative)}
@@ -431,14 +431,14 @@ export default function LiquidityForecastTab() {
 
       {/* Compromisos pendientes */}
       {pendingPayables.length > 0 && (
-        <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl p-4">
+        <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl p-4">
           <h3 className="text-sm font-bold text-gray-700 dark:text-foreground mb-3">
             Compromisos pendientes de pago ({payables.filter((p) => p.status !== "pagado").length} total)
           </h3>
           <div className="overflow-x-auto">
             <table className="w-full min-w-[400px] text-sm">
               <thead>
-                <tr className="text-xs text-gray-400 border-b border-gray-100 dark:border-card-border">
+                <tr className="text-xs text-gray-400 border-b border-[var(--rule-soft)] dark:border-card-border">
                   <th className="text-left pb-2">Proveedor</th>
                   <th className="text-right pb-2">Monto</th>
                   <th className="text-right pb-2">Pagado</th>

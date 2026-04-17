@@ -69,7 +69,7 @@ export default function DashboardWidgets({ onNavigate }: DashboardWidgetsProps) 
       value: `S/${data.ventasHoy.toFixed(0)}`,
       icon: DollarSign,
       color: "text-emerald-600 bg-emerald-50 dark:bg-emerald-950/30",
-      tab: "ventas-caja",
+      tab: "analytics-pro",
     },
     {
       label: "Pedidos pendientes",
@@ -91,7 +91,7 @@ export default function DashboardWidgets({ onNavigate }: DashboardWidgetsProps) 
       label: "Clientes nuevos",
       value: String(data.clientesNuevos),
       icon: Users,
-      color: "text-blue-600 bg-blue-50 dark:bg-blue-950/30",
+      color: "text-emerald-600 bg-emerald-50 dark:bg-emerald-950/30",
       tab: "clientes",
     },
   ];
@@ -105,9 +105,9 @@ export default function DashboardWidgets({ onNavigate }: DashboardWidgetsProps) 
             key={w.label}
             onClick={() => onNavigate?.(w.tab)}
             className={cn(
-              "relative flex items-center gap-3 p-4 rounded-2xl border transition-all text-left",
-              "bg-white dark:bg-card border-gray-100 dark:border-card-border",
-              "hover:shadow-md hover:border-gray-200 dark:hover:border-gray-600",
+              "relative flex items-center gap-3 p-4 rounded-xl border transition-all text-left",
+              "bg-white dark:bg-card border-[var(--rule-soft)] dark:border-card-border",
+              "hover:shadow-sm hover:border-gray-200 dark:hover:border-gray-600",
               loading && "animate-pulse"
             )}
           >
@@ -115,10 +115,10 @@ export default function DashboardWidgets({ onNavigate }: DashboardWidgetsProps) 
               <Icon className="h-5 w-5" />
             </div>
             <div className="min-w-0">
-              <p className="text-xl font-black text-foreground leading-tight">
+              <p className="text-xl font-extrabold text-foreground leading-tight">
                 {loading ? "—" : w.value}
               </p>
-              <p className="text-[11px] text-muted truncate">{w.label}</p>
+              <p className="text-[length:var(--ts-xs)] text-muted truncate">{w.label}</p>
             </div>
             {w.alert && !loading && (
               <span className="absolute top-2 right-2 h-2 w-2 rounded-full bg-red-500 animate-pulse" />

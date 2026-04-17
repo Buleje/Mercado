@@ -1,4 +1,4 @@
- 
+
 /* eslint-disable react-hooks/set-state-in-effect, react-hooks/purity */
 "use client";
 
@@ -58,23 +58,23 @@ function getUrgency(daysLeft: number): PlanItem["urgency"] {
 
 const URGENCY_STYLES: Record<PlanItem["urgency"], { badge: string; row: string; label: string }> = {
   critical: {
-    badge: "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400",
-    row: "border-red-200 dark:border-red-800 bg-red-50/50 dark:bg-red-950/10",
+    badge: "bg-red-100 text-red-700",
+    row: "border-red-200 bg-red-50/50",
     label: "Critico",
   },
   high: {
-    badge: "bg-[#f97316]/10 text-[#f97316]",
-    row: "border-[#f97316]/20 bg-[#f97316]/5 dark:bg-[#f97316]/5",
+    badge: "bg-secondary/10 text-secondary",
+    row: "border-secondary/20 bg-secondary/5",
     label: "Urgente",
   },
   medium: {
-    badge: "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400",
-    row: "border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900",
+    badge: "bg-emerald-100 text-emerald-700",
+    row: "border-[var(--rule-base)] bg-white",
     label: "Esta semana",
   },
   low: {
-    badge: "bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-400",
-    row: "border-gray-100 dark:border-gray-800 bg-gray-50 dark:bg-gray-800/30",
+    badge: "bg-gray-100 text-gray-600",
+    row: "border-[var(--rule-soft)] bg-gray-50",
     label: "Monitorear",
   },
 };
@@ -180,19 +180,19 @@ export default function WeeklyPurchasePlanner() {
   }, [plan]);
 
   return (
-    <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-700 overflow-hidden shadow-sm">
+    <div className="bg-white rounded-xl border border-[var(--rule-base)] overflow-hidden ">
       {/* Header */}
-      <div className="p-5 border-b border-gray-100 dark:border-gray-800">
+      <div className="p-5 border-b border-[var(--rule-soft)]">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="p-2 rounded-xl bg-[#00B4A6]/10">
-              <ShoppingBag className="w-5 h-5 text-[#00B4A6]" />
+            <div className="p-2 rounded-xl bg-primary/10">
+              <ShoppingBag className="w-5 h-5 text-primary" />
             </div>
             <div>
-              <h2 className="font-bold text-gray-900 dark:text-white">
+              <h2 className="font-bold text-gray-900">
                 Planner de compras semanal
               </h2>
-              <p className="text-xs text-gray-500 dark:text-gray-400">
+              <p className="text-xs text-gray-500">
                 Basado en ventas de los ultimos 7 dias
               </p>
             </div>
@@ -201,7 +201,7 @@ export default function WeeklyPurchasePlanner() {
             {plan.length > 0 && (
               <button
                 onClick={exportCSV}
-                className="p-2 rounded-xl hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+                className="p-2 rounded-lg hover:bg-gray-100 transition-colors"
                 title="Exportar CSV"
               >
                 <Download className="w-5 h-5 text-gray-500" />
@@ -210,7 +210,7 @@ export default function WeeklyPurchasePlanner() {
             <button
               onClick={fetchData}
               disabled={loading}
-              className="p-2 rounded-xl hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+              className="p-2 rounded-lg hover:bg-gray-100 transition-colors"
               aria-label="Actualizar"
             >
               <RefreshCw
@@ -223,21 +223,21 @@ export default function WeeklyPurchasePlanner() {
         {/* Summary */}
         {!loading && (
           <div className="mt-4 flex items-center gap-4 flex-wrap">
-            <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-red-50 dark:bg-red-950/30 border border-red-200 dark:border-red-800">
+            <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-red-50 border border-red-200">
               <AlertTriangle className="w-3.5 h-3.5 text-red-500" />
-              <span className="text-xs font-semibold text-red-700 dark:text-red-400">
+              <span className="text-xs font-semibold text-red-700">
                 {plan.filter((i) => i.urgency === "critical").length} criticos
               </span>
             </div>
-            <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-[#f97316]/10 border border-[#f97316]/20">
-              <Clock className="w-3.5 h-3.5 text-[#f97316]" />
-              <span className="text-xs font-semibold text-[#f97316]">
+            <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-secondary/10 border border-secondary/20">
+              <Clock className="w-3.5 h-3.5 text-secondary" />
+              <span className="text-xs font-semibold text-secondary">
                 {plan.filter((i) => i.urgency === "high").length} urgentes
               </span>
             </div>
-            <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-[#00B4A6]/10 border border-[#00B4A6]/20 ml-auto">
-              <CheckCircle2 className="w-3.5 h-3.5 text-[#00B4A6]" />
-              <span className="text-xs font-semibold text-[#00B4A6] dark:text-[#2dd4bf]">
+            <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-primary/10 border border-primary/20 ml-auto">
+              <CheckCircle2 className="w-3.5 h-3.5 text-primary" />
+              <span className="text-xs font-semibold text-primary">
                 Costo estimado: {fmt(totalCost)}
               </span>
             </div>
@@ -246,21 +246,21 @@ export default function WeeklyPurchasePlanner() {
       </div>
 
       {/* List */}
-      <div className="divide-y divide-gray-100 dark:divide-gray-800">
+      <div className="divide-y divide-gray-100">
         {loading ? (
           Array.from({ length: 5 }).map((_, i) => (
             <div key={i} className="p-4 flex gap-4 animate-pulse">
-              <div className="flex-1 h-5 bg-gray-100 dark:bg-gray-800 rounded" />
-              <div className="w-20 h-5 bg-gray-100 dark:bg-gray-800 rounded" />
+              <div className="flex-1 h-5 bg-gray-100 rounded" />
+              <div className="w-20 h-5 bg-gray-100 rounded" />
             </div>
           ))
         ) : plan.length === 0 ? (
           <div className="p-8 text-center">
-            <CheckCircle2 className="w-10 h-10 text-[#00B4A6] mx-auto mb-3" />
-            <p className="font-semibold text-gray-900 dark:text-white">
+            <CheckCircle2 className="w-10 h-10 text-primary mx-auto mb-3" />
+            <p className="font-semibold text-gray-900">
               Todo en orden
             </p>
-            <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
+            <p className="text-sm text-gray-500 mt-1">
               No hay productos que necesiten reabastecimiento esta semana
             </p>
           </div>
@@ -275,17 +275,17 @@ export default function WeeklyPurchasePlanner() {
                   item.urgency === "critical"
                     ? "border-l-red-500"
                     : item.urgency === "high"
-                      ? "border-l-[#f97316]"
+                      ? "border-l-secondary"
                       : item.urgency === "medium"
-                        ? "border-l-blue-400"
-                        : "border-l-gray-200 dark:border-l-gray-700"
+                        ? "border-l-emerald-400"
+                        : "border-l-gray-200"
                 )}
               >
                 <div className="flex-1 min-w-0">
-                  <p className="font-semibold text-gray-900 dark:text-white text-sm truncate">
+                  <p className="font-semibold text-gray-900 text-sm truncate">
                     {item.product.name}
                   </p>
-                  <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
+                  <p className="text-xs text-gray-500 mt-0.5">
                     Stock: {item.currentStock} {item.product.unit ?? "u"} —
                     Venta: {item.dailySales}/dia —{" "}
                     {item.daysLeft >= 99 ? "sin ventas" : `${item.daysLeft} dias restantes`}
@@ -294,10 +294,10 @@ export default function WeeklyPurchasePlanner() {
                 <div className="flex items-center gap-4 flex-shrink-0">
                   <div className="text-right">
                     <p className="text-xs text-gray-400">Comprar</p>
-                    <p className="font-bold text-gray-900 dark:text-white text-sm">
+                    <p className="font-bold text-gray-900 text-sm">
                       {item.suggestedQty} {item.product.unit ?? "u"}
                     </p>
-                    <p className="text-xs text-[#00B4A6] dark:text-[#2dd4bf]">
+                    <p className="text-xs text-primary">
                       {fmt(item.estimatedCost)}
                     </p>
                   </div>
@@ -317,8 +317,8 @@ export default function WeeklyPurchasePlanner() {
       </div>
 
       {error && (
-        <div className="px-5 py-3 bg-[#f97316]/10 border-t border-[#f97316]/20">
-          <p className="text-xs text-[#f97316]">{error}</p>
+        <div className="px-5 py-3 bg-secondary/10 border-t border-secondary/20">
+          <p className="text-xs text-secondary">{error}</p>
         </div>
       )}
     </div>

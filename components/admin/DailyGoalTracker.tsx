@@ -66,7 +66,7 @@ function Confetti() {
   const colors = ["#00B4A6", "#f97316", "#2dd4bf", "#f4d03f", "#e76f51"];
 
   return (
-    <div className="pointer-events-none absolute inset-0 overflow-hidden rounded-2xl">
+    <div className="pointer-events-none absolute inset-0 overflow-hidden rounded-xl">
       {Array.from({ length: 24 }).map((_, i) => {
         const color = colors[i % colors.length];
         const left = `${(i * 4.2) % 100}%`;
@@ -117,7 +117,7 @@ function HourlyChart({ buckets }: { buckets: HourlyBucket[] }) {
             >
               {/* Tooltip */}
               {b.revenue > 0 && (
-                <div className="absolute -top-7 left-1/2 -translate-x-1/2 bg-gray-800 dark:bg-gray-600 text-white text-[10px] rounded px-1.5 py-0.5 whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-10">
+                <div className="absolute -top-7 left-1/2 -translate-x-1/2 bg-gray-800 dark:bg-gray-600 text-white text-[length:var(--ts-2xs)] rounded px-1.5 py-0.5 whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-10">
                   {fmt(b.revenue)}
                 </div>
               )}
@@ -126,7 +126,7 @@ function HourlyChart({ buckets }: { buckets: HourlyBucket[] }) {
               <div className="w-full flex items-end" style={{ height: "64px" }}>
                 <div
                   className={cn(
-                    "w-full rounded-t transition-all duration-500",
+                    "w-full rounded-t transition-all duration-[var(--dur-slow)]",
                     isCurrent
                       ? "bg-[#f97316]"
                       : b.revenue > 0
@@ -139,7 +139,7 @@ function HourlyChart({ buckets }: { buckets: HourlyBucket[] }) {
 
               {/* Etiqueta hora */}
               <span className={cn(
-                "text-[9px] leading-none",
+                "text-[length:var(--ts-2xs)] leading-none",
                 isCurrent
                   ? "text-[#f97316] font-bold"
                   : "text-gray-400 dark:text-gray-500"
@@ -215,12 +215,12 @@ export default function DailyGoalTracker({ dailyGoal = DEFAULT_DAILY_GOAL }: Dai
   // ── Color segun progreso
   const barColor =
     pct >= 100
-      ? "from-emerald-500 to-emerald-600"
+      ? "bg-[var(--data-success)]"
       : pct >= 80
-      ? "from-[#00B4A6] to-[#2dd4bf]"
+      ? "bg-[var(--brand-primary)]"
       : pct >= 50
-      ? "from-[#f97316] to-[#e8803a]"
-      : "from-red-400 to-red-500";
+      ? "bg-[var(--data-warning)]"
+      : "bg-[var(--data-error)]";
 
   const statusLabel =
     pct >= 100
@@ -241,7 +241,7 @@ export default function DailyGoalTracker({ dailyGoal = DEFAULT_DAILY_GOAL }: Dai
       : "text-red-500 dark:text-red-400";
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-6">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
@@ -273,10 +273,10 @@ export default function DailyGoalTracker({ dailyGoal = DEFAULT_DAILY_GOAL }: Dai
 
       {/* Tarjeta principal */}
       <div className={cn(
-        "relative rounded-2xl border-2 p-6 overflow-hidden transition-all duration-500",
+        "relative rounded-xl border-2 p-6 overflow-hidden transition-all duration-[var(--dur-slow)]",
         isGoalMet
           ? "border-emerald-400 dark:border-emerald-600 bg-emerald-50 dark:bg-emerald-900/20"
-          : "border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800"
+          : "border-[var(--rule-base)] bg-white dark:bg-gray-800"
       )}>
         {/* Confetti */}
         {celebrated && <Confetti />}
@@ -297,7 +297,7 @@ export default function DailyGoalTracker({ dailyGoal = DEFAULT_DAILY_GOAL }: Dai
           <>
             {/* Cifras principales */}
             <div className="text-center mb-5">
-              <div className="text-4xl font-black text-gray-900 dark:text-gray-100 tracking-tight">
+              <div className="text-4xl font-extrabold text-gray-900 dark:text-gray-100 tracking-tight">
                 {fmt(totalToday)}
               </div>
               <div className="text-base text-gray-400 dark:text-gray-500 mt-1">
@@ -319,7 +319,7 @@ export default function DailyGoalTracker({ dailyGoal = DEFAULT_DAILY_GOAL }: Dai
               <div className="h-6 bg-gray-100 dark:bg-gray-700 rounded-full overflow-hidden">
                 <div
                   className={cn(
-                    "h-full rounded-full bg-gradient-to-r transition-all duration-700 relative",
+                    "h-full rounded-full transition-all duration-[var(--dur-slower)] relative",
                     barColor
                   )}
                   style={{ width: `${pct}%` }}
@@ -358,7 +358,7 @@ export default function DailyGoalTracker({ dailyGoal = DEFAULT_DAILY_GOAL }: Dai
 
       {/* Mini grafico por hora */}
       {!loading && hourlyBuckets.length > 0 && (
-        <div className="rounded-2xl border border-gray-100 dark:border-gray-700 bg-white dark:bg-gray-800 p-4">
+        <div className="rounded-xl border border-[var(--rule-base)] bg-white dark:bg-gray-800 p-4">
           <div className="flex items-center gap-2 mb-3">
             <TrendingUp className="w-4 h-4 text-[#00B4A6] dark:text-green-400" />
             <span className="text-sm font-medium text-gray-700 dark:text-gray-300">

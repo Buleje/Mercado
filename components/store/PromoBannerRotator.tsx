@@ -34,7 +34,7 @@ const DEFAULT_BANNERS: PromoBanner[] = [
     subtitle: "Delivery rapido a toda la zona",
     ctaText: "Comprar ahora",
     ctaLink: "/tienda",
-    bgColor: "bg-gradient-to-r from-emerald-600 to-emerald-500",
+    bgColor: "bg-[#00B4A6]",
     emoji: "🚚",
   },
   {
@@ -43,7 +43,7 @@ const DEFAULT_BANNERS: PromoBanner[] = [
     subtitle: "Valido en todas tus compras",
     ctaText: "Ver productos",
     ctaLink: "/tienda",
-    bgColor: "bg-gradient-to-r from-purple-600 to-purple-500",
+    bgColor: "bg-[#00B4A6]",
     emoji: "📱",
   },
   {
@@ -52,7 +52,7 @@ const DEFAULT_BANNERS: PromoBanner[] = [
     subtitle: "Acumula y canjea por productos gratis",
     ctaText: "Mis puntos",
     ctaLink: "/puntos",
-    bgColor: "bg-gradient-to-r from-amber-500 to-orange-500",
+    bgColor: "bg-[#d97706]",
     emoji: "⭐",
   },
   {
@@ -61,7 +61,7 @@ const DEFAULT_BANNERS: PromoBanner[] = [
     subtitle: "Sin intereses en 2 cuotas",
     ctaText: "Saber mas",
     ctaLink: "/mi-credito",
-    bgColor: "bg-gradient-to-r from-blue-600 to-indigo-600",
+    bgColor: "bg-[var(--brand-ink)]",
     emoji: "💳",
   },
 ];
@@ -121,7 +121,7 @@ export default function PromoBannerRotator({
     >
       <div
         className={cn(
-          "relative py-3 sm:py-4 px-4 sm:px-6 transition-all duration-500 ease-in-out",
+          "relative py-3 sm:py-4 px-4 sm:px-6 transition-all duration-[var(--dur-slow)] ease-in-out",
           banner.bgColor,
           banner.textColor ?? "text-white",
         )}
@@ -181,7 +181,7 @@ export default function PromoBannerRotator({
                 key={b.id}
                 onClick={() => setCurrentIndex(idx)}
                 className={cn(
-                  "h-1.5 rounded-full transition-all duration-300",
+                  "h-1.5 rounded-full transition-all duration-[var(--dur-base)]",
                   idx === currentIndex
                     ? "w-4 bg-white"
                     : "w-1.5 bg-white/40 hover:bg-white/60",

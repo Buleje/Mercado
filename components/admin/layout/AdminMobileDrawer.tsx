@@ -124,14 +124,14 @@ export function AdminMobileDrawer({
       {/* Mobile drawer */}
       <aside
         className={cn(
-          "fixed top-0 left-0 bottom-0 w-72 z-50 bg-white dark:bg-card shadow-2xl flex flex-col transition-transform duration-300 sm:hidden",
+          "fixed top-0 left-0 bottom-0 w-72 z-50 bg-white dark:bg-card flex flex-col transition-transform duration-[var(--dur-base)] sm:hidden",
           open ? "translate-x-0" : "-translate-x-full"
         )}
       >
         {/* Header */}
-        <div className="flex items-center justify-between px-5 py-4 border-b border-gray-200 dark:border-card-border bg-primary/5">
+        <div className="flex items-center justify-between px-5 py-4 border-b border-[var(--rule-base)] dark:border-card-border bg-primary/5">
           <div className="flex items-center gap-3">
-            <div className="h-8 w-8 rounded-xl bg-primary text-white flex items-center justify-center">
+            <div className="h-8 w-8 rounded-lg bg-primary text-white flex items-center justify-center">
               <ShoppingBasket className="h-4 w-4" />
             </div>
             <span className="font-extrabold text-gray-900 dark:text-foreground text-sm">
@@ -147,10 +147,10 @@ export function AdminMobileDrawer({
         </div>
 
         {/* Category selector (mobile) */}
-        <div className="relative px-3 py-3 border-b border-gray-200 dark:border-card-border">
+        <div className="relative px-3 py-3 border-b border-[var(--rule-base)] dark:border-card-border">
           <button
             onClick={onToggleCategoryDropdown}
-            className="w-full flex items-center justify-between px-4 py-2.5 rounded-xl text-sm font-semibold text-gray-700 dark:text-foreground bg-gray-50 dark:bg-surface hover:bg-gray-100 dark:hover:bg-accent transition-all border border-gray-200 dark:border-card-border"
+            className="w-full flex items-center justify-between px-4 py-2.5 rounded-lg text-sm font-semibold text-gray-700 dark:text-foreground bg-gray-50 dark:bg-surface hover:bg-gray-100 dark:hover:bg-accent transition-all border border-[var(--rule-base)] dark:border-card-border"
           >
             <div className="flex items-center gap-2">
               {selectedCategory ? (
@@ -186,7 +186,7 @@ export function AdminMobileDrawer({
                 className="fixed inset-0 z-10"
                 onClick={onToggleCategoryDropdown}
               />
-              <div className="absolute top-full left-3 right-3 mt-1 bg-white dark:bg-card shadow-xl rounded-xl border border-gray-200 dark:border-card-border z-20 max-h-80 overflow-y-auto py-2">
+              <div className="absolute top-full left-3 right-3 mt-1 bg-white dark:bg-card rounded-xl border border-[var(--rule-base)] dark:border-card-border z-20 max-h-80 overflow-y-auto py-2">
                 <button
                   onClick={() => {
                     onSelectCategory(null);
@@ -237,7 +237,7 @@ export function AdminMobileDrawer({
           {/* Favorite tabs section */}
           {(favoriteTabItems.length > 0 || customShortcutItems.length > 0) && (
             <div className="mb-2">
-              <p className="text-[10px] font-bold uppercase tracking-wider text-gray-400 dark:text-muted px-4 mb-1 flex items-center gap-1">
+              <p className="text-[length:var(--ts-2xs)] font-bold text-gray-400 dark:text-muted px-4 mb-1 flex items-center gap-1">
                 <Star className="h-3 w-3" /> Favoritos
               </p>
               {favoriteTabItems.map(({ id, label, icon: Icon }) => (
@@ -247,7 +247,7 @@ export function AdminMobileDrawer({
                   className={cn(
                     "w-full flex items-center gap-3 px-4 py-2.5 rounded-xl text-sm font-semibold transition-all mb-0.5",
                     tab === id
-                      ? "bg-primary text-white shadow-sm"
+                      ? "bg-primary text-white "
                       : "text-gray-600 dark:text-muted hover:bg-gray-100 dark:hover:bg-accent"
                   )}
                 >
@@ -262,7 +262,7 @@ export function AdminMobileDrawer({
                   className={cn(
                     "w-full flex items-center gap-3 px-4 py-2.5 rounded-xl text-sm font-semibold transition-all mb-0.5",
                     tab === id
-                      ? "bg-primary text-white shadow-sm"
+                      ? "bg-primary text-white "
                       : "text-yellow-600 dark:text-yellow-400 hover:bg-yellow-50 dark:hover:bg-accent"
                   )}
                 >
@@ -279,7 +279,7 @@ export function AdminMobileDrawer({
             <div className="mb-2">
               <button
                 onClick={onToggleRecentCollapsed}
-                className="w-full text-[10px] font-bold uppercase tracking-wider text-gray-400 dark:text-muted px-4 mb-1 flex items-center gap-1 hover:text-gray-600 dark:hover:text-foreground transition-colors"
+                className="w-full text-[length:var(--ts-2xs)] font-bold text-gray-400 dark:text-muted px-4 mb-1 flex items-center gap-1 hover:text-gray-600 dark:hover:text-foreground transition-colors"
               >
                 <Clock className="h-3 w-3" /> Recientes
                 {recentCollapsed
@@ -293,7 +293,7 @@ export function AdminMobileDrawer({
                   className={cn(
                     "w-full flex items-center gap-3 px-4 py-2.5 rounded-xl text-sm font-semibold transition-all mb-0.5",
                     tab === id
-                      ? "bg-primary text-white shadow-sm"
+                      ? "bg-primary text-white "
                       : "text-gray-600 dark:text-muted hover:bg-gray-100 dark:hover:bg-accent"
                   )}
                 >
@@ -313,7 +313,7 @@ export function AdminMobileDrawer({
               className={cn(
                 "group w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-semibold transition-all mb-1",
                 tab === id
-                  ? "bg-primary text-white shadow-sm"
+                  ? "bg-primary text-white "
                   : "text-gray-600 dark:text-muted hover:bg-gray-100 dark:hover:bg-accent"
               )}
             >
@@ -352,11 +352,11 @@ export function AdminMobileDrawer({
         </nav>
 
         {/* Footer */}
-        <div className="px-3 py-4 border-t border-gray-200 dark:border-card-border space-y-1">
+        <div className="px-3 py-4 border-t border-[var(--rule-base)] dark:border-card-border space-y-1">
           {/* Quick access shortcuts — mobile */}
           <div className="mb-2 space-y-0.5">
             <div className="flex items-center justify-between px-4 mb-1">
-              <p className="text-[10px] font-bold uppercase tracking-wider text-gray-400 dark:text-gray-500">
+              <p className="text-[length:var(--ts-2xs)] font-bold text-gray-400 dark:text-gray-500">
                 Accesos rápidos
               </p>
               <button
@@ -424,12 +424,12 @@ export function AdminMobileDrawer({
               <div className="relative">
                 <button
                   onClick={onToggleShowAddShortcut}
-                  className="w-full flex items-center gap-2.5 px-4 py-2 rounded-xl text-sm font-medium text-primary/70 hover:bg-primary/5 transition-all border border-dashed border-primary/30"
+                  className="w-full flex items-center gap-2.5 px-4 py-2 rounded-lg text-sm font-medium text-primary/70 hover:bg-primary/5 transition-all border border-dashed border-primary/30"
                 >
                   <Plus className="h-4 w-4" /> Agregar acceso
                 </button>
                 {showAddShortcut && (
-                  <div className="absolute left-0 right-0 top-full mt-1 z-50 bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl shadow-xl max-h-48 overflow-y-auto">
+                  <div className="absolute left-0 right-0 top-full mt-1 z-50 bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl max-h-48 overflow-y-auto">
                     {availableForShortcut.map((t: TabItem) => (
                       <button
                         key={t.id}
@@ -451,20 +451,20 @@ export function AdminMobileDrawer({
           <Link
             href="/marketplace"
             target="_blank"
-            className="flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-semibold text-indigo-600 dark:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-indigo-950/30 transition-all"
+            className="flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-semibold text-[var(--text-secondary)] dark:text-[var(--text-primary)] hover:bg-[var(--surface-sunken)] dark:hover:bg-indigo-950/30 transition-all"
           >
             <Globe className="h-5 w-5" /> Marketplace
           </Link>
           <Link
             href="/"
             target="_blank"
-            className="flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-semibold text-primary hover:bg-primary/10 dark:hover:bg-primary/20 transition-all"
+            className="flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-semibold text-primary hover:bg-primary/10 dark:hover:bg-primary/20 transition-all"
           >
             <Store className="h-5 w-5" /> Tienda
           </Link>
           <button
             onClick={() => { onOpenCierreDiario(); onClose(); }}
-            className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-semibold text-amber-600 dark:text-amber-400 hover:bg-amber-50 dark:hover:bg-amber-950/30 transition-all"
+            className="w-full flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-semibold text-amber-600 dark:text-amber-400 hover:bg-amber-50 dark:hover:bg-amber-950/30 transition-all"
           >
             <Power className="h-5 w-5" /> Cerrar d&iacute;a
           </button>

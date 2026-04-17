@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef, useCallback } from "react";
 import dynamic from "next/dynamic";
+import Image from "next/image";
 import {
   ArrowLeft,
   Package,
@@ -160,10 +161,12 @@ function ConfirmDeliveryModal({ orderId, onClose, onSuccess }: ConfirmModalProps
             />
             {photo ? (
               <div className="relative">
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img
+                <Image
                   src={photo}
                   alt="Foto de entrega"
+                  width={400}
+                  height={160}
+                  unoptimized
                   className="w-full h-40 object-cover rounded-xl border border-gray-200 dark:border-gray-700"
                 />
                 <button
@@ -183,7 +186,7 @@ function ConfirmDeliveryModal({ orderId, onClose, onSuccess }: ConfirmModalProps
                   border-2 border-dashed border-gray-300 dark:border-gray-700
                   flex flex-col items-center justify-center gap-2
                   text-gray-400 dark:text-gray-600
-                  hover:border-[#00B4A6] hover:text-[#00B4A6]
+                  hover:border-primary hover:text-primary
                   transition-colors active:scale-95
                 "
               >
@@ -223,7 +226,7 @@ function ConfirmDeliveryModal({ orderId, onClose, onSuccess }: ConfirmModalProps
                 text-sm text-gray-900 dark:text-white
                 placeholder:text-gray-400
                 px-3 py-2.5 resize-none
-                focus:outline-none focus:ring-2 focus:ring-[#00B4A6]
+                focus:outline-none focus:ring-2 focus:ring-primary
               "
             />
           </div>
@@ -360,7 +363,7 @@ export default function DeliveryOrderDetail({ orderId }: DeliveryOrderDetailProp
             <button
               type="button"
               onClick={load}
-              className="mt-3 text-sm text-[#00B4A6] font-bold underline"
+              className="mt-3 text-sm text-primary font-bold underline"
             >
               Reintentar
             </button>
@@ -379,7 +382,7 @@ export default function DeliveryOrderDetail({ orderId }: DeliveryOrderDetailProp
       <div className="flex flex-col min-h-screen bg-gray-50 dark:bg-gray-950">
         {/* Header */}
         <header
-          className="sticky top-0 z-30 bg-[#00B4A6] text-white px-4 py-3 shadow-md flex items-center gap-3"
+          className="sticky top-0 z-30 bg-primary text-white px-4 py-3 shadow-md flex items-center gap-3"
           style={{ paddingTop: "max(12px, env(safe-area-inset-top))" }}
         >
           <button
@@ -410,7 +413,7 @@ export default function DeliveryOrderDetail({ orderId }: DeliveryOrderDetailProp
           {/* Mapa */}
           <section className="bg-white dark:bg-gray-900 rounded-2xl shadow-sm border border-gray-200 dark:border-gray-800 p-4 space-y-3">
             <div className="flex items-center gap-2">
-              <MapPin className="h-4 w-4 text-[#00B4A6] shrink-0" />
+              <MapPin className="h-4 w-4 text-primary shrink-0" />
               <h2 className="font-bold text-sm text-gray-900 dark:text-white">Destino</h2>
             </div>
 
@@ -440,7 +443,7 @@ export default function DeliveryOrderDetail({ orderId }: DeliveryOrderDetailProp
           {/* Datos del cliente */}
           <section className="bg-white dark:bg-gray-900 rounded-2xl shadow-sm border border-gray-200 dark:border-gray-800 p-4 space-y-3">
             <div className="flex items-center gap-2">
-              <User className="h-4 w-4 text-[#00B4A6] shrink-0" />
+              <User className="h-4 w-4 text-primary shrink-0" />
               <h2 className="font-bold text-sm text-gray-900 dark:text-white">Cliente</h2>
             </div>
 
@@ -491,7 +494,7 @@ export default function DeliveryOrderDetail({ orderId }: DeliveryOrderDetailProp
           {/* Items del pedido */}
           <section className="bg-white dark:bg-gray-900 rounded-2xl shadow-sm border border-gray-200 dark:border-gray-800 p-4">
             <div className="flex items-center gap-2 mb-3">
-              <ClipboardList className="h-4 w-4 text-[#00B4A6] shrink-0" />
+              <ClipboardList className="h-4 w-4 text-primary shrink-0" />
               <h2 className="font-bold text-sm text-gray-900 dark:text-white">
                 Items ({order.items.length})
               </h2>
@@ -500,13 +503,14 @@ export default function DeliveryOrderDetail({ orderId }: DeliveryOrderDetailProp
             <ul className="divide-y divide-gray-100 dark:divide-gray-800">
               {order.items.map((item) => (
                 <li key={item.id} className="py-2.5 flex items-center gap-3">
-                  <div className="h-9 w-9 rounded-lg bg-gray-100 dark:bg-gray-800 flex items-center justify-center overflow-hidden shrink-0">
+                  <div className="relative h-9 w-9 rounded-lg bg-gray-100 dark:bg-gray-800 flex items-center justify-center overflow-hidden shrink-0">
                     {item.image ? (
-                      // eslint-disable-next-line @next/next/no-img-element
-                      <img
+                      <Image
                         src={item.image}
                         alt={item.name}
-                        className="h-full w-full object-cover"
+                        fill
+                        sizes="36px"
+                        className="object-cover"
                       />
                     ) : (
                       <Package className="h-4 w-4 text-gray-400" />

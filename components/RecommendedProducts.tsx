@@ -98,7 +98,7 @@ function ProductCard({ product, onAdd, justAdded }: ProductCardProps) {
         )}
 
         <div className="flex items-center justify-between gap-1 pt-0.5">
-          <span className="text-[13px] font-extrabold text-[#00B4A6] dark:text-[#00cfc0] leading-none">
+          <span className="text-[13px] font-extrabold text-primary dark:text-primary-light leading-none">
             S/{product.price.toFixed(2)}
           </span>
 
@@ -112,7 +112,7 @@ function ProductCard({ product, onAdd, justAdded }: ProductCardProps) {
               "transition-all duration-200 active:scale-90",
               justAdded
                 ? "bg-emerald-500 dark:bg-emerald-600"
-                : "bg-[#00B4A6] hover:bg-[#009990] dark:bg-[#00B4A6] dark:hover:bg-[#009990]",
+                : "bg-primary hover:bg-primary-dark dark:bg-primary dark:hover:bg-primary-dark",
             )}
           >
             {justAdded ? (
@@ -272,14 +272,15 @@ export default function RecommendedProducts({
   if (recommendations.length === 0) return null;
 
   // ── Vista principal ───────────────────────────────────────────────────────
+  // TODO(#1): from-[#f0faf9] is a non-standard teal-tinted white used in section bg — no token exists yet
   return (
     <section
       aria-label="Productos recomendados"
-      className="w-full px-4 py-3 bg-linear-to-b from-[#f0faf9]/60 to-transparent dark:from-[#00B4A6]/5 dark:to-transparent"
+      className="w-full px-4 py-3 bg-linear-to-b from-[#f0faf9]/60 to-transparent dark:from-primary/5 dark:to-transparent"
     >
       {/* Header */}
       <div className="flex items-center gap-2 mb-3">
-        <Sparkles className="h-4 w-4 text-[#f4a261] shrink-0" aria-hidden="true" />
+        <Sparkles className="h-4 w-4 text-secondary shrink-0" aria-hidden="true" />
         <h3 className="text-[13px] font-bold text-gray-800 dark:text-foreground tracking-tight">
           También te puede interesar
         </h3>

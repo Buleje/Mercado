@@ -15,6 +15,10 @@ const nextConfig: NextConfig = {
   // See docs/adr/008-typescript-strict-gate.md.
   typescript: { ignoreBuildErrors: true },
 
+  // Ocultar el boton flotante "compiling" / dev indicators en desarrollo.
+  // Bloqueaba la navegacion al superponerse sobre la UI en pantallas pequenas.
+  devIndicators: false,
+
   // ── Cache Components (Next.js 16) ─────────────────────────────────────────
   // Habilita Partial Prerendering (PPR) + directiva `'use cache'` + cacheLife +
   // cacheTag + updateTag/revalidateTag. Reemplaza al viejo `experimental.ppr`.
@@ -43,6 +47,23 @@ const nextConfig: NextConfig = {
     },
   },
 
+  // Prisma + Turbopack (Next 16 + Prisma 7): el cliente generado importa
+  // `@prisma/client/runtime/client` que Turbopack intenta bundlear como un
+  // alias hasheado y falla ("Cannot find module @prisma/client-<hash>/runtime/client").
+  // Marcar estos como externals fuerza que se resuelvan vía Node module system.
+  serverExternalPackages: [
+    "@prisma/client",
+    "@prisma/adapter-pg",
+    ".prisma/client",
+    // Sentry + OpenTelemetry también tienen el mismo bug de hash-alias en Turbopack
+    "@sentry/nextjs",
+    "@sentry/node",
+    "@opentelemetry/api",
+    "@opentelemetry/instrumentation",
+    "require-in-the-middle",
+    "import-in-the-middle",
+  ],
+
   // No source maps in production browser bundle (saves ~30–50% of chunk sizes)
   productionBrowserSourceMaps: false,
 
@@ -65,6 +86,7 @@ const nextConfig: NextConfig = {
       { protocol: "http", hostname: "static.openfoodfacts.org" },
       { protocol: "https", hostname: "*.supabase.co" },
       { protocol: "https", hostname: "chart.googleapis.com" },
+      { protocol: "https", hostname: "api.qrserver.com" },
     ],
   },
 

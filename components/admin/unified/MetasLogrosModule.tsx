@@ -2,7 +2,11 @@
 
 import { useState, useEffect, useMemo } from "react";
 import dynamic from "next/dynamic";
-import { Target, Trophy, Flame, TrendingUp, Pencil, Check, X, Calendar } from "lucide-react";
+import {
+  Target, Trophy, Flame, TrendingUp, Pencil, Check, X, Calendar,
+  Award, Rocket, Zap, Coins, Users, Star, Landmark, Sunrise, Smile,
+  type LucideIcon,
+} from "lucide-react";
 import { cn } from "@/lib/utils";
 import { formatCurrency } from "@/lib/currency";
 import AdminTabBar from "@/components/admin/shared/AdminTabBar";
@@ -12,7 +16,7 @@ import AdminModuleHeader from "@/components/admin/shared/AdminModuleHeader";
 
 const Spinner = () => (
   <div className="flex items-center justify-center py-12">
-    <div className="h-8 w-8 border-4 border-[#00B4A6] border-t-transparent rounded-full animate-spin" />
+    <div className="h-8 w-8 border-4 border-primary border-t-transparent rounded-full animate-spin" />
   </div>
 );
 
@@ -32,7 +36,7 @@ interface Goal {
 
 interface Achievement {
   id: string;
-  emoji: string;
+  Icon: LucideIcon;
   name: string;
   desc: string;
   unlockedAt?: string;
@@ -41,20 +45,20 @@ interface Achievement {
 // ─── Constantes de logros ─────────────────────────────────────────────────────
 
 const ACHIEVEMENTS_DEF: Omit<Achievement, "unlockedAt">[] = [
-  { id: "primera-venta",    emoji: "🎯", name: "Primera Venta",      desc: "Registraste tu primera venta" },
-  { id: "100-ventas",       emoji: "💯", name: "100 Ventas",          desc: "Llegaste a 100 ventas" },
-  { id: "1000-ventas",      emoji: "🚀", name: "1000 Ventas",         desc: "Mil ventas! Increíble" },
-  { id: "mejor-dia",        emoji: "📈", name: "Mejor Día",           desc: "Superaste tu récord de ventas diarias" },
-  { id: "racha-7",          emoji: "🔥", name: "Racha 7",             desc: "7 días seguidos vendiendo" },
-  { id: "racha-30",         emoji: "⚡", name: "Racha 30",            desc: "30 días seguidos vendiendo" },
-  { id: "todo-cobrado",     emoji: "✅", name: "Todo Cobrado",        desc: "Todos los fiados al día" },
-  { id: "cobrador",         emoji: "💰", name: "Cobrador",            desc: "Cobraste más de S/ 1000 en fiados" },
-  { id: "50-clientes",      emoji: "👥", name: "50 Clientes",         desc: "Llegaste a 50 clientes registrados" },
-  { id: "vendedor-estrella",emoji: "⭐", name: "Vendedor Estrella",   desc: "Meta diaria alcanzada 5 veces en una semana" },
-  { id: "caja-perfecta",    emoji: "🏦", name: "Caja Perfecta",       desc: "Arqueo sin diferencias 3 veces seguidas" },
-  { id: "madrugador",       emoji: "🌅", name: "Madrugador",          desc: "Abriste caja antes de las 7am" },
-  { id: "cliente-feliz",    emoji: "😊", name: "Cliente Feliz",       desc: "Recibiste 5 reseñas de 5 estrellas" },
-  { id: "meta-cumplida",    emoji: "🏆", name: "Meta Cumplida",       desc: "Alcanzaste tu meta mensual" },
+  { id: "primera-venta",    Icon: Target,    name: "Primera Venta",      desc: "Registraste tu primera venta" },
+  { id: "100-ventas",       Icon: Award,     name: "100 Ventas",          desc: "Llegaste a 100 ventas" },
+  { id: "1000-ventas",      Icon: Rocket,    name: "1000 Ventas",         desc: "Mil ventas — increíble" },
+  { id: "mejor-dia",        Icon: TrendingUp, name: "Mejor Día",          desc: "Superaste tu récord de ventas diarias" },
+  { id: "racha-7",          Icon: Flame,     name: "Racha 7",             desc: "7 días seguidos vendiendo" },
+  { id: "racha-30",         Icon: Zap,       name: "Racha 30",            desc: "30 días seguidos vendiendo" },
+  { id: "todo-cobrado",     Icon: Check,     name: "Todo Cobrado",        desc: "Todos los fiados al día" },
+  { id: "cobrador",         Icon: Coins,     name: "Cobrador",            desc: "Cobraste más de S/ 1000 en fiados" },
+  { id: "50-clientes",      Icon: Users,     name: "50 Clientes",         desc: "Llegaste a 50 clientes registrados" },
+  { id: "vendedor-estrella",Icon: Star,      name: "Vendedor Estrella",   desc: "Meta diaria alcanzada 5 veces en una semana" },
+  { id: "caja-perfecta",    Icon: Landmark,  name: "Caja Perfecta",       desc: "Arqueo sin diferencias 3 veces seguidas" },
+  { id: "madrugador",       Icon: Sunrise,   name: "Madrugador",          desc: "Abriste caja antes de las 7am" },
+  { id: "cliente-feliz",    Icon: Smile,     name: "Cliente Feliz",       desc: "Recibiste 5 reseñas de 5 estrellas" },
+  { id: "meta-cumplida",    Icon: Trophy,    name: "Meta Cumplida",       desc: "Alcanzaste tu meta mensual" },
 ];
 
 const LS_ACHIEVEMENTS = "achievements";
@@ -64,9 +68,9 @@ const LS_MONTHLY_GOAL = "monthly-goal";
 // ─── Confetti simple (igual que DailyGoalTracker) ─────────────────────────────
 
 function Confetti() {
-  const colors = ["#00B4A6", "#f97316", "#2dd4bf", "#f4d03f", "#e76f51"];
+  const colors = ["var(--color-primary)", "#f97316", "#2dd4bf", "#f4d03f", "#e76f51"];
   return (
-    <div className="pointer-events-none absolute inset-0 overflow-hidden rounded-2xl z-10">
+    <div className="pointer-events-none absolute inset-0 overflow-hidden rounded-xl z-10">
       {Array.from({ length: 24 }).map((_, i) => {
         const color = colors[i % colors.length];
         return (
@@ -173,20 +177,20 @@ function SemaMesTab() {
       <WeeklyGoalCard sales={[]} />
 
       {/* Card mensual */}
-      <div className="rounded-2xl border border-gray-200 bg-white p-5 space-y-4">
+      <div className="rounded-xl border border-[var(--rule-base)] bg-white p-5 space-y-4">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <span className="flex items-center justify-center w-8 h-8 rounded-lg bg-[#00B4A6]/10">
-              <Calendar className="w-4 h-4 text-[#00B4A6]" />
+            <span className="flex items-center justify-center w-8 h-8 rounded-lg bg-primary/10">
+              <Calendar className="w-4 h-4 text-primary" />
             </span>
-            <span className="text-xs font-semibold text-gray-500 uppercase tracking-wide">
+            <span className="text-xs font-semibold text-gray-500">
               Meta del mes
             </span>
           </div>
           {!editing ? (
             <button
               onClick={() => { setTempGoal(String(monthlyGoal)); setEditing(true); }}
-              className="flex items-center gap-1 text-[10px] font-semibold text-gray-400 hover:text-[#00B4A6] transition-colors px-2 py-1 rounded-lg hover:bg-gray-50"
+              className="flex items-center gap-1 text-[length:var(--ts-2xs)] font-semibold text-gray-400 hover:text-primary transition-colors px-2 py-1 rounded-lg hover:bg-gray-50"
             >
               <Pencil className="w-3 h-3" /> Editar
             </button>
@@ -199,7 +203,7 @@ function SemaMesTab() {
                 onChange={(e) => setTempGoal(e.target.value)}
                 onKeyDown={(e) => e.key === "Enter" && handleSave()}
                 autoFocus
-                className="w-20 px-2 py-1 text-xs rounded-lg border border-gray-200 bg-white text-gray-900 outline-none focus:border-[#00B4A6]"
+                className="w-20 px-2 py-1 text-xs rounded-lg border border-[var(--rule-base)] bg-white text-gray-900 outline-none focus:border-primary"
               />
               <button onClick={handleSave} className="p-1 rounded-lg hover:bg-emerald-50 text-emerald-600">
                 <Check className="w-3.5 h-3.5" />
@@ -214,7 +218,7 @@ function SemaMesTab() {
         {/* Barra de progreso */}
         <div className="h-4 rounded-full bg-gray-100 overflow-hidden">
           <div
-            className={cn("h-full rounded-full transition-all duration-700 ease-out", barColor)}
+            className={cn("h-full rounded-full transition-all duration-[var(--dur-slower)] ease-out", barColor)}
             style={{ width: `${pct}%` }}
           />
         </div>
@@ -234,12 +238,12 @@ function SemaMesTab() {
 
         {/* Mini-calendario */}
         <div>
-          <p className="text-xs font-semibold text-gray-500 mb-2 uppercase tracking-wide">
+          <p className="text-xs font-semibold text-gray-500 mb-2">
             Días con meta alcanzada
           </p>
           <div className="grid grid-cols-7 gap-1">
             {["L","M","M","J","V","S","D"].map((d, i) => (
-              <div key={i} className="text-[9px] text-center text-gray-400 font-bold pb-0.5">{d}</div>
+              <div key={i} className="text-[length:var(--ts-2xs)] text-center text-gray-400 font-bold pb-0.5">{d}</div>
             ))}
             {/* Celdas vacías de offset */}
             {Array.from({ length: calendarDays.offset }).map((_, i) => (
@@ -257,7 +261,7 @@ function SemaMesTab() {
                   key={day}
                   title={key}
                   className={cn(
-                    "aspect-square rounded flex items-center justify-center text-[10px] font-semibold",
+                    "aspect-square rounded flex items-center justify-center text-[length:var(--ts-2xs)] font-semibold",
                     hit
                       ? "bg-emerald-500 text-white"
                       : isPast
@@ -335,7 +339,7 @@ function LogrosTab() {
   const totalUnlocked = Object.keys(unlocked).length;
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-6">
       {/* Resumen */}
       <div className="flex items-center justify-between">
         <p className="text-sm text-gray-500">
@@ -346,7 +350,7 @@ function LogrosTab() {
         </p>
         <div className="h-2 w-32 rounded-full bg-gray-100 overflow-hidden">
           <div
-            className="h-full rounded-full bg-[#00B4A6] transition-all duration-500"
+            className="h-full rounded-full bg-primary transition-all duration-[var(--dur-slow)]"
             style={{ width: `${(totalUnlocked / ACHIEVEMENTS_DEF.length) * 100}%` }}
           />
         </div>
@@ -362,19 +366,26 @@ function LogrosTab() {
               <div
                 key={a.id}
                 className={cn(
-                  "relative rounded-2xl border p-4 flex flex-col items-center text-center gap-2 transition-all duration-300",
+                  "relative rounded-xl border p-4 flex flex-col items-center text-center gap-2 transition-all duration-[var(--dur-base)]",
                   isUnlocked
-                    ? "border-[#00B4A6]/40 bg-gradient-to-b from-[#00B4A6]/5 to-[#00B4A6]/10 shadow-sm"
-                    : "border-gray-200 bg-gray-50 opacity-40"
+                    ? "border-[var(--text-primary)] bg-[var(--surface-raised)] elev-1"
+                    : "border-[var(--rule-base)] bg-[var(--surface-sunken)] opacity-40"
                 )}
               >
                 {/* Efecto brillo si desbloqueado */}
                 {isUnlocked && (
-                  <div className="absolute inset-0 rounded-2xl overflow-hidden pointer-events-none">
-                    <div className="absolute -inset-full animate-[spin_4s_linear_infinite] bg-gradient-conic from-transparent via-[#00B4A6]/10 to-transparent" />
+                  <div className="absolute inset-0 rounded-xl overflow-hidden pointer-events-none">
+                    <div className="absolute -inset-full animate-[spin_4s_linear_infinite] bg-gradient-conic from-transparent via-primary/10 to-transparent" />
                   </div>
                 )}
-                <span className="text-3xl leading-none">{a.emoji}</span>
+                <div className={cn(
+                  "h-10 w-10 shrink-0 rounded-lg flex items-center justify-center border",
+                  isUnlocked
+                    ? "bg-white border-primary/30 text-primary"
+                    : "bg-gray-100 border-[var(--rule-base)] text-gray-400",
+                )}>
+                  <a.Icon className="h-5 w-5" strokeWidth={1.5} aria-hidden="true" />
+                </div>
                 <div>
                   <p className={cn(
                     "text-xs font-bold leading-tight",
@@ -382,16 +393,16 @@ function LogrosTab() {
                   )}>
                     {a.name}
                   </p>
-                  <p className="text-[10px] text-gray-400 mt-0.5 leading-tight">
+                  <p className="text-[length:var(--ts-2xs)] text-gray-400 mt-0.5 leading-tight">
                     {a.desc}
                   </p>
                 </div>
                 {isUnlocked ? (
-                  <span className="text-[9px] font-semibold text-[#00B4A6] bg-[#00B4A6]/10 px-2 py-0.5 rounded-full">
+                  <span className="text-[length:var(--ts-2xs)] font-semibold text-primary bg-primary/10 px-2 py-0.5 rounded-full">
                     {unlocked[a.id]}
                   </span>
                 ) : (
-                  <span className="text-[9px] font-semibold text-gray-400 uppercase tracking-wide">
+                  <span className="text-[length:var(--ts-2xs)] font-semibold text-gray-400">
                     Bloqueado
                   </span>
                 )}
@@ -448,14 +459,14 @@ export default function MetasLogrosModule({ tenantId: _tenantId }: Props) {
   }, [goals, streak]);
 
   const _kpiCards = [
-    { label: "Metas activas",   value: String(kpis.active),   icon: Target,      color: "text-[#00B4A6]", bg: "bg-[#00B4A6]/10" },
+    { label: "Metas activas",   value: String(kpis.active),   icon: Target,      color: "text-primary", bg: "bg-primary/10" },
     { label: "Logradas",        value: String(kpis.achieved), icon: Trophy,       color: "text-amber-600",   bg: "bg-amber-50"        },
     { label: "Racha (días)",    value: String(kpis.streak),   icon: Flame,        color: "text-orange-600", bg: "bg-orange-50"      },
-    { label: "Tasa de éxito",   value: `${kpis.rate}%`,       icon: TrendingUp,   color: "text-blue-600",     bg: "bg-blue-50"          },
+    { label: "Tasa de éxito",   value: `${kpis.rate}%`,       icon: TrendingUp,   color: "text-emerald-600",     bg: "bg-emerald-50"          },
   ] as const;
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-6">
       <AdminModuleHeader
         title="Metas y Logros"
         description="Seguimiento de objetivos, racha diaria y logros desbloqueados"

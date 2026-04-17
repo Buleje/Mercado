@@ -26,7 +26,7 @@ const CATEGORIES: Category[] = [
   {
     name:     "Limpieza",
     keywords: ["jabon", "jabón", "detergente", "lejia", "lejía", "cloro", "suavizante", "desinfectante", "limpiador", "escoba", "trapeador", "esponja", "guante", "bolsa basura"],
-    color:    "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400",
+    color:    "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400",
   },
   {
     name:     "Bebidas",
@@ -36,12 +36,12 @@ const CATEGORIES: Category[] = [
   {
     name:     "Lacteos",
     keywords: ["leche", "yogurt", "queso", "mantequilla", "lacteo", "lácteo", "yogur", "manjar", "crema"],
-    color:    "bg-violet-100 text-violet-700 dark:bg-violet-900/30 dark:text-violet-400",
+    color:    "bg-[var(--surface-sunken)] text-[var(--text-primary)]",
   },
   {
     name:     "Golosinas",
     keywords: ["galleta", "chocolate", "caramelo", "chicle", "chupete", "caramelos", "dulce", "bombom", "chifle", "snack", "chips", "wafer"],
-    color:    "bg-pink-100 text-pink-700 dark:bg-pink-900/30 dark:text-pink-400",
+    color:    "bg-[var(--surface-sunken)] text-[var(--text-primary)]",
   },
 ];
 

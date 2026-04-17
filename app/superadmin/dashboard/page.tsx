@@ -140,7 +140,7 @@ export default function DashboardPage() {
             accent="#f59e0b"
           />
           <SAStatCard
-            icon={<Users className="w-4 h-4 text-blue-500" />}
+            icon={<Users className="w-4 h-4 text-emerald-500" />}
             label="Usuarios admin"
             value={data.totals.totalAdminUsers.toLocaleString("es-PE")}
             accent="#3b82f6"
@@ -182,7 +182,7 @@ export default function DashboardPage() {
             },
             {
               href: "/superadmin/activity",
-              icon: <Activity className="w-6 h-6 text-blue-500" />,
+              icon: <Activity className="w-6 h-6 text-emerald-500" />,
               label: "Log de actividad",
               desc: "Auditoría completa de acciones en la plataforma",
             },

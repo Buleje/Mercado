@@ -241,7 +241,7 @@ export default function VoiceCommandPOS({ onAddProduct, onCheckout, className }:
           "border focus:outline-none focus:ring-2 focus:ring-primary/40",
           voiceState === "listening"
             ? "bg-primary text-white border-primary animate-pulse"
-            : "bg-white dark:bg-card border-gray-200 dark:border-card-border text-gray-700 dark:text-foreground hover:border-primary"
+            : "bg-white dark:bg-card border-[var(--rule-base)] dark:border-card-border text-gray-700 dark:text-foreground hover:border-primary"
         )}
         aria-label="Venta por voz"
       >
@@ -251,9 +251,9 @@ export default function VoiceCommandPOS({ onAddProduct, onCheckout, className }:
 
       {/* Panel */}
       {isOpen && (
-        <div className="absolute right-0 top-full mt-2 z-50 w-80 bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl shadow-xl overflow-hidden">
+        <div className="absolute right-0 top-full mt-2 z-50 w-80 bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl overflow-hidden">
           {/* Header */}
-          <div className="flex items-center justify-between px-4 py-3 border-b border-gray-100 dark:border-card-border bg-gray-50 dark:bg-gray-900/50">
+          <div className="flex items-center justify-between px-4 py-3 border-b border-[var(--rule-soft)] dark:border-card-border bg-gray-50 dark:bg-gray-900/50">
             <div className="flex items-center gap-2">
               <Volume2 className="h-4 w-4 text-primary" />
               <span className="text-sm font-semibold text-gray-900 dark:text-foreground">Venta por voz</span>
@@ -274,7 +274,7 @@ export default function VoiceCommandPOS({ onAddProduct, onCheckout, className }:
                 className={cn(
                   "w-20 h-20 rounded-full flex items-center justify-center transition-all focus:outline-none focus:ring-4",
                   voiceState === "listening"
-                    ? "bg-primary text-white shadow-lg shadow-primary/40 animate-pulse focus:ring-primary/30"
+                    ? "bg-primary text-white animate-pulse focus:ring-primary/30"
                     : voiceState === "processing"
                     ? "bg-amber-400 text-white cursor-not-allowed"
                     : voiceState === "success"
@@ -318,7 +318,7 @@ export default function VoiceCommandPOS({ onAddProduct, onCheckout, className }:
 
             {/* Transcript */}
             {transcript && (
-              <div className="px-3 py-2 rounded-xl bg-gray-50 dark:bg-gray-900/50 border border-gray-100 dark:border-card-border">
+              <div className="px-3 py-2 rounded-xl bg-gray-50 dark:bg-gray-900/50 border border-[var(--rule-soft)] dark:border-card-border">
                 <p className="text-xs text-gray-500 dark:text-muted mb-0.5">Escuche:</p>
                 <p className="text-sm text-gray-800 dark:text-foreground italic">&ldquo;{transcript}&rdquo;</p>
               </div>
@@ -333,7 +333,7 @@ export default function VoiceCommandPOS({ onAddProduct, onCheckout, className }:
 
             {/* Commands hint */}
             <div className="space-y-1.5">
-              <p className="text-xs font-semibold text-gray-500 dark:text-muted uppercase tracking-wide">Ejemplos de comandos</p>
+              <p className="text-xs font-semibold text-gray-500 dark:text-muted">Ejemplos de comandos</p>
               {[
                 '"2 kilos de arroz"',
                 '"agregar aceite"',

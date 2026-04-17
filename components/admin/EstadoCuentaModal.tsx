@@ -163,9 +163,9 @@ export default function EstadoCuentaModal({ customerPhone, customerName, onClose
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-      <div className="bg-white dark:bg-card rounded-2xl shadow-2xl max-w-2xl w-full max-h-[90vh] flex flex-col">
+      <div className="bg-white dark:bg-card rounded-xl max-w-2xl w-full max-h-[90vh] flex flex-col">
         {/* Header */}
-        <div className="flex items-center justify-between p-4 border-b border-gray-100 dark:border-card-border shrink-0">
+        <div className="flex items-center justify-between p-4 border-b border-[var(--rule-soft)] dark:border-card-border shrink-0">
           <div>
             <h3 className="font-bold text-gray-900 dark:text-foreground flex items-center gap-2">
               <CreditCard className="h-5 w-5 text-primary" />
@@ -203,31 +203,31 @@ export default function EstadoCuentaModal({ customerPhone, customerName, onClose
                 <div className="bg-red-50 dark:bg-red-950/30 border border-red-200 dark:border-red-800 rounded-xl p-3">
                   <div className="flex items-center gap-1.5 mb-1">
                     <Banknote className="h-3.5 w-3.5 text-red-500" />
-                    <p className="text-[10px] font-bold text-red-600/70 uppercase">Fiados</p>
+                    <p className="text-[length:var(--ts-2xs)] font-bold text-red-600/70 uppercase">Fiados</p>
                   </div>
                   <p className="text-base font-extrabold text-red-700 dark:text-red-400">{fmt(data.resumen.totalFiados)}</p>
-                  <p className="text-[10px] text-red-500/70">{data.resumen.fiadosActivos} activos</p>
+                  <p className="text-[length:var(--ts-2xs)] text-red-500/70">{data.resumen.fiadosActivos} activos</p>
                 </div>
                 <div className="bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800 rounded-xl p-3">
                   <div className="flex items-center gap-1.5 mb-1">
                     <CreditCard className="h-3.5 w-3.5 text-amber-500" />
-                    <p className="text-[10px] font-bold text-amber-600/70 uppercase">Préstamos</p>
+                    <p className="text-[length:var(--ts-2xs)] font-bold text-amber-600/70 uppercase">Préstamos</p>
                   </div>
                   <p className="text-base font-extrabold text-amber-700 dark:text-amber-400">{fmt(data.resumen.totalPrestamos)}</p>
-                  <p className="text-[10px] text-amber-500/70">{data.resumen.cuotasPendientes} cuotas</p>
+                  <p className="text-[length:var(--ts-2xs)] text-amber-500/70">{data.resumen.cuotasPendientes} cuotas</p>
                 </div>
-                <div className="bg-violet-50 dark:bg-violet-950/30 border border-violet-200 dark:border-violet-800 rounded-xl p-3">
+                <div className="bg-[var(--surface-sunken)] border border-[var(--rule-base)] rounded-xl p-3">
                   <div className="flex items-center gap-1.5 mb-1">
-                    <Star className="h-3.5 w-3.5 text-violet-500" />
-                    <p className="text-[10px] font-bold text-violet-600/70 uppercase">Puntos</p>
+                    <Star className="h-3.5 w-3.5 text-[var(--text-secondary)]" />
+                    <p className="text-[length:var(--ts-2xs)] font-bold text-[var(--text-secondary)]/70 uppercase">Puntos</p>
                   </div>
-                  <p className="text-base font-extrabold text-violet-700 dark:text-violet-400">{data.resumen.puntosLealtad}</p>
-                  <p className="text-[10px] text-violet-500/70 capitalize">{data.resumen.tierLealtad}</p>
+                  <p className="text-base font-extrabold text-[var(--text-secondary)] dark:text-[var(--text-primary)]">{data.resumen.puntosLealtad}</p>
+                  <p className="text-[length:var(--ts-2xs)] text-[var(--text-secondary)]/70 capitalize">{data.resumen.tierLealtad}</p>
                 </div>
                 <div className="bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-800 rounded-xl p-3">
                   <div className="flex items-center gap-1.5 mb-1">
                     <ShoppingBag className="h-3.5 w-3.5 text-emerald-500" />
-                    <p className="text-[10px] font-bold text-emerald-600/70 uppercase">Últ. compra</p>
+                    <p className="text-[length:var(--ts-2xs)] font-bold text-emerald-600/70 uppercase">Últ. compra</p>
                   </div>
                   <p className="text-base font-extrabold text-emerald-700 dark:text-emerald-400">
                     {fmtRelative(data.resumen.ultimaCompra)}
@@ -237,14 +237,14 @@ export default function EstadoCuentaModal({ customerPhone, customerName, onClose
 
               {/* Fiados table */}
               {data.fiados.length > 0 && (
-                <div className="bg-white dark:bg-surface border border-gray-200 dark:border-card-border rounded-xl p-4">
+                <div className="bg-white dark:bg-surface border border-[var(--rule-base)] dark:border-card-border rounded-xl p-4">
                   <h4 className="font-bold text-sm text-gray-900 dark:text-foreground mb-3 flex items-center gap-2">
                     <Banknote className="h-4 w-4 text-red-500" /> Fiados pendientes
                   </h4>
                   <div className="overflow-x-auto">
                     <table className="w-full text-xs">
                       <thead>
-                        <tr className="border-b border-gray-200 dark:border-card-border">
+                        <tr className="border-b border-[var(--rule-base)] dark:border-card-border">
                           <th className="text-left py-2 font-bold text-gray-400 uppercase">Descripción</th>
                           <th className="text-right py-2 font-bold text-gray-400 uppercase">Total</th>
                           <th className="text-right py-2 font-bold text-gray-400 uppercase">Saldo</th>
@@ -264,7 +264,7 @@ export default function EstadoCuentaModal({ customerPhone, customerName, onClose
                         ))}
                       </tbody>
                       <tfoot>
-                        <tr className="border-t-2 border-gray-300 dark:border-card-border font-bold">
+                        <tr className="border-t-2 border-[var(--rule-base)] dark:border-card-border font-bold">
                           <td className="py-2 text-gray-700 dark:text-foreground">Total</td>
                           <td className="py-2 text-right text-gray-500 dark:text-muted">{fmt(data.fiados.reduce((s, f) => s + f.total, 0))}</td>
                           <td className="py-2 text-right text-red-600 dark:text-red-400">{fmt(data.resumen.totalFiados)}</td>
@@ -278,7 +278,7 @@ export default function EstadoCuentaModal({ customerPhone, customerName, onClose
 
               {/* Prestamos table */}
               {data.prestamos.length > 0 && (
-                <div className="bg-white dark:bg-surface border border-gray-200 dark:border-card-border rounded-xl p-4">
+                <div className="bg-white dark:bg-surface border border-[var(--rule-base)] dark:border-card-border rounded-xl p-4">
                   <h4 className="font-bold text-sm text-gray-900 dark:text-foreground mb-3 flex items-center gap-2">
                     <CreditCard className="h-4 w-4 text-amber-500" /> Préstamos activos
                   </h4>
@@ -288,7 +288,7 @@ export default function EstadoCuentaModal({ customerPhone, customerName, onClose
                         <span className="text-xs font-bold text-gray-700 dark:text-foreground">
                           Préstamo {fmt(p.monto)} — Saldo: <span className="text-amber-600 dark:text-amber-400">{fmt(p.saldoPendiente)}</span>
                         </span>
-                        <span className="text-[10px] text-gray-400">{fmtDate(p.fechaCreacion)}</span>
+                        <span className="text-[length:var(--ts-2xs)] text-gray-400">{fmtDate(p.fechaCreacion)}</span>
                       </div>
                       {p.cuotasPendientes.length > 0 && (
                         <div className="bg-gray-50 dark:bg-card rounded-lg p-2 space-y-1">
@@ -310,7 +310,7 @@ export default function EstadoCuentaModal({ customerPhone, customerName, onClose
 
               {/* Últimas compras */}
               {data.ultimasCompras.length > 0 && (
-                <div className="bg-white dark:bg-surface border border-gray-200 dark:border-card-border rounded-xl p-4">
+                <div className="bg-white dark:bg-surface border border-[var(--rule-base)] dark:border-card-border rounded-xl p-4">
                   <h4 className="font-bold text-sm text-gray-900 dark:text-foreground mb-3 flex items-center gap-2">
                     <ShoppingBag className="h-4 w-4 text-primary" /> Últimas compras
                   </h4>
@@ -319,7 +319,7 @@ export default function EstadoCuentaModal({ customerPhone, customerName, onClose
                       <div key={c.id} className="flex items-center justify-between text-xs py-1.5 border-b border-gray-50 dark:border-card-border last:border-0">
                         <span className="text-gray-500 dark:text-muted">{fmtDate(c.fecha)}</span>
                         <span className="text-gray-500 dark:text-muted capitalize">{c.metodoPago ?? "efectivo"}</span>
-                        <span className={cn("text-[10px] font-bold px-2 py-0.5 rounded-full",
+                        <span className={cn("text-[length:var(--ts-2xs)] font-bold px-2 py-0.5 rounded-full",
                           c.status === "entregado" ? "bg-emerald-50 text-emerald-700 dark:bg-emerald-950/30 dark:text-emerald-400" :
                           c.status === "cancelado" ? "bg-red-50 text-red-600 dark:bg-red-950/30 dark:text-red-400" :
                           "bg-amber-50 text-amber-700 dark:bg-amber-950/30 dark:text-amber-400"
@@ -337,18 +337,18 @@ export default function EstadoCuentaModal({ customerPhone, customerName, onClose
         </div>
 
         {/* Footer actions */}
-        <div className="flex gap-2 p-4 border-t border-gray-100 dark:border-card-border shrink-0">
+        <div className="flex gap-2 p-4 border-t border-[var(--rule-soft)] dark:border-card-border shrink-0">
           <button
             onClick={handlePrint}
             disabled={!data}
-            className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-primary text-white text-sm font-bold hover:bg-primary/90 transition-colors disabled:opacity-50"
+            className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg bg-primary text-white text-sm font-bold hover:bg-primary/90 transition-colors disabled:opacity-50"
           >
             <Printer className="h-4 w-4" /> Imprimir
           </button>
           <button
             onClick={handleWhatsApp}
             disabled={!data}
-            className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-[#25D366] text-white text-sm font-bold hover:bg-[#1ebe5d] transition-colors disabled:opacity-50"
+            className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg bg-[#25D366] text-white text-sm font-bold hover:bg-[#1ebe5d] transition-colors disabled:opacity-50"
           >
             <MessageCircle className="h-4 w-4" /> WhatsApp
           </button>

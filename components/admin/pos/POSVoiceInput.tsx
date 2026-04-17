@@ -266,8 +266,8 @@ export default function POSVoiceInput({ products, onAddToCart, onHighlightProduc
         className={cn(
           "relative h-10 w-10 rounded-full flex items-center justify-center transition-all border-2 shrink-0",
           isListening
-            ? "bg-red-500 border-red-400 text-white animate-pulse shadow-lg shadow-red-500/30"
-            : "bg-white dark:bg-card border-gray-200 dark:border-card-border text-gray-500 dark:text-muted hover:border-primary hover:text-primary"
+            ? "bg-red-500 border-red-400 text-white animate-pulse"
+            : "bg-white dark:bg-card border-[var(--rule-base)] dark:border-card-border text-gray-500 dark:text-muted hover:border-primary hover:text-primary"
         )}
         title={isListening ? "Detener (Ctrl+M)" : "Dictar por voz (Ctrl+M)"}
       >
@@ -276,9 +276,9 @@ export default function POSVoiceInput({ products, onAddToCart, onHighlightProduc
 
       {/* Voice panel */}
       {showPanel && (
-        <div className="absolute top-12 right-0 z-50 w-80 bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl shadow-xl overflow-hidden">
+        <div className="absolute top-12 right-0 z-50 w-80 bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl overflow-hidden">
           {/* Panel header */}
-          <div className="px-3 py-2.5 border-b border-gray-100 dark:border-card-border flex items-center justify-between">
+          <div className="px-3 py-2.5 border-b border-[var(--rule-soft)] dark:border-card-border flex items-center justify-between">
             <div className="flex items-center gap-2">
               <Mic className={cn("h-4 w-4", isListening ? "text-red-500" : "text-gray-400")} />
               <span className="text-xs font-bold text-gray-700 dark:text-foreground">
@@ -318,7 +318,7 @@ export default function POSVoiceInput({ products, onAddToCart, onHighlightProduc
               </p>
             )}
             {isListening && (
-              <p className="text-[10px] text-gray-400 mt-1">
+              <p className="text-[length:var(--ts-2xs)] text-gray-400 mt-1">
                 Diga &quot;listo&quot; para confirmar o &quot;cancelar&quot; para cancelar
               </p>
             )}
@@ -340,7 +340,7 @@ export default function POSVoiceInput({ products, onAddToCart, onHighlightProduc
                   <p className="text-xs font-bold text-red-700 dark:text-red-400 flex items-center gap-1.5">
                     <HelpCircle className="h-3.5 w-3.5" /> Micrófono bloqueado
                   </p>
-                  <p className="text-[11px] text-red-600 dark:text-red-300 leading-tight">
+                  <p className="text-[length:var(--ts-xs)] text-red-600 dark:text-red-300 leading-tight">
                     Haz clic en el icono del candado 🔒 en la barra de direcciones superior y selecciona <strong>Permitir</strong> para el micrófono.
                   </p>
                 </div>
@@ -375,8 +375,8 @@ export default function POSVoiceInput({ products, onAddToCart, onHighlightProduc
 
           {/* Recognized items */}
           {items.length > 0 && (
-            <div className="px-3 py-2.5 border-t border-gray-100 dark:border-card-border">
-              <p className="text-[10px] font-bold text-gray-500 dark:text-muted uppercase tracking-wider mb-2">
+            <div className="px-3 py-2.5 border-t border-[var(--rule-soft)] dark:border-card-border">
+              <p className="text-[length:var(--ts-2xs)] font-bold text-gray-500 dark:text-muted mb-2">
                 Productos reconocidos
               </p>
               <div className="space-y-1.5">
@@ -394,7 +394,7 @@ export default function POSVoiceInput({ products, onAddToCart, onHighlightProduc
                       <p className="text-xs font-semibold text-gray-800 dark:text-foreground truncate">
                         {item.productName}
                       </p>
-                      <p className="text-[10px] text-gray-400 dark:text-muted">
+                      <p className="text-[length:var(--ts-2xs)] text-gray-400 dark:text-muted">
                         Cantidad: {item.quantity}
                         {item.confidence < 0.8 && " · Baja confianza"}
                       </p>
@@ -426,8 +426,8 @@ export default function POSVoiceInput({ products, onAddToCart, onHighlightProduc
           )}
 
           {/* Keyboard shortcut hint */}
-          <div className="px-3 py-1.5 bg-gray-50 dark:bg-surface border-t border-gray-100 dark:border-card-border text-center">
-            <kbd className="text-[10px] bg-gray-200 dark:bg-gray-700 text-gray-500 px-1.5 py-0.5 rounded font-mono">
+          <div className="px-3 py-1.5 bg-gray-50 dark:bg-surface border-t border-[var(--rule-soft)] dark:border-card-border text-center">
+            <kbd className="text-[length:var(--ts-2xs)] bg-gray-200 dark:bg-gray-700 text-gray-500 px-1.5 py-0.5 rounded font-mono">
               Ctrl+M
             </kbd>
           </div>

@@ -52,7 +52,8 @@ export async function POST(req: NextRequest, { params }: RouteParams) {
     const auth = await requireAdmin(req, ["admin", "almacenero"]);
     if (auth instanceof NextResponse) return auth;
 
-    const body = await req.json();
+    const body = await req.json().catch((err) => { logger.error("[marketplace/products/[id]/images] parse JSON body failed", { error: String(err) }); return null; });
+    if (!body) return NextResponse.json({ error: "Invalid JSON" }, { status: 400 });
     const parsed = PostSchema.safeParse(body);
     if (!parsed.success) {
       return NextResponse.json({ error: "Datos inválidos", issues: parsed.error.issues }, { status: 400 });
@@ -65,7 +66,7 @@ export async function POST(req: NextRequest, { params }: RouteParams) {
 
     invalidateByPrefix(`marketplace:product:${productId}`);
 
-    logActivity("create", "product_image", `productId:${productId}`, image.id, auth.username, undefined, auth.tenantId).catch(() => {});
+    logActivity("create", "product_image", `productId:${productId}`, image.id, auth.username, undefined, auth.tenantId).catch((err) => logger.error("[marketplace/products/[id]/images] activity log failed", { error: String(err), tenantId: auth.tenantId }));
 
     return NextResponse.json({ data: image }, { status: 201 });
   } catch (err) {
@@ -95,7 +96,7 @@ export async function DELETE(req: NextRequest, { params }: RouteParams) {
     await ProductImagesDB.delete(auth.tenantId, imageId);
     invalidateByPrefix(`marketplace:product:${productId}`);
 
-    logActivity("delete", "product_image", `productId:${productId}`, imageId, auth.username, undefined, auth.tenantId).catch(() => {});
+    logActivity("delete", "product_image", `productId:${productId}`, imageId, auth.username, undefined, auth.tenantId).catch((err) => logger.error("[marketplace/products/[id]/images] activity log failed", { error: String(err), tenantId: auth.tenantId }));
 
     return NextResponse.json({ ok: true });
   } catch (err) {

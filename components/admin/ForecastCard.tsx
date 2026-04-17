@@ -67,16 +67,16 @@ export default function ForecastCard({ className }: Props) {
 
   return (
     <div className={cn(
-      "bg-white dark:bg-card rounded-2xl border border-gray-200 dark:border-card-border p-5",
+      "bg-white dark:bg-card rounded-xl border border-[var(--rule-base)] dark:border-card-border p-5",
       className,
     )}>
       <div className="flex items-center justify-between mb-4">
-        <h3 className="text-xs font-bold text-gray-500 dark:text-muted uppercase tracking-wide">
+        <h3 className="text-xs font-bold text-gray-500 dark:text-muted">
           Prediccion de la semana
         </h3>
         {result && (
           <span className={cn(
-            "text-[10px] font-bold px-2 py-0.5 rounded-full",
+            "text-[length:var(--ts-2xs)] font-bold px-2 py-0.5 rounded-full",
             confidenceStyle[result.confidence],
           )}>
             Confianza {result.confidence}
@@ -100,7 +100,7 @@ export default function ForecastCard({ className }: Props) {
 
       {/* Result */}
       {!loading && result && (
-        <div className="space-y-4">
+        <div className="space-y-6">
           {/* Revenue headline */}
           <div>
             <p className="text-2xl font-extrabold text-gray-900 dark:text-foreground">
@@ -128,11 +128,11 @@ export default function ForecastCard({ className }: Props) {
                   <div key={day.date} className="flex-1 flex flex-col items-center gap-1">
                     <div className="w-full relative" style={{ height: "48px" }}>
                       <div
-                        className="absolute bottom-0 left-0 right-0 rounded-t-sm bg-[#00B4A6]/70 dark:bg-emerald-600/70 transition-all duration-500"
+                        className="absolute bottom-0 left-0 right-0 rounded-t-sm bg-[#00B4A6]/70 dark:bg-emerald-600/70 transition-all duration-[var(--dur-slow)]"
                         style={{ height: `${Math.max(pct, 4)}%` }}
                       />
                     </div>
-                    <span className="text-[9px] font-semibold text-gray-400 dark:text-muted">
+                    <span className="text-[length:var(--ts-2xs)] font-semibold text-gray-400 dark:text-muted">
                       {day.dayName.slice(0, 2)}
                     </span>
                   </div>
@@ -144,7 +144,7 @@ export default function ForecastCard({ className }: Props) {
           {/* Best / Worst day */}
           <div className="flex gap-3">
             <div className="flex-1 bg-emerald-50 dark:bg-emerald-950/20 rounded-xl p-2.5 text-center">
-              <p className="text-[10px] text-emerald-600 dark:text-emerald-400 font-semibold mb-0.5">
+              <p className="text-[length:var(--ts-2xs)] text-emerald-600 dark:text-emerald-400 font-semibold mb-0.5">
                 Mejor dia
               </p>
               <p className="text-sm font-extrabold text-emerald-700 dark:text-emerald-300">
@@ -152,7 +152,7 @@ export default function ForecastCard({ className }: Props) {
               </p>
             </div>
             <div className="flex-1 bg-red-50 dark:bg-red-950/20 rounded-xl p-2.5 text-center">
-              <p className="text-[10px] text-red-500 dark:text-red-400 font-semibold mb-0.5">
+              <p className="text-[length:var(--ts-2xs)] text-red-500 dark:text-red-400 font-semibold mb-0.5">
                 Peor dia
               </p>
               <p className="text-sm font-extrabold text-red-600 dark:text-red-300">

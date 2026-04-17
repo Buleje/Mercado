@@ -128,7 +128,7 @@ export default function SalesHeatmap() {
         </div>
 
         <div className="flex items-center gap-2">
-          <div className="flex gap-1 rounded-lg border border-gray-200 dark:border-gray-700 p-1">
+          <div className="flex gap-1 rounded-lg border border-[var(--rule-base)] p-1">
             {(["7d", "30d", "90d"] as const).map((p) => (
               <button
                 key={p}
@@ -146,7 +146,7 @@ export default function SalesHeatmap() {
           </div>
           <button
             onClick={load}
-            className="flex h-8 w-8 items-center justify-center rounded-lg border border-gray-200 dark:border-gray-700 text-gray-500 hover:bg-gray-50 dark:hover:bg-gray-800"
+            className="flex h-8 w-8 items-center justify-center rounded-lg border border-[var(--rule-base)] text-gray-500 hover:bg-gray-50 dark:hover:bg-gray-800"
           >
             <RefreshCw className="h-4 w-4" />
           </button>
@@ -166,7 +166,7 @@ export default function SalesHeatmap() {
         {/* Tooltip */}
         {tooltip && (
           <div
-            className="pointer-events-none fixed z-50 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 px-3 py-2 text-xs shadow-lg"
+            className="pointer-events-none fixed z-50 rounded-lg border border-[var(--rule-base)] bg-white dark:bg-gray-900 px-3 py-2 text-xs"
             style={{ left: tooltip.x + 12, top: tooltip.y - 40 }}
           >
             <p className="font-medium text-gray-800 dark:text-gray-200">

@@ -8,8 +8,10 @@ import {
   Loader2,
   ChevronDown,
   Check,
+  DollarSign,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { getProductCategoryIcon } from "@/components/marketplace/_category-icons";
 
 /* ── Tipos públicos ─────────────────────────────────────────────────────────── */
 
@@ -39,12 +41,12 @@ export interface MarketplaceFiltersProps {
 /* ── Constantes ─────────────────────────────────────────────────────────────── */
 
 const PRODUCT_CATEGORIES = [
-  { id: null,        label: "Todos", emoji: "🔥" },
-  { id: "abarrotes", label: "Abarrotes", emoji: "🛒" },
-  { id: "bebidas",   label: "Bebidas", emoji: "🥤" },
-  { id: "limpieza",  label: "Limpieza", emoji: "🧹" },
-  { id: "frescos",   label: "Frescos", emoji: "🥬" },
-  { id: "otros",     label: "Otros", emoji: "📦" },
+  { id: null,        label: "Todos", key: "todos" },
+  { id: "abarrotes", label: "Abarrotes", key: "abarrotes" },
+  { id: "bebidas",   label: "Bebidas", key: "bebidas" },
+  { id: "limpieza",  label: "Limpieza", key: "limpieza" },
+  { id: "frescos",   label: "Frescos", key: "frescos" },
+  { id: "otros",     label: "Otros", key: "otros" },
 ] as const;
 
 const SORT_OPTIONS: { value: SortBy; label: string; short: string }[] = [
@@ -213,28 +215,30 @@ function FiltersDrawer({
 
   return (
     <div className="fixed inset-0 z-50 flex items-end sm:hidden" role="dialog" aria-modal="true" aria-label="Filtros">
+      {/* Backdrop */}
       <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={onClose} aria-hidden="true" />
-      <div className="relative w-full rounded-t-3xl bg-white px-5 pb-8 pt-5 dark:bg-gray-950 shadow-2xl animate-in slide-in-from-bottom-4 duration-300">
-        <div className="mx-auto mb-4 h-1 w-10 rounded-full bg-gray-200 dark:bg-gray-700" aria-hidden="true" />
-        <button
-          type="button"
-          onClick={onClose}
-          className="absolute right-4 top-4 flex h-8 w-8 items-center justify-center rounded-full bg-gray-100 text-gray-600 hover:bg-gray-200 dark:bg-gray-800 dark:text-gray-300"
-          aria-label="Cerrar filtros"
-        >
-          <X className="h-4 w-4" />
-        </button>
 
-        <div className="flex flex-col gap-5">
-          <div className="flex items-center justify-between">
+      {/* Sheet — 60-80% viewport height, scrollable body, sticky action bar */}
+      <div className="relative w-full max-h-[80vh] min-h-[60vh] rounded-t-3xl bg-white dark:bg-gray-950 shadow-2xl animate-in slide-in-from-bottom-4 duration-300 flex flex-col">
+        {/* Drag handle */}
+        <div className="shrink-0 px-5 pt-5 pb-0">
+          <div className="mx-auto mb-4 h-1 w-10 rounded-full bg-gray-200 dark:bg-gray-700" aria-hidden="true" />
+          {/* Header */}
+          <div className="flex items-center justify-between mb-1">
             <span className="text-sm font-bold text-gray-800 dark:text-white">Filtros</span>
-            {activeCount > 0 && (
-              <button type="button" onClick={onReset} className="text-xs font-semibold text-gray-400 underline hover:text-red-500">
-                Limpiar
-              </button>
-            )}
+            <button
+              type="button"
+              onClick={onClose}
+              className="flex h-8 w-8 items-center justify-center rounded-full bg-gray-100 text-gray-600 hover:bg-gray-200 dark:bg-gray-800 dark:text-gray-300"
+              aria-label="Cerrar filtros"
+            >
+              <X className="h-4 w-4" />
+            </button>
           </div>
+        </div>
 
+        {/* Scrollable content */}
+        <div className="flex-1 overflow-y-auto px-5 py-4 space-y-5">
           {/* Sort */}
           <div>
             <label htmlFor="mobile-sort" className="mb-1.5 block text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">
@@ -261,14 +265,19 @@ function FiltersDrawer({
                   key={String(cat.id)}
                   type="button"
                   onClick={() => onChange({ productCategory: cat.id })}
+                  aria-pressed={filters.productCategory === cat.id}
                   className={cn(
-                    "rounded-full px-3 py-1.5 text-sm font-semibold transition-colors",
+                    "inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-sm font-semibold transition-colors",
                     filters.productCategory === cat.id
-                      ? "bg-primary text-white shadow-sm"
-                      : "border border-gray-200 bg-white text-gray-600 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300"
+                      ? "bg-gray-900 dark:bg-white text-white dark:text-gray-900"
+                      : "border border-gray-200 bg-white text-gray-600 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300 hover:border-gray-400"
                   )}
                 >
-                  {cat.emoji} {cat.label}
+                  {(() => {
+                    const CatIcon = getProductCategoryIcon(cat.key);
+                    return <CatIcon className="h-3.5 w-3.5" strokeWidth={1.75} aria-hidden="true" />;
+                  })()}
+                  {cat.label}
                 </button>
               ))}
             </div>
@@ -290,27 +299,44 @@ function FiltersDrawer({
             type="button"
             onClick={onRequestGeo}
             disabled={geoLoading}
+            aria-pressed={filters.nearbyEnabled}
+            aria-label={geoLoading ? "Obteniendo ubicación..." : filters.nearbyEnabled ? "Desactivar tiendas cercanas" : "Mostrar tiendas cercanas"}
             className={cn(
-              "inline-flex min-h-11 items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-sm font-bold transition-colors disabled:opacity-60",
+              "inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-sm font-bold transition-colors disabled:opacity-60",
               filters.nearbyEnabled
                 ? "bg-primary text-white shadow-md"
                 : "border border-gray-200 bg-white text-gray-600 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300"
             )}
           >
             {geoLoading
-              ? <Loader2 className="h-4 w-4 animate-spin" />
-              : <LocateFixed className="h-4 w-4" />}
+              ? <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />
+              : <LocateFixed className="h-4 w-4" aria-hidden="true" />}
             {filters.nearbyEnabled ? "Cerca de mí ✓" : "Cerca de mí"}
           </button>
         </div>
 
-        <button
-          type="button"
-          onClick={onClose}
-          className="mt-6 min-h-12 w-full rounded-2xl bg-primary text-sm font-bold text-white shadow-md hover:bg-primary/90 transition-colors"
-        >
-          Ver resultados
-        </button>
+        {/* Sticky action bar */}
+        <div className="shrink-0 border-t border-gray-100 dark:border-gray-800 px-5 py-4 flex gap-3">
+          {activeCount > 0 ? (
+            <button
+              type="button"
+              onClick={onReset}
+              aria-label="Limpiar todos los filtros"
+              className="min-h-12 flex-1 rounded-2xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 text-sm font-bold text-gray-600 dark:text-gray-300 hover:border-red-300 hover:text-red-500 transition-colors"
+            >
+              Limpiar
+            </button>
+          ) : (
+            <div className="flex-1" aria-hidden="true" />
+          )}
+          <button
+            type="button"
+            onClick={onClose}
+            className="min-h-12 flex-[2] rounded-2xl bg-primary text-sm font-bold text-white shadow-md hover:bg-primary/90 transition-colors"
+          >
+            Aplicar
+          </button>
+        </div>
       </div>
     </div>
   );
@@ -348,6 +374,9 @@ export default function MarketplaceFilters(props: MarketplaceFiltersProps) {
         <button
           type="button"
           onClick={() => setDrawerOpen(true)}
+          aria-expanded={drawerOpen}
+          aria-haspopup="dialog"
+          aria-label={activeCount > 0 ? `Filtros (${activeCount} activos)` : "Filtros"}
           className={cn(
             "inline-flex min-h-10 items-center gap-2 rounded-xl px-4 py-2 text-sm font-bold border transition-colors",
             activeCount > 0
@@ -355,10 +384,10 @@ export default function MarketplaceFilters(props: MarketplaceFiltersProps) {
               : "border-gray-200 bg-white text-gray-600 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300"
           )}
         >
-          <SlidersHorizontal className="h-4 w-4" />
+          <SlidersHorizontal className="h-4 w-4" aria-hidden="true" />
           Filtros
           {activeCount > 0 && (
-            <span className="flex h-5 w-5 items-center justify-center rounded-full bg-primary text-[10px] font-bold text-white">
+            <span aria-hidden="true" className="flex h-5 w-5 items-center justify-center rounded-full bg-primary text-[10px] font-bold text-white">
               {activeCount}
             </span>
           )}
@@ -380,20 +409,24 @@ export default function MarketplaceFilters(props: MarketplaceFiltersProps) {
       {/* ── Desktop: barra horizontal compacta ── */}
       <div className="hidden sm:flex items-center gap-2 flex-wrap">
         {/* Categorías como pills horizontales */}
-        <div className="flex items-center gap-1.5 overflow-x-auto scrollbar-hide">
+        <div role="group" aria-label="Filtrar por categoría de producto" className="flex items-center gap-1.5 overflow-x-auto scrollbar-hide">
           {PRODUCT_CATEGORIES.map((cat) => (
             <button
               key={String(cat.id)}
               type="button"
               onClick={() => onChange({ productCategory: cat.id })}
+              aria-pressed={filters.productCategory === cat.id}
               className={cn(
-                "inline-flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap border transition-all shrink-0",
+                "inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap border transition-all shrink-0",
                 filters.productCategory === cat.id
-                  ? "bg-primary text-white border-primary shadow-sm"
-                  : "bg-white dark:bg-gray-900 text-gray-600 dark:text-gray-300 border-gray-200 dark:border-gray-700 hover:border-primary/40 hover:text-primary"
+                  ? "bg-gray-900 dark:bg-white text-white dark:text-gray-900 border-gray-900 dark:border-white"
+                  : "bg-white dark:bg-gray-900 text-gray-600 dark:text-gray-300 border-gray-200 dark:border-gray-700 hover:border-gray-400"
               )}
             >
-              <span className="text-sm">{cat.emoji}</span>
+              {(() => {
+                const CatIcon = getProductCategoryIcon(cat.key);
+                return <CatIcon className="h-3.5 w-3.5" strokeWidth={1.75} aria-hidden="true" />;
+              })()}
               {cat.label}
             </button>
           ))}
@@ -407,6 +440,9 @@ export default function MarketplaceFilters(props: MarketplaceFiltersProps) {
           <button
             type="button"
             onClick={() => { setSortOpen(!sortOpen); setPriceOpen(false); }}
+            aria-expanded={sortOpen}
+            aria-haspopup="listbox"
+            aria-label={`Ordenar por: ${currentSort.label}`}
             className={cn(
               "inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold border transition-all",
               filters.sortBy !== "relevance"
@@ -414,9 +450,9 @@ export default function MarketplaceFilters(props: MarketplaceFiltersProps) {
                 : "bg-white dark:bg-gray-900 text-gray-600 dark:text-gray-300 border-gray-200 dark:border-gray-700 hover:border-primary/40"
             )}
           >
-            <SlidersHorizontal className="h-3.5 w-3.5" />
+            <SlidersHorizontal className="h-3.5 w-3.5" aria-hidden="true" />
             {currentSort.short}
-            <ChevronDown className={cn("h-3 w-3 transition-transform", sortOpen && "rotate-180")} />
+            <ChevronDown className={cn("h-3 w-3 transition-transform", sortOpen && "rotate-180")} aria-hidden="true" />
           </button>
           <FilterDropdown open={sortOpen} onClose={handleCloseSortDropdown}>
             <div className="space-y-0.5">
@@ -425,6 +461,7 @@ export default function MarketplaceFilters(props: MarketplaceFiltersProps) {
                   key={opt.value}
                   type="button"
                   onClick={() => { onChange({ sortBy: opt.value }); setSortOpen(false); }}
+                  aria-pressed={filters.sortBy === opt.value}
                   className={cn(
                     "flex w-full items-center gap-2 rounded-lg px-3 py-2 text-xs font-semibold transition-colors",
                     filters.sortBy === opt.value
@@ -432,7 +469,7 @@ export default function MarketplaceFilters(props: MarketplaceFiltersProps) {
                       : "text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800"
                   )}
                 >
-                  {filters.sortBy === opt.value && <Check className="h-3 w-3" />}
+                  {filters.sortBy === opt.value && <Check className="h-3 w-3" aria-hidden="true" />}
                   {opt.label}
                 </button>
               ))}
@@ -445,6 +482,9 @@ export default function MarketplaceFilters(props: MarketplaceFiltersProps) {
           <button
             type="button"
             onClick={() => { setPriceOpen(!priceOpen); setSortOpen(false); }}
+            aria-expanded={priceOpen}
+            aria-haspopup="dialog"
+            aria-label={priceActive ? `Precio: S/${filters.minPrice} a S/${filters.maxPrice >= MAX_PRICE_LIMIT ? "500+" : filters.maxPrice}` : "Filtrar por precio"}
             className={cn(
               "inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold border transition-all",
               priceActive
@@ -452,8 +492,9 @@ export default function MarketplaceFilters(props: MarketplaceFiltersProps) {
                 : "bg-white dark:bg-gray-900 text-gray-600 dark:text-gray-300 border-gray-200 dark:border-gray-700 hover:border-primary/40"
             )}
           >
-            💰 {priceActive ? `S/${filters.minPrice} – S/${filters.maxPrice >= MAX_PRICE_LIMIT ? "500+" : filters.maxPrice}` : "Precio"}
-            <ChevronDown className={cn("h-3 w-3 transition-transform", priceOpen && "rotate-180")} />
+            <DollarSign className="h-3.5 w-3.5" strokeWidth={1.75} aria-hidden="true" />
+            {priceActive ? `S/${filters.minPrice} – S/${filters.maxPrice >= MAX_PRICE_LIMIT ? "500+" : filters.maxPrice}` : "Precio"}
+            <ChevronDown className={cn("h-3 w-3 transition-transform", priceOpen && "rotate-180")} aria-hidden="true" />
           </button>
           <FilterDropdown open={priceOpen} onClose={handleClosePriceDropdown}>
             <PriceRangePopover
@@ -470,6 +511,8 @@ export default function MarketplaceFilters(props: MarketplaceFiltersProps) {
           type="button"
           onClick={onRequestGeo}
           disabled={geoLoading}
+          aria-pressed={filters.nearbyEnabled}
+          aria-label={geoLoading ? "Obteniendo ubicación..." : filters.nearbyEnabled ? "Desactivar tiendas cercanas" : "Mostrar tiendas cercanas"}
           className={cn(
             "inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold border transition-all disabled:opacity-60",
             filters.nearbyEnabled
@@ -478,8 +521,8 @@ export default function MarketplaceFilters(props: MarketplaceFiltersProps) {
           )}
         >
           {geoLoading
-            ? <Loader2 className="h-3.5 w-3.5 animate-spin" />
-            : <LocateFixed className="h-3.5 w-3.5" />}
+            ? <Loader2 className="h-3.5 w-3.5 animate-spin" aria-hidden="true" />
+            : <LocateFixed className="h-3.5 w-3.5" aria-hidden="true" />}
           {filters.nearbyEnabled ? "Cerca ✓" : "Cerca"}
         </button>
 
@@ -488,9 +531,10 @@ export default function MarketplaceFilters(props: MarketplaceFiltersProps) {
           <button
             type="button"
             onClick={handleReset}
+            aria-label="Limpiar todos los filtros"
             className="inline-flex items-center gap-1 px-2 py-1.5 rounded-lg text-xs font-semibold text-gray-400 hover:text-red-500 transition-colors"
           >
-            <X className="h-3 w-3" />
+            <X className="h-3 w-3" aria-hidden="true" />
             Limpiar
           </button>
         )}

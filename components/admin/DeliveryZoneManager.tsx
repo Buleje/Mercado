@@ -73,7 +73,7 @@ function ZoneMap({ zones }: { zones: DeliveryZone[] }) {
   return (
     <div className="relative w-full aspect-square max-w-xs mx-auto select-none">
       {/* Outer container */}
-      <div className="absolute inset-0 rounded-full bg-gray-100 dark:bg-gray-800 border border-gray-200 dark:border-gray-700" />
+      <div className="absolute inset-0 rounded-full bg-gray-100 dark:bg-gray-800 border border-[var(--rule-base)]" />
 
       {/* Zone circles (largest first) */}
       {[...zones]
@@ -96,7 +96,7 @@ function ZoneMap({ zones }: { zones: DeliveryZone[] }) {
               }}
             >
               <span
-                className="text-[10px] font-semibold px-1"
+                className="text-[length:var(--ts-2xs)] font-semibold px-1"
                 style={{ color: zone.color }}
               >
                 {zone.name}
@@ -107,7 +107,7 @@ function ZoneMap({ zones }: { zones: DeliveryZone[] }) {
 
       {/* Store dot */}
       <div className="absolute inset-0 flex items-center justify-center">
-        <div className="w-5 h-5 rounded-full bg-[#00B4A6] border-2 border-white dark:border-gray-900 shadow-md flex items-center justify-center">
+        <div className="w-5 h-5 rounded-full bg-[#00B4A6] border-2 border-white dark:border-[var(--rule-base)] flex items-center justify-center">
           <MapPin size={10} className="text-white" />
         </div>
       </div>
@@ -157,7 +157,7 @@ function ZoneRow({ zone, onChange, onDelete }: ZoneRowProps) {
               step={0.5}
               value={draft.radiusKm}
               onChange={(e) => setDraft({ ...draft, radiusKm: parseFloat(e.target.value) || 0 })}
-              className="w-20 px-2 py-1 text-sm rounded border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 text-gray-900 dark:text-white focus:outline-none focus:ring-1 focus:ring-[#00B4A6]"
+              className="w-20 px-2 py-1 text-sm rounded border border-[var(--rule-base)] dark:border-gray-600 bg-white dark:bg-gray-900 text-gray-900 dark:text-white focus:outline-none focus:ring-1 focus:ring-[#00B4A6]"
             />
             <span className="text-xs text-gray-500">km</span>
           </div>
@@ -171,7 +171,7 @@ function ZoneRow({ zone, onChange, onDelete }: ZoneRowProps) {
               step={0.5}
               value={draft.fee}
               onChange={(e) => setDraft({ ...draft, fee: parseFloat(e.target.value) || 0 })}
-              className="w-20 px-2 py-1 text-sm rounded border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 text-gray-900 dark:text-white focus:outline-none focus:ring-1 focus:ring-[#00B4A6]"
+              className="w-20 px-2 py-1 text-sm rounded border border-[var(--rule-base)] dark:border-gray-600 bg-white dark:bg-gray-900 text-gray-900 dark:text-white focus:outline-none focus:ring-1 focus:ring-[#00B4A6]"
             />
           </div>
         </td>
@@ -180,7 +180,7 @@ function ZoneRow({ zone, onChange, onDelete }: ZoneRowProps) {
             type="color"
             value={draft.color}
             onChange={(e) => setDraft({ ...draft, color: e.target.value })}
-            className="w-8 h-8 rounded cursor-pointer border border-gray-200 dark:border-gray-700"
+            className="w-8 h-8 rounded cursor-pointer border border-[var(--rule-base)]"
           />
         </td>
         <td className="px-3 py-2">
@@ -228,7 +228,7 @@ function ZoneRow({ zone, onChange, onDelete }: ZoneRowProps) {
         <button
           onClick={() => onChange({ ...zone, active: !zone.active })}
           className={cn(
-            "relative inline-flex h-5 w-9 items-center rounded-full transition-colors duration-200",
+            "relative inline-flex h-5 w-9 items-center rounded-full transition-colors duration-[var(--dur-base)]",
             zone.active ? "bg-[#00B4A6]" : "bg-gray-300 dark:bg-gray-600"
           )}
           role="switch"
@@ -236,7 +236,7 @@ function ZoneRow({ zone, onChange, onDelete }: ZoneRowProps) {
         >
           <span
             className={cn(
-              "inline-block h-3.5 w-3.5 rounded-full bg-white shadow transition-transform duration-200",
+              "inline-block h-3.5 w-3.5 rounded-full bg-white shadow transition-transform duration-[var(--dur-base)]",
               zone.active ? "translate-x-4" : "translate-x-1"
             )}
           />
@@ -346,7 +346,7 @@ export default function DeliveryZoneManager() {
             onClick={handleSave}
             disabled={saving}
             className={cn(
-              "flex items-center gap-1.5 px-4 py-2 text-sm font-medium rounded-lg transition-all duration-150",
+              "flex items-center gap-1.5 px-4 py-2 text-sm font-medium rounded-lg transition-all duration-[var(--dur-fast)]",
               saved
                 ? "bg-emerald-500 text-white"
                 : "bg-[#00B4A6] hover:bg-[#235c42] text-white",
@@ -367,7 +367,7 @@ export default function DeliveryZoneManager() {
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-start">
         {/* Visual map */}
-        <div className="rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 p-5">
+        <div className="rounded-xl border border-[var(--rule-base)] bg-white dark:bg-gray-900 p-5">
           <h4 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-4 flex items-center gap-2">
             <MapPin size={14} className="text-[#00B4A6]" />
             Vista de cobertura
@@ -379,8 +379,8 @@ export default function DeliveryZoneManager() {
         </div>
 
         {/* Zone table */}
-        <div className="rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 overflow-hidden">
-          <div className="px-4 py-3 border-b border-gray-100 dark:border-gray-800 flex items-center justify-between">
+        <div className="rounded-xl border border-[var(--rule-base)] bg-white dark:bg-gray-900 overflow-hidden">
+          <div className="px-4 py-3 border-b border-[var(--rule-base)] flex items-center justify-between">
             <h4 className="text-sm font-medium text-gray-700 dark:text-gray-300">Configuracion de zonas</h4>
             <button
               onClick={addZone}
@@ -393,7 +393,7 @@ export default function DeliveryZoneManager() {
           <div className="overflow-x-auto">
             <table className="w-full text-left">
               <thead>
-                <tr className="border-b border-gray-100 dark:border-gray-800">
+                <tr className="border-b border-[var(--rule-base)]">
                   <th className="px-3 py-2 text-xs font-medium text-gray-500 dark:text-gray-400">Zona</th>
                   <th className="px-3 py-2 text-xs font-medium text-gray-500 dark:text-gray-400">Radio</th>
                   <th className="px-3 py-2 text-xs font-medium text-gray-500 dark:text-gray-400">Tarifa</th>

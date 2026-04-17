@@ -106,7 +106,7 @@ describe("mailer-superadmin: sendSuperAdminAlert", () => {
     subject: "Test Alert",
     title: "🆕 Test Title",
     items: [
-      { label: "Store", value: "Test Store", color: "#33C4B8" },
+      { label: "Store", value: "Test Store", color: "#3B82F6" },
       { label: "Plan", value: "PRO" },
     ],
     actionUrl: "https://example.com/superadmin",
@@ -188,6 +188,6 @@ describe("mailer-superadmin: sendSuperAdminAlert", () => {
     await sendSuperAdminAlert(sampleAlert);
 
     const call = mockSendMail.mock.calls[0][0];
-    expect(call.html).toContain("#33C4B8"); // custom color for first item
+    expect(call.html).toContain("#3B82F6"); // custom color for first item
   });
 });

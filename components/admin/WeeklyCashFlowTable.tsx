@@ -160,7 +160,7 @@ export default function WeeklyCashFlowTable() {
 
   /* ── Render ── */
   return (
-    <div className="space-y-4">
+    <div className="space-y-6">
       {/* Header */}
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
         <div className="flex items-center gap-2">
@@ -173,7 +173,7 @@ export default function WeeklyCashFlowTable() {
         <div className="flex items-center gap-2">
           <button
             onClick={() => setWeekOffset((w) => w - 1)}
-            className="px-3 py-1.5 rounded-lg border border-gray-200 dark:border-gray-700 text-sm text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-750 transition-colors"
+            className="px-3 py-1.5 rounded-lg border border-[var(--rule-base)] text-sm text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-750 transition-colors"
           >
             Anterior
           </button>
@@ -187,7 +187,7 @@ export default function WeeklyCashFlowTable() {
           <button
             onClick={() => setWeekOffset((w) => Math.min(0, w + 1))}
             disabled={weekOffset === 0}
-            className="px-3 py-1.5 rounded-lg border border-gray-200 dark:border-gray-700 text-sm text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-750 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+            className="px-3 py-1.5 rounded-lg border border-[var(--rule-base)] text-sm text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-750 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
           >
             Siguiente
           </button>
@@ -195,7 +195,7 @@ export default function WeeklyCashFlowTable() {
             onClick={load}
             disabled={loading}
             title="Refrescar"
-            className="p-1.5 rounded-lg border border-gray-200 dark:border-gray-700 text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-750 transition-colors"
+            className="p-1.5 rounded-lg border border-[var(--rule-base)] text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-750 transition-colors"
           >
             <RefreshCw className={cn("w-4 h-4", loading && "animate-spin")} />
           </button>
@@ -204,19 +204,19 @@ export default function WeeklyCashFlowTable() {
 
       {/* Neto total con tendencia */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-        <div className="rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 p-3 col-span-2 sm:col-span-1">
+        <div className="rounded-xl border border-[var(--rule-base)] bg-white dark:bg-gray-800 p-3 col-span-2 sm:col-span-1">
           <p className="text-xs text-gray-500 dark:text-gray-400">Ventas semana</p>
           <p className="text-xl font-bold text-[#00B4A6] dark:text-[#2dd4bf]">
             {fmt(totals.sales)}
           </p>
         </div>
-        <div className="rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 p-3">
+        <div className="rounded-xl border border-[var(--rule-base)] bg-white dark:bg-gray-800 p-3">
           <p className="text-xs text-gray-500 dark:text-gray-400">Total compras</p>
           <p className="text-xl font-bold text-red-600 dark:text-red-400">
             {fmt(totals.purchases)}
           </p>
         </div>
-        <div className="rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 p-3">
+        <div className="rounded-xl border border-[var(--rule-base)] bg-white dark:bg-gray-800 p-3">
           <p className="text-xs text-gray-500 dark:text-gray-400">Total gastos</p>
           <p className="text-xl font-bold text-orange-600 dark:text-orange-400">
             {fmt(totals.expenses)}
@@ -283,10 +283,10 @@ export default function WeeklyCashFlowTable() {
 
       {/* Tabla */}
       {!loading && (
-        <div className="rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 overflow-x-auto">
+        <div className="rounded-xl border border-[var(--rule-base)] bg-white dark:bg-gray-800 overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
-              <tr className="border-b border-gray-100 dark:border-gray-700">
+              <tr className="border-b border-[var(--rule-base)]">
                 <th className="px-4 py-3 text-left font-medium text-gray-500 dark:text-gray-400 w-28">
                   Concepto
                 </th>

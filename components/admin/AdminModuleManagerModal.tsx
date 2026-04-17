@@ -89,9 +89,9 @@ export function AdminModuleManagerModal({
     <div className="fixed inset-0 z-100 overflow-y-auto">
       <div className="fixed inset-0 bg-black/40 backdrop-blur-sm" onClick={onClose} />
       <div className="relative z-10 min-h-screen flex items-center justify-center p-4">
-        <div className="bg-white dark:bg-card rounded-2xl shadow-2xl border border-gray-200 dark:border-card-border w-full max-w-3xl max-h-[90vh] flex flex-col">
+        <div className="bg-white dark:bg-card rounded-xl border border-[var(--rule-base)] dark:border-card-border w-full max-w-3xl max-h-[90vh] flex flex-col">
           {/* Header */}
-          <div className="flex items-center justify-between px-6 py-5 border-b border-gray-200 dark:border-card-border">
+          <div className="flex items-center justify-between px-6 py-5 border-b border-[var(--rule-base)] dark:border-card-border">
             <div>
               <h2 className="font-extrabold text-gray-900 dark:text-foreground text-lg">Gestionar módulos</h2>
               <p className="text-xs text-gray-400 dark:text-muted mt-0.5">
@@ -100,40 +100,40 @@ export function AdminModuleManagerModal({
             </div>
             <button
               onClick={onClose}
-              className="p-2 rounded-xl hover:bg-gray-100 dark:hover:bg-accent transition-colors"
+              className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-accent transition-colors"
             >
               <X className="h-5 w-5 text-gray-500" />
             </button>
           </div>
 
           {/* Stats strip */}
-          <div className="px-6 py-3 bg-gray-50 dark:bg-surface border-b border-gray-200 dark:border-card-border space-y-2.5">
+          <div className="px-6 py-3 bg-gray-50 dark:bg-surface border-b border-[var(--rule-base)] dark:border-card-border space-y-2.5">
             <div className="flex gap-6">
               <div className="text-center">
                 <div className="text-xl font-extrabold text-primary">{allowedTabs.length}</div>
-                <div className="text-[10px] text-gray-400 uppercase font-semibold">Total</div>
+                <div className="text-[length:var(--ts-2xs)] text-gray-400 uppercase font-semibold">Total</div>
               </div>
               <div className="text-center">
                 <div className="text-xl font-extrabold text-emerald-600">
                   {allowedTabs.length - hiddenTabs.size}
                 </div>
-                <div className="text-[10px] text-gray-400 uppercase font-semibold">Visibles</div>
+                <div className="text-[length:var(--ts-2xs)] text-gray-400 uppercase font-semibold">Visibles</div>
               </div>
               <div className="text-center">
                 <div className="text-xl font-extrabold text-gray-400">{hiddenTabs.size}</div>
-                <div className="text-[10px] text-gray-400 uppercase font-semibold">Ocultos</div>
+                <div className="text-[length:var(--ts-2xs)] text-gray-400 uppercase font-semibold">Ocultos</div>
               </div>
               <div className="text-center">
                 <div className="text-xl font-extrabold text-red-500">{demoCount}</div>
-                <div className="text-[10px] text-gray-400 uppercase font-semibold">Con demo</div>
+                <div className="text-[length:var(--ts-2xs)] text-gray-400 uppercase font-semibold">Con demo</div>
               </div>
             </div>
             <div className="flex items-center gap-2 flex-wrap">
-              <span className="text-[10px] text-gray-400 font-semibold uppercase tracking-wide mr-1">Prioridad:</span>
-              <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-red-100 text-red-600 dark:bg-red-950/40 dark:text-red-400">Esencial</span>
-              <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-orange-100 text-orange-600 dark:bg-orange-950/40 dark:text-orange-400">Alta</span>
-              <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-amber-100 text-amber-600 dark:bg-amber-950/40 dark:text-amber-400">Media</span>
-              <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-green-100 text-green-600 dark:bg-green-950/40 dark:text-green-400">Normal</span>
+              <span className="text-[length:var(--ts-2xs)] text-gray-400 font-semibold mr-1">Prioridad:</span>
+              <span className="text-[length:var(--ts-2xs)] font-bold px-2 py-0.5 rounded-full bg-red-100 text-red-600 dark:bg-red-950/40 dark:text-red-400">Esencial</span>
+              <span className="text-[length:var(--ts-2xs)] font-bold px-2 py-0.5 rounded-full bg-orange-100 text-orange-600 dark:bg-orange-950/40 dark:text-orange-400">Alta</span>
+              <span className="text-[length:var(--ts-2xs)] font-bold px-2 py-0.5 rounded-full bg-amber-100 text-amber-600 dark:bg-amber-950/40 dark:text-amber-400">Media</span>
+              <span className="text-[length:var(--ts-2xs)] font-bold px-2 py-0.5 rounded-full bg-green-100 text-green-600 dark:bg-green-950/40 dark:text-green-400">Normal</span>
             </div>
           </div>
 
@@ -146,7 +146,7 @@ export function AdminModuleManagerModal({
 
               return (
                 <div key={category.id} className="mb-1">
-                  <div className="flex items-center gap-2 px-6 py-2 text-[10px] font-bold uppercase tracking-wider text-gray-400 dark:text-muted sticky top-0 bg-white dark:bg-card z-10">
+                  <div className="flex items-center gap-2 px-6 py-2 text-[length:var(--ts-2xs)] font-bold text-gray-400 dark:text-muted sticky top-0 bg-white dark:bg-card z-10">
                     <CatIcon className="h-3 w-3" />
                     <span>{category.label}</span>
                   </div>
@@ -201,7 +201,7 @@ export function AdminModuleManagerModal({
                             {pCfg && (
                               <span
                                 className={cn(
-                                  "shrink-0 text-[9px] font-bold px-1.5 py-0.5 rounded-full uppercase tracking-wide",
+                                  "shrink-0 text-[length:var(--ts-2xs)] font-bold px-1.5 py-0.5 rounded-full",
                                   pCfg.cls
                                 )}
                               >
@@ -210,19 +210,19 @@ export function AdminModuleManagerModal({
                               </span>
                             )}
                             {hasDemo && (
-                              <span className="shrink-0 flex items-center gap-0.5 text-[10px] font-bold text-red-500 bg-red-50 dark:bg-red-950/30 px-1.5 py-0.5 rounded-full">
+                              <span className="shrink-0 flex items-center gap-0.5 text-[length:var(--ts-2xs)] font-bold text-red-500 bg-red-50 dark:bg-red-950/30 px-1.5 py-0.5 rounded-full">
                                 <span className="h-1.5 w-1.5 rounded-full bg-red-500 inline-block" />
                                 Demo
                               </span>
                             )}
                           </div>
                           {info?.desc && (
-                            <p className="text-[11px] text-gray-500 dark:text-muted mt-0.5 leading-snug line-clamp-2">
+                            <p className="text-[length:var(--ts-xs)] text-gray-500 dark:text-muted mt-0.5 leading-snug line-clamp-2">
                               {info.desc}
                             </p>
                           )}
                           {info?.tip && (
-                            <p className="text-[11px] text-primary/70 dark:text-primary/60 mt-0.5 leading-snug">
+                            <p className="text-[length:var(--ts-xs)] text-primary/70 dark:text-primary/60 mt-0.5 leading-snug">
                               {info.tip}
                             </p>
                           )}
@@ -260,7 +260,7 @@ export function AdminModuleManagerModal({
           </div>
 
           {/* Footer */}
-          <div className="flex items-center justify-between px-6 py-4 border-t border-gray-200 dark:border-card-border">
+          <div className="flex items-center justify-between px-6 py-4 border-t border-[var(--rule-base)] dark:border-card-border">
             {hiddenTabs.size > 0 ? (
               <button
                 onClick={onClearAllHidden}
@@ -274,7 +274,7 @@ export function AdminModuleManagerModal({
             )}
             <button
               onClick={onClose}
-              className="px-5 py-2 rounded-xl bg-primary text-white text-sm font-semibold hover:bg-primary/90 transition-colors"
+              className="px-5 py-2 rounded-lg bg-primary text-white text-sm font-semibold hover:bg-primary/90 transition-colors"
             >
               Listo
             </button>

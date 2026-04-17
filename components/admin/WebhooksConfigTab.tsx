@@ -23,10 +23,10 @@ const EVENT_LABELS: Record<WebhookEvent, string> = {
 };
 
 const EVENT_COLORS: Record<WebhookEvent, string> = {
-  new_order:    "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300",
+  new_order:    "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300",
   low_stock:    "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-300",
   new_customer: "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300",
-  payment:      "bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-300",
+  payment:      "bg-[var(--surface-sunken)] text-[var(--text-primary)]",
 };
 
 const ALL_EVENTS: WebhookEvent[] = ["new_order", "low_stock", "new_customer", "payment"];
@@ -170,7 +170,7 @@ export function WebhooksConfigTab() {
       {/* Formulario de creacion */}
       <form
         onSubmit={handleCreate}
-        className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-2xl p-5 space-y-4"
+        className="bg-white dark:bg-gray-900 border border-[var(--rule-base)] rounded-xl p-5 space-y-4"
       >
         <h3 className="font-medium text-gray-800 dark:text-gray-200 text-sm">
           Agregar nuevo webhook
@@ -185,7 +185,7 @@ export function WebhooksConfigTab() {
             value={url}
             onChange={(e) => setUrl(e.target.value)}
             placeholder="https://mi-servidor.com/webhook"
-            className="w-full px-3 py-2 text-sm border border-gray-200 dark:border-gray-700 rounded-xl bg-gray-50 dark:bg-gray-800 text-gray-900 dark:text-gray-100 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-green-500"
+            className="w-full px-3 py-2 text-sm border border-[var(--rule-base)] rounded-lg bg-gray-50 dark:bg-gray-800 text-gray-900 dark:text-gray-100 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-green-500"
           />
         </div>
 
@@ -202,7 +202,7 @@ export function WebhooksConfigTab() {
                 className={`px-3 py-1 rounded-full text-xs font-medium border transition-colors ${
                   selectedEvents.includes(event)
                     ? "border-green-600 bg-green-600 text-white"
-                    : "border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-400 hover:border-green-400"
+                    : "border-[var(--rule-base)] text-gray-600 dark:text-gray-400 hover:border-green-400"
                 }`}
               >
                 {EVENT_LABELS[event]}
@@ -218,7 +218,7 @@ export function WebhooksConfigTab() {
         <button
           type="submit"
           disabled={saving}
-          className="flex items-center gap-2 px-4 py-2 text-sm font-medium bg-green-600 hover:bg-green-700 disabled:opacity-60 text-white rounded-xl transition-colors"
+          className="flex items-center gap-2 px-4 py-2 text-sm font-medium bg-green-600 hover:bg-green-700 disabled:opacity-60 text-white rounded-lg transition-colors"
         >
           {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Plus className="h-4 w-4" />}
           Crear webhook
@@ -251,7 +251,7 @@ export function WebhooksConfigTab() {
           return (
             <div
               key={webhook.id}
-              className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-2xl p-4 space-y-3"
+              className="bg-white dark:bg-gray-900 border border-[var(--rule-base)] rounded-xl p-4 space-y-3"
             >
               <div className="flex items-start justify-between gap-2">
                 <div className="min-w-0 flex-1">
@@ -268,7 +268,7 @@ export function WebhooksConfigTab() {
                     onClick={() => handleTest(webhook)}
                     disabled={testState === "loading"}
                     title="Enviar ping de prueba"
-                    className="p-2 rounded-xl text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors disabled:opacity-50"
+                    className="p-2 rounded-lg text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors disabled:opacity-50"
                   >
                     {testState === "loading" && <Loader2 className="h-4 w-4 animate-spin" />}
                     {testState === "ok"      && <CheckCircle className="h-4 w-4 text-green-500" />}
@@ -279,7 +279,7 @@ export function WebhooksConfigTab() {
                   <button
                     onClick={() => handleDelete(webhook.id)}
                     title="Eliminar webhook"
-                    className="p-2 rounded-xl text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
+                    className="p-2 rounded-lg text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
                   >
                     <Trash2 className="h-4 w-4" />
                   </button>
