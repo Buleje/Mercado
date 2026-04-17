@@ -1,7 +1,7 @@
 # ADR 042 — pgvector Hybrid Recommender v2
 
-**Estado:** Scaffolding listo — migracion SQL propuesta, aplicacion manual pendiente
-**Fecha:** 2026-04-10
+**Estado:** Codigo + tests listos — solo falta aplicar la migracion SQL manual en Supabase
+**Fecha:** 2026-04-10 (ampliado 2026-04-17)
 **Autor:** Claude (ingeniero-jefe) — sesion `luis` modo maximo
 **Sprint:** 2 (AI + WhatsApp + Growth)
 **Tier S item:** #4 — ROI estimado S/3,600-6,750 por mes por tienda
@@ -83,16 +83,40 @@ cd bodega-san-martin
 # 1. Aplicar la migracion en Supabase (requiere DIRECT_URL configurada)
 psql "$DIRECT_URL" -f prisma/migrations/proposed-pgvector.sql
 
-# 2. Agregar la columna al schema.prisma:
+# 2. Agregar la columna al schema.prisma (zona peligrosa — requiere ADR o confirmacion):
 #    embedding Unsupported("vector(1536)")?
 #    en el model Product
+#    NOTA: `hybrid.ts` usa raw SQL y degrada graceful si la columna no existe,
+#    por lo que el schema.prisma es opcional para que el feature FUNCIONE.
+#    Pero es recomendable para que Prisma no intente re-crear la tabla en un
+#    futuro `prisma db pull`.
 
 # 3. Regenerar cliente
 npx prisma generate
 
-# 4. Backfill (script a crear siguiente sesion):
-#    npx tsx scripts/embed-products.ts --tenant main
+# 4. Backfill (script listo — ver scripts/embed-products.ts):
+#    npx tsx scripts/embed-products.ts --tenant main --dry-run   # verificar
+#    npx tsx scripts/embed-products.ts --tenant main             # ejecutar
+#
+#    Flags:
+#      --force        : re-genera embeddings aunque ya existan
+#      --limit N      : procesa solo N productos (util para pruebas)
+#      --after-id ID  : resume desde un id puntual
+#      --batch N      : batch size (default 20, cuida rate limit OpenAI)
 ```
+
+## Entregables de esta sesion (2026-04-17, sesion `luis`)
+
+Todo sin tocar zona peligrosa (schema.prisma):
+
+| Archivo | Proposito |
+|---------|-----------|
+| `scripts/embed-products.ts` | Backfill CLI idempotente con rate limit, dry-run, resume, force |
+| `__tests__/lib/recommender/embeddings.test.ts` | 15 casos — cosineSimilarity + toPgVectorLiteral + degradacion generateEmbedding |
+| `__tests__/lib/recommender/hybrid.test.ts` | 9 casos — blend 70/30, fallback a copurchase, lineas de degradacion ADR |
+| Este ADR (ampliado) | Pasos de activacion actualizados con el script real |
+
+Tests verde: 24/24. tsc: 0 errores.
 
 ## Referencias
 
