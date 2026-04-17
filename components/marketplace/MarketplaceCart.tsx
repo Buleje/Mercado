@@ -4,6 +4,8 @@ import React, { useState, useCallback, useEffect } from "react";
 import Image from "next/image";
 import { motion, AnimatePresence } from "framer-motion";
 import { useMarketplaceCart, type CartItem } from "@/hooks/use-marketplace-cart";
+import ShareCartButton from "@/components/marketplace/ShareCartButton";
+import WhatsAppOrderButton from "@/components/marketplace/WhatsAppOrderButton";
 
 // ---------- helpers ----------
 
@@ -246,6 +248,9 @@ export default function MarketplaceCart({
   const [redeemPoints, setRedeemPoints] = useState(0);
   const [loyaltyLoading, setLoyaltyLoading] = useState(false);
 
+  // WhatsApp phone per store (slug → phone | null)
+  const [storePhones, setStorePhones] = useState<Record<string, string | null>>({});
+
   // Persist customer info in localStorage
   useState(() => {
     if (typeof window === "undefined") return;
@@ -301,6 +306,26 @@ export default function MarketplaceCart({
       .finally(() => { if (!cancelled) setLoyaltyLoading(false); });
     return () => { cancelled = true; };
   }, [step, customerPhone]);
+
+  // Fetch WhatsApp phones for each store when the cart opens
+  useEffect(() => {
+    if (!isOpen) return;
+    const slugs = Object.values(byStore).map((g) => g.storeSlug);
+    const missing = slugs.filter((sl) => !(sl in storePhones));
+    if (missing.length === 0) return;
+
+    for (const slug of missing) {
+      fetch(`/api/marketplace/stores/${encodeURIComponent(slug)}/phone`)
+        .then((r) => r.ok ? r.json() : { phone: null })
+        .then((d: { phone?: string | null }) => {
+          setStorePhones((prev) => ({ ...prev, [slug]: d.phone ?? null }));
+        })
+        .catch(() => {
+          setStorePhones((prev) => ({ ...prev, [slug]: null }));
+        });
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isOpen, byStore]);
 
   // Calculate total discounts
   const totalCouponDiscount = Object.values(couponResults).reduce(
@@ -392,7 +417,9 @@ export default function MarketplaceCart({
           })),
           total: group.items.reduce((s, i) => s + i.price * i.quantity, 0),
         }),
-      }).catch(() => {});
+      }).catch(() => {
+        // Silent — analytics best-effort, no bloquea el flujo de checkout
+      });
     }
 
     const results = await Promise.allSettled(
@@ -1094,6 +1121,22 @@ export default function MarketplaceCart({
                             {fmt(storeSub)}
                           </span>
                         </div>
+
+                        {/* botón WhatsApp por tienda */}
+                        <WhatsAppOrderButton
+                          storeSlug={group.storeSlug}
+                          storeName={group.storeName}
+                          storePhone={storePhones[group.storeSlug] ?? null}
+                          items={group.items.map((i) => ({
+                            name: i.name,
+                            quantity: i.quantity,
+                            price: i.price,
+                            unit: i.unit,
+                          }))}
+                          customerName={customerName || undefined}
+                          customerAddress={customerAddress || undefined}
+                          className="mt-2"
+                        />
                       </section>
                     );
                   })}
@@ -1130,6 +1173,9 @@ export default function MarketplaceCart({
                     >
                       Continuar · {fmt(grandTotal)}
                     </button>
+                    <div className="mt-2">
+                      <ShareCartButton />
+                    </div>
                     <p className="mt-2 text-center text-[10px] text-gray-400 dark:text-gray-500">
                       Se crea un pedido separado por cada tienda
                     </p>

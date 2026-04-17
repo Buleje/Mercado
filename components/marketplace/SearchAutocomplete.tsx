@@ -11,7 +11,7 @@ import {
   type ElementType,
 } from "react";
 import Image from "next/image";
-import { Search, X, Loader2, Store, Package, Tag, History, ArrowRight } from "lucide-react";
+import { Search, X, Loader2, Store, Package, Tag, History, ArrowRight, Mic, MicOff } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { m, AnimatePresence } from "framer-motion";
 
@@ -102,6 +102,67 @@ export default function SearchAutocomplete({
     } finally {
       setLoading(false);
     }
+  }, []);
+
+  // ── Voice search (Web Speech API) ──────────────────────────────────────────
+  // Declarado DESPUÉS de fetchSuggestions para evitar TDZ en el dep array.
+  const [isListening, setIsListening] = useState(false);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const recognitionRef = useRef<any>(null);
+
+  const speechSupported =
+    typeof window !== "undefined" &&
+    ("SpeechRecognition" in window || "webkitSpeechRecognition" in window);
+
+  const startListening = useCallback(() => {
+    if (!speechSupported || isListening) return;
+
+    // Web Speech API no tiene tipos oficiales en lib.dom por default.
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const w = window as any;
+    const SpeechRecognitionAPI = w.webkitSpeechRecognition ?? w.SpeechRecognition;
+    if (!SpeechRecognitionAPI) return;
+
+    const recognition = new SpeechRecognitionAPI();
+    recognition.lang = "es-PE";
+    recognition.continuous = false;
+    recognition.interimResults = false;
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    recognition.onresult = (event: any) => {
+      const transcript: string = event?.results?.[0]?.[0]?.transcript ?? "";
+      if (transcript) {
+        setValue(transcript);
+        if (debounceRef.current) clearTimeout(debounceRef.current);
+        debounceRef.current = setTimeout(() => {
+          fetchSuggestions(transcript);
+          onSearch(transcript);
+        }, 0);
+      }
+      setIsListening(false);
+    };
+
+    recognition.onerror = () => {
+      setIsListening(false);
+      window.dispatchEvent(
+        new CustomEvent("marketplace-toast", {
+          detail: { message: "No pudimos escucharte, probá de nuevo", type: "error" },
+        }),
+      );
+    };
+
+    recognition.onend = () => {
+      setIsListening(false);
+    };
+
+    recognitionRef.current = recognition;
+    recognition.start();
+    setIsListening(true);
+  }, [speechSupported, isListening, fetchSuggestions, onSearch]);
+
+  const stopListening = useCallback(() => {
+    recognitionRef.current?.stop();
+    setIsListening(false);
   }, []);
 
   const handleChange = (nextValue: string) => {
@@ -243,6 +304,25 @@ export default function SearchAutocomplete({
             className="absolute right-4 top-1/2 -translate-y-1/2 p-1 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
           >
             <X className="h-4 w-4 text-gray-400" />
+          </button>
+        ) : speechSupported ? (
+          <button
+            type="button"
+            onClick={isListening ? stopListening : startListening}
+            aria-label="Buscar por voz"
+            aria-pressed={isListening}
+            className={cn(
+              "absolute right-4 top-1/2 -translate-y-1/2 p-1 rounded-full transition-colors",
+              isListening
+                ? "text-red-500 animate-pulse hover:bg-red-50 dark:hover:bg-red-900/20"
+                : "text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800",
+            )}
+          >
+            {isListening ? (
+              <MicOff className="h-4 w-4" aria-hidden="true" />
+            ) : (
+              <Mic className="h-4 w-4" aria-hidden="true" />
+            )}
           </button>
         ) : null}
       </div>
