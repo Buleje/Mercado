@@ -242,3 +242,127 @@ export function generateBreadcrumbLD(items: Array<{ name: string; url: string }>
     })),
   };
 }
+
+// ── District landing (hyperlocal SEO) ────────────────────────────────
+
+type District = {
+  slug: string;
+  name: string;
+  cityslug: string;
+  geo: { lat: number; lon: number };
+  description: string;
+};
+
+/**
+ * District landing JSON-LD — `SoftwareApplication` escopado a un distrito
+ * especifico. El `areaServed` apunta al distrito (no a la ciudad completa)
+ * para que Google pueda asociar el contenido con busquedas del tipo
+ * "bodega en Yarinacocha" o "abarrotes delivery Los Olivos".
+ */
+export function generateDistrictLandingLD(district: District, zone: Zone) {
+  return {
+    "@context": "https://schema.org",
+    "@type": "WebPage",
+    name: `Buleje — Software para Bodegas en ${district.name}, ${zone.name}`,
+    description: district.description,
+    url: `${BASE_URL}/zona/${zone.slug}/distrito/${district.slug}`,
+    isPartOf: {
+      "@type": "WebSite",
+      name: "Buleje",
+      url: BASE_URL,
+    },
+    about: {
+      "@type": "SoftwareApplication",
+      name: "Buleje ERP",
+      applicationCategory: "BusinessApplication",
+      areaServed: {
+        "@type": "Place",
+        name: `${district.name}, ${zone.name}`,
+        geo: {
+          "@type": "GeoCoordinates",
+          latitude: district.geo.lat,
+          longitude: district.geo.lon,
+        },
+        containedInPlace: {
+          "@type": "City",
+          name: zone.name,
+          containedInPlace: {
+            "@type": "AdministrativeArea",
+            name: zone.region,
+          },
+        },
+      },
+    },
+  };
+}
+
+/**
+ * District x Category JSON-LD — ItemList con lugar hiperlocal.
+ * Usa el mismo patron que `generateItemListLD` pero asocia cada oferta
+ * al distrito concreto via `areaServed` en el `Offer`.
+ */
+export function generateDistrictCategoryLD(
+  district: District,
+  zone: Zone,
+  categoryLabel: string,
+  products: ProductItem[],
+) {
+  return {
+    "@context": "https://schema.org",
+    "@type": "ItemList",
+    name: `${categoryLabel} en ${district.name}, ${zone.name} — Buleje`,
+    numberOfItems: products.length,
+    itemListElement: products.slice(0, 30).map((p, i) => ({
+      "@type": "ListItem",
+      position: i + 1,
+      item: {
+        "@type": "Product",
+        name: p.name,
+        image: p.image.startsWith("http") ? p.image : `${BASE_URL}${p.image}`,
+        url: p.url,
+        offers: {
+          "@type": "Offer",
+          price: p.price,
+          priceCurrency: "PEN",
+          availability: "https://schema.org/InStock",
+          areaServed: {
+            "@type": "Place",
+            name: `${district.name}, ${zone.name}`,
+            geo: {
+              "@type": "GeoCoordinates",
+              latitude: district.geo.lat,
+              longitude: district.geo.lon,
+            },
+          },
+          seller: {
+            "@type": "Organization",
+            name: "Buleje",
+          },
+        },
+      },
+    })),
+  };
+}
+
+/** District breadcrumb helper (extends `zoneBreadcrumbs`) */
+export function districtBreadcrumbs(
+  district: District,
+  zone: Zone,
+  category?: { id: string; label: string },
+) {
+  const items = [
+    { name: "Buleje", url: BASE_URL },
+    { name: zone.name, url: `${BASE_URL}/zona/${zone.slug}` },
+    {
+      name: district.name,
+      url: `${BASE_URL}/zona/${zone.slug}/distrito/${district.slug}`,
+    },
+  ];
+  if (category) {
+    items.push({
+      name: category.label,
+      url: `${BASE_URL}/zona/${zone.slug}/distrito/${district.slug}/${category.id}`,
+    });
+  }
+  return items;
+}

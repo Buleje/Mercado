@@ -1,6 +1,7 @@
 import type { MetadataRoute } from "next";
 import { categories, slugify } from "@/data/products";
 import { zones } from "@/data/zones";
+import { districts } from "@/data/districts";
 import { prisma } from "@/lib/prisma";
 
 const realCategories = categories.filter((c) => c.id !== "todos");
@@ -258,6 +259,28 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     }
   }
 
+  // Programmatic SEO — district landing + district × category pages
+  // /zona/[ciudad]/distrito/[distrito] + /zona/[ciudad]/distrito/[distrito]/[categoria]
+  const districtPages: MetadataRoute.Sitemap = [];
+  for (const district of districts) {
+    // District landing
+    districtPages.push({
+      url: `${baseUrl}/zona/${district.cityslug}/distrito/${district.slug}`,
+      lastModified,
+      changeFrequency: "weekly",
+      priority: 0.78,
+    });
+    // District × category
+    for (const cat of realCategories) {
+      districtPages.push({
+        url: `${baseUrl}/zona/${district.cityslug}/distrito/${district.slug}/${cat.id}`,
+        lastModified,
+        changeFrequency: "daily",
+        priority: 0.72,
+      });
+    }
+  }
+
   return [
     ...staticPages,
     ...categoryPages,
@@ -267,5 +290,6 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     ...recipePages,         // Recipe detail pages
     ...zonePages,
     ...zoneProductPages,
+    ...districtPages,       // District landing + district × category
   ];
 }

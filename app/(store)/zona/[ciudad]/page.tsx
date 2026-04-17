@@ -17,6 +17,7 @@ import { headers } from "next/headers";
 import { cacheLife, cacheTag } from "next/cache";
 import { categories } from "@/data/products";
 import { zones, findZone, getZoneFAQs } from "@/data/zones";
+import { getDistrictsForCity } from "@/data/districts";
 import { ProductsDB } from "@/lib/db/products.db";
 import {
   generateSoftwareApplicationLD,
@@ -299,6 +300,32 @@ async function ZoneContent({ ciudad }: { ciudad: string }) {
 
       {/* Features */}
       <FeaturesGrid zoneName={zone.name} />
+
+      {/* Districts strip (hyperlocal SEO signal) */}
+      {getDistrictsForCity(zone.slug).length > 0 && (
+        <section className="mt-10">
+          <h2 className="text-xl font-bold text-slate-800 mb-4">
+            Buleje por distritos de {zone.name}
+          </h2>
+          <p className="text-sm text-slate-500 mb-3">
+            Landings hiperlocales con delivery y soporte por distrito.
+          </p>
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
+            {getDistrictsForCity(zone.slug).map((d) => (
+              <Link
+                key={d.slug}
+                href={`/zona/${zone.slug}/distrito/${d.slug}`}
+                className="group rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm font-medium text-slate-700 hover:border-emerald-300 hover:text-emerald-700 transition-colors"
+              >
+                {d.name}
+                <span className="block text-xs text-slate-400 group-hover:text-emerald-500 mt-0.5">
+                  Ver bodegas y delivery
+                </span>
+              </Link>
+            ))}
+          </div>
+        </section>
+      )}
 
       {/* FAQ */}
       <FAQSection zone={zone} />
