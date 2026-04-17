@@ -27,3 +27,4 @@ export * from "./tokens";
 // Hooks
 export { useScrollLock } from "./hooks/use-scroll-lock";
 export { useInView } from "./hooks/use-in-view";
+export { useSwipe } from "./hooks/use-swipe";
