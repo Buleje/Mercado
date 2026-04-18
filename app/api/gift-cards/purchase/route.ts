@@ -1,4 +1,4 @@
-import { NextResponse, type NextRequest } from "next/server";
+import { type NextRequest } from "next/server";
 import { z } from "zod";
 import { GiftCardsDB } from "@/lib/db/gift-cards.db";
 import { rateLimit, getClientIp } from "@/lib/rate-limit";
@@ -7,10 +7,13 @@ import { apiSuccess, apiError } from "@/lib/api-response";
 import { logger } from "@/lib/logger";
 
 /**
- * POST /api/gift-cards/purchase
+ * POST /api/gift-cards/purchase — ADR-077
  *
- * Crea una tarjeta de regalo. MOCK — no toca payment gateway real.
- * Zona peligrosa (checkout) documentada en README.md del feature.
+ * Crea una gift card real en DB. Devuelve el plainCode UNA sola vez para que
+ * el comprador (sender) pueda copiarlo / compartirlo. Despues solo queda el
+ * hash en DB — no hay recuperacion.
+ *
+ * Rate limit: 5 compras / IP / 5 minutos (prevenir abuse / stress).
  */
 
 const DESIGN_ENUM = z.enum([
@@ -32,10 +35,10 @@ const PurchaseSchema = z.object({
   recipientContact: z.string().min(3).max(120),
   contactMethod: z.enum(["email", "whatsapp"]),
   senderName: z.string().min(1).max(80),
+  senderEmail: z.string().email().optional(),
 });
 
 export async function POST(req: NextRequest) {
-  // Rate limit: 5 compras por IP cada 5 minutos
   const ip = getClientIp(req);
   const { allowed } = rateLimit(`giftcard:purchase:${ip}`, 5, 300);
   if (!allowed) {
@@ -53,23 +56,35 @@ export async function POST(req: NextRequest) {
     }
 
     const tenantId = getTenantIdFromRequest(req);
-    // TODO(agent-E): cuando haya auth real, leer userId del session. Mock:
-    const senderUserId =
-      req.headers.get("x-user-id") ?? "user_me";
+    const senderUserId = req.headers.get("x-user-id") ?? null;
 
-    const card = await GiftCardsDB.purchase({
+    const { recipientContact, contactMethod } = parsed.data;
+    const isEmail = contactMethod === "email";
+
+    const result = await GiftCardsDB.purchase(
       tenantId,
+      {
+        amount: parsed.data.amount,
+        design: parsed.data.design,
+        message: parsed.data.message,
+        recipientName: parsed.data.recipientName,
+        recipientEmail: isEmail ? recipientContact : null,
+        recipientPhone: !isEmail ? recipientContact : null,
+        senderName: parsed.data.senderName,
+        senderEmail: parsed.data.senderEmail ?? null,
+      },
       senderUserId,
-      senderName: parsed.data.senderName,
-      amount: parsed.data.amount,
-      design: parsed.data.design,
-      message: parsed.data.message,
-      recipientName: parsed.data.recipientName,
-      recipientContact: parsed.data.recipientContact,
-      contactMethod: parsed.data.contactMethod,
-    });
+    );
 
-    return apiSuccess({ giftCard: card }, 201);
+    // CRITICO: el plainCode va en la respuesta UNA sola vez. El client debe
+    // mostrarlo y dejarlo copiar; no hay endpoint para recuperarlo.
+    return apiSuccess(
+      {
+        giftCard: result.giftCard,
+        plainCode: result.plainCode,
+      },
+      201,
+    );
   } catch (e) {
     logger.error("[gift-cards/purchase] error", {
       err: e instanceof Error ? e.message : String(e),

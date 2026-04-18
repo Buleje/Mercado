@@ -3,11 +3,12 @@
 /**
  * VendorApplicationsModule — Review de aplicaciones de vendedores.
  *
- * Superadmin ve todas las aplicaciones enviadas desde /vender/registro
- * y puede aprobar, rechazar con motivo o solicitar info adicional.
+ * Fetch real desde /api/superadmin/vendor-applications (ADR-079).
+ * El componente mantiene un loading state y muestra un empty si no
+ * hay aplicaciones.
  */
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect, useCallback } from "react";
 import {
   Building2,
   Clock,
@@ -20,6 +21,7 @@ import {
   Check,
   X,
   MessageSquare,
+  Loader2,
   type LucideIcon,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -27,111 +29,6 @@ import {
   ApplicationDetailsDrawer,
   type VendorApplication,
 } from "./vendor-applications/ApplicationDetailsDrawer";
-
-// ── Mock data ───────────────────────────────────────────────────────────────
-
-const MOCK_APPLICATIONS: VendorApplication[] = [
-  {
-    id: "VA-001",
-    businessName: "Bodega El Sol",
-    ownerName: "Carlos Torres",
-    ruc: "20123456789",
-    phone: "987654321",
-    email: "carlos@elsol.pe",
-    district: "Yarinacocha",
-    address: "Jr. Los Incas 234",
-    category: "Abarrotes y minimarket",
-    monthlyRevenue: "S/ 15,000 - 30,000",
-    productsCount: 120,
-    hasDelivery: true,
-    hasPos: true,
-    description:
-      "Bodega familiar con 8 años de experiencia atendiendo al vecindario. Queremos expandirnos al delivery online.",
-    status: "pendiente",
-    submittedAt: "2026-04-15",
-  },
-  {
-    id: "VA-002",
-    businessName: "Panadería La Espiga Dorada",
-    ownerName: "María Quispe",
-    ruc: "20234567890",
-    phone: "912345678",
-    email: "maria@espigadorada.pe",
-    district: "Callería",
-    address: "Av. Pucallpa 567",
-    category: "Panadería y repostería",
-    monthlyRevenue: "S/ 8,000 - 15,000",
-    productsCount: 45,
-    hasDelivery: true,
-    hasPos: false,
-    description:
-      "Panadería artesanal especializada en panes regionales. Producción diaria desde las 4am.",
-    status: "pendiente",
-    submittedAt: "2026-04-14",
-  },
-  {
-    id: "VA-003",
-    businessName: "Frutas Amazónicas S.A.C.",
-    ownerName: "Juan Ramírez",
-    ruc: "20345678901",
-    phone: "965432109",
-    email: "juan@frutasamazonicas.com",
-    district: "Manantay",
-    address: "Calle Las Palmeras 89",
-    category: "Frutas y verduras",
-    monthlyRevenue: "S/ 30,000+",
-    productsCount: 80,
-    hasDelivery: true,
-    hasPos: true,
-    description:
-      "Mayorista de frutas amazónicas regionales. Atendemos a restaurantes y tiendas del centro.",
-    status: "aprobada",
-    submittedAt: "2026-04-01",
-    reviewedAt: "2026-04-03",
-  },
-  {
-    id: "VA-004",
-    businessName: "Farmacia Vida Plena",
-    ownerName: "Ana Mendoza",
-    ruc: "20456789012",
-    phone: "998877665",
-    email: "ana@vidaplena.pe",
-    district: "Centro",
-    address: "Jr. Raymondi 456",
-    category: "Farmacia",
-    monthlyRevenue: "S/ 15,000 - 30,000",
-    productsCount: 200,
-    hasDelivery: false,
-    hasPos: true,
-    description: "Farmacia con servicio de delivery por WhatsApp.",
-    status: "rechazada",
-    submittedAt: "2026-03-25",
-    reviewedAt: "2026-03-28",
-    rejectReason:
-      "Categoría Farmacia requiere certificación DIGEMID adicional. Por favor, envía el certificado vigente para reactivar tu solicitud.",
-  },
-  {
-    id: "VA-005",
-    businessName: "Pollería Sabor Norteño",
-    ownerName: "Pedro Salas",
-    ruc: "20567890123",
-    phone: "934567890",
-    email: "pedro@sabornorteno.pe",
-    district: "Pueblo Libre",
-    address: "Av. Centenario 123",
-    category: "Restaurante y pollería",
-    monthlyRevenue: "S/ 8,000 - 15,000",
-    productsCount: 25,
-    hasDelivery: true,
-    hasPos: false,
-    description: "Pollería con más de 5 años atendiendo en la zona.",
-    status: "info_solicitada",
-    submittedAt: "2026-04-10",
-    reviewedAt: "2026-04-11",
-    requestedInfo:
-      "Por favor envía una foto del letrero exterior del local y copia de la ficha RUC al día.",
-  },
-];
 
 // ── Helpers ─────────────────────────────────────────────────────────────────
 
@@ -147,14 +44,19 @@ function fmtDate(iso: string) {
   }
 }
 
-function calcReviewDays(submitted: string, reviewed?: string) {
-  if (!reviewed) return null;
-  const diff = new Date(reviewed).getTime() - new Date(submitted).getTime();
-  return Math.max(1, Math.round(diff / (1000 * 60 * 60 * 24)));
-}
-
 function exportCSV(rows: VendorApplication[]) {
-  const headers = ["ID", "Razon social", "RUC", "Propietario", "Telefono", "Distrito", "Categoria", "Estado", "Enviada", "Revisada"];
+  const headers = [
+    "ID",
+    "Razon social",
+    "RUC",
+    "Propietario",
+    "Telefono",
+    "Distrito",
+    "Categoria",
+    "Estado",
+    "Enviada",
+    "Revisada",
+  ];
   const csvRows = rows.map((r) => [
     r.id,
     r.businessName,
@@ -224,97 +126,169 @@ function StatCard({
   );
 }
 
+// ── Data hook ───────────────────────────────────────────────────────────────
+
+type Stats = {
+  pending: number;
+  underReview: number;
+  approvedThisMonth: number;
+  rejectedThisMonth: number;
+  tenantProvisioned: number;
+  avgReviewDays: number;
+  topRejectionReasons: Array<{ reason: string; count: number }>;
+};
+
+async function fetchApplications(status: string): Promise<VendorApplication[]> {
+  const res = await fetch(
+    `/api/superadmin/vendor-applications?status=${encodeURIComponent(status)}`,
+    { cache: "no-store" },
+  );
+  if (!res.ok) throw new Error(`HTTP ${res.status}`);
+  const json = (await res.json()) as {
+    ok: boolean;
+    applications: VendorApplication[];
+  };
+  return json.applications;
+}
+
+async function fetchStats(): Promise<Stats | null> {
+  try {
+    const res = await fetch("/api/superadmin/vendor-applications/stats", {
+      cache: "no-store",
+    });
+    if (!res.ok) return null;
+    const json = (await res.json()) as { ok: boolean; stats: Stats };
+    return json.stats;
+  } catch {
+    return null;
+  }
+}
+
+async function postReview(
+  id: string,
+  action:
+    | "start_review"
+    | "request_info"
+    | "approve"
+    | "reject"
+    | "reopen",
+  note?: string,
+): Promise<{ ok: boolean; error?: string }> {
+  const res = await fetch(`/api/superadmin/vendor-applications/${id}/review`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ action, note }),
+  });
+  if (!res.ok) {
+    const body = (await res.json().catch(() => ({}))) as { error?: string };
+    return { ok: false, error: body.error ?? `HTTP ${res.status}` };
+  }
+  return { ok: true };
+}
+
 // ── Main Component ──────────────────────────────────────────────────────────
 
 export default function VendorApplicationsModule() {
-  const [apps, setApps] = useState<VendorApplication[]>(MOCK_APPLICATIONS);
+  const [apps, setApps] = useState<VendorApplication[]>([]);
+  const [stats, setStats] = useState<Stats | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [search, setSearch] = useState("");
-  const [statusFilter, setStatusFilter] = useState<VendorApplication["status"] | "all">("pendiente");
+  const [statusFilter, setStatusFilter] = useState<
+    VendorApplication["status"] | "all"
+  >("pendiente");
   const [selected, setSelected] = useState<VendorApplication | null>(null);
 
+  // Mapea el filtro UI al status del backend
+  const backendStatus = useMemo(() => {
+    switch (statusFilter) {
+      case "pendiente":
+        return "pending";
+      case "aprobada":
+        return "approved";
+      case "rechazada":
+        return "rejected";
+      case "info_solicitada":
+        return "info_requested";
+      default:
+        return "all";
+    }
+  }, [statusFilter]);
+
+  const reload = useCallback(async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const [list, s] = await Promise.all([
+        fetchApplications(backendStatus),
+        fetchStats(),
+      ]);
+      setApps(list);
+      setStats(s);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Error al cargar");
+    } finally {
+      setLoading(false);
+    }
+  }, [backendStatus]);
+
+  useEffect(() => {
+    reload();
+  }, [reload]);
+
   const filtered = useMemo(() => {
-    return apps.filter((a) => {
-      if (statusFilter !== "all" && a.status !== statusFilter) return false;
-      if (!search.trim()) return true;
-      const q = search.toLowerCase();
-      return (
+    if (!search.trim()) return apps;
+    const q = search.toLowerCase();
+    return apps.filter(
+      (a) =>
         a.businessName.toLowerCase().includes(q) ||
         a.ruc.includes(q) ||
         a.ownerName.toLowerCase().includes(q) ||
         a.district.toLowerCase().includes(q) ||
-        a.id.toLowerCase().includes(q)
-      );
-    });
-  }, [apps, search, statusFilter]);
-
-  // KPIs
-  const pendientes = apps.filter((a) => a.status === "pendiente").length;
-  const now = new Date();
-  const thisMonth = (iso: string) => {
-    const d = new Date(iso);
-    return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear();
-  };
-  const aprobadasEsteMes = apps.filter(
-    (a) => a.status === "aprobada" && a.reviewedAt && thisMonth(a.reviewedAt)
-  ).length;
-  const rechazadasEsteMes = apps.filter(
-    (a) => a.status === "rechazada" && a.reviewedAt && thisMonth(a.reviewedAt)
-  ).length;
-  const reviewedApps = apps.filter((a) => a.reviewedAt);
-  const avgReviewDays = reviewedApps.length > 0
-    ? Math.round(
-        reviewedApps
-          .map((a) => calcReviewDays(a.submittedAt, a.reviewedAt) ?? 0)
-          .reduce((s, d) => s + d, 0) / reviewedApps.length
-      )
-    : 0;
-
-  const handleApprove = (id: string) => {
-    setApps((prev) =>
-      prev.map((a) =>
-        a.id === id
-          ? {
-              ...a,
-              status: "aprobada" as const,
-              reviewedAt: new Date().toISOString().split("T")[0],
-            }
-          : a
-      )
+        a.id.toLowerCase().includes(q),
     );
+  }, [apps, search]);
+
+  const handleApprove = async (id: string) => {
+    const res = await postReview(id, "approve");
+    if (!res.ok) {
+      setError(res.error ?? "No se pudo aprobar");
+      return;
+    }
     setSelected(null);
+    await reload();
   };
 
-  const handleReject = (id: string, reason: string) => {
-    setApps((prev) =>
-      prev.map((a) =>
-        a.id === id
-          ? {
-              ...a,
-              status: "rechazada" as const,
-              reviewedAt: new Date().toISOString().split("T")[0],
-              rejectReason: reason,
-            }
-          : a
-      )
-    );
+  const handleReject = async (id: string, reason: string) => {
+    const res = await postReview(id, "reject", reason);
+    if (!res.ok) {
+      setError(res.error ?? "No se pudo rechazar");
+      return;
+    }
     setSelected(null);
+    await reload();
   };
 
-  const handleRequestInfo = (id: string, info: string) => {
-    setApps((prev) =>
-      prev.map((a) =>
-        a.id === id
-          ? {
-              ...a,
-              status: "info_solicitada" as const,
-              reviewedAt: new Date().toISOString().split("T")[0],
-              requestedInfo: info,
-            }
-          : a
-      )
-    );
+  const handleRequestInfo = async (id: string, info: string) => {
+    // Si viene de pending, primero hay que startReview para entrar a under_review
+    const current = apps.find((a) => a.id === id);
+    if (current?.status === "pendiente") {
+      await postReview(id, "start_review");
+    }
+    const res = await postReview(id, "request_info", info);
+    if (!res.ok) {
+      setError(res.error ?? "No se pudo solicitar info");
+      return;
+    }
     setSelected(null);
+    await reload();
   };
+
+  // KPIs: usamos stats del server si hay, sino derivamos del listado.
+  const pendientes = stats?.pending ?? apps.filter((a) => a.status === "pendiente").length;
+  const aprobadasEsteMes = stats?.approvedThisMonth ?? 0;
+  const rechazadasEsteMes = stats?.rejectedThisMonth ?? 0;
+  const avgReviewDays = stats?.avgReviewDays ?? 0;
 
   return (
     <div className="space-y-4">
@@ -332,6 +306,18 @@ export default function VendorApplicationsModule() {
           </p>
         </div>
       </div>
+
+      {error && (
+        <div className="rounded-xl border border-[var(--data-error)] bg-[var(--data-error)]/5 px-4 py-3 text-sm text-[var(--data-error)] flex items-center justify-between">
+          <span>{error}</span>
+          <button
+            onClick={() => setError(null)}
+            className="text-xs font-semibold underline"
+          >
+            Cerrar
+          </button>
+        </div>
+      )}
 
       {/* KPIs */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
@@ -379,7 +365,11 @@ export default function VendorApplicationsModule() {
         </div>
         <select
           value={statusFilter}
-          onChange={(e) => setStatusFilter(e.target.value as VendorApplication["status"] | "all")}
+          onChange={(e) =>
+            setStatusFilter(
+              e.target.value as VendorApplication["status"] | "all",
+            )
+          }
           className="px-3 py-2 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 text-sm cursor-pointer"
         >
           <option value="all">Todos los estados</option>
@@ -398,7 +388,12 @@ export default function VendorApplicationsModule() {
       </div>
 
       {/* Tabla */}
-      {filtered.length === 0 ? (
+      {loading ? (
+        <div className="text-center py-16 text-gray-400 bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 rounded-2xl">
+          <Loader2 className="h-6 w-6 mx-auto mb-3 animate-spin" />
+          <p className="text-sm font-semibold">Cargando aplicaciones…</p>
+        </div>
+      ) : filtered.length === 0 ? (
         <div className="text-center py-16 text-gray-400 bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 rounded-2xl">
           <Building2 className="h-10 w-10 mx-auto mb-3 opacity-40" />
           <p className="text-sm font-semibold">Sin aplicaciones que mostrar</p>

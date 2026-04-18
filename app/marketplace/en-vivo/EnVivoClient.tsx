@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { ArrowRight } from "@buleje/design-system/icons";
 import { EnVivoHero } from "@/components/marketplace/en-vivo/EnVivoHero";
@@ -19,21 +19,56 @@ import {
   getPastLives,
   getUpcomingLives,
   LIVES_MOCK,
+  type LiveSession,
 } from "@/lib/mocks/lives.mock";
+import { fetchActiveLives } from "@/lib/lives/client";
 
 export function EnVivoClient() {
   const [activeCategory, setActiveCategory] = useState<string | null>(null);
 
-  const currentLive = useMemo(() => getLiveNow(), []);
-  const upcoming = useMemo(() => getUpcomingLives(), []);
-  const past = useMemo(() => getPastLives(), []);
+  // ─── Initial mock state (SSR-friendly, reemplazado por API cuando carga) ──
+  const [currentLive, setCurrentLive] = useState<LiveSession | null>(() =>
+    getLiveNow(),
+  );
+  const [upcoming, setUpcoming] = useState<LiveSession[]>(() =>
+    getUpcomingLives(),
+  );
+  const [past, setPast] = useState<LiveSession[]>(() => getPastLives());
   const categories = useMemo(() => getLiveCategories(), []);
+
+  // ─── Fetch real data y refresco cada 30s ──────────────────────────────────
+  useEffect(() => {
+    let cancelled = false;
+
+    const load = async () => {
+      try {
+        const result = await fetchActiveLives();
+        if (cancelled) return;
+        // Si el backend tiene datos reales, usarlos; si no, mantener mock inicial
+        if (result.active.length > 0 || result.upcoming.length > 0 || result.past.length > 0) {
+          setCurrentLive(result.active[0] ?? null);
+          setUpcoming(result.upcoming);
+          setPast(result.past);
+        }
+      } catch {
+        // swallowed — mantenemos el estado mock
+      }
+    };
+
+    void load();
+    const id = setInterval(() => void load(), 30_000);
+    return () => {
+      cancelled = true;
+      clearInterval(id);
+    };
+  }, []);
 
   // nextInHours se calcula una sola vez vía useState initializer para no
   // llamar Date.now() durante el render body (regla de pureza de React 19).
   const [nextInHours] = useState<number | undefined>(() => {
-    if (upcoming.length === 0) return undefined;
-    const diffMs = new Date(upcoming[0].startsAt).getTime() - Date.now();
+    const ups = getUpcomingLives();
+    if (ups.length === 0) return undefined;
+    const diffMs = new Date(ups[0].startsAt).getTime() - Date.now();
     return Math.max(1, Math.round(diffMs / (1000 * 60 * 60)));
   });
 
@@ -46,7 +81,7 @@ export function EnVivoClient() {
     [past, activeCategory],
   );
 
-  const liveCount = LIVES_MOCK.filter((l) => l.status === "live").length;
+  const liveCount = currentLive ? 1 : LIVES_MOCK.filter((l) => l.status === "live").length;
 
   return (
     <div className="min-h-screen bg-[var(--surface-canvas)]">
@@ -106,6 +141,7 @@ export function EnVivoClient() {
                 <LiveChat
                   initialMessages={currentLive.chat}
                   hostName={currentLive.storeName}
+                  liveId={currentLive.id}
                   active
                 />
               </aside>

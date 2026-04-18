@@ -66,9 +66,20 @@ export default function ComprarClient() {
       throw new Error(data.error ?? "Error al procesar la compra");
     }
 
-    router.push(
-      `/marketplace/gift-cards/confirmacion?amount=${amount}&recipient=${encodeURIComponent(recipientName)}`,
-    );
+    // ADR-077: el plainCode solo viene UNA vez en este response. Lo pasamos
+    // por query string a la confirmacion para que el sender pueda copiarlo /
+    // compartirlo. La confirmacion debe mostrarlo una sola vez y limpiarlo
+    // del history despues.
+    const data = await res.json().catch(() => ({}) as { plainCode?: string });
+    const plainCode = typeof data.plainCode === "string" ? data.plainCode : "";
+
+    const params = new URLSearchParams({
+      amount: String(amount),
+      recipient: recipientName,
+    });
+    if (plainCode) params.set("code", plainCode);
+
+    router.push(`/marketplace/gift-cards/confirmacion?${params.toString()}`);
   }
 
   return (

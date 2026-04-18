@@ -2,26 +2,37 @@
  * POST /api/vendor/registration
  *
  * Recibe el payload completo del wizard /vender/registro.
- * Valida con Zod (safeParse — regla CLAUDE.md #2), persiste via
- * VendorRegistrationsDB (placeholder in-memory — ver archivo para roadmap),
- * y responde con `{ id, status }` para redirigir al success page.
+ * Valida con Zod (safeParse — regla CLAUDE.md #2), mapea al shape que
+ * espera VendorApplicationsDB y persiste via Prisma (ADR-079).
  *
- * tenantId (regla CLAUDE.md #3): derivado del cookie `active-tenant` o
- * default "main" (public endpoint). Rate-limited para evitar spam.
+ * RUC unico a nivel plataforma: duplicate => 409.
+ * Publico / sin auth — rate-limit STRICT para evitar spam.
  */
 
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 import { vendorRegistrationSchema } from "@/lib/validators/vendor-registration";
-import { VendorRegistrationsDB } from "@/lib/db/vendor-registrations.db";
+import {
+  VendorApplicationsDB,
+  RucAlreadyRegisteredError,
+} from "@/lib/db/vendor-applications.db";
+import { mapWizardToSubmitInput } from "@/lib/vendor/registration-mapper";
 import { applyRateLimit } from "@/lib/rate-limit";
+import { logger } from "@/lib/logger";
 
 export async function POST(req: NextRequest) {
   const limited = applyRateLimit(req, "STRICT", "vendor-registration");
   if (limited) return limited;
 
   try {
-    const body = await req.json().catch(() => null);
+    let body: unknown = null;
+    try {
+      body = await req.json();
+    } catch (parseErr) {
+      logger.warn("[api/vendor/registration] invalid json", {
+        error: parseErr instanceof Error ? parseErr.message : String(parseErr),
+      });
+    }
     if (!body || typeof body !== "object") {
       return NextResponse.json(
         { error: "Cuerpo de la solicitud inválido" },
@@ -29,7 +40,7 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // Validate with Zod — safeParse (never .parse)
+    // Validate with Zod — safeParse (CLAUDE.md #2)
     const parsed = vendorRegistrationSchema.safeParse(body);
     if (!parsed.success) {
       const first = parsed.error.issues[0];
@@ -42,23 +53,36 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // Derive tenant from cookie (public endpoint — best-effort, default "main")
-    const tenantId =
-      req.cookies.get("active-tenant")?.value?.trim() ?? "main";
+    // Map UI shape -> DB shape
+    const submitInput = mapWizardToSubmitInput(parsed.data);
 
-    // Persist via DB class (never Prisma directly — CLAUDE.md #1)
-    const record = await VendorRegistrationsDB.create(tenantId, parsed.data);
-
-    return NextResponse.json(
-      {
-        ok: true,
-        id: record.id,
-        status: record.status,
-      },
-      { status: 201 },
-    );
-  } catch (_err) {
-    // Fire-and-forget tolerance on unexpected errors (CLAUDE.md #7)
+    try {
+      const row = await VendorApplicationsDB.submit(submitInput);
+      return NextResponse.json(
+        {
+          ok: true,
+          id: row.id,
+          status: row.status,
+        },
+        { status: 201 },
+      );
+    } catch (err) {
+      if (err instanceof RucAlreadyRegisteredError) {
+        return NextResponse.json(
+          {
+            error:
+              "Ya tenés una aplicación con ese RUC. Contactá a soporte para consultar su estado.",
+            code: err.code,
+          },
+          { status: 409 },
+        );
+      }
+      throw err;
+    }
+  } catch (err) {
+    logger.error("[api/vendor/registration] unexpected error", {
+      error: err instanceof Error ? err.message : String(err),
+    });
     return NextResponse.json(
       { error: "No se pudo procesar la solicitud. Intentá nuevamente." },
       { status: 500 },

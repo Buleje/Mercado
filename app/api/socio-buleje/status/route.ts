@@ -2,19 +2,23 @@ import "server-only";
 import { NextRequest, NextResponse } from "next/server";
 import { StatusQuerySchema } from "@/lib/validators/socio-buleje";
 import { SocioBulejeDB } from "@/lib/db/socio-buleje.db";
+import { toErrorPayload, newTraceId } from "@/lib/api-error";
+import { logger } from "@/lib/logger";
 
 /**
  * GET /api/socio-buleje/status?userId=...
  *
- * Devuelve el estado actual de la membership del usuario (o null si no tiene).
+ * Devuelve la membership activa del usuario (o null). Incluye `cashbackBalance`,
+ * `totalEarned` y `totalRedeemed` hidratados del ledger. ADR-078.
  */
 export async function GET(req: NextRequest) {
+  const traceId = newTraceId();
   try {
     const { searchParams } = new URL(req.url);
     const parsed = StatusQuerySchema.safeParse({ userId: searchParams.get("userId") });
     if (!parsed.success) {
       return NextResponse.json(
-        { error: "Parámetros inválidos", issues: parsed.error.flatten() },
+        { error: { code: "VALIDATION_ERROR", message: "Parámetros inválidos", details: parsed.error.flatten(), traceId } },
         { status: 400 },
       );
     }
@@ -23,8 +27,13 @@ export async function GET(req: NextRequest) {
     const { userId } = parsed.data;
     const membership = await SocioBulejeDB.getMembership(tenantId, userId);
 
-    return NextResponse.json({ ok: true, membership });
-  } catch {
-    return NextResponse.json({ error: "Error interno" }, { status: 500 });
+    return NextResponse.json({ ok: true, membership, traceId });
+  } catch (err) {
+    const { payload, status } = toErrorPayload(err, traceId);
+    logger.warn("[api/socio-buleje/status] error", {
+      traceId,
+      error: err instanceof Error ? err.message : String(err),
+    });
+    return NextResponse.json(payload, { status });
   }
 }
