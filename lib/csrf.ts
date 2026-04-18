@@ -115,6 +115,7 @@ export function validateCsrfToken(request: NextRequest): boolean {
     "/api/stripe/webhook",
     "/api/cron/",
     "/api/health",
+    "/api/admin/log-error", // error boundary, dispara antes del login
   ];
   if (webhookPaths.some((p) => pathname.startsWith(p) || pathname === p)) {
     return true;

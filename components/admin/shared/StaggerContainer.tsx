@@ -1,6 +1,6 @@
 "use client";
 
-import { motion } from "framer-motion";
+import { m } from "framer-motion";
 
 const container = {
   hidden: { opacity: 0 },
@@ -17,16 +17,16 @@ const item = {
 
 export function StaggerContainer({ children, className }: { children: React.ReactNode; className?: string }) {
   return (
-    <motion.div variants={container} initial="hidden" animate="show" className={className}>
+    <m.div variants={container} initial="hidden" animate="show" className={className}>
       {children}
-    </motion.div>
+    </m.div>
   );
 }
 
 export function StaggerItem({ children, className }: { children: React.ReactNode; className?: string }) {
   return (
-    <motion.div variants={item} className={className}>
+    <m.div variants={item} className={className}>
       {children}
-    </motion.div>
+    </m.div>
   );
 }

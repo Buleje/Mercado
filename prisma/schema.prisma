@@ -3839,3 +3839,120 @@ enum ApplicationReviewAction {
   reject
   reopen
 }
+
+enum LiveStatus {
+  scheduled
+  live
+  ended
+  cancelled
+}
+
+enum ModerationState {
+  approved
+  flagged
+  removed
+}
+
+enum LiveViewerEventType {
+  joined
+  left
+  heartbeat
+  product_click
+  add_to_cart
+  ordered
+}
+
+/// Transmisión en vivo. State machine: scheduled → live → ended (o scheduled → cancelled).
+/// streamUrl / recordingUrl nullable — streaming real (WebRTC/HLS) queda fuera del ADR-080.
+/// Agregados se calculan al endLive desde LiveViewerEvent + LiveChatMessage.
+model LiveSession {
+  id              String     @id @default(cuid())
+  tenantId        String
+  storeId         String?
+  title           String
+  description     String?
+  thumbnailUrl    String?
+  status          LiveStatus
+  scheduledFor    DateTime
+  startedAt       DateTime?
+  endedAt         DateTime?
+  durationSeconds Int?
+  streamUrl       String?
+  recordingUrl    String?
+  viewersPeak     Int        @default(0)
+  viewersAvg      Int        @default(0)
+  messagesCount   Int        @default(0)
+  ordersGenerated Int        @default(0)
+  gmvSoles        Decimal    @default(0) @db.Decimal(10, 2)
+  categoryChips   String[]
+  createdAt       DateTime   @default(now())
+  updatedAt       DateTime   @updatedAt
+
+  products     LiveProduct[]
+  messages     LiveChatMessage[]
+  viewerEvents LiveViewerEvent[]
+
+  @@index([tenantId, status, scheduledFor])
+  @@index([status, scheduledFor])
+  @@index([tenantId, endedAt])
+  @@map("live_sessions")
+}
+
+/// Producto destacado dentro de una transmisión. featuredOrder define el orden
+/// del panel lateral; highlightedAt marca "lo de ahora" durante el stream.
+/// Contadores addedToCart / orderedCount se incrementan via trackViewerEvent.
+model LiveProduct {
+  id            String    @id @default(cuid())
+  liveSessionId String
+  tenantId      String
+  productId     Int
+  featuredOrder Int
+  highlightedAt DateTime?
+  addedToCart   Int       @default(0)
+  orderedCount  Int       @default(0)
+  createdAt     DateTime  @default(now())
+
+  session LiveSession @relation(fields: [liveSessionId], references: [id], onDelete: Cascade)
+
+  @@unique([liveSessionId, productId])
+  @@index([tenantId, liveSessionId, featuredOrder])
+  @@map("live_products")
+}
+
+/// Mensaje de chat en vivo. moderationState=flagged oculta el mensaje del feed público.
+/// Rate limit 10 msg/min por userId / anonymousId (ADR-080).
+model LiveChatMessage {
+  id              String          @id @default(cuid())
+  liveSessionId   String
+  tenantId        String
+  userId          String?
+  userName        String
+  message         String
+  moderationState ModerationState @default(approved)
+  createdAt       DateTime        @default(now())
+
+  session LiveSession @relation(fields: [liveSessionId], references: [id], onDelete: Cascade)
+
+  @@index([liveSessionId, createdAt])
+  @@index([tenantId, moderationState])
+  @@map("live_chat_messages")
+}
+
+/// Eventos de viewer (joined/left/heartbeat/product_click/add_to_cart/ordered).
+/// Retention: 90 días detallados, después rollup a totales del LiveSession (cron v2, ADR-080).
+model LiveViewerEvent {
+  id            String              @id @default(cuid())
+  liveSessionId String
+  tenantId      String
+  userId        String?
+  anonymousId   String?
+  eventType     LiveViewerEventType
+  productId     Int?
+  createdAt     DateTime            @default(now())
+
+  session LiveSession @relation(fields: [liveSessionId], references: [id], onDelete: Cascade)
+
+  @@index([liveSessionId, eventType, createdAt])
+  @@index([tenantId, createdAt])
+  @@map("live_viewer_events")
+}

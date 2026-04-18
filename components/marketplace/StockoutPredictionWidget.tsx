@@ -63,18 +63,26 @@ export default function StockoutPredictionWidget({ storeSlug }: Props) {
   const [lastUpdated, setLastUpdated] = useState<string | null>(null);
 
   const fetchPredictions = useCallback(async () => {
+    if (!storeSlug) {
+      setLoading(false);
+      return;
+    }
     setLoading(true);
     setError(null);
     try {
       const res = await fetch(
         `/api/marketplace/predictions?storeSlug=${encodeURIComponent(storeSlug)}&severity=critical,high`
       );
-      if (!res.ok) throw new Error("Error al cargar predicciones");
-      const json = await res.json() as { data: PredictionItem[] };
+      if (!res.ok) {
+        // 400/401/403/500 — widget secundario, tratar como sin predicciones
+        setItems([]);
+        return;
+      }
+      const json = (await res.json()) as { data: PredictionItem[] };
       setItems(json.data ?? []);
       setLastUpdated(new Date().toLocaleTimeString("es-PE", { hour: "2-digit", minute: "2-digit" }));
     } catch {
-      setError("No se pudieron cargar las predicciones.");
+      setItems([]);
     } finally {
       setLoading(false);
     }

@@ -562,10 +562,18 @@ export default function DevolucionesProveedorModule() {
 
       {/* ── Panel de Reportes ─────────────────────────────────────────── */}
       <div className="mt-6 border border-[var(--rule-base)] rounded-xl overflow-hidden">
-        <button
-          type="button"
+        <div
+          role="button"
+          tabIndex={0}
+          aria-expanded={showReportes}
           onClick={() => setShowReportes(v => !v)}
-          className="w-full flex items-center justify-between px-4 py-3 bg-gray-50 hover:bg-gray-100 transition-colors"
+          onKeyDown={(e) => {
+            if (e.key === "Enter" || e.key === " ") {
+              e.preventDefault();
+              setShowReportes(v => !v);
+            }
+          }}
+          className="w-full flex items-center justify-between px-4 py-3 bg-gray-50 hover:bg-gray-100 transition-colors cursor-pointer"
         >
           <div className="flex items-center gap-2">
             <BarChart2 className="h-4 w-4 text-primary" />
@@ -587,7 +595,7 @@ export default function DevolucionesProveedorModule() {
             </button>
             {showReportes ? <ChevronUp className="h-4 w-4 text-[var(--text-tertiary)]" /> : <ChevronDown className="h-4 w-4 text-[var(--text-tertiary)]" />}
           </div>
-        </button>
+        </div>
 
         {showReportes && (
           <div className="p-4 space-y-6">

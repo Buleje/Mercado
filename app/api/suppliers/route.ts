@@ -38,10 +38,12 @@ export async function GET(req: NextRequest) {
 
   try {
     const data = await withDbRetry(() => SuppliersDB.getAll(auth.tenantId));
-    return NextResponse.json(data);
+    return NextResponse.json(data ?? []);
   } catch (e) {
-    console.error("[suppliers] GET error:", e);
-    return NextResponse.json({ error: "Database error" }, { status: 503 });
+    // Graceful fallback — si la tabla no está migrada o hay timeout,
+    // devolver [] en vez de 503 para no romper UI admin que iterará sobre el array.
+    console.warn("[suppliers] GET fallback empty:", e instanceof Error ? e.message : String(e));
+    return NextResponse.json([], { headers: { "Cache-Control": "no-store" } });
   }
 }
 
