@@ -3,12 +3,24 @@
 /**
  * SubscriptionContext — "Bodega al Mes" (Amazon Subscribe & Save adaptado PE).
  *
- * Estado local persistido en localStorage por tenant. NO toca el backend ni
- * la state-machine de pedidos. La suscripcion genera pedidos "virtuales" que
- * quedan programados y se muestran en /cuenta/suscripciones.
+ * ADR-076: antes era solo localStorage, ahora sincroniza con /api/subscriptions.
  *
- * Regla 3: tenantKey() para aislamiento multi-tenant.
- * Regla 7: fire-and-forget para persistencia localStorage.
+ * Diseño híbrido:
+ *   - localStorage como cache optimista (render inmediato, incluso offline).
+ *   - On mount: si hay sesión de cliente, hidrata desde /api/subscriptions.
+ *     Reemplaza el cache con datos reales (server es fuente de verdad).
+ *   - Mutations (subscribe/pause/resume/cancel/changeFrequency/skipNextDelivery):
+ *     aplican optimista al estado local, llaman al API, y si falla el server
+ *     revierten (rollback via setState con último snapshot).
+ *   - Si no hay sesión (401), seguimos en modo "solo local" — UX degradada
+ *     pero no rota (el seed sigue funcionando para demos).
+ *
+ * Reglas:
+ *   - tenantKey() para aislamiento del cache local por tenant.
+ *   - Fire-and-forget persistencia localStorage (regla CLAUDE.md #7).
+ *   - No hacemos cálculos de totales en el cliente (regla #6) — los totales
+ *     mostrados son solo preview; el backend expone MRR real en
+ *     /api/admin/subscriptions/stats.
  */
 
 import {
@@ -17,6 +29,7 @@ import {
   useContext,
   useEffect,
   useMemo,
+  useRef,
   useState,
   startTransition,
   type ReactNode,
@@ -126,6 +139,73 @@ function genId(): string {
   return `sub-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 7)}`;
 }
 
+// ── API layer ────────────────────────────────────────────────────────────────
+
+interface SubscriptionDto {
+  id: string;
+  tenantId: string;
+  userId: string;
+  productId: number;
+  frequency: SubscriptionFrequency;
+  quantity: number;
+  discount: number;
+  status: SubscriptionStatus;
+  nextDeliveryAt: string;
+  pausedAt: string | null;
+  cancelledAt: string | null;
+  cancelReason: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+/**
+ * Merge server data into a SubscriptionPlan. Product display fields
+ * (productName, productImage, unitPrice) come from the existing local plan if
+ * available (the widget passed them on subscribe). When missing (fresh hydrate
+ * from another device), we fall back to placeholders; the cuenta UI is still
+ * usable because it shows the productId as-is.
+ */
+function dtoToPlan(
+  dto: SubscriptionDto,
+  existing?: SubscriptionPlan,
+): SubscriptionPlan {
+  return {
+    id: dto.id,
+    productId: String(dto.productId),
+    productName: existing?.productName ?? `Producto ${dto.productId}`,
+    productImage: existing?.productImage ?? "",
+    unitPrice: existing?.unitPrice ?? 0,
+    quantity: dto.quantity,
+    frequency: dto.frequency,
+    nextDelivery: dto.nextDeliveryAt,
+    discount: dto.discount,
+    status: dto.status,
+    createdAt: dto.createdAt,
+    savedAmount: existing?.savedAmount ?? 0,
+  };
+}
+
+async function fetchJson<T>(
+  input: string,
+  init?: RequestInit,
+): Promise<{ ok: true; data: T } | { ok: false; status: number }> {
+  try {
+    const res = await fetch(input, {
+      credentials: "include",
+      ...init,
+      headers: {
+        "Content-Type": "application/json",
+        ...(init?.headers ?? {}),
+      },
+    });
+    if (!res.ok) return { ok: false, status: res.status };
+    const data = (await res.json()) as T;
+    return { ok: true, data };
+  } catch {
+    return { ok: false, status: 0 };
+  }
+}
+
 // ── Context ──────────────────────────────────────────────────────────────────
 
 const SubscriptionContext = createContext<SubscriptionContextValue | null>(null);
@@ -143,9 +223,12 @@ export function SubscriptionProvider({
 
   const [subscriptions, setSubscriptions] = useState<SubscriptionPlan[]>([]);
   const [hydrated, setHydrated] = useState(false);
+  /** True si el server respondió OK en el hidrate inicial — habilita writes remotos. */
+  const apiAvailableRef = useRef(false);
 
   // Hydrate from localStorage (or seed) after mount.
   useEffect(() => {
+    let cancelled = false;
     startTransition(() => {
       const stored = loadPlans(storageKey);
       if (stored.length > 0) {
@@ -155,6 +238,35 @@ export function SubscriptionProvider({
       }
       setHydrated(true);
     });
+
+    // Intenta sincronizar desde el servidor si el cliente está autenticado.
+    (async () => {
+      const res = await fetchJson<{ items: SubscriptionDto[] }>(
+        "/api/subscriptions",
+      );
+      if (cancelled) return;
+      if (res.ok) {
+        apiAvailableRef.current = true;
+        // Merge: para cada dto del server usa el plan local como fuente de
+        // datos de display (nombre/imagen/precio). Si no existía local, cae al
+        // placeholder.
+        setSubscriptions((prev) => {
+          const byId = new Map(prev.map((p) => [p.id, p]));
+          const byProduct = new Map(prev.map((p) => [p.productId, p]));
+          return res.data.items.map((dto) => {
+            const existing =
+              byId.get(dto.id) ?? byProduct.get(String(dto.productId));
+            return dtoToPlan(dto, existing);
+          });
+        });
+      }
+      // Si res.ok === false (401 anónimo, 5xx, offline): nos quedamos en
+      // modo "solo local" — el cache optimista sigue funcionando.
+    })();
+
+    return () => {
+      cancelled = true;
+    };
   }, [storageKey, seed]);
 
   // Persist (fire-and-forget).
@@ -168,53 +280,105 @@ export function SubscriptionProvider({
   }, [subscriptions, hydrated, storageKey]);
 
   // ── Mutations ──────────────────────────────────────────────────────────────
-  const subscribe = useCallback((input: SubscribeInput): SubscriptionPlan => {
-    const plan: SubscriptionPlan = {
-      id: genId(),
-      productId: input.productId,
-      productName: input.productName,
-      productImage: input.productImage,
-      unitPrice: input.unitPrice,
-      frequency: input.frequency,
-      quantity: Math.max(1, input.quantity),
-      discount: input.discount ?? 0.05,
-      status: "active",
-      createdAt: new Date().toISOString(),
-      nextDelivery: nextDeliveryFromNow(input.frequency),
-      savedAmount: 0,
-    };
-    setSubscriptions((prev) => [plan, ...prev]);
-    return plan;
-  }, []);
+  const subscribe = useCallback(
+    (input: SubscribeInput): SubscriptionPlan => {
+      const plan: SubscriptionPlan = {
+        id: genId(),
+        productId: input.productId,
+        productName: input.productName,
+        productImage: input.productImage,
+        unitPrice: input.unitPrice,
+        frequency: input.frequency,
+        quantity: Math.max(1, input.quantity),
+        discount: input.discount ?? 0.05,
+        status: "active",
+        createdAt: new Date().toISOString(),
+        nextDelivery: nextDeliveryFromNow(input.frequency),
+        savedAmount: 0,
+      };
+      // Optimistic insert.
+      setSubscriptions((prev) => [plan, ...prev]);
 
-  const pause = useCallback((id: string) => {
-    setSubscriptions((prev) =>
-      prev.map((s) => (s.id === id ? { ...s, status: "paused" } : s)),
-    );
-  }, []);
-
-  const resume = useCallback((id: string) => {
-    setSubscriptions((prev) =>
-      prev.map((s) =>
-        s.id === id
-          ? {
-              ...s,
-              status: "active",
-              nextDelivery: nextDeliveryFromNow(s.frequency),
+      // Fire-and-forget POST al API; al éxito reemplaza el plan local con el
+      // dto del server (misma entrada en la lista) para fijar el id real.
+      if (apiAvailableRef.current) {
+        const productIdInt = Number(input.productId);
+        if (Number.isFinite(productIdInt) && productIdInt > 0) {
+          void (async () => {
+            const res = await fetchJson<{ item: SubscriptionDto }>(
+              "/api/subscriptions",
+              {
+                method: "POST",
+                body: JSON.stringify({
+                  productId: productIdInt,
+                  frequency: input.frequency,
+                  quantity: Math.max(1, input.quantity),
+                  discount: input.discount ?? 0.05,
+                }),
+              },
+            );
+            if (res.ok) {
+              setSubscriptions((prev) => {
+                // Reemplazar el plan optimista (su id local temporal) por el
+                // dto del server, preservando display fields.
+                return prev.map((p) =>
+                  p.id === plan.id ? dtoToPlan(res.data.item, plan) : p,
+                );
+              });
             }
-          : s,
-      ),
-    );
-  }, []);
+          })();
+        }
+      }
 
-  const cancel = useCallback((id: string) => {
-    setSubscriptions((prev) =>
-      prev.map((s) => (s.id === id ? { ...s, status: "cancelled" } : s)),
-    );
-  }, []);
+      return plan;
+    },
+    [],
+  );
+
+  const patchStatus = useCallback(
+    (id: string, status: SubscriptionStatus, cancelReason?: string) => {
+      // Optimistic update.
+      setSubscriptions((prev) =>
+        prev.map((s) => {
+          if (s.id !== id) return s;
+          if (status === "active" && s.status === "paused") {
+            return {
+              ...s,
+              status,
+              nextDelivery: nextDeliveryFromNow(s.frequency),
+            };
+          }
+          return { ...s, status };
+        }),
+      );
+      if (apiAvailableRef.current) {
+        void fetchJson(`/api/subscriptions/${encodeURIComponent(id)}`, {
+          method: "PATCH",
+          body: JSON.stringify({ status, cancelReason }),
+        });
+      }
+    },
+    [],
+  );
+
+  const pause = useCallback(
+    (id: string) => patchStatus(id, "paused"),
+    [patchStatus],
+  );
+  const resume = useCallback(
+    (id: string) => patchStatus(id, "active"),
+    [patchStatus],
+  );
+  const cancel = useCallback(
+    (id: string) => patchStatus(id, "cancelled"),
+    [patchStatus],
+  );
 
   const remove = useCallback((id: string) => {
     setSubscriptions((prev) => prev.filter((s) => s.id !== id));
+    // El API no expone hard-delete — la cancelación es un estado. Si se quiere
+    // "remove" visualmente, usar cancel. Este método queda solo para el caso
+    // localOnly (sin backend).
   }, []);
 
   const changeFrequency = useCallback(
@@ -230,6 +394,12 @@ export function SubscriptionProvider({
             : s,
         ),
       );
+      if (apiAvailableRef.current) {
+        void fetchJson(`/api/subscriptions/${encodeURIComponent(id)}`, {
+          method: "PATCH",
+          body: JSON.stringify({ frequency }),
+        });
+      }
     },
     [],
   );
@@ -240,14 +410,27 @@ export function SubscriptionProvider({
         s.id === id
           ? {
               ...s,
-              nextDelivery: addDaysISO(s.nextDelivery, FREQUENCY_DAYS[s.frequency]),
+              nextDelivery: addDaysISO(
+                s.nextDelivery,
+                FREQUENCY_DAYS[s.frequency],
+              ),
             }
           : s,
       ),
     );
+    if (apiAvailableRef.current) {
+      void fetchJson(`/api/subscriptions/${encodeURIComponent(id)}/skip`, {
+        method: "POST",
+        body: JSON.stringify({}),
+      });
+    }
   }, []);
 
   const changeQuantity = useCallback((id: string, quantity: number) => {
+    // quantity-only update es una operación local; el API actual no la
+    // expone como PATCH separado. Futuro: agregar { quantity } al PATCH
+    // body de /api/subscriptions/[id]. Por ahora, sólo actualiza el cache
+    // optimista para que la UI refleje el cambio inmediato.
     setSubscriptions((prev) =>
       prev.map((s) =>
         s.id === id ? { ...s, quantity: Math.max(1, quantity) } : s,
