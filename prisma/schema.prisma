@@ -3451,3 +3451,69 @@ model TenantPageVisit {
   @@index([tenantId, converted])
   @@index([sessionId])
 }
+
+/// ─────────────────────────────────────────────────────────────────────────────
+/// Subscription — "Bodega al Mes" (Amazon Subscribe & Save adaptado PE).
+/// ADR-076. Feature mutable: status/frequency/quantity cambian durante la vida.
+/// userId hace FK lógico a Customer.phone (no físico — evita CASCADE inesperado).
+/// ─────────────────────────────────────────────────────────────────────────────
+enum SubscriptionFreq {
+  weekly
+  biweekly
+  monthly
+  bimonthly
+}
+
+enum SubscriptionStatus {
+  active
+  paused
+  cancelled
+}
+
+model Subscription {
+  id             String             @id @default(cuid())
+  tenantId       String // multi-tenant isolation (CLAUDE.md #3)
+  userId         String // FK lógico a Customer.phone
+  productId      Int // FK lógico a Product.id
+  frequency      SubscriptionFreq
+  quantity       Int                @default(1)
+  discount       Decimal            @default(0.05) @db.Decimal(5, 4) // 5 % default, 4 decimales
+  status         SubscriptionStatus
+  nextDeliveryAt DateTime
+  pausedAt       DateTime?
+  cancelledAt    DateTime?
+  cancelReason   String?
+  createdAt      DateTime           @default(now())
+  updatedAt      DateTime           @updatedAt
+
+  deliveries SubscriptionDelivery[]
+
+  @@index([tenantId, userId, status])
+  @@index([tenantId, nextDeliveryAt, status])
+  @@index([tenantId, status])
+  @@map("subscriptions")
+}
+
+/// ─────────────────────────────────────────────────────────────────────────────
+/// SubscriptionDelivery — ledger append-only de cada entrega programada.
+/// ADR-076. Cada row es una entrega (real o saltada). orderId es nullable
+/// porque una entrega saltada no genera pedido.
+/// ─────────────────────────────────────────────────────────────────────────────
+model SubscriptionDelivery {
+  id             String    @id @default(cuid())
+  subscriptionId String
+  tenantId       String
+  scheduledFor   DateTime
+  deliveredAt    DateTime?
+  skipped        Boolean   @default(false)
+  skipReason     String?
+  orderId        String? // FK lógico a Order.id cuando se crea pedido real
+  createdAt      DateTime  @default(now())
+
+  subscription Subscription @relation(fields: [subscriptionId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId, subscriptionId])
+  @@index([tenantId, scheduledFor])
+  @@map("subscription_deliveries")
+}
+
