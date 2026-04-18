@@ -1,13 +1,25 @@
 @import "tailwindcss";
 
-/* Excluir docs, reports, HEALING del scanner de Tailwind v4.
-   Los ADRs y reportes contienen ejemplos de sintaxis con wildcards que
-   generan CSS invalido al ser escaneados como si fueran clases reales. */
+/* Scope explícito: solo escanear código de la app.
+   Tailwind v4 default escanea todo — esto lo restringe a los directorios
+   reales de componentes/rutas/libs de UI y excluye docs/reports/scripts/tests
+   que contienen sintaxis tipo `var(--dur-*)` que genera CSS inválido. */
+@source "../app/**/*.{ts,tsx,js,jsx}";
+@source "../components/**/*.{ts,tsx,js,jsx}";
+@source "../contexts/**/*.{ts,tsx,js,jsx}";
+@source "../hooks/**/*.{ts,tsx,js,jsx}";
+@source "../lib/**/*.{ts,tsx,js,jsx}";
+@source "../packages/design-system/src/**/*.{ts,tsx,js,jsx}";
 @source not "../docs/**/*";
 @source not "../reports/**/*";
 @source not "../HEALING/**/*";
 @source not "../scripts/**/*";
 @source not "../.claude/**/*";
+@source not "**/*.md";
+@source not "**/*.mdx";
+@source not "**/__tests__/**";
+@source not "**/*.test.{ts,tsx}";
+@source not "**/*.spec.{ts,tsx}";
 
 /* Habilitar dark mode por clase (.dark en <html>) */
 @custom-variant dark (&:where(.dark, .dark *));

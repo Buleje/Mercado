@@ -49,6 +49,7 @@ interface SuperAdminShellProps {
 const NAV_ITEMS: NavItem[] = [
   { label: "Dashboard",       icon: <LayoutDashboard className="w-5 h-5 shrink-0" />, href: "/superadmin/dashboard"       },
   { label: "Centro Control",  icon: <Gauge           className="w-5 h-5 shrink-0" />, href: "/superadmin/control-center" },
+  { label: "Sitemap",         icon: <MapIcon         className="w-5 h-5 shrink-0" />, href: "/superadmin/sitemap"         },
   { label: "Roadmap",         icon: <MapIcon         className="w-5 h-5 shrink-0" />, href: "/superadmin/roadmap"         },
   { label: "Tiendas",         icon: <Building2       className="w-5 h-5 shrink-0" />, href: "/superadmin/tenants"         },
   { label: "Aplicaciones",    icon: <FileCheck       className="w-5 h-5 shrink-0" />, href: "/superadmin/vendor-applications" },
@@ -64,6 +65,7 @@ const NAV_ITEMS: NavItem[] = [
 const PAGE_TITLES: Record<string, string> = {
   "/superadmin/dashboard":       "Dashboard",
   "/superadmin/control-center":  "Centro de Control",
+  "/superadmin/sitemap":         "Sitemap",
   "/superadmin/roadmap":         "Roadmap",
   "/superadmin/tenants":         "Tiendas",
   "/superadmin/vendor-applications": "Aplicaciones de vendedores",

@@ -206,11 +206,22 @@ export default function SponsoredAdminPanel({ storeSlug }: Props) {
   const storeId = boosts[0]?.storeId ?? storeSlug;
 
   const fetchBoosts = useCallback(async () => {
+    if (!storeSlug) {
+      setLoading(false);
+      return;
+    }
     setLoading(true);
     setError(null);
     try {
-      const res = await fetch("/api/marketplace/sponsored");
-      if (!res.ok) throw new Error("Error cargando boosts");
+      const res = await fetch(`/api/marketplace/sponsored?storeId=${encodeURIComponent(storeSlug)}`);
+      if (!res.ok) {
+        // 400 sin storeId o 401/403 sin auth — tratar como sin boosts
+        if (res.status === 400 || res.status === 401 || res.status === 403) {
+          setBoosts([]);
+          return;
+        }
+        throw new Error("Error cargando boosts");
+      }
       const json = await res.json() as { data: SponsoredBoost[] };
       setBoosts(json.data ?? []);
     } catch {
@@ -218,7 +229,7 @@ export default function SponsoredAdminPanel({ storeSlug }: Props) {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [storeSlug]);
 
   useEffect(() => {
     fetchBoosts();

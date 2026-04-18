@@ -134,10 +134,22 @@ export async function guardAdminPages(
  * Admin-only API guard — every HTTP method on the prefixes in
  * ADMIN_ONLY_API_PREFIXES requires a valid admin session.
  */
+/**
+ * Admin API endpoints que son PÚBLICOS (sin auth).
+ * Casos: error boundaries (log-error) que disparan ANTES del login,
+ * health probes que necesitan responder sin sesión.
+ */
+const ADMIN_PUBLIC_ENDPOINTS = [
+  "/api/admin/log-error",
+] as const;
+
 export async function guardAdminOnlyApi(
   req: NextRequest,
   pathname: string,
 ): Promise<NextResponse | null> {
+  const isPublic = ADMIN_PUBLIC_ENDPOINTS.some((p) => pathname === p || pathname.startsWith(p + "/"));
+  if (isPublic) return null;
+
   const isAdminOnly = ADMIN_ONLY_API_PREFIXES.some((p) => pathname.startsWith(p));
   if (!isAdminOnly) return null;
 

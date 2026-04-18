@@ -362,6 +362,12 @@ export {
   ZoomIn,
   ZoomOut,
 
+  // ── Additional pass 3 (sitemap module ADR-??) ────────────────
+  Cable,
+  Code,
+  Video,
+  Trees,
+
   // ── Types ────────────────────────────────────────────────────
   type LucideIcon,
   type LucideProps,

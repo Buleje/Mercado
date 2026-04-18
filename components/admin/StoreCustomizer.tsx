@@ -124,7 +124,7 @@ const DEFAULT_THEME: StoreTheme = {
 const COLOR_PRESETS = [
   { label: "Teal",    value: "var(--color-primary)" },
   { label: "Verde",   value: "#16a34a" },
-  { label: "Azul",    value: "var(--color-primary)" },
+  { label: "Azul",    value: "#2563eb" },
   { label: "Emerald", value: "#059669" },
   { label: "Rosa",    value: "#e11d48" },
   { label: "Amber",   value: "#d97706" },

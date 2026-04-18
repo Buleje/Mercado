@@ -87,7 +87,7 @@ export async function POST(
       anonymousId: parsed.data.anonymousId ?? null,
       eventType: parsed.data.eventType,
       productId: parsed.data.productId ?? null,
-    }).catch((err) => {
+    }).catch((err: unknown) => {
       logger.warn("[api/lives/event] tracking failed (swallowed)", {
         err: String(err),
         sessionId: id,

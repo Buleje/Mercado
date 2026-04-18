@@ -12,8 +12,9 @@ export default function AdminError({
   reset: () => void;
 }) {
   useEffect(() => {
-    // Log to monitoring (logger is server-only, so we use fetch)
-    fetch("/api/admin/health", {
+    // Log to monitoring (logger is server-only, so we use fetch).
+    // Uses public log-error endpoint — health require auth which falla en error boundary.
+    fetch("/api/admin/log-error", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({

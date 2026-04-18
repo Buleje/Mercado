@@ -67,17 +67,23 @@ export default function SalesAnomalyAlert({ storeSlug }: Props) {
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   const fetchAnomalies = useCallback(async () => {
+    if (!storeSlug) {
+      setLoading(false);
+      return;
+    }
     try {
       const since = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
       const res = await fetch(
         `/api/marketplace/anomalies?storeSlug=${encodeURIComponent(storeSlug)}&since=${encodeURIComponent(since)}&severity=critical,high`
       );
-      if (!res.ok) return;
-      const json = await res.json() as { data: AnomalyItem[] };
-      // Filtrar solo las no reconocidas
+      if (!res.ok) {
+        setItems([]);
+        return;
+      }
+      const json = (await res.json()) as { data: AnomalyItem[] };
       setItems((json.data ?? []).filter((a) => !a.acknowledgedAt));
     } catch {
-      /* silent — es un widget secundario */
+      setItems([]);
     } finally {
       setLoading(false);
     }
