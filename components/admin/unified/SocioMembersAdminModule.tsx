@@ -7,7 +7,7 @@
  * KPIs de miembros, MRR, churn, etc. + catálogo de ofertas exclusivas.
  */
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import {
   HeartHandshake,
   Users,
@@ -336,10 +336,90 @@ const TABS = [
   { id: "ofertas", label: "Ofertas exclusivas", icon: Package },
 ];
 
+// ── Server → SocioMember mapper (ADR-078) ─────────────────────────────────────
+
+type ServerMember = {
+  userId: string;
+  plan: "monthly" | "annual";
+  status: "trial" | "active" | "past_due" | "paused" | "cancelled";
+  startedAt: string;
+  currentPeriodEnd: string;
+  cashbackBalance: number;
+  totalEarned: number;
+};
+
+type ServerStats = {
+  totalMembers: number;
+  activeMembers: number;
+  trialMembers: number;
+  mrrSoles: number;
+  churnRate30d: number;
+  outstandingCashbackLiabilitySoles: number;
+} | null;
+
+function serverToLegacyMember(m: ServerMember): SocioMember {
+  const statusMap = {
+    active: "activo" as const,
+    trial: "activo" as const,
+    past_due: "activo" as const,
+    paused: "pausado" as const,
+    cancelled: "cancelado" as const,
+  };
+  const planMap = { monthly: "mensual" as const, annual: "anual" as const };
+  const monthlyFee = m.plan === "annual" ? 15 : 19;
+  return {
+    id: m.userId,
+    name: m.userId,
+    phone: "",
+    plan: planMap[m.plan],
+    status: statusMap[m.status],
+    startDate: m.startedAt.split("T")[0] ?? m.startedAt,
+    renewsAt: m.currentPeriodEnd.split("T")[0] ?? m.currentPeriodEnd,
+    monthlyFee,
+    totalCashback: m.cashbackBalance,
+    totalSpent: 0,
+    ordersCount: 0,
+    offersUsed: 0,
+  };
+}
+
 export default function SocioMembersAdminModule() {
   const [tab, setTab] = useState(TABS[0].id);
   const [members, setMembers] = useState<SocioMember[]>(MOCK_MEMBERS);
   const [selected, setSelected] = useState<SocioMember | null>(null);
+  const [serverStats, setServerStats] = useState<ServerStats>(null);
+
+  // ADR-078: al mount, intentamos hidratar desde /api/admin/socio/*.
+  // Si falla (403, API caída), se mantiene el MOCK_MEMBERS como fallback.
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const [membersRes, statsRes] = await Promise.all([
+          fetch("/api/admin/socio/members?limit=200", { cache: "no-store" }),
+          fetch("/api/admin/socio/stats", { cache: "no-store" }),
+        ]);
+        if (!cancelled && membersRes.ok) {
+          const data = (await membersRes.json()) as {
+            ok: boolean;
+            members: ServerMember[];
+          };
+          if (data.ok && Array.isArray(data.members) && data.members.length > 0) {
+            setMembers(data.members.map(serverToLegacyMember));
+          }
+        }
+        if (!cancelled && statsRes.ok) {
+          const data = (await statsRes.json()) as { ok: boolean; stats: ServerStats };
+          if (data.ok) setServerStats(data.stats);
+        }
+      } catch {
+        // silent — UI sigue con mock.
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   // KPIs
   const activos = members.filter((m) => m.status === "activo");
@@ -383,21 +463,21 @@ export default function SocioMembersAdminModule() {
         icon={HeartHandshake}
       />
 
-      {/* KPIs */}
+      {/* KPIs — prefiere stats de server (ADR-078), fallback a cálculo local */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
         <KPICard
           label="Miembros activos"
-          value={activos.length}
+          value={serverStats?.activeMembers ?? activos.length}
           icon={Users}
           color="#00B4A6"
           subtitle="Membresía vigente"
         />
         <KPICard
-          label="MRR estimado"
-          value={fmt(mrr)}
+          label="MRR"
+          value={fmt(serverStats?.mrrSoles ?? mrr)}
           icon={DollarSign}
           color="#10B981"
-          subtitle="Ingreso recurrente"
+          subtitle="Ingreso recurrente 30d"
         />
         <KPICard
           label="Nuevos este mes"
@@ -407,12 +487,16 @@ export default function SocioMembersAdminModule() {
           subtitle="Altas del periodo"
         />
         <KPICard
-          label="Churn este mes"
-          value={churnEsteMes}
+          label={serverStats ? "Churn 30d" : "Churn este mes"}
+          value={
+            serverStats
+              ? `${(serverStats.churnRate30d * 100).toFixed(1)}%`
+              : churnEsteMes
+          }
           icon={TrendingDown}
           color="#F59E0B"
           subtitle="Bajas del periodo"
-          alert={churnEsteMes > 3}
+          alert={(serverStats?.churnRate30d ?? 0) > 0.08 || churnEsteMes > 3}
         />
       </div>
 

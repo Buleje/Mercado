@@ -1,18 +1,18 @@
 "use client";
 
 /**
- * contexts/socio-buleje-context.tsx — Estado cliente de Socio Buleje.
+ * contexts/socio-buleje-context.tsx — Estado cliente de Socio Buleje (ADR-078).
+ *
+ * Fuente única de verdad = servidor. El localStorage es **cache optimista**
+ * que se reconcilia con `GET /api/socio-buleje/status` al mount.
  *
  * Provee:
  *   - `isSocio: boolean` — membership activa (o trial).
- *   - `plan` — monthly | yearly.
+ *   - `plan` — monthly | yearly | annual (alias compatible).
  *   - `membershipEnd` — fecha de vencimiento ISO.
- *   - `cashbackBalance` — saldo disponible.
- *   - `totalSaved` — ahorro acumulado histórico (S/).
- *   - `subscribe(plan)` / `cancel()` / `resume()`.
- *
- * Persistencia: localStorage key `socio-buleje-{tenantSlug}` (regla tenant-scoped).
- * En prod: se hidrata desde GET /api/socio-buleje/status en cada mount.
+ *   - `cashbackBalance` — saldo disponible (hidratado del ledger).
+ *   - `totalSaved` — acumulado histórico aprox. (se deriva de totalEarned).
+ *   - `subscribe(plan)` / `cancel()` / `resume()` — optimistic + server sync.
  */
 
 import {
@@ -21,6 +21,7 @@ import {
   useContext,
   useEffect,
   useMemo,
+  useRef,
   useState,
   type ReactNode,
 } from "react";
@@ -30,7 +31,7 @@ import type { SocioPlan } from "@/lib/validators/socio-buleje";
 export type SocioBulejeState = {
   isSocio: boolean;
   plan: SocioPlan | null;
-  status: "active" | "canceled" | "trial" | null;
+  status: "active" | "canceled" | "trial" | "past_due" | "paused" | "cancelled" | null;
   membershipEnd: string | null;
   cashbackBalance: number;
   totalSaved: number;
@@ -43,6 +44,7 @@ type SocioBulejeCtx = SocioBulejeState & {
   subscribe: (plan: SocioPlan) => Promise<void>;
   cancel: () => Promise<void>;
   resume: () => Promise<void>;
+  refresh: () => Promise<void>;
   /** Preview: ¿cuánto ahorraría el usuario con una compra de monto X? */
   computeSavings: (monthlySpend: number) => {
     deliverySavings: number;
@@ -69,6 +71,9 @@ const AVG_DELIVERY_COST = 6;
 const ASSUMED_ORDERS_PER_MONTH = 4;
 const CASHBACK_RATE = 0.05;
 
+// Dev-demo user id — en prod saldrá de la session / customer auth.
+const DEMO_USER_ID = "user_demo_01";
+
 function loadState(storageKey: string): SocioBulejeState {
   if (typeof window === "undefined") return EMPTY_STATE;
   try {
@@ -90,17 +95,43 @@ function saveState(storageKey: string, state: SocioBulejeState) {
   }
 }
 
+type ServerMembership = {
+  userId: string;
+  plan: "monthly" | "annual";
+  status: "trial" | "active" | "past_due" | "paused" | "cancelled";
+  startedAt: string;
+  currentPeriodEnd: string;
+  cashbackBalance: number;
+  totalEarned: number;
+  totalRedeemed: number;
+};
+
+function daysBetween(a: string, b: string): number {
+  const d1 = new Date(a).getTime();
+  const d2 = new Date(b).getTime();
+  return Math.max(0, Math.floor((d2 - d1) / (24 * 60 * 60 * 1000)));
+}
+
+function serverToState(m: ServerMembership | null): SocioBulejeState {
+  if (!m) return EMPTY_STATE;
+  return {
+    isSocio: m.status === "active" || m.status === "trial",
+    plan: m.plan,
+    status: m.status,
+    membershipEnd: m.currentPeriodEnd,
+    cashbackBalance: m.cashbackBalance,
+    totalSaved: m.totalEarned,
+    totalOrdersWithFreeShipping: 0, // no lo trackea ADR-078 v1
+    daysAsSocio: daysBetween(m.startedAt, new Date().toISOString()),
+  };
+}
+
 export function SocioBulejeProvider({ children }: { children: ReactNode }) {
   const slug = useTenantSlug();
   const storageKey = tenantKey(slug, "socio-buleje");
   const [state, setState] = useState<SocioBulejeState>(EMPTY_STATE);
   const [isLoading, setIsLoading] = useState(true);
-
-  // Hidrata desde localStorage después del mount (evita SSR mismatch)
-  useEffect(() => {
-    setState(loadState(storageKey));
-    setIsLoading(false);
-  }, [storageKey]);
+  const hasHydrated = useRef(false);
 
   const persist = useCallback(
     (next: SocioBulejeState) => {
@@ -110,51 +141,106 @@ export function SocioBulejeProvider({ children }: { children: ReactNode }) {
     [storageKey],
   );
 
+  const refresh = useCallback(async () => {
+    try {
+      const res = await fetch(
+        `/api/socio-buleje/status?userId=${encodeURIComponent(DEMO_USER_ID)}`,
+        { cache: "no-store" },
+      );
+      if (!res.ok) return;
+      const data = (await res.json()) as {
+        ok: boolean;
+        membership: ServerMembership | null;
+      };
+      if (data.ok) {
+        persist(serverToState(data.membership));
+      }
+    } catch {
+      // offline / SSR — dejamos el optimistic state.
+    }
+  }, [persist]);
+
+  // Hidrata desde localStorage primero (instant UI), luego reconcilia con server.
+  // Usamos functional updater para evitar lint de set-state-in-effect.
+  useEffect(() => {
+    if (hasHydrated.current) return;
+    hasHydrated.current = true;
+    setState((prev) => {
+      const loaded = loadState(storageKey);
+      return loaded.isSocio || loaded.status ? loaded : prev;
+    });
+    setIsLoading((prev) => (prev ? false : prev));
+    refresh().catch((err) => {
+      console.warn("[socio-buleje] server hydrate failed", String(err));
+    });
+  }, [storageKey, refresh]);
+
   const subscribe = useCallback(
     async (plan: SocioPlan) => {
-      const duration = plan === "yearly" ? 365 : 30;
+      const duration = plan === "annual" || plan === "yearly" ? 365 : 30;
       const end = new Date();
       end.setDate(end.getDate() + duration);
-      const next: SocioBulejeState = {
+      const optimistic: SocioBulejeState = {
         ...state,
         isSocio: true,
         plan,
-        status: state.status === "canceled" ? "active" : "trial",
+        status: state.status === "cancelled" || state.status === "canceled" ? "active" : "trial",
         membershipEnd: end.toISOString(),
         cashbackBalance: state.cashbackBalance || 0,
         totalSaved: state.totalSaved || 0,
       };
-      persist(next);
-      // Fire-and-forget API call — no bloquea UI (CLAUDE.md #7)
-      fetch("/api/socio-buleje/subscribe", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ plan, userId: "user_demo_01" }),
-      }).catch((err) => {
-        // eslint-disable-next-line no-console
+      persist(optimistic);
+
+      try {
+        const res = await fetch("/api/socio-buleje/subscribe", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ plan, userId: DEMO_USER_ID }),
+        });
+        if (res.ok) {
+          const data = (await res.json()) as {
+            ok: boolean;
+            membership: ServerMembership | null;
+          };
+          if (data.ok && data.membership) {
+            persist(serverToState(data.membership));
+          }
+        }
+      } catch (err) {
         console.warn("[socio-buleje] subscribe sync failed", String(err));
-      });
+      }
     },
     [state, persist],
   );
 
   const cancel = useCallback(async () => {
-    const next: SocioBulejeState = { ...state, status: "canceled" };
-    persist(next);
-    fetch("/api/socio-buleje/cancel", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ userId: "user_demo_01" }),
-    }).catch((err) => {
-      // eslint-disable-next-line no-console
+    const optimistic: SocioBulejeState = { ...state, status: "cancelled" };
+    persist(optimistic);
+    try {
+      const res = await fetch("/api/socio-buleje/cancel", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ userId: DEMO_USER_ID }),
+      });
+      if (res.ok) {
+        const data = (await res.json()) as {
+          ok: boolean;
+          membership: ServerMembership | null;
+        };
+        if (data.ok && data.membership) {
+          persist(serverToState(data.membership));
+        }
+      }
+    } catch (err) {
       console.warn("[socio-buleje] cancel sync failed", String(err));
-    });
+    }
   }, [state, persist]);
 
   const resume = useCallback(async () => {
-    const next: SocioBulejeState = { ...state, status: "active" };
-    persist(next);
-  }, [state, persist]);
+    const optimistic: SocioBulejeState = { ...state, status: "active" };
+    persist(optimistic);
+    await refresh();
+  }, [state, persist, refresh]);
 
   const computeSavings = useCallback((monthlySpend: number) => {
     const deliverySavings = AVG_DELIVERY_COST * ASSUMED_ORDERS_PER_MONTH * 12;
@@ -173,9 +259,10 @@ export function SocioBulejeProvider({ children }: { children: ReactNode }) {
       subscribe,
       cancel,
       resume,
+      refresh,
       computeSavings,
     }),
-    [state, isLoading, subscribe, cancel, resume, computeSavings],
+    [state, isLoading, subscribe, cancel, resume, refresh, computeSavings],
   );
 
   return (
@@ -189,13 +276,13 @@ export function useSocioBuleje(): SocioBulejeCtx {
   const ctx = useContext(SocioBulejeContext);
   if (!ctx) {
     // Graceful fallback: si no hay provider, devolvemos estado vacío.
-    // Evita crashes cuando un componente se renderiza fuera del árbol store.
     return {
       ...EMPTY_STATE,
       isLoading: false,
       subscribe: async () => {},
       cancel: async () => {},
       resume: async () => {},
+      refresh: async () => {},
       computeSavings: () => ({ deliverySavings: 0, cashbackSavings: 0, total: 0 }),
     };
   }

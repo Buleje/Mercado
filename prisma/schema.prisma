@@ -3451,7 +3451,6 @@ model TenantPageVisit {
   @@index([tenantId, converted])
   @@index([sessionId])
 }
-<<<<<<< HEAD
 
 /// ─────────────────────────────────────────────────────────────────────────────
 /// Subscription — "Bodega al Mes" (Amazon Subscribe & Save adaptado PE).
@@ -3518,7 +3517,6 @@ model SubscriptionDelivery {
   @@map("subscription_deliveries")
 }
 
-=======
 // ═══════════════════════════════════════════════════════════════════════════
 // GIFT CARDS (ADR-077 — HMAC-hashed codes + redemption ledger)
 // ═══════════════════════════════════════════════════════════════════════════
@@ -3614,4 +3612,111 @@ model GiftCardRedemption {
   @@index([tenantId, redeemedAt])
   @@map("gift_card_redemptions")
 }
->>>>>>> worktree-agent-aedb62a9
+
+
+// ─── Socio Buleje — Membresía Prime-like (ADR-078) ──────────────────
+/// Programa de suscripción mensual/anual del marketplace. Beneficios:
+/// delivery gratis, 5% cashback, early access, precios exclusivos.
+///
+/// Tres tablas (ADR-078):
+///   1. SocioMembership     — contrato vivo (mutable).
+///   2. SocioBillingCycle   — ciclo de cobro mensual/anual.
+///   3. SocioCashbackEntry  — ledger append-only del saldo cashback.
+///
+/// Write path: lib/db/socio-buleje.db.ts (todos los métodos).
+/// Cron diario: app/api/cron/socio/renew-cycles.
+// ─────────────────────────────────────────────────────────────────────
+
+enum SocioPlan {
+  monthly
+  annual
+}
+
+enum SocioStatus {
+  trial
+  active
+  past_due
+  paused
+  cancelled
+}
+
+enum BillingCycleStatus {
+  pending
+  paid
+  failed
+  waived
+}
+
+enum CashbackEntryType {
+  earned
+  redeemed
+  expired
+  bonus
+  adjustment
+}
+
+model SocioMembership {
+  id                String      @id @default(cuid())
+  tenantId          String
+  userId            String
+  plan              SocioPlan
+  status            SocioStatus
+  startedAt         DateTime    @default(now())
+  currentPeriodEnd  DateTime
+  trialEndsAt       DateTime?
+  cancelledAt       DateTime?
+  cancelReason      String?
+  cancelAtPeriodEnd Boolean     @default(false)
+  autoRenew         Boolean     @default(true)
+  createdAt         DateTime    @default(now())
+  updatedAt         DateTime    @updatedAt
+
+  billingCycles   SocioBillingCycle[]
+  cashbackEntries SocioCashbackEntry[]
+
+  @@unique([tenantId, userId])
+  @@index([tenantId, status])
+  @@index([tenantId, currentPeriodEnd, status])
+  @@index([tenantId, cancelAtPeriodEnd])
+  @@map("socio_memberships")
+}
+
+model SocioBillingCycle {
+  id            String             @id @default(cuid())
+  membershipId  String
+  tenantId      String
+  periodStart   DateTime
+  periodEnd     DateTime
+  amountSoles   Decimal            @db.Decimal(10, 2)
+  status        BillingCycleStatus
+  paidAt        DateTime?
+  invoiceId     String?
+  failureReason String?
+  createdAt     DateTime           @default(now())
+
+  membership SocioMembership @relation(fields: [membershipId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId, membershipId])
+  @@index([tenantId, periodEnd, status])
+  @@map("socio_billing_cycles")
+}
+
+model SocioCashbackEntry {
+  id           String            @id @default(cuid())
+  membershipId String
+  tenantId     String
+  userId       String
+  orderId      String?
+  type         CashbackEntryType
+  amountSoles  Decimal           @db.Decimal(10, 2)
+  description  String
+  balanceAfter Decimal           @db.Decimal(10, 2)
+  createdAt    DateTime          @default(now())
+
+  membership SocioMembership @relation(fields: [membershipId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId, userId, createdAt])
+  @@index([tenantId, membershipId, type])
+  @@index([tenantId, orderId])
+  @@map("socio_cashback_entries")
+}

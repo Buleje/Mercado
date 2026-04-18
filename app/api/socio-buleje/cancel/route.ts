@@ -2,34 +2,47 @@ import "server-only";
 import { NextRequest, NextResponse } from "next/server";
 import { CancelBodySchema } from "@/lib/validators/socio-buleje";
 import { SocioBulejeDB } from "@/lib/db/socio-buleje.db";
+import { toErrorPayload, newTraceId } from "@/lib/api-error";
+import { logger } from "@/lib/logger";
 
 /**
  * POST /api/socio-buleje/cancel
  *
- * Cancela una membership. El beneficio sigue activo hasta endDate.
- * Body: { userId, reason? }
+ * Cancela una membership — ADR-078.
+ * Body: { userId, reason?, immediate? }
+ *   - immediate=false (default): `cancelAtPeriodEnd=true`, sigue siendo socio hasta currentPeriodEnd.
+ *   - immediate=true: status=`cancelled` inmediatamente.
  */
 export async function POST(req: NextRequest) {
+  const traceId = newTraceId();
   try {
     const body = await req.json().catch(() => ({}));
     const parsed = CancelBodySchema.safeParse(body);
     if (!parsed.success) {
       return NextResponse.json(
-        { error: "Datos inválidos", issues: parsed.error.flatten() },
+        { error: { code: "VALIDATION_ERROR", message: "Datos inválidos", details: parsed.error.flatten(), traceId } },
         { status: 400 },
       );
     }
 
     const tenantId = req.headers.get("x-tenant-id") ?? "main";
-    const { userId } = parsed.data;
-    const membership = await SocioBulejeDB.cancel(tenantId, userId);
+    const { userId, reason, immediate } = parsed.data;
+    const membership = await SocioBulejeDB.cancel(tenantId, userId, reason, immediate ?? false);
 
     if (!membership) {
-      return NextResponse.json({ error: "Membership no encontrada" }, { status: 404 });
+      return NextResponse.json(
+        { error: { code: "NOT_FOUND", message: "Membership no encontrada", traceId } },
+        { status: 404 },
+      );
     }
 
-    return NextResponse.json({ ok: true, membership });
-  } catch {
-    return NextResponse.json({ error: "Error interno" }, { status: 500 });
+    return NextResponse.json({ ok: true, membership, traceId });
+  } catch (err) {
+    const { payload, status } = toErrorPayload(err, traceId);
+    logger.warn("[api/socio-buleje/cancel] error", {
+      traceId,
+      error: err instanceof Error ? err.message : String(err),
+    });
+    return NextResponse.json(payload, { status });
   }
 }
