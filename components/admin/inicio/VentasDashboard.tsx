@@ -3,10 +3,9 @@
 import { StatCard } from "@buleje/design-system";
 import { useMemo } from "react";
 import {
-  DollarSign, TrendingUp, TrendingDown, Minus, Receipt,
-  AlertTriangle, CreditCard, RefreshCw, ShoppingCart,
-  Percent, ArrowUpRight, ArrowDownRight, Download, Target,
-  Clock,
+  DollarSign, TrendingUp, Receipt,
+  AlertTriangle, RefreshCw, ShoppingCart,
+  Percent, Clock,
 } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 import dynamic from "next/dynamic";
@@ -259,12 +258,12 @@ export default function VentasDashboard({ dateRange }: { dateRange: DateRange })
 
   return (
     <div className="space-y-5">
-      {/* ── KPI Hero Row · ADR-068 UnifiedKPITile (armonía estricta) ── */}
+      {/* ── KPI Hero Row · ADR-068 UnifiedKPITile (armonía estricta) — con sparklines ── */}
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
-        <StatCard label="Ventas Netas" value={fmt(data.ventasNetas)} icon={DollarSign} delta={data.dVentas} />
-        <StatCard label="Utilidad Bruta" value={fmt(data.utilidadBruta)} icon={TrendingUp} delta={data.dUtilidad} />
+        <StatCard label="Ventas Netas" value={fmt(data.ventasNetas)} icon={DollarSign} delta={data.dVentas} sparkline={data.sparkVentas.length >= 2 ? { data: data.sparkVentas } : undefined} />
+        <StatCard label="Utilidad Bruta" value={fmt(data.utilidadBruta)} icon={TrendingUp} delta={data.dUtilidad} sparkline={data.sparkUtilidad.length >= 2 ? { data: data.sparkUtilidad } : undefined} />
         <StatCard label="Margen" value={`${data.margen.toFixed(1)}%`} icon={Percent} delta={data.dMargen} emphasis={data.margen >= 25 ? "success" : data.margen >= 15 ? "warning" : "error"} />
-        <StatCard label="Tickets" value={String(data.tickets)} icon={Receipt} delta={data.dTickets} />
+        <StatCard label="Tickets" value={String(data.tickets)} icon={Receipt} delta={data.dTickets} sparkline={data.sparkTickets.length >= 2 ? { data: data.sparkTickets } : undefined} />
         <StatCard label="Ticket Prom." value={fmt(data.ticketPromedio)} icon={ShoppingCart} delta={data.dTicketProm} />
         <StatCard label="Cancelados" value={String(data.cancelados)} icon={AlertTriangle} delta={data.dCancelados} emphasis={data.cancelados > 0 ? "error" : "neutral"} />
       </div>
@@ -293,69 +292,6 @@ export default function VentasDashboard({ dateRange }: { dateRange: DateRange })
   );
 }
 
-// ── KPI Card ──────────────────────────────────────────────────────────────────
-
-function KPICard({ label, value, Icon, delta, sparkline, accent, invertTrend }: {
-  label: string; value: string;
-  Icon: React.ComponentType<{ className?: string }>;
-  delta?: number | null; sparkline?: number[];
-  accent: "emerald" | "blue" | "violet" | "cyan" | "amber" | "red";
-  invertTrend?: boolean;
-}) {
-  const isPositive = delta != null ? (invertTrend ? delta <= 0 : delta >= 0) : false;
-  const colorMap = {
-    emerald: { bg: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]", icon: "text-[var(--data-success)]", spark: "#00B4A6" },
-    blue: { bg: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]", icon: "text-[var(--data-success)]", spark: "#3b82f6" },
-    violet: { bg: "bg-[var(--surface-sunken)]", icon: "text-[var(--text-secondary)]", spark: "#8b5cf6" },
-    cyan: { bg: "bg-[var(--data-info-50)] dark:bg-cyan-950/30", icon: "text-cyan-500", spark: "#06b6d4" },
-    amber: { bg: "bg-[var(--data-warning-50)] dark:bg-amber-950/30", icon: "text-amber-500", spark: "#f59e0b" },
-    red: { bg: "bg-[var(--data-error-50)] dark:bg-red-950/30", icon: "text-red-500", spark: "#ef4444" },
-  };
-  const c = colorMap[accent];
-
-  return (
-    <div className="relative bg-white dark:bg-card border border-[var(--rule-soft)] dark:border-card-border rounded-xl p-4 overflow-hidden hover:shadow-sm transition-shadow">
-      {delta != null && Math.abs(delta) >= 10 && (
-        <div className={cn("absolute top-0 left-0 right-0 h-1", isPositive ? "bg-[var(--accent-soft)]" : "bg-[var(--data-error)]")} />
-      )}
-      <div className="flex items-start justify-between mb-3">
-        <div className={cn("w-9 h-9 rounded-xl flex items-center justify-center", c.bg)}>
-          <Icon className={cn("h-4.5 w-4.5", c.icon)} />
-        </div>
-        {delta != null && (
-          <div className={cn("flex items-center gap-0.5 px-1.5 py-0.5 rounded-md text-xs font-bold",
-            isPositive ? "bg-[var(--accent-soft)] text-[var(--data-success)] dark:bg-[var(--accent-muted)] dark:text-[var(--data-success)]" : "bg-[var(--data-error-50)] text-[var(--data-error)] dark:bg-red-950/30 dark:text-[var(--data-error)]"
-          )}>
-            {delta >= 0 ? <ArrowUpRight className="h-3 w-3" /> : <ArrowDownRight className="h-3 w-3" />}
-            {Math.abs(delta).toFixed(1)}%
-          </div>
-        )}
-      </div>
-      <p className="text-xl font-bold text-[var(--text-primary)] dark:text-foreground tabular-nums leading-none mb-1">{value}</p>
-      <p className="text-[length:var(--ts-xs)] font-medium text-[var(--text-tertiary)] dark:text-muted">{label}</p>
-      {sparkline && sparkline.length > 0 && (
-        <div className="mt-2">
-          <MiniSparkline data={sparkline} color={c.spark} />
-        </div>
-      )}
-    </div>
-  );
-}
-
-// ── Mini Sparkline ───────────────────────────────────────────────────────────
-
-function MiniSparkline({ data, color }: { data: number[]; color: string }) {
-  const max = Math.max(...data, 1);
-  const min = Math.min(...data, 0);
-  const range = max - min || 1;
-  const points = data.map((val, i) => `${(i / (data.length - 1)) * 100},${28 - ((val - min) / range) * 24}`).join(" ");
-  return (
-    <svg viewBox="0 0 100 28" className="w-full h-7 opacity-50">
-      <polyline points={points} fill="none" stroke={color} strokeWidth="2" strokeLinejoin="round" strokeLinecap="round" />
-    </svg>
-  );
-}
-
 // ── Skeleton ─────────────────────────────────────────────────────────────────
 
 function DashboardSkeleton() {
@@ -367,9 +303,15 @@ function DashboardSkeleton() {
         ))}
       </div>
       <div className="bg-[var(--surface-sunken)] rounded-xl h-12" />
-      <div className="grid grid-cols-1 gap-4 lg:grid-cols-5">
-        <div className="lg:col-span-3 bg-[var(--surface-sunken)] rounded-xl h-72" />
-        <div className="lg:col-span-2 bg-[var(--surface-sunken)] rounded-xl h-72" />
+      <div className="bg-[var(--surface-sunken)] rounded-xl h-[380px]" />
+      <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+        <div className="bg-[var(--surface-sunken)] rounded-xl h-[300px]" />
+        <div className="bg-[var(--surface-sunken)] rounded-xl h-[300px]" />
+      </div>
+      <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
+        <div className="bg-[var(--surface-sunken)] rounded-xl h-[260px]" />
+        <div className="bg-[var(--surface-sunken)] rounded-xl h-[260px]" />
+        <div className="bg-[var(--surface-sunken)] rounded-xl h-[260px]" />
       </div>
     </div>
   );
